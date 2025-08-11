@@ -1,6 +1,6 @@
 # Privacy Policy for HabitV8
 
-**Last Updated**: December 2024
+**Last Updated**: August 2025
 
 ## Introduction
 
@@ -52,9 +52,33 @@ Your data is used exclusively to:
 HabitV8 may integrate with the following services (all optional):
 
 ### Health Integration
-- **Apple HealthKit** (iOS): For fitness and health data integration
-- **Google Fit** (Android): For activity and health data
-- **Data Usage**: Only accessed with your permission, stored locally
+
+**Health Data Types We Access:**
+- **Steps**: To correlate walking habits with your step count goals
+- **Heart Rate**: For fitness habit tracking and workout intensity monitoring
+- **Sleep Data**: To help optimize sleep-related habits and bedtime routines
+- **Exercise/Workout Data**: To automatically track fitness habits and provide insights
+- **Active Energy Burned**: To correlate with fitness and activity habits
+- **Water Intake**: To support hydration habit tracking
+- **Mindfulness Data** (iOS): To track meditation and mindfulness habits
+
+**How We Use Health Data:**
+- Provide personalized habit recommendations based on your health patterns
+- Automatically mark health-related habits as complete when data is detected
+- Generate insights about the correlation between your habits and health metrics
+- Display health progress alongside habit completion data
+- All health data processing occurs locally on your device
+
+**Health Data Security:**
+- Health data is encrypted and stored locally using secure device storage
+- No health data is transmitted to external servers
+- You can revoke health data access at any time through device settings
+- Health data is only accessed when you explicitly enable health integration features
+
+**Platform-Specific Integration:**
+- **Apple HealthKit** (iOS): Integrates with iOS Health app for comprehensive health data
+- **Google Fit/Health Connect** (Android): Connects with Android health platforms
+- **Data Usage**: Only accessed with your explicit permission, stored locally only
 
 ### Calendar Integration
 - **Device Calendar**: For habit scheduling and reminders
@@ -112,9 +136,15 @@ If you have questions about this Privacy Policy or our privacy practices:
 ## Data Processing Legal Basis
 
 We process your data based on:
-- **Consent**: For optional features like health integration
+- **Consent**: For optional features like health integration, calendar access, and location-based habits
 - **Legitimate Interest**: For core app functionality and improvements
 - **Contract Performance**: To provide the services you requested
+
+### Health Data Specific Legal Basis
+- **Explicit Consent**: All health data access requires your explicit, informed consent
+- **Purpose Limitation**: Health data is only used for the specific habit tracking features you enable
+- **Data Minimization**: We only request access to health data types that directly support your chosen habits
+- **User Control**: You can withdraw consent and revoke health data access at any time
 
 ## Your Consent
 
