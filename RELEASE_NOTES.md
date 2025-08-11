@@ -67,15 +67,6 @@ HabitV8 is your comprehensive habit tracking companion designed to help you buil
 - **Charts**: FL Chart
 - **AI/ML**: TensorFlow Lite
 
-### 📱 Supported Platforms
-
-- ✅ Android (Phone & Tablet)
-- ✅ iOS (iPhone & iPad)
-- ✅ Web (Progressive Web App)
-- ✅ Windows Desktop
-- ✅ macOS Desktop
-- ✅ Linux Desktop
-
 ### 🔐 Permissions Required
 
 #### Android
