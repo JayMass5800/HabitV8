@@ -28,7 +28,7 @@ Never miss a habit with our intelligent reminder system that adapts to your sche
 Seamlessly integrate with your device calendar to visualize habit completions alongside your daily schedule. See your progress at a glance with our beautiful calendar view.
 
 **🏥 HEALTH INTEGRATION**
-Connect with Apple HealthKit to automatically track fitness-related habits and correlate your health data with your habit progress.
+Connect with HealthKit to automatically sync your health data and seamlessly correlate your health data with your habit progress.
 
 **🎨 BEAUTIFUL DESIGN**
 Enjoy a modern, intuitive interface with smooth animations, customizable themes, and a delightful user experience that makes habit tracking a pleasure.
@@ -44,10 +44,14 @@ Your data stays on your device. We use local storage with encryption to ensure y
 ✓ Calendar and health app integration
 ✓ Beautiful, customizable interface
 ✓ Offline functionality
-✓ Data export capabilities
-✓ No subscription required
+✓ No subscription required, ever.
+✓ No third-party services.
+✓ Local data storage with encryption.
+✓ No data sharing.
 
-Whether you're trying to drink more water, exercise regularly, read daily, or build any positive routine, HabitV8 provides the tools and motivation you need to succeed.
+✓ Data export capabilities - coming soon.
+
+Whether you're trying to drink more water, remember to take your medications, exercise regularly, or build any positive routine, HabitV8 provides the tools and motivation you need to succeed.
 
 Download HabitV8 today and start building the habits that will transform your life!
 
