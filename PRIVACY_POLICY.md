@@ -105,9 +105,8 @@ HabitV8 is designed to work globally while respecting local privacy laws:
 
 If you have questions about this Privacy Policy or our privacy practices:
 
-- **Email**: privacy@habitv8.app
-- **Support**: support@habitv8.app
-- **Address**: [Your Company Address]
+- **Email**: dappercatsinc@gmail.com
+- **Support**: dappercatsinc@gmail.com
 
 ## Data Processing Legal Basis
 
