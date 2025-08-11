@@ -652,9 +652,84 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _clearAllData() {
-    // TODO: Implement data clearing functionality
-    _showSnackBar('All data cleared');
+  Future<void> _clearAllData() async {
+    try {
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                SizedBox(width: 16),
+                Text('Clearing all data...'),
+              ],
+            ),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+
+      // 1. Cancel all notifications
+      await NotificationService.cancelAllNotifications();
+      AppLogger.info('All notifications cancelled');
+
+      // 2. Clear SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      AppLogger.info('SharedPreferences cleared');
+
+      // 3. Reset the Hive database (this will clear all habits)
+      await DatabaseService.resetDatabase();
+      AppLogger.info('Database reset completed');
+
+      // 4. Disable calendar sync (preferences already cleared above)
+      try {
+        await CalendarService.setCalendarSyncEnabled(false);
+        AppLogger.info('Calendar sync disabled');
+      } catch (e) {
+        AppLogger.warning('Failed to disable calendar sync: $e');
+        // Don't fail the entire operation if calendar disabling fails
+      }
+
+      // 5. Reset app state
+      setState(() {
+        _notificationsEnabled = false;
+        _calendarSync = false;
+        _healthDataSync = false;
+        _defaultScreen = 'Timeline';
+      });
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All data cleared successfully! 🗑️'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      AppLogger.info('All data cleared successfully');
+    } catch (e) {
+      AppLogger.error('Error clearing all data', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error clearing data: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   void _showAboutDialog() {
