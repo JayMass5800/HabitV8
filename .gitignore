@@ -66,3 +66,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android signing files - NEVER commit these!
+android/key.properties
+android/upload-keystore.jks
+android/app/upload-keystore.jks
+*.jks
+*.keystore
+
+# Play Store files
+android/fastlane/
+android/metadata/
