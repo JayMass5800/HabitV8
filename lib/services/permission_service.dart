@@ -31,25 +31,45 @@ class PermissionService {
     return allGranted && healthPermissionsGranted;
   }
 
-  /// Request health-specific permissions
+  /// Request health-specific permissions with proper user consent
+  /// 
+  /// This method requests access to specific health data types that directly support
+  /// habit tracking features. Each data type serves a specific purpose:
+  /// - STEPS: For walking/running habit tracking and step count insights
+  /// - HEART_RATE: For workout intensity monitoring during fitness habits
+  /// - ACTIVE_ENERGY_BURNED: For correlating energy expenditure with fitness habits
+  /// - DISTANCE_DELTA: For tracking distance-based exercise habits
+  /// - WORKOUT: For automatic detection and completion of fitness habits
+  /// - SLEEP_IN_BED: For sleep habit optimization and bedtime routine tracking
+  /// 
+  /// All data is processed locally and used solely for habit tracking features.
+  /// Users can revoke these permissions at any time through device settings.
   static Future<bool> _requestHealthPermissions() async {
     final types = [
-      HealthDataType.STEPS,
-      HealthDataType.HEART_RATE,
-      HealthDataType.ACTIVE_ENERGY_BURNED,
-      HealthDataType.DISTANCE_DELTA,
-      HealthDataType.WORKOUT,
-      HealthDataType.SLEEP_IN_BED,
+      HealthDataType.STEPS,           // For step counting habits and walking goals
+      HealthDataType.HEART_RATE,      // For workout intensity and fitness habits
+      HealthDataType.ACTIVE_ENERGY_BURNED, // For energy expenditure correlation
+      HealthDataType.DISTANCE_DELTA,  // For distance-based exercise habits
+      HealthDataType.WORKOUT,         // For automatic fitness habit completion
+      HealthDataType.SLEEP_IN_BED,    // For sleep habit optimization
     ];
 
-    // Create permissions list that matches the length of types
+    // Create permissions list that matches the length of types (READ access only)
     final permissions = types.map((type) => HealthDataAccess.READ).toList();
 
     try {
+      // Request authorization with explicit user consent
       bool requested = await Health().requestAuthorization(
         types,
         permissions: permissions,
       );
+      
+      if (requested) {
+        AppLogger.info('Health permissions granted for habit tracking features');
+      } else {
+        AppLogger.info('Health permissions denied by user');
+      }
+      
       return requested;
     } catch (e) {
       AppLogger.error('Error requesting health permissions', e);

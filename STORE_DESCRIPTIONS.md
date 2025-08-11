@@ -28,7 +28,13 @@ Never miss a habit with our intelligent reminder system that adapts to your sche
 Seamlessly integrate with your device calendar to visualize habit completions alongside your daily schedule. See your progress at a glance with our beautiful calendar view.
 
 **🏥 HEALTH INTEGRATION**
-Connect with HealthKit to automatically sync your health data and seamlessly correlate your health data with your habit progress.
+Connect with HealthKit and Health Connect to enhance your habit tracking experience. We access specific health data types only to support your chosen habits:
+• Steps data to automatically track walking/running habits and provide step count insights
+• Heart rate monitoring during workouts to help optimize fitness habits and exercise intensity
+• Sleep data to correlate with sleep hygiene habits and bedtime routines
+• Exercise/workout data to automatically mark fitness habits as complete
+• Water intake tracking to support hydration habits
+All health data remains on your device and is used solely to provide personalized habit insights and automatic tracking features.
 
 **🎨 BEAUTIFUL DESIGN**
 Enjoy a modern, intuitive interface with smooth animations, customizable themes, and a delightful user experience that makes habit tracking a pleasure.
@@ -97,11 +103,15 @@ Our AI-powered system learns from your behavior patterns to provide personalized
 • Gentle nudges without being intrusive
 
 📅 **SEAMLESS INTEGRATIONS**
-• Google Calendar synchronization
-• Google Fit and health app connectivity
-• Device calendar integration for scheduling
-• Health data correlation and tracking
-• Automatic activity recognition
+• Google Calendar synchronization for habit scheduling
+• Health Connect and Google Fit integration with specific data access:
+  - Steps data for walking/running habit tracking and insights
+  - Heart rate monitoring for workout intensity optimization
+  - Sleep data analysis for sleep habit improvement
+  - Exercise detection for automatic fitness habit completion
+  - Water intake tracking for hydration habit support
+• All health data processed locally with explicit user consent
+• Device calendar integration for habit scheduling and reminders
 
 🎨 **BEAUTIFUL & INTUITIVE DESIGN**
 • Modern Material Design 3 interface

@@ -2,10 +2,28 @@ import 'package:health/health.dart';
 import 'dart:io';
 import 'logging_service.dart';
 
+/// HealthService provides secure, privacy-focused access to health data for habit tracking.
+/// 
+/// This service complies with Android Health Permissions guidelines by:
+/// - Only requesting access to specific data types needed for habit tracking features
+/// - Processing all data locally on the device
+/// - Requiring explicit user consent for each data type
+/// - Providing clear justification for each permission request
+/// - Allowing users to revoke permissions at any time
+/// 
+/// Data Usage Justification:
+/// - STEPS: Correlate walking/running habits with actual step counts
+/// - HEART_RATE: Monitor workout intensity for fitness habit optimization
+/// - SLEEP_*: Analyze sleep patterns to improve sleep-related habits
+/// - ACTIVE_ENERGY_BURNED: Track energy expenditure for fitness habits
+/// - EXERCISE_TIME/WORKOUT: Automatically detect and complete fitness habits
+/// - WATER: Support hydration habit tracking and reminders
+/// - MINDFULNESS: Track meditation and mindfulness habit completion
+/// - WEIGHT: Correlate with health and fitness habit progress
 class HealthService {
   static bool _isInitialized = false;
 
-  /// List of health data types we want to access
+  /// List of health data types we access, each with specific habit tracking purpose
   static final List<HealthDataType> _healthDataTypes = [
     HealthDataType.STEPS,
     HealthDataType.HEART_RATE,

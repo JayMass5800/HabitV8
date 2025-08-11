@@ -55,10 +55,13 @@ HabitV8 is a habit tracking application that helps users:
 - We are not responsible for health-related decisions based on App data
 
 ### Health Integration:
-- Health data integration is optional
-- Health data is used only for habit tracking purposes
-- We do not provide medical analysis or recommendations
+- Health data integration is entirely optional and requires explicit consent
+- Health data is used exclusively for habit tracking and personal insights
+- All health data processing occurs locally on your device
+- You can revoke health data permissions at any time through device settings
+- We do not provide medical analysis, diagnosis, or treatment recommendations
 - Always verify health data with certified medical devices
+- Health data is never shared with third parties or used for advertising
 
 ## 7. Intellectual Property
 
