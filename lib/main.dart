@@ -40,8 +40,9 @@ void main() async {
   // Initialize notification service
   await NotificationService.initialize();
 
-  // Request permissions
-  await PermissionService.requestAllPermissions();
+  // Request only essential permissions during startup (non-blocking)
+  // Health permissions will be requested when user accesses health features
+  _requestEssentialPermissions();
 
   // Create provider container and initialize notification action service
   final container = ProviderContainer();
@@ -51,6 +52,19 @@ void main() async {
     container: container,
     child: const MyApp(),
   ));
+}
+
+/// Request only essential permissions that don't require user interaction
+/// Health permissions are requested later when needed
+void _requestEssentialPermissions() async {
+  try {
+    // Request only notification permission during startup
+    // Other permissions will be requested contextually when features are used
+    await PermissionService.requestEssentialPermissions();
+  } catch (e) {
+    AppLogger.error('Error requesting essential permissions', e);
+    // Don't block app startup if permission request fails
+  }
 }
 
 Future<void> _setCorrectTimezone() async {

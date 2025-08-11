@@ -9,7 +9,26 @@ class PermissionService {
   factory PermissionService() => _instance;
   PermissionService._internal();
 
+  /// Request only essential permissions during app startup
+  /// This prevents app crashes by avoiding heavy permission requests during initialization
+  static Future<bool> requestEssentialPermissions() async {
+    try {
+      // Only request notification permission during startup
+      // This is the most critical permission for basic app functionality
+      final notificationStatus = await Permission.notification.request();
+      
+      AppLogger.info('Essential permission (notification) status: $notificationStatus');
+      
+      return notificationStatus == PermissionStatus.granted || 
+             notificationStatus == PermissionStatus.limited;
+    } catch (e) {
+      AppLogger.error('Error requesting essential permissions', e);
+      return false;
+    }
+  }
+
   /// Request all necessary permissions for the app
+  /// This should be called contextually when features are accessed, not during startup
   static Future<bool> requestAllPermissions() async {
     final permissions = <Permission>[
       Permission.notification,
@@ -32,6 +51,12 @@ class PermissionService {
     return allGranted && healthPermissionsGranted;
   }
 
+  /// Request health permissions contextually when user accesses health features
+  /// This is the public method that should be called when health integration is needed
+  static Future<bool> requestHealthPermissions() async {
+    return await _requestHealthPermissions();
+  }
+
   /// Request health-specific permissions with proper user consent
   /// 
   /// This method requests access to specific health data types that directly support
@@ -50,20 +75,20 @@ class PermissionService {
     List<HealthDataType> types;
     
     if (Platform.isAndroid) {
-      // Android Health Connect - start with just STEPS to avoid permission issues
-      // We can expand this later once basic functionality works
+      // Android Health Connect - start with minimal permissions to avoid crashes
+      // Only request the most essential health data types
       types = [
         HealthDataType.STEPS,                  // Step counting - most widely supported
+        HealthDataType.ACTIVE_ENERGY_BURNED,   // Basic fitness tracking
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - more comprehensive support
+      // iOS HealthKit - more comprehensive support but still conservative
       types = [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
         HealthDataType.HEART_RATE,
         HealthDataType.SLEEP_IN_BED,
         HealthDataType.WORKOUT,
-        HealthDataType.MINDFULNESS,
       ];
     } else {
       // Other platforms - minimal set
@@ -138,20 +163,20 @@ class PermissionService {
     List<HealthDataType> types;
     
     if (Platform.isAndroid) {
-      // Android Health Connect - start with just STEPS to avoid permission issues
-      // We can expand this later once basic functionality works
+      // Android Health Connect - start with minimal permissions to avoid crashes
+      // Only request the most essential health data types
       types = [
         HealthDataType.STEPS,                  // Step counting - most widely supported
+        HealthDataType.ACTIVE_ENERGY_BURNED,   // Basic fitness tracking
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - more comprehensive support
+      // iOS HealthKit - more comprehensive support but still conservative
       types = [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
         HealthDataType.HEART_RATE,
         HealthDataType.SLEEP_IN_BED,
         HealthDataType.WORKOUT,
-        HealthDataType.MINDFULNESS,
       ];
     } else {
       // Other platforms - minimal set
