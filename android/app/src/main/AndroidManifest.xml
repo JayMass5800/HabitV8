@@ -12,25 +12,21 @@
 
     <!-- Health and fitness permissions -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
-    <uses-permission android:name="android.permission.BODY_SENSORS" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-    <!-- Health Connect permissions for Android 14+ -->
+    
+    <!-- Health Connect permissions for Android 16+ -->
     <!-- Core fitness and activity permissions -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_DISTANCE" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />
-    <uses-permission android:name="android.permission.health.READ_ACTIVITY_INTENSITY" />
     
-    <!-- Sleep and recovery permissions -->
+    <!-- Sleep permissions -->
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     
     <!-- Nutrition and hydration permissions -->
     <uses-permission android:name="android.permission.health.READ_NUTRITION" />
-    <uses-permission android:name="android.permission.health.READ_WATER_HYDRATION" />
+    <uses-permission android:name="android.permission.health.READ_HYDRATION" />
     
     <!-- Vital signs permissions -->
     <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
@@ -38,7 +34,14 @@
     <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION" />
     <uses-permission android:name="android.permission.health.READ_RESPIRATORY_RATE" />
     <uses-permission android:name="android.permission.health.READ_BODY_TEMPERATURE" />
-    <uses-permission android:name="android.permission.health.READ_BASAL_BODY_TEMPERATURE" />
+    
+    <!-- Body metrics permissions -->
+    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
+    <uses-permission android:name="android.permission.health.READ_HEIGHT" />
+    <uses-permission android:name="android.permission.health.READ_BODY_FAT" />
+    
+    <!-- Mental health permissions -->
+    <uses-permission android:name="android.permission.health.READ_MINDFULNESS" />
     
     <!-- Background health data access for continuous monitoring -->
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
@@ -62,6 +65,11 @@
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:supportsRtl="true">
+
+        <!-- Health Connect metadata -->
+        <meta-data
+            android:name="health_permissions"
+            android:resource="@array/health_permissions" />
 
         <!-- Notification receivers for scheduled notifications -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
@@ -95,9 +103,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Health Connect intent filter for permissions -->
+            <!-- Health Connect intent filters -->
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

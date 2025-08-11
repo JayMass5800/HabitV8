@@ -873,6 +873,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _openHealthConnectSettings();
+              },
+              child: const Text('Open Settings'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _showHealthConnectDebugInfo();
+              },
+              child: const Text('Debug Info'),
+            ),
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
@@ -899,8 +913,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Open Health Connect settings
   Future<void> _openHealthConnectSettings() async {
     try {
-      final permissionService = PermissionService();
-      await permissionService.openSettings();
+      final bool opened = await HealthService.openHealthConnectSettings();
+      if (mounted) {
+        if (opened) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Health Connect settings opened'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Unable to open Health Connect settings. Please open manually.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
     } catch (e) {
       AppLogger.error('Error opening Health Connect settings', e);
       if (mounted) {
@@ -908,6 +938,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SnackBar(
             content: Text('Unable to open settings. Please manually open Health Connect app.'),
             backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show Health Connect debug information
+  Future<void> _showHealthConnectDebugInfo() async {
+    try {
+      final debugInfo = await HealthService.getHealthConnectDebugInfo();
+      
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Health Connect Debug Info'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: debugInfo.entries.map((entry) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Text(
+                        '${entry.key}: ${entry.value}',
+                        style: const TextStyle(fontFamily: 'monospace'),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error showing Health Connect debug info', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to get debug information'),
+            backgroundColor: Colors.red,
           ),
         );
       }

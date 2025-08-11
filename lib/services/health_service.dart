@@ -137,11 +137,19 @@ class HealthService {
     if (_isInitialized) return true;
 
     try {
-      // Check if health data is available on this platform
-      final bool isAvailable = await Health().hasPermissions(_healthDataTypes) ?? false;
+      // For Android 16+, we need to check Health Connect availability differently
+      if (Platform.isAndroid) {
+        // Check if Health Connect is installed and available
+        final bool isInstalled = await Health().isHealthConnectSdkAvailable() ?? false;
+        if (!isInstalled) {
+          AppLogger.error('Health Connect is not installed on this device');
+          return false;
+        }
+        AppLogger.info('Health Connect is available on this device');
+      }
 
       _isInitialized = true;
-      AppLogger.info('Health service initialized. Available: $isAvailable');
+      AppLogger.info('Health service initialized successfully');
 
       return true;
     } catch (e) {
@@ -161,11 +169,13 @@ class HealthService {
     }
 
     try {
-      // Check if Health Connect is available
-      final bool isAvailable = await Health().hasPermissions([HealthDataType.STEPS]) != null;
-      if (!isAvailable) {
-        AppLogger.error('Health Connect is not available on this device');
-        return false;
+      // For Android 16+, ensure Health Connect is available before requesting permissions
+      if (Platform.isAndroid) {
+        final bool isAvailable = await Health().isHealthConnectSdkAvailable() ?? false;
+        if (!isAvailable) {
+          AppLogger.error('Health Connect is not available on this device');
+          return false;
+        }
       }
 
       // Request permissions for read access
@@ -174,11 +184,14 @@ class HealthService {
           .toList();
 
       AppLogger.info('Requesting health permissions for ${_healthDataTypes.length} data types');
+      AppLogger.info('Data types: ${_healthDataTypes.map((t) => t.name).join(', ')}');
       
       final bool granted = await Health().requestAuthorization(
         _healthDataTypes,
         permissions: permissions,
       );
+
+      AppLogger.info('Permission request result: $granted');
 
       if (granted) {
         AppLogger.info('Health permissions granted successfully');
@@ -861,6 +874,72 @@ class HealthService {
     } catch (e) {
       AppLogger.error('Failed to write multiple health data points', e);
       return false;
+    }
+  }
+
+  /// Open Health Connect settings for Android 16+
+  static Future<bool> openHealthConnectSettings() async {
+    try {
+      if (Platform.isAndroid) {
+        // For Android 16+, open Health Connect app settings directly
+        final bool opened = await Health().openHealthConnectSettings();
+        AppLogger.info('Health Connect settings opened: $opened');
+        return opened;
+      } else {
+        AppLogger.info('Health Connect settings not available on this platform');
+        return false;
+      }
+    } catch (e) {
+      AppLogger.error('Failed to open Health Connect settings', e);
+      return false;
+    }
+  }
+
+  /// Check if Health Connect is installed and available
+  static Future<bool> isHealthConnectAvailable() async {
+    try {
+      if (Platform.isAndroid) {
+        final bool available = await Health().isHealthConnectSdkAvailable() ?? false;
+        AppLogger.info('Health Connect availability: $available');
+        return available;
+      }
+      return false;
+    } catch (e) {
+      AppLogger.error('Failed to check Health Connect availability', e);
+      return false;
+    }
+  }
+
+  /// Debug method to check Health Connect status
+  static Future<Map<String, dynamic>> getHealthConnectDebugInfo() async {
+    final Map<String, dynamic> debugInfo = {};
+    
+    try {
+      // Check platform
+      debugInfo['platform'] = Platform.operatingSystem;
+      debugInfo['isAndroid'] = Platform.isAndroid;
+      
+      if (Platform.isAndroid) {
+        // Check Health Connect availability
+        debugInfo['healthConnectAvailable'] = await Health().isHealthConnectSdkAvailable() ?? false;
+        
+        // Check permissions for a basic data type
+        debugInfo['hasStepsPermission'] = await Health().hasPermissions([HealthDataType.STEPS]) ?? false;
+        
+        // Check all requested data types
+        debugInfo['requestedDataTypes'] = _healthDataTypes.map((t) => t.name).toList();
+        debugInfo['dataTypesCount'] = _healthDataTypes.length;
+        
+        // Check if initialized
+        debugInfo['serviceInitialized'] = _isInitialized;
+      }
+      
+      AppLogger.info('Health Connect Debug Info: $debugInfo');
+      return debugInfo;
+    } catch (e) {
+      debugInfo['error'] = e.toString();
+      AppLogger.error('Failed to get Health Connect debug info', e);
+      return debugInfo;
     }
   }
 }
