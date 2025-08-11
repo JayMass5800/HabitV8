@@ -1,5 +1,5 @@
-name: habitv8
-description: "A new Flutter project."
+name: Habitv8
+description: "Track your habits and build better routines with HabitV8"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -54,6 +54,7 @@ dependencies:
   logger: ^2.4.0
   table_calendar: ^3.0.9 # Calendar integration for habit events
   device_calendar: ^4.3.3 # Device calendar integration
+  url_launcher: ^6.2.5 # For opening Health Connect settings
   
 
 dev_dependencies:
