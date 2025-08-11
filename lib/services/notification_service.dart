@@ -511,18 +511,32 @@ class NotificationService {
       await initialize();
     }
 
-    // Skip if notifications are disabled or no notification time is set
-    if (!habit.notificationsEnabled || habit.notificationTime == null) {
-      print('DEBUG: Skipping notifications - disabled or no time set');
+    // Skip if notifications are disabled
+    if (!habit.notificationsEnabled) {
+      print('DEBUG: Skipping notifications - disabled');
       AppLogger.info('Notifications disabled for habit: ${habit.name}');
       return;
     }
 
+    // For non-hourly habits, require notification time
+    final frequency = habit.frequency.toString().split('.').last;
+    if (frequency != 'hourly' && habit.notificationTime == null) {
+      print('DEBUG: Skipping notifications - no time set for non-hourly habit');
+      AppLogger.info('No notification time set for habit: ${habit.name}');
+      return;
+    }
+
     final notificationTime = habit.notificationTime;
-    final hour = notificationTime.hour;
-    final minute = notificationTime.minute;
+    int hour = 9; // Default hour for hourly habits
+    int minute = 0; // Default minute for hourly habits
     
-    print('DEBUG: Scheduling for $hour:$minute');
+    if (notificationTime != null) {
+      hour = notificationTime.hour;
+      minute = notificationTime.minute;
+      print('DEBUG: Scheduling for $hour:$minute');
+    } else {
+      print('DEBUG: Using default time for hourly habit');
+    }
 
     try {
       // Cancel any existing notifications for this habit first
@@ -688,22 +702,20 @@ class NotificationService {
 
   /// Schedule hourly habit notifications
   static Future<void> _scheduleHourlyHabitNotifications(dynamic habit) async {
-    final hourlyTimes = habit.hourlyTimes ?? <dynamic>[];
     final now = DateTime.now();
-
-    for (var timeOfDay in hourlyTimes) {
-      final hour = timeOfDay.hour as int;
-      final minute = timeOfDay.minute as int;
-
-      DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, minute);
-
+    
+    // For hourly habits, schedule notifications every hour during active hours (8 AM - 10 PM)
+    // This creates a more practical hourly reminder system
+    for (int hour = 8; hour <= 22; hour++) {
+      DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, 0);
+      
       // If the time has passed today, schedule for tomorrow
       if (nextNotification.isBefore(now)) {
         nextNotification = nextNotification.add(const Duration(days: 1));
       }
 
       await scheduleHabitNotification(
-        id: generateSafeId(habit.id + '_hour_${hour}_$minute'), // Use string concatenation for uniqueness
+        id: generateSafeId('${habit.id}_hourly_$hour'), // Use string concatenation for uniqueness
         habitId: habit.id.toString(),
         title: '⏰ ${habit.name}',
         body: 'Hourly reminder: Time for your habit!',

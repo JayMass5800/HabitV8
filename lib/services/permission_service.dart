@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:health/health.dart';
 import '../services/notification_service.dart';
@@ -45,19 +46,36 @@ class PermissionService {
   /// All data is processed locally and used solely for habit tracking features.
   /// Users can revoke these permissions at any time through device settings.
   static Future<bool> _requestHealthPermissions() async {
-    final types = [
-      HealthDataType.STEPS,           // For step counting habits and walking goals
-      HealthDataType.HEART_RATE,      // For workout intensity and fitness habits
-      HealthDataType.ACTIVE_ENERGY_BURNED, // For energy expenditure correlation
-      HealthDataType.DISTANCE_DELTA,  // For distance-based exercise habits
-      HealthDataType.WORKOUT,         // For automatic fitness habit completion
-      HealthDataType.SLEEP_IN_BED,    // For sleep habit optimization
-    ];
+    // Platform-specific health data types to avoid permission issues
+    List<HealthDataType> types;
+    
+    if (Platform.isAndroid) {
+      // Android Health Connect - start with just STEPS to avoid permission issues
+      // We can expand this later once basic functionality works
+      types = [
+        HealthDataType.STEPS,                  // Step counting - most widely supported
+      ];
+    } else if (Platform.isIOS) {
+      // iOS HealthKit - more comprehensive support
+      types = [
+        HealthDataType.STEPS,
+        HealthDataType.ACTIVE_ENERGY_BURNED,
+        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.WORKOUT,
+        HealthDataType.MINDFULNESS,
+      ];
+    } else {
+      // Other platforms - minimal set
+      types = [HealthDataType.STEPS];
+    }
 
     // Create permissions list that matches the length of types (READ access only)
     final permissions = types.map((type) => HealthDataAccess.READ).toList();
 
     try {
+      AppLogger.info('Requesting health permissions for ${types.length} data types');
+      
       // Request authorization with explicit user consent
       bool requested = await Health().requestAuthorization(
         types,
@@ -65,12 +83,39 @@ class PermissionService {
       );
       
       if (requested) {
-        AppLogger.info('Health permissions granted for habit tracking features');
+        AppLogger.info('Health permission request completed');
+        
+        // Add a small delay to allow the system to process the permission changes
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Verify that permissions were actually granted
+        final bool hasPermissions = await Health().hasPermissions(types) ?? false;
+        AppLogger.info('Health permissions verification: $hasPermissions');
+        
+        if (hasPermissions) {
+          AppLogger.info('Health permissions successfully granted for habit tracking features');
+          return true;
+        } else {
+          AppLogger.info('Health permissions were requested but not fully granted');
+          
+          // On Android, sometimes partial permissions are granted
+          // Check individual permissions to provide better feedback
+          if (Platform.isAndroid) {
+            for (final type in types) {
+              final hasIndividualPermission = await Health().hasPermissions([type]) ?? false;
+              AppLogger.info('Permission for $type: $hasIndividualPermission');
+            }
+          }
+          
+          // Return true if at least STEPS permission is granted (minimum requirement)
+          final hasStepsPermission = await Health().hasPermissions([HealthDataType.STEPS]) ?? false;
+          AppLogger.info('Minimum STEPS permission granted: $hasStepsPermission');
+          return hasStepsPermission;
+        }
       } else {
         AppLogger.info('Health permissions denied by user');
+        return false;
       }
-      
-      return requested;
     } catch (e) {
       AppLogger.error('Error requesting health permissions', e);
       return false;
@@ -89,18 +134,52 @@ class PermissionService {
 
   /// Check health permission status
   Future<bool> isHealthPermissionGranted() async {
-    final types = [
-      HealthDataType.STEPS, 
-      HealthDataType.HEART_RATE,
-      HealthDataType.ACTIVE_ENERGY_BURNED,
-      HealthDataType.SLEEP_IN_BED,
-    ];
+    // Use the same platform-specific health data types as we request
+    List<HealthDataType> types;
+    
+    if (Platform.isAndroid) {
+      // Android Health Connect - start with just STEPS to avoid permission issues
+      // We can expand this later once basic functionality works
+      types = [
+        HealthDataType.STEPS,                  // Step counting - most widely supported
+      ];
+    } else if (Platform.isIOS) {
+      // iOS HealthKit - more comprehensive support
+      types = [
+        HealthDataType.STEPS,
+        HealthDataType.ACTIVE_ENERGY_BURNED,
+        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.WORKOUT,
+        HealthDataType.MINDFULNESS,
+      ];
+    } else {
+      // Other platforms - minimal set
+      types = [HealthDataType.STEPS];
+    }
+    
     try {
       final hasPermissions = await Health().hasPermissions(types);
-      AppLogger.info('Health permissions check result: $hasPermissions');
-      return hasPermissions ?? false;
+      AppLogger.info('Health permissions check result: $hasPermissions for ${types.length} types');
+      
+      if (hasPermissions == true) {
+        return true;
+      }
+      
+      // If full permissions are not granted, check for minimum requirements
+      // At least STEPS permission should be sufficient for basic functionality
+      final hasStepsPermission = await Health().hasPermissions([HealthDataType.STEPS]) ?? false;
+      AppLogger.info('Minimum STEPS permission check: $hasStepsPermission');
+      
+      if (hasStepsPermission) {
+        AppLogger.info('Minimum health permissions satisfied');
+        return true;
+      }
+      
+      return false;
     } catch (e) {
       AppLogger.error('Error checking health permissions', e);
+      // If there's an error checking permissions, assume they're not granted
       return false;
     }
   }

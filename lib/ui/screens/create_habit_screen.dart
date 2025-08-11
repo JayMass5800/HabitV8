@@ -1033,6 +1033,17 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return;
       }
 
+      // Validate notification time for non-hourly habits
+      if (_notificationsEnabled && _selectedFrequency != HabitFrequency.hourly && _notificationTime == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a notification time'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       final databaseAsync = ref.read(databaseProvider);
       final database = databaseAsync.value;
       

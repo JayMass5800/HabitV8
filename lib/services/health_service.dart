@@ -23,24 +23,29 @@ import 'logging_service.dart';
 class HealthService {
   static bool _isInitialized = false;
 
-  /// List of health data types we access, each with specific habit tracking purpose
-  static final List<HealthDataType> _healthDataTypes = [
-    HealthDataType.STEPS,
-    HealthDataType.HEART_RATE,
-    HealthDataType.SLEEP_IN_BED,
-    HealthDataType.SLEEP_ASLEEP,
-    HealthDataType.ACTIVE_ENERGY_BURNED,
-    HealthDataType.EXERCISE_TIME,
-    HealthDataType.WORKOUT,
-    if (Platform.isIOS) ...[
-      HealthDataType.MINDFULNESS,
-      HealthDataType.WATER,
-    ],
-    if (Platform.isAndroid) ...[
-      HealthDataType.WATER,
-      HealthDataType.WEIGHT,
-    ],
-  ];
+  /// Get platform-specific health data types
+  static List<HealthDataType> get _healthDataTypes {
+    if (Platform.isAndroid) {
+      // Android Health Connect - start with just STEPS to avoid permission issues
+      // We can expand this later once basic functionality works
+      return [
+        HealthDataType.STEPS,                  // Step counting - most widely supported
+      ];
+    } else if (Platform.isIOS) {
+      // iOS HealthKit - more comprehensive support
+      return [
+        HealthDataType.STEPS,
+        HealthDataType.ACTIVE_ENERGY_BURNED,
+        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.WORKOUT,
+        HealthDataType.MINDFULNESS,
+      ];
+    } else {
+      // Other platforms - minimal set
+      return [HealthDataType.STEPS];
+    }
+  }
 
   /// Initialize health service
   static Future<bool> initialize() async {
