@@ -23,6 +23,12 @@
     <uses-permission android:name="android.permission.health.READ_DISTANCE" />
     <uses-permission android:name="android.permission.health.READ_EXERCISE" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <uses-permission android:name="android.permission.health.READ_WATER_HYDRATION" />
+    
+    <!-- Health Connect package declaration -->
+    <queries>
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
 
     <!-- Storage permissions for data export/import -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -68,6 +74,10 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Health Connect intent filter for permissions -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

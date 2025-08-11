@@ -108,7 +108,6 @@ Our AI-powered system learns from your behavior patterns to provide personalized
   - Steps data for walking/running habit tracking and insights
   - Heart rate monitoring for workout intensity optimization
   - Sleep data analysis for sleep habit improvement
-  - Exercise detection for automatic fitness habit completion
   - Water intake tracking for hydration habit support
 • All health data processed locally with explicit user consent
 • Device calendar integration for habit scheduling and reminders
@@ -145,7 +144,6 @@ Our AI-powered system learns from your behavior patterns to provide personalized
 • Calendar integration and scheduling
 • Health and fitness app connectivity
 • Offline functionality - works without internet
-• Data export and backup capabilities
 • Achievement system with streak rewards
 • Timeline view of your habit journey
 • Customizable themes and appearance

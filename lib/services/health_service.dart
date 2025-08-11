@@ -63,22 +63,43 @@ class HealthService {
   /// Request health data permissions
   static Future<bool> requestPermissions() async {
     if (!_isInitialized) {
-      await initialize();
+      final initialized = await initialize();
+      if (!initialized) {
+        AppLogger.error('Failed to initialize health service');
+        return false;
+      }
     }
 
     try {
+      // Check if Health Connect is available
+      final bool isAvailable = await Health().hasPermissions([HealthDataType.STEPS]) != null;
+      if (!isAvailable) {
+        AppLogger.error('Health Connect is not available on this device');
+        return false;
+      }
+
       // Request permissions for read access
       final List<HealthDataAccess> permissions = _healthDataTypes
           .map((type) => HealthDataAccess.READ)
           .toList();
 
+      AppLogger.info('Requesting health permissions for ${_healthDataTypes.length} data types');
+      
       final bool granted = await Health().requestAuthorization(
         _healthDataTypes,
         permissions: permissions,
       );
 
-      AppLogger.info('Health permissions granted: $granted');
-      return granted;
+      if (granted) {
+        AppLogger.info('Health permissions granted successfully');
+        // Verify permissions were actually granted
+        final bool hasPerms = await hasPermissions();
+        AppLogger.info('Permission verification: $hasPerms');
+        return hasPerms;
+      } else {
+        AppLogger.info('Health permissions denied by user');
+        return false;
+      }
     } catch (e) {
       AppLogger.error('Failed to request health permissions', e);
       return false;
