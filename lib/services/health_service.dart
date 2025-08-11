@@ -571,9 +571,9 @@ class HealthService {
       for (var point in bodyMetricsData) {
         if (point.value is NumericHealthValue) {
           if (point.type == HealthDataType.WEIGHT) {
-            latestWeight = (point.value as NumericHealthValue).numericValue;
+            latestWeight = (point.value as NumericHealthValue).numericValue.toDouble();
           } else if (point.type == HealthDataType.BODY_FAT_PERCENTAGE) {
-            latestBodyFat = (point.value as NumericHealthValue).numericValue;
+            latestBodyFat = (point.value as NumericHealthValue).numericValue.toDouble();
           }
         }
       }
@@ -639,7 +639,7 @@ class HealthService {
         final List<double> heartRates = [];
         for (var point in heartRateData) {
           if (point.value is NumericHealthValue) {
-            heartRates.add((point.value as NumericHealthValue).numericValue);
+            heartRates.add((point.value as NumericHealthValue).numericValue.toDouble());
           }
         }
         
@@ -792,7 +792,7 @@ class HealthService {
           availability[type.name] = hasPermission ?? false;
         } catch (e) {
           availability[type.name] = false;
-          AppLogger.warning('Failed to check permission for ${type.name}', e);
+          AppLogger.warning('Failed to check permission for ${type.name}: $e');
         }
       }
       

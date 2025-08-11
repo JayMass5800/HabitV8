@@ -10,6 +10,7 @@ import '../../services/health_service.dart';
 import '../../services/calendar_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/onboarding_service.dart';
+import '../../data/database.dart';
 import '../widgets/calendar_selection_dialog.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
