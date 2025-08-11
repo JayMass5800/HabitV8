@@ -102,21 +102,58 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final habitDate = DateTime(habit.createdAt.year, habit.createdAt.month, habit.createdAt.day);
     final checkDate = DateTime(date.year, date.month, date.day);
     
+    // Don't show habits before they were created
     if (checkDate.isBefore(habitDate)) return false;
-    
-    final daysSinceCreation = checkDate.difference(habitDate).inDays;
     
     switch (habit.frequency) {
       case HabitFrequency.daily:
         return true;
+        
       case HabitFrequency.weekly:
-        return daysSinceCreation % 7 == 0;
+        // Check if the day of week is in the selected weekdays
+        if (habit.selectedWeekdays.isEmpty) {
+          // Fallback: if no weekdays selected, use the creation day
+          return checkDate.weekday == habitDate.weekday;
+        }
+        // Convert DateTime.weekday (1=Monday) to our format (0=Sunday)
+        final dayOfWeek = checkDate.weekday == 7 ? 0 : checkDate.weekday;
+        return habit.selectedWeekdays.contains(dayOfWeek);
+        
       case HabitFrequency.monthly:
-        return checkDate.day == habitDate.day;
+        // Check if the day of month is in the selected month days
+        if (habit.selectedMonthDays.isEmpty) {
+          // Fallback: if no days selected, use the creation day
+          return checkDate.day == habitDate.day;
+        }
+        return habit.selectedMonthDays.contains(checkDate.day);
+        
       case HabitFrequency.hourly:
-        return true; // Hourly habits are due every day
+        // Hourly habits should only appear on days when they have scheduled times
+        // and only if there are selected weekdays (days of week when hourly habit applies)
+        if (habit.selectedWeekdays.isEmpty || habit.hourlyTimes.isEmpty) {
+          return false; // No schedule set up
+        }
+        // Convert DateTime.weekday (1=Monday) to our format (0=Sunday)
+        final dayOfWeek = checkDate.weekday == 7 ? 0 : checkDate.weekday;
+        return habit.selectedWeekdays.contains(dayOfWeek);
+        
       case HabitFrequency.yearly:
-        return checkDate.month == habitDate.month && checkDate.day == habitDate.day;
+        // Check if the date is in the selected yearly dates
+        if (habit.selectedYearlyDates.isEmpty) {
+          // Fallback: if no dates selected, use the creation date (month and day)
+          return checkDate.month == habitDate.month && checkDate.day == habitDate.day;
+        }
+        final dateString = '${checkDate.year.toString().padLeft(4, '0')}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}';
+        // For yearly habits, we need to check if the month-day combination matches any selected date
+        return habit.selectedYearlyDates.any((selectedDate) {
+          final parts = selectedDate.split('-');
+          if (parts.length == 3) {
+            final selectedMonth = int.tryParse(parts[1]);
+            final selectedDay = int.tryParse(parts[2]);
+            return selectedMonth == checkDate.month && selectedDay == checkDate.day;
+          }
+          return false;
+        });
     }
   }
 

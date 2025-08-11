@@ -487,18 +487,80 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Toggle health data sync
   Future<void> _toggleHealthDataSync(bool value) async {
     if (value) {
-      // Request health permissions
-      final hasPermissions = await HealthService.requestPermissions();
-      setState(() {
-        _healthDataSync = hasPermissions;
-      });
-
-      if (!hasPermissions) {
+      try {
+        // Show loading indicator
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Health permissions are required for this feature'),
-              backgroundColor: Colors.orange,
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 16),
+                  Text('Requesting health permissions...'),
+                ],
+              ),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+
+        // Initialize health service first
+        final initialized = await HealthService.initialize();
+        if (!initialized) {
+          setState(() => _healthDataSync = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Health Connect is not available on this device'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
+        // Request health permissions
+        final hasPermissions = await HealthService.requestPermissions();
+        
+        setState(() {
+          _healthDataSync = hasPermissions;
+        });
+
+        if (hasPermissions) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Health permissions granted successfully! 🎉'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Health permissions are required for this feature. Please grant permissions in Health Connect.'),
+                backgroundColor: Colors.orange,
+                action: SnackBarAction(
+                  label: 'Open Settings',
+                  onPressed: () => _openHealthConnectSettings(),
+                ),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        setState(() => _healthDataSync = false);
+        AppLogger.error('Error toggling health data sync', e);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
             ),
           );
         }
@@ -507,6 +569,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       setState(() {
         _healthDataSync = false;
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Health data sync disabled'),
+          ),
+        );
+      }
     }
   }
 
@@ -667,6 +736,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       },
     );
+  }
+
+  /// Open Health Connect settings
+  Future<void> _openHealthConnectSettings() async {
+    try {
+      final permissionService = PermissionService();
+      await permissionService.openSettings();
+    } catch (e) {
+      AppLogger.error('Error opening Health Connect settings', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to open settings. Please manually open Health Connect app.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   void _showSnackBar(String message) {

@@ -89,10 +89,18 @@ class PermissionService {
 
   /// Check health permission status
   Future<bool> isHealthPermissionGranted() async {
-    final types = [HealthDataType.STEPS, HealthDataType.HEART_RATE];
+    final types = [
+      HealthDataType.STEPS, 
+      HealthDataType.HEART_RATE,
+      HealthDataType.ACTIVE_ENERGY_BURNED,
+      HealthDataType.SLEEP_IN_BED,
+    ];
     try {
-      return await Health().hasPermissions(types) ?? false;
+      final hasPermissions = await Health().hasPermissions(types);
+      AppLogger.info('Health permissions check result: $hasPermissions');
+      return hasPermissions ?? false;
     } catch (e) {
+      AppLogger.error('Error checking health permissions', e);
       return false;
     }
   }
