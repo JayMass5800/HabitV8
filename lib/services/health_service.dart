@@ -4,46 +4,131 @@ import 'logging_service.dart';
 
 /// HealthService provides secure, privacy-focused access to health data for habit tracking.
 /// 
-/// This service complies with Android Health Permissions guidelines by:
+/// This service complies with Android 16 Health Connect permissions and guidelines by:
 /// - Only requesting access to specific data types needed for habit tracking features
 /// - Processing all data locally on the device
 /// - Requiring explicit user consent for each data type
 /// - Providing clear justification for each permission request
 /// - Allowing users to revoke permissions at any time
+/// - Supporting background health data access for continuous monitoring
 /// 
-/// Data Usage Justification:
+/// Android 16 Health Data Types Supported:
+/// 
+/// Core Fitness & Activity:
 /// - STEPS: Correlate walking/running habits with actual step counts
-/// - HEART_RATE: Monitor workout intensity for fitness habit optimization
-/// - SLEEP_*: Analyze sleep patterns to improve sleep-related habits
 /// - ACTIVE_ENERGY_BURNED: Track energy expenditure for fitness habits
-/// - EXERCISE_TIME/WORKOUT: Automatically detect and complete fitness habits
+/// - DISTANCE_DELTA: Monitor distance-based exercise habits
+/// - WORKOUT: Automatically detect and complete fitness habits
+/// - ACTIVITY_INTENSITY: Analyze workout intensity patterns
+/// 
+/// Vital Signs & Health Monitoring:
+/// - HEART_RATE: Monitor workout intensity and resting heart rate trends
+/// - BLOOD_PRESSURE: Track cardiovascular health for related habits
+/// - BLOOD_GLUCOSE: Support diabetes management habits
+/// - BODY_TEMPERATURE: Monitor health status for wellness habits
+/// 
+/// Sleep & Recovery:
+/// - SLEEP_IN_BED, SLEEP_ASLEEP, SLEEP_AWAKE: Comprehensive sleep analysis
+/// - SLEEP_DEEP, SLEEP_LIGHT, SLEEP_REM: Sleep quality optimization
+/// 
+/// Nutrition & Hydration:
 /// - WATER: Support hydration habit tracking and reminders
+/// - NUTRITION: Track dietary habits and nutritional goals
+/// 
+/// Mental Health & Wellness:
 /// - MINDFULNESS: Track meditation and mindfulness habit completion
-/// - WEIGHT: Correlate with health and fitness habit progress
+/// 
+/// Body Metrics:
+/// - WEIGHT, HEIGHT, BODY_FAT_PERCENTAGE: Support body composition habits
+/// 
+/// Background Access:
+/// - READ_HEALTH_DATA_IN_BACKGROUND: Continuous monitoring for habit automation
 class HealthService {
   static bool _isInitialized = false;
 
   /// Get platform-specific health data types
   static List<HealthDataType> get _healthDataTypes {
     if (Platform.isAndroid) {
-      // Android Health Connect - start with just STEPS to avoid permission issues
-      // We can expand this later once basic functionality works
+      // Android Health Connect - comprehensive support for Android 16
+      // Full range of health data types for habit tracking
       return [
-        HealthDataType.STEPS,                  // Step counting - most widely supported
-      ];
-    } else if (Platform.isIOS) {
-      // iOS HealthKit - more comprehensive support
-      return [
+        // Core fitness and activity data
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.HEART_RATE,
-        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.DISTANCE_DELTA,
         HealthDataType.WORKOUT,
+        
+        // Vital signs for health habit tracking
+        HealthDataType.HEART_RATE,
+        HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+        HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
+        HealthDataType.BLOOD_GLUCOSE,
+        HealthDataType.BODY_TEMPERATURE,
+        
+        // Sleep data for sleep habit optimization
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.SLEEP_ASLEEP,
+        HealthDataType.SLEEP_AWAKE,
+        HealthDataType.SLEEP_DEEP,
+        HealthDataType.SLEEP_LIGHT,
+        HealthDataType.SLEEP_REM,
+        
+        // Nutrition and hydration for dietary habits
+        HealthDataType.WATER,
+        HealthDataType.NUTRITION,
+        
+        // Mental health and mindfulness
         HealthDataType.MINDFULNESS,
+        
+        // Body metrics for health tracking habits
+        HealthDataType.WEIGHT,
+        HealthDataType.HEIGHT,
+        HealthDataType.BODY_FAT_PERCENTAGE,
+      ];
+    } else if (Platform.isIOS) {
+      // iOS HealthKit - comprehensive support
+      return [
+        // Core fitness and activity data
+        HealthDataType.STEPS,
+        HealthDataType.ACTIVE_ENERGY_BURNED,
+        HealthDataType.DISTANCE_DELTA,
+        HealthDataType.WORKOUT,
+        
+        // Vital signs
+        HealthDataType.HEART_RATE,
+        HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+        HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
+        HealthDataType.BLOOD_GLUCOSE,
+        HealthDataType.BODY_TEMPERATURE,
+        
+        // Sleep data
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.SLEEP_ASLEEP,
+        HealthDataType.SLEEP_AWAKE,
+        HealthDataType.SLEEP_DEEP,
+        HealthDataType.SLEEP_LIGHT,
+        HealthDataType.SLEEP_REM,
+        
+        // Nutrition and hydration
+        HealthDataType.WATER,
+        HealthDataType.NUTRITION,
+        
+        // Mental health
+        HealthDataType.MINDFULNESS,
+        
+        // Body metrics
+        HealthDataType.WEIGHT,
+        HealthDataType.HEIGHT,
+        HealthDataType.BODY_FAT_PERCENTAGE,
       ];
     } else {
-      // Other platforms - minimal set
-      return [HealthDataType.STEPS];
+      // Other platforms - basic set
+      return [
+        HealthDataType.STEPS,
+        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.WATER,
+      ];
     }
   }
 
@@ -246,6 +331,154 @@ class HealthService {
     }
   }
 
+  /// Get blood pressure data for a date range
+  static Future<List<HealthDataPoint>> getBloodPressureData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: [HealthDataType.BLOOD_PRESSURE_SYSTOLIC, HealthDataType.BLOOD_PRESSURE_DIASTOLIC],
+        startTime: startDate,
+        endTime: endDate,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} blood pressure data points');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get blood pressure data', e);
+      return [];
+    }
+  }
+
+  /// Get blood glucose data for a date range
+  static Future<List<HealthDataPoint>> getBloodGlucoseData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: [HealthDataType.BLOOD_GLUCOSE],
+        startTime: startDate,
+        endTime: endDate,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} blood glucose data points');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get blood glucose data', e);
+      return [];
+    }
+  }
+
+  /// Get body temperature data for a date range
+  static Future<List<HealthDataPoint>> getBodyTemperatureData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: [HealthDataType.BODY_TEMPERATURE],
+        startTime: startDate,
+        endTime: endDate,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} body temperature data points');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get body temperature data', e);
+      return [];
+    }
+  }
+
+  /// Get nutrition data for a date range
+  static Future<List<HealthDataPoint>> getNutritionData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: [HealthDataType.NUTRITION],
+        startTime: startDate,
+        endTime: endDate,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} nutrition data points');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get nutrition data', e);
+      return [];
+    }
+  }
+
+  /// Get body metrics data (weight, height, body fat) for a date range
+  static Future<List<HealthDataPoint>> getBodyMetricsData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: [
+          HealthDataType.WEIGHT,
+          HealthDataType.HEIGHT,
+          HealthDataType.BODY_FAT_PERCENTAGE,
+        ],
+        startTime: startDate,
+        endTime: endDate,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} body metrics data points');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get body metrics data', e);
+      return [];
+    }
+  }
+
+  /// Get mindfulness data for a date range
+  static Future<List<HealthDataPoint>> getMindfulnessData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: [HealthDataType.MINDFULNESS],
+        startTime: startDate,
+        endTime: endDate,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} mindfulness data points');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get mindfulness data', e);
+      return [];
+    }
+  }
+
   /// Get comprehensive health summary for today
   static Future<Map<String, dynamic>> getTodayHealthSummary() async {
     final DateTime today = DateTime.now();
@@ -294,6 +527,60 @@ class HealthService {
       }
       summary['waterIntake'] = totalWater;
 
+      // Get heart rate data
+      final heartRateData = await getHeartRateData(
+        startDate: startOfDay,
+        endDate: endOfDay,
+      );
+      if (heartRateData.isNotEmpty) {
+        double avgHeartRate = 0;
+        int count = 0;
+        for (var point in heartRateData) {
+          if (point.value is NumericHealthValue) {
+            avgHeartRate += (point.value as NumericHealthValue).numericValue;
+            count++;
+          }
+        }
+        if (count > 0) {
+          summary['averageHeartRate'] = (avgHeartRate / count).round();
+        }
+      }
+
+      // Get mindfulness data
+      final mindfulnessData = await getMindfulnessData(
+        startDate: startOfDay,
+        endDate: endOfDay,
+      );
+      double totalMindfulnessMinutes = 0;
+      for (var point in mindfulnessData) {
+        if (point.value is NumericHealthValue) {
+          totalMindfulnessMinutes += (point.value as NumericHealthValue).numericValue;
+        }
+      }
+      summary['mindfulnessMinutes'] = totalMindfulnessMinutes.round();
+
+      // Get latest body metrics
+      final bodyMetricsData = await getBodyMetricsData(
+        startDate: startOfDay.subtract(const Duration(days: 7)), // Look back 7 days for latest readings
+        endDate: endOfDay,
+      );
+      
+      double? latestWeight;
+      double? latestBodyFat;
+      
+      for (var point in bodyMetricsData) {
+        if (point.value is NumericHealthValue) {
+          if (point.type == HealthDataType.WEIGHT) {
+            latestWeight = (point.value as NumericHealthValue).numericValue;
+          } else if (point.type == HealthDataType.BODY_FAT_PERCENTAGE) {
+            latestBodyFat = (point.value as NumericHealthValue).numericValue;
+          }
+        }
+      }
+      
+      if (latestWeight != null) summary['weight'] = latestWeight;
+      if (latestBodyFat != null) summary['bodyFatPercentage'] = latestBodyFat;
+
       AppLogger.info('Health summary generated: $summary');
     } catch (e) {
       AppLogger.error('Failed to generate health summary', e);
@@ -325,6 +612,8 @@ class HealthService {
         final avgSteps = dailySteps.values.reduce((a, b) => a + b) / dailySteps.length;
         insights['averageDailySteps'] = avgSteps.round();
         insights['totalDaysWithSteps'] = dailySteps.length;
+        insights['maxDailySteps'] = dailySteps.values.reduce((a, b) => a > b ? a : b);
+        insights['minDailySteps'] = dailySteps.values.reduce((a, b) => a < b ? a : b);
       }
 
       // Get sleep patterns
@@ -341,6 +630,87 @@ class HealthService {
       if (sleepDurations.isNotEmpty) {
         final avgSleep = sleepDurations.reduce((a, b) => a + b) / sleepDurations.length;
         insights['averageSleepHours'] = (avgSleep * 100).round() / 100; // Round to 2 decimal places
+        insights['totalSleepSessions'] = sleepDurations.length;
+      }
+
+      // Get heart rate insights
+      final heartRateData = await getHeartRateData(startDate: startDate, endDate: endDate);
+      if (heartRateData.isNotEmpty) {
+        final List<double> heartRates = [];
+        for (var point in heartRateData) {
+          if (point.value is NumericHealthValue) {
+            heartRates.add((point.value as NumericHealthValue).numericValue);
+          }
+        }
+        
+        if (heartRates.isNotEmpty) {
+          final avgHeartRate = heartRates.reduce((a, b) => a + b) / heartRates.length;
+          insights['averageHeartRate'] = avgHeartRate.round();
+          insights['maxHeartRate'] = heartRates.reduce((a, b) => a > b ? a : b).round();
+          insights['minHeartRate'] = heartRates.reduce((a, b) => a < b ? a : b).round();
+        }
+      }
+
+      // Get exercise insights
+      final exerciseData = await getExerciseData(startDate: startDate, endDate: endDate);
+      if (exerciseData.isNotEmpty) {
+        double totalExerciseMinutes = 0;
+        int exerciseSessions = 0;
+        
+        for (var point in exerciseData) {
+          if (point.value is NumericHealthValue) {
+            totalExerciseMinutes += (point.value as NumericHealthValue).numericValue;
+            exerciseSessions++;
+          }
+        }
+        
+        if (exerciseSessions > 0) {
+          insights['totalExerciseMinutes'] = totalExerciseMinutes.round();
+          insights['exerciseSessions'] = exerciseSessions;
+          insights['averageExerciseSessionMinutes'] = (totalExerciseMinutes / exerciseSessions).round();
+        }
+      }
+
+      // Get water intake insights
+      final waterData = await getWaterData(startDate: startDate, endDate: endDate);
+      if (waterData.isNotEmpty) {
+        double totalWater = 0;
+        final Map<String, double> dailyWater = {};
+        
+        for (var point in waterData) {
+          if (point.value is NumericHealthValue) {
+            final date = '${point.dateFrom.year}-${point.dateFrom.month.toString().padLeft(2, '0')}-${point.dateFrom.day.toString().padLeft(2, '0')}';
+            final waterAmount = (point.value as NumericHealthValue).numericValue;
+            totalWater += waterAmount;
+            dailyWater[date] = (dailyWater[date] ?? 0) + waterAmount;
+          }
+        }
+        
+        if (dailyWater.isNotEmpty) {
+          final avgDailyWater = dailyWater.values.reduce((a, b) => a + b) / dailyWater.length;
+          insights['averageDailyWaterIntake'] = (avgDailyWater * 100).round() / 100;
+          insights['totalWaterIntake'] = (totalWater * 100).round() / 100;
+        }
+      }
+
+      // Get mindfulness insights
+      final mindfulnessData = await getMindfulnessData(startDate: startDate, endDate: endDate);
+      if (mindfulnessData.isNotEmpty) {
+        double totalMindfulnessMinutes = 0;
+        int mindfulnessSessions = 0;
+        
+        for (var point in mindfulnessData) {
+          if (point.value is NumericHealthValue) {
+            totalMindfulnessMinutes += (point.value as NumericHealthValue).numericValue;
+            mindfulnessSessions++;
+          }
+        }
+        
+        if (mindfulnessSessions > 0) {
+          insights['totalMindfulnessMinutes'] = totalMindfulnessMinutes.round();
+          insights['mindfulnessSessions'] = mindfulnessSessions;
+          insights['averageMindfulnessSessionMinutes'] = (totalMindfulnessMinutes / mindfulnessSessions).round();
+        }
       }
 
       AppLogger.info('Health insights generated: $insights');
@@ -359,6 +729,79 @@ class HealthService {
       AppLogger.error('Error checking health data availability', e);
       return false;
     }
+  }
+
+  /// Get all available health data for comprehensive analysis
+  static Future<List<HealthDataPoint>> getAllHealthData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: _healthDataTypes,
+        startTime: startDate,
+        endTime: endDate,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} total health data points across ${_healthDataTypes.length} data types');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get all health data', e);
+      return [];
+    }
+  }
+
+  /// Get health data correlation for habit analysis
+  static Future<Map<String, List<HealthDataPoint>>> getHealthDataByType({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final Map<String, List<HealthDataPoint>> dataByType = {};
+    
+    try {
+      final allData = await getAllHealthData(startDate: startDate, endDate: endDate);
+      
+      for (var point in allData) {
+        final typeName = point.type.name;
+        if (!dataByType.containsKey(typeName)) {
+          dataByType[typeName] = [];
+        }
+        dataByType[typeName]!.add(point);
+      }
+      
+      AppLogger.info('Organized health data into ${dataByType.keys.length} categories');
+    } catch (e) {
+      AppLogger.error('Failed to organize health data by type', e);
+    }
+    
+    return dataByType;
+  }
+
+  /// Check which health data types are available and have permissions
+  static Future<Map<String, bool>> getAvailableHealthDataTypes() async {
+    final Map<String, bool> availability = {};
+    
+    try {
+      for (var type in _healthDataTypes) {
+        try {
+          final bool? hasPermission = await Health().hasPermissions([type]);
+          availability[type.name] = hasPermission ?? false;
+        } catch (e) {
+          availability[type.name] = false;
+          AppLogger.warning('Failed to check permission for ${type.name}', e);
+        }
+      }
+      
+      AppLogger.info('Health data type availability: $availability');
+    } catch (e) {
+      AppLogger.error('Failed to check health data type availability', e);
+    }
+    
+    return availability;
   }
 
   /// Write health data (for habits that contribute to health metrics)
@@ -388,6 +831,35 @@ class HealthService {
       return success;
     } catch (e) {
       AppLogger.error('Failed to write health data', e);
+      return false;
+    }
+  }
+
+  /// Write multiple health data points at once
+  static Future<bool> writeMultipleHealthData(List<Map<String, dynamic>> dataPoints) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      int successCount = 0;
+      
+      for (var dataPoint in dataPoints) {
+        final success = await writeHealthData(
+          type: dataPoint['type'] as HealthDataType,
+          value: dataPoint['value'] as double,
+          dateTime: dataPoint['dateTime'] as DateTime,
+          unit: dataPoint['unit'] as String?,
+        );
+        
+        if (success) successCount++;
+      }
+      
+      final bool allSuccessful = successCount == dataPoints.length;
+      AppLogger.info('Wrote $successCount/${dataPoints.length} health data points successfully');
+      return allSuccessful;
+    } catch (e) {
+      AppLogger.error('Failed to write multiple health data points', e);
       return false;
     }
   }
