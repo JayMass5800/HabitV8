@@ -143,7 +143,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           // Fallback: if no dates selected, use the creation date (month and day)
           return checkDate.month == habitDate.month && checkDate.day == habitDate.day;
         }
-        final dateString = '${checkDate.year.toString().padLeft(4, '0')}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}';
         // For yearly habits, we need to check if the month-day combination matches any selected date
         return habit.selectedYearlyDates.any((selectedDate) {
           final parts = selectedDate.split('-');

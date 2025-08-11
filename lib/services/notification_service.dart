@@ -679,24 +679,35 @@ class NotificationService {
 
   /// Schedule yearly habit notifications
   static Future<void> _scheduleYearlyHabitNotifications(dynamic habit, int hour, int minute) async {
-    final selectedYearlyDates = habit.selectedYearlyDates ?? <DateTime>[];
+    final selectedYearlyDates = habit.selectedYearlyDates ?? <String>[];
     final now = DateTime.now();
 
-    for (DateTime date in selectedYearlyDates) {
-      DateTime nextNotification = DateTime(now.year, date.month, date.day, hour, minute);
+    for (String dateString in selectedYearlyDates) {
+      try {
+        // Parse the date string (format: "yyyy-MM-dd")
+        final parts = dateString.split('-');
+        if (parts.length != 3) continue;
+        
+        final month = int.parse(parts[1]);
+        final day = int.parse(parts[2]);
+        
+        DateTime nextNotification = DateTime(now.year, month, day, hour, minute);
 
-      // If the date has passed this year, schedule for next year
-      if (nextNotification.isBefore(now)) {
-        nextNotification = DateTime(now.year + 1, date.month, date.day, hour, minute);
+        // If the date has passed this year, schedule for next year
+        if (nextNotification.isBefore(now)) {
+          nextNotification = DateTime(now.year + 1, month, day, hour, minute);
+        }
+
+        await scheduleHabitNotification(
+          id: generateSafeId(habit.id + '_year_${month}_${day}'), // Use string concatenation for uniqueness
+          habitId: habit.id.toString(),
+          title: '🎯 ${habit.name}',
+          body: 'Time to complete your yearly habit! This is your special day.',
+          scheduledTime: nextNotification,
+        );
+      } catch (e) {
+        AppLogger.error('Error parsing yearly date: $dateString', e);
       }
-
-      await scheduleHabitNotification(
-        id: generateSafeId(habit.id + '_year_${date.month}_${date.day}'), // Use string concatenation for uniqueness
-        habitId: habit.id.toString(),
-        title: '🎯 ${habit.name}',
-        body: 'Time to complete your yearly habit! This is your special day.',
-        scheduledTime: nextNotification,
-      );
     }
   }
 

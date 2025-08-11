@@ -352,6 +352,15 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               ),
               const SizedBox(height: 8),
               _buildHourlyTimeSelector(),
+              const SizedBox(height: 16),
+              Text(
+                'Select days of the week:',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              _buildWeekdaySelector(),
             ],
             if (_selectedFrequency == HabitFrequency.weekly) ...[
               const SizedBox(height: 16),
@@ -1027,6 +1036,16 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select at least one time for hourly reminders'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (_selectedFrequency == HabitFrequency.hourly && _selectedWeekdays.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select at least one day of the week for hourly habits'),
             backgroundColor: Colors.red,
           ),
         );

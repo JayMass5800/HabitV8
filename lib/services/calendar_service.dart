@@ -292,18 +292,47 @@ class CalendarService {
     if (_deviceCalendarPlugin == null || _selectedCalendarId == null) return;
 
     try {
+      // For hourly habits, create multiple events for each scheduled time
+      if (habit.frequency == HabitFrequency.hourly && habit.hourlyTimes.isNotEmpty) {
+        for (String timeString in habit.hourlyTimes) {
+          await _createSingleHabitEvent(habit, date, timeString);
+        }
+      } else {
+        // For non-hourly habits, use the habit's notification time or default to 9 AM
+        String timeString = '09:00';
+        if (habit.notificationTime != null) {
+          timeString = '${habit.notificationTime!.hour.toString().padLeft(2, '0')}:${habit.notificationTime!.minute.toString().padLeft(2, '0')}';
+        }
+        await _createSingleHabitEvent(habit, date, timeString);
+      }
+    } catch (e) {
+      AppLogger.error('Error creating habit event', e);
+    }
+  }
+
+  /// Create a single calendar event for a habit at a specific time
+  static Future<void> _createSingleHabitEvent(Habit habit, DateTime date, String timeString) async {
+    if (_deviceCalendarPlugin == null || _selectedCalendarId == null) return;
+
+    try {
+      // Parse the time string (format: "HH:mm")
+      final timeParts = timeString.split(':');
+      final hour = int.tryParse(timeParts[0]) ?? 9;
+      final minute = timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
+
       final event = Event(_selectedCalendarId);
       event.title = habit.name;
       event.description = '${habit.description ?? 'Habit reminder'}\n\nHabit ID: ${habit.id}'; // Include habit ID for tracking
-      // Use local timezone instead of UTC
+      
+      // Use local timezone and the actual scheduled time
       final localLocation = tz.local;
       event.start = tz.TZDateTime(
         localLocation,
-        date.year, date.month, date.day, 9, 0, // Default to 9 AM
+        date.year, date.month, date.day, hour, minute,
       );
       event.end = tz.TZDateTime(
         localLocation,
-        date.year, date.month, date.day, 9, 30, // 30 minute duration
+        date.year, date.month, date.day, hour, minute + 30, // 30 minute duration
       );
       
       // Add habit-specific properties
@@ -320,7 +349,7 @@ class CalendarService {
         AppLogger.info('Successfully created calendar event for habit "${habit.name}" with ID: ${result.data}');
       } else {
         String errorMessage = 'Unknown error';
-        if (result != null && result.errors != null && result.errors.isNotEmpty) {
+        if (result != null && result.errors.isNotEmpty) {
           errorMessage = result.errors.join(', ');
         }
         AppLogger.error('Failed to create calendar event for habit "${habit.name}": $errorMessage');
