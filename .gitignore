@@ -58,6 +58,7 @@ windows/build/
 
 # Symbolication related
 app.*.symbols
+android/key.properties
 
 # Obfuscation related
 app.*.map.json
