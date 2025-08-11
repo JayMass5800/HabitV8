@@ -209,6 +209,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   leading: const Icon(Icons.calendar_month),
                   onTap: () => _showCalendarSelection(),
                 ),
+              if (_calendarSync)
+                _SettingsTile(
+                  title: 'Debug Calendar Sync',
+                  subtitle: 'Check calendar sync status and logs',
+                  leading: const Icon(Icons.bug_report),
+                  onTap: () => _debugCalendarSync(),
+                ),
               SwitchListTile(
                 title: const Text('Health Data'),
                 subtitle: const Text('Connect with health apps for insights'),
@@ -687,6 +694,81 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  /// Debug calendar sync status
+  Future<void> _debugCalendarSync() async {
+    try {
+      // Print debug status to logs
+      await CalendarService.debugCalendarStatus();
+      
+      // Get detailed status for display
+      final status = await CalendarService.getCalendarSyncStatus();
+      
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Calendar Sync Debug'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Initialized: ${status['isInitialized']}'),
+                  Text('Sync Enabled: ${status['enabled']}'),
+                  Text('Has Permissions: ${status['hasPermissions']}'),
+                  Text('Device Calendar Available: ${status['deviceCalendarAvailable']}'),
+                  Text('Selected Calendar: ${status['selectedCalendar'] ?? 'None'}'),
+                  Text('Available Calendars: ${status['availableCalendarsCount']}'),
+                  const SizedBox(height: 16),
+                  const Text('Check the app logs for detailed debug information.'),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  // Test sync with existing habits
+                  final habitServiceAsync = ref.read(habitServiceProvider);
+                  final habitService = habitServiceAsync.value;
+                  if (habitService != null) {
+                    final habits = await habitService.getAllHabits();
+                    if (habits.isNotEmpty) {
+                      await CalendarService.syncAllHabitsToCalendar(habits);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Test sync completed - check logs for details'),
+                            backgroundColor: Colors.blue,
+                          ),
+                        );
+                      }
+                    }
+                  }
+                },
+                child: const Text('Test Sync'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error in debug calendar sync', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Debug error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   /// Manage health permissions

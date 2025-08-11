@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:device_calendar/device_calendar.dart';
 import '../../services/calendar_service.dart';
+import '../../data/database.dart';
+import '../../services/logging_service.dart';
 
-class CalendarSelectionDialog extends StatefulWidget {
+class CalendarSelectionDialog extends ConsumerStatefulWidget {
   const CalendarSelectionDialog({super.key});
 
   @override
-  State<CalendarSelectionDialog> createState() => _CalendarSelectionDialogState();
+  ConsumerState<CalendarSelectionDialog> createState() => _CalendarSelectionDialogState();
 }
 
-class _CalendarSelectionDialogState extends State<CalendarSelectionDialog> {
+class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialog> {
   List<Calendar> _calendars = [];
   String? _selectedCalendarId;
   bool _isLoading = true;
@@ -205,18 +208,67 @@ class _CalendarSelectionDialogState extends State<CalendarSelectionDialog> {
     if (_selectedCalendarId == null) return;
 
     try {
-      final success = await CalendarService.setSelectedCalendar(_selectedCalendarId!);
-      if (success && mounted) {
-        Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Calendar selection saved!'),
-            backgroundColor: Colors.green,
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Setting up calendar sync...'),
+            ],
           ),
-        );
+        ),
+      );
+
+      final success = await CalendarService.setSelectedCalendar(_selectedCalendarId!);
+      
+      if (success) {
+        // Get all existing habits and sync them to the calendar
+        final habitServiceAsync = ref.read(habitServiceProvider);
+        final habitService = habitServiceAsync.value;
+        
+        if (habitService != null) {
+          final allHabits = await habitService.getAllHabits();
+          AppLogger.info('Syncing ${allHabits.length} existing habits to calendar');
+          
+          // Sync all habits to the newly selected calendar
+          await CalendarService.syncAllHabitsToCalendar(allHabits);
+          
+          AppLogger.info('Successfully synced all habits to calendar');
+        }
+        
+        if (mounted) {
+          // Close loading dialog
+          Navigator.of(context).pop();
+          // Close selection dialog
+          Navigator.of(context).pop(true);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Calendar selection saved and habits synced! 📅'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          Navigator.of(context).pop(); // Close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to save calendar selection'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
+      AppLogger.error('Error saving calendar selection', e);
       if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to save selection: $e'),

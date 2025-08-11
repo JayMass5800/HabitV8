@@ -9,6 +9,7 @@ import '../services/habit_stats_service.dart';
 import '../services/cache_service.dart';
 import '../services/notification_service.dart';
 import '../services/logging_service.dart';
+import '../services/calendar_service.dart';
 
 // Provider for the Habit database box
 final databaseProvider = FutureProvider<Box<Habit>>((ref) async {
@@ -71,11 +72,27 @@ class HabitService {
   Future<void> addHabit(Habit habit) async {
     await _habitBox.add(habit);
     // No need to invalidate cache for new habits
+    
+    // Sync to calendar if enabled
+    try {
+      await CalendarService.syncHabitChanges(habit);
+      AppLogger.info('Synced new habit "${habit.name}" to calendar');
+    } catch (e) {
+      AppLogger.error('Failed to sync new habit to calendar', e);
+    }
   }
 
   Future<void> updateHabit(Habit habit) async {
     await habit.save();
     // Cache is automatically invalidated by habit.save()
+    
+    // Sync to calendar if enabled
+    try {
+      await CalendarService.syncHabitChanges(habit);
+      AppLogger.info('Synced updated habit "${habit.name}" to calendar');
+    } catch (e) {
+      AppLogger.error('Failed to sync updated habit to calendar', e);
+    }
   }
 
   Future<void> deleteHabit(Habit habit) async {
@@ -83,6 +100,14 @@ class HabitService {
       // Cancel all notifications for this habit before deletion
       final habitIdHash = NotificationService.generateSafeId(habit.id);
       await NotificationService.cancelHabitNotifications(habitIdHash);
+      
+      // Remove from calendar before deletion
+      try {
+        await CalendarService.syncHabitChanges(habit, isDeleted: true);
+        AppLogger.info('Removed habit "${habit.name}" from calendar');
+      } catch (e) {
+        AppLogger.error('Failed to remove habit from calendar', e);
+      }
       
       // Invalidate cache before deletion
       _statsService.invalidateHabitCache(habit.id);
@@ -165,6 +190,14 @@ class HabitService {
       // Invalidate cache before saving
       _statsService.invalidateHabitCache(habitId);
       await habit.save();
+      
+      // Sync completion to calendar if enabled
+      try {
+        await CalendarService.syncHabitChanges(habit);
+        AppLogger.debug('Synced habit completion for "${habit.name}" to calendar');
+      } catch (e) {
+        AppLogger.error('Failed to sync habit completion to calendar', e);
+      }
     }
   }
 
@@ -182,6 +215,14 @@ class HabitService {
     // Invalidate cache before saving
     _statsService.invalidateHabitCache(habitId);
     await habit.save();
+    
+    // Sync removal to calendar if enabled
+    try {
+      await CalendarService.syncHabitChanges(habit);
+      AppLogger.debug('Synced habit completion removal for "${habit.name}" to calendar');
+    } catch (e) {
+      AppLogger.error('Failed to sync habit completion removal to calendar', e);
+    }
   }
 
   // Bulk operations for better performance
@@ -212,6 +253,16 @@ class HabitService {
     // Batch save
     for (final habit in habitsToUpdate) {
       await habit.save();
+    }
+    
+    // Sync all updated habits to calendar if enabled
+    for (final habit in habitsToUpdate) {
+      try {
+        await CalendarService.syncHabitChanges(habit);
+        AppLogger.debug('Synced bulk completion for "${habit.name}" to calendar');
+      } catch (e) {
+        AppLogger.error('Failed to sync bulk completion to calendar for "${habit.name}"', e);
+      }
     }
   }
 

@@ -222,23 +222,35 @@ class CalendarService {
 
   /// Sync habit changes to calendar display (called when habits are modified)
   static Future<void> syncHabitChanges(Habit habit, {bool isDeleted = false}) async {
+    AppLogger.info('syncHabitChanges called for habit "${habit.name}", isDeleted: $isDeleted');
+    
     final syncEnabled = await isCalendarSyncEnabled();
     if (!syncEnabled) {
-      AppLogger.debug('Calendar sync disabled, skipping habit sync');
+      AppLogger.debug('Calendar sync disabled, skipping habit sync for "${habit.name}"');
+      return;
+    }
+
+    if (_deviceCalendarPlugin == null) {
+      AppLogger.warning('Device calendar plugin not initialized, skipping sync for "${habit.name}"');
+      return;
+    }
+
+    if (_selectedCalendarId == null) {
+      AppLogger.warning('No calendar selected, skipping sync for "${habit.name}"');
       return;
     }
 
     try {
       if (isDeleted) {
-        AppLogger.info('Calendar sync: Habit "${habit.name}" removed from calendar view');
+        AppLogger.info('Calendar sync: Removing habit "${habit.name}" from calendar');
         await _removeHabitFromDeviceCalendar(habit);
       } else {
-        AppLogger.info('Calendar sync: Habit "${habit.name}" updated in calendar view');
+        AppLogger.info('Calendar sync: Syncing habit "${habit.name}" to calendar');
         await _syncHabitToDeviceCalendar(habit);
       }
       
     } catch (e) {
-      AppLogger.error('Error syncing habit changes to calendar', e);
+      AppLogger.error('Error syncing habit changes to calendar for "${habit.name}"', e);
     }
   }
 
@@ -283,26 +295,35 @@ class CalendarService {
       final event = Event(_selectedCalendarId);
       event.title = habit.name;
       event.description = '${habit.description ?? 'Habit reminder'}\n\nHabit ID: ${habit.id}'; // Include habit ID for tracking
-      event.start = tz.TZDateTime.from(
-        DateTime(date.year, date.month, date.day, 9, 0), // Default to 9 AM
-        tz.getLocation('UTC'),
+      // Use local timezone instead of UTC
+      final localLocation = tz.local;
+      event.start = tz.TZDateTime(
+        localLocation,
+        date.year, date.month, date.day, 9, 0, // Default to 9 AM
       );
-      event.end = tz.TZDateTime.from(
-        DateTime(date.year, date.month, date.day, 9, 30), // 30 minute duration
-        tz.getLocation('UTC'),
+      event.end = tz.TZDateTime(
+        localLocation,
+        date.year, date.month, date.day, 9, 30, // 30 minute duration
       );
       
       // Add habit-specific properties
       event.allDay = false;
       event.availability = Availability.Busy;
       
+      AppLogger.info('Creating calendar event for habit "${habit.name}" on ${date.toIso8601String()}');
+      AppLogger.debug('Event details: title="${event.title}", start=${event.start}, end=${event.end}, calendarId=$_selectedCalendarId');
+      
       final result = await _deviceCalendarPlugin!.createOrUpdateEvent(event);
       if (result?.isSuccess == true && result?.data != null) {
         // Store the event ID for future deletion
         await _storeEventId(habit.id, result!.data!, date);
-        AppLogger.debug('Created calendar event for habit "${habit.name}" on ${date.toIso8601String()}');
+        AppLogger.info('Successfully created calendar event for habit "${habit.name}" with ID: ${result.data}');
       } else {
-        AppLogger.warning('Failed to create calendar event: ${result?.errors}');
+        String errorMessage = 'Unknown error';
+        if (result != null && result.errors != null && result.errors.isNotEmpty) {
+          errorMessage = result.errors.join(', ');
+        }
+        AppLogger.error('Failed to create calendar event for habit "${habit.name}": $errorMessage');
       }
     } catch (e) {
       AppLogger.error('Error creating habit event', e);
@@ -477,7 +498,31 @@ class CalendarService {
       'selectedCalendar': selectedCalendar?.name,
       'selectedCalendarId': _selectedCalendarId,
       'availableCalendarsCount': availableCalendars.length,
+      'isInitialized': _isInitialized,
     };
+  }
+
+  /// Debug method to print current calendar sync status
+  static Future<void> debugCalendarStatus() async {
+    AppLogger.info('=== Calendar Service Debug Status ===');
+    AppLogger.info('Initialized: $_isInitialized');
+    AppLogger.info('Device calendar plugin: ${_deviceCalendarPlugin != null}');
+    AppLogger.info('Selected calendar ID: $_selectedCalendarId');
+    
+    final syncEnabled = await isCalendarSyncEnabled();
+    AppLogger.info('Sync enabled: $syncEnabled');
+    
+    final hasCalendarPermissions = await hasPermissions();
+    AppLogger.info('Has permissions: $hasCalendarPermissions');
+    
+    final availableCalendars = await getAvailableCalendars();
+    AppLogger.info('Available calendars: ${availableCalendars.length}');
+    
+    for (final calendar in availableCalendars) {
+      AppLogger.info('  - ${calendar.name} (${calendar.id})');
+    }
+    
+    AppLogger.info('=== End Debug Status ===');
   }
 
   /// Enhanced habit filtering for calendar view
@@ -547,19 +592,37 @@ class CalendarService {
 
   /// Sync all habits to calendar (useful for bulk operations)
   static Future<void> syncAllHabitsToCalendar(List<Habit> habits) async {
+    AppLogger.info('syncAllHabitsToCalendar called with ${habits.length} habits');
+    
     if (!await isCalendarSyncEnabled()) {
       AppLogger.debug('Calendar sync disabled, skipping bulk sync');
       return;
     }
 
-    AppLogger.info('Starting bulk sync of ${habits.length} habits to calendar');
+    if (_deviceCalendarPlugin == null) {
+      AppLogger.warning('Device calendar plugin not initialized, skipping bulk sync');
+      return;
+    }
+
+    if (_selectedCalendarId == null) {
+      AppLogger.warning('No calendar selected, skipping bulk sync');
+      return;
+    }
+
+    AppLogger.info('Starting bulk sync of ${habits.length} habits to calendar $_selectedCalendarId');
+    
+    int successCount = 0;
+    int errorCount = 0;
     
     for (final habit in habits) {
       try {
+        AppLogger.debug('Bulk syncing habit: "${habit.name}"');
         await _syncHabitToDeviceCalendar(habit);
+        successCount++;
         // Small delay to avoid overwhelming the calendar API
         await Future.delayed(const Duration(milliseconds: 100));
       } catch (e) {
+        errorCount++;
         AppLogger.error('Error syncing habit "${habit.name}" during bulk sync', e);
       }
     }
@@ -567,6 +630,6 @@ class CalendarService {
     // Clean up old event IDs after bulk sync
     await cleanupOldEventIds();
     
-    AppLogger.info('Completed bulk sync of habits to calendar');
+    AppLogger.info('Completed bulk sync: $successCount successful, $errorCount errors');
   }
 }
