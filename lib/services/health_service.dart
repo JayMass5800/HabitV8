@@ -49,25 +49,85 @@ class HealthService {
   /// Get platform-specific health data types
   static List<HealthDataType> get _healthDataTypes {
     if (Platform.isAndroid) {
-      // Android Health Connect - minimal permissions to prevent crashes
-      // Only request essential health data types
+      // Android Health Connect - comprehensive support for Android 16
+      // Full range of health data types for habit tracking
       return [
+        // Core fitness and activity data
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
+        HealthDataType.DISTANCE_DELTA,
+        HealthDataType.WORKOUT,
+        
+        // Vital signs for health habit tracking
+        HealthDataType.HEART_RATE,
+        HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+        HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
+        HealthDataType.BLOOD_GLUCOSE,
+        HealthDataType.BODY_TEMPERATURE,
+        
+        // Sleep data for sleep habit optimization
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.SLEEP_ASLEEP,
+        HealthDataType.SLEEP_AWAKE,
+        HealthDataType.SLEEP_DEEP,
+        HealthDataType.SLEEP_LIGHT,
+        HealthDataType.SLEEP_REM,
+        
+        // Nutrition and hydration for dietary habits
+        HealthDataType.WATER,
+        HealthDataType.NUTRITION,
+        
+        // Mental health and mindfulness
+        HealthDataType.MINDFULNESS,
+        
+        // Body metrics for health tracking habits
+        HealthDataType.WEIGHT,
+        HealthDataType.HEIGHT,
+        HealthDataType.BODY_FAT_PERCENTAGE,
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - conservative approach to prevent crashes
+      // iOS HealthKit - comprehensive support
       return [
+        // Core fitness and activity data
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.HEART_RATE,
-        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.DISTANCE_DELTA,
         HealthDataType.WORKOUT,
+        
+        // Vital signs
+        HealthDataType.HEART_RATE,
+        HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+        HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
+        HealthDataType.BLOOD_GLUCOSE,
+        HealthDataType.BODY_TEMPERATURE,
+        
+        // Sleep data
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.SLEEP_ASLEEP,
+        HealthDataType.SLEEP_AWAKE,
+        HealthDataType.SLEEP_DEEP,
+        HealthDataType.SLEEP_LIGHT,
+        HealthDataType.SLEEP_REM,
+        
+        // Nutrition and hydration
+        HealthDataType.WATER,
+        HealthDataType.NUTRITION,
+        
+        // Mental health
+        HealthDataType.MINDFULNESS,
+        
+        // Body metrics
+        HealthDataType.WEIGHT,
+        HealthDataType.HEIGHT,
+        HealthDataType.BODY_FAT_PERCENTAGE,
       ];
     } else {
-      // Other platforms - minimal set
+      // Other platforms - basic set
       return [
         HealthDataType.STEPS,
+        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.WATER,
       ];
     }
   }

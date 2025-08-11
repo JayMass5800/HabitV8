@@ -75,24 +75,44 @@ class PermissionService {
     List<HealthDataType> types;
     
     if (Platform.isAndroid) {
-      // Android Health Connect - start with minimal permissions to avoid crashes
-      // Only request the most essential health data types
+      // Android Health Connect - comprehensive support for Android 16
       types = [
-        HealthDataType.STEPS,                  // Step counting - most widely supported
-        HealthDataType.ACTIVE_ENERGY_BURNED,   // Basic fitness tracking
+        HealthDataType.STEPS,
+        HealthDataType.HEART_RATE,
+        HealthDataType.ACTIVE_ENERGY_BURNED,
+        HealthDataType.DISTANCE_DELTA,
+        HealthDataType.WORKOUT,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.WATER,
+        HealthDataType.NUTRITION,
+        HealthDataType.MINDFULNESS,
+        HealthDataType.WEIGHT,
+        HealthDataType.HEIGHT,
+        HealthDataType.BODY_FAT_PERCENTAGE,
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - more comprehensive support but still conservative
+      // iOS HealthKit - comprehensive support
       types = [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
         HealthDataType.HEART_RATE,
         HealthDataType.SLEEP_IN_BED,
         HealthDataType.WORKOUT,
+        HealthDataType.MINDFULNESS,
+        HealthDataType.WATER,
+        HealthDataType.NUTRITION,
+        HealthDataType.WEIGHT,
+        HealthDataType.HEIGHT,
+        HealthDataType.BODY_FAT_PERCENTAGE,
       ];
     } else {
-      // Other platforms - minimal set
-      types = [HealthDataType.STEPS];
+      // Other platforms - basic set
+      types = [
+        HealthDataType.STEPS,
+        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.WATER,
+      ];
     }
 
     // Create permissions list that matches the length of types (READ access only)
@@ -163,24 +183,44 @@ class PermissionService {
     List<HealthDataType> types;
     
     if (Platform.isAndroid) {
-      // Android Health Connect - start with minimal permissions to avoid crashes
-      // Only request the most essential health data types
+      // Android Health Connect - comprehensive support for Android 16
       types = [
-        HealthDataType.STEPS,                  // Step counting - most widely supported
-        HealthDataType.ACTIVE_ENERGY_BURNED,   // Basic fitness tracking
+        HealthDataType.STEPS,
+        HealthDataType.HEART_RATE,
+        HealthDataType.ACTIVE_ENERGY_BURNED,
+        HealthDataType.DISTANCE_DELTA,
+        HealthDataType.WORKOUT,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.WATER,
+        HealthDataType.NUTRITION,
+        HealthDataType.MINDFULNESS,
+        HealthDataType.WEIGHT,
+        HealthDataType.HEIGHT,
+        HealthDataType.BODY_FAT_PERCENTAGE,
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - more comprehensive support but still conservative
+      // iOS HealthKit - comprehensive support
       types = [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
         HealthDataType.HEART_RATE,
         HealthDataType.SLEEP_IN_BED,
         HealthDataType.WORKOUT,
+        HealthDataType.MINDFULNESS,
+        HealthDataType.WATER,
+        HealthDataType.NUTRITION,
+        HealthDataType.WEIGHT,
+        HealthDataType.HEIGHT,
+        HealthDataType.BODY_FAT_PERCENTAGE,
       ];
     } else {
-      // Other platforms - minimal set
-      types = [HealthDataType.STEPS];
+      // Other platforms - basic set
+      types = [
+        HealthDataType.STEPS,
+        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.WATER,
+      ];
     }
     
     try {

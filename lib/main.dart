@@ -34,11 +34,21 @@ void main() async {
   );
 
   // Initialize timezone data
-  tz.initializeTimeZones();
-  await _setCorrectTimezone();
+  try {
+    tz.initializeTimeZones();
+    await _setCorrectTimezone();
+  } catch (e) {
+    AppLogger.error('Error initializing timezone', e);
+    // Continue with app startup even if timezone fails
+  }
 
   // Initialize notification service
-  await NotificationService.initialize();
+  try {
+    await NotificationService.initialize();
+  } catch (e) {
+    AppLogger.error('Error initializing notification service', e);
+    // Continue with app startup even if notifications fail
+  }
 
   // Request only essential permissions during startup (non-blocking)
   // Health permissions will be requested when user accesses health features
