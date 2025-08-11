@@ -373,7 +373,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
             const SizedBox(height: 16),
             SwitchListTile(
               title: const Text('Enable Notifications'),
-              subtitle: const Text('Get reminded when it\'s time for your habit'),
+              subtitle: Text(_selectedFrequency == HabitFrequency.hourly 
+                  ? 'Get reminded at your selected times throughout the day'
+                  : 'Get reminded when it\'s time for your habit'),
               value: _notificationsEnabled,
               onChanged: (value) {
                 setState(() {
@@ -382,7 +384,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               },
               activeColor: _selectedColor,
             ),
-            if (_notificationsEnabled) ...[
+            // Only show time picker for non-hourly habits
+            if (_notificationsEnabled && _selectedFrequency != HabitFrequency.hourly) ...[
               const SizedBox(height: 16),
               ListTile(
                 title: const Text('Notification Time'),
@@ -401,6 +404,32 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                     });
                   }
                 },
+              ),
+            ],
+            // Show info for hourly habits
+            if (_notificationsEnabled && _selectedFrequency == HabitFrequency.hourly) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _selectedColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _selectedColor.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: _selectedColor, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Hourly habits will send notifications every hour during your active hours (8 AM - 10 PM)',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: _selectedColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ],
@@ -450,7 +479,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       return;
     }
 
-    if (_notificationsEnabled && _notificationTime == null) {
+    // Only require notification time for non-hourly habits
+    if (_notificationsEnabled && _selectedFrequency != HabitFrequency.hourly && _notificationTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a notification time'),
@@ -550,7 +580,22 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
   /// Schedule notifications for the updated habit based on its frequency
   Future<void> _scheduleHabitNotifications(Habit habit) async {
-    if (!habit.notificationsEnabled || habit.notificationTime == null) {
+    if (!habit.notificationsEnabled) {
+      return;
+    }
+
+    // For hourly habits, use the notification service directly
+    if (habit.frequency == HabitFrequency.hourly) {
+      try {
+        await NotificationService.scheduleHabitNotifications(habit);
+      } catch (e) {
+        // Error scheduling hourly notifications
+      }
+      return;
+    }
+
+    // For other frequencies, require notification time
+    if (habit.notificationTime == null) {
       return;
     }
 
@@ -576,7 +621,6 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
             body: 'Time to complete your daily habit! Keep your streak going.',
             scheduledTime: nextNotification,
           );
-          // Rescheduled daily notification
           break;
 
         case HabitFrequency.weekly:
@@ -599,7 +643,6 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               body: 'Time to complete your habit! Don\'t break your streak.',
               scheduledTime: nextNotification,
             );
-            // Rescheduled weekly notification
           }
           break;
 
@@ -619,24 +662,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               body: 'Monthly habit reminder - keep up the great work!',
               scheduledTime: nextNotification,
             );
-            // Rescheduled monthly notification
           }
-          break;
-
-        case HabitFrequency.hourly:
-          final now = DateTime.now();
-          for (int i = 1; i <= 24; i++) {
-            final nextNotification = DateTime(now.year, now.month, now.day, now.hour + i, minute);
-
-            await NotificationService.scheduleHabitNotification(
-              id: habit.hashCode + i + 2000,
-              habitId: habit.id,
-              title: '⏰ ${habit.name}',
-              body: 'Hourly reminder - time for your habit!',
-              scheduledTime: nextNotification,
-            );
-          }
-          // Rescheduled hourly notifications
           break;
 
         case HabitFrequency.yearly:
@@ -651,7 +677,10 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
             body: 'Annual habit reminder - time for your yearly goal!',
             scheduledTime: nextNotification,
           );
-          // Rescheduled yearly notification
+          break;
+
+        case HabitFrequency.hourly:
+          // This case is handled above
           break;
       }
     } catch (e) {

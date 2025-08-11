@@ -880,7 +880,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             const SizedBox(height: 16),
             SwitchListTile(
               title: const Text('Enable Notifications'),
-              subtitle: const Text('Get reminded to complete your habit'),
+              subtitle: Text(_selectedFrequency == HabitFrequency.hourly 
+                  ? 'Get reminded at your selected times throughout the day'
+                  : 'Get reminded to complete your habit'),
               value: _notificationsEnabled,
               onChanged: (value) {
                 setState(() {
@@ -891,7 +893,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 });
               },
             ),
-            if (_notificationsEnabled) ...[
+            // Only show time picker for non-hourly habits
+            if (_notificationsEnabled && _selectedFrequency != HabitFrequency.hourly) ...[
               const SizedBox(height: 8),
               ListTile(
                 title: const Text('Notification Time'),
@@ -903,7 +906,32 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 trailing: const Icon(Icons.access_time),
                 onTap: _selectNotificationTime,
               ),
-
+            ],
+            // Show info for hourly habits
+            if (_notificationsEnabled && _selectedFrequency == HabitFrequency.hourly) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _selectedColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _selectedColor.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: _selectedColor, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Hourly habits will send notifications every hour during your active hours (8 AM - 10 PM)',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: _selectedColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ],
         ),
