@@ -85,7 +85,8 @@ HabitV8 may integrate with the following services (all optional):
 
 ## Children's Privacy
 
-HabitV8 is suitable for users of all ages. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided personal information, please contact us.
+HabitV8 is suitable for users of all ages. We do not knowingly collect personal information from children. If you are a parent or guardian and believe your child has provided personal information, please contact us.
+'Committed to follow the Play Families policy' 
 
 ## Changes to This Policy
 
