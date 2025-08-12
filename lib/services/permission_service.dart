@@ -75,38 +75,37 @@ class PermissionService {
     List<HealthDataType> types;
     
     if (Platform.isAndroid) {
-      // Android Health Connect - comprehensive support for Android 16
+      // Android Health Connect - only essential data types actually used by the app
       types = [
-        HealthDataType.STEPS,
-        HealthDataType.HEART_RATE,
-        HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.DISTANCE_DELTA,
-        HealthDataType.WORKOUT,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.WATER,
-        HealthDataType.NUTRITION,
-        HealthDataType.MINDFULNESS,
-        HealthDataType.WEIGHT,
-        HealthDataType.HEIGHT,
-        HealthDataType.BODY_FAT_PERCENTAGE,
+        HealthDataType.STEPS,                    // Used in getTodayHealthSummary()
+        HealthDataType.ACTIVE_ENERGY_BURNED,     // Used for fitness habit insights
+        HealthDataType.WORKOUT,                  // Used in getExerciseData()
+        HealthDataType.HEART_RATE,               // Used in getTodayHealthSummary()
+        HealthDataType.WATER,                    // Used in getTodayHealthSummary()
+        HealthDataType.MINDFULNESS,              // Used in getTodayHealthSummary()
+        HealthDataType.WEIGHT,                   // Used in getBodyMetricsData()
+        HealthDataType.HEIGHT,                   // Used in getBodyMetricsData()
+        HealthDataType.BODY_FAT_PERCENTAGE,      // Used in getBodyMetricsData()
+        HealthDataType.SLEEP_IN_BED,             // Used in getSleepData()
+        HealthDataType.SLEEP_ASLEEP,             // Used in getSleepData()
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - comprehensive support
+      // iOS HealthKit - same essential data types
       types = [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.HEART_RATE,
-        HealthDataType.SLEEP_IN_BED,
         HealthDataType.WORKOUT,
-        HealthDataType.MINDFULNESS,
+        HealthDataType.HEART_RATE,
         HealthDataType.WATER,
-        HealthDataType.NUTRITION,
+        HealthDataType.MINDFULNESS,
         HealthDataType.WEIGHT,
         HealthDataType.HEIGHT,
         HealthDataType.BODY_FAT_PERCENTAGE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.SLEEP_ASLEEP,
       ];
     } else {
-      // Other platforms - basic set
+      // Other platforms - minimal set
       types = [
         HealthDataType.STEPS,
         HealthDataType.HEART_RATE,
@@ -183,38 +182,37 @@ class PermissionService {
     List<HealthDataType> types;
     
     if (Platform.isAndroid) {
-      // Android Health Connect - comprehensive support for Android 16
+      // Android Health Connect - only essential data types actually used by the app
       types = [
-        HealthDataType.STEPS,
-        HealthDataType.HEART_RATE,
-        HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.DISTANCE_DELTA,
-        HealthDataType.WORKOUT,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.WATER,
-        HealthDataType.NUTRITION,
-        HealthDataType.MINDFULNESS,
-        HealthDataType.WEIGHT,
-        HealthDataType.HEIGHT,
-        HealthDataType.BODY_FAT_PERCENTAGE,
+        HealthDataType.STEPS,                    // Used in getTodayHealthSummary()
+        HealthDataType.ACTIVE_ENERGY_BURNED,     // Used for fitness habit insights
+        HealthDataType.WORKOUT,                  // Used in getExerciseData()
+        HealthDataType.HEART_RATE,               // Used in getTodayHealthSummary()
+        HealthDataType.WATER,                    // Used in getTodayHealthSummary()
+        HealthDataType.MINDFULNESS,              // Used in getTodayHealthSummary()
+        HealthDataType.WEIGHT,                   // Used in getBodyMetricsData()
+        HealthDataType.HEIGHT,                   // Used in getBodyMetricsData()
+        HealthDataType.BODY_FAT_PERCENTAGE,      // Used in getBodyMetricsData()
+        HealthDataType.SLEEP_IN_BED,             // Used in getSleepData()
+        HealthDataType.SLEEP_ASLEEP,             // Used in getSleepData()
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - comprehensive support
+      // iOS HealthKit - same essential data types
       types = [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.HEART_RATE,
-        HealthDataType.SLEEP_IN_BED,
         HealthDataType.WORKOUT,
-        HealthDataType.MINDFULNESS,
+        HealthDataType.HEART_RATE,
         HealthDataType.WATER,
-        HealthDataType.NUTRITION,
+        HealthDataType.MINDFULNESS,
         HealthDataType.WEIGHT,
         HealthDataType.HEIGHT,
         HealthDataType.BODY_FAT_PERCENTAGE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.SLEEP_ASLEEP,
       ];
     } else {
-      // Other platforms - basic set
+      // Other platforms - minimal set
       types = [
         HealthDataType.STEPS,
         HealthDataType.HEART_RATE,

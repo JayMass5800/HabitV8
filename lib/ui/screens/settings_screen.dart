@@ -20,7 +20,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBindingObserver {
   bool _notificationsEnabled = false;
   bool _calendarSync = false;
   bool _healthDataSync = false;
@@ -50,8 +50,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadPermissionStatus();
     _loadDefaultScreen();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // When app resumes, refresh health permissions in case they were changed externally
+    if (state == AppLifecycleState.resumed) {
+      AppLogger.info('App resumed, refreshing health permissions');
+      _refreshHealthPermissions();
+    }
   }
 
   /// Load current permission status when screen initializes
@@ -102,6 +120,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       AppLogger.info('Default screen set to: $screen');
     } catch (e) {
       AppLogger.error('Error saving default screen preference', e);
+    }
+  }
+
+  /// Refresh health permissions status
+  /// This is called when the app resumes to check if permissions were granted externally
+  Future<void> _refreshHealthPermissions() async {
+    try {
+      AppLogger.info('Refreshing health permissions status');
+      
+      // Use the new refresh method from HealthService
+      final bool hasPermissions = await HealthService.refreshPermissions();
+      
+      // Update the UI state if permissions changed
+      if (mounted && hasPermissions != _healthDataSync) {
+        setState(() {
+          _healthDataSync = hasPermissions;
+        });
+        
+        if (hasPermissions) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Health permissions detected! Health data sync is now enabled. 🎉'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        
+        AppLogger.info('Health permissions status updated: $hasPermissions');
+      }
+    } catch (e) {
+      AppLogger.error('Error refreshing health permissions', e);
     }
   }
 
@@ -231,6 +281,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   leading: const Icon(Icons.health_and_safety),
                   onTap: () => _manageHealthPermissions(),
                 ),
+              // Always show refresh button for health permissions
+              _SettingsTile(
+                title: 'Refresh Health Status',
+                subtitle: 'Check if health permissions were granted externally',
+                leading: const Icon(Icons.refresh),
+                onTap: () => _refreshHealthPermissions(),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -531,8 +588,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           return;
         }
 
-        // Request health permissions
-        final hasPermissions = await HealthService.requestPermissions();
+        // First check if permissions are already granted (in case they were granted externally)
+        bool hasPermissions = await HealthService.refreshPermissions();
+        
+        if (!hasPermissions) {
+          // Request health permissions if not already granted
+          hasPermissions = await HealthService.requestPermissions();
+        }
         
         setState(() {
           _healthDataSync = hasPermissions;
@@ -551,8 +613,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Health permissions are required for this feature. Please grant permissions in Health Connect.'),
+                content: const Text('Health permissions are required for this feature. Please grant permissions in Health Connect and return to the app.'),
                 backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 5),
                 action: SnackBarAction(
                   label: 'Open Settings',
                   onPressed: () => _openHealthConnectSettings(),
@@ -917,31 +980,81 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         if (opened) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Health Connect settings opened'),
+            SnackBar(
+              content: const Text('Health Connect opened! Grant permissions for HabitV8, then return to the app.'),
               backgroundColor: Colors.green,
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Refresh',
+                onPressed: () => _refreshHealthPermissions(),
+              ),
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Unable to open Health Connect settings. Please open manually.'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          // Show detailed instructions if we can't open settings automatically
+          _showHealthConnectInstructions();
         }
       }
     } catch (e) {
       AppLogger.error('Error opening Health Connect settings', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to open settings. Please manually open Health Connect app.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        _showHealthConnectInstructions();
       }
     }
+  }
+
+  /// Show manual instructions for Health Connect
+  void _showHealthConnectInstructions() {
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Health Connect Setup'),
+          content: const SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'To enable health data sync, please follow these steps:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 16),
+                Text('1. Open the Health Connect app on your device'),
+                SizedBox(height: 8),
+                Text('2. Go to "App permissions" or "Connected apps"'),
+                SizedBox(height: 8),
+                Text('3. Find "HabitV8" in the list'),
+                SizedBox(height: 8),
+                Text('4. Grant permissions for the data types you want to share'),
+                SizedBox(height: 8),
+                Text('5. Return to HabitV8 and tap "Refresh Health Status"'),
+                SizedBox(height: 16),
+                Text(
+                  'Note: Health Connect may be called "Google Health" on some devices.',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Got it'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _refreshHealthPermissions();
+              },
+              child: const Text('Refresh Status'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Show Health Connect debug information

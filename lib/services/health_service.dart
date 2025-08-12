@@ -1,4 +1,5 @@
 import 'package:health/health.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'logging_service.dart';
 
@@ -47,82 +48,52 @@ class HealthService {
   static bool _isInitialized = false;
 
   /// Get platform-specific health data types
+  /// Only requests permissions for data types that are actually used by the app
+  /// to comply with Play Store requirements and user privacy expectations
   static List<HealthDataType> get _healthDataTypes {
     if (Platform.isAndroid) {
-      // Android Health Connect - comprehensive support for Android 16
-      // Full range of health data types for habit tracking
+      // Android Health Connect - only essential data types actually used by the app
       return [
-        // Core fitness and activity data
-        HealthDataType.STEPS,
-        HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.DISTANCE_DELTA,
-        HealthDataType.WORKOUT,
+        // Core fitness data - used in insights and habit correlation
+        HealthDataType.STEPS,                    // Used in getTodayHealthSummary()
+        HealthDataType.ACTIVE_ENERGY_BURNED,     // Used for fitness habit insights
+        HealthDataType.WORKOUT,                  // Used in getExerciseData()
         
-        // Vital signs for health habit tracking
-        HealthDataType.HEART_RATE,
-        HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
-        HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
-        HealthDataType.BLOOD_GLUCOSE,
-        HealthDataType.BODY_TEMPERATURE,
+        // Heart rate - used for workout intensity monitoring
+        HealthDataType.HEART_RATE,               // Used in getTodayHealthSummary()
         
-        // Sleep data for sleep habit optimization
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.SLEEP_ASLEEP,
-        HealthDataType.SLEEP_AWAKE,
-        HealthDataType.SLEEP_DEEP,
-        HealthDataType.SLEEP_LIGHT,
-        HealthDataType.SLEEP_REM,
+        // Hydration tracking - used for water intake habits
+        HealthDataType.WATER,                    // Used in getTodayHealthSummary()
         
-        // Nutrition and hydration for dietary habits
-        HealthDataType.WATER,
-        HealthDataType.NUTRITION,
+        // Mental health - used for meditation habit tracking
+        HealthDataType.MINDFULNESS,              // Used in getTodayHealthSummary()
         
-        // Mental health and mindfulness
-        HealthDataType.MINDFULNESS,
+        // Body metrics - used for health tracking habits
+        HealthDataType.WEIGHT,                   // Used in getBodyMetricsData()
+        HealthDataType.HEIGHT,                   // Used in getBodyMetricsData()
+        HealthDataType.BODY_FAT_PERCENTAGE,      // Used in getBodyMetricsData()
         
-        // Body metrics for health tracking habits
-        HealthDataType.WEIGHT,
-        HealthDataType.HEIGHT,
-        HealthDataType.BODY_FAT_PERCENTAGE,
+        // Sleep data - basic sleep tracking for sleep habits
+        HealthDataType.SLEEP_IN_BED,             // Used in getSleepData()
+        HealthDataType.SLEEP_ASLEEP,             // Used in getSleepData()
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - comprehensive support
+      // iOS HealthKit - same essential data types
       return [
-        // Core fitness and activity data
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.DISTANCE_DELTA,
         HealthDataType.WORKOUT,
-        
-        // Vital signs
         HealthDataType.HEART_RATE,
-        HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
-        HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
-        HealthDataType.BLOOD_GLUCOSE,
-        HealthDataType.BODY_TEMPERATURE,
-        
-        // Sleep data
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.SLEEP_ASLEEP,
-        HealthDataType.SLEEP_AWAKE,
-        HealthDataType.SLEEP_DEEP,
-        HealthDataType.SLEEP_LIGHT,
-        HealthDataType.SLEEP_REM,
-        
-        // Nutrition and hydration
         HealthDataType.WATER,
-        HealthDataType.NUTRITION,
-        
-        // Mental health
         HealthDataType.MINDFULNESS,
-        
-        // Body metrics
         HealthDataType.WEIGHT,
         HealthDataType.HEIGHT,
         HealthDataType.BODY_FAT_PERCENTAGE,
+        HealthDataType.SLEEP_IN_BED,
+        HealthDataType.SLEEP_ASLEEP,
       ];
     } else {
-      // Other platforms - basic set
+      // Other platforms - minimal set
       return [
         HealthDataType.STEPS,
         HealthDataType.HEART_RATE,
@@ -134,11 +105,26 @@ class HealthService {
 
   /// Initialize health service
   static Future<bool> initialize() async {
-    if (_isInitialized) return true;
+    if (_isInitialized) {
+      AppLogger.info('Health service already initialized');
+      return true;
+    }
 
     try {
+      AppLogger.info('Initializing health service...');
+      
       // Configure the health plugin
       await Health().configure();
+      
+      // Test basic functionality to ensure it's working
+      try {
+        // Try a simple permission check to verify the service is working
+        await Health().hasPermissions([HealthDataType.STEPS]);
+        AppLogger.info('Health service basic functionality test passed');
+      } catch (e) {
+        AppLogger.warning('Health service basic functionality test failed, but continuing: $e');
+        // Don't fail initialization just because of this test
+      }
       
       _isInitialized = true;
       AppLogger.info('Health service initialized successfully');
@@ -146,8 +132,16 @@ class HealthService {
       return true;
     } catch (e) {
       AppLogger.error('Failed to initialize health service', e);
+      _isInitialized = false;
       return false;
     }
+  }
+
+  /// Force re-initialization of the health service
+  static Future<bool> reinitialize() async {
+    AppLogger.info('Force re-initializing health service...');
+    _isInitialized = false;
+    return await initialize();
   }
 
   /// Request health data permissions
@@ -200,9 +194,74 @@ class HealthService {
 
     try {
       final bool? hasPerms = await Health().hasPermissions(_healthDataTypes);
+      AppLogger.info('Health permissions check result: $hasPerms');
       return hasPerms ?? false;
     } catch (e) {
       AppLogger.error('Error checking health permissions', e);
+      return false;
+    }
+  }
+
+  /// Refresh and re-check health permissions
+  /// This is useful when permissions might have been granted outside the app
+  static Future<bool> refreshPermissions() async {
+    try {
+      AppLogger.info('Refreshing health permissions status');
+      
+      // Re-initialize if needed, or force re-initialization if service seems broken
+      if (!_isInitialized) {
+        AppLogger.info('Health service not initialized, initializing...');
+        final initialized = await initialize();
+        if (!initialized) {
+          AppLogger.error('Failed to initialize health service during refresh');
+          return false;
+        }
+      } else {
+        // Try a quick test to see if the service is working
+        try {
+          await Health().hasPermissions([HealthDataType.STEPS]);
+        } catch (e) {
+          AppLogger.warning('Health service seems broken, re-initializing: $e');
+          final reinitialized = await reinitialize();
+          if (!reinitialized) {
+            AppLogger.error('Failed to re-initialize health service');
+            return false;
+          }
+        }
+      }
+      
+      // Add a small delay to ensure system has processed any recent permission changes
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Check permissions again
+      final bool hasPerms = await hasPermissions();
+      AppLogger.info('Refreshed health permissions status: $hasPerms');
+      
+      // If we have permissions, try to verify by attempting to read a small amount of data
+      if (hasPerms) {
+        try {
+          final now = DateTime.now();
+          final yesterday = now.subtract(const Duration(days: 1));
+          
+          // Try to read steps data as a verification
+          final stepsData = await Health().getHealthDataFromTypes(
+            types: [HealthDataType.STEPS],
+            startTime: yesterday,
+            endTime: now,
+          );
+          
+          AppLogger.info('Permission verification: Successfully accessed health data (${stepsData.length} points)');
+          return true;
+        } catch (e) {
+          AppLogger.info('Permission verification failed: $e');
+          // Even if data access fails, return the permission status
+          return hasPerms;
+        }
+      }
+      
+      return hasPerms;
+    } catch (e) {
+      AppLogger.error('Error refreshing health permissions', e);
       return false;
     }
   }
@@ -864,11 +923,92 @@ class HealthService {
   static Future<bool> openHealthConnectSettings() async {
     try {
       if (Platform.isAndroid) {
-        // Try to open Health Connect app via package name
         AppLogger.info('Attempting to open Health Connect settings');
-        // Note: This would require url_launcher or similar package to open the Health Connect app
-        // For now, we'll just log that this feature is not available
-        AppLogger.info('Health Connect settings opening not implemented - user should manually open Health Connect app');
+        
+        // Try multiple approaches to open Health Connect
+        
+        // Method 1: Try to open Health Connect app directly
+        const healthConnectPackage = 'com.google.android.apps.healthdata';
+        final healthConnectUri = Uri.parse('package:$healthConnectPackage');
+        
+        if (await canLaunchUrl(healthConnectUri)) {
+          AppLogger.info('Opening Health Connect app directly');
+          final launched = await launchUrl(healthConnectUri);
+          if (launched) {
+            return true;
+          }
+        }
+        
+        // Method 2: Try to open Health Connect via intent
+        const healthConnectIntent = 'android-app://com.google.android.apps.healthdata';
+        final intentUri = Uri.parse(healthConnectIntent);
+        
+        if (await canLaunchUrl(intentUri)) {
+          AppLogger.info('Opening Health Connect via intent');
+          final launched = await launchUrl(intentUri);
+          if (launched) {
+            return true;
+          }
+        }
+        
+        // Method 3: Try to open Health Connect settings via action
+        const settingsAction = 'android.settings.HEALTH_CONNECT_SETTINGS';
+        final settingsUri = Uri.parse('android.intent.action.VIEW');
+        
+        try {
+          // Try to launch with custom scheme for Health Connect settings
+          final healthConnectSettingsUri = Uri.parse('android.intent.action.MAIN');
+          if (await canLaunchUrl(healthConnectSettingsUri)) {
+            final launched = await launchUrl(healthConnectSettingsUri);
+            if (launched) {
+              return true;
+            }
+          }
+        } catch (e) {
+          AppLogger.info('Health Connect settings action not available: $e');
+        }
+        
+        // Method 4: Fallback to general app settings
+        AppLogger.info('Falling back to general app settings');
+        const appSettingsUri = 'android.settings.APPLICATION_DETAILS_SETTINGS';
+        final appUri = Uri.parse('android.settings.APPLICATION_DETAILS_SETTINGS');
+        
+        if (await canLaunchUrl(appUri)) {
+          final launched = await launchUrl(appUri);
+          if (launched) {
+            AppLogger.info('Opened general app settings as fallback');
+            return true;
+          }
+        }
+        
+        AppLogger.info('All methods to open Health Connect settings failed');
+        return false;
+      } else if (Platform.isIOS) {
+        // For iOS, try to open Health app
+        AppLogger.info('Attempting to open iOS Health app');
+        const healthAppUri = 'x-apple-health://';
+        final uri = Uri.parse(healthAppUri);
+        
+        if (await canLaunchUrl(uri)) {
+          final launched = await launchUrl(uri);
+          if (launched) {
+            AppLogger.info('Opened iOS Health app');
+            return true;
+          }
+        }
+        
+        // Fallback to iOS Settings
+        const settingsUri = 'app-settings:';
+        final settingsUriParsed = Uri.parse(settingsUri);
+        
+        if (await canLaunchUrl(settingsUriParsed)) {
+          final launched = await launchUrl(settingsUriParsed);
+          if (launched) {
+            AppLogger.info('Opened iOS app settings');
+            return true;
+          }
+        }
+        
         return false;
       } else {
         AppLogger.info('Health Connect settings not available on this platform');
@@ -918,6 +1058,26 @@ class HealthService {
         
         // Check if initialized
         debugInfo['serviceInitialized'] = _isInitialized;
+        
+        // Try to re-initialize if not initialized
+        if (!_isInitialized) {
+          debugInfo['attemptingInitialization'] = true;
+          try {
+            final initResult = await initialize();
+            debugInfo['initializationResult'] = initResult;
+            debugInfo['serviceInitializedAfterAttempt'] = _isInitialized;
+          } catch (e) {
+            debugInfo['initializationError'] = e.toString();
+          }
+        }
+        
+        // Test basic functionality
+        try {
+          final testResult = await Health().hasPermissions([HealthDataType.STEPS]);
+          debugInfo['basicFunctionalityTest'] = testResult;
+        } catch (e) {
+          debugInfo['basicFunctionalityError'] = e.toString();
+        }
       }
       
       AppLogger.info('Health Connect Debug Info: $debugInfo');
