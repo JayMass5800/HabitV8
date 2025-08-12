@@ -62,11 +62,11 @@ class PermissionService {
   /// This method requests access to specific health data types that directly support
   /// habit tracking features. Each data type serves a specific purpose:
   /// - STEPS: For walking/running habit tracking and step count insights
-  /// - HEART_RATE: For workout intensity monitoring during fitness habits
   /// - ACTIVE_ENERGY_BURNED: For correlating energy expenditure with fitness habits
-  /// - DISTANCE_DELTA: For tracking distance-based exercise habits
-  /// - WORKOUT: For automatic detection and completion of fitness habits
   /// - SLEEP_IN_BED: For sleep habit optimization and bedtime routine tracking
+  /// - WATER: For hydration habit tracking and reminders
+  /// - MINDFULNESS: For meditation and mindfulness habit completion
+  /// - WEIGHT: For weight management habit tracking
   /// 
   /// All data is processed locally and used solely for habit tracking features.
   /// Users can revoke these permissions at any time through device settings.

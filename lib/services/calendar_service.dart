@@ -151,11 +151,11 @@ class CalendarService {
 
   /// Get habits that are due on a specific date (integrates with table_calendar)
   static List<Habit> getHabitsForDate(DateTime date, List<Habit> allHabits) {
-    return allHabits.where((habit) => _isHabitDueOnDate(habit, date)).toList();
+    return allHabits.where((habit) => isHabitDueOnDate(habit, date)).toList();
   }
 
   /// Check if a habit is due on a specific date (matches calendar_screen logic)
-  static bool _isHabitDueOnDate(Habit habit, DateTime date) {
+  static bool isHabitDueOnDate(Habit habit, DateTime date) {
     switch (habit.frequency) {
       case HabitFrequency.hourly:
       case HabitFrequency.daily:
@@ -271,13 +271,14 @@ class CalendarService {
       // First, remove any existing events for this habit to avoid duplicates
       await _removeHabitFromDeviceCalendar(habit);
 
-      // Create calendar events for the next 30 days based on habit frequency
+      // Create calendar events for the next 90 days based on habit frequency
+      // Extended from 30 to 90 days to reduce renewal frequency
       final now = DateTime.now();
-      final endDate = now.add(const Duration(days: 30));
+      final endDate = now.add(const Duration(days: 90));
       
       for (DateTime date = now; date.isBefore(endDate); date = date.add(const Duration(days: 1))) {
-        if (_isHabitDueOnDate(habit, date)) {
-          await _createHabitEvent(habit, date);
+        if (isHabitDueOnDate(habit, date)) {
+          await createHabitEvent(habit, date);
         }
       }
       
@@ -288,7 +289,7 @@ class CalendarService {
   }
 
   /// Create a calendar event for a habit on a specific date
-  static Future<void> _createHabitEvent(Habit habit, DateTime date) async {
+  static Future<void> createHabitEvent(Habit habit, DateTime date) async {
     if (_deviceCalendarPlugin == null || _selectedCalendarId == null) return;
 
     try {
@@ -557,6 +558,46 @@ class CalendarService {
     }
     
     AppLogger.info('=== End Debug Status ===');
+  }
+
+  /// Debug method to test habit frequency detection
+  static void debugHabitFrequency(Habit habit, DateTime testDate) {
+    AppLogger.info('=== Habit Frequency Debug for "${habit.name}" ===');
+    AppLogger.info('Frequency: ${habit.frequency}');
+    AppLogger.info('Test date: ${testDate.toIso8601String()}');
+    
+    switch (habit.frequency) {
+      case HabitFrequency.weekly:
+        AppLogger.info('Weekly schedule: ${habit.weeklySchedule}');
+        AppLogger.info('Test date weekday: ${testDate.weekday}');
+        AppLogger.info('Is due: ${habit.weeklySchedule.contains(testDate.weekday)}');
+        break;
+      case HabitFrequency.monthly:
+        AppLogger.info('Monthly schedule: ${habit.monthlySchedule}');
+        AppLogger.info('Test date day: ${testDate.day}');
+        AppLogger.info('Is due: ${habit.monthlySchedule.contains(testDate.day)}');
+        break;
+      case HabitFrequency.yearly:
+        AppLogger.info('Yearly dates: ${habit.selectedYearlyDates}');
+        AppLogger.info('Test date month/day: ${testDate.month}/${testDate.day}');
+        final isDue = habit.selectedYearlyDates.any((dateStr) {
+          final parts = dateStr.split('-');
+          if (parts.length == 3) {
+            final month = int.parse(parts[1]);
+            final day = int.parse(parts[2]);
+            return month == testDate.month && day == testDate.day;
+          }
+          return false;
+        });
+        AppLogger.info('Is due: $isDue');
+        break;
+      default:
+        AppLogger.info('Daily/hourly habit - always due');
+    }
+    
+    final actualResult = isHabitDueOnDate(habit, testDate);
+    AppLogger.info('Final result: $actualResult');
+    AppLogger.info('=== End Habit Frequency Debug ===');
   }
 
   /// Enhanced habit filtering for calendar view

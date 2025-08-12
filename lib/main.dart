@@ -11,6 +11,7 @@ import 'services/permission_service.dart';
 import 'services/theme_service.dart';
 import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
+import 'services/calendar_renewal_service.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/all_habits_screen.dart';
 import 'ui/screens/calendar_screen.dart';
@@ -58,6 +59,9 @@ void main() async {
   final container = ProviderContainer();
   NotificationActionService.initialize(container);
 
+  // Initialize calendar renewal service (non-blocking)
+  _initializeCalendarRenewal();
+
   runApp(UncontrolledProviderScope(
     container: container,
     child: const MyApp(),
@@ -74,6 +78,18 @@ void _requestEssentialPermissions() async {
   } catch (e) {
     AppLogger.error('Error requesting essential permissions', e);
     // Don't block app startup if permission request fails
+  }
+}
+
+/// Initialize calendar renewal service (non-blocking)
+void _initializeCalendarRenewal() async {
+  try {
+    // Small delay to let the app finish initializing
+    await Future.delayed(const Duration(seconds: 5));
+    await CalendarRenewalService.initialize();
+  } catch (e) {
+    AppLogger.error('Error initializing calendar renewal service', e);
+    // Don't block app startup if calendar renewal fails
   }
 }
 

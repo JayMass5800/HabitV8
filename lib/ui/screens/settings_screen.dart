@@ -8,10 +8,12 @@ import '../../services/notification_service.dart';
 import '../../services/theme_service.dart';
 import '../../services/health_service.dart';
 import '../../services/calendar_service.dart';
+import '../../services/calendar_renewal_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/onboarding_service.dart';
 import '../../data/database.dart';
 import '../widgets/calendar_selection_dialog.dart';
+import '../widgets/health_education_dialog.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -311,13 +313,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 onChanged: (value) => _toggleCalendarSync(value),
                 secondary: const Icon(Icons.calendar_today),
               ),
-              if (_calendarSync)
+              if (_calendarSync) ...[
                 _SettingsTile(
                   title: 'Select Calendar',
                   subtitle: 'Choose which calendar to sync habits to',
                   leading: const Icon(Icons.calendar_month),
                   onTap: () => _showCalendarSelection(),
                 ),
+                _SettingsTile(
+                  title: 'Calendar Renewal Status',
+                  subtitle: 'View and manage automatic calendar sync renewal',
+                  leading: const Icon(Icons.refresh),
+                  onTap: () => _showCalendarRenewalStatus(),
+                ),
+              ],
 
               SwitchListTile(
                 title: const Text('Health Data'),
@@ -592,6 +601,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
   Future<void> _toggleHealthDataSync(bool value) async {
     if (value) {
       try {
+        // Show health education dialog first
+        final bool? userConsent = await HealthEducationDialog.show(context);
+        if (userConsent != true) {
+          // User declined or dismissed the dialog
+          setState(() => _healthDataSync = false);
+          return;
+        }
+
         // Show loading indicator
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1154,6 +1171,169 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
           const SnackBar(
             content: Text('Unable to get debug information'),
             backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show calendar renewal status and management options
+  Future<void> _showCalendarRenewalStatus() async {
+    try {
+      final status = await CalendarRenewalService.getRenewalStatus();
+      
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.refresh, color: Colors.blue),
+                SizedBox(width: 8),
+                Text('Calendar Renewal Status'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStatusRow('Service Active', status['isActive'] ?? false),
+                  const SizedBox(height: 8),
+                  _buildStatusRow('Needs Renewal', status['needsRenewal'] ?? true),
+                  const SizedBox(height: 8),
+                  if (status['lastRenewal'] != null) ...[
+                    Text('Last Renewal: ${_formatDateTime(status['lastRenewal'])}'),
+                    const SizedBox(height: 8),
+                  ],
+                  if (status['nextRenewal'] != null) ...[
+                    Text('Next Renewal: ${_formatDateTime(status['nextRenewal'])}'),
+                    const SizedBox(height: 8),
+                  ],
+                  if (status['daysSinceRenewal'] != null) ...[
+                    Text('Days Since Last Renewal: ${status['daysSinceRenewal']}'),
+                    const SizedBox(height: 16),
+                  ],
+                  const Text(
+                    'Calendar events are automatically renewed every 30 days to ensure your habits continue syncing to your calendar.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                  if (status['error'] != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Text(
+                        'Error: ${status['error']}',
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+              if (status['needsRenewal'] == true)
+                ElevatedButton(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await _performManualRenewal();
+                  },
+                  child: const Text('Renew Now'),
+                ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error showing calendar renewal status', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading renewal status: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildStatusRow(String label, bool status) {
+    return Row(
+      children: [
+        Icon(
+          status ? Icons.check_circle : Icons.cancel,
+          color: status ? Colors.green : Colors.red,
+          size: 16,
+        ),
+        const SizedBox(width: 8),
+        Text(label),
+      ],
+    );
+  }
+
+  String _formatDateTime(String? isoString) {
+    if (isoString == null) return 'Unknown';
+    try {
+      final dateTime = DateTime.parse(isoString);
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return 'Invalid date';
+    }
+  }
+
+  /// Perform manual calendar renewal
+  Future<void> _performManualRenewal() async {
+    try {
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 16),
+                Text('Renewing calendar events...'),
+              ],
+            ),
+            duration: Duration(seconds: 10),
+          ),
+        );
+      }
+
+      await CalendarRenewalService.forceRenewal();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Calendar renewal completed successfully! 📅'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error performing manual renewal', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Renewal failed: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }

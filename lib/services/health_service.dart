@@ -13,66 +13,55 @@ import 'logging_service.dart';
 /// - Allowing users to revoke permissions at any time
 /// - Supporting background health data access for continuous monitoring
 /// 
-/// Android 16 Health Data Types Supported:
+/// Android 16 Health Data Types Supported (Essential Set Only):
 /// 
 /// Core Fitness & Activity:
 /// - STEPS: Correlate walking/running habits with actual step counts
 /// - ACTIVE_ENERGY_BURNED: Track energy expenditure for fitness habits
-/// - DISTANCE_DELTA: Monitor distance-based exercise habits
-/// - WORKOUT: Automatically detect and complete fitness habits
-/// - ACTIVITY_INTENSITY: Analyze workout intensity patterns
-/// 
-/// Vital Signs & Health Monitoring:
-/// - HEART_RATE: Monitor workout intensity and resting heart rate trends
-/// - BLOOD_PRESSURE: Track cardiovascular health for related habits
-/// - BLOOD_GLUCOSE: Support diabetes management habits
-/// - BODY_TEMPERATURE: Monitor health status for wellness habits
 /// 
 /// Sleep & Recovery:
-/// - SLEEP_IN_BED, SLEEP_ASLEEP, SLEEP_AWAKE: Comprehensive sleep analysis
-/// - SLEEP_DEEP, SLEEP_LIGHT, SLEEP_REM: Sleep quality optimization
+/// - SLEEP_IN_BED: Sleep duration tracking for sleep habits
 /// 
 /// Nutrition & Hydration:
 /// - WATER: Support hydration habit tracking and reminders
-/// - NUTRITION: Track dietary habits and nutritional goals
 /// 
 /// Mental Health & Wellness:
 /// - MINDFULNESS: Track meditation and mindfulness habit completion
 /// 
 /// Body Metrics:
-/// - WEIGHT, HEIGHT, BODY_FAT_PERCENTAGE: Support body composition habits
+/// - WEIGHT: Support weight management habits
 /// 
-/// Background Access:
-/// - READ_HEALTH_DATA_IN_BACKGROUND: Continuous monitoring for habit automation
+/// Note: This service only requests the minimal essential data types to reduce
+/// permission complexity while maintaining core functionality.
 class HealthService {
   static bool _isInitialized = false;
 
   /// Get platform-specific health data types
   /// Only requests permissions for data types that are actually used by the app
-  /// Minimized to reduce excessive permissions in Health Connect
+  /// Further optimized to only include data types with active usage in the codebase
   static List<HealthDataType> get _healthDataTypes {
     if (Platform.isAndroid) {
-      // Android Health Connect - minimal essential data types only
-      // Reduced from 11 to 6 core types to minimize permission requests
+      // Android Health Connect - essential data types only
+      // 6 core types that are actively used in the app
       return [
-        // Core fitness data - essential for habit tracking
-        HealthDataType.STEPS,                    // Primary fitness metric
-        HealthDataType.ACTIVE_ENERGY_BURNED,     // Exercise intensity tracking
+        // Core fitness data - actively used in getTodayHealthSummary and getHealthInsights
+        HealthDataType.STEPS,                    // Primary fitness metric - actively used
+        HealthDataType.ACTIVE_ENERGY_BURNED,     // Exercise tracking - actively used
         
-        // Sleep data - for sleep habit optimization
-        HealthDataType.SLEEP_IN_BED,             // Sleep duration tracking
+        // Sleep data - actively used in getSleepData and insights
+        HealthDataType.SLEEP_IN_BED,             // Sleep duration tracking - actively used
         
-        // Hydration tracking - for water intake habits
-        HealthDataType.WATER,                    // Hydration habits
+        // Hydration tracking - actively used in getWaterData and insights
+        HealthDataType.WATER,                    // Hydration habits - actively used
         
-        // Mental wellness - for meditation habits
-        HealthDataType.MINDFULNESS,              // Meditation tracking
+        // Mental wellness - actively used in getTodayHealthSummary and insights
+        HealthDataType.MINDFULNESS,              // Meditation tracking - actively used
         
-        // Basic body metrics - for weight management habits
-        HealthDataType.WEIGHT,                   // Weight tracking habits
+        // Basic body metrics - actively used in getTodayHealthSummary and insights
+        HealthDataType.WEIGHT,                   // Weight tracking habits - actively used
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - same minimal essential data types
+      // iOS HealthKit - same essential data types
       return [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
@@ -82,11 +71,12 @@ class HealthService {
         HealthDataType.WEIGHT,
       ];
     } else {
-      // Other platforms - minimal set
+      // Other platforms - minimal set focused on most common data
       return [
         HealthDataType.STEPS,
-        HealthDataType.SLEEP_IN_BED,
         HealthDataType.WATER,
+        HealthDataType.MINDFULNESS,
+        HealthDataType.WEIGHT,
       ];
     }
   }
@@ -212,9 +202,9 @@ class HealthService {
         
         AppLogger.info('Health permissions: $grantedCount/${_healthDataTypes.length} granted');
         
-        // Consider it successful if we have at least 2 permissions including STEPS
-        // With the reduced set of 6 permissions, having 2+ is reasonable
-        return grantedCount >= 2;
+        // Consider it successful if we have at least 3 permissions including STEPS
+        // With the set of 6 permissions, having 3+ is reasonable for basic functionality
+        return grantedCount >= 3;
       }
       
       return false;
@@ -394,7 +384,7 @@ class HealthService {
 
 
 
-  /// Get weight data for a date range (only approved body metric)
+  /// Get weight data for a date range
   static Future<List<HealthDataPoint>> getWeightData({
     required DateTime startDate,
     required DateTime endDate,
@@ -405,7 +395,7 @@ class HealthService {
 
     try {
       final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
-        types: [HealthDataType.WEIGHT], // Only use approved weight data type
+        types: [HealthDataType.WEIGHT],
         startTime: startDate,
         endTime: endDate,
       );
@@ -592,20 +582,16 @@ class HealthService {
       );
       
       double? latestWeight;
-      double? latestBodyFat;
       
       for (var point in bodyMetricsData) {
         if (point.value is NumericHealthValue) {
           if (point.type == HealthDataType.WEIGHT) {
             latestWeight = (point.value as NumericHealthValue).numericValue.toDouble();
-          } else if (point.type == HealthDataType.BODY_FAT_PERCENTAGE) {
-            latestBodyFat = (point.value as NumericHealthValue).numericValue.toDouble();
           }
         }
       }
       
       if (latestWeight != null) summary['weight'] = latestWeight;
-      if (latestBodyFat != null) summary['bodyFatPercentage'] = latestBodyFat;
 
       AppLogger.info('Health summary generated: $summary');
     } catch (e) {
@@ -647,7 +633,7 @@ class HealthService {
       final List<double> sleepDurations = [];
 
       for (var point in sleepData) {
-        if (point.type == HealthDataType.SLEEP_ASLEEP && point.value is NumericHealthValue) {
+        if (point.type == HealthDataType.SLEEP_IN_BED && point.value is NumericHealthValue) {
           final hours = (point.value as NumericHealthValue).numericValue.toDouble();
           sleepDurations.add(hours);
         }
@@ -1003,6 +989,39 @@ class HealthService {
       return false;
     } catch (e) {
       AppLogger.error('Failed to check Health Connect availability', e);
+      return false;
+    }
+  }
+
+  /// Open Health Connect settings
+  static Future<bool> openHealthConnectSettings() async {
+    try {
+      if (!Platform.isAndroid) {
+        AppLogger.info('Health Connect settings only available on Android');
+        return false;
+      }
+
+      // Try to open Health Connect settings
+      const url = 'package:com.google.android.apps.healthdata';
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(Uri.parse(url));
+        AppLogger.info('Health Connect settings opened successfully');
+        return true;
+      } else {
+        AppLogger.warning('Health Connect app not found, trying alternative');
+        // Fallback to general app settings
+        const settingsUrl = 'package:com.android.settings';
+        if (await canLaunchUrl(Uri.parse(settingsUrl))) {
+          await launchUrl(Uri.parse(settingsUrl));
+          AppLogger.info('Android settings opened as fallback');
+          return true;
+        }
+      }
+      
+      AppLogger.warning('Could not open Health Connect or Android settings');
+      return false;
+    } catch (e) {
+      AppLogger.error('Error opening Health Connect settings', e);
       return false;
     }
   }
