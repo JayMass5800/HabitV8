@@ -890,6 +890,7 @@ class HabitCompletionResult {
   String? healthDataType;
   dynamic healthValue;
   dynamic threshold;
+  double confidence;
   String? error;
   
   HabitCompletionResult({
@@ -900,6 +901,7 @@ class HabitCompletionResult {
     this.healthDataType,
     this.healthValue,
     this.threshold,
+    this.confidence = 0.0,
     this.error,
   });
 }
