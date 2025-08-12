@@ -312,8 +312,8 @@ class HealthService {
     }
   }
 
-  /// Get heart rate data for a date range
-  static Future<List<HealthDataPoint>> getHeartRateData({
+  /// Get active energy burned data for a date range
+  static Future<List<HealthDataPoint>> getActiveEnergyData({
     required DateTime startDate,
     required DateTime endDate,
   }) async {
@@ -323,15 +323,15 @@ class HealthService {
 
     try {
       final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
-        types: [HealthDataType.HEART_RATE],
+        types: [HealthDataType.ACTIVE_ENERGY_BURNED],
         startTime: startDate,
         endTime: endDate,
       );
 
-      AppLogger.info('Retrieved ${healthData.length} heart rate data points');
+      AppLogger.info('Retrieved ${healthData.length} active energy data points');
       return healthData;
     } catch (e) {
-      AppLogger.error('Failed to get heart rate data', e);
+      AppLogger.error('Failed to get active energy data', e);
       return [];
     }
   }
@@ -347,7 +347,7 @@ class HealthService {
 
     try {
       final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
-        types: [HealthDataType.SLEEP_IN_BED, HealthDataType.SLEEP_ASLEEP],
+        types: [HealthDataType.SLEEP_IN_BED], // Only use approved sleep data type
         startTime: startDate,
         endTime: endDate,
       );
@@ -360,29 +360,7 @@ class HealthService {
     }
   }
 
-  /// Get exercise/workout data for a date range
-  static Future<List<HealthDataPoint>> getExerciseData({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    if (!_isInitialized) {
-      await initialize();
-    }
 
-    try {
-      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
-        types: [HealthDataType.EXERCISE_TIME, HealthDataType.WORKOUT],
-        startTime: startDate,
-        endTime: endDate,
-      );
-
-      AppLogger.info('Retrieved ${healthData.length} exercise data points');
-      return healthData;
-    } catch (e) {
-      AppLogger.error('Failed to get exercise data', e);
-      return [];
-    }
-  }
 
   /// Get water intake data for a date range
   static Future<List<HealthDataPoint>> getWaterData({
@@ -408,8 +386,16 @@ class HealthService {
     }
   }
 
-  /// Get blood pressure data for a date range
-  static Future<List<HealthDataPoint>> getBloodPressureData({
+
+
+
+
+
+
+
+
+  /// Get weight data for a date range (only approved body metric)
+  static Future<List<HealthDataPoint>> getWeightData({
     required DateTime startDate,
     required DateTime endDate,
   }) async {
@@ -419,115 +405,15 @@ class HealthService {
 
     try {
       final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
-        types: [HealthDataType.BLOOD_PRESSURE_SYSTOLIC, HealthDataType.BLOOD_PRESSURE_DIASTOLIC],
+        types: [HealthDataType.WEIGHT], // Only use approved weight data type
         startTime: startDate,
         endTime: endDate,
       );
 
-      AppLogger.info('Retrieved ${healthData.length} blood pressure data points');
+      AppLogger.info('Retrieved ${healthData.length} weight data points');
       return healthData;
     } catch (e) {
-      AppLogger.error('Failed to get blood pressure data', e);
-      return [];
-    }
-  }
-
-  /// Get blood glucose data for a date range
-  static Future<List<HealthDataPoint>> getBloodGlucoseData({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    if (!_isInitialized) {
-      await initialize();
-    }
-
-    try {
-      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
-        types: [HealthDataType.BLOOD_GLUCOSE],
-        startTime: startDate,
-        endTime: endDate,
-      );
-
-      AppLogger.info('Retrieved ${healthData.length} blood glucose data points');
-      return healthData;
-    } catch (e) {
-      AppLogger.error('Failed to get blood glucose data', e);
-      return [];
-    }
-  }
-
-  /// Get body temperature data for a date range
-  static Future<List<HealthDataPoint>> getBodyTemperatureData({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    if (!_isInitialized) {
-      await initialize();
-    }
-
-    try {
-      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
-        types: [HealthDataType.BODY_TEMPERATURE],
-        startTime: startDate,
-        endTime: endDate,
-      );
-
-      AppLogger.info('Retrieved ${healthData.length} body temperature data points');
-      return healthData;
-    } catch (e) {
-      AppLogger.error('Failed to get body temperature data', e);
-      return [];
-    }
-  }
-
-  /// Get nutrition data for a date range
-  static Future<List<HealthDataPoint>> getNutritionData({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    if (!_isInitialized) {
-      await initialize();
-    }
-
-    try {
-      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
-        types: [HealthDataType.NUTRITION],
-        startTime: startDate,
-        endTime: endDate,
-      );
-
-      AppLogger.info('Retrieved ${healthData.length} nutrition data points');
-      return healthData;
-    } catch (e) {
-      AppLogger.error('Failed to get nutrition data', e);
-      return [];
-    }
-  }
-
-  /// Get body metrics data (weight, height, body fat) for a date range
-  static Future<List<HealthDataPoint>> getBodyMetricsData({
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    if (!_isInitialized) {
-      await initialize();
-    }
-
-    try {
-      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
-        types: [
-          HealthDataType.WEIGHT,
-          HealthDataType.HEIGHT,
-          HealthDataType.BODY_FAT_PERCENTAGE,
-        ],
-        startTime: startDate,
-        endTime: endDate,
-      );
-
-      AppLogger.info('Retrieved ${healthData.length} body metrics data points');
-      return healthData;
-    } catch (e) {
-      AppLogger.error('Failed to get body metrics data', e);
+      AppLogger.error('Failed to get weight data', e);
       return [];
     }
   }
@@ -578,18 +464,18 @@ class HealthService {
       }
       summary['steps'] = totalSteps;
 
-      // Get exercise time
-      final exerciseData = await getExerciseData(
+      // Get active energy burned (approved data type)
+      final activeEnergyData = await getActiveEnergyData(
         startDate: startOfDay,
         endDate: endOfDay,
       );
-      double totalExerciseMinutes = 0;
-      for (var point in exerciseData) {
+      double totalActiveEnergy = 0;
+      for (var point in activeEnergyData) {
         if (point.value is NumericHealthValue) {
-          totalExerciseMinutes += (point.value as NumericHealthValue).numericValue;
+          totalActiveEnergy += (point.value as NumericHealthValue).numericValue;
         }
       }
-      summary['exerciseMinutes'] = totalExerciseMinutes.round();
+      summary['activeEnergyBurned'] = totalActiveEnergy.round();
 
       // Get water intake
       final waterData = await getWaterData(
