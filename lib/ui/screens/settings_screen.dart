@@ -78,10 +78,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
       final permissionService = PermissionService();
 
       final notificationStatus = await permissionService.isNotificationPermissionGranted();
-      final healthStatus = await permissionService.isHealthPermissionGranted();
       
       // Load calendar sync status using the calendar service
       final calendarSyncEnabled = await CalendarService.isCalendarSyncEnabled();
+
+      // Load health sync preference and verify actual permissions
+      final healthSyncPreference = await _loadHealthSyncPreference();
+      bool healthStatus = false;
+      
+      if (healthSyncPreference) {
+        // If user previously enabled health sync, check if permissions are still valid
+        healthStatus = await permissionService.isHealthPermissionGranted();
+        
+        // If permissions were revoked externally, update the preference
+        if (!healthStatus) {
+          await _saveHealthSyncPreference(false);
+        }
+      }
 
       setState(() {
         _notificationsEnabled = notificationStatus;
@@ -123,6 +136,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
     }
   }
 
+  /// Save health sync preference
+  Future<void> _saveHealthSyncPreference(bool enabled) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('health_sync_enabled', enabled);
+      AppLogger.info('Health sync preference saved: $enabled');
+    } catch (e) {
+      AppLogger.error('Error saving health sync preference', e);
+    }
+  }
+
+  /// Load health sync preference
+  Future<bool> _loadHealthSyncPreference() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool('health_sync_enabled') ?? false;
+    } catch (e) {
+      AppLogger.error('Error loading health sync preference', e);
+      return false;
+    }
+  }
+
   /// Refresh health permissions status
   /// This is called when the app resumes to check if permissions were granted externally
   Future<void> _refreshHealthPermissions() async {
@@ -138,6 +173,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
           _healthDataSync = hasPermissions;
         });
         
+        // Update the saved preference to match the actual permission state
+        await _saveHealthSyncPreference(hasPermissions);
+        
         if (hasPermissions) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -146,12 +184,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
               duration: Duration(seconds: 3),
             ),
           );
+        } else {
+          // Permissions were revoked externally
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Health permissions were revoked. Health data sync is now disabled.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
         }
         
         AppLogger.info('Health permissions status updated: $hasPermissions');
+      } else if (mounted) {
+        // Even if state didn't change, show feedback that refresh was performed
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Health permissions refreshed. Status: ${hasPermissions ? 'Enabled' : 'Disabled'}'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     } catch (e) {
       AppLogger.error('Error refreshing health permissions', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error refreshing health permissions. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -594,13 +658,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
         if (!hasPermissions) {
           // Request health permissions if not already granted
           hasPermissions = await HealthService.requestPermissions();
+          
+          // If permissions were requested but not immediately granted,
+          // they might have been granted in Health Connect but need time to sync
+          if (!hasPermissions) {
+            // Wait a bit longer and check again
+            await Future.delayed(const Duration(seconds: 1));
+            hasPermissions = await HealthService.refreshPermissions();
+          }
         }
         
+        // Update UI state immediately
         setState(() {
           _healthDataSync = hasPermissions;
         });
 
         if (hasPermissions) {
+          // Save the health sync preference to persist across app restarts
+          await _saveHealthSyncPreference(true);
+          
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -615,7 +691,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
               SnackBar(
                 content: const Text('Health permissions are required for this feature. Please grant permissions in Health Connect and return to the app.'),
                 backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 5),
+                duration: const Duration(seconds: 8),
                 action: SnackBarAction(
                   label: 'Open Settings',
                   onPressed: () => _openHealthConnectSettings(),
@@ -637,6 +713,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
         }
       }
     } else {
+      // Save the disabled preference
+      await _saveHealthSyncPreference(false);
+      
       setState(() {
         _healthDataSync = false;
       });

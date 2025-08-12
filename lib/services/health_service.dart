@@ -53,6 +53,7 @@ class HealthService {
   static List<HealthDataType> get _healthDataTypes {
     if (Platform.isAndroid) {
       // Android Health Connect - only essential data types actually used by the app
+      // Note: Health Connect may show additional derived metrics, but we only request these core types
       return [
         // Core fitness data - used in insights and habit correlation
         HealthDataType.STEPS,                    // Used in getTodayHealthSummary()
@@ -187,15 +188,48 @@ class HealthService {
   }
 
   /// Check if health permissions are granted
+  /// Returns true if at least the minimum required permissions are available
   static Future<bool> hasPermissions() async {
     if (!_isInitialized) {
       await initialize();
     }
 
     try {
-      final bool? hasPerms = await Health().hasPermissions(_healthDataTypes);
-      AppLogger.info('Health permissions check result: $hasPerms');
-      return hasPerms ?? false;
+      // First check if all permissions are granted
+      final bool? hasAllPerms = await Health().hasPermissions(_healthDataTypes);
+      AppLogger.info('Health permissions check result (all): $hasAllPerms');
+      
+      if (hasAllPerms == true) {
+        return true;
+      }
+      
+      // If not all permissions are granted, check for minimum required permissions
+      // At least STEPS permission is required for basic functionality
+      final List<HealthDataType> minimumRequired = [HealthDataType.STEPS];
+      final bool? hasMinimumPerms = await Health().hasPermissions(minimumRequired);
+      AppLogger.info('Health permissions check result (minimum): $hasMinimumPerms');
+      
+      if (hasMinimumPerms == true) {
+        // Check how many permissions we actually have
+        int grantedCount = 0;
+        for (final type in _healthDataTypes) {
+          try {
+            final bool? hasIndividual = await Health().hasPermissions([type]);
+            if (hasIndividual == true) {
+              grantedCount++;
+            }
+          } catch (e) {
+            AppLogger.warning('Error checking individual permission for $type: $e');
+          }
+        }
+        
+        AppLogger.info('Health permissions: $grantedCount/${_healthDataTypes.length} granted');
+        
+        // Consider it successful if we have at least 3 permissions including STEPS
+        return grantedCount >= 3;
+      }
+      
+      return false;
     } catch (e) {
       AppLogger.error('Error checking health permissions', e);
       return false;
