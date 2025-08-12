@@ -796,7 +796,7 @@ class HealthHabitAnalyticsService {
         }
         
         if (isInPeriod == duringStreaks && point.value is NumericHealthValue) {
-          relevantData.add((point.value as NumericHealthValue).numericValue);
+          relevantData.add((point.value as NumericHealthValue).numericValue.toDouble());
         }
       }
       

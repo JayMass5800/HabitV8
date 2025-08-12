@@ -791,7 +791,7 @@ class HealthHabitUIService {
           if (!healthByType.containsKey(typeName)) {
             healthByType[typeName] = [];
           }
-          healthByType[typeName]!.add((point.value as NumericHealthValue).numericValue);
+          healthByType[typeName]!.add((point.value as NumericHealthValue).numericValue.toDouble());
         }
       }
       
