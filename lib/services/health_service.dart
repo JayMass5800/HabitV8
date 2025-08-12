@@ -49,55 +49,42 @@ class HealthService {
 
   /// Get platform-specific health data types
   /// Only requests permissions for data types that are actually used by the app
-  /// to comply with Play Store requirements and user privacy expectations
+  /// Minimized to reduce excessive permissions in Health Connect
   static List<HealthDataType> get _healthDataTypes {
     if (Platform.isAndroid) {
-      // Android Health Connect - only essential data types actually used by the app
-      // Note: Health Connect may show additional derived metrics, but we only request these core types
+      // Android Health Connect - minimal essential data types only
+      // Reduced from 11 to 6 core types to minimize permission requests
       return [
-        // Core fitness data - used in insights and habit correlation
-        HealthDataType.STEPS,                    // Used in getTodayHealthSummary()
-        HealthDataType.ACTIVE_ENERGY_BURNED,     // Used for fitness habit insights
-        HealthDataType.WORKOUT,                  // Used in getExerciseData()
+        // Core fitness data - essential for habit tracking
+        HealthDataType.STEPS,                    // Primary fitness metric
+        HealthDataType.ACTIVE_ENERGY_BURNED,     // Exercise intensity tracking
         
-        // Heart rate - used for workout intensity monitoring
-        HealthDataType.HEART_RATE,               // Used in getTodayHealthSummary()
+        // Sleep data - for sleep habit optimization
+        HealthDataType.SLEEP_IN_BED,             // Sleep duration tracking
         
-        // Hydration tracking - used for water intake habits
-        HealthDataType.WATER,                    // Used in getTodayHealthSummary()
+        // Hydration tracking - for water intake habits
+        HealthDataType.WATER,                    // Hydration habits
         
-        // Mental health - used for meditation habit tracking
-        HealthDataType.MINDFULNESS,              // Used in getTodayHealthSummary()
+        // Mental wellness - for meditation habits
+        HealthDataType.MINDFULNESS,              // Meditation tracking
         
-        // Body metrics - used for health tracking habits
-        HealthDataType.WEIGHT,                   // Used in getBodyMetricsData()
-        HealthDataType.HEIGHT,                   // Used in getBodyMetricsData()
-        HealthDataType.BODY_FAT_PERCENTAGE,      // Used in getBodyMetricsData()
-        
-        // Sleep data - basic sleep tracking for sleep habits
-        HealthDataType.SLEEP_IN_BED,             // Used in getSleepData()
-        HealthDataType.SLEEP_ASLEEP,             // Used in getSleepData()
+        // Basic body metrics - for weight management habits
+        HealthDataType.WEIGHT,                   // Weight tracking habits
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - same essential data types
+      // iOS HealthKit - same minimal essential data types
       return [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.WORKOUT,
-        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
         HealthDataType.WATER,
         HealthDataType.MINDFULNESS,
         HealthDataType.WEIGHT,
-        HealthDataType.HEIGHT,
-        HealthDataType.BODY_FAT_PERCENTAGE,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.SLEEP_ASLEEP,
       ];
     } else {
       // Other platforms - minimal set
       return [
         HealthDataType.STEPS,
-        HealthDataType.HEART_RATE,
         HealthDataType.SLEEP_IN_BED,
         HealthDataType.WATER,
       ];
@@ -225,8 +212,9 @@ class HealthService {
         
         AppLogger.info('Health permissions: $grantedCount/${_healthDataTypes.length} granted');
         
-        // Consider it successful if we have at least 3 permissions including STEPS
-        return grantedCount >= 3;
+        // Consider it successful if we have at least 2 permissions including STEPS
+        // With the reduced set of 6 permissions, having 2+ is reasonable
+        return grantedCount >= 2;
       }
       
       return false;

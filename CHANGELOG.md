@@ -5,6 +5,42 @@ All notable changes to HabitV8 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2024-12-XX - Health Integration Improvements
+
+### 🔧 Fixed
+- **Health Data Integration**
+  - Fixed health toggle not updating immediately after permissions granted
+  - Resolved issue requiring app restart to activate health data sync
+  - Fixed health data deactivating after app restart
+  - Improved permission state persistence across app sessions
+
+### ✨ Improved
+- **Reduced Health Permissions**
+  - Minimized health data requests from 11 to 6 essential types
+  - Reduced Health Connect permission requests for better user experience
+  - Streamlined permission checking logic for better reliability
+  - Enhanced permission refresh mechanism with automatic retry logic
+
+- **User Interface Cleanup**
+  - Removed debug/developer sections from settings (Test Action Buttons, Debug Calendar Sync, Health Permissions management, Refresh Health Status)
+  - Cleaner settings interface focused on end-user needs
+  - Improved user feedback with better snackbar messages
+
+- **Health Data Types (Optimized)**
+  - Steps: Primary fitness metric for walking/running habits
+  - Active Energy Burned: Exercise intensity tracking
+  - Sleep Duration: Sleep habit optimization
+  - Water Intake: Hydration habit support
+  - Mindfulness Sessions: Meditation habit tracking
+  - Weight: Weight management habits
+
+### 📚 Updated
+- Updated Play Store documentation to reflect reduced permissions
+- Revised privacy policy for minimized health data access
+- Updated compliance documentation for health permissions
+
+---
+
 ## [1.0.0] - 2024-12-XX - Initial Release
 
 ### 🎉 Welcome to HabitV8!

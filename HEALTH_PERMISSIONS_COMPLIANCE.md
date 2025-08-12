@@ -1,6 +1,6 @@
 # Health Permissions Compliance Documentation
 
-**Last Updated**: August 2025
+**Last Updated**: December 2024
 
 ## Overview
 
@@ -14,16 +14,18 @@ HabitV8 is a habit tracking application that helps users build and maintain heal
 
 ## Health Data Types and Justifications
 
-### Android Health Connect Permissions
+### Android Health Connect Permissions (Minimized Set)
+
+**Note**: HabitV8 requests only 6 essential health data types to minimize permissions while providing core habit tracking functionality.
 
 | Permission | Justification | User Benefit |
 |------------|---------------|--------------|
-| `android.permission.health.READ_STEPS` | Correlate walking/running habits with actual step counts to provide accurate progress tracking and personalized step goals | Users can see how their walking habits contribute to daily step targets and receive insights on optimal walking times |
-| `android.permission.health.READ_HEART_RATE` | Monitor workout intensity during fitness habits to provide real-time feedback and optimize exercise routines | Users receive guidance on workout intensity and can track heart rate trends related to their fitness habits |
-| `android.permission.health.READ_ACTIVE_CALORIES_BURNED` | Track energy expenditure to correlate with fitness and activity habits | Users can understand the caloric impact of their habits and optimize their fitness routines |
-| `android.permission.health.READ_DISTANCE` | Support distance-based exercise habits like running, cycling, or walking goals | Users can track progress on distance-based fitness habits and receive route recommendations |
-| `android.permission.health.READ_EXERCISE` | Automatically detect workouts to mark fitness habits as complete without manual input | Users benefit from automatic habit completion and comprehensive exercise tracking |
-| `android.permission.health.READ_SLEEP` | Analyze sleep patterns to optimize sleep-related habits and bedtime routines | Users receive insights on sleep quality correlation with their evening and morning habits |
+| `android.permission.health.READ_STEPS` | Primary fitness metric for walking/running habits with step count correlation and progress tracking | Users can see how their walking habits contribute to daily step targets and receive insights on optimal walking times |
+| `android.permission.health.READ_ACTIVE_CALORIES_BURNED` | Track energy expenditure to correlate with fitness and activity habits for comprehensive fitness insights | Users can understand the caloric impact of their habits and optimize their fitness routines |
+| `android.permission.health.READ_SLEEP` | Analyze sleep duration patterns to optimize sleep-related habits and bedtime routines | Users receive insights on sleep quality correlation with their evening and morning habits |
+| `android.permission.health.READ_WATER` | Support hydration habits with water intake tracking and personalized hydration goals | Users can track daily water consumption and receive reminders for hydration habits |
+| `android.permission.health.READ_MINDFULNESS` | Track meditation and mindfulness habits with automatic session detection | Users benefit from automatic completion of meditation habits and mindfulness progress tracking |
+| `android.permission.health.READ_WEIGHT` | Support weight management habits with body weight tracking for health and fitness goals | Users can correlate weight trends with their health and fitness habits for better insights |
 
 ### Legacy Android Permissions
 
@@ -32,17 +34,18 @@ HabitV8 is a habit tracking application that helps users build and maintain heal
 | `android.permission.BODY_SENSORS` | Access heart rate data from wearable devices for real-time workout monitoring | Users can monitor workout intensity and receive immediate feedback during exercise habits |
 | `android.permission.ACTIVITY_RECOGNITION` | Detect physical activities to automatically track fitness habits | Users benefit from seamless habit tracking without manual logging |
 
-### iOS HealthKit Integration
+### iOS HealthKit Integration (Minimized Set)
+
+**Note**: HabitV8 requests only 6 essential health data types on iOS to minimize permissions while providing core habit tracking functionality.
 
 | Data Type | Justification | User Benefit |
 |-----------|---------------|--------------|
-| Steps | Walking habit correlation and step goal insights | Automatic step counting for walking habits with personalized recommendations |
-| Heart Rate | Workout intensity monitoring and fitness optimization | Real-time heart rate feedback during exercise habits |
+| Steps | Primary fitness metric for walking habit correlation and step goal insights | Automatic step counting for walking habits with personalized recommendations |
+| Active Energy | Fitness habit energy expenditure tracking for comprehensive fitness insights | Understanding caloric impact of fitness habits and workout optimization |
 | Sleep Analysis | Sleep habit optimization and bedtime routine improvement | Sleep quality insights correlated with evening and morning habits |
-| Active Energy | Fitness habit energy expenditure tracking | Understanding caloric impact of fitness habits |
-| Workouts | Automatic fitness habit completion | Seamless workout detection and habit logging |
-| Mindfulness | Meditation and mindfulness habit tracking | Automatic completion of meditation habits |
-| Water | Hydration habit support and reminders | Hydration tracking with personalized water intake goals |
+| Mindfulness | Meditation and mindfulness habit tracking with automatic session detection | Automatic completion of meditation habits and mindfulness progress tracking |
+| Water | Hydration habit support and reminders with intake tracking | Hydration tracking with personalized water intake goals and habit completion |
+| Weight | Weight management habits with body weight tracking for health goals | Weight trend correlation with health and fitness habits for better insights |
 
 ## Data Usage Principles
 

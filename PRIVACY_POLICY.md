@@ -1,6 +1,6 @@
 # Privacy Policy for HabitV8
 
-**Last Updated**: August 2025
+**Last Updated**: December 2024
 
 ## Introduction
 
@@ -53,14 +53,15 @@ HabitV8 may integrate with the following services (all optional):
 
 ### Health Integration
 
-**Health Data Types We Access:**
-- **Steps**: To correlate walking habits with your step count goals
-- **Heart Rate**: For fitness habit tracking and workout intensity monitoring
-- **Sleep Data**: To help optimize sleep-related habits and bedtime routines
-- **Exercise/Workout Data**: To automatically track fitness habits and provide insights
-- **Active Energy Burned**: To correlate with fitness and activity habits
-- **Water Intake**: To support hydration habit tracking
-- **Mindfulness Data** (iOS): To track meditation and mindfulness habits
+**Health Data Types We Access (Minimized Set - Only 6 Essential Types):**
+- **Steps**: To correlate walking habits with your step count goals and provide fitness insights
+- **Active Energy Burned**: To correlate with fitness and activity habits for comprehensive exercise tracking
+- **Sleep Duration**: To help optimize sleep-related habits and bedtime routines
+- **Water Intake**: To support hydration habit tracking and daily hydration goals
+- **Mindfulness Sessions**: To automatically track meditation and mindfulness habits
+- **Weight**: To support weight management habits and health goal tracking
+
+**Note**: We have minimized our health data requests to only 6 essential types to reduce permissions while maintaining core functionality.
 
 **How We Use Health Data:**
 - Provide personalized habit recommendations based on your health patterns

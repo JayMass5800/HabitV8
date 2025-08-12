@@ -297,13 +297,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 onChanged: (value) => _toggleNotifications(value),
                 secondary: const Icon(Icons.notifications),
               ),
-              if (_notificationsEnabled)
-                _SettingsTile(
-                  title: 'Test Action Buttons',
-                  subtitle: 'Test notification Complete/Snooze buttons',
-                  leading: const Icon(Icons.notification_add),
-                  onTap: () => _testNotifications(),
-                ),
+
             ],
           ),
           const SizedBox(height: 24),
@@ -324,13 +318,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                   leading: const Icon(Icons.calendar_month),
                   onTap: () => _showCalendarSelection(),
                 ),
-              if (_calendarSync)
-                _SettingsTile(
-                  title: 'Debug Calendar Sync',
-                  subtitle: 'Check calendar sync status and logs',
-                  leading: const Icon(Icons.bug_report),
-                  onTap: () => _debugCalendarSync(),
-                ),
+
               SwitchListTile(
                 title: const Text('Health Data'),
                 subtitle: const Text('Connect with health apps for insights'),
@@ -338,20 +326,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 onChanged: (value) => _toggleHealthDataSync(value),
                 secondary: const Icon(Icons.favorite),
               ),
-              if (_healthDataSync)
-                _SettingsTile(
-                  title: 'Health Permissions',
-                  subtitle: 'Manage health data access',
-                  leading: const Icon(Icons.health_and_safety),
-                  onTap: () => _manageHealthPermissions(),
-                ),
-              // Always show refresh button for health permissions
-              _SettingsTile(
-                title: 'Refresh Health Status',
-                subtitle: 'Check if health permissions were granted externally',
-                leading: const Icon(Icons.refresh),
-                onTap: () => _refreshHealthPermissions(),
-              ),
+
             ],
           ),
           const SizedBox(height: 24),

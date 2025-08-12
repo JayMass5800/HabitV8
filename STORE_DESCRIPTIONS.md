@@ -28,12 +28,13 @@ Never miss a habit with our intelligent reminder system that adapts to your sche
 Seamlessly integrate with your device calendar to visualize habit completions alongside your daily schedule. See your progress at a glance with our beautiful calendar view.
 
 **🏥 HEALTH INTEGRATION**
-Connect with HealthKit and Health Connect to enhance your habit tracking experience. We access specific health data types only to support your chosen habits:
+Connect with HealthKit and Health Connect to enhance your habit tracking experience. We access only 6 essential health data types to minimize permissions while providing powerful habit insights:
 • Steps data to automatically track walking/running habits and provide step count insights
-• Heart rate monitoring during workouts to help optimize fitness habits and exercise intensity
-• Sleep data to correlate with sleep hygiene habits and bedtime routines
-• Exercise/workout data to automatically mark fitness habits as complete
-• Water intake tracking to support hydration habits
+• Active energy burned to correlate with fitness habits and exercise intensity
+• Sleep duration to optimize sleep hygiene habits and bedtime routines
+• Water intake tracking to support hydration habits and daily goals
+• Mindfulness sessions to automatically complete meditation habits
+• Weight data to support weight management and health habits
 All health data remains on your device and is used solely to provide personalized habit insights and automatic tracking features.
 
 **🎨 BEAUTIFUL DESIGN**
@@ -104,11 +105,13 @@ Our AI-powered system learns from your behavior patterns to provide personalized
 
 📅 **SEAMLESS INTEGRATIONS**
 • Google Calendar synchronization for habit scheduling
-• Health Connect and Google Fit integration with specific data access:
+• Health Connect and Google Fit integration with minimal permissions (only 6 essential data types):
   - Steps data for walking/running habit tracking and insights
-  - Heart rate monitoring for workout intensity optimization
-  - Sleep data analysis for sleep habit improvement
-  - Water intake tracking for hydration habit support
+  - Active energy burned for fitness habit correlation and exercise optimization
+  - Sleep duration analysis for sleep habit improvement and bedtime routines
+  - Water intake tracking for hydration habit support and daily goals
+  - Mindfulness sessions for automatic meditation habit completion
+  - Weight data for weight management and health habit tracking
 • All health data processed locally with explicit user consent
 • Device calendar integration for habit scheduling and reminders
 

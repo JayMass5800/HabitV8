@@ -75,40 +75,30 @@ class PermissionService {
     List<HealthDataType> types;
     
     if (Platform.isAndroid) {
-      // Android Health Connect - only essential data types actually used by the app
+      // Android Health Connect - minimal essential data types only
+      // Reduced to minimize excessive permissions in Health Connect
       types = [
-        HealthDataType.STEPS,                    // Used in getTodayHealthSummary()
-        HealthDataType.ACTIVE_ENERGY_BURNED,     // Used for fitness habit insights
-        HealthDataType.WORKOUT,                  // Used in getExerciseData()
-        HealthDataType.HEART_RATE,               // Used in getTodayHealthSummary()
-        HealthDataType.WATER,                    // Used in getTodayHealthSummary()
-        HealthDataType.MINDFULNESS,              // Used in getTodayHealthSummary()
-        HealthDataType.WEIGHT,                   // Used in getBodyMetricsData()
-        HealthDataType.HEIGHT,                   // Used in getBodyMetricsData()
-        HealthDataType.BODY_FAT_PERCENTAGE,      // Used in getBodyMetricsData()
-        HealthDataType.SLEEP_IN_BED,             // Used in getSleepData()
-        HealthDataType.SLEEP_ASLEEP,             // Used in getSleepData()
+        HealthDataType.STEPS,                    // Primary fitness metric
+        HealthDataType.ACTIVE_ENERGY_BURNED,     // Exercise intensity tracking
+        HealthDataType.SLEEP_IN_BED,             // Sleep duration tracking
+        HealthDataType.WATER,                    // Hydration habits
+        HealthDataType.MINDFULNESS,              // Meditation tracking
+        HealthDataType.WEIGHT,                   // Weight tracking habits
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - same essential data types
+      // iOS HealthKit - same minimal essential data types
       types = [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.WORKOUT,
-        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
         HealthDataType.WATER,
         HealthDataType.MINDFULNESS,
         HealthDataType.WEIGHT,
-        HealthDataType.HEIGHT,
-        HealthDataType.BODY_FAT_PERCENTAGE,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.SLEEP_ASLEEP,
       ];
     } else {
       // Other platforms - minimal set
       types = [
         HealthDataType.STEPS,
-        HealthDataType.HEART_RATE,
         HealthDataType.SLEEP_IN_BED,
         HealthDataType.WATER,
       ];
@@ -182,40 +172,30 @@ class PermissionService {
     List<HealthDataType> types;
     
     if (Platform.isAndroid) {
-      // Android Health Connect - only essential data types actually used by the app
+      // Android Health Connect - minimal essential data types only
+      // Reduced to minimize excessive permissions in Health Connect
       types = [
-        HealthDataType.STEPS,                    // Used in getTodayHealthSummary()
-        HealthDataType.ACTIVE_ENERGY_BURNED,     // Used for fitness habit insights
-        HealthDataType.WORKOUT,                  // Used in getExerciseData()
-        HealthDataType.HEART_RATE,               // Used in getTodayHealthSummary()
-        HealthDataType.WATER,                    // Used in getTodayHealthSummary()
-        HealthDataType.MINDFULNESS,              // Used in getTodayHealthSummary()
-        HealthDataType.WEIGHT,                   // Used in getBodyMetricsData()
-        HealthDataType.HEIGHT,                   // Used in getBodyMetricsData()
-        HealthDataType.BODY_FAT_PERCENTAGE,      // Used in getBodyMetricsData()
-        HealthDataType.SLEEP_IN_BED,             // Used in getSleepData()
-        HealthDataType.SLEEP_ASLEEP,             // Used in getSleepData()
+        HealthDataType.STEPS,                    // Primary fitness metric
+        HealthDataType.ACTIVE_ENERGY_BURNED,     // Exercise intensity tracking
+        HealthDataType.SLEEP_IN_BED,             // Sleep duration tracking
+        HealthDataType.WATER,                    // Hydration habits
+        HealthDataType.MINDFULNESS,              // Meditation tracking
+        HealthDataType.WEIGHT,                   // Weight tracking habits
       ];
     } else if (Platform.isIOS) {
-      // iOS HealthKit - same essential data types
+      // iOS HealthKit - same minimal essential data types
       types = [
         HealthDataType.STEPS,
         HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.WORKOUT,
-        HealthDataType.HEART_RATE,
+        HealthDataType.SLEEP_IN_BED,
         HealthDataType.WATER,
         HealthDataType.MINDFULNESS,
         HealthDataType.WEIGHT,
-        HealthDataType.HEIGHT,
-        HealthDataType.BODY_FAT_PERCENTAGE,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.SLEEP_ASLEEP,
       ];
     } else {
       // Other platforms - minimal set
       types = [
         HealthDataType.STEPS,
-        HealthDataType.HEART_RATE,
         HealthDataType.SLEEP_IN_BED,
         HealthDataType.WATER,
       ];
@@ -235,8 +215,29 @@ class PermissionService {
       AppLogger.info('Minimum STEPS permission check: $hasStepsPermission');
       
       if (hasStepsPermission) {
-        AppLogger.info('Minimum health permissions satisfied');
-        return true;
+        // Check how many permissions we actually have
+        int grantedCount = 0;
+        for (final type in types) {
+          try {
+            final bool? hasIndividual = await Health().hasPermissions([type]);
+            if (hasIndividual == true) {
+              grantedCount++;
+            }
+          } catch (e) {
+            AppLogger.warning('Error checking individual permission for $type: $e');
+          }
+        }
+        
+        AppLogger.info('Health permissions: $grantedCount/${types.length} granted');
+        
+        // Consider it successful if we have at least 2 permissions including STEPS
+        if (grantedCount >= 2) {
+          AppLogger.info('Sufficient health permissions satisfied');
+          return true;
+        } else {
+          AppLogger.info('Minimum health permissions satisfied (STEPS only)');
+          return true; // Still allow with just STEPS
+        }
       }
       
       return false;
