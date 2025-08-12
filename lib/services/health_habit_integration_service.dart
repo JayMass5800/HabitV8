@@ -795,15 +795,19 @@ class HealthHabitIntegrationService {
       int healthMappedHabits = 0;
       final habitMappings = <String, dynamic>{};
       
-      for (final habit in habits) {
-        final mapping = _getHealthMappingForHabit(habit);
-        if (mapping.isNotEmpty) {
-          healthMappedHabits++;
-          habitMappings[habit.id] = {
-            'name': habit.name,
-            'mapping': mapping,
-          };
-        }
+      // Use the new mapping service for better analysis
+      final mappableHabits = await HealthHabitMappingService.getMappableHabits(habits);
+      healthMappedHabits = mappableHabits.length;
+      
+      for (final mapping in mappableHabits) {
+        final habit = habits.firstWhere((h) => h.id == mapping.habitId);
+        habitMappings[habit.id] = {
+          'name': habit.name,
+          'healthDataType': mapping.healthDataType.name,
+          'threshold': mapping.threshold,
+          'unit': mapping.unit,
+          'relevanceScore': mapping.relevanceScore,
+        };
       }
       
       status['totalHabits'] = habits.length;
