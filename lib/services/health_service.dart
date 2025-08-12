@@ -767,6 +767,31 @@ class HealthService {
     }
   }
 
+  /// Get health data for specific types within a date range
+  static Future<List<HealthDataPoint>> getHealthDataFromTypes({
+    required List<HealthDataType> types,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: types,
+        startTime: startTime,
+        endTime: endTime,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} health data points for ${types.length} types');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get health data for specific types', e);
+      return [];
+    }
+  }
+
   /// Get health data correlation for habit analysis
   static Future<Map<String, List<HealthDataPoint>>> getHealthDataByType({
     required DateTime startDate,

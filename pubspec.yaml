@@ -52,9 +52,9 @@ dependencies:
   shared_preferences: ^2.2.2
   timezone: ^0.9.4
   logger: ^2.4.0
+  url_launcher: ^6.2.5 # For opening Health Connect settings
   table_calendar: ^3.0.9 # Calendar integration for habit events
   device_calendar: ^4.3.3 # Device calendar integration
-  url_launcher: ^6.2.5 # For opening Health Connect settings
   
 
 dev_dependencies:

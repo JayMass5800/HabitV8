@@ -12,6 +12,7 @@ import 'services/theme_service.dart';
 import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/calendar_renewal_service.dart';
+import 'services/health_habit_initialization_service.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/all_habits_screen.dart';
 import 'ui/screens/calendar_screen.dart';
@@ -62,6 +63,9 @@ void main() async {
   // Initialize calendar renewal service (non-blocking)
   _initializeCalendarRenewal();
 
+  // Initialize health-habit integration (non-blocking)
+  _initializeHealthHabitIntegration();
+
   runApp(UncontrolledProviderScope(
     container: container,
     child: const MyApp(),
@@ -90,6 +94,29 @@ void _initializeCalendarRenewal() async {
   } catch (e) {
     AppLogger.error('Error initializing calendar renewal service', e);
     // Don't block app startup if calendar renewal fails
+  }
+}
+
+/// Initialize health-habit integration (non-blocking)
+void _initializeHealthHabitIntegration() async {
+  try {
+    // Delay to let the app finish core initialization
+    await Future.delayed(const Duration(seconds: 3));
+    
+    AppLogger.info('Starting health-habit integration initialization...');
+    final result = await HealthHabitInitializationService.initialize();
+    
+    if (result.success) {
+      AppLogger.info('Health-habit integration initialized successfully');
+      if (result.hasWarnings) {
+        AppLogger.warning('Health-habit integration warnings: ${result.warnings.join(', ')}');
+      }
+    } else {
+      AppLogger.error('Health-habit integration initialization failed: ${result.message}');
+    }
+  } catch (e) {
+    AppLogger.error('Error initializing health-habit integration', e);
+    // Don't block app startup if health integration fails
   }
 }
 
