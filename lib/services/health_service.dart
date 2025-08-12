@@ -1018,38 +1018,7 @@ class HealthService {
     }
   }
 
-  /// Open Health Connect settings
-  static Future<bool> openHealthConnectSettings() async {
-    try {
-      if (!Platform.isAndroid) {
-        AppLogger.info('Health Connect settings only available on Android');
-        return false;
-      }
 
-      // Try to open Health Connect settings
-      const url = 'package:com.google.android.apps.healthdata';
-      if (await canLaunchUrl(Uri.parse(url))) {
-        await launchUrl(Uri.parse(url));
-        AppLogger.info('Health Connect settings opened successfully');
-        return true;
-      } else {
-        AppLogger.warning('Health Connect app not found, trying alternative');
-        // Fallback to general app settings
-        const settingsUrl = 'package:com.android.settings';
-        if (await canLaunchUrl(Uri.parse(settingsUrl))) {
-          await launchUrl(Uri.parse(settingsUrl));
-          AppLogger.info('Android settings opened as fallback');
-          return true;
-        }
-      }
-      
-      AppLogger.warning('Could not open Health Connect or Android settings');
-      return false;
-    } catch (e) {
-      AppLogger.error('Error opening Health Connect settings', e);
-      return false;
-    }
-  }
 
   /// Debug method to check Health Connect status
   static Future<Map<String, dynamic>> getHealthConnectDebugInfo() async {

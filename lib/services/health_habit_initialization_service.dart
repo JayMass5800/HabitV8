@@ -32,17 +32,17 @@ class HealthHabitInitializationService {
     if (_isInitializing) {
       // Wait for ongoing initialization to complete
       await _initializationCompleter.future;
-      return HealthHabitInitializationResult(
-        success: _isInitialized,
-        message: _isInitialized ? 'Already initialized' : 'Initialization failed',
-      );
+      final result = HealthHabitInitializationResult();
+      result.success = _isInitialized;
+      result.message = _isInitialized ? 'Already initialized' : 'Initialization failed';
+      return result;
     }
     
     if (_isInitialized && !forceReinit) {
-      return HealthHabitInitializationResult(
-        success: true,
-        message: 'Health-Habit integration already initialized',
-      );
+      final result = HealthHabitInitializationResult();
+      result.success = true;
+      result.message = 'Health-Habit integration already initialized';
+      return result;
     }
     
     _isInitializing = true;

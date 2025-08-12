@@ -768,6 +768,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
     }
   }
 
+  /// Toggle automatic habit completion
+  Future<void> _toggleAutoCompletion(bool value) async {
+    setState(() {
+      _autoCompletionEnabled = value;
+    });
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('auto_completion_enabled', value);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(value 
+            ? 'Automatic habit completion enabled' 
+            : 'Automatic habit completion disabled'),
+        ),
+      );
+    }
+  }
+
+  /// Set auto completion check interval
+  Future<void> _setAutoCompletionInterval(int minutes) async {
+    setState(() {
+      _autoCompletionInterval = minutes;
+    });
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('auto_completion_interval', minutes);
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Check interval set to $minutes minutes'),
+        ),
+      );
+    }
+  }
+
   Future<void> _testNotifications() async {
     try {
       // Send a regular test notification first

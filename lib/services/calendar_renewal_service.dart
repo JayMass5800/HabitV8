@@ -111,8 +111,9 @@ class CalendarRenewalService {
       AppLogger.info('Starting calendar renewal process');
       
       // Get all active habits
-      final database = HabitDatabase();
-      final habits = await database.getAllHabits();
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+      final habits = await habitService.getAllHabits();
       final activeHabits = habits.where((habit) => !habit.isArchived).toList();
       
       AppLogger.info('Renewing calendar events for ${activeHabits.length} active habits');

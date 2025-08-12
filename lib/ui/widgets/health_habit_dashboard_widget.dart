@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:health/health.dart';
 import '../../data/database.dart';
 import '../../services/health_habit_integration_service.dart';
-import '../../services/health_habit_mapping_service.dart';
+import '../../services/health_habit_mapping_service.dart' as mapping;
 import '../../services/health_service.dart';
 import '../../services/logging_service.dart';
 
