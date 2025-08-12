@@ -11,6 +11,7 @@ import '../../services/calendar_service.dart';
 import '../../services/calendar_renewal_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/onboarding_service.dart';
+import '../../services/automatic_habit_completion_service.dart';
 import '../../data/database.dart';
 import '../widgets/calendar_selection_dialog.dart';
 import '../widgets/health_education_dialog.dart';
@@ -26,6 +27,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
   bool _notificationsEnabled = false;
   bool _calendarSync = false;
   bool _healthDataSync = false;
+  bool _autoCompletionEnabled = false;
+  int _autoCompletionInterval = 30;
   bool _isLoading = true;
   String _defaultScreen = 'Timeline'; // Default startup screen
 
@@ -85,6 +88,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
       final calendarSyncEnabled = await CalendarService.isCalendarSyncEnabled();
 
       // Load health sync preference and verify actual permissions
+      // Load auto-completion settings
+      final autoCompletionEnabled = await AutomaticHabitCompletionService.isServiceEnabled();
+      final autoCompletionInterval = await AutomaticHabitCompletionService.getCheckIntervalMinutes();
       final healthSyncPreference = await _loadHealthSyncPreference();
       bool healthStatus = false;
       
@@ -102,6 +108,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
         _notificationsEnabled = notificationStatus;
         _calendarSync = calendarSyncEnabled;
         _healthDataSync = healthStatus;
+        _autoCompletionEnabled = autoCompletionEnabled;
+        _autoCompletionInterval = autoCompletionInterval;
         _isLoading = false;
       });
     } catch (e) {
@@ -335,6 +343,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 onChanged: (value) => _toggleHealthDataSync(value),
                 secondary: const Icon(Icons.favorite),
               ),
+
+              // Auto-completion settings (only show if health data is enabled)
+              if (_healthDataSync) ...[
+                const Divider(),
+                SwitchListTile(
+                  title: const Text('Automatic Habit Completion'),
+                  subtitle: const Text('Auto-complete habits based on health data'),
+                  value: _autoCompletionEnabled,
+                  onChanged: (value) => _toggleAutoCompletion(value),
+                  secondary: const Icon(Icons.auto_awesome),
+                ),
+                
+                if (_autoCompletionEnabled)
+                  ListTile(
+                    title: const Text('Check Interval'),
+                    subtitle: Text('Check every $_autoCompletionInterval minutes'),
+                    leading: const Icon(Icons.schedule),
+                    trailing: PopupMenuButton<int>(
+                      onSelected: (value) => _setAutoCompletionInterval(value),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 15, child: Text('15 minutes')),
+                        const PopupMenuItem(value: 30, child: Text('30 minutes')),
+                        const PopupMenuItem(value: 60, child: Text('1 hour')),
+                        const PopupMenuItem(value: 120, child: Text('2 hours')),
+                        const PopupMenuItem(value: 240, child: Text('4 hours')),
+                      ],
+                      child: const Icon(Icons.more_vert),
+                    ),
+                  ),
+                
+                if (_autoCompletionEnabled)
+                  ListTile(
+                    title: const Text('Health Integration Dashboard'),
+                    subtitle: const Text('View detailed health-habit integration'),
+                    leading: const Icon(Icons.dashboard),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/health-integration'),
+                  ),
+              ],
 
             ],
           ),

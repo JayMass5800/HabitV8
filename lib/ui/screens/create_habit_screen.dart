@@ -1172,4 +1172,50 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       }
     }
   }
+
+  /// Load health-based habit suggestions
+  Future<void> _loadHealthSuggestions() async {
+    setState(() {
+      _loadingSuggestions = true;
+    });
+
+    try {
+      final suggestions = await HealthEnhancedHabitCreationService.generateHealthBasedSuggestions();
+      if (mounted) {
+        setState(() {
+          _healthSuggestions = suggestions;
+          _loadingSuggestions = false;
+        });
+      }
+    } catch (e) {
+      AppLogger.error('Error loading health suggestions', e);
+      if (mounted) {
+        setState(() {
+          _loadingSuggestions = false;
+        });
+      }
+    }
+  }
+
+  /// Apply a health-based suggestion to the form
+  void _applySuggestion(HealthBasedHabitSuggestion suggestion) {
+    setState(() {
+      _nameController.text = suggestion.name;
+      _descriptionController.text = suggestion.description;
+      _selectedCategory = suggestion.category;
+      _selectedFrequency = suggestion.frequency;
+      _enableHealthIntegration = true;
+      _selectedHealthDataType = suggestion.healthDataType;
+      _customThreshold = suggestion.suggestedThreshold;
+      _thresholdLevel = 'custom';
+    });
+
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Applied suggestion: ${suggestion.name}'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
 }

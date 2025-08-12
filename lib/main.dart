@@ -13,6 +13,7 @@ import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/calendar_renewal_service.dart';
 import 'services/health_habit_initialization_service.dart';
+import 'services/automatic_habit_completion_service.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/all_habits_screen.dart';
 import 'ui/screens/calendar_screen.dart';
@@ -111,6 +112,15 @@ void _initializeHealthHabitIntegration() async {
       AppLogger.info('Health-habit integration initialized successfully');
       if (result.hasWarnings) {
         AppLogger.warning('Health-habit integration warnings: ${result.warnings.join(', ')}');
+      }
+      
+      // Initialize automatic habit completion service
+      AppLogger.info('Initializing automatic habit completion service...');
+      final completionServiceInitialized = await AutomaticHabitCompletionService.initialize();
+      if (completionServiceInitialized) {
+        AppLogger.info('Automatic habit completion service initialized successfully');
+      } else {
+        AppLogger.error('Failed to initialize automatic habit completion service');
       }
     } else {
       AppLogger.error('Health-habit integration initialization failed: ${result.message}');
