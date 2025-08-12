@@ -364,8 +364,10 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         final day = date.day;
         return habit.monthlySchedule.contains(day);
       case HabitFrequency.yearly:
-        final today = DateTime.now();
-        return date.month == today.month && date.day == today.day;
+        // For yearly habits, check if the selected date matches the habit's yearly schedule
+        // The yearly schedule should be based on the habit's creation date or a specific date
+        final habitCreationDate = habit.createdAt;
+        return date.month == habitCreationDate.month && date.day == habitCreationDate.day;
     }
   }
 

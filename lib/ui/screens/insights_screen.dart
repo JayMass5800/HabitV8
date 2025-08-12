@@ -340,34 +340,55 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   Widget _buildHealthCard() {
     final health = _healthSummary!;
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.favorite, color: Colors.red),
-                const SizedBox(width: 8),
-                Text(
-                  'Health Summary',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                if (health['steps'] != null)
-                  _buildStatItem('Steps', '${health['steps']}'),
-                if (health['exerciseMinutes'] != null)
-                  _buildStatItem('Exercise', '${health['exerciseMinutes']} min'),
-                if (health['waterIntake'] != null)
-                  _buildStatItem('Water', '${health['waterIntake'].toStringAsFixed(1)}L'),
-              ],
-            ),
-          ],
+      elevation: 2,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.blue.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.favorite, color: Colors.red, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Today\'s Health Summary',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  if (health['steps'] != null)
+                    _buildHealthStatItem('Steps', '${health['steps']}', Icons.directions_walk, Colors.green),
+                  if (health['exerciseMinutes'] != null)
+                    _buildHealthStatItem('Exercise', '${health['exerciseMinutes']} min', Icons.fitness_center, Colors.orange),
+                  if (health['waterIntake'] != null)
+                    _buildHealthStatItem('Water', '${health['waterIntake'].toStringAsFixed(1)}L', Icons.water_drop, Colors.blue),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -433,6 +454,40 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
+    );
+  }
+
+  Widget _buildHealthStatItem(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
