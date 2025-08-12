@@ -82,14 +82,12 @@ class HealthEnhancedHabitCreationService {
       AppLogger.info('Creating health-integrated habit: $name');
       
       // Create the basic habit
-      final habit = Habit(
-        id: _generateHabitId(),
+      final habit = Habit.create(
         name: name,
         description: description,
         frequency: frequency,
         category: category,
-        createdAt: DateTime.now(),
-        isActive: true,
+        colorValue: 0xFF2196F3, // Default blue color
       );
       
       // If health data type is specified, set up the integration
@@ -833,7 +831,22 @@ class HealthBasedHabitSuggestion {
 enum HabitPriority {
   low,
   medium,
-  high,
+  high;
+  
+  int get value {
+    switch (this) {
+      case HabitPriority.low:
+        return 1;
+      case HabitPriority.medium:
+        return 2;
+      case HabitPriority.high:
+        return 3;
+    }
+  }
+  
+  int compareTo(HabitPriority other) {
+    return value.compareTo(other.value);
+  }
 }
 
 /// Health pattern analysis

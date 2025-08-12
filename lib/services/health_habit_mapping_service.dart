@@ -405,7 +405,7 @@ class HealthHabitMappingService {
         double value = 0.0;
         
         if (point.value is NumericHealthValue) {
-          value = (point.value as NumericHealthValue).numericValue;
+          value = (point.value as NumericHealthValue).numericValue.toDouble();
           
           // Convert units as needed
           if (healthDataType == HealthDataType.SLEEP_IN_BED) {

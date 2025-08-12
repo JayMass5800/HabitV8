@@ -547,7 +547,7 @@ class HealthHabitAnalyticsService {
     final standardDeviation = math.sqrt(variance);
     
     // Lower standard deviation = higher consistency
-    return math.max(0, 1 - (standardDeviation / average)).clamp(0, 1);
+    return (math.max(0, 1 - (standardDeviation / average)).clamp(0, 1)).toDouble();
   }
 
   static Future<String?> _findStrongestHealthMetric(Habit habit, List<HealthDataPoint> healthData) async {
@@ -796,7 +796,7 @@ class HealthHabitAnalyticsService {
         }
         
         if (isInPeriod == duringStreaks && point.value is NumericHealthValue) {
-          relevantData.add((point.value as NumericHealthValue).numericValue);
+          relevantData.add((point.value as NumericHealthValue).numericValue.toDouble());
         }
       }
       
