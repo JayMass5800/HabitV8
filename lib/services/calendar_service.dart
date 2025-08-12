@@ -324,22 +324,27 @@ class CalendarService {
       event.title = habit.name;
       event.description = '${habit.description ?? 'Habit reminder'}\n\nHabit ID: ${habit.id}'; // Include habit ID for tracking
       
-      // Use local timezone and the actual scheduled time
+      // Create DateTime objects first, then convert to TZDateTime
+      final startDateTime = DateTime(date.year, date.month, date.day, hour, minute);
+      final endDateTime = DateTime(date.year, date.month, date.day, hour, minute + 30);
+      
+      // Use local timezone with proper conversion
       final localLocation = tz.local;
-      event.start = tz.TZDateTime(
-        localLocation,
-        date.year, date.month, date.day, hour, minute,
-      );
-      event.end = tz.TZDateTime(
-        localLocation,
-        date.year, date.month, date.day, hour, minute + 30, // 30 minute duration
-      );
+      
+      // Convert to TZDateTime using the local timezone
+      event.start = tz.TZDateTime.from(startDateTime, localLocation);
+      event.end = tz.TZDateTime.from(endDateTime, localLocation);
       
       // Add habit-specific properties
       event.allDay = false;
       event.availability = Availability.Busy;
       
       AppLogger.info('Creating calendar event for habit "${habit.name}" on ${date.toIso8601String()}');
+      AppLogger.info('Parsed time: ${hour}:${minute.toString().padLeft(2, '0')} from timeString: $timeString');
+      AppLogger.info('Local DateTime: $startDateTime');
+      AppLogger.info('TZDateTime start: ${event.start}');
+      AppLogger.info('TZDateTime end: ${event.end}');
+      AppLogger.info('Local timezone: ${localLocation.name}');
       AppLogger.debug('Event details: title="${event.title}", start=${event.start}, end=${event.end}, calendarId=$_selectedCalendarId');
       
       final result = await _deviceCalendarPlugin!.createOrUpdateEvent(event);

@@ -293,6 +293,35 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                             ),
                           ),
                         ),
+                        // Add time display
+                        if (_getHabitTimeDisplay(habit).isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 12,
+                                  color: Colors.grey[600],
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _getHabitTimeDisplay(habit),
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -424,6 +453,32 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       setState(() {
         _selectedDate = picked;
       });
+    }
+  }
+
+  String _getHabitTimeDisplay(Habit habit) {
+    switch (habit.frequency) {
+      case HabitFrequency.hourly:
+        if (habit.hourlyTimes.isNotEmpty) {
+          if (habit.hourlyTimes.length == 1) {
+            return habit.hourlyTimes.first;
+          } else if (habit.hourlyTimes.length <= 3) {
+            return habit.hourlyTimes.join(', ');
+          } else {
+            return '${habit.hourlyTimes.first} +${habit.hourlyTimes.length - 1} more';
+          }
+        }
+        return 'Hourly';
+      
+      case HabitFrequency.daily:
+      case HabitFrequency.weekly:
+      case HabitFrequency.monthly:
+      case HabitFrequency.yearly:
+        if (habit.notificationTime != null) {
+          final time = habit.notificationTime!;
+          return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+        }
+        return '';
     }
   }
 }

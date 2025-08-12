@@ -429,6 +429,24 @@ class _HabitCard extends ConsumerWidget {
                               fontSize: 12,
                             ),
                           ),
+                          // Add time display
+                          if (_getHabitTimeDisplay(habit).isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              _getHabitTimeDisplay(habit),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
@@ -775,6 +793,32 @@ class _HabitCard extends ConsumerWidget {
       case 'all':
       default:
         return Icons.apps;
+    }
+  }
+
+  String _getHabitTimeDisplay(Habit habit) {
+    switch (habit.frequency) {
+      case HabitFrequency.hourly:
+        if (habit.hourlyTimes.isNotEmpty) {
+          if (habit.hourlyTimes.length == 1) {
+            return habit.hourlyTimes.first;
+          } else if (habit.hourlyTimes.length <= 3) {
+            return habit.hourlyTimes.join(', ');
+          } else {
+            return '${habit.hourlyTimes.first} +${habit.hourlyTimes.length - 1} more';
+          }
+        }
+        return 'Hourly';
+      
+      case HabitFrequency.daily:
+      case HabitFrequency.weekly:
+      case HabitFrequency.monthly:
+      case HabitFrequency.yearly:
+        if (habit.notificationTime != null) {
+          final time = habit.notificationTime!;
+          return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+        }
+        return '';
     }
   }
 }

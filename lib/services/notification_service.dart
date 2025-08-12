@@ -715,23 +715,57 @@ class NotificationService {
   static Future<void> _scheduleHourlyHabitNotifications(dynamic habit) async {
     final now = DateTime.now();
     
-    // For hourly habits, schedule notifications every hour during active hours (8 AM - 10 PM)
-    // This creates a more practical hourly reminder system
-    for (int hour = 8; hour <= 22; hour++) {
-      DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, 0);
+    // For hourly habits, use the specific times set by the user
+    if (habit.hourlyTimes != null && habit.hourlyTimes.isNotEmpty) {
+      print('DEBUG: Scheduling hourly notifications for specific times: ${habit.hourlyTimes}');
       
-      // If the time has passed today, schedule for tomorrow
-      if (nextNotification.isBefore(now)) {
-        nextNotification = nextNotification.add(const Duration(days: 1));
-      }
+      for (String timeString in habit.hourlyTimes) {
+        try {
+          // Parse the time string (format: "HH:mm")
+          final timeParts = timeString.split(':');
+          final hour = int.tryParse(timeParts[0]) ?? 9;
+          final minute = timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
+          
+          DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, minute);
+          
+          // If the time has passed today, schedule for tomorrow
+          if (nextNotification.isBefore(now)) {
+            nextNotification = nextNotification.add(const Duration(days: 1));
+          }
 
-      await scheduleHabitNotification(
-        id: generateSafeId('${habit.id}_hourly_$hour'), // Use string concatenation for uniqueness
-        habitId: habit.id.toString(),
-        title: '⏰ ${habit.name}',
-        body: 'Hourly reminder: Time for your habit!',
-        scheduledTime: nextNotification,
-      );
+          await scheduleHabitNotification(
+            id: generateSafeId('${habit.id}_hourly_${hour}_$minute'), // Use hour and minute for uniqueness
+            habitId: habit.id.toString(),
+            title: '⏰ ${habit.name}',
+            body: 'Time for your habit! Scheduled for ${timeString}',
+            scheduledTime: nextNotification,
+          );
+          
+          print('DEBUG: Scheduled hourly notification for ${timeString} at ${nextNotification}');
+        } catch (e) {
+          print('DEBUG: Error parsing hourly time "$timeString": $e');
+          AppLogger.error('Error parsing hourly time "$timeString" for habit ${habit.name}', e);
+        }
+      }
+    } else {
+      // Fallback: For hourly habits without specific times, schedule every hour during active hours (8 AM - 10 PM)
+      print('DEBUG: No specific hourly times set, using default hourly schedule (8 AM - 10 PM)');
+      for (int hour = 8; hour <= 22; hour++) {
+        DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, 0);
+        
+        // If the time has passed today, schedule for tomorrow
+        if (nextNotification.isBefore(now)) {
+          nextNotification = nextNotification.add(const Duration(days: 1));
+        }
+
+        await scheduleHabitNotification(
+          id: generateSafeId('${habit.id}_hourly_$hour'), // Use string concatenation for uniqueness
+          habitId: habit.id.toString(),
+          title: '⏰ ${habit.name}',
+          body: 'Hourly reminder: Time for your habit!',
+          scheduledTime: nextNotification,
+        );
+      }
     }
   }
 
