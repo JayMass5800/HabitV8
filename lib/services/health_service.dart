@@ -442,6 +442,69 @@ class HealthService {
     }
   }
 
+  /// Get heart rate data for a date range
+  /// Note: Heart rate is not in our approved data types, so this returns empty data
+  static Future<List<HealthDataPoint>> getHeartRateData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    // Heart rate data is not in our approved minimal data types
+    // Return empty list to avoid permission issues
+    AppLogger.info('Heart rate data not available - not in approved data types');
+    return [];
+  }
+
+  /// Get body metrics data (weight, body fat, etc.) for a date range
+  static Future<List<HealthDataPoint>> getBodyMetricsData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      // Only use WEIGHT which is in our approved data types
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: [HealthDataType.WEIGHT],
+        startTime: startDate,
+        endTime: endDate,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} body metrics data points');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get body metrics data', e);
+      return [];
+    }
+  }
+
+  /// Get exercise/workout data for a date range
+  /// Note: Uses active energy burned as a proxy for exercise data
+  static Future<List<HealthDataPoint>> getExerciseData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      // Use ACTIVE_ENERGY_BURNED as a proxy for exercise data since it's in our approved types
+      final List<HealthDataPoint> healthData = await Health().getHealthDataFromTypes(
+        types: [HealthDataType.ACTIVE_ENERGY_BURNED],
+        startTime: startDate,
+        endTime: endDate,
+      );
+
+      AppLogger.info('Retrieved ${healthData.length} exercise data points (active energy)');
+      return healthData;
+    } catch (e) {
+      AppLogger.error('Failed to get exercise data', e);
+      return [];
+    }
+  }
+
   /// Get comprehensive health summary for today
   static Future<Map<String, dynamic>> getTodayHealthSummary() async {
     final DateTime today = DateTime.now();
