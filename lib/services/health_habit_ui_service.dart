@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:health/health.dart';
 import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'health_habit_integration_service.dart';

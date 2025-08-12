@@ -636,7 +636,7 @@ class HealthEnhancedHabitCreationService {
   }) async {
     try {
       // Get default mapping configuration
-      final defaultMapping = HealthHabitMappingService._healthMappings[healthDataType];
+      final defaultMapping = HealthHabitMappingService.healthMappings[healthDataType];
       if (defaultMapping == null) return null;
       
       // Determine threshold

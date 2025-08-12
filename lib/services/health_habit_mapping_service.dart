@@ -12,7 +12,7 @@ import 'logging_service.dart';
 class HealthHabitMappingService {
   
   /// Map of health data types to their corresponding habit keywords and thresholds
-  static const Map<HealthDataType, HealthHabitMapping> _healthMappings = {
+  static const Map<HealthDataType, HealthHabitMapping> healthMappings = {
     HealthDataType.STEPS: HealthHabitMapping(
       keywords: ['walk', 'step', 'walking', 'jog', 'run', 'exercise', 'cardio', 'fitness'],
       thresholds: {
@@ -96,7 +96,7 @@ class HealthHabitMappingService {
       // Find matching health data types
       final matches = <HealthDataType, double>{};
       
-      for (final entry in _healthMappings.entries) {
+      for (final entry in healthMappings.entries) {
         final healthType = entry.key;
         final mapping = entry.value;
         
@@ -150,7 +150,7 @@ class HealthHabitMappingService {
         thresholdLevel = 'very_active';
       }
       
-      final mapping = _healthMappings[bestMatch.key]!;
+      final mapping = healthMappings[bestMatch.key]!;
       final threshold = mapping.thresholds[thresholdLevel] ?? mapping.thresholds['moderate']!;
       
       return HabitHealthMapping(
@@ -394,7 +394,7 @@ class HealthHabitMappingService {
       
       if (healthData.length < 7) {
         // Not enough data, return default thresholds
-        return _healthMappings[healthDataType]?.thresholds ?? {};
+        return healthMappings[healthDataType]?.thresholds ?? {};
       }
       
       // Calculate daily values
@@ -419,7 +419,7 @@ class HealthHabitMappingService {
       final values = dailyValues.values.toList()..sort();
       
       if (values.isEmpty) {
-        return _healthMappings[healthDataType]?.thresholds ?? {};
+        return healthMappings[healthDataType]?.thresholds ?? {};
       }
       
       // Calculate percentile-based thresholds
@@ -434,7 +434,7 @@ class HealthHabitMappingService {
       
     } catch (e) {
       AppLogger.error('Error suggesting optimal thresholds', e);
-      return _healthMappings[healthDataType]?.thresholds ?? {};
+      return healthMappings[healthDataType]?.thresholds ?? {};
     }
   }
 
