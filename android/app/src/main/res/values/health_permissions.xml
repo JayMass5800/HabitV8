@@ -1,31 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="health_permissions">
+        <!-- Only essential health permissions that are actually used in the app -->
         <!-- Core fitness and activity permissions -->
         <item>android.permission.health.READ_STEPS</item>
-        <item>android.permission.health.READ_HEART_RATE</item>
         <item>android.permission.health.READ_ACTIVE_CALORIES_BURNED</item>
-        <item>android.permission.health.READ_DISTANCE</item>
-        <item>android.permission.health.READ_EXERCISE</item>
         
         <!-- Sleep permissions -->
         <item>android.permission.health.READ_SLEEP</item>
         
-        <!-- Nutrition and hydration permissions -->
-        <item>android.permission.health.READ_NUTRITION</item>
+        <!-- Hydration permissions -->
         <item>android.permission.health.READ_HYDRATION</item>
-        
-        <!-- Vital signs permissions -->
-        <item>android.permission.health.READ_BLOOD_PRESSURE</item>
-        <item>android.permission.health.READ_BLOOD_GLUCOSE</item>
-        <item>android.permission.health.READ_OXYGEN_SATURATION</item>
-        <item>android.permission.health.READ_RESPIRATORY_RATE</item>
-        <item>android.permission.health.READ_BODY_TEMPERATURE</item>
         
         <!-- Body metrics permissions -->
         <item>android.permission.health.READ_WEIGHT</item>
-        <item>android.permission.health.READ_HEIGHT</item>
-        <item>android.permission.health.READ_BODY_FAT</item>
         
         <!-- Mental health permissions -->
         <item>android.permission.health.READ_MINDFULNESS</item>
