@@ -3,9 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:health/health.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
+import '../../services/health_enhanced_habit_creation_service.dart';
+import '../../services/health_habit_mapping_service.dart';
+import '../../services/health_service.dart';
+import '../../services/logging_service.dart';
 
 class CreateHabitScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? prefilledData;
@@ -31,6 +36,14 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   final List<TimeOfDay> _hourlyTimes = []; // New: Multiple times for hourly habits
   final Set<DateTime> _selectedYearlyDates = {}; // New: Selected dates for yearly habits
   DateTime _focusedMonth = DateTime.now(); // New: For calendar navigation
+  
+  // Health integration fields
+  bool _enableHealthIntegration = false;
+  HealthDataType? _selectedHealthDataType;
+  double? _customThreshold;
+  String _thresholdLevel = 'moderate';
+  List<HealthBasedHabitSuggestion> _healthSuggestions = [];
+  bool _loadingSuggestions = false;
 
   final List<String> _categories = [
     'Health',
@@ -60,6 +73,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   void initState() {
     super.initState();
     _initializeFromPrefilledData();
+    _loadHealthSuggestions();
   }
 
   void _initializeFromPrefilledData() {

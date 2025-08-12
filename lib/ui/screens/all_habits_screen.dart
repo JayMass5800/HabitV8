@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/logging_service.dart';
+import '../widgets/health_habit_dashboard_widget.dart';
 import 'edit_habit_screen.dart';
 
 class AllHabitsScreen extends ConsumerStatefulWidget {
@@ -129,6 +131,15 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                   ],
                 ),
               ),
+              
+              // Health-Habit Integration Dashboard
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: CompactHealthHabitDashboard(
+                  onTap: () => context.push('/health-integration'),
+                ),
+              ),
+              
               // Current filters display
               if (_selectedCategory != 'All' || _selectedSort != 'Recent')
                 Padding(

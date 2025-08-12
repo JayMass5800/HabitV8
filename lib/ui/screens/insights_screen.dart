@@ -8,6 +8,7 @@ import '../../services/smart_recommendations_service.dart';
 import '../../services/achievements_service.dart';
 import '../../services/health_service.dart';
 import '../../services/logging_service.dart';
+import '../widgets/health_habit_dashboard_widget.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
   const InsightsScreen({super.key});
@@ -223,8 +224,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     _buildQuickStatsGrid(habits),
                     const SizedBox(height: 16),
 
-                    // Health Integration Card
-                    if (_healthSummary != null) _buildHealthCard(),
+                    // Health-Habit Integration Dashboard
+                    HealthHabitDashboardWidget(
+                      showFullDetails: true,
+                      onTap: () => context.push('/health-integration'),
+                    ),
                     const SizedBox(height: 16),
 
                     // Recent Insights
