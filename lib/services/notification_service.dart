@@ -133,6 +133,14 @@ class NotificationService {
     AppLogger.info('Payload: ${notificationResponse.payload}');
     AppLogger.info('Notification response type: ${notificationResponse.notificationResponseType}');
     
+    // Additional debugging for action button presses
+    if (notificationResponse.actionId != null) {
+      AppLogger.info('ACTION BUTTON PRESSED: ${notificationResponse.actionId}');
+      AppLogger.info('Response type for action: ${notificationResponse.notificationResponseType}');
+    } else {
+      AppLogger.info('NOTIFICATION TAPPED (no action button)');
+    }
+    
     final String? payload = notificationResponse.payload;
     if (payload != null) {
       AppLogger.info('Processing notification with payload: $payload');
@@ -847,13 +855,15 @@ class NotificationService {
           'complete',
           'Complete',
           showsUserInterface: false,
-          cancelNotification: true,
+          cancelNotification: false,
+          allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           'Snooze 30min',
           showsUserInterface: false,
           cancelNotification: false,
+          allowGeneratedReplies: false,
         ),
       ],
     );
@@ -905,12 +915,14 @@ class NotificationService {
           'Complete',
           showsUserInterface: false,
           cancelNotification: false,
+          allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           'Snooze 30min',
           showsUserInterface: false,
           cancelNotification: false,
+          allowGeneratedReplies: false,
         ),
       ],
     );
@@ -1114,5 +1126,16 @@ class NotificationService {
         AppLogger.error('Error opening exact alarm settings', e);
       }
     }
+  }
+
+  /// Test method to show a notification with action buttons for debugging
+  static Future<void> showTestNotificationWithActions() async {
+    await showHabitNotification(
+      id: 999999,
+      habitId: 'test-habit-id',
+      title: '🧪 Test Notification with Actions',
+      body: 'Tap Complete or Snooze to test action buttons',
+    );
+    AppLogger.info('Test notification with actions shown');
   }
 }
