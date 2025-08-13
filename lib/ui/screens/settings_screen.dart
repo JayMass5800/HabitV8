@@ -1436,6 +1436,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
       SnackBar(content: Text(message)),
     );
   }
+
+  /// Show a test notification with action buttons for debugging
+  void _showTestNotification() async {
+    try {
+      await NotificationService.showTestNotificationWithActions();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Test notification sent! Check your notification panel and try the action buttons.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error showing test notification', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sending test notification: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 }
 
 class _SettingsSection extends StatelessWidget {

@@ -120,6 +120,8 @@ class NotificationService {
       await androidImplementation.createNotificationChannel(scheduledHabitChannel);
       
       AppLogger.info('Notification channels created successfully');
+      AppLogger.info('Habit channel: ${habitChannel.id} - ${habitChannel.name}');
+      AppLogger.info('Scheduled habit channel: ${scheduledHabitChannel.id} - ${scheduledHabitChannel.name}');
     }
   }
 
@@ -167,6 +169,11 @@ class NotificationService {
     AppLogger.info('Background notification ID: ${notificationResponse.id}');
     AppLogger.info('Background action ID: ${notificationResponse.actionId}');
     AppLogger.info('Background payload: ${notificationResponse.payload}');
+    AppLogger.info('Background response type: ${notificationResponse.notificationResponseType}');
+    AppLogger.info('Background input: ${notificationResponse.input}');
+    
+    // Log the raw response object for debugging
+    AppLogger.info('Raw background response: $notificationResponse');
     
     // For background responses, we need to handle them differently
     // The app might not be fully initialized, so we'll delegate to the foreground handler
@@ -182,10 +189,14 @@ class NotificationService {
     AppLogger.info('Payload: ${notificationResponse.payload}');
     AppLogger.info('Notification response type: ${notificationResponse.notificationResponseType}');
     
+    // Log the raw response object for complete debugging
+    AppLogger.info('Raw notification response: $notificationResponse');
+    
     // Additional debugging for action button presses
     if (notificationResponse.actionId != null) {
-      AppLogger.info('ACTION BUTTON PRESSED: ${notificationResponse.actionId}');
+      AppLogger.info('🔥 ACTION BUTTON PRESSED: ${notificationResponse.actionId}');
       AppLogger.info('Response type for action: ${notificationResponse.notificationResponseType}');
+      AppLogger.info('Action button working! Processing action...');
     } else {
       AppLogger.info('NOTIFICATION TAPPED (no action button)');
     }
@@ -912,14 +923,14 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           'Complete',
-          showsUserInterface: false,
-          cancelNotification: false,
+          showsUserInterface: true,
+          cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           'Snooze 30min',
-          showsUserInterface: false,
+          showsUserInterface: true,
           cancelNotification: false,
           allowGeneratedReplies: false,
         ),
@@ -971,14 +982,14 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           'Complete',
-          showsUserInterface: false,
-          cancelNotification: false,
+          showsUserInterface: true,
+          cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           'Snooze 30min',
-          showsUserInterface: false,
+          showsUserInterface: true,
           cancelNotification: false,
           allowGeneratedReplies: false,
         ),
@@ -1195,5 +1206,19 @@ class NotificationService {
       body: 'Tap Complete or Snooze to test action buttons',
     );
     AppLogger.info('Test notification with actions shown');
+  }
+
+  /// Show a simple test notification to verify basic functionality
+  static Future<void> showSimpleTestNotification() async {
+    await showNotification(
+      id: 888888,
+      title: '🔔 Simple Test Notification',
+      body: 'This is a basic test notification without actions',
+      payload: jsonEncode({
+        'habitId': 'simple-test',
+        'type': 'test',
+      }),
+    );
+    AppLogger.info('Simple test notification shown');
   }
 }
