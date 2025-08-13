@@ -149,13 +149,14 @@ class HealthHabitIntegrationService {
         return result;
       }
       
-      // Get all active habits and filter for health-related categories only
+      // Get all active habits and filter for health-mappable habits
       final allHabits = await habitService.getActiveHabits();
+      final mappableHabits = await HealthHabitMappingService.getMappableHabits(allHabits);
       final habits = allHabits.where((habit) => 
-        habit.category == 'Health' || habit.category == 'Fitness'
+        mappableHabits.any((mapping) => mapping.habitId == habit.id)
       ).toList();
       if (habits.isEmpty) {
-        AppLogger.info('No active health or fitness habits found');
+        AppLogger.info('No active health-mappable habits found');
         return result;
       }
       
@@ -792,24 +793,21 @@ class HealthHabitIntegrationService {
     
     try {
       final allHabits = await habitService.getActiveHabits();
-      // Filter for health and fitness habits only
-      final habits = allHabits.where((habit) => 
-        habit.category == 'Health' || habit.category == 'Fitness'
-      ).toList();
       final healthPermissions = await HealthService.hasPermissions();
       final autoCompletionEnabled = await isAutoCompletionEnabled();
       
       int healthMappedHabits = 0;
       final habitMappings = <String, dynamic>{};
       
-      // Use the new mapping service for better analysis
-      final mappableHabits = await HealthHabitMappingService.getMappableHabits(habits);
+      // Use the mapping service to find all mappable habits (regardless of category)
+      final mappableHabits = await HealthHabitMappingService.getMappableHabits(allHabits);
       healthMappedHabits = mappableHabits.length;
       
       for (final mapping in mappableHabits) {
-        final habit = habits.firstWhere((h) => h.id == mapping.habitId);
+        final habit = allHabits.firstWhere((h) => h.id == mapping.habitId);
         habitMappings[habit.id] = {
           'name': habit.name,
+          'category': habit.category,
           'healthDataType': mapping.healthDataType.name,
           'threshold': mapping.threshold,
           'unit': mapping.unit,
@@ -817,11 +815,16 @@ class HealthHabitIntegrationService {
         };
       }
       
-      status['totalHabits'] = habits.length;
-      status['totalAllHabits'] = allHabits.length; // Keep track of all habits for reference
+      // Count health-related habits by category for reference
+      final healthCategoryHabits = allHabits.where((habit) => 
+        habit.category == 'Health' || habit.category == 'Fitness'
+      ).length;
+      
+      status['totalHabits'] = allHabits.length;
+      status['healthCategoryHabits'] = healthCategoryHabits; // Habits specifically categorized as Health/Fitness
       status['healthMappedHabits'] = healthMappedHabits;
-      status['mappingPercentage'] = habits.isNotEmpty ? 
-          (healthMappedHabits / habits.length * 100).round() : 0;
+      status['mappingPercentage'] = allHabits.isNotEmpty ? 
+          (healthMappedHabits / allHabits.length * 100).round() : 0;
       status['healthPermissions'] = healthPermissions;
       status['autoCompletionEnabled'] = autoCompletionEnabled;
       status['habitMappings'] = habitMappings;

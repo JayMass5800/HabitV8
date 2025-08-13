@@ -398,29 +398,67 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
             final healthType = habitData['healthDataType'] as String?;
             final threshold = habitData['threshold'];
             final unit = habitData['unit'] as String?;
+            final category = habitData['category'] as String?;
+            final relevanceScore = habitData['relevanceScore'] as double?;
             
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    _getHealthDataTypeIcon(healthType),
-                    size: 16,
-                    color: Colors.blue,
+                  Row(
+                    children: [
+                      Icon(
+                        _getHealthDataTypeIcon(healthType),
+                        size: 16,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          habitData['name'] as String,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      if (threshold != null && unit != null)
+                        Text(
+                          '${threshold.round()} $unit',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                        ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      habitData['name'] as String,
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ),
-                  if (threshold != null && unit != null)
-                    Text(
-                      '${threshold.round()} $unit',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey,
+                  if (category != null || relevanceScore != null)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 24, top: 2),
+                      child: Row(
+                        children: [
+                          if (category != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                category,
+                                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          if (relevanceScore != null)
+                            Text(
+                              'Match: ${(relevanceScore * 100).round()}%',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: relevanceScore > 0.7 ? Colors.green : 
+                                       relevanceScore > 0.4 ? Colors.orange : Colors.grey,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                 ],
