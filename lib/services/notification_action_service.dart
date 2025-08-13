@@ -15,7 +15,9 @@ class NotificationActionService {
     // Set up the notification action callback
     NotificationService.onNotificationAction = _handleNotificationAction;
     
-    AppLogger.info('NotificationActionService initialized');
+    AppLogger.info('🔧 NotificationActionService initialized');
+    AppLogger.info('📦 Container set: ${_container != null}');
+    AppLogger.info('🔗 Callback registered: ${NotificationService.onNotificationAction != null}');
   }
   
   /// Handle notification actions (complete/snooze)

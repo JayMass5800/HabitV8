@@ -432,6 +432,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 leading: const Icon(Icons.notification_add),
                 onTap: () => _testNotificationWithActions(),
               ),
+              _SettingsTile(
+                title: 'Debug Notification System',
+                subtitle: 'Check notification system status',
+                leading: const Icon(Icons.bug_report),
+                onTap: () => _debugNotificationSystem(),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -1527,6 +1533,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Debug notification system
+  void _debugNotificationSystem() async {
+    try {
+      await NotificationService.debugNotificationSystem();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🔍 Notification system debug info logged'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      AppLogger.info('Notification system debug triggered from settings');
+    } catch (e) {
+      AppLogger.error('Error debugging notification system', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Debug Error: $e'),
             backgroundColor: Colors.red,
           ),
         );

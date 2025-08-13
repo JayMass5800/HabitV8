@@ -58,7 +58,7 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
-      onDidReceiveBackgroundNotificationResponse: _onBackgroundNotificationTapped,
+      onDidReceiveBackgroundNotificationResponse: _onNotificationTapped, // Use same handler for both
     );
 
     // Request permissions for Android 13+
@@ -68,6 +68,9 @@ class NotificationService {
     }
 
     _isInitialized = true;
+    AppLogger.info('🔔 NotificationService initialized successfully');
+    AppLogger.info('📱 Platform: ${Platform.operatingSystem}');
+    AppLogger.info('🔧 Background handler registered: ${_onNotificationTapped != null}');
   }
 
   /// Check if device is running Android 12+ (API level 31+)
@@ -183,6 +186,7 @@ class NotificationService {
   /// Handle notification tap and actions
   static void _onNotificationTapped(NotificationResponse notificationResponse) async {
     AppLogger.info('=== NOTIFICATION RESPONSE DEBUG ===');
+    AppLogger.info('🔔 NOTIFICATION RECEIVED!');
     AppLogger.info('Notification ID: ${notificationResponse.id}');
     AppLogger.info('Action ID: ${notificationResponse.actionId}');
     AppLogger.info('Input: ${notificationResponse.input}');
@@ -193,13 +197,16 @@ class NotificationService {
     AppLogger.info('Raw notification response: $notificationResponse');
     
     // Additional debugging for action button presses
-    if (notificationResponse.actionId != null) {
-      AppLogger.info('🔥 ACTION BUTTON PRESSED: ${notificationResponse.actionId}');
+    if (notificationResponse.actionId != null && notificationResponse.actionId!.isNotEmpty) {
+      AppLogger.info('🔥🔥🔥 ACTION BUTTON PRESSED: ${notificationResponse.actionId}');
       AppLogger.info('Response type for action: ${notificationResponse.notificationResponseType}');
       AppLogger.info('Action button working! Processing action...');
     } else {
-      AppLogger.info('NOTIFICATION TAPPED (no action button)');
+      AppLogger.info('📱 NOTIFICATION TAPPED (no action button)');
     }
+    
+    // Always log that we received something
+    AppLogger.info('✅ Notification handler called successfully');
     
     final String? payload = notificationResponse.payload;
     if (payload != null) {
@@ -240,8 +247,9 @@ class NotificationService {
     AppLogger.info('Handling notification action: $action for habit: $habitId');
     
     try {
-      switch (action.toLowerCase()) {
-        case 'complete':
+      switch (action.toUpperCase()) {
+        case 'COMPLETE_ACTION':
+        case 'COMPLETE':
           AppLogger.info('🔥 Processing complete action for habit: $habitId');
           
           // Always cancel the notification first for complete action
@@ -261,7 +269,8 @@ class NotificationService {
           }
           break;
           
-        case 'snooze':
+        case 'SNOOZE_ACTION':
+        case 'SNOOZE':
           AppLogger.info('😴 Processing snooze action for habit: $habitId');
           // Handle snooze action
           await _handleSnoozeAction(habitId);
@@ -928,17 +937,17 @@ class NotificationService {
       playSound: true,
       actions: [
         const AndroidNotificationAction(
-          'complete',
-          'Complete',
+          'COMPLETE_ACTION',
+          '✅ Complete',
           showsUserInterface: false,
-          cancelNotification: true,
+          cancelNotification: false,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
-          'snooze',
-          'Snooze 30min',
+          'SNOOZE_ACTION',
+          '⏰ Snooze 30min',
           showsUserInterface: false,
-          cancelNotification: true,
+          cancelNotification: false,
           allowGeneratedReplies: false,
         ),
       ],
@@ -987,17 +996,17 @@ class NotificationService {
       priority: Priority.high,
       actions: [
         const AndroidNotificationAction(
-          'complete',
-          'Complete',
+          'COMPLETE_ACTION',
+          '✅ Complete',
           showsUserInterface: false,
-          cancelNotification: true,
+          cancelNotification: false,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
-          'snooze',
-          'Snooze 30min',
+          'SNOOZE_ACTION',
+          '⏰ Snooze 30min',
           showsUserInterface: false,
-          cancelNotification: true,
+          cancelNotification: false,
           allowGeneratedReplies: false,
         ),
       ],
@@ -1210,26 +1219,55 @@ class NotificationService {
 
   /// Test method to show a notification with action buttons for debugging
   static Future<void> showTestNotificationWithActions() async {
+    AppLogger.info('🧪 Creating test notification with action buttons...');
+    
     await showHabitNotification(
       id: 999999,
       habitId: 'test-habit-id',
       title: '🧪 Test Notification with Actions',
-      body: 'Tap Complete or Snooze to test action buttons',
+      body: 'Try the Complete and Snooze buttons below!',
     );
-    AppLogger.info('Test notification with actions shown');
+    AppLogger.info('✅ Test notification with actions shown with ID: 999999');
+    AppLogger.info('🔘 Action buttons: COMPLETE_ACTION, SNOOZE_ACTION');
   }
 
   /// Show a simple test notification to verify basic functionality
   static Future<void> showSimpleTestNotification() async {
+    AppLogger.info('🧪 Creating simple test notification...');
+    
     await showNotification(
       id: 888888,
       title: '🔔 Simple Test Notification',
-      body: 'This is a basic test notification without actions',
+      body: 'This is a basic test notification without actions. Tap me!',
       payload: jsonEncode({
         'habitId': 'simple-test',
         'type': 'test',
       }),
     );
-    AppLogger.info('Simple test notification shown');
+    AppLogger.info('✅ Simple test notification shown with ID: 888888');
+  }
+
+  /// Debug method to test notification system comprehensively
+  static Future<void> debugNotificationSystem() async {
+    AppLogger.info('🔍 === NOTIFICATION SYSTEM DEBUG ===');
+    AppLogger.info('🔧 Initialized: $_isInitialized');
+    AppLogger.info('📱 Platform: ${Platform.operatingSystem}');
+    AppLogger.info('🔗 Callback set: ${onNotificationAction != null}');
+    
+    if (Platform.isAndroid) {
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      
+      if (androidImplementation != null) {
+        final bool? notificationsEnabled = await androidImplementation.areNotificationsEnabled();
+        AppLogger.info('🔔 Notifications enabled: $notificationsEnabled');
+        
+        final bool canScheduleExact = await canScheduleExactAlarms();
+        AppLogger.info('⏰ Can schedule exact alarms: $canScheduleExact');
+      }
+    }
+    
+    AppLogger.info('🔍 === END DEBUG ===');
   }
 }
