@@ -1480,6 +1480,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
       }
     }
   }
+
+  /// Test simple notification without actions
+  void _testSimpleNotification() async {
+    try {
+      await NotificationService.showSimpleTestNotification();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Simple test notification sent!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      AppLogger.info('Simple test notification triggered from settings');
+    } catch (e) {
+      AppLogger.error('Error showing simple test notification', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Test notification with action buttons
+  void _testNotificationWithActions() async {
+    try {
+      await NotificationService.showTestNotificationWithActions();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🧪 Test notification with actions sent! Try the Complete/Snooze buttons.'),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+      AppLogger.info('Test notification with actions triggered from settings');
+    } catch (e) {
+      AppLogger.error('Error showing test notification with actions', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 }
 
 class _SettingsSection extends StatelessWidget {

@@ -86,7 +86,7 @@ class NotificationActionService {
               AppLogger.info('✅ SUCCESS: Habit marked as complete from notification: ${habit.name} $frequencyText');
               
               // Force save to ensure persistence
-              await habitService.saveHabit(habit);
+              await habitService.updateHabit(habit);
               AppLogger.info('Habit data saved to database');
             } else {
               // Log with frequency-specific message
