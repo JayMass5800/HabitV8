@@ -788,7 +788,11 @@ class HealthHabitIntegrationService {
     final status = <String, dynamic>{};
     
     try {
-      final habits = await habitService.getActiveHabits();
+      final allHabits = await habitService.getActiveHabits();
+      // Filter for health and fitness habits only
+      final habits = allHabits.where((habit) => 
+        habit.category == 'Health' || habit.category == 'Fitness'
+      ).toList();
       final healthPermissions = await HealthService.hasPermissions();
       final autoCompletionEnabled = await isAutoCompletionEnabled();
       
@@ -811,6 +815,7 @@ class HealthHabitIntegrationService {
       }
       
       status['totalHabits'] = habits.length;
+      status['totalAllHabits'] = allHabits.length; // Keep track of all habits for reference
       status['healthMappedHabits'] = healthMappedHabits;
       status['mappingPercentage'] = habits.isNotEmpty ? 
           (healthMappedHabits / habits.length * 100).round() : 0;

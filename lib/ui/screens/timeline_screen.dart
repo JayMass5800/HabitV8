@@ -365,9 +365,30 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         return habit.monthlySchedule.contains(day);
       case HabitFrequency.yearly:
         // For yearly habits, check if the selected date matches the habit's yearly schedule
-        // The yearly schedule should be based on the habit's creation date or a specific date
-        final habitCreationDate = habit.createdAt;
-        return date.month == habitCreationDate.month && date.day == habitCreationDate.day;
+        // Use selectedYearlyDates if available, otherwise fall back to creation date
+        if (habit.selectedYearlyDates.isNotEmpty) {
+          return habit.selectedYearlyDates.any((selectedDate) {
+            final parts = selectedDate.split('-');
+            if (parts.length == 3) {
+              final month = int.tryParse(parts[1]);
+              final day = int.tryParse(parts[2]);
+              if (month != null && day != null) {
+                return date.month == month && date.day == day;
+              }
+            }
+            return false;
+          });
+        } else {
+          // Fallback: use creation date but only show on or after the anniversary
+          final habitCreationDate = habit.createdAt;
+          final currentYear = date.year;
+          final anniversaryDate = DateTime(currentYear, habitCreationDate.month, habitCreationDate.day);
+          
+          // Only show if the date is the anniversary and it's on or after the creation year
+          return date.month == habitCreationDate.month && 
+                 date.day == habitCreationDate.day &&
+                 currentYear >= habitCreationDate.year;
+        }
     }
   }
 

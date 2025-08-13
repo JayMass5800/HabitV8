@@ -29,15 +29,19 @@ class HealthHabitAnalyticsService {
       final endDate = DateTime.now();
       final startDate = endDate.subtract(Duration(days: analysisWindowDays));
       
-      // Get all habits and health data
-      final habits = await habitService.getAllHabits();
+      // Get all habits and filter for health-related categories only
+      final allHabits = await habitService.getAllHabits();
+      final habits = allHabits.where((habit) => 
+        habit.category == 'Health' || habit.category == 'Fitness'
+      ).toList();
+      
       final healthData = await HealthService.getAllHealthData(
         startDate: startDate,
         endDate: endDate,
       );
       
       if (habits.isEmpty) {
-        report.error = 'No habits found for analysis';
+        report.error = 'No health or fitness habits found for analysis';
         return report;
       }
       

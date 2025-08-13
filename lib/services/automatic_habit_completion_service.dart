@@ -270,14 +270,17 @@ class AutomaticHabitCompletionService {
         return result;
       }
       
-      // Get active habits
+      // Get active habits and filter for health-related categories only
       final habitBox = await DatabaseService.getInstance();
       final habitService = HabitService(habitBox);
-      final habits = await habitService.getActiveHabits();
+      final allHabits = await habitService.getActiveHabits();
+      final habits = allHabits.where((habit) => 
+        habit.category == 'Health' || habit.category == 'Fitness'
+      ).toList();
       
       if (habits.isEmpty) {
-        AppLogger.info('No active habits found');
-        result.skippedReason = 'No active habits';
+        AppLogger.info('No active health or fitness habits found');
+        result.skippedReason = 'No active health or fitness habits';
         return result;
       }
       
