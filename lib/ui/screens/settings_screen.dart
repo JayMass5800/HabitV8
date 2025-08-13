@@ -418,6 +418,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
           ),
           const SizedBox(height: 24),
           _SettingsSection(
+            title: 'Debug & Testing',
+            children: [
+              _SettingsTile(
+                title: 'Test Simple Notification',
+                subtitle: 'Show a basic test notification',
+                leading: const Icon(Icons.notifications_outlined),
+                onTap: () => _testSimpleNotification(),
+              ),
+              _SettingsTile(
+                title: 'Test Notification with Actions',
+                subtitle: 'Show notification with Complete/Snooze buttons',
+                leading: const Icon(Icons.notification_add),
+                onTap: () => _testNotificationWithActions(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _SettingsSection(
             title: 'About',
             children: [
               _SettingsTile(

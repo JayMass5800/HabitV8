@@ -55,40 +55,49 @@ class NotificationActionService {
       // Get the habit service from the provider
       final habitServiceAsync = _container!.read(habitServiceProvider);
       
-      await habitServiceAsync.when(
+      habitServiceAsync.when(
         data: (habitService) async {
-          AppLogger.info('Habit service obtained successfully');
-          
-          // Get the habit
-          final habit = await habitService.getHabitById(habitId);
-          if (habit == null) {
-            AppLogger.warning('Habit not found: $habitId');
-            return;
-          }
-          
-          AppLogger.info('Found habit: ${habit.name}');
-          
-          // Check if already completed for the current time period
-          final now = DateTime.now();
-          final isCompleted = habitService.isHabitCompletedForCurrentPeriod(habitId, now);
-          
-          AppLogger.info('Habit completion status: $isCompleted');
-          
-          if (!isCompleted) {
-            // Mark the habit as complete for this time period
-            await habitService.markHabitComplete(habitId, now);
+          try {
+            AppLogger.info('Habit service obtained successfully');
             
-            // Log with frequency-specific message
-            final frequencyText = habit.frequency == HabitFrequency.hourly 
-                ? 'for this hour' 
-                : 'for today';
-            AppLogger.info('Habit marked as complete from notification: ${habit.name} $frequencyText');
-          } else {
-            // Log with frequency-specific message
-            final frequencyText = habit.frequency == HabitFrequency.hourly 
-                ? 'for this hour' 
-                : 'for today';
-            AppLogger.info('Habit already completed $frequencyText: ${habit.name}');
+            // Get the habit
+            final habit = await habitService.getHabitById(habitId);
+            if (habit == null) {
+              AppLogger.warning('Habit not found: $habitId');
+              return;
+            }
+            
+            AppLogger.info('Found habit: ${habit.name}');
+            
+            // Check if already completed for the current time period
+            final now = DateTime.now();
+            final isCompleted = habitService.isHabitCompletedForCurrentPeriod(habitId, now);
+            
+            AppLogger.info('Habit completion status: $isCompleted');
+            
+            if (!isCompleted) {
+              // Mark the habit as complete for this time period
+              await habitService.markHabitComplete(habitId, now);
+              
+              // Log with frequency-specific message
+              final frequencyText = habit.frequency == HabitFrequency.hourly 
+                  ? 'for this hour' 
+                  : 'for today';
+              AppLogger.info('✅ SUCCESS: Habit marked as complete from notification: ${habit.name} $frequencyText');
+              
+              // Force save to ensure persistence
+              await habitService.saveHabit(habit);
+              AppLogger.info('Habit data saved to database');
+            } else {
+              // Log with frequency-specific message
+              final frequencyText = habit.frequency == HabitFrequency.hourly 
+                  ? 'for this hour' 
+                  : 'for today';
+              AppLogger.info('ℹ️ INFO: Habit already completed $frequencyText: ${habit.name}');
+            }
+          } catch (e, stackTrace) {
+            AppLogger.error('Error in habit completion process', e);
+            AppLogger.error('Stack trace: $stackTrace');
           }
         },
         loading: () {

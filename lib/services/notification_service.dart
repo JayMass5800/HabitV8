@@ -242,28 +242,30 @@ class NotificationService {
     try {
       switch (action.toLowerCase()) {
         case 'complete':
-          AppLogger.info('Processing complete action for habit: $habitId');
+          AppLogger.info('🔥 Processing complete action for habit: $habitId');
           
           // Always cancel the notification first for complete action
           final notificationId = habitId.hashCode;
           await cancelNotification(notificationId);
-          AppLogger.info('Notification cancelled for complete action for habit: $habitId');
+          AppLogger.info('✅ Notification cancelled for complete action for habit: $habitId');
           
           // Call the callback if set
           if (onNotificationAction != null) {
+            AppLogger.info('📞 Calling complete action callback for habit: $habitId');
             onNotificationAction!(habitId, 'complete');
-            AppLogger.info('Complete action callback executed for habit: $habitId');
+            AppLogger.info('✅ Complete action callback executed for habit: $habitId');
           } else {
-            AppLogger.warning('No notification action callback set - action will be lost');
+            AppLogger.warning('❌ No notification action callback set - action will be lost');
             // Store the action for later processing if callback is not set
             _storeActionForLaterProcessing(habitId, 'complete');
           }
           break;
           
         case 'snooze':
-          AppLogger.info('Processing snooze action for habit: $habitId');
+          AppLogger.info('😴 Processing snooze action for habit: $habitId');
           // Handle snooze action
           await _handleSnoozeAction(habitId);
+          AppLogger.info('✅ Snooze action completed for habit: $habitId');
           break;
           
         default:
@@ -285,30 +287,35 @@ class NotificationService {
   static Future<void> _handleSnoozeAction(String habitId) async {
     try {
       final notificationId = habitId.hashCode;
+      AppLogger.info('🔔 Starting snooze process for habit: $habitId (notification ID: $notificationId)');
       
       // Cancel the current notification
       await cancelNotification(notificationId);
-      AppLogger.info('Cancelled current notification for habit: $habitId');
+      AppLogger.info('❌ Cancelled current notification for habit: $habitId');
       
       // Schedule a new notification for 30 minutes later
+      final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
+      AppLogger.info('⏰ Scheduling snoozed notification for: $snoozeTime');
+      
       await snoozeNotification(
         id: notificationId,
         habitId: habitId,
         title: '⏰ Habit Reminder (Snoozed)',
         body: 'Time to complete your habit! This is your snoozed reminder.',
       );
+      AppLogger.info('📅 Snoozed notification scheduled successfully');
       
       // Call the callback if set
       if (onNotificationAction != null) {
         onNotificationAction!(habitId, 'snooze');
-        AppLogger.info('Snooze action callback executed for habit: $habitId');
+        AppLogger.info('📞 Snooze action callback executed for habit: $habitId');
       } else {
-        AppLogger.warning('No notification action callback set for snooze');
+        AppLogger.warning('⚠️ No notification action callback set for snooze');
       }
       
-      AppLogger.info('Notification snoozed for 30 minutes for habit: $habitId');
+      AppLogger.info('✅ Notification snoozed for 30 minutes for habit: $habitId');
     } catch (e) {
-      AppLogger.error('Error handling snooze action for habit: $habitId', e);
+      AppLogger.error('❌ Error handling snooze action for habit: $habitId', e);
     }
   }
 
@@ -923,15 +930,15 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           'Complete',
-          showsUserInterface: true,
+          showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           'Snooze 30min',
-          showsUserInterface: true,
-          cancelNotification: false,
+          showsUserInterface: false,
+          cancelNotification: true,
           allowGeneratedReplies: false,
         ),
       ],
@@ -982,15 +989,15 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           'Complete',
-          showsUserInterface: true,
+          showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           'Snooze 30min',
-          showsUserInterface: true,
-          cancelNotification: false,
+          showsUserInterface: false,
+          cancelNotification: true,
           allowGeneratedReplies: false,
         ),
       ],
@@ -1042,11 +1049,15 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    AppLogger.info('🔄 Snoozing notification ID: $id for habit: $habitId');
+    
     // Cancel the current notification
     await _notificationsPlugin.cancel(id);
+    AppLogger.info('❌ Current notification cancelled');
     
     // Schedule a new one for 30 minutes later
     final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
+    AppLogger.info('⏰ Scheduling new notification for: $snoozeTime');
     
     await scheduleHabitNotification(
       id: id,
@@ -1056,7 +1067,7 @@ class NotificationService {
       scheduledTime: snoozeTime,
     );
     
-    AppLogger.info('Notification snoozed for 30 minutes');
+    AppLogger.info('✅ Notification snoozed for 30 minutes - new notification scheduled');
   }
 
   /// Debug method to check exact alarm permissions and timezone
