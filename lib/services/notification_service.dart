@@ -126,16 +126,24 @@ class NotificationService {
 
   /// Handle notification tap and actions
   static void _onNotificationTapped(NotificationResponse notificationResponse) async {
+    AppLogger.info('=== NOTIFICATION RESPONSE DEBUG ===');
+    AppLogger.info('Notification ID: ${notificationResponse.id}');
+    AppLogger.info('Action ID: ${notificationResponse.actionId}');
+    AppLogger.info('Input: ${notificationResponse.input}');
+    AppLogger.info('Payload: ${notificationResponse.payload}');
+    AppLogger.info('Notification response type: ${notificationResponse.notificationResponseType}');
+    
     final String? payload = notificationResponse.payload;
     if (payload != null) {
-      AppLogger.info('Notification tapped with payload: $payload');
-      AppLogger.info('Action ID: ${notificationResponse.actionId}');
-      AppLogger.info('Input: ${notificationResponse.input}');
+      AppLogger.info('Processing notification with payload: $payload');
       
       try {
         final Map<String, dynamic> data = jsonDecode(payload);
         final String? habitId = data['habitId'];
         final String? action = notificationResponse.actionId;
+        
+        AppLogger.info('Parsed habitId: $habitId');
+        AppLogger.info('Parsed action: $action');
         
         if (habitId != null) {
           if (action != null && action.isNotEmpty) {
@@ -148,10 +156,14 @@ class NotificationService {
             // You could open the app to the habit details or timeline here
             // For now, we'll just log it
           }
+        } else {
+          AppLogger.warning('No habitId found in notification payload');
         }
       } catch (e) {
         AppLogger.error('Error parsing notification payload', e);
       }
+    } else {
+      AppLogger.warning('Notification tapped but no payload provided');
     }
   }
 
@@ -828,12 +840,14 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,
+      enableVibration: true,
+      playSound: true,
       actions: [
         const AndroidNotificationAction(
           'complete',
           'Complete',
           showsUserInterface: false,
-          cancelNotification: false,
+          cancelNotification: true,
         ),
         const AndroidNotificationAction(
           'snooze',

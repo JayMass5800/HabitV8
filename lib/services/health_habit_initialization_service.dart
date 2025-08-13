@@ -17,6 +17,7 @@ class HealthHabitInitializationService {
   static const String _initializationStatusKey = 'health_habit_init_status';
   static const String _lastInitializationKey = 'last_health_habit_init';
   static const String _initializationVersionKey = 'health_habit_init_version';
+  static const String _notificationSentKey = 'health_habit_notification_sent';
   
   // Current version of the health-habit integration system
   static const int _currentVersion = 1;
@@ -336,24 +337,47 @@ class HealthHabitInitializationService {
     }
   }
 
-  /// Send initialization notification
+  /// Send initialization notification (only once)
   static Future<void> _sendInitializationNotification(bool success) async {
     try {
-      if (success) {
-        await NotificationService.showNotification(
-          id: 9997,
-          title: 'Health Integration Ready! 🎯',
-          body: 'Your habits can now be automatically completed based on health data.',
-        );
+      final prefs = await SharedPreferences.getInstance();
+      final notificationSent = prefs.getBool(_notificationSentKey) ?? false;
+      
+      // Only send notification if it hasn't been sent before
+      if (!notificationSent) {
+        if (success) {
+          await NotificationService.showNotification(
+            id: 9997,
+            title: 'Health Integration Ready! 🎯',
+            body: 'Your habits can now be automatically completed based on health data.',
+          );
+        } else {
+          await NotificationService.showNotification(
+            id: 9996,
+            title: 'Health Integration Setup',
+            body: 'Some features may be limited. Check settings to enable full integration.',
+          );
+        }
+        
+        // Mark notification as sent
+        await prefs.setBool(_notificationSentKey, true);
+        AppLogger.info('Health integration notification sent');
       } else {
-        await NotificationService.showNotification(
-          id: 9996,
-          title: 'Health Integration Setup',
-          body: 'Some features may be limited. Check settings to enable full integration.',
-        );
+        AppLogger.info('Health integration notification already sent, skipping');
       }
     } catch (e) {
       AppLogger.error('Failed to send initialization notification', e);
+    }
+  }
+
+  /// Reset notification flag (for testing or re-enabling notifications)
+  static Future<void> resetNotificationFlag() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_notificationSentKey);
+      AppLogger.info('Health integration notification flag reset');
+    } catch (e) {
+      AppLogger.error('Failed to reset notification flag', e);
     }
   }
 

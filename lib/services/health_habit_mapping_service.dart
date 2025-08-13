@@ -26,7 +26,7 @@ class HealthHabitMappingService {
     ),
     
     HealthDataType.ACTIVE_ENERGY_BURNED: HealthHabitMapping(
-      keywords: ['exercise', 'workout', 'gym', 'fitness', 'cardio', 'training', 'sport', 'run', 'bike'],
+      keywords: ['exercise', 'workout', 'gym', 'fitness', 'cardio', 'training', 'sport', 'run', 'bike', 'vibration', 'plate', 'vibrating'],
       thresholds: {
         'minimal': 100,     // Light exercise (100 cal)
         'moderate': 250,    // Moderate exercise (250 cal)
@@ -132,26 +132,39 @@ class HealthHabitMappingService {
         return null; // Too weak correlation
       }
       
-      // Determine appropriate threshold based on habit frequency and difficulty
-      String thresholdLevel = 'moderate'; // Default
+      // Try to extract custom threshold from habit name/description first
+      final customThreshold = _extractCustomThreshold(searchText, bestMatch.key);
       
-      if (habit.frequency == HabitFrequency.daily) {
-        thresholdLevel = 'moderate';
-      } else if (habit.frequency == HabitFrequency.weekly) {
-        thresholdLevel = 'active';
-      } else if (habit.frequency == HabitFrequency.monthly) {
-        thresholdLevel = 'very_active';
+      double threshold;
+      String thresholdLevel;
+      
+      if (customThreshold != null) {
+        // Use custom threshold extracted from habit text
+        threshold = customThreshold;
+        thresholdLevel = 'custom';
+        AppLogger.info('Using custom threshold for habit ${habit.name}: $threshold');
+      } else {
+        // Determine appropriate threshold based on habit frequency and difficulty
+        thresholdLevel = 'moderate'; // Default
+        
+        if (habit.frequency == HabitFrequency.daily) {
+          thresholdLevel = 'moderate';
+        } else if (habit.frequency == HabitFrequency.weekly) {
+          thresholdLevel = 'active';
+        } else if (habit.frequency == HabitFrequency.monthly) {
+          thresholdLevel = 'very_active';
+        }
+        
+        // Adjust based on habit name patterns
+        if (searchText.contains('light') || searchText.contains('easy') || searchText.contains('gentle')) {
+          thresholdLevel = 'minimal';
+        } else if (searchText.contains('intense') || searchText.contains('hard') || searchText.contains('vigorous')) {
+          thresholdLevel = 'very_active';
+        }
+        
+        final mapping = healthMappings[bestMatch.key]!;
+        threshold = mapping.thresholds[thresholdLevel] ?? mapping.thresholds['moderate']!;
       }
-      
-      // Adjust based on habit name patterns
-      if (searchText.contains('light') || searchText.contains('easy') || searchText.contains('gentle')) {
-        thresholdLevel = 'minimal';
-      } else if (searchText.contains('intense') || searchText.contains('hard') || searchText.contains('vigorous')) {
-        thresholdLevel = 'very_active';
-      }
-      
-      final mapping = healthMappings[bestMatch.key]!;
-      final threshold = mapping.thresholds[thresholdLevel] ?? mapping.thresholds['moderate']!;
       
       return HabitHealthMapping(
         habitId: habit.id,
@@ -487,6 +500,85 @@ class HealthHabitMappingService {
     }
     
     return stats;
+  }
+
+  /// Extract custom threshold from habit name/description
+  static double? _extractCustomThreshold(String searchText, HealthDataType healthType) {
+    try {
+      // Define patterns for different health data types
+      List<RegExp> patterns = [];
+      
+      switch (healthType) {
+        case HealthDataType.STEPS:
+          patterns = [
+            RegExp(r'(\d+)\s*steps?', caseSensitive: false),
+            RegExp(r'(\d+)\s*step', caseSensitive: false),
+            RegExp(r'walk\s*(\d+)', caseSensitive: false),
+            RegExp(r'(\d+)\s*walk', caseSensitive: false),
+          ];
+          break;
+        case HealthDataType.ACTIVE_ENERGY_BURNED:
+          patterns = [
+            RegExp(r'(\d+)\s*cal(?:ories?)?', caseSensitive: false),
+            RegExp(r'burn\s*(\d+)', caseSensitive: false),
+            RegExp(r'(\d+)\s*burn', caseSensitive: false),
+          ];
+          break;
+        case HealthDataType.WATER:
+          patterns = [
+            RegExp(r'(\d+)\s*ml', caseSensitive: false),
+            RegExp(r'(\d+)\s*l(?:iter)?s?', caseSensitive: false),
+            RegExp(r'(\d+)\s*cup', caseSensitive: false),
+            RegExp(r'drink\s*(\d+)', caseSensitive: false),
+          ];
+          break;
+        case HealthDataType.MINDFULNESS:
+          patterns = [
+            RegExp(r'(\d+)\s*min(?:ute)?s?', caseSensitive: false),
+            RegExp(r'meditate\s*(\d+)', caseSensitive: false),
+            RegExp(r'(\d+)\s*meditation', caseSensitive: false),
+          ];
+          break;
+        case HealthDataType.SLEEP_IN_BED:
+          patterns = [
+            RegExp(r'(\d+)\s*h(?:our)?s?', caseSensitive: false),
+            RegExp(r'sleep\s*(\d+)', caseSensitive: false),
+            RegExp(r'(\d+)\s*sleep', caseSensitive: false),
+          ];
+          break;
+        default:
+          return null;
+      }
+      
+      // Try to find a match with any of the patterns
+      for (final pattern in patterns) {
+        final match = pattern.firstMatch(searchText);
+        if (match != null && match.group(1) != null) {
+          final value = double.tryParse(match.group(1)!);
+          if (value != null && value > 0) {
+            // Apply unit conversions if needed
+            switch (healthType) {
+              case HealthDataType.WATER:
+                // Convert liters to ml if needed
+                if (searchText.toLowerCase().contains('l') && !searchText.toLowerCase().contains('ml')) {
+                  return value * 1000; // Convert liters to ml
+                }
+                return value;
+              case HealthDataType.SLEEP_IN_BED:
+                // Sleep is stored in hours
+                return value;
+              default:
+                return value;
+            }
+          }
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      AppLogger.error('Error extracting custom threshold from: $searchText', e);
+      return null;
+    }
   }
 }
 
