@@ -273,6 +273,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                   }).toList(),
                 ),
               ),
+              _SettingsTile(
+                title: 'Test Notification Actions',
+                subtitle: 'Send a test notification with action buttons',
+                leading: const Icon(Icons.bug_report),
+                onTap: () => _showTestNotification(),
+              ),
             ],
           ),
           const SizedBox(height: 24),

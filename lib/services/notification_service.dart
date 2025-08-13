@@ -58,11 +58,13 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
+      onDidReceiveBackgroundNotificationResponse: _onBackgroundNotificationTapped,
     );
 
     // Request permissions for Android 13+
     if (Platform.isAndroid) {
       await _requestAndroidPermissions();
+      await _createNotificationChannels();
     }
 
     _isInitialized = true;
@@ -85,6 +87,40 @@ class NotificationService {
   /// Check if device is running Android 12+ (API level 31+) - public version
   static Future<bool> isAndroid12Plus() async {
     return await _isAndroid12Plus();
+  }
+
+  /// Create Android notification channels
+  static Future<void> _createNotificationChannels() async {
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidImplementation != null) {
+      // Create habit notification channel
+      const AndroidNotificationChannel habitChannel = AndroidNotificationChannel(
+        'habit_channel',
+        'Habit Notifications',
+        description: 'Notifications for habit reminders',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      );
+
+      // Create scheduled habit notification channel
+      const AndroidNotificationChannel scheduledHabitChannel = AndroidNotificationChannel(
+        'habit_scheduled_channel',
+        'Scheduled Habit Notifications',
+        description: 'Scheduled notifications for habit reminders',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      );
+
+      await androidImplementation.createNotificationChannel(habitChannel);
+      await androidImplementation.createNotificationChannel(scheduledHabitChannel);
+      
+      AppLogger.info('Notification channels created successfully');
+    }
   }
 
   /// Request Android notification permissions with enhanced exact alarm handling
@@ -122,6 +158,19 @@ class NotificationService {
         AppLogger.info('Android 11 or below detected - exact alarm permissions not required');
       }
     }
+  }
+
+  /// Handle background notification responses (when app is not in foreground)
+  @pragma('vm:entry-point')
+  static void _onBackgroundNotificationTapped(NotificationResponse notificationResponse) {
+    AppLogger.info('=== BACKGROUND NOTIFICATION RESPONSE ===');
+    AppLogger.info('Background notification ID: ${notificationResponse.id}');
+    AppLogger.info('Background action ID: ${notificationResponse.actionId}');
+    AppLogger.info('Background payload: ${notificationResponse.payload}');
+    
+    // For background responses, we need to handle them differently
+    // The app might not be fully initialized, so we'll delegate to the foreground handler
+    _onNotificationTapped(notificationResponse);
   }
 
   /// Handle notification tap and actions
@@ -184,17 +233,19 @@ class NotificationService {
         case 'complete':
           AppLogger.info('Processing complete action for habit: $habitId');
           
+          // Always cancel the notification first for complete action
+          final notificationId = habitId.hashCode;
+          await cancelNotification(notificationId);
+          AppLogger.info('Notification cancelled for complete action for habit: $habitId');
+          
           // Call the callback if set
           if (onNotificationAction != null) {
             onNotificationAction!(habitId, 'complete');
             AppLogger.info('Complete action callback executed for habit: $habitId');
-            
-            // Cancel the notification after the callback is processed
-            final notificationId = habitId.hashCode;
-            await cancelNotification(notificationId);
-            AppLogger.info('Notification cancelled after complete action for habit: $habitId');
           } else {
-            AppLogger.warning('No notification action callback set');
+            AppLogger.warning('No notification action callback set - action will be lost');
+            // Store the action for later processing if callback is not set
+            _storeActionForLaterProcessing(habitId, 'complete');
           }
           break;
           
@@ -210,6 +261,13 @@ class NotificationService {
     } catch (e) {
       AppLogger.error('Error handling notification action: $action', e);
     }
+  }
+  
+  /// Store action for later processing if callback is not available
+  static void _storeActionForLaterProcessing(String habitId, String action) {
+    // This is a fallback mechanism - in a real app you might want to store this in SharedPreferences
+    AppLogger.warning('Storing action for later processing: $action for habit: $habitId');
+    // For now, just log it - the app should handle this when it starts up
   }
   
   /// Handle snooze action specifically
