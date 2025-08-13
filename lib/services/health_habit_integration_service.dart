@@ -149,10 +149,13 @@ class HealthHabitIntegrationService {
         return result;
       }
       
-      // Get all active habits
-      final habits = await habitService.getActiveHabits();
+      // Get all active habits and filter for health-related categories only
+      final allHabits = await habitService.getActiveHabits();
+      final habits = allHabits.where((habit) => 
+        habit.category == 'Health' || habit.category == 'Fitness'
+      ).toList();
       if (habits.isEmpty) {
-        AppLogger.info('No active habits found');
+        AppLogger.info('No active health or fitness habits found');
         return result;
       }
       

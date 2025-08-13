@@ -140,8 +140,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       case HabitFrequency.yearly:
         // Check if the date is in the selected yearly dates
         if (habit.selectedYearlyDates.isEmpty) {
-          // Fallback: if no dates selected, use the creation date (month and day)
-          return checkDate.month == habitDate.month && checkDate.day == habitDate.day;
+          // Fallback: use creation date but only show on or after the anniversary
+          final currentYear = checkDate.year;
+          return checkDate.month == habitDate.month && 
+                 checkDate.day == habitDate.day &&
+                 currentYear >= habitDate.year;
         }
         // For yearly habits, we need to check if the month-day combination matches any selected date
         return habit.selectedYearlyDates.any((selectedDate) {
@@ -149,7 +152,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           if (parts.length == 3) {
             final selectedMonth = int.tryParse(parts[1]);
             final selectedDay = int.tryParse(parts[2]);
-            return selectedMonth == checkDate.month && selectedDay == checkDate.day;
+            final selectedYear = int.tryParse(parts[0]);
+            if (selectedMonth != null && selectedDay != null && selectedYear != null) {
+              // Only show if the date is on or after the selected year
+              return selectedMonth == checkDate.month && 
+                     selectedDay == checkDate.day &&
+                     checkDate.year >= selectedYear;
+            }
           }
           return false;
         });
