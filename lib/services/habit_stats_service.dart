@@ -241,7 +241,6 @@ class HabitStatsService {
   /// Calculate monthly statistics
   MonthlyStats _calculateMonthlyStats(Habit habit) {
     final now = DateTime.now();
-    final thisMonth = DateTime(now.year, now.month);
     final lastMonth = DateTime(now.year, now.month - 1);
 
     final thisMonthCompletions = habit.completions.where((c) =>

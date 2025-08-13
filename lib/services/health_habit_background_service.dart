@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:isolate';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/database.dart';
 import 'health_habit_integration_service.dart';
@@ -390,29 +388,7 @@ class HealthHabitBackgroundService {
     return stats;
   }
 
-  /// Update sync statistics
-  static Future<void> _updateSyncStatistics(HealthHabitSyncResult result) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      // Increment total syncs
-      final totalSyncs = (prefs.getInt('total_background_syncs') ?? 0) + 1;
-      await prefs.setInt('total_background_syncs', totalSyncs);
-      
-      // Update total auto-completions
-      if (result.hasCompletions) {
-        final totalCompletions = (prefs.getInt('total_auto_completions') ?? 0) + result.completionCount;
-        await prefs.setInt('total_auto_completions', totalCompletions);
-        
-        // Update average completions per sync
-        final avgCompletions = totalCompletions / totalSyncs;
-        await prefs.setDouble('avg_completions_per_sync', avgCompletions);
-      }
-      
-    } catch (e) {
-      AppLogger.error('Failed to update sync statistics', e);
-    }
-  }
+
 }
 
 /// Configuration for background service

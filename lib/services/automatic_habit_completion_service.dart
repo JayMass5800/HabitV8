@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:isolate';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'health_service.dart';
 import 'health_habit_mapping_service.dart';
-import 'health_habit_integration_service.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
 
@@ -287,10 +284,8 @@ class AutomaticHabitCompletionService {
         return result;
       }
       
-      // Get today's date range
+      // Get current time for completion checks
       final now = DateTime.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
       
       // Process each habit for potential completion
       for (final habit in habits) {

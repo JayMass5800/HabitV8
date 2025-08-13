@@ -19,7 +19,6 @@ import 'notification_service.dart';
 /// - Predictive habit completion suggestions
 class HealthHabitIntegrationService {
   static const String _lastHealthSyncKey = 'last_health_sync';
-  static const String _healthHabitMappingsKey = 'health_habit_mappings';
   static const String _autoCompletionEnabledKey = 'auto_completion_enabled';
   static const String _healthThresholdsKey = 'health_thresholds';
   

@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:health/health.dart';
 import '../domain/model/habit.dart';
-import '../data/database.dart';
 import 'health_service.dart';
 import 'logging_service.dart';
 
@@ -274,6 +273,9 @@ class HealthHabitMappingService {
       // Try to extract custom threshold from habit name/description first
       final customThreshold = _extractCustomThreshold(searchText, bestMatch.key);
       
+      // Get the mapping for the best match
+      final mapping = healthMappings[bestMatch.key]!;
+      
       double threshold;
       String thresholdLevel;
       
@@ -301,7 +303,6 @@ class HealthHabitMappingService {
           thresholdLevel = 'very_active';
         }
         
-        final mapping = healthMappings[bestMatch.key]!;
         threshold = mapping.thresholds[thresholdLevel] ?? mapping.thresholds['moderate']!;
       }
       

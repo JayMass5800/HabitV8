@@ -263,7 +263,6 @@ class HealthHabitAnalyticsService {
       if (dailyValues.length < 7) continue;
       
       final values = dailyValues.values.toList();
-      final dates = dailyValues.keys.toList()..sort();
       
       // Calculate trend metrics
       trend.currentValue = values.last;
@@ -750,7 +749,7 @@ class HealthHabitAnalyticsService {
         lastCompletion = completion;
       } else {
         // End current streak
-        if (lastCompletion!.difference(streakStart).inDays >= 2) { // At least 3 days
+        if (lastCompletion.difference(streakStart).inDays >= 2) { // At least 3 days
           periods.add(StreakPeriod(start: streakStart, end: lastCompletion));
         }
         streakStart = completion;

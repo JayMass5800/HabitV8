@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:health/health.dart';
 import '../domain/model/habit.dart';
-import '../data/database.dart';
 import 'health_service.dart';
 import 'health_habit_mapping_service.dart';
 import 'logging_service.dart';
@@ -674,10 +673,7 @@ class HealthEnhancedHabitCreationService {
     AppLogger.info('Storing health mapping for habit $habitId: ${mapping.toJson()}');
   }
 
-  /// Generate a unique habit ID
-  static String _generateHabitId() {
-    return 'habit_${DateTime.now().millisecondsSinceEpoch}_${math.Random().nextInt(1000)}';
-  }
+
 
   /// Analyze health patterns
   static Future<Map<HealthDataType, HealthPatternAnalysis>> _analyzeHealthPatterns(

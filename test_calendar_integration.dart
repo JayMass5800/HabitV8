@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'lib/services/calendar_service.dart';
-import 'lib/services/logging_service.dart';
 import 'lib/domain/model/habit.dart';
-import 'lib/data/database.dart';
 
 /// Simple test script to verify calendar integration
 void main() async {
@@ -62,15 +59,13 @@ void main() async {
       
       // Test creating a sample habit event
       print('\n7. Testing habit sync...');
-      final testHabit = Habit(
-        id: 'test-habit-${DateTime.now().millisecondsSinceEpoch}',
+      final testHabit = Habit.create(
         name: 'Test Calendar Sync',
         description: 'Testing calendar integration',
+        category: 'Test',
+        colorValue: 0xFF2196F3,
         frequency: HabitFrequency.daily,
         difficulty: HabitDifficulty.easy,
-        category: 'Test',
-        isActive: true,
-        createdAt: DateTime.now(),
         weeklySchedule: [1, 2, 3, 4, 5, 6, 7], // All days
         monthlySchedule: [],
         hourlyTimes: [],
