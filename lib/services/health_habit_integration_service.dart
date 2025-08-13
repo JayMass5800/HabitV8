@@ -221,12 +221,12 @@ class HealthHabitIntegrationService {
   }
 
   /// Process a single habit for potential auto-completion using advanced mapping
-  static Future<HabitCompletionResult> _processHabitForAutoCompletion({
+  static Future<HabitAutoCompletionResult> _processHabitForAutoCompletion({
     required Habit habit,
     required List<HealthDataPoint> healthData,
     required HabitService habitService,
   }) async {
-    final result = HabitCompletionResult(
+    final result = HabitAutoCompletionResult(
       habitId: habit.id,
       habitName: habit.name,
       completed: false,
@@ -763,7 +763,7 @@ class HealthHabitIntegrationService {
 
   /// Send notification about auto-completed habits
   static Future<void> _sendAutoCompletionNotification(
-    List<HabitCompletionResult> completedHabits,
+    List<HabitAutoCompletionResult> completedHabits,
   ) async {
     try {
       if (completedHabits.length == 1) {
@@ -885,7 +885,7 @@ class HealthHabitIntegrationService {
 
 /// Result of health-habit sync operation
 class HealthHabitSyncResult {
-  final List<HabitCompletionResult> completedHabits = [];
+  final List<HabitAutoCompletionResult> completedHabits = [];
   final Map<String, HabitHealthCorrelation> correlations = {};
   Map<String, dynamic> insights = {};
   String? error;
@@ -895,8 +895,8 @@ class HealthHabitSyncResult {
   int get completionCount => completedHabits.length;
 }
 
-/// Result of individual habit completion check
-class HabitCompletionResult {
+/// Result of individual habit auto-completion operation
+class HabitAutoCompletionResult {
   final String habitId;
   final String habitName;
   bool completed;
@@ -907,7 +907,7 @@ class HabitCompletionResult {
   double confidence;
   String? error;
   
-  HabitCompletionResult({
+  HabitAutoCompletionResult({
     required this.habitId,
     required this.habitName,
     required this.completed,

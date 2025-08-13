@@ -27,13 +27,18 @@ class HealthHabitMappingService {
         'treadmill', 'elliptical', 'stepper', 'stairs', 'climbing',
         // Daily activities
         'commute', 'commuting', 'errands', 'shopping', 'patrol', 'patrolling',
+        // Medical/recovery terms
+        'recovery', 'rehab', 'rehabilitation', 'therapy', 'physical', 'medical',
+        'healing', 'mobility', 'assisted', 'gentle', 'slow', 'basic', 'beginner',
+        'post-surgery', 'injury', 'limited', 'wheelchair', 'walker', 'cane',
         // Distance terms (often correlate with steps)
         'distance', 'mile', 'miles', 'km', 'kilometer', 'meters',
       ],
       thresholds: {
-        'minimal': 2000,    // Light activity
-        'moderate': 5000,   // Moderate activity
-        'active': 8000,     // Active lifestyle
+        'recovery': 500,     // Medical recovery/rehabilitation
+        'minimal': 2000,     // Light activity
+        'moderate': 5000,    // Moderate activity
+        'active': 8000,      // Active lifestyle
         'very_active': 12000, // Very active
       },
       unit: 'steps',
@@ -297,9 +302,16 @@ class HealthHabitMappingService {
         }
         
         // Adjust based on habit name patterns
-        if (searchText.contains('light') || searchText.contains('easy') || searchText.contains('gentle')) {
+        if (searchText.contains('recovery') || searchText.contains('rehab') || searchText.contains('rehabilitation') || 
+            searchText.contains('medical') || searchText.contains('therapy') || searchText.contains('physical therapy') ||
+            searchText.contains('post-surgery') || searchText.contains('healing') || searchText.contains('injury') ||
+            searchText.contains('limited mobility') || searchText.contains('wheelchair') || searchText.contains('assisted')) {
+          thresholdLevel = 'recovery';
+        } else if (searchText.contains('light') || searchText.contains('easy') || searchText.contains('gentle') ||
+                   searchText.contains('slow') || searchText.contains('basic') || searchText.contains('beginner')) {
           thresholdLevel = 'minimal';
-        } else if (searchText.contains('intense') || searchText.contains('hard') || searchText.contains('vigorous')) {
+        } else if (searchText.contains('intense') || searchText.contains('hard') || searchText.contains('vigorous') ||
+                   searchText.contains('challenging') || searchText.contains('advanced') || searchText.contains('high')) {
           thresholdLevel = 'very_active';
         }
         
@@ -665,6 +677,55 @@ class HealthHabitMappingService {
     return false;
   }
 
+  /// Check if a habit appears to be for medical/recovery purposes
+  static bool isMedicalRecoveryHabit(Habit habit) {
+    final searchText = '${habit.name} ${habit.description ?? ''}'.toLowerCase();
+    
+    return searchText.contains('recovery') || searchText.contains('rehab') || 
+           searchText.contains('rehabilitation') || searchText.contains('medical') || 
+           searchText.contains('therapy') || searchText.contains('physical therapy') ||
+           searchText.contains('post-surgery') || searchText.contains('healing') || 
+           searchText.contains('injury') || searchText.contains('limited mobility') || 
+           searchText.contains('wheelchair') || searchText.contains('assisted') ||
+           searchText.contains('walker') || searchText.contains('cane');
+  }
+
+  /// Get recommended step ranges for different user types
+  static Map<String, Map<String, dynamic>> getStepRecommendations() {
+    return {
+      'recovery': {
+        'range': '50-1000 steps',
+        'description': 'For medical recovery, rehabilitation, or limited mobility',
+        'examples': ['Post-surgery walking', 'Physical therapy steps', 'Assisted mobility'],
+        'threshold': 500,
+      },
+      'minimal': {
+        'range': '1000-3000 steps', 
+        'description': 'For beginners or light activity',
+        'examples': ['Gentle daily walk', 'Basic movement', 'Light exercise'],
+        'threshold': 2000,
+      },
+      'moderate': {
+        'range': '3000-7000 steps',
+        'description': 'For regular daily activity',
+        'examples': ['Daily walk', 'Regular movement', 'Moderate exercise'],
+        'threshold': 5000,
+      },
+      'active': {
+        'range': '7000-10000 steps',
+        'description': 'For active lifestyle',
+        'examples': ['Brisk walking', 'Active commuting', 'Regular exercise'],
+        'threshold': 8000,
+      },
+      'very_active': {
+        'range': '10000+ steps',
+        'description': 'For very active individuals',
+        'examples': ['Long walks', 'Running', 'High activity'],
+        'threshold': 12000,
+      },
+    };
+  }
+
   /// Extract custom threshold from habit name/description
   static double? _extractCustomThreshold(String searchText, HealthDataType healthType) {
     try {
@@ -678,6 +739,13 @@ class HealthHabitMappingService {
             RegExp(r'(\d+)\s*step', caseSensitive: false),
             RegExp(r'walk\s*(\d+)', caseSensitive: false),
             RegExp(r'(\d+)\s*walk', caseSensitive: false),
+            // Medical/recovery specific patterns
+            RegExp(r'at least\s*(\d+)', caseSensitive: false),
+            RegExp(r'minimum\s*(\d+)', caseSensitive: false),
+            RegExp(r'target\s*(\d+)', caseSensitive: false),
+            RegExp(r'goal\s*(\d+)', caseSensitive: false),
+            // Very low numbers for recovery
+            RegExp(r'(\d{1,3})\s*(?:steps?|walk)', caseSensitive: false),
           ];
           break;
         case HealthDataType.ACTIVE_ENERGY_BURNED:

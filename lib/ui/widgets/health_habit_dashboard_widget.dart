@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:health/health.dart';
 import '../../data/database.dart';
 import '../../services/health_habit_integration_service.dart';
-import '../../services/health_habit_mapping_service.dart' as mapping;
+import '../../services/health_habit_mapping_service.dart';
 import '../../services/health_service.dart';
 import '../../services/logging_service.dart';
 
@@ -28,7 +27,7 @@ class HealthHabitDashboardWidget extends ConsumerStatefulWidget {
 class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboardWidget> {
   bool _isLoading = false;
   Map<String, dynamic>? _integrationStatus;
-  List<HabitCompletionResult>? _recentCompletions;
+  List<HabitAutoCompletionResult>? _recentCompletions;
   Map<String, dynamic>? _todayHealthSummary;
 
   @override
@@ -296,7 +295,7 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
                 ),
                 if (completion.healthValue != null)
                   Text(
-                    '${completion.healthValue!.round()}',
+                    '${(completion.healthValue as num).round()}',
                     style: const TextStyle(
                       fontSize: 11,
                       color: Colors.grey,
