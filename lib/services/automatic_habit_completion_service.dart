@@ -270,17 +270,20 @@ class AutomaticHabitCompletionService {
         return result;
       }
       
-      // Get active habits and filter for health-related categories only
+      // Get active habits and filter for health-mappable habits
       final habitBox = await DatabaseService.getInstance();
       final habitService = HabitService(habitBox);
       final allHabits = await habitService.getActiveHabits();
+      
+      // Use mapping service to find health-related habits regardless of category
+      final mappableHabits = await HealthHabitMappingService.getMappableHabits(allHabits);
       final habits = allHabits.where((habit) => 
-        habit.category == 'Health' || habit.category == 'Fitness'
+        mappableHabits.any((mapping) => mapping.habitId == habit.id)
       ).toList();
       
       if (habits.isEmpty) {
-        AppLogger.info('No active health or fitness habits found');
-        result.skippedReason = 'No active health or fitness habits';
+        AppLogger.info('No active health-mappable habits found');
+        result.skippedReason = 'No active health-mappable habits';
         return result;
       }
       

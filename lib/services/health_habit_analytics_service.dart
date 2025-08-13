@@ -3,6 +3,7 @@ import 'package:health/health.dart';
 import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'health_service.dart';
+import 'health_habit_mapping_service.dart';
 import 'logging_service.dart';
 
 /// Advanced Health-Habit Analytics Service
@@ -29,10 +30,13 @@ class HealthHabitAnalyticsService {
       final endDate = DateTime.now();
       final startDate = endDate.subtract(Duration(days: analysisWindowDays));
       
-      // Get all habits and filter for health-related categories only
+      // Get all habits and filter for health-mappable habits
       final allHabits = await habitService.getAllHabits();
+      
+      // Use mapping service to find health-related habits regardless of category
+      final mappableHabits = await HealthHabitMappingService.getMappableHabits(allHabits);
       final habits = allHabits.where((habit) => 
-        habit.category == 'Health' || habit.category == 'Fitness'
+        mappableHabits.any((mapping) => mapping.habitId == habit.id)
       ).toList();
       
       final healthData = await HealthService.getAllHealthData(
@@ -41,7 +45,7 @@ class HealthHabitAnalyticsService {
       );
       
       if (habits.isEmpty) {
-        report.error = 'No health or fitness habits found for analysis';
+        report.error = 'No health-mappable habits found for analysis';
         return report;
       }
       
