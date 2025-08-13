@@ -14,7 +14,23 @@ class HealthHabitMappingService {
   /// Map of health data types to their corresponding habit keywords and thresholds
   static const Map<HealthDataType, HealthHabitMapping> healthMappings = {
     HealthDataType.STEPS: HealthHabitMapping(
-      keywords: ['walk', 'step', 'walking', 'jog', 'run', 'exercise', 'cardio', 'fitness'],
+      keywords: [
+        // Basic walking terms
+        'walk', 'walking', 'walked', 'step', 'steps', 'stepping',
+        // Running and jogging
+        'run', 'running', 'jog', 'jogging', 'sprint', 'sprinting',
+        // Movement and activity
+        'move', 'movement', 'moving', 'active', 'activity', 'stroll', 'strolling',
+        'hike', 'hiking', 'trek', 'trekking', 'march', 'marching',
+        // Exercise terms that involve steps
+        'exercise', 'cardio', 'fitness', 'aerobic', 'aerobics',
+        // Specific activities
+        'treadmill', 'elliptical', 'stepper', 'stairs', 'climbing',
+        // Daily activities
+        'commute', 'commuting', 'errands', 'shopping', 'patrol', 'patrolling',
+        // Distance terms (often correlate with steps)
+        'distance', 'mile', 'miles', 'km', 'kilometer', 'meters',
+      ],
       thresholds: {
         'minimal': 2000,    // Light activity
         'moderate': 5000,   // Moderate activity
@@ -26,7 +42,34 @@ class HealthHabitMappingService {
     ),
     
     HealthDataType.ACTIVE_ENERGY_BURNED: HealthHabitMapping(
-      keywords: ['exercise', 'workout', 'gym', 'fitness', 'cardio', 'training', 'sport', 'run', 'bike', 'vibration', 'plate', 'vibrating'],
+      keywords: [
+        // General exercise terms
+        'exercise', 'exercising', 'workout', 'working', 'train', 'training',
+        'fitness', 'fit', 'active', 'activity', 'sport', 'sports',
+        // Gym and equipment
+        'gym', 'gymnasium', 'weights', 'lifting', 'strength', 'resistance',
+        'dumbbell', 'barbell', 'kettlebell', 'machine', 'equipment',
+        // Cardio activities
+        'cardio', 'cardiovascular', 'aerobic', 'aerobics', 'hiit',
+        'run', 'running', 'jog', 'jogging', 'sprint', 'bike', 'biking',
+        'cycle', 'cycling', 'swim', 'swimming', 'row', 'rowing',
+        // Specific workouts
+        'crossfit', 'pilates', 'yoga', 'zumba', 'dance', 'dancing',
+        'boxing', 'kickboxing', 'martial', 'karate', 'taekwondo',
+        // Equipment and activities
+        'treadmill', 'elliptical', 'stepper', 'climber', 'vibration', 'plate', 'vibrating',
+        'tennis', 'basketball', 'football', 'soccer', 'volleyball',
+        'badminton', 'squash', 'racquet', 'golf', 'baseball',
+        // Outdoor activities
+        'hike', 'hiking', 'climb', 'climbing', 'ski', 'skiing',
+        'surf', 'surfing', 'kayak', 'kayaking', 'paddle',
+        // Body parts (often in exercise context)
+        'abs', 'core', 'legs', 'arms', 'chest', 'back', 'shoulders',
+        // Intensity terms
+        'intense', 'vigorous', 'hard', 'tough', 'challenging',
+        // Calorie-related terms
+        'burn', 'burning', 'calories', 'calorie', 'energy',
+      ],
       thresholds: {
         'minimal': 100,     // Light exercise (100 cal)
         'moderate': 250,    // Moderate exercise (250 cal)
@@ -38,7 +81,27 @@ class HealthHabitMappingService {
     ),
     
     HealthDataType.SLEEP_IN_BED: HealthHabitMapping(
-      keywords: ['sleep', 'rest', 'bedtime', 'bed', 'night', 'slumber'],
+      keywords: [
+        // Basic sleep terms
+        'sleep', 'sleeping', 'slept', 'asleep', 'sleepy',
+        'rest', 'resting', 'rested', 'restful',
+        // Bedtime terms
+        'bed', 'bedtime', 'bedroom', 'mattress', 'pillow',
+        'nap', 'napping', 'napped', 'siesta', 'doze', 'dozing',
+        // Time-related sleep terms
+        'night', 'nighttime', 'evening', 'late', 'early',
+        'hours', 'hour', 'time', 'schedule', 'routine',
+        // Sleep quality terms
+        'deep', 'light', 'rem', 'dream', 'dreaming',
+        'slumber', 'snooze', 'drowsy', 'tired', 'fatigue',
+        // Sleep hygiene terms
+        'wind', 'down', 'relax', 'unwind', 'calm', 'peaceful',
+        'quiet', 'dark', 'comfortable', 'cozy',
+        // Sleep problems (people track to improve)
+        'insomnia', 'restless', 'toss', 'turn', 'wake', 'waking',
+        // Recovery terms
+        'recover', 'recovery', 'recharge', 'rejuvenate', 'refresh',
+      ],
       thresholds: {
         'minimal': 6.0,     // 6 hours minimum
         'moderate': 7.0,    // 7 hours recommended
@@ -50,7 +113,29 @@ class HealthHabitMappingService {
     ),
     
     HealthDataType.WATER: HealthHabitMapping(
-      keywords: ['water', 'hydrate', 'drink', 'fluid', 'hydration'],
+      keywords: [
+        // Basic water terms
+        'water', 'h2o', 'hydrate', 'hydrating', 'hydration',
+        'drink', 'drinking', 'drank', 'sip', 'sipping',
+        // Fluid terms
+        'fluid', 'fluids', 'liquid', 'liquids', 'beverage', 'beverages',
+        // Containers and measurements
+        'bottle', 'bottles', 'glass', 'glasses', 'cup', 'cups',
+        'liter', 'liters', 'litre', 'litres', 'ml', 'milliliter',
+        'ounce', 'ounces', 'oz', 'gallon', 'quart', 'pint',
+        // Types of water/drinks
+        'tap', 'filtered', 'spring', 'mineral', 'sparkling',
+        'plain', 'still', 'cold', 'warm', 'hot', 'ice', 'iced',
+        // Health-related terms
+        'thirst', 'thirsty', 'dehydrate', 'dehydration',
+        'electrolyte', 'electrolytes', 'replenish', 'refill',
+        // Daily habits
+        'morning', 'afternoon', 'evening', 'meal', 'meals',
+        'before', 'after', 'during', 'workout', 'exercise',
+        // Tracking terms
+        'intake', 'consumption', 'amount', 'quantity', 'goal',
+        'target', 'daily', 'hourly', 'regular', 'consistent',
+      ],
       thresholds: {
         'minimal': 1000,    // 1L minimum
         'moderate': 2000,   // 2L recommended
@@ -62,7 +147,36 @@ class HealthHabitMappingService {
     ),
     
     HealthDataType.MINDFULNESS: HealthHabitMapping(
-      keywords: ['meditate', 'meditation', 'mindful', 'mindfulness', 'breathe', 'breathing', 'zen', 'calm'],
+      keywords: [
+        // Meditation terms
+        'meditate', 'meditation', 'meditative', 'meditating',
+        'mindful', 'mindfulness', 'mindfully', 'aware', 'awareness',
+        // Breathing practices
+        'breathe', 'breathing', 'breath', 'breathwork',
+        'inhale', 'exhale', 'pranayama', 'respiratory',
+        // Mental states
+        'calm', 'calming', 'peace', 'peaceful', 'tranquil', 'serenity',
+        'zen', 'zenful', 'centered', 'grounded', 'present', 'presence',
+        'focus', 'focused', 'concentration', 'concentrate',
+        // Relaxation terms
+        'relax', 'relaxation', 'relaxing', 'unwind', 'unwinding',
+        'stress', 'destress', 'relief', 'tension', 'release',
+        'quiet', 'silence', 'still', 'stillness',
+        // Spiritual/philosophical terms
+        'spiritual', 'soul', 'inner', 'self', 'reflection', 'reflect',
+        'contemplation', 'contemplate', 'introspection',
+        'gratitude', 'grateful', 'thankful', 'appreciation',
+        // Practices and techniques
+        'vipassana', 'transcendental', 'guided', 'mantra', 'chant',
+        'visualization', 'visualize', 'imagery', 'affirmation',
+        'prayer', 'praying', 'devotion', 'worship',
+        // Apps and tools
+        'headspace', 'calm', 'insight', 'timer', 'bell', 'gong',
+        'cushion', 'mat', 'candle', 'incense',
+        // Time-related
+        'minutes', 'minute', 'session', 'practice', 'daily',
+        'morning', 'evening', 'routine', 'habit',
+      ],
       thresholds: {
         'minimal': 5,       // 5 minutes minimum
         'moderate': 10,     // 10 minutes recommended
@@ -74,7 +188,32 @@ class HealthHabitMappingService {
     ),
     
     HealthDataType.WEIGHT: HealthHabitMapping(
-      keywords: ['weight', 'weigh', 'scale', 'body', 'mass'],
+      keywords: [
+        // Basic weight terms
+        'weight', 'weigh', 'weighing', 'weighed', 'pounds', 'lbs',
+        'kilograms', 'kg', 'kilogram', 'grams', 'gram',
+        // Scale and measurement
+        'scale', 'scales', 'measure', 'measuring', 'measurement',
+        'track', 'tracking', 'monitor', 'monitoring', 'record',
+        // Body terms
+        'body', 'bodily', 'mass', 'bmi', 'index', 'composition',
+        'fat', 'muscle', 'lean', 'bone', 'density',
+        // Health tracking
+        'health', 'healthy', 'fitness', 'progress', 'goal',
+        'target', 'ideal', 'maintain', 'maintenance',
+        // Weight management
+        'lose', 'losing', 'loss', 'gain', 'gaining', 'maintain',
+        'diet', 'dieting', 'nutrition', 'eating', 'food',
+        // Daily habits
+        'morning', 'daily', 'weekly', 'regular', 'routine',
+        'consistent', 'habit', 'check', 'checking',
+        // Medical/health terms
+        'doctor', 'physician', 'medical', 'health', 'checkup',
+        'appointment', 'visit', 'clinic', 'hospital',
+        // Emotional/motivational
+        'motivation', 'motivated', 'discipline', 'commitment',
+        'accountability', 'responsible', 'mindful',
+      ],
       thresholds: {
         'minimal': 1,       // Any weight measurement
         'moderate': 1,      // Daily weighing
@@ -210,6 +349,14 @@ class HealthHabitMappingService {
       );
       
       if (healthData.isEmpty) {
+        // Provide specific guidance for water tracking
+        if (mapping.healthDataType == HealthDataType.WATER) {
+          return HabitCompletionResult(
+            shouldComplete: false,
+            reason: 'No water intake data found. Water must be manually logged in your health app (Apple Health, Google Health, etc.) to enable auto-completion.',
+          );
+        }
+        
         return HabitCompletionResult(
           shouldComplete: false,
           reason: 'No health data available for ${mapping.healthDataType.name}',
@@ -500,6 +647,21 @@ class HealthHabitMappingService {
     }
     
     return stats;
+  }
+
+  /// Check if a habit should be recommended for manual tracking instead of health integration
+  static bool shouldRecommendManualTracking(Habit habit) {
+    final searchText = '${habit.name} ${habit.description ?? ''}'.toLowerCase();
+    
+    // Water habits are often better tracked manually due to lack of automatic tracking
+    if (searchText.contains(RegExp(r'\b(water|hydrat|drink|fluid)\b'))) {
+      return true;
+    }
+    
+    // Other habits that might be better tracked manually
+    // (can be expanded based on user feedback)
+    
+    return false;
   }
 
   /// Extract custom threshold from habit name/description
