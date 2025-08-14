@@ -1,7 +1,8 @@
-import 'package:health/health.dart';
+// import 'package:health/health.dart';  // REMOVED - causes Google Play Console issues
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'logging_service.dart';
+import 'minimal_health_service.dart';
 
 /// HealthService provides secure, privacy-focused access to health data for habit tracking.
 /// 
@@ -42,16 +43,16 @@ class HealthService {
   /// 
   /// CRITICAL: This list MUST match exactly what's declared in AndroidManifest.xml
   /// and health_permissions.xml to avoid static analysis issues
-  static List<HealthDataType> get _healthDataTypes {
+  static List<String> get _healthDataTypes {
     // FIXED LIST - DO NOT ADD MORE TYPES
     // These are the ONLY 6 health data types this app will ever request
     const allowedTypes = [
-      HealthDataType.STEPS,                    // Steps tracking
-      HealthDataType.ACTIVE_ENERGY_BURNED,     // Calories burned (active)
-      HealthDataType.SLEEP_IN_BED,             // Sleep duration
-      HealthDataType.WATER,                    // Water intake/hydration
-      HealthDataType.MINDFULNESS,              // Meditation/mindfulness
-      HealthDataType.WEIGHT,                   // Body weight
+      'STEPS',                    // Steps tracking
+      'ACTIVE_ENERGY_BURNED',     // Calories burned (active)
+      'SLEEP_IN_BED',             // Sleep duration
+      'WATER',                    // Water intake/hydration
+      'MINDFULNESS',              // Meditation/mindfulness
+      'WEIGHT',                   // Body weight
     ];
     
     // Validate that we're not accidentally including forbidden types
@@ -62,15 +63,18 @@ class HealthService {
   
   /// Validate that only allowed health data types are being used
   /// This prevents accidental inclusion of types that would trigger Google Play Console issues
-  static void _validateHealthDataTypes(List<HealthDataType> types) {
+  static void _validateHealthDataTypes(List<String> types) {
     // List of forbidden types that would trigger Google Play Console static analysis
     const forbiddenTypes = [
-      HealthDataType.HEART_RATE,
-      HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
-      HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
-      HealthDataType.BLOOD_GLUCOSE,
-      HealthDataType.BODY_TEMPERATURE,
-      HealthDataType.RESPIRATORY_RATE,
+      'HEART_RATE',
+      'BLOOD_PRESSURE_SYSTOLIC',
+      'BLOOD_PRESSURE_DIASTOLIC',
+      'BLOOD_GLUCOSE',
+      'BODY_TEMPERATURE',
+      'RESPIRATORY_RATE',
+      'NUTRITION',
+      'EXERCISE',
+      'DISTANCE',
       // Add more forbidden types as needed
     ];
     
@@ -96,25 +100,19 @@ class HealthService {
     }
 
     try {
-      AppLogger.info('Initializing health service...');
+      AppLogger.info('Initializing minimal health service...');
       
-      // Configure the health plugin
-      await Health().configure();
+      // Use our minimal health service instead of the problematic health plugin
+      final initialized = await MinimalHealthService.initialize();
       
-      // Test basic functionality to ensure it's working
-      try {
-        // Try a simple permission check to verify the service is working
-        await Health().hasPermissions([HealthDataType.STEPS]);
-        AppLogger.info('Health service basic functionality test passed');
-      } catch (e) {
-        AppLogger.warning('Health service basic functionality test failed, but continuing: $e');
-        // Don't fail initialization just because of this test
+      if (initialized) {
+        _isInitialized = true;
+        AppLogger.info('Minimal health service initialized successfully');
+        return true;
+      } else {
+        AppLogger.error('Failed to initialize minimal health service');
+        return false;
       }
-      
-      _isInitialized = true;
-      AppLogger.info('Health service initialized successfully');
-
-      return true;
     } catch (e) {
       AppLogger.error('Failed to initialize health service', e);
       _isInitialized = false;
@@ -140,18 +138,10 @@ class HealthService {
     }
 
     try {
-      // Request permissions for read access
-      final List<HealthDataAccess> permissions = _healthDataTypes
-          .map((type) => HealthDataAccess.READ)
-          .toList();
-
       AppLogger.info('Requesting health permissions for ${_healthDataTypes.length} data types');
-      AppLogger.info('Data types: ${_healthDataTypes.map((t) => t.name).join(', ')}');
+      AppLogger.info('Data types: ${_healthDataTypes.join(', ')}');
       
-      final bool granted = await Health().requestAuthorization(
-        _healthDataTypes,
-        permissions: permissions,
-      );
+      final bool granted = await MinimalHealthService.requestPermissions();
 
       AppLogger.info('Permission request result: $granted');
 
@@ -179,39 +169,11 @@ class HealthService {
     }
 
     try {
-      // First check if all permissions are granted
-      final bool? hasAllPerms = await Health().hasPermissions(_healthDataTypes);
-      AppLogger.info('Health permissions check result (all): $hasAllPerms');
+      // Use our minimal health service to check permissions
+      final bool hasPerms = await MinimalHealthService.hasPermissions();
+      AppLogger.info('Health permissions check result: $hasPerms');
       
-      if (hasAllPerms == true) {
-        return true;
-      }
-      
-      // If not all permissions are granted, check for minimum required permissions
-      // At least STEPS permission is required for basic functionality
-      final List<HealthDataType> minimumRequired = [HealthDataType.STEPS];
-      final bool? hasMinimumPerms = await Health().hasPermissions(minimumRequired);
-      AppLogger.info('Health permissions check result (minimum): $hasMinimumPerms');
-      
-      if (hasMinimumPerms == true) {
-        // Check how many permissions we actually have
-        int grantedCount = 0;
-        for (final type in _healthDataTypes) {
-          try {
-            final bool? hasIndividual = await Health().hasPermissions([type]);
-            if (hasIndividual == true) {
-              grantedCount++;
-            }
-          } catch (e) {
-            AppLogger.warning('Error checking individual permission for $type: $e');
-          }
-        }
-        
-        AppLogger.info('Health permissions: $grantedCount/${_healthDataTypes.length} granted');
-        
-        // Consider it successful if we have at least 3 permissions including STEPS
-        // With the set of 6 permissions, having 3+ is reasonable for basic functionality
-        return grantedCount >= 3;
+      return hasPerms;
       }
       
       return false;

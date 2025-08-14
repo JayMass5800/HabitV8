@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.core.view.WindowCompat
 import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.engine.FlutterEngine
 
 class MainActivity : FlutterFragmentActivity() {
     
@@ -22,5 +23,12 @@ class MainActivity : FlutterFragmentActivity() {
             @Suppress("DEPRECATION")
             window.navigationBarColor = android.graphics.Color.TRANSPARENT
         }
+    }
+    
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        
+        // Register our minimal health plugin
+        flutterEngine.plugins.add(MinimalHealthPlugin())
     }
 }
