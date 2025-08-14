@@ -58,7 +58,7 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
-      onDidReceiveBackgroundNotificationResponse: _onNotificationTapped, // Use same handler for both
+      onDidReceiveBackgroundNotificationResponse: onBackgroundNotificationResponse,
     );
 
     // Request permissions for Android 13+
@@ -166,8 +166,9 @@ class NotificationService {
   }
 
   /// Handle background notification responses (when app is not in foreground)
+  /// This method is called when the app is not running or in background
   @pragma('vm:entry-point')
-  static void _onBackgroundNotificationTapped(NotificationResponse notificationResponse) {
+  static void onBackgroundNotificationResponse(NotificationResponse notificationResponse) {
     AppLogger.info('=== BACKGROUND NOTIFICATION RESPONSE ===');
     AppLogger.info('Background notification ID: ${notificationResponse.id}');
     AppLogger.info('Background action ID: ${notificationResponse.actionId}');
@@ -178,9 +179,22 @@ class NotificationService {
     // Log the raw response object for debugging
     AppLogger.info('Raw background response: $notificationResponse');
     
-    // For background responses, we need to handle them differently
-    // The app might not be fully initialized, so we'll delegate to the foreground handler
-    _onNotificationTapped(notificationResponse);
+    // Handle the notification response directly in background
+    final String? payload = notificationResponse.payload;
+    if (payload != null) {
+      try {
+        final Map<String, dynamic> data = jsonDecode(payload);
+        final String? habitId = data['habitId'];
+        final String? action = notificationResponse.actionId;
+        
+        if (habitId != null && action != null && action.isNotEmpty) {
+          AppLogger.info('Processing background action: $action for habit: $habitId');
+          _handleNotificationAction(habitId, action);
+        }
+      } catch (e) {
+        AppLogger.error('Error parsing background notification payload', e);
+      }
+    }
   }
 
   /// Handle notification tap and actions
@@ -247,9 +261,11 @@ class NotificationService {
     AppLogger.info('Handling notification action: $action for habit: $habitId');
     
     try {
-      switch (action.toUpperCase()) {
-        case 'COMPLETE_ACTION':
-        case 'COMPLETE':
+      // Normalize action IDs to handle both iOS and Android formats
+      final normalizedAction = action.toLowerCase().replaceAll('_action', '');
+      
+      switch (normalizedAction) {
+        case 'complete':
           AppLogger.info('🔥 Processing complete action for habit: $habitId');
           
           // Always cancel the notification first for complete action
@@ -269,8 +285,7 @@ class NotificationService {
           }
           break;
           
-        case 'SNOOZE_ACTION':
-        case 'SNOOZE':
+        case 'snooze':
           AppLogger.info('😴 Processing snooze action for habit: $habitId');
           // Handle snooze action
           await _handleSnoozeAction(habitId);
@@ -278,7 +293,7 @@ class NotificationService {
           break;
           
         default:
-          AppLogger.warning('Unknown notification action: $action');
+          AppLogger.warning('Unknown notification action: $action (normalized: $normalizedAction)');
       }
     } catch (e) {
       AppLogger.error('Error handling notification action: $action', e);
@@ -937,17 +952,17 @@ class NotificationService {
       playSound: true,
       actions: [
         const AndroidNotificationAction(
-          'COMPLETE_ACTION',
+          'complete',
           '✅ Complete',
-          showsUserInterface: false,
-          cancelNotification: false,
+          showsUserInterface: faalse,
+          cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
-          'SNOOZE_ACTION',
+          'snooze',
           '⏰ Snooze 30min',
           showsUserInterface: false,
-          cancelNotification: false,
+          cancelNotification: true,
           allowGeneratedReplies: false,
         ),
       ],
@@ -996,17 +1011,17 @@ class NotificationService {
       priority: Priority.high,
       actions: [
         const AndroidNotificationAction(
-          'COMPLETE_ACTION',
+          'complete',
           '✅ Complete',
           showsUserInterface: false,
-          cancelNotification: false,
+          cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
-          'SNOOZE_ACTION',
+          'snooze',
           '⏰ Snooze 30min',
           showsUserInterface: false,
-          cancelNotification: false,
+          cancelNotification: true,
           allowGeneratedReplies: false,
         ),
       ],
@@ -1228,7 +1243,7 @@ class NotificationService {
       body: 'Try the Complete and Snooze buttons below!',
     );
     AppLogger.info('✅ Test notification with actions shown with ID: 999999');
-    AppLogger.info('🔘 Action buttons: COMPLETE_ACTION, SNOOZE_ACTION');
+    AppLogger.info('🔘 Action buttons: complete, snooze');
   }
 
   /// Show a simple test notification to verify basic functionality
