@@ -819,7 +819,7 @@ class NotificationService {
         }
 
         await scheduleHabitNotification(
-          id: generateSafeId(habit.id + '_year_${month}_${day}'), // Use string concatenation for uniqueness
+          id: generateSafeId(habit.id + '_year_${month}_$day'), // Use string concatenation for uniqueness
           habitId: habit.id.toString(),
           title: '🎯 ${habit.name}',
           body: 'Time to complete your yearly habit! This is your special day.',
@@ -857,11 +857,11 @@ class NotificationService {
             id: generateSafeId('${habit.id}_hourly_${hour}_$minute'), // Use hour and minute for uniqueness
             habitId: habit.id.toString(),
             title: '⏰ ${habit.name}',
-            body: 'Time for your habit! Scheduled for ${timeString}',
+            body: 'Time for your habit! Scheduled for $timeString',
             scheduledTime: nextNotification,
           );
           
-          print('DEBUG: Scheduled hourly notification for ${timeString} at ${nextNotification}');
+          print('DEBUG: Scheduled hourly notification for $timeString at $nextNotification');
         } catch (e) {
           print('DEBUG: Error parsing hourly time "$timeString": $e');
           AppLogger.error('Error parsing hourly time "$timeString" for habit ${habit.name}', e);
@@ -954,7 +954,7 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           '✅ Complete',
-          showsUserInterface: faalse,
+          showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
@@ -1235,6 +1235,8 @@ class NotificationService {
   /// Test method to show a notification with action buttons for debugging
   static Future<void> showTestNotificationWithActions() async {
     AppLogger.info('🧪 Creating test notification with action buttons...');
+    AppLogger.info('📱 Platform: ${Platform.operatingSystem}');
+    AppLogger.info('🔧 Background handler registered: ${onBackgroundNotificationResponse != null}');
     
     await showHabitNotification(
       id: 999999,
@@ -1244,6 +1246,7 @@ class NotificationService {
     );
     AppLogger.info('✅ Test notification with actions shown with ID: 999999');
     AppLogger.info('🔘 Action buttons: complete, snooze');
+    AppLogger.info('💡 Tap the notification or use the action buttons to test functionality');
   }
 
   /// Show a simple test notification to verify basic functionality

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../services/health_habit_integration_service.dart';
-import '../../services/health_habit_mapping_service.dart';
 import '../../services/health_service.dart';
 import '../../services/logging_service.dart';
 
@@ -167,7 +166,7 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
             Expanded(
               child: _buildStatTile(
                 'Auto-Complete',
-                '${mappingPercentage}%',
+                '$mappingPercentage%',
                 Icons.auto_awesome,
                 mappingPercentage > 0 ? Colors.blue : Colors.grey,
               ),

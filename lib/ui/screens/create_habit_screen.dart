@@ -8,8 +8,6 @@ import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/health_enhanced_habit_creation_service.dart';
-import '../../services/health_habit_mapping_service.dart';
-import '../../services/health_service.dart';
 import '../../services/logging_service.dart';
 
 class CreateHabitScreen extends ConsumerStatefulWidget {

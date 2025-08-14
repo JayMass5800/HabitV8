@@ -479,18 +479,18 @@ class HealthHabitMappingService {
         
       case HealthDataType.MINDFULNESS:
         if (roundedValue >= 30) {
-          return 'Deep meditation! You practiced for ${roundedValue} minutes 🧘‍♂️';
+          return 'Deep meditation! You practiced for $roundedValue minutes 🧘‍♂️';
         } else if (roundedValue >= 15) {
-          return 'Great mindfulness session! ${roundedValue} minutes of practice 🧘‍♀️';
+          return 'Great mindfulness session! $roundedValue minutes of practice 🧘‍♀️';
         } else {
-          return 'You meditated for ${roundedValue} minutes today ☮️';
+          return 'You meditated for $roundedValue minutes today ☮️';
         }
         
       case HealthDataType.WEIGHT:
         return 'Weight tracked successfully! 📊';
         
       default:
-        return 'Health goal achieved! ${roundedValue} ${mapping.unit} ✅';
+        return 'Health goal achieved! $roundedValue ${mapping.unit} ✅';
     }
   }
 

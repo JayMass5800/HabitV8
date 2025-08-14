@@ -341,7 +341,7 @@ class CalendarService {
       event.availability = Availability.Busy;
       
       AppLogger.info('Creating calendar event for habit "${habit.name}" on ${date.toIso8601String()}');
-      AppLogger.info('Parsed time: ${hour}:${minute.toString().padLeft(2, '0')} from timeString: $timeString');
+      AppLogger.info('Parsed time: $hour:${minute.toString().padLeft(2, '0')} from timeString: $timeString');
       AppLogger.info('Local DateTime: $startDateTime');
       AppLogger.info('TZDateTime start: ${event.start}');
       AppLogger.info('TZDateTime end: ${event.end}');
