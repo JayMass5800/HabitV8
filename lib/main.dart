@@ -27,7 +27,9 @@ import 'ui/screens/health_integration_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Edge-to-edge design
+  // Edge-to-edge design - Updated for Android 15+ compatibility
+  // The native MainActivity now handles edge-to-edge setup
+  // This is kept for iOS and older Android versions
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -515,7 +517,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: widget.child,
+      // Handle system insets for edge-to-edge display
+      body: SafeArea(
+        top: true,
+        bottom: false, // Let the navigation bar handle bottom insets
+        child: widget.child,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {

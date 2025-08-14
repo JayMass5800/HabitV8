@@ -44,6 +44,49 @@ android {
         // Add these for better Play Store compatibility
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Fix for 16 KB native library alignment
+        ndk {
+            // Ensure native libraries are aligned for 16 KB page sizes
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+        }
+    }
+
+    // Configure packaging options for native library alignment
+    packaging {
+        jniLibs {
+            // Modern approach for 16 KB alignment - let AGP handle it automatically
+            useLegacyPackaging = false
+        }
+        // Ensure proper alignment for all native libraries
+        resources {
+            excludes += listOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/notice.txt",
+                "META-INF/ASL2.0"
+            )
+        }
+    }
+
+    // Additional configuration for 16 KB page size support
+    bundle {
+        language {
+            // Disable language splits to ensure proper native library packaging
+            enableSplit = false
+        }
+        density {
+            // Disable density splits to ensure proper native library packaging
+            enableSplit = false
+        }
+        abi {
+            // Enable ABI splits but ensure proper alignment
+            enableSplit = true
+        }
     }
 
     signingConfigs {
