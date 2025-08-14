@@ -15,6 +15,10 @@ class NotificationService {
   // Callback for handling notification actions
   static Function(String habitId, String action)? onNotificationAction;
   
+  // Debug tracking for callback state
+  static int _callbackSetCount = 0;
+  static DateTime? _lastCallbackSetTime;
+  
   // Queue for storing pending actions when callback is not available
   static final List<Map<String, String>> _pendingActions = [];
 
@@ -287,6 +291,9 @@ class NotificationService {
     print('🚀 DEBUG: _handleNotificationAction called with habitId: $habitId, action: $action');
     AppLogger.info('Handling notification action: $action for habit: $habitId');
     
+    // Check callback status for debugging
+    ensureCallbackIsSet();
+    
     try {
       // Normalize action IDs to handle both iOS and Android formats
       final normalizedAction = action.toLowerCase().replaceAll('_action', '');
@@ -307,12 +314,18 @@ class NotificationService {
           if (onNotificationAction != null) {
             print('📞 DEBUG: Calling notification action callback');
             AppLogger.info('📞 Calling complete action callback for habit: $habitId');
+            AppLogger.info('🔍 Callback state: set $_callbackSetCount times, last at $_lastCallbackSetTime');
             onNotificationAction!(habitId, 'complete');
             print('✅ DEBUG: Callback executed successfully');
             AppLogger.info('✅ Complete action callback executed for habit: $habitId');
           } else {
             print('❌ DEBUG: No notification action callback set!');
             AppLogger.warning('❌ No notification action callback set - action will be lost');
+            AppLogger.warning('🔍 Callback debug: set $_callbackSetCount times, last at $_lastCallbackSetTime');
+            AppLogger.warning('🔍 Current time: ${DateTime.now()}');
+            
+            // The callback should be set by now. If not, there's a deeper issue.
+            
             // Store the action for later processing if callback is not set
             _storeActionForLaterProcessing(habitId, 'complete');
           }
@@ -350,7 +363,9 @@ class NotificationService {
   /// Set the notification action callback and process any pending actions
   static void setNotificationActionCallback(Function(String habitId, String action) callback) {
     onNotificationAction = callback;
-    AppLogger.info('🔗 Notification action callback set');
+    _callbackSetCount++;
+    _lastCallbackSetTime = DateTime.now();
+    AppLogger.info('🔗 Notification action callback set (count: $_callbackSetCount, time: $_lastCallbackSetTime)');
     
     // Process any pending actions
     if (_pendingActions.isNotEmpty) {
@@ -383,6 +398,17 @@ class NotificationService {
   /// Get the number of pending actions (for debugging)
   static int getPendingActionsCount() {
     return _pendingActions.length;
+  }
+  
+  /// Check if callback is set and re-initialize if needed
+  static bool ensureCallbackIsSet() {
+    final isSet = onNotificationAction != null;
+    AppLogger.info('🔍 Callback check: ${isSet ? "SET" : "NOT SET"}');
+    if (!isSet) {
+      AppLogger.warning('⚠️ Callback is not set! This may cause notification actions to fail.');
+      AppLogger.info('🔍 Callback was set $_callbackSetCount times, last at $_lastCallbackSetTime');
+    }
+    return isSet;
   }
   
   /// Handle snooze action specifically
@@ -1083,14 +1109,14 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           '✅ Complete',
-          showsUserInterface: false,
+          showsUserInterface: true,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           '⏰ Snooze 30min',
-          showsUserInterface: false,
+          showsUserInterface: true,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
@@ -1341,6 +1367,9 @@ class NotificationService {
     AppLogger.info('🔧 Initialized: $_isInitialized');
     AppLogger.info('📱 Platform: ${Platform.operatingSystem}');
     AppLogger.info('🔗 Callback set: ${onNotificationAction != null}');
+    AppLogger.info('🔍 Callback set count: $_callbackSetCount');
+    AppLogger.info('🔍 Last callback set time: $_lastCallbackSetTime');
+    AppLogger.info('🔍 Current time: ${DateTime.now()}');
     AppLogger.info('📋 Pending actions: ${_pendingActions.length}');
     
     if (_pendingActions.isNotEmpty) {

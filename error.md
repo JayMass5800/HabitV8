@@ -1,201 +1,239 @@
-8-13 14:55:24.854  2414  2714 D ImsResolver: maybeAddedImsService, packageName: com.habittracker.habitv8.debug
-08-13 14:55:24.854  2414  2714 V ImsResolver: searchForImsServices: package=com.habittracker.habitv8.debug, users=[UserHandle{0}]
-08-13 14:55:24.855  2414  2714 V ImsResolver: searchForImsServices: package=com.habittracker.habitv8.debug, users=[UserHandle{0}]
-08-13 14:55:24.858  2414  2414 W VvmPkgInstalledRcvr: carrierVvmPkgAdded: carrier vvm packages doesn't contain com.habittracker.habitv8.debug
-08-13 14:55:24.867  2414  2414 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:24.872 22335 22335 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:24.873  1401  1586 W ActivityManager: ProcessRecord{557538c 0:com.habittracker.habitv8.debug/u0a358} is attached to a previous process 6773
-08-13 14:55:24.875 22335 22335 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:24.884  2414  2414 D SatelliteController: packageStateChanged: package:com.habittracker.habitv8.debug DefaultSmsPackageName:com.google.android.apps.messaging
-08-13 14:55:24.884  2414  2414 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:24.884  2414  2414 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:24.887  1401  1401 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:24.898 14152 14152 I Finsky:background: [2] IQ: onPackageRemoved com.habittracker.habitv8.debug, replacing=true, uninstallingFromPlay=false
-08-13 14:55:24.899  5175  5175 I Finsky  : [2] AIM: AppInfoCacheUpdater -> invalidating apps: [com.habittracker.habitv8.debug]
-08-13 14:55:24.913  1401  1401 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:24.913  1401  1401 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:24.954  1401  5482 V ActivityManager: Got obituary of 6773:com.habittracker.habitv8.debug
-08-13 14:55:24.982  1401  1587 I ActivityManager: Start proc 22780:com.habittracker.habitv8.debug/u0a358 for broadcast {com.habittracker.habitv8.debug/com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver}
-08-13 14:55:24.982  3179  3179 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:24.983  3179  3179 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.014  5175  5216 I Finsky  : [204] AIM: AppInfoManager-Perf > OnDeviceAppInfo > cacheHitCount=0, cacheMissCount=1. Missed  in cache (limit 10) : [com.habittracker.habitv8.debug]
-08-13 14:55:25.016  9432  9432 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.016  9432  9432 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.016  9432  9432 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.029  3038  3038 I SafetyLabelChangedBroadcastReceiver: received broadcast packageName: com.habittracker.habitv8.debug, current user: UserHandle{0}, packageChangeEvent: UPDATE, intent user: UserHandle{0}
-08-13 14:55:25.029  3038  3038 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.035  3038  3038 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.035 14152 14152 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.035  3038  3038 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.036 14152 14152 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.036 14152 14152 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.042  2364  2364 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.042  2364  2364 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.045  2364  2364 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.082  5175  5175 I Finsky  : [2] AIM: AppInfoCacheUpdater -> invalidating apps: [com.habittracker.habitv8.debug]
-08-13 14:55:25.102 15496 15513 D InstallSessionTracker: onFinished: active install session finished for appPackageName=com.habittracker.habitv8.debug, sessionId=711616705, success=true
-08-13 14:55:25.136  5175  5175 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.137  5175  5175 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.139  5175  5175 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:25.144  5175  5219 I Finsky  : [207] AIM: AppInfoManager-Perf > OnDeviceAppInfo > cacheHitCount=0, cacheMissCount=1. Missed  in cache (limit 10) : [com.habittracker.habitv8.debug]
-08-13 14:55:25.273 29674 22831 I ProximityAuth: [RecentAppsMediator] Package added: (user=UserHandle{0}) com.habittracker.habitv8.debug
-08-13 14:55:25.386 31470 22848 W SQLiteLog: (28) double-quoted string literal: "com.habittracker.habitv8.debug"
-08-13 14:55:25.443 22780 22780 D nativeloader: Configuring clns-9 for other apk /data/app/~~Iv7iZ9TwrytVoLxA2l8T4g==/com.habittracker.habitv8.debug-MqIk59TyD-2MvTOCtBImMQ==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~Iv7iZ9TwrytVoLxA2l8T4g==/com.habittracker.habitv8.debug-MqIk59TyD-2MvTOCtBImMQ==/lib/arm64:/data/app/~~Iv7iZ9TwrytVoLxA2l8T4g==/com.habittracker.habitv8.debug-MqIk59TyD-2MvTOCtBImMQ==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.habittracker.habitv8.debug
-08-13 14:55:25.458 22780 22780 V GraphicsEnvironment: com.habittracker.habitv8.debug is not listed in per-application setting
-08-13 14:55:25.458 22780 22780 V GraphicsEnvironment: com.habittracker.habitv8.debug is not listed in ANGLE allowlist or settings, returning default
-08-13 14:55:25.686  9432 22807 I bgn     : Handling installed or updated package: com.habittracker.habitv8.debug
-08-13 14:55:25.686  9432 22807 I bvr     : Attempting to classify package: com.habittracker.habitv8.debug using model: bll_1
-08-13 14:55:25.849  9432 22807 I bhr     : BLL finished for package: com.habittracker.habitv8.debug, score: 6.0, verdict: NOT_HARMFUL
-08-13 14:55:25.849  9432 22807 I bvr     : Finished new classification for package: com.habittracker.habitv8.debug, model: bll_1, verdict: NOT_HARMFUL, score: 6.0
-08-13 14:55:30.781 22780 22873 D ProfileInstaller: Installing profile for com.habittracker.habitv8.debug
-08-13 14:55:37.059  1401  4190 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x34000000 xflg=0x4 pkg=com.habittracker.habitv8.debug cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} with LAUNCH_SINGLE_TOP from uid 10100 (sr=71512499) (BAL_ALLOW_VISIBLE_WINDOW) result code=0
-08-13 14:55:37.059  2127  2161 V WindowManagerShell: Transition requested (#2038): android.os.BinderProxy@2e32052 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=766 effectiveUid=10358 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x34000000 pkg=com.habittracker.habitv8.debug cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=178759327 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.window.IWindowContainerToken$Stub$Proxy@ff9ef23} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{c59ac20 com.habittracker.habitv8.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactive}} topActivityMainWindowFrame=null}, pipChange = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 2038 }
-08-13 14:55:37.074 22780 22885 D vulkan  : searching for layers in '/data/app/~~Iv7iZ9TwrytVoLxA2l8T4g==/com.habittracker.habitv8.debug-MqIk59TyD-2MvTOCtBImMQ==/lib/arm64'
-08-13 14:55:37.075 22780 22885 D vulkan  : searching for layers in '/data/app/~~Iv7iZ9TwrytVoLxA2l8T4g==/com.habittracker.habitv8.debug-MqIk59TyD-2MvTOCtBImMQ==/base.apk!/lib/arm64-v8a'
-08-13 14:55:37.081 22780 22885 D vulkan  : added global layer 'VK_LAYER_KHRONOS_validation' from library '/data/app/~~Iv7iZ9TwrytVoLxA2l8T4g==/com.habittracker.habitv8.debug-MqIk59TyD-2MvTOCtBImMQ==/base.apk!/lib/arm64-v8a/libVkLayer_khronos_validation.so'
-08-13 14:55:37.101  1401  1507 V WindowManager: Sent Transition (#2038) createdAt=08-13 14:55:37.050 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=766 effectiveUid=10358 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x34000000 pkg=com.habittracker.habitv8.debug cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=178759327 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{d2a2353 Task{f59fd5c #766 type=standard I=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{6e68490 com.habittracker.habitv8.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactive}} topActivityMainWindowFrame=null}, pipChange = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 2038 }
-08-13 14:55:37.101  1401  1507 V WindowManager:         {WCT{RemoteToken{d2a2353 Task{f59fd5c #766 type=standard I=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}}} m=OPEN f=NONE leash=Surface(name=Task=766)/@0xb52f951 sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1},
-08-13 14:55:37.128 22780 22900 D nativeloader: Load /data/app/~~Iv7iZ9TwrytVoLxA2l8T4g==/com.habittracker.habitv8.debug-MqIk59TyD-2MvTOCtBImMQ==/base.apk!/lib/arm64-v8a/libflutter.so using class loader ns clns-9 (caller=/data/app/~~Iv7iZ9TwrytVoLxA2l8T4g==/com.habittracker.habitv8.debug-MqIk59TyD-2MvTOCtBImMQ==/base.apk): ok
-08-13 14:55:37.395 22780 22780 W r.habitv8.debug: type=1400 audit(0.0:25086): avc:  denied  { read } for  name="max_map_count" dev="proc" ino=12211217 scontext=u:r:untrusted_app:s0:c102,c257,c512,c768 tcontext=u:object_r:proc_max_map_count:s0 tclass=file permissive=0 app=com.habittracker.habitv8.debug
-08-13 14:55:37.783  1401  1882 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f035cb4, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}      
-08-13 14:55:37.827 22780 22780 D WindowLayoutComponentImpl: Register WindowLayoutInfoListener on Context=com.habittracker.habitv8.MainActivity@407c26, of which baseContext=android.app.ContextImpl@bdc36
-08-13 14:55:37.831  1401  2172 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8.debug:getSerial:-1
-08-13 14:55:38.502  1401  1507 I ActivityTaskManager: Displayed com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity for user 0: +1s457ms
-08-13 14:55:38.561  1401  1946 I ImeTracker: com.habittracker.habitv8.debug:b69b272: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
-08-13 14:55:38.562 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:b69b272: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
-08-13 14:55:38.564 28334 28334 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1315 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
-08-13 14:55:38.565  1401  4188 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
-08-13 14:55:39.985  1401  1882 D CoreBackPreview: startBackNavigation currentTask=Task{f59fd5c #766 type=standard I=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}, topRunningActivity=ActivityRecord{101191631 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t766}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f035cb4, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}, currentFocus=Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}
-08-13 14:55:40.134  1401  1882 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e84a37, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
-08-13 14:55:40.417  1401  2172 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e30492f, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}      
-08-13 14:55:40.903  1401  4188 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8.debug:getSerial:-1
-08-13 14:55:40.972  1401  4188 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8.debug:getSerial:-1
-08-13 14:55:43.354 21531 21531 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:43.368 21531 21531 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:43.373 21531 21531 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:43.518 30492 30492 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:43.529 30492 30492 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:43.534 30492 30492 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:45.514  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=999999 tag=null key=0|com.habittracker.habitv8.debug|999999|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 actions=2 vis=PRIVATE))
-08-13 14:55:45.514 15496 15496 I NotificationListener: received notification posted event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 14:55:47.943  1401  2497 I ActivityTaskManager: START u0 {act=SELECT_NOTIFICATION cat=[android.intent.category.LAUNCHER] flg=0x10000000 xflg=0x4 pkg=com.habittracker.habitv8.debug cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity (has extras)} with LAUNCH_SINGLE_TOP from uid 10358 (realCallingUid=10249) (BAL_ALLOW_NON_APP_VISIBLE_WINDOW [realCaller]) result code=3
-08-13 14:55:47.944  2127  2161 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}, wasVisible=true
-08-13 14:55:47.964 15496 15496 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 14:55:48.464  4233  5878 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=999999 tag=null key=0|com.habittracker.habitv8.debug|999999|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 actions=2 vis=PRIVATE))
-08-13 14:55:49.785 22464 22464 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:49.793 22464 22464 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:49.793 22464 22464 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:57.208 15496 15496 I NotificationListener: received notification posted event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 14:55:57.210  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=888888 tag=null key=0|com.habittracker.habitv8.debug|888888|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 vis=PRIVATE))
-08-13 14:55:58.884 18035 18035 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:58.886 18035 18035 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:58.886 18035 18035 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:58.887 18035 18035 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:58.887 18035 18035 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:58.888 18035 18035 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:58.889 18035 18035 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:58.889 18035 18035 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:58.890 18035 18035 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:59.284 28839 28839 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:59.287 28839 28839 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:59.289 28839 28839 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:59.309  4068  4068 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:59.312  4068  4068 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:55:59.313  4068  4068 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:56:03.282 15496 15496 I NotificationListener: received notification posted event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 14:56:03.289  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=888888 tag=null key=0|com.habittracker.habitv8.debug|888888|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 vis=PRIVATE))
-08-13 14:56:16.304  1401  1946 I ImeTracker: com.habittracker.habitv8.debug:7232b1d4: onRequestHide at ORIGIN_SERVER reason HIDE_SAME_WINDOW_FOCUSED_WITHOUT_EDITOR fromUser false
-08-13 14:56:16.306 28334 28334 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1315 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
-08-13 14:56:16.307  1401  2497 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
-08-13 14:56:16.308 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:7232b1d4: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
-08-13 14:56:17.317  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=999999 tag=null key=0|com.habittracker.habitv8.debug|999999|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|SILENT color=0x00000000 actions=2 vis=PRIVATE))
-08-13 14:56:17.319 15496 15496 I NotificationListener: received notification posted event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 14:56:17.525  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=0 tag=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection key=0|com.habittracker.habitv8.debug|0|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection|10358|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|LOCAL_ONLY|GROUP_SUMMARY|AUTOGROUP_SUMMARY color=0x00000000 groupKey=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection vis=PRIVATE))
-08-13 14:56:17.526 15496 15496 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 14:56:17.890  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|999999|null|10358 wasDrawing:false
-08-13 14:56:17.891  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|888888|null|10358 wasDrawing:false
-08-13 14:56:30.459 15496 15496 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 14:56:30.962  4233  5878 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=999999 tag=null key=0|com.habittracker.habitv8.debug|999999|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|SILENT color=0x00000000 actions=2 vis=PRIVATE))
-08-13 14:56:37.768  1401  1946 I ImeTracker: com.habittracker.habitv8.debug:15640cf8: onRequestHide at ORIGIN_SERVER reason HIDE_SAME_WINDOW_FOCUSED_WITHOUT_EDITOR fromUser false
-08-13 14:56:37.773 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:15640cf8: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
-08-13 14:56:37.779 28334 28334 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1315 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
-08-13 14:56:37.780  1401  4191 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
-08-13 14:56:39.412  1401  1469 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b66af68, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
-08-13 14:56:39.637  1401  2903 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@69a8f81, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
-08-13 14:56:43.179  1401  2903 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b68adb9, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
-08-13 14:56:44.195 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:87fab2c9: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
-08-13 14:56:44.204 28334 28334 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1315 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=null, hintLocales=[]}}, false)
-08-13 14:56:44.206  1401  2497 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
-08-13 14:56:44.208 28334 28334 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():1408 onStartInputView(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}}, false)
-08-13 14:56:44.211 28334 28334 I AndroidIME: AbstractIme.onActivate():96 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
-08-13 14:56:44.263  1401  4190 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@56e83dc, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
-08-13 14:56:44.294 22780 22780 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.habittracker.habitv8.debug
-08-13 14:56:44.302 28334 22361 I KeyboardEventHandler: KeyboardEventHandler.handleFieldChangedEvent():446 Handling FieldChangedEvent: fgPkg=com.habittracker.habitv8.debug, fieldType=3.3e+04, interactionType=FIELD_CHANGE [SD]
-08-13 14:56:44.590 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:87fab2c9: onShown
-08-13 14:56:49.909 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:1c90642d: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
-08-13 14:56:49.909  1401  4190 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@39b4f6a, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
-08-13 14:56:59.914  1401  1946 I ImeTracker: com.habittracker.habitv8.debug:1c90642d: setFinished at PHASE_CLIENT_ANIMATION_CANCEL with STATUS_TIMEOUT
-08-13 14:57:00.366 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:381973c2: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
-08-13 14:57:00.367 28334 28334 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1315 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=5, initialSelEnd=5, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=null, hintLocales=[]}}, true)
-08-13 14:57:00.370  1401  4190 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
-08-13 14:57:00.375 28334 28334 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():1408 onStartInputView(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=5, initialSelEnd=5, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}}, false)
-08-13 14:57:00.378 28334 28334 I AndroidIME: AbstractIme.onActivate():96 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=5, initialSelEnd=5, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
-08-13 14:57:00.407 28334 23291 I KeyboardEventHandler: KeyboardEventHandler.handleFieldChangedEvent():446 Handling FieldChangedEvent: fgPkg=com.habittracker.habitv8.debug, fieldType=3.3e+04, interactionType=FIELD_CHANGE [SD]
-08-13 14:57:00.414  1401  4188 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@61d5164, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
-08-13 14:57:00.728 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:381973c2: onShown
-08-13 14:57:03.221 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:12740b3f: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
-08-13 14:57:03.221  1401  2172 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1f68fc, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
-08-13 14:57:03.222  1401  1469 D CoreBackPreview: Window{9137869 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e44ab85, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}      
-08-13 14:57:04.764 15496 15496 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=766 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
-08-13 14:57:04.766 15496 15496 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=766 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
-08-13 14:57:04.774 15496 15496 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=766 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
-08-13 14:57:04.774 15496 15496 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=766 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
-08-13 14:57:04.774  1401  2903 I InputDispatcher: Channel [Gesture Monitor] swipe-up is stealing input gesture for device 3 from [9137869 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity, [Gesture Monitor] edge-swipe]
-08-13 14:57:04.802  1401  1507 V WindowManager:         {WCT{RemoteToken{d2a2353 Task{f59fd5c #766 type=standard I=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}}} m=TO_BACK f=NONE leash=Surface(name=Task=766)/@0xb52f951 sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1},
-08-13 14:57:04.817 15496 15496 I NotificationListener: Handling notification state refresh for com.habittracker.habitv8.debug#0
-08-13 14:57:07.988  7614  7614 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:57:07.990  7614  7614 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:57:07.991  7614  7614 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:57:13.223  1401  1946 I ImeTracker: com.habittracker.habitv8.debug:12740b3f: setFinished at PHASE_CLIENT_ANIMATION_CANCEL with STATUS_TIMEOUT
-08-13 14:57:35.342 15139 15139 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:57:35.343 15139 15139 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:57:35.343 15139 15139 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:57:55.443 10595 10595 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:57:55.444 10595 10595 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:57:55.445 10595 10595 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:58:00.313 15496 15496 I NotificationListener: received notification posted event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 14:58:00.313  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=16090288 tag=null key=0|com.habittracker.habitv8.debug|16090288|null|10358: Notification(channel=habit_scheduled_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|SILENT color=0x00000000 actions=2 vis=PRIVATE))
-08-13 14:58:00.518 15496 15496 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 14:58:00.520  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=0 tag=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection key=0|com.habittracker.habitv8.debug|0|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection|10358|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|LOCAL_ONLY|GROUP_SUMMARY|AUTOGROUP_SUMMARY color=0x00000000 groupKey=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection vis=PRIVATE))
-08-13 14:58:00.643  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|16090288|null|10358 wasDrawing:false
-08-13 14:58:00.645  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|888888|null|10358 wasDrawing:false
-08-13 14:58:08.352  3342  3342 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:58:08.352  3342  3342 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:58:08.352  3342  3342 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:58:08.428  3121  3121 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:58:08.429  3121  3121 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-08-13 14:58:08.429  3121  3121 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
-PS C:\HabitV8> 
+setting a habit for two minutes in the future then pressing the complete button results in this 
+I/flutter (18804): ❌ DEBUG: No notification action callback set!
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.warning (package:habitv8/services/logging_service.dart:24:13)
+I/flutter (18804): │ #1   NotificationService._handleNotificationAction (package:habitv8/services/notification_service.dart:315:23)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ ! ❌ No notification action callback set - action will be lost
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.warning (package:habitv8/services/logging_service.dart:24:13)
+I/flutter (18804): │ #1   NotificationService._storeActionForLaterProcessing (package:habitv8/services/notification_service.dart:341:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ ! Storing action for later processing: complete for habit: 1755190732181
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-08-13 15:01:36.073  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|999999|null|10358 wasDrawing:false
-08-13 15:01:36.074  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|888888|null|10358 wasDrawing:false
-08-13 15:01:43.085  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=888888 tag=null key=0|com.habittracker.habitv8.debug|888888|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 vis=PRIVATE))
-08-13 15:01:43.086 15496 15496 I NotificationListener: received notification posted event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 15:01:49.480  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|888888|null|10358 wasDrawing:false
-08-13 15:01:49.481  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|999999|null|10358 wasDrawing:false
-08-13 15:01:53.657 15496 15496 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 15:01:53.870 15496 15496 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 15:01:53.873  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=0 tag=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection key=0|com.habittracker.habitv8.debug|0|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection|10358|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|LOCAL_ONLY|GROUP_SUMMARY|AUTOGROUP_SUMMARY color=0x00000000 groupKey=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection vis=PRIVATE))
-08-13 15:01:54.157  4233  5878 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=999999 tag=null key=0|com.habittracker.habitv8.debug|999999|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|SILENT color=0x00000000 actions=2 vis=PRIVATE))
-08-13 15:02:01.039  1401  1946 I ImeTracker: com.habittracker.habitv8.debug:667be753: onRequestHide at ORIGIN_SERVER reason HIDE_SAME_WINDOW_FOCUSED_WITHOUT_EDITOR fromUser false
-08-13 15:02:01.040 22780 22780 I ImeTracker: com.habittracker.habitv8.debug:667be753: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
-08-13 15:02:01.041 28334 28334 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1315 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8.debug, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
-08-13 15:02:01.042  1401  1470 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
-08-13 15:02:01.940  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=999999 tag=null key=0|com.habittracker.habitv8.debug|999999|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|SILENT color=0x00000000 actions=2 vis=PRIVATE))
-08-13 15:02:01.947 15496 15496 I NotificationListener: received notification posted event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 15:02:02.303  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|999999|null|10358 wasDrawing:false
-08-13 15:02:02.304  2127  2127 W NotifRow: cancelAppearDrawing childKey: 0|com.habittracker.habitv8.debug|888888|null|10358 wasDrawing:false
-08-13 15:02:08.546 15496 15496 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 15:02:08.756 15496 15496 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
-08-13 15:02:08.756  4233  5878 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=0 tag=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection key=0|com.habittracker.habitv8.debug|0|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection|10358|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|LOCAL_ONLY|GROUP_SUMMARY|AUTOGROUP_SUMMARY color=0x00000000 groupKey=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection vis=PRIVATE))
-08-13 15:02:09.049  4233  5878 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=999999 tag=null key=0|com.habittracker.habitv8.debug|999999|null|10358: Notification(channel=habit_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|SILENT color=0x00000000 actions=2 vis=PRIVATE))
+setting a habit for one minute in the future and pressing complete results in this error
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService._handleNotificationAction (package:habitv8/services/notification_service.dart:304:21)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 ✅ Notification cancelled for complete action for habit: 1755190931288
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ❌ DEBUG: No notification action callback set!
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.warning (package:habitv8/services/logging_service.dart:24:13)
+I/flutter (18804): │ #1   NotificationService._handleNotificationAction (package:habitv8/services/notification_service.dart:315:23)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ ! ❌ No notification action callback set - action will be lost
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.warning (package:habitv8/services/logging_service.dart:24:13)
+I/flutter (18804): │ #1   NotificationService._storeActionForLaterProcessing (package:habitv8/services/notification_service.dart:341:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ ! Storing action for later processing: complete for habit: 1755190931288
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+pressing debug notification system 
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService._storeActionForLaterProcessing (package:habitv8/services/notification_service.dart:347:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Pending actions queue size: 2
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1340:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔍 === NOTIFICATION SYSTEM DEBUG ===
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1341:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔧 Initialized: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1342:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 📱 Platform: android
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1343:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔗 Callback set: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1344:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 📋 Pending actions: 0
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1361:19)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔔 Notifications enabled: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.canScheduleExactAlarms (package:habitv8/services/notification_service.dart:1273:21)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Can schedule exact alarms: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1364:19)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 ⏰ Can schedule exact alarms: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1368:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔍 === END DEBUG ===
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   _SettingsScreenState._debugNotificationSystem (package:habitv8/ui/screens/settings_screen.dart:1555:17)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Notification system debug triggered from settings
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1340:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔍 === NOTIFICATION SYSTEM DEBUG ===
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1341:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔧 Initialized: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1342:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 📱 Platform: android
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1343:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔗 Callback set: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1344:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 📋 Pending actions: 0
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1361:19)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔔 Notifications enabled: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.canScheduleExactAlarms (package:habitv8/services/notification_service.dart:1273:21)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Can schedule exact alarms: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1364:19)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 ⏰ Can schedule exact alarms: true
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.debugNotificationSystem (package:habitv8/services/notification_service.dart:1368:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 🔍 === END DEBUG ===
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   _SettingsScreenState._debugNotificationSystem (package:habitv8/ui/screens/settings_screen.dart:1555:17)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Notification system debug triggered from settings
+
+test notification with action buttons gets this 
+/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.onBackgroundNotificationResponse (package:habitv8/services/notification_service.dart:179:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Background action ID: complete
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.onBackgroundNotificationResponse (package:habitv8/services/notification_service.dart:180:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Background payload: {"habitId":"test-habit-id","type":"habit_reminder"}
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.onBackgroundNotificationResponse (package:habitv8/services/notification_service.dart:181:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Background response type: NotificationResponseType.selectedNotificationAction
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.onBackgroundNotificationResponse (package:habitv8/services/notification_service.dart:182:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Background input: null
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.onBackgroundNotificationResponse (package:habitv8/services/notification_service.dart:185:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Raw background response: Instance of 'NotificationResponse'
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService.onBackgroundNotificationResponse (package:habitv8/services/notification_service.dart:196:21)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Processing background action: complete for habit: test-habit-id
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): 🚀 DEBUG: _handleNotificationAction called with habitId: test-habit-id, action: complete
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService._handleNotificationAction (package:habitv8/services/notification_service.dart:288:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Handling notification action: complete for habit: test-habit-id
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): 🔄 DEBUG: Normalized action: complete
+I/flutter (18804): ✅ DEBUG: Processing complete action for habit: test-habit-id
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService._handleNotificationAction (package:habitv8/services/notification_service.dart:298:21)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡  Processing complete action for habit: test-habit-id
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): 🗑️ DEBUG: Notification cancelled with ID: 620174292
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService._handleNotificationAction (package:habitv8/services/notification_service.dart:304:21)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 ✅ Notification cancelled for complete action for habit: test-habit-id
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ❌ DEBUG: No notification action callback set!
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.warning (package:habitv8/services/logging_service.dart:24:13)
+I/flutter (18804): │ #1   NotificationService._handleNotificationAction (package:habitv8/services/notification_service.dart:315:23)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ ! ❌ No notification action callback set - action will be lost
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.warning (package:habitv8/services/logging_service.dart:24:13)
+I/flutter (18804): │ #1   NotificationService._storeActionForLaterProcessing (package:habitv8/services/notification_service.dart:341:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ ! Storing action for later processing: complete for habit: test-habit-id
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (18804): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+I/flutter (18804): │ #1   NotificationService._storeActionForLaterProcessing (package:habitv8/services/notification_service.dart:347:15)
+I/flutter (18804): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (18804): │ 💡 Pending actions queue size: 4
+I/flutter (18804): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

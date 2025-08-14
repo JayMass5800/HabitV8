@@ -21,6 +21,14 @@ class NotificationActionService {
     AppLogger.info('📋 Pending actions processed: ${NotificationService.getPendingActionsCount() == 0}');
   }
   
+  /// Re-register the callback if it gets lost
+  static void ensureCallbackRegistered() {
+    if (_container != null && NotificationService.onNotificationAction == null) {
+      AppLogger.warning('🔄 Re-registering notification action callback');
+      NotificationService.setNotificationActionCallback(_handleNotificationAction);
+    }
+  }
+  
   /// Handle notification actions (complete/snooze)
   static void _handleNotificationAction(String habitId, String action) async {
     if (_container == null) {
