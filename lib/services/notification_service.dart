@@ -199,6 +199,13 @@ class NotificationService {
 
   /// Handle notification tap and actions
   static void _onNotificationTapped(NotificationResponse notificationResponse) async {
+    // CRITICAL: Add print statements that will show in Flutter console
+    print('🚨🚨🚨 FLUTTER NOTIFICATION HANDLER CALLED! 🚨🚨🚨');
+    print('🔔 Notification ID: ${notificationResponse.id}');
+    print('🔔 Action ID: ${notificationResponse.actionId}');
+    print('🔔 Response Type: ${notificationResponse.notificationResponseType}');
+    print('🔔 Payload: ${notificationResponse.payload}');
+    
     AppLogger.info('=== NOTIFICATION RESPONSE DEBUG ===');
     AppLogger.info('🔔 NOTIFICATION RECEIVED!');
     AppLogger.info('Notification ID: ${notificationResponse.id}');
@@ -212,10 +219,12 @@ class NotificationService {
     
     // Additional debugging for action button presses
     if (notificationResponse.actionId != null && notificationResponse.actionId!.isNotEmpty) {
+      print('🔥🔥🔥 ACTION BUTTON DETECTED: ${notificationResponse.actionId} 🔥🔥🔥');
       AppLogger.info('🔥🔥🔥 ACTION BUTTON PRESSED: ${notificationResponse.actionId}');
       AppLogger.info('Response type for action: ${notificationResponse.notificationResponseType}');
       AppLogger.info('Action button working! Processing action...');
     } else {
+      print('📱 REGULAR NOTIFICATION TAP (no action button)');
       AppLogger.info('📱 NOTIFICATION TAPPED (no action button)');
     }
     
@@ -224,6 +233,7 @@ class NotificationService {
     
     final String? payload = notificationResponse.payload;
     if (payload != null) {
+      print('📦 Processing payload: $payload');
       AppLogger.info('Processing notification with payload: $payload');
       
       try {
@@ -231,29 +241,38 @@ class NotificationService {
         final String? habitId = data['habitId'];
         final String? action = notificationResponse.actionId;
         
+        print('🎯 Parsed habitId: $habitId');
+        print('⚡ Parsed action: $action');
         AppLogger.info('Parsed habitId: $habitId');
         AppLogger.info('Parsed action: $action');
         
         if (habitId != null) {
           if (action != null && action.isNotEmpty) {
             // Handle the action button press
+            print('🚀 CALLING _handleNotificationAction with: $action, $habitId');
             AppLogger.info('Processing action button: $action for habit: $habitId');
             _handleNotificationAction(habitId, action);
           } else {
             // Handle regular notification tap (no action button)
+            print('👆 Regular tap for habit: $habitId');
             AppLogger.info('Regular notification tap for habit: $habitId');
             // You could open the app to the habit details or timeline here
             // For now, we'll just log it
           }
         } else {
+          print('❌ No habitId found in payload!');
           AppLogger.warning('No habitId found in notification payload');
         }
       } catch (e) {
+        print('💥 Error parsing payload: $e');
         AppLogger.error('Error parsing notification payload', e);
       }
     } else {
+      print('❌ No payload provided!');
       AppLogger.warning('Notification tapped but no payload provided');
     }
+    
+    print('✅ _onNotificationTapped completed');
   }
 
   /// Handle notification actions (Complete/Snooze)
