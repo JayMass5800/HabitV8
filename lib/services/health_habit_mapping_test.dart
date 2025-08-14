@@ -24,6 +24,18 @@ class HealthHabitMappingTest {
         frequency: HabitFrequency.daily,
       ),
       Habit.create(
+        name: 'health habit without keywords',
+        category: 'health',
+        colorValue: 0xFF4CAF50,
+        frequency: HabitFrequency.daily,
+      ),
+      Habit.create(
+        name: 'fitness habit without keywords',
+        category: 'fitness',
+        colorValue: 0xFF2196F3,
+        frequency: HabitFrequency.daily,
+      ),
+      Habit.create(
         name: 'Walk 10000 steps daily',
         category: 'exercise',
         colorValue: 0xFF2196F3,

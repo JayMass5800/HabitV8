@@ -219,7 +219,12 @@ class HealthHabitMappingService {
         // Emotional/motivational
         'motivation', 'motivated', 'discipline', 'commitment',
         'accountability', 'responsible', 'mindful',
-
+        // Medication and supplement tracking (using weight as proxy for daily tracking)
+        'med', 'meds', 'medication', 'medications', 'medicine', 'medicines',
+        'pill', 'pills', 'tablet', 'tablets', 'capsule', 'capsules',
+        'drug', 'drugs', 'prescription', 'prescriptions', 'rx',
+        'vitamin', 'vitamins', 'supplement', 'supplements', 'take', 'taking',
+        'dose', 'dosage', 'treatment', 'therapy', 'pharmaceutical',
       ],
       thresholds: {
         'minimal': 1,       // Any weight measurement
@@ -273,9 +278,55 @@ class HealthHabitMappingService {
         }
       }
       
+      // If no keyword matches found, check if habit is in health/fitness categories
       if (matches.isEmpty) {
-        AppLogger.info('No health mappings found for habit: ${habit.name}');
-        return null;
+        final category = habit.category.toLowerCase();
+        AppLogger.info('No keyword matches found for habit: ${habit.name}, checking category: $category');
+        
+        if (category == 'health' || category == 'fitness' || category == 'exercise' || 
+            category == 'wellness' || category == 'medical') {
+          
+          // For health/fitness category habits without specific keywords,
+          // try to infer the most appropriate health data type based on common patterns
+          HealthDataType? inferredType;
+          
+          if (searchText.contains('step') || searchText.contains('walk') || 
+              searchText.contains('run') || searchText.contains('move') ||
+              category == 'fitness' || category == 'exercise') {
+            inferredType = HealthDataType.STEPS;
+          } else if (searchText.contains('sleep') || searchText.contains('rest') ||
+                     searchText.contains('bed')) {
+            inferredType = HealthDataType.SLEEP_IN_BED;
+          } else if (searchText.contains('water') || searchText.contains('drink') ||
+                     searchText.contains('hydrat')) {
+            inferredType = HealthDataType.WATER;
+          } else if (searchText.contains('weight') || searchText.contains('weigh') ||
+                     searchText.contains('med') || searchText.contains('medication') ||
+                     searchText.contains('pill') || searchText.contains('tablet') ||
+                     searchText.contains('drug') || searchText.contains('prescription') ||
+                     searchText.contains('vitamin') || searchText.contains('supplement')) {
+            inferredType = HealthDataType.WEIGHT;
+          } else if (searchText.contains('meditat') || searchText.contains('mindful') ||
+                     searchText.contains('calm') || searchText.contains('relax')) {
+            inferredType = HealthDataType.MINDFULNESS;
+          } else if (category == 'health') {
+            // Default health category habits to steps (most common health tracking)
+            inferredType = HealthDataType.STEPS;
+          } else if (category == 'fitness' || category == 'exercise') {
+            // Default fitness/exercise habits to steps
+            inferredType = HealthDataType.STEPS;
+          }
+          
+          if (inferredType != null) {
+            matches[inferredType] = 0.5; // Medium relevance for category-based inference
+            AppLogger.info('Inferred health type ${inferredType.name} for category-based habit: ${habit.name}');
+          }
+        }
+        
+        if (matches.isEmpty) {
+          AppLogger.info('No health mappings found for habit: ${habit.name}');
+          return null;
+        }
       }
       
       // Find the best match
@@ -377,6 +428,21 @@ class HealthHabitMappingService {
       );
       
       if (healthData.isEmpty) {
+        // Special handling for medication habits that use WEIGHT as proxy
+        if (mapping.healthDataType == HealthDataType.WEIGHT) {
+          // Check if this is actually a medication habit by looking at the habit name
+          final habitName = habit.name.toLowerCase();
+          if (habitName.contains('med') || habitName.contains('pill') || 
+              habitName.contains('tablet') || habitName.contains('drug') ||
+              habitName.contains('prescription') || habitName.contains('vitamin') ||
+              habitName.contains('supplement')) {
+            return HabitCompletionResult(
+              shouldComplete: false,
+              reason: 'Medication habits require manual completion. Auto-completion is not available for medication tracking.',
+            );
+          }
+        }
+        
         // Provide specific guidance for water tracking
         if (mapping.healthDataType == HealthDataType.WATER) {
           return HabitCompletionResult(
