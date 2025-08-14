@@ -33,6 +33,8 @@ class HealthHabitMappingService {
         'post-surgery', 'injury', 'limited', 'wheelchair', 'walker', 'cane',
         // Distance terms (often correlate with steps)
         'distance', 'mile', 'miles', 'km', 'kilometer', 'meters',
+        // Health category terms that often involve movement
+        'health', 'healthy', 'wellness', 'wellbeing',
       ],
       thresholds: {
         'recovery': 500,     // Medical recovery/rehabilitation
@@ -217,6 +219,7 @@ class HealthHabitMappingService {
         // Emotional/motivational
         'motivation', 'motivated', 'discipline', 'commitment',
         'accountability', 'responsible', 'mindful',
+
       ],
       thresholds: {
         'minimal': 1,       // Any weight measurement
@@ -236,6 +239,9 @@ class HealthHabitMappingService {
       final habitDescription = (habit.description ?? '').toLowerCase();
       final searchText = '$habitName $habitDescription';
       
+      AppLogger.info('Analyzing habit for health mapping: "${habit.name}" (category: ${habit.category})');
+      AppLogger.info('Search text: "$searchText"');
+      
       // Find matching health data types
       final matches = <HealthDataType, double>{};
       
@@ -244,11 +250,13 @@ class HealthHabitMappingService {
         final mapping = entry.value;
         
         double relevanceScore = 0.0;
+        int matchedKeywords = 0;
         
         // Check for keyword matches
         for (final keyword in mapping.keywords) {
           if (searchText.contains(keyword)) {
             relevanceScore += 1.0;
+            matchedKeywords++;
             
             // Bonus for exact matches
             if (habitName == keyword || habitName.contains(keyword)) {
@@ -261,17 +269,21 @@ class HealthHabitMappingService {
         if (relevanceScore > 0) {
           relevanceScore = relevanceScore / mapping.keywords.length;
           matches[healthType] = relevanceScore;
+          AppLogger.info('Health type ${healthType.name} matched with score $relevanceScore ($matchedKeywords keywords)');
         }
       }
       
       if (matches.isEmpty) {
+        AppLogger.info('No health mappings found for habit: ${habit.name}');
         return null;
       }
       
       // Find the best match
       final bestMatch = matches.entries.reduce((a, b) => a.value > b.value ? a : b);
+      AppLogger.info('Best match for habit "${habit.name}": ${bestMatch.key.name} (score: ${bestMatch.value})');
       
       if (bestMatch.value < 0.1) {
+        AppLogger.info('Relevance score too low (${bestMatch.value}) for habit: ${habit.name}');
         return null; // Too weak correlation
       }
       
@@ -318,7 +330,7 @@ class HealthHabitMappingService {
         threshold = mapping.thresholds[thresholdLevel] ?? mapping.thresholds['moderate']!;
       }
       
-      return HabitHealthMapping(
+      final result = HabitHealthMapping(
         habitId: habit.id,
         healthDataType: bestMatch.key,
         threshold: threshold,
@@ -327,6 +339,9 @@ class HealthHabitMappingService {
         unit: mapping.unit,
         description: mapping.description,
       );
+      
+      AppLogger.info('Created health mapping for habit "${habit.name}": ${bestMatch.key.name}, threshold: $threshold ($thresholdLevel)');
+      return result;
       
     } catch (e) {
       AppLogger.error('Error analyzing habit for health mapping: ${habit.name}', e);

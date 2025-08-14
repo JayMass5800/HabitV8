@@ -50,6 +50,9 @@ android {
             // Ensure native libraries are aligned for 16 KB page sizes
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
         }
+        
+        // Manifest placeholders for health permissions control
+        manifestPlaceholders["healthPermissionsOnly"] = "true"
     }
 
     // Configure packaging options for native library alignment

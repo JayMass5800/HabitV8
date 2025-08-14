@@ -5,6 +5,7 @@ import 'health_service.dart';
 import 'health_habit_mapping_service.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
+import 'health_habit_mapping_test.dart';
 
 /// Automatic Habit Completion Service
 /// 
@@ -241,6 +242,17 @@ class AutomaticHabitCompletionService {
     }
   }
   
+  /// Run health habit mapping test for debugging
+  static Future<void> runMappingTest() async {
+    AppLogger.info('Running health habit mapping test...');
+    await HealthHabitMappingTest.testMappings();
+  }
+  
+  /// Test specific habit mapping
+  static Future<void> testSpecificHabit(String habitName, String category) async {
+    await HealthHabitMappingTest.testSpecificHabit(habitName, category);
+  }
+  
   /// Dispose of the service
   static Future<void> dispose() async {
     await stopService();
@@ -273,7 +285,18 @@ class AutomaticHabitCompletionService {
       final allHabits = await habitService.getActiveHabits();
       
       // Use mapping service to find health-related habits regardless of category
+      AppLogger.info('Found ${allHabits.length} active habits total');
+      for (final habit in allHabits) {
+        AppLogger.info('Active habit: "${habit.name}" (category: ${habit.category})');
+      }
+      
       final mappableHabits = await HealthHabitMappingService.getMappableHabits(allHabits);
+      AppLogger.info('Found ${mappableHabits.length} mappable habits');
+      for (final mapping in mappableHabits) {
+        final habit = allHabits.firstWhere((h) => h.id == mapping.habitId);
+        AppLogger.info('Mappable habit: "${habit.name}" -> ${mapping.healthDataType.name} (threshold: ${mapping.threshold})');
+      }
+      
       final habits = allHabits.where((habit) => 
         mappableHabits.any((mapping) => mapping.habitId == habit.id)
       ).toList();
