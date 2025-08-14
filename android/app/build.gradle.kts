@@ -53,6 +53,8 @@ android {
         
         // Manifest placeholders for health permissions control
         manifestPlaceholders["healthPermissionsOnly"] = "true"
+        manifestPlaceholders["healthPermissionsRestricted"] = "true"
+        manifestPlaceholders["healthDataTypesMinimal"] = "true"
     }
 
     // Configure packaging options for native library alignment
@@ -114,6 +116,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            
+            // Additional resource shrinking for health permissions
+            resourceConfigurations.addAll(listOf("en", "xxhdpi"))
+            
+            // Ensure unused health permissions are stripped
+            manifestPlaceholders["stripUnusedHealthPermissions"] = "true"
         }
     }
 }

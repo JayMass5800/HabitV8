@@ -56,6 +56,13 @@
     <uses-permission android:name="android.permission.health.READ_CERVICAL_MUCUS" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_SEXUAL_ACTIVITY" tools:node="remove" />
     
+    <!-- Additional health permissions that might be detected by static analysis -->
+    <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" tools:node="remove" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY" tools:node="remove" />
+    <uses-permission android:name="android.permission.health.READ_BODY_WATER_MASS" tools:node="remove" />
+    <uses-permission android:name="android.permission.health.READ_CERVICAL_POSITION" tools:node="remove" />
+    <uses-permission android:name="android.permission.health.READ_SKIN_TEMPERATURE" tools:node="remove" />
+    
     <!-- Health Connect package declaration -->
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
@@ -80,6 +87,20 @@
         <meta-data
             android:name="health_permissions"
             android:resource="@array/health_permissions" />
+        
+        <!-- Explicitly restrict health plugin to only declared permissions -->
+        <meta-data
+            android:name="health.permissions.restricted"
+            android:value="true" />
+        <meta-data
+            android:name="health.permissions.mode"
+            android:value="minimal" />
+        <meta-data
+            android:name="health_data_types_allowed"
+            android:resource="@array/health_data_types_allowed" />
+        <meta-data
+            android:name="health_data_types_excluded"
+            android:resource="@array/health_data_types_excluded" />
 
         <!-- Notification receivers for scheduled notifications -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />

@@ -66,8 +66,19 @@
 -keep class com.dexterous.** { *; }
 -keep class androidx.work.** { *; }
 
-# Keep health plugin classes
+# Keep health plugin classes but remove unused permission references
 -keep class cachet.plugins.health.** { *; }
+
+# Remove unused health permission metadata to prevent static analysis detection
+-assumenosideeffects class androidx.health.platform.client.** {
+    public static *** getPermissions(...);
+}
+
+# Strip unused health data type references
+-assumenosideeffects class androidx.health.connect.client.** {
+    public static *** getAllDataTypes(...);
+    public static *** getUnusedDataTypes(...);
+}
 
 # Keep permission handler classes
 -keep class com.baseflow.permissionhandler.** { *; }

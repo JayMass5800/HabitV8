@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Explicitly define ONLY the health data types we use -->
+    <!-- This overrides any broader definitions from the health plugin -->
+    <string-array name="health_data_types_allowed">
+        <!-- Core fitness and activity data types -->
+        <item>STEPS</item>
+        <item>ACTIVE_ENERGY_BURNED</item>
+        
+        <!-- Sleep data types -->
+        <item>SLEEP_IN_BED</item>
+        
+        <!-- Hydration data types -->
+        <item>WATER</item>
+        
+        <!-- Body metrics data types -->
+        <item>WEIGHT</item>
+        
+        <!-- Mental health data types -->
+        <item>MINDFULNESS</item>
+    </string-array>
+    
+    <!-- Explicitly define health data types that are NOT allowed -->
+    <string-array name="health_data_types_excluded">
+        <item>HEART_RATE</item>
+        <item>BLOOD_PRESSURE_SYSTOLIC</item>
+        <item>BLOOD_PRESSURE_DIASTOLIC</item>
+        <item>BLOOD_GLUCOSE</item>
+        <item>BODY_TEMPERATURE</item>
+        <item>OXYGEN_SATURATION</item>
+        <item>RESPIRATORY_RATE</item>
+        <item>NUTRITION</item>
+        <item>EXERCISE</item>
+        <item>DISTANCE_DELTA</item>
+        <item>ELEVATION_GAINED</item>
+        <item>FLOORS_CLIMBED</item>
+        <item>POWER</item>
+        <item>SPEED</item>
+        <item>TOTAL_CALORIES_BURNED</item>
+        <item>VO2_MAX</item>
+        <item>WHEELCHAIR_PUSHES</item>
+        <item>BASAL_METABOLIC_RATE</item>
+        <item>BODY_FAT_PERCENTAGE</item>
+        <item>BONE_MASS</item>
+        <item>HEIGHT</item>
+        <item>HIP_CIRCUMFERENCE</item>
+        <item>LEAN_BODY_MASS</item>
+        <item>WAIST_CIRCUMFERENCE</item>
+        <item>MENSTRUATION</item>
+        <item>INTERMENSTRUAL_BLEEDING</item>
+        <item>OVULATION_TEST</item>
+        <item>CERVICAL_MUCUS</item>
+        <item>SEXUAL_ACTIVITY</item>
+        <item>RESTING_HEART_RATE</item>
+        <item>HEART_RATE_VARIABILITY_RMSSD</item>
+        <item>BODY_WATER_MASS</item>
+        <item>CERVICAL_POSITION</item>
+        <item>SKIN_TEMPERATURE</item>
+    </string-array>
+</resources>
