@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Health permissions filter configuration -->
+    <!-- This file explicitly defines what health permissions are allowed -->
+    <!-- and should override any plugin defaults -->
+    
+    <string-array name="allowed_health_permissions">
+        <item>android.permission.health.READ_STEPS</item>
+        <item>android.permission.health.READ_ACTIVE_CALORIES_BURNED</item>
+        <item>android.permission.health.READ_SLEEP</item>
+        <item>android.permission.health.READ_HYDRATION</item>
+        <item>android.permission.health.READ_MINDFULNESS</item>
+        <item>android.permission.health.READ_WEIGHT</item>
+    </string-array>
+    
+    <!-- Explicitly mark these as the ONLY health permissions this app uses -->
+    <bool name="health_permissions_restricted">true</bool>
+    <integer name="max_health_permissions">6</integer>
+    <string name="health_permissions_mode">strict</string>
+</resources>

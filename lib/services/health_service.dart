@@ -70,7 +70,6 @@ class HealthService {
       HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
       HealthDataType.BLOOD_GLUCOSE,
       HealthDataType.BODY_TEMPERATURE,
-      HealthDataType.OXYGEN_SATURATION,
       HealthDataType.RESPIRATORY_RATE,
       // Add more forbidden types as needed
     ];
