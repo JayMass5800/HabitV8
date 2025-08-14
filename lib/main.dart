@@ -140,29 +140,45 @@ Future<void> _setCorrectTimezone() async {
     final deviceOffset = now.timeZoneOffset;
     final deviceOffsetHours = deviceOffset.inHours;
     final deviceOffsetMinutes = deviceOffset.inMinutes % 60;
+    final timeZoneName = now.timeZoneName;
     
     print('DEBUG: Device timezone offset: ${deviceOffset.toString()} (${deviceOffsetHours}h ${deviceOffsetMinutes}m)');
+    print('DEBUG: Device timezone name: $timeZoneName');
+    print('DEBUG: Current date: ${now.toIso8601String()}');
     
     // Try to get system timezone name first
-    String? timezoneName = await _getSystemTimezone();
+    String? detectedTimezoneName = await _getSystemTimezone();
     
-    if (timezoneName != null && timezoneName.isNotEmpty) {
-      print('DEBUG: Using system timezone: $timezoneName');
-      tz.setLocalLocation(tz.getLocation(timezoneName));
-    } else {
+    if (detectedTimezoneName != null && detectedTimezoneName.isNotEmpty) {
+      print('DEBUG: Using system-detected timezone: $detectedTimezoneName');
+      try {
+        tz.setLocalLocation(tz.getLocation(detectedTimezoneName));
+        print('DEBUG: Successfully set timezone to: $detectedTimezoneName');
+      } catch (e) {
+        print('DEBUG: Failed to set system timezone $detectedTimezoneName: $e');
+        detectedTimezoneName = null; // Fall back to offset detection
+      }
+    }
+    
+    if (detectedTimezoneName == null) {
       // Better fallback using more comprehensive timezone detection
-      timezoneName = _detectTimezoneFromOffset(deviceOffsetHours, deviceOffsetMinutes);
-      print('DEBUG: Using detected timezone: $timezoneName');
-      tz.setLocalLocation(tz.getLocation(timezoneName));
+      detectedTimezoneName = _detectTimezoneFromOffset(deviceOffsetHours, deviceOffsetMinutes);
+      print('DEBUG: Using offset-detected timezone: $detectedTimezoneName');
+      tz.setLocalLocation(tz.getLocation(detectedTimezoneName));
     }
     
     // Verify the timezone was set correctly
     final tzLocal = tz.local;
     final tzNow = tz.TZDateTime.now(tzLocal);
-    print('DEBUG: Timezone set to: ${tzLocal.name}');
+    print('DEBUG: Final timezone set to: ${tzLocal.name}');
     print('DEBUG: Current TZ time: $tzNow');
     print('DEBUG: Current device time: $now');
+    print('DEBUG: TZ offset: ${tzNow.timeZoneOffset}');
+    print('DEBUG: Device offset: ${deviceOffset}');
     print('DEBUG: TZ offset matches device: ${tzNow.timeZoneOffset == deviceOffset}');
+    
+    // Log success
+    AppLogger.info('Timezone successfully set to: ${tzLocal.name}');
     
   } catch (e) {
     print('DEBUG: Error setting timezone: $e');
@@ -171,6 +187,7 @@ Future<void> _setCorrectTimezone() async {
       // Use UTC as ultimate fallback
       tz.setLocalLocation(tz.UTC);
       print('DEBUG: Fallback to UTC timezone');
+      AppLogger.warning('Timezone fallback to UTC due to error');
     } catch (fallbackError) {
       print('DEBUG: Critical timezone error: $fallbackError');
       AppLogger.error('Fallback timezone setting failed', fallbackError);
@@ -180,28 +197,92 @@ Future<void> _setCorrectTimezone() async {
 
 Future<String?> _getSystemTimezone() async {
   try {
-    // This would require platform-specific implementation
-    // For now, return null to use the fallback method
+    // Try to get timezone from DateTime.now().timeZoneName
+    final now = DateTime.now();
+    final timeZoneName = now.timeZoneName;
+    
+    // Map common timezone abbreviations and names to IANA timezone names
+    final timezoneMap = {
+      'PST': 'America/Los_Angeles',
+      'PDT': 'America/Los_Angeles',
+      'Pacific Standard Time': 'America/Los_Angeles',
+      'Pacific Daylight Time': 'America/Los_Angeles',
+      'Pacific Summer Time': 'America/Los_Angeles', // Windows uses this for PDT
+      'MST': 'America/Denver', 
+      'MDT': 'America/Denver',
+      'Mountain Standard Time': 'America/Denver',
+      'Mountain Daylight Time': 'America/Denver',
+      'CST': 'America/Chicago',
+      'CDT': 'America/Chicago',
+      'Central Standard Time': 'America/Chicago',
+      'Central Daylight Time': 'America/Chicago',
+      'EST': 'America/New_York',
+      'EDT': 'America/New_York',
+      'Eastern Standard Time': 'America/New_York',
+      'Eastern Daylight Time': 'America/New_York',
+      'AKST': 'America/Anchorage',
+      'AKDT': 'America/Anchorage',
+      'Alaska Standard Time': 'America/Anchorage',
+      'Alaska Daylight Time': 'America/Anchorage',
+      'HST': 'Pacific/Honolulu',
+      'Hawaii Standard Time': 'Pacific/Honolulu',
+      'GMT': 'Europe/London',
+      'UTC': 'UTC',
+    };
+    
+    if (timezoneMap.containsKey(timeZoneName)) {
+      print('DEBUG: Mapped timezone abbreviation $timeZoneName to ${timezoneMap[timeZoneName]}');
+      return timezoneMap[timeZoneName];
+    }
+    
+    // If we get a full IANA name, try to use it directly
+    if (timeZoneName.contains('/')) {
+      print('DEBUG: Using IANA timezone name: $timeZoneName');
+      return timeZoneName;
+    }
+    
+    print('DEBUG: Unknown timezone name: $timeZoneName, falling back to offset detection');
     return null;
   } catch (e) {
+    print('DEBUG: Error getting system timezone: $e');
     return null;
   }
 }
 
 String _detectTimezoneFromOffset(int hours, int minutes) {
-  // More comprehensive timezone detection
+  // More comprehensive timezone detection with DST awareness
   final totalMinutes = hours * 60 + minutes;
+  final now = DateTime.now();
+  final isDST = _isDaylightSavingTime(now);
   
-  // Common timezone mappings with better accuracy
+  print('DEBUG: Detecting timezone for offset ${hours}h ${minutes}m (${totalMinutes} minutes), DST: $isDST');
+  
+  // Common timezone mappings with DST awareness
   switch (totalMinutes) {
     case -720: return 'Pacific/Wake'; // UTC-12
     case -660: return 'Pacific/Midway'; // UTC-11
-    case -600: return 'Pacific/Honolulu'; // UTC-10
-    case -540: return 'America/Anchorage'; // UTC-9
-    case -480: return 'America/Los_Angeles'; // UTC-8
-    case -420: return 'America/Denver'; // UTC-7
-    case -360: return 'America/Chicago'; // UTC-6
-    case -300: return 'America/New_York'; // UTC-5
+    case -600: return 'Pacific/Honolulu'; // UTC-10 (no DST)
+    case -540: return 'America/Anchorage'; // UTC-9 (AKST) or UTC-8 (AKDT)
+    case -480: 
+      // Could be Pacific Standard Time (UTC-8) or Alaska Daylight Time (UTC-8)
+      // In most cases, this is Pacific Time
+      return 'America/Los_Angeles'; // UTC-8 (PST) or UTC-7 (PDT)
+    case -420:
+      // This is tricky - could be:
+      // 1. Pacific Daylight Time (Los Angeles in summer)
+      // 2. Mountain Standard Time (Denver in winter)
+      // We need to make an educated guess based on the time of year
+      if (isDST) {
+        // During DST period, UTC-7 is more likely to be Pacific Daylight Time
+        print('DEBUG: UTC-7 during DST period, assuming Pacific Time (Los Angeles)');
+        return 'America/Los_Angeles';
+      } else {
+        // During standard time, UTC-7 is Mountain Standard Time
+        print('DEBUG: UTC-7 during standard time, assuming Mountain Time (Denver)');
+        return 'America/Denver';
+      }
+    case -360: return 'America/Chicago'; // UTC-6 (CST) or UTC-5 (CDT)
+    case -300: return 'America/New_York'; // UTC-5 (EST) or UTC-4 (EDT)
     case -240: return 'America/Halifax'; // UTC-4
     case -180: return 'America/Sao_Paulo'; // UTC-3
     case -120: return 'America/Noronha'; // UTC-2
@@ -241,6 +322,24 @@ String _detectTimezoneFromOffset(int hours, int minutes) {
       
       return _detectTimezoneFromOffset(closest ~/ 60, closest % 60);
   }
+}
+
+/// Simple DST detection based on date
+/// This is a rough approximation - DST typically runs from March to November in the US
+bool _isDaylightSavingTime(DateTime dateTime) {
+  final month = dateTime.month;
+  final day = dateTime.day;
+  
+  // DST in the US typically runs from the second Sunday in March to the first Sunday in November
+  // This is a simplified check - not 100% accurate but good enough for timezone detection
+  if (month < 3 || month > 11) return false; // Definitely standard time
+  if (month > 3 && month < 11) return true;  // Definitely daylight time
+  
+  // March and November need more careful checking, but for simplicity:
+  if (month == 3) return day > 10; // Rough approximation
+  if (month == 11) return day < 7;  // Rough approximation
+  
+  return false;
 }
 
 class MyApp extends ConsumerWidget {

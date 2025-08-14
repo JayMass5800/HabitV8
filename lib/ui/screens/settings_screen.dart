@@ -273,12 +273,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                   }).toList(),
                 ),
               ),
-              _SettingsTile(
-                title: 'Test Notification Actions',
-                subtitle: 'Send a test notification with action buttons',
-                leading: const Icon(Icons.bug_report),
-                onTap: () => _showTestNotification(),
-              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -413,30 +407,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 leading: const Icon(Icons.delete_forever, color: Colors.red),
                 onTap: () => _showClearDataDialog(),
                 textColor: Colors.red,
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _SettingsSection(
-            title: 'Debug & Testing',
-            children: [
-              _SettingsTile(
-                title: 'Test Simple Notification',
-                subtitle: 'Show a basic test notification',
-                leading: const Icon(Icons.notifications_outlined),
-                onTap: () => _testSimpleNotification(),
-              ),
-              _SettingsTile(
-                title: 'Test Notification with Actions',
-                subtitle: 'Show notification with Complete/Snooze buttons',
-                leading: const Icon(Icons.notification_add),
-                onTap: () => _testNotificationWithActions(),
-              ),
-              _SettingsTile(
-                title: 'Debug Notification System',
-                subtitle: 'Check notification system status',
-                leading: const Icon(Icons.bug_report),
-                onTap: () => _debugNotificationSystem(),
               ),
             ],
           ),
@@ -1461,110 +1431,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
     );
   }
 
-  /// Show a test notification with action buttons for debugging
-  void _showTestNotification() async {
-    try {
-      await NotificationService.showTestNotificationWithActions();
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Test notification sent! Check your notification panel and try the action buttons.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      AppLogger.error('Error showing test notification', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error sending test notification: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
 
-  /// Test simple notification without actions
-  void _testSimpleNotification() async {
-    try {
-      await NotificationService.showSimpleTestNotification();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Simple test notification sent!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-      AppLogger.info('Simple test notification triggered from settings');
-    } catch (e) {
-      AppLogger.error('Error showing simple test notification', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
 
-  /// Test notification with action buttons
-  void _testNotificationWithActions() async {
-    try {
-      await NotificationService.showTestNotificationWithActions();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🧪 Test notification with actions sent! Try the Complete/Snooze buttons.'),
-            backgroundColor: Colors.blue,
-            duration: Duration(seconds: 4),
-          ),
-        );
-      }
-      AppLogger.info('Test notification with actions triggered from settings');
-    } catch (e) {
-      AppLogger.error('Error showing test notification with actions', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
 
-  /// Debug notification system
-  void _debugNotificationSystem() async {
-    try {
-      await NotificationService.debugNotificationSystem();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🔍 Notification system debug info logged'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      }
-      AppLogger.info('Notification system debug triggered from settings');
-    } catch (e) {
-      AppLogger.error('Error debugging notification system', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Debug Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+
+
+
 }
 
 class _SettingsSection extends StatelessWidget {
