@@ -12,12 +12,13 @@ class NotificationActionService {
   static void initialize(ProviderContainer container) {
     _container = container;
     
-    // Set up the notification action callback
-    NotificationService.onNotificationAction = _handleNotificationAction;
+    // Set up the notification action callback using the new method
+    NotificationService.setNotificationActionCallback(_handleNotificationAction);
     
     AppLogger.info('🔧 NotificationActionService initialized');
     AppLogger.info('📦 Container set: ${_container != null}');
     AppLogger.info('🔗 Callback registered: ${NotificationService.onNotificationAction != null}');
+    AppLogger.info('📋 Pending actions processed: ${NotificationService.getPendingActionsCount() == 0}');
   }
   
   /// Handle notification actions (complete/snooze)

@@ -14,6 +14,9 @@ class NotificationService {
 
   // Callback for handling notification actions
   static Function(String habitId, String action)? onNotificationAction;
+  
+  // Queue for storing pending actions when callback is not available
+  static final List<Map<String, String>> _pendingActions = [];
 
   /// Initialize the notification service
   @pragma('vm:entry-point')
@@ -335,9 +338,51 @@ class NotificationService {
   
   /// Store action for later processing if callback is not available
   static void _storeActionForLaterProcessing(String habitId, String action) {
-    // This is a fallback mechanism - in a real app you might want to store this in SharedPreferences
     AppLogger.warning('Storing action for later processing: $action for habit: $habitId');
-    // For now, just log it - the app should handle this when it starts up
+    _pendingActions.add({
+      'habitId': habitId,
+      'action': action,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+    AppLogger.info('Pending actions queue size: ${_pendingActions.length}');
+  }
+  
+  /// Set the notification action callback and process any pending actions
+  static void setNotificationActionCallback(Function(String habitId, String action) callback) {
+    onNotificationAction = callback;
+    AppLogger.info('🔗 Notification action callback set');
+    
+    // Process any pending actions
+    if (_pendingActions.isNotEmpty) {
+      AppLogger.info('📦 Processing ${_pendingActions.length} pending notification actions');
+      
+      final actionsToProcess = List<Map<String, String>>.from(_pendingActions);
+      _pendingActions.clear();
+      
+      for (final actionData in actionsToProcess) {
+        final habitId = actionData['habitId']!;
+        final action = actionData['action']!;
+        final timestamp = actionData['timestamp']!;
+        
+        AppLogger.info('⚡ Processing pending action: $action for habit: $habitId (queued at: $timestamp)');
+        
+        try {
+          callback(habitId, action);
+          AppLogger.info('✅ Successfully processed pending action: $action for habit: $habitId');
+        } catch (e) {
+          AppLogger.error('❌ Error processing pending action: $action for habit: $habitId', e);
+        }
+      }
+      
+      AppLogger.info('🎉 All pending actions processed');
+    } else {
+      AppLogger.info('📭 No pending actions to process');
+    }
+  }
+  
+  /// Get the number of pending actions (for debugging)
+  static int getPendingActionsCount() {
+    return _pendingActions.length;
   }
   
   /// Handle snooze action specifically
@@ -1296,6 +1341,15 @@ class NotificationService {
     AppLogger.info('🔧 Initialized: $_isInitialized');
     AppLogger.info('📱 Platform: ${Platform.operatingSystem}');
     AppLogger.info('🔗 Callback set: ${onNotificationAction != null}');
+    AppLogger.info('📋 Pending actions: ${_pendingActions.length}');
+    
+    if (_pendingActions.isNotEmpty) {
+      AppLogger.info('📋 Pending actions details:');
+      for (int i = 0; i < _pendingActions.length; i++) {
+        final action = _pendingActions[i];
+        AppLogger.info('  [$i] ${action['action']} for ${action['habitId']} at ${action['timestamp']}');
+      }
+    }
     
     if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
