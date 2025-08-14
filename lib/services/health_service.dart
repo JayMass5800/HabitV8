@@ -37,48 +37,56 @@ class HealthService {
   static bool _isInitialized = false;
 
   /// Get platform-specific health data types
-  /// Only requests permissions for data types that are actually used by the app
-  /// Further optimized to only include data types with active usage in the codebase
+  /// STRICTLY LIMITED to only the 6 essential data types to prevent Google Play Console
+  /// static analysis from detecting broader health permissions
+  /// 
+  /// CRITICAL: This list MUST match exactly what's declared in AndroidManifest.xml
+  /// and health_permissions.xml to avoid static analysis issues
   static List<HealthDataType> get _healthDataTypes {
-    if (Platform.isAndroid) {
-      // Android Health Connect - essential data types only
-      // 6 core types that are actively used in the app
-      return [
-        // Core fitness data - actively used in getTodayHealthSummary and getHealthInsights
-        HealthDataType.STEPS,                    // Primary fitness metric - actively used
-        HealthDataType.ACTIVE_ENERGY_BURNED,     // Exercise tracking - actively used
-        
-        // Sleep data - actively used in getSleepData and insights
-        HealthDataType.SLEEP_IN_BED,             // Sleep duration tracking - actively used
-        
-        // Hydration tracking - actively used in getWaterData and insights
-        HealthDataType.WATER,                    // Hydration habits - actively used
-        
-        // Mental wellness - actively used in getTodayHealthSummary and insights
-        HealthDataType.MINDFULNESS,              // Meditation tracking - actively used
-        
-        // Basic body metrics - actively used in getTodayHealthSummary and insights
-        HealthDataType.WEIGHT,                   // Weight tracking habits - actively used
-      ];
-    } else if (Platform.isIOS) {
-      // iOS HealthKit - same essential data types
-      return [
-        HealthDataType.STEPS,
-        HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.WATER,
-        HealthDataType.MINDFULNESS,
-        HealthDataType.WEIGHT,
-      ];
-    } else {
-      // Other platforms - minimal set focused on most common data
-      return [
-        HealthDataType.STEPS,
-        HealthDataType.WATER,
-        HealthDataType.MINDFULNESS,
-        HealthDataType.WEIGHT,
-      ];
+    // FIXED LIST - DO NOT ADD MORE TYPES
+    // These are the ONLY 6 health data types this app will ever request
+    const allowedTypes = [
+      HealthDataType.STEPS,                    // Steps tracking
+      HealthDataType.ACTIVE_ENERGY_BURNED,     // Calories burned (active)
+      HealthDataType.SLEEP_IN_BED,             // Sleep duration
+      HealthDataType.WATER,                    // Water intake/hydration
+      HealthDataType.MINDFULNESS,              // Meditation/mindfulness
+      HealthDataType.WEIGHT,                   // Body weight
+    ];
+    
+    // Validate that we're not accidentally including forbidden types
+    _validateHealthDataTypes(allowedTypes);
+    
+    return allowedTypes;
+  }
+  
+  /// Validate that only allowed health data types are being used
+  /// This prevents accidental inclusion of types that would trigger Google Play Console issues
+  static void _validateHealthDataTypes(List<HealthDataType> types) {
+    // List of forbidden types that would trigger Google Play Console static analysis
+    const forbiddenTypes = [
+      HealthDataType.HEART_RATE,
+      HealthDataType.BLOOD_PRESSURE_SYSTOLIC,
+      HealthDataType.BLOOD_PRESSURE_DIASTOLIC,
+      HealthDataType.BLOOD_GLUCOSE,
+      HealthDataType.BODY_TEMPERATURE,
+      HealthDataType.OXYGEN_SATURATION,
+      HealthDataType.RESPIRATORY_RATE,
+      // Add more forbidden types as needed
+    ];
+    
+    for (final type in types) {
+      if (forbiddenTypes.contains(type)) {
+        throw Exception('FORBIDDEN HEALTH DATA TYPE DETECTED: $type - This would trigger Google Play Console rejection!');
+      }
     }
+    
+    // Ensure we only have the exact 6 allowed types
+    if (types.length != 6) {
+      throw Exception('INVALID HEALTH DATA TYPE COUNT: Expected exactly 6 types, got ${types.length}');
+    }
+    
+    AppLogger.info('Health data types validation passed: ${types.length} allowed types');
   }
 
   /// Initialize health service

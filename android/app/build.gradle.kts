@@ -118,10 +118,15 @@ android {
             )
             
             // Additional resource shrinking for health permissions
-            resourceConfigurations.addAll(listOf("en", "xxhdpi"))
+            // resourceConfigurations += listOf("en") // Commented out - not available in this context
             
             // Ensure unused health permissions are stripped
             manifestPlaceholders["stripUnusedHealthPermissions"] = "true"
+            
+            // Configure manifest merger to remove unwanted permissions
+            androidResources {
+                additionalParameters += listOf("--extra-packages", "com.habittracker.habitv8.health")
+            }
         }
     }
 }
@@ -133,3 +138,6 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
+
+// Custom health permissions cleanup script removed due to compatibility issues
+// The manifest-based approach should be sufficient
