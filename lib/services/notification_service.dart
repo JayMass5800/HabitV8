@@ -258,27 +258,34 @@ class NotificationService {
 
   /// Handle notification actions (Complete/Snooze)
   static void _handleNotificationAction(String habitId, String action) async {
+    print('🚀 DEBUG: _handleNotificationAction called with habitId: $habitId, action: $action');
     AppLogger.info('Handling notification action: $action for habit: $habitId');
     
     try {
       // Normalize action IDs to handle both iOS and Android formats
       final normalizedAction = action.toLowerCase().replaceAll('_action', '');
+      print('🔄 DEBUG: Normalized action: $normalizedAction');
       
       switch (normalizedAction) {
         case 'complete':
+          print('✅ DEBUG: Processing complete action for habit: $habitId');
           AppLogger.info('🔥 Processing complete action for habit: $habitId');
           
           // Always cancel the notification first for complete action
           final notificationId = habitId.hashCode;
           await cancelNotification(notificationId);
+          print('🗑️ DEBUG: Notification cancelled with ID: $notificationId');
           AppLogger.info('✅ Notification cancelled for complete action for habit: $habitId');
           
           // Call the callback if set
           if (onNotificationAction != null) {
+            print('📞 DEBUG: Calling notification action callback');
             AppLogger.info('📞 Calling complete action callback for habit: $habitId');
             onNotificationAction!(habitId, 'complete');
+            print('✅ DEBUG: Callback executed successfully');
             AppLogger.info('✅ Complete action callback executed for habit: $habitId');
           } else {
+            print('❌ DEBUG: No notification action callback set!');
             AppLogger.warning('❌ No notification action callback set - action will be lost');
             // Store the action for later processing if callback is not set
             _storeActionForLaterProcessing(habitId, 'complete');
@@ -286,6 +293,7 @@ class NotificationService {
           break;
           
         case 'snooze':
+          print('😴 DEBUG: Processing snooze action for habit: $habitId');
           AppLogger.info('😴 Processing snooze action for habit: $habitId');
           // Handle snooze action
           await _handleSnoozeAction(habitId);
@@ -293,9 +301,11 @@ class NotificationService {
           break;
           
         default:
+          print('❓ DEBUG: Unknown action: $action (normalized: $normalizedAction)');
           AppLogger.warning('Unknown notification action: $action (normalized: $normalizedAction)');
       }
     } catch (e) {
+      print('💥 DEBUG: Error in _handleNotificationAction: $e');
       AppLogger.error('Error handling notification action: $action', e);
     }
   }
