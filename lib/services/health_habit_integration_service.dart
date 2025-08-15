@@ -383,9 +383,7 @@ class HealthHabitIntegrationService {
         case 'STEPS':
           int totalSteps = 0;
           for (var point in healthData) {
-            if (point.value is NumericHealthValue) {
-              totalSteps += (point.value as NumericHealthValue).numericValue.toInt();
-            }
+            totalSteps += point.value.toInt();
           }
           result.value = totalSteps;
           result.meets = totalSteps >= (threshold as int);
@@ -394,9 +392,7 @@ class HealthHabitIntegrationService {
         case 'ACTIVE_ENERGY_BURNED':
           double totalEnergy = 0;
           for (var point in healthData) {
-            if (point.value is NumericHealthValue) {
-              totalEnergy += (point.value as NumericHealthValue).numericValue;
-            }
+            totalEnergy += point.value;
           }
           result.value = totalEnergy.round();
           result.meets = totalEnergy >= (threshold as int);
@@ -405,8 +401,7 @@ class HealthHabitIntegrationService {
         case 'SLEEP_IN_BED':
           double totalSleep = 0;
           for (var point in healthData) {
-            if (point.value is NumericHealthValue) {
-              totalSleep += (point.value as NumericHealthValue).numericValue;
+            totalSleep += point.value;
             }
           }
           result.value = (totalSleep * 100).round() / 100; // Round to 2 decimals
@@ -416,9 +411,7 @@ class HealthHabitIntegrationService {
         case 'WATER':
           double totalWater = 0;
           for (var point in healthData) {
-            if (point.value is NumericHealthValue) {
-              totalWater += (point.value as NumericHealthValue).numericValue;
-            }
+            totalWater += point.value;
           }
           result.value = totalWater.round();
           result.meets = totalWater >= (threshold as int);
@@ -427,9 +420,7 @@ class HealthHabitIntegrationService {
         case 'MINDFULNESS':
           double totalMindfulness = 0;
           for (var point in healthData) {
-            if (point.value is NumericHealthValue) {
-              totalMindfulness += (point.value as NumericHealthValue).numericValue;
-            }
+            totalMindfulness += point.value;
           }
           result.value = totalMindfulness.round();
           result.meets = totalMindfulness >= (threshold as int);
@@ -438,8 +429,8 @@ class HealthHabitIntegrationService {
         case 'WEIGHT':
           // For weight, any entry counts as completion
           result.meets = healthData.isNotEmpty;
-          if (healthData.isNotEmpty && healthData.first.value is NumericHealthValue) {
-            result.value = (healthData.first.value as NumericHealthValue).numericValue;
+          if (healthData.isNotEmpty) {
+            result.value = healthData.first.value;
           }
           break;
       }
@@ -516,11 +507,8 @@ class HealthHabitIntegrationService {
       // Group health data by day
       final healthByDay = <DateTime, double>{};
       for (var point in healthData) {
-        final day = DateTime(point.dateFrom.year, point.dateFrom.month, point.dateFrom.day);
-        if (point.value is NumericHealthValue) {
-          healthByDay[day] = (healthByDay[day] ?? 0) + 
-              (point.value as NumericHealthValue).numericValue;
-        }
+        final day = DateTime(point.timestamp.year, point.timestamp.month, point.timestamp.day);
+        healthByDay[day] = (healthByDay[day] ?? 0) + point.value;
       }
       
       if (healthByDay.length < 5) return 0.0;

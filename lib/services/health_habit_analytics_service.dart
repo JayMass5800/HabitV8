@@ -381,19 +381,26 @@ class HealthHabitAnalyticsReport {
   Map<String, HabitAnalytics> habitAnalytics = {};
   List<String> overallInsights = [];
   List<String> recommendations = [];
+  List<String> predictiveInsights = [];
   int totalHabitsAnalyzed = 0;
   int analysisWindowDays = 0;
   DateTime? generatedAt;
   String? error;
+  double overallScore = 0.0;
+  
+  bool get hasError => error != null;
   
   Map<String, dynamic> toJson() => {
     'habitAnalytics': habitAnalytics.map((k, v) => MapEntry(k, v.toJson())),
     'overallInsights': overallInsights,
     'recommendations': recommendations,
+    'predictiveInsights': predictiveInsights,
     'totalHabitsAnalyzed': totalHabitsAnalyzed,
     'analysisWindowDays': analysisWindowDays,
     'generatedAt': generatedAt?.toIso8601String(),
     'error': error,
+    'overallScore': overallScore,
+    'hasError': hasError,
   };
 }
 
