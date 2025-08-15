@@ -199,7 +199,7 @@ class HealthHabitIntegrationService {
         try {
           final completionResult = await _processHabitForAutoCompletion(
             habit: habit,
-            healthData: healthData,
+            healthSummary: healthSummary,
             habitService: habitService,
           );
           
@@ -210,7 +210,7 @@ class HealthHabitIntegrationService {
           // Analyze habit-health correlation
           final correlation = await _analyzeHabitHealthCorrelation(
             habit: habit,
-            healthData: healthData,
+            healthSummary: healthSummary,
           );
           result.correlations[habit.id] = correlation;
           
@@ -223,7 +223,7 @@ class HealthHabitIntegrationService {
       await _updateLastSyncTime();
       
       // Generate health insights for habits
-      result.insights = await _generateHealthHabitInsights(habits, healthData);
+      result.insights = await _generateHealthHabitInsights(habits, healthSummary);
       
       AppLogger.info('Health-habit sync completed: ${result.completedHabits.length} habits auto-completed');
       
@@ -243,7 +243,7 @@ class HealthHabitIntegrationService {
   /// Process a single habit for potential auto-completion using advanced mapping
   static Future<HabitAutoCompletionResult> _processHabitForAutoCompletion({
     required Habit habit,
-    required List<HealthDataPoint> healthData,
+    required Map<String, dynamic> healthSummary,
     required HabitService habitService,
   }) async {
     final result = HabitAutoCompletionResult(
@@ -453,7 +453,7 @@ class HealthHabitIntegrationService {
   /// Analyze correlation between habit completion and health metrics
   static Future<HabitHealthCorrelation> _analyzeHabitHealthCorrelation({
     required Habit habit,
-    required List<HealthDataPoint> healthData,
+    required Map<String, dynamic> healthSummary,
   }) async {
     final correlation = HabitHealthCorrelation(
       habitId: habit.id,
@@ -558,25 +558,25 @@ class HealthHabitIntegrationService {
   /// Generate comprehensive health-habit insights
   static Future<Map<String, dynamic>> _generateHealthHabitInsights(
     List<Habit> habits,
-    List<HealthDataPoint> healthData,
+    Map<String, dynamic> healthSummary,
   ) async {
     final insights = <String, dynamic>{};
     
     try {
       // Overall health-habit integration score
-      final integrationScore = _calculateIntegrationScore(habits, healthData);
+      final integrationScore = _calculateIntegrationScore(habits, healthSummary);
       insights['integrationScore'] = integrationScore;
       
       // Health-driven habit suggestions
-      final suggestions = await _generateHealthDrivenSuggestions(healthData);
+      final suggestions = await _generateHealthDrivenSuggestions(healthSummary);
       insights['suggestions'] = suggestions;
       
       // Health trend analysis
-      final trends = _analyzeHealthTrends(healthData);
+      final trends = _analyzeHealthTrends(healthSummary);
       insights['trends'] = trends;
       
       // Habit completion predictions
-      final predictions = _generateCompletionPredictions(habits, healthData);
+      final predictions = _generateCompletionPredictions(habits, healthSummary);
       insights['predictions'] = predictions;
       
     } catch (e) {
@@ -587,8 +587,8 @@ class HealthHabitIntegrationService {
   }
 
   /// Calculate overall health-habit integration score (0-100)
-  static double _calculateIntegrationScore(List<Habit> habits, List<HealthDataPoint> healthData) {
-    if (habits.isEmpty || healthData.isEmpty) return 0.0;
+  static double _calculateIntegrationScore(List<Habit> habits, Map<String, dynamic> healthSummary) {
+    if (habits.isEmpty || healthSummary.containsKey('error')) return 0.0;
     
     int healthMappedHabits = 0;
     for (final habit in habits) {
@@ -599,17 +599,16 @@ class HealthHabitIntegrationService {
     }
     
     final mappingScore = (healthMappedHabits / habits.length) * 50;
-    final dataAvailabilityScore = math.min(healthData.length / 10, 1.0) * 50;
+    final dataAvailabilityScore = healthSummary.isNotEmpty ? 50.0 : 0.0;
     
     return mappingScore + dataAvailabilityScore;
   }
 
   /// Generate health-driven habit suggestions
-  static Future<List<String>> _generateHealthDrivenSuggestions(List<HealthDataPoint> healthData) async {
+  static Future<List<String>> _generateHealthDrivenSuggestions(Map<String, dynamic> healthSummary) async {
     final suggestions = <String>[];
     
     try {
-      final healthSummary = await HealthService.getTodayHealthSummary();
       
       // Steps-based suggestions
       final steps = healthSummary['steps'] ?? 0;

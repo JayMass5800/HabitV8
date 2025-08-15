@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:health/health.dart';
+
 import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'health_habit_integration_service.dart';
@@ -766,10 +766,7 @@ class HealthHabitUIService {
       final endDate = DateTime.now();
       final startDate = endDate.subtract(const Duration(days: 30));
       
-      final healthData = await HealthService.getAllHealthData(
-        startDate: startDate,
-        endDate: endDate,
-      );
+      final healthSummary = await HealthService.getTodayHealthSummary();
       
       // This is a simplified correlation calculation
       // In a real implementation, you'd want more sophisticated analysis

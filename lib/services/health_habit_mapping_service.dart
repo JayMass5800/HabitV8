@@ -296,19 +296,19 @@ class HealthHabitMappingService {
             inferredType = 'STEPS';
           } else if (searchText.contains('sleep') || searchText.contains('rest') ||
                      searchText.contains('bed')) {
-            inferredType = HealthDataType.SLEEP_IN_BED;
+            inferredType = 'SLEEP_IN_BED';
           } else if (searchText.contains('water') || searchText.contains('drink') ||
                      searchText.contains('hydrat')) {
-            inferredType = HealthDataType.WATER;
+            inferredType = 'WATER';
           } else if (searchText.contains('weight') || searchText.contains('weigh') ||
                      searchText.contains('med') || searchText.contains('medication') ||
                      searchText.contains('pill') || searchText.contains('tablet') ||
                      searchText.contains('drug') || searchText.contains('prescription') ||
                      searchText.contains('vitamin') || searchText.contains('supplement')) {
-            inferredType = HealthDataType.WEIGHT;
+            inferredType = 'WEIGHT';
           } else if (searchText.contains('meditat') || searchText.contains('mindful') ||
                      searchText.contains('calm') || searchText.contains('relax')) {
-            inferredType = HealthDataType.MINDFULNESS;
+            inferredType = 'MINDFULNESS';
           } else if (category == 'health') {
             // Default health category habits to steps (most common health tracking)
             inferredType = 'STEPS';
@@ -429,7 +429,7 @@ class HealthHabitMappingService {
       
       if (healthData.isEmpty) {
         // Special handling for medication habits that use WEIGHT as proxy
-        if (mapping.healthDataType == HealthDataType.WEIGHT) {
+        if (mapping.healthDataType == 'WEIGHT') {
           // Check if this is actually a medication habit by looking at the habit name
           final habitName = habit.name.toLowerCase();
           if (habitName.contains('med') || habitName.contains('pill') || 
@@ -444,7 +444,7 @@ class HealthHabitMappingService {
         }
         
         // Provide specific guidance for water tracking
-        if (mapping.healthDataType == HealthDataType.WATER) {
+        if (mapping.healthDataType == 'WATER') {
           return HabitCompletionResult(
             shouldComplete: false,
             reason: 'No water intake data found. Water must be manually logged in your health app (Apple Health, Google Health, etc.) to enable auto-completion.',
@@ -467,11 +467,11 @@ class HealthHabitMappingService {
           
           // Special handling for different health types
           switch (mapping.healthDataType) {
-            case HealthDataType.SLEEP_IN_BED:
+            case 'SLEEP_IN_BED':
               // Convert minutes to hours for sleep
               totalValue += value / 60.0;
               break;
-            case HealthDataType.WEIGHT:
+            case 'WEIGHT':
               // For weight, just count measurements
               dataPoints++;
               totalValue = dataPoints.toDouble();
@@ -520,7 +520,7 @@ class HealthHabitMappingService {
     final roundedValue = value.round();
     
     switch (mapping.healthDataType) {
-      case HealthDataType.STEPS:
+      case 'STEPS':
         if (roundedValue >= 12000) {
           return 'Excellent! You walked $roundedValue steps today 🚶‍♂️';
         } else if (roundedValue >= 8000) {
@@ -529,7 +529,7 @@ class HealthHabitMappingService {
           return 'You walked $roundedValue steps today ✅';
         }
         
-      case HealthDataType.ACTIVE_ENERGY_BURNED:
+      case 'ACTIVE_ENERGY_BURNED':
         if (roundedValue >= 600) {
           return 'Amazing workout! You burned $roundedValue calories 🔥';
         } else if (roundedValue >= 400) {
@@ -538,7 +538,7 @@ class HealthHabitMappingService {
           return 'You burned $roundedValue calories through activity 🏃‍♂️';
         }
         
-      case HealthDataType.SLEEP_IN_BED:
+      case 'SLEEP_IN_BED':
         final hours = (value * 10).round() / 10; // Round to 1 decimal
         if (hours >= 8.5) {
           return 'Excellent rest! You slept ${hours}h last night 😴';
@@ -548,7 +548,7 @@ class HealthHabitMappingService {
           return 'You slept ${hours}h last night 💤';
         }
         
-      case HealthDataType.WATER:
+      case 'WATER':
         final liters = (value / 1000 * 10).round() / 10; // Convert to liters, round to 1 decimal
         if (liters >= 3.0) {
           return 'Excellent hydration! You drank ${liters}L of water 💧';
@@ -558,7 +558,7 @@ class HealthHabitMappingService {
           return 'You drank ${liters}L of water today 💦';
         }
         
-      case HealthDataType.MINDFULNESS:
+      case 'MINDFULNESS':
         if (roundedValue >= 30) {
           return 'Deep meditation! You practiced for $roundedValue minutes 🧘‍♂️';
         } else if (roundedValue >= 15) {
@@ -567,7 +567,7 @@ class HealthHabitMappingService {
           return 'You meditated for $roundedValue minutes today ☮️';
         }
         
-      case HealthDataType.WEIGHT:
+      case 'WEIGHT':
         return 'Weight tracked successfully! 📊';
         
       default:
@@ -617,8 +617,8 @@ class HealthHabitMappingService {
   }
 
   /// Get health data types that are actively used by habits
-  static Future<Set<HealthDataType>> getActiveHealthDataTypes(List<Habit> habits) async {
-    final activeTypes = <HealthDataType>{};
+  static Future<Set<String>> getActiveHealthDataTypes(List<Habit> habits) async {
+    final activeTypes = <String>{};
     
     for (final habit in habits) {
       final mapping = await analyzeHabitForHealthMapping(habit);
@@ -633,7 +633,7 @@ class HealthHabitMappingService {
   /// Suggest optimal thresholds for a habit based on user's historical health data
   static Future<Map<String, double>> suggestOptimalThresholds({
     required Habit habit,
-    required HealthDataType healthDataType,
+    required String healthDataType,
     int analysisWindowDays = 30,
   }) async {
     try {
@@ -662,7 +662,7 @@ class HealthHabitMappingService {
           value = (point.value as NumericHealthValue).numericValue.toDouble();
           
           // Convert units as needed
-          if (healthDataType == HealthDataType.SLEEP_IN_BED) {
+          if (healthDataType == 'SLEEP_IN_BED') {
             value = value / 60.0; // Convert minutes to hours
           }
         }
@@ -808,13 +808,13 @@ class HealthHabitMappingService {
   }
 
   /// Extract custom threshold from habit name/description
-  static double? _extractCustomThreshold(String searchText, HealthDataType healthType) {
+  static double? _extractCustomThreshold(String searchText, String healthType) {
     try {
       // Define patterns for different health data types
       List<RegExp> patterns = [];
       
       switch (healthType) {
-        case HealthDataType.STEPS:
+        case 'STEPS':
           patterns = [
             RegExp(r'(\d+)\s*steps?', caseSensitive: false),
             RegExp(r'(\d+)\s*step', caseSensitive: false),
@@ -829,14 +829,14 @@ class HealthHabitMappingService {
             RegExp(r'(\d{1,3})\s*(?:steps?|walk)', caseSensitive: false),
           ];
           break;
-        case HealthDataType.ACTIVE_ENERGY_BURNED:
+        case 'ACTIVE_ENERGY_BURNED':
           patterns = [
             RegExp(r'(\d+)\s*cal(?:ories?)?', caseSensitive: false),
             RegExp(r'burn\s*(\d+)', caseSensitive: false),
             RegExp(r'(\d+)\s*burn', caseSensitive: false),
           ];
           break;
-        case HealthDataType.WATER:
+        case 'WATER':
           patterns = [
             RegExp(r'(\d+)\s*ml', caseSensitive: false),
             RegExp(r'(\d+)\s*l(?:iter)?s?', caseSensitive: false),
@@ -844,14 +844,14 @@ class HealthHabitMappingService {
             RegExp(r'drink\s*(\d+)', caseSensitive: false),
           ];
           break;
-        case HealthDataType.MINDFULNESS:
+        case 'MINDFULNESS':
           patterns = [
             RegExp(r'(\d+)\s*min(?:ute)?s?', caseSensitive: false),
             RegExp(r'meditate\s*(\d+)', caseSensitive: false),
             RegExp(r'(\d+)\s*meditation', caseSensitive: false),
           ];
           break;
-        case HealthDataType.SLEEP_IN_BED:
+        case 'SLEEP_IN_BED':
           patterns = [
             RegExp(r'(\d+)\s*h(?:our)?s?', caseSensitive: false),
             RegExp(r'sleep\s*(\d+)', caseSensitive: false),
@@ -870,13 +870,13 @@ class HealthHabitMappingService {
           if (value != null && value > 0) {
             // Apply unit conversions if needed
             switch (healthType) {
-              case HealthDataType.WATER:
+              case 'WATER':
                 // Convert liters to ml if needed
                 if (searchText.toLowerCase().contains('l') && !searchText.toLowerCase().contains('ml')) {
                   return value * 1000; // Convert liters to ml
                 }
                 return value;
-              case HealthDataType.SLEEP_IN_BED:
+              case 'SLEEP_IN_BED':
                 // Sleep is stored in hours
                 return value;
               default:
@@ -912,7 +912,7 @@ class HealthHabitMapping {
 /// Individual habit-health mapping
 class HabitHealthMapping {
   final String habitId;
-  final HealthDataType healthDataType;
+  final String healthDataType;
   final double threshold;
   final String thresholdLevel;
   final double relevanceScore;
@@ -946,7 +946,7 @@ class HabitCompletionResult {
   final String reason;
   final double? healthValue;
   final double? threshold;
-  final HealthDataType? healthDataType;
+  final String? healthDataType;
   final double confidence;
   
   HabitCompletionResult({
