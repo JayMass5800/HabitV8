@@ -46,26 +46,42 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     private var pendingResult: Result? = null
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
-    // ONLY these 6 health data types are supported
+    // ONLY these health data types are supported
     // Adding any more will cause Google Play Console rejection
-    private val ALLOWED_DATA_TYPES = mapOf(
+    private val ALLOWED_DATA_TYPES = mutableMapOf<String, KClass<out Record>>(
         "STEPS" to StepsRecord::class,
         "ACTIVE_ENERGY_BURNED" to ActiveCaloriesBurnedRecord::class,
         "SLEEP_IN_BED" to SleepSessionRecord::class,
         "WATER" to HydrationRecord::class,
-        "MINDFULNESS" to MindfulnessSessionRecord::class,
         "WEIGHT" to WeightRecord::class
-    )
+    ).apply {
+        // Try to add MindfulnessSessionRecord if available
+        try {
+            val mindfulnessClass = Class.forName("androidx.health.connect.client.records.MindfulnessSessionRecord").kotlin as KClass<out Record>
+            this["MINDFULNESS"] = mindfulnessClass
+            Log.i("MinimalHealthPlugin", "MindfulnessSessionRecord is available")
+        } catch (e: ClassNotFoundException) {
+            Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord not available in this Health Connect version")
+        }
+    }
 
     // Health Connect permissions for our allowed data types
-    private val HEALTH_PERMISSIONS = setOf(
+    private val HEALTH_PERMISSIONS = mutableSetOf(
         HealthPermission.getReadPermission(StepsRecord::class),
         HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
         HealthPermission.getReadPermission(SleepSessionRecord::class),
         HealthPermission.getReadPermission(HydrationRecord::class),
-        HealthPermission.getReadPermission(MindfulnessSessionRecord::class),
         HealthPermission.getReadPermission(WeightRecord::class)
-    )
+    ).apply {
+        // Try to add MindfulnessSessionRecord permission if available
+        try {
+            val mindfulnessClass = Class.forName("androidx.health.connect.client.records.MindfulnessSessionRecord").kotlin as KClass<out Record>
+            this.add(HealthPermission.getReadPermission(mindfulnessClass))
+            Log.i("MinimalHealthPlugin", "MindfulnessSessionRecord permission added")
+        } catch (e: ClassNotFoundException) {
+            Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord permission not available")
+        }
+    }
 
     companion object {
         private const val HEALTH_CONNECT_REQUEST_CODE = 1001
@@ -234,34 +250,70 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     private fun convertRecordToMap(record: Record, dataType: String): Map<String, Any> {
         val map = mutableMapOf<String, Any>()
         map["type"] = dataType
-        map["timestamp"] = record.startTime.toEpochMilli()
         
         when (record) {
             is StepsRecord -> {
+                map["timestamp"] = record.startTime.toEpochMilli()
                 map["value"] = record.count.toDouble()
                 map["unit"] = "steps"
             }
             is ActiveCaloriesBurnedRecord -> {
+                map["timestamp"] = record.startTime.toEpochMilli()
                 map["value"] = record.energy.inCalories
                 map["unit"] = "calories"
             }
             is SleepSessionRecord -> {
+                map["timestamp"] = record.startTime.toEpochMilli()
                 map["value"] = (record.endTime.toEpochMilli() - record.startTime.toEpochMilli()) / (1000.0 * 60.0) // minutes
                 map["unit"] = "minutes"
                 map["endTime"] = record.endTime.toEpochMilli()
             }
             is HydrationRecord -> {
+                // HydrationRecord is an InstantRecord, so it should have a 'time' property
+                try {
+                    val timeMethod = record.javaClass.getMethod("getTime")
+                    val time = timeMethod.invoke(record) as Instant
+                    map["timestamp"] = time.toEpochMilli()
+                } catch (e: Exception) {
+                    Log.w("MinimalHealthPlugin", "Error getting time from HydrationRecord", e)
+                    map["timestamp"] = System.currentTimeMillis()
+                }
                 map["value"] = record.volume.inLiters
                 map["unit"] = "liters"
             }
-            is MindfulnessSessionRecord -> {
-                map["value"] = (record.endTime.toEpochMilli() - record.startTime.toEpochMilli()) / (1000.0 * 60.0) // minutes
-                map["unit"] = "minutes"
-                map["endTime"] = record.endTime.toEpochMilli()
-            }
             is WeightRecord -> {
+                // WeightRecord is an InstantRecord, so it should have a 'time' property
+                try {
+                    val timeMethod = record.javaClass.getMethod("getTime")
+                    val time = timeMethod.invoke(record) as Instant
+                    map["timestamp"] = time.toEpochMilli()
+                } catch (e: Exception) {
+                    Log.w("MinimalHealthPlugin", "Error getting time from WeightRecord", e)
+                    map["timestamp"] = System.currentTimeMillis()
+                }
                 map["value"] = record.weight.inKilograms
                 map["unit"] = "kg"
+            }
+            else -> {
+                // Handle MindfulnessSessionRecord dynamically if available
+                if (record.javaClass.simpleName == "MindfulnessSessionRecord") {
+                    try {
+                        val startTimeMethod = record.javaClass.getMethod("getStartTime")
+                        val endTimeMethod = record.javaClass.getMethod("getEndTime")
+                        val startTime = startTimeMethod.invoke(record) as Instant
+                        val endTime = endTimeMethod.invoke(record) as Instant
+                        
+                        map["timestamp"] = startTime.toEpochMilli()
+                        map["value"] = (endTime.toEpochMilli() - startTime.toEpochMilli()) / (1000.0 * 60.0) // minutes
+                        map["unit"] = "minutes"
+                        map["endTime"] = endTime.toEpochMilli()
+                    } catch (e: Exception) {
+                        Log.w("MinimalHealthPlugin", "Error processing MindfulnessSessionRecord", e)
+                        map["timestamp"] = System.currentTimeMillis()
+                        map["value"] = 0.0
+                        map["unit"] = "minutes"
+                    }
+                }
             }
         }
         
