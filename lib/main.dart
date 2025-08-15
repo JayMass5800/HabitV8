@@ -176,7 +176,7 @@ Future<void> _setCorrectTimezone() async {
     print('DEBUG: Current TZ time: $tzNow');
     print('DEBUG: Current device time: $now');
     print('DEBUG: TZ offset: ${tzNow.timeZoneOffset}');
-    print('DEBUG: Device offset: ${deviceOffset}');
+    print('DEBUG: Device offset: $deviceOffset');
     print('DEBUG: TZ offset matches device: ${tzNow.timeZoneOffset == deviceOffset}');
     
     // Log success
@@ -257,7 +257,7 @@ String _detectTimezoneFromOffset(int hours, int minutes) {
   final now = DateTime.now();
   final isDST = _isDaylightSavingTime(now);
   
-  print('DEBUG: Detecting timezone for offset ${hours}h ${minutes}m (${totalMinutes} minutes), DST: $isDST');
+  print('DEBUG: Detecting timezone for offset ${hours}h ${minutes}m ($totalMinutes minutes), DST: $isDST');
   
   // Common timezone mappings with DST awareness
   switch (totalMinutes) {

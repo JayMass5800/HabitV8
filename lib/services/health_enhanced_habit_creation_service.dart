@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import '../domain/model/habit.dart';
 import 'health_service.dart';
-import 'health_habit_mapping_service.dart';
 import 'logging_service.dart';
 
 /// Health-Enhanced Habit Creation Service

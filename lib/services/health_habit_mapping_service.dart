@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import '../domain/model/habit.dart';
-import 'minimal_health_service.dart';
 import 'health_service.dart';
 import 'logging_service.dart';
 
