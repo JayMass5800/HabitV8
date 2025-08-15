@@ -5,6 +5,7 @@ import 'health_service.dart';
 import 'health_habit_integration_service.dart';
 import 'health_habit_background_service.dart';
 import 'health_habit_analytics_service.dart';
+import 'activity_recognition_service.dart';
 import 'logging_service.dart';
 import 'notification_service.dart';
 
@@ -76,13 +77,19 @@ class HealthHabitInitializationService {
         result.warnings.add('Background service initialization failed - manual sync only');
       }
       
-      // Step 4: Initialize analytics service (optional)
+      // Step 4: Initialize activity recognition service (optional)
+      result.activityRecognitionServiceInitialized = await _initializeActivityRecognitionService();
+      if (!result.activityRecognitionServiceInitialized) {
+        result.warnings.add('Activity recognition service initialization failed - activity-based habits unavailable');
+      }
+      
+      // Step 5: Initialize analytics service (optional)
       result.analyticsServiceInitialized = await _initializeAnalyticsService();
       if (!result.analyticsServiceInitialized) {
         result.warnings.add('Analytics service initialization failed - limited insights available');
       }
       
-      // Step 5: Set up periodic maintenance
+      // Step 6: Set up periodic maintenance
       await _setupPeriodicMaintenance();
       
       // Step 6: Perform initial health check

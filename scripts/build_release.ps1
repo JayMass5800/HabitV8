@@ -33,8 +33,8 @@ flutter build apk --release
 Write-Host "✅ Build completed successfully!" -ForegroundColor Green
 Write-Host ""
 Write-Host "📁 Files created:" -ForegroundColor Cyan
-Write-Host "  - AAB (for Play Store): build\app\outputs\bundle\release\app-release.aab" -ForegroundColor White
-Write-Host "  - APK (for testing): build\app\outputs\flutter-apk\app-release.apk" -ForegroundColor White
+Write-Host "  - AAB (for Play Store): android\app\build\outputs\bundle\release\app-release.aab" -ForegroundColor White
+Write-Host "  - APK (for testing): android\app\build\outputs\flutter-apk\app-release.apk" -ForegroundColor White
 Write-Host ""
 Write-Host "🎯 Next steps:" -ForegroundColor Cyan
 Write-Host "  1. Test the APK on a physical device" -ForegroundColor White

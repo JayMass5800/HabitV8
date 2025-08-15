@@ -166,6 +166,31 @@ class PermissionService {
     return await Permission.calendarFullAccess.isGranted;
   }
 
+  /// Check activity recognition permission status
+  Future<bool> isActivityRecognitionPermissionGranted() async {
+    try {
+      final status = await Permission.activityRecognition.status;
+      AppLogger.info('Activity recognition permission status: $status');
+      return status == PermissionStatus.granted;
+    } catch (e) {
+      AppLogger.error('Error checking activity recognition permission', e);
+      return false;
+    }
+  }
+
+  /// Request activity recognition permission
+  Future<bool> requestActivityRecognitionPermission() async {
+    try {
+      AppLogger.info('Requesting activity recognition permission');
+      final status = await Permission.activityRecognition.request();
+      AppLogger.info('Activity recognition permission request result: $status');
+      return status == PermissionStatus.granted;
+    } catch (e) {
+      AppLogger.error('Error requesting activity recognition permission', e);
+      return false;
+    }
+  }
+
   /// Check health permission status
   Future<bool> isHealthPermissionGranted() async {
     // Use the same platform-specific health data types as we request
