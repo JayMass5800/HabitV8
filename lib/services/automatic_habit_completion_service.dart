@@ -294,7 +294,7 @@ class AutomaticHabitCompletionService {
       AppLogger.info('Found ${mappableHabits.length} mappable habits');
       for (final mapping in mappableHabits) {
         final habit = allHabits.firstWhere((h) => h.id == mapping.habitId);
-        AppLogger.info('Mappable habit: "${habit.name}" -> ${mapping.healthDataType.name} (threshold: ${mapping.threshold})');
+        AppLogger.info('Mappable habit: "${habit.name}" -> ${mapping.healthDataType} (threshold: ${mapping.threshold})');
       }
       
       final habits = allHabits.where((habit) => 

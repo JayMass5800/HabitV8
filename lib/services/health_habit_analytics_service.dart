@@ -96,17 +96,20 @@ class HealthHabitAnalyticsService {
     final analytics = HabitAnalytics(habitId: habit.id, habitName: habit.name);
     
     try {
-      // Get habit completion data
-      final completions = await habitService.getHabitCompletions(
-        habit.id,
-        DateTime.now().subtract(Duration(days: windowDays)),
-        DateTime.now(),
-      );
+      // Get habit completion data from the habit's completions list
+      final now = DateTime.now();
+      final windowStart = now.subtract(Duration(days: windowDays));
+      final recentCompletions = habit.completions.where((completion) =>
+        completion.isAfter(windowStart) && completion.isBefore(now.add(Duration(days: 1)))
+      ).toList();
       
-      // Calculate basic metrics
-      analytics.completionRate = completions.length / windowDays;
-      analytics.currentStreak = await habitService.getCurrentStreak(habit.id);
-      analytics.longestStreak = await habitService.getLongestStreak(habit.id);
+      // Calculate basic metrics using HabitStatsService
+      final statsService = HabitStatsService();
+      final streakInfo = statsService.getStreakInfo(habit);
+      
+      analytics.completionRate = recentCompletions.length / windowDays;
+      analytics.currentStreak = streakInfo.current;
+      analytics.longestStreak = streakInfo.longest;
       
       // Get health mapping
       final mapping = await HealthHabitMappingService.analyzeHabitForHealthMapping(habit);
