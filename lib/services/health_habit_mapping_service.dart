@@ -151,46 +151,8 @@ class HealthHabitMappingService {
       description: 'Water intake for hydration habits',
     ),
     
-    'MINDFULNESS': HealthHabitMapping(
-      keywords: [
-        // Meditation terms
-        'meditate', 'meditation', 'meditative', 'meditating',
-        'mindful', 'mindfulness', 'mindfully', 'aware', 'awareness',
-        // Breathing practices
-        'breathe', 'breathing', 'breath', 'breathwork',
-        'inhale', 'exhale', 'pranayama', 'respiratory',
-        // Mental states
-        'calm', 'calming', 'peace', 'peaceful', 'tranquil', 'serenity',
-        'zen', 'zenful', 'centered', 'grounded', 'present', 'presence',
-        'focus', 'focused', 'concentration', 'concentrate',
-        // Relaxation terms
-        'relax', 'relaxation', 'relaxing', 'unwind', 'unwinding',
-        'stress', 'destress', 'relief', 'tension', 'release',
-        'quiet', 'silence', 'still', 'stillness',
-        // Spiritual/philosophical terms
-        'spiritual', 'soul', 'inner', 'self', 'reflection', 'reflect',
-        'contemplation', 'contemplate', 'introspection',
-        'gratitude', 'grateful', 'thankful', 'appreciation',
-        // Practices and techniques
-        'vipassana', 'transcendental', 'guided', 'mantra', 'chant',
-        'visualization', 'visualize', 'imagery', 'affirmation',
-        'prayer', 'praying', 'devotion', 'worship',
-        // Apps and tools
-        'headspace', 'calm', 'insight', 'timer', 'bell', 'gong',
-        'cushion', 'mat', 'candle', 'incense',
-        // Time-related
-        'minutes', 'minute', 'session', 'practice', 'daily',
-        'morning', 'evening', 'routine', 'habit',
-      ],
-      thresholds: {
-        'minimal': 5,       // 5 minutes minimum
-        'moderate': 10,     // 10 minutes recommended
-        'active': 20,       // 20 minutes active practice
-        'very_active': 30,  // 30+ minutes extended
-      },
-      unit: 'minutes',
-      description: 'Mindfulness and meditation practice duration',
-    ),
+    // MINDFULNESS mapping removed due to platform restrictions
+    // Mindfulness habits will be handled as manual tracking only
     
     'WEIGHT': HealthHabitMapping(
       keywords: [

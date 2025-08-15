@@ -15,14 +15,14 @@ class MinimalHealthService {
   static const MethodChannel _channel = MethodChannel('minimal_health_service');
   static bool _isInitialized = false;
 
-  /// The ONLY 6 health data types this service supports
+  /// The ONLY 5 health data types this service supports
+  /// MINDFULNESS removed due to platform restrictions
   /// Adding any more will cause Google Play Console rejection
   static const Map<String, String> _supportedDataTypes = {
     'STEPS': 'android.permission.health.READ_STEPS',
     'ACTIVE_ENERGY_BURNED': 'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
     'SLEEP_IN_BED': 'android.permission.health.READ_SLEEP',
     'WATER': 'android.permission.health.READ_HYDRATION',
-    'MINDFULNESS': 'android.permission.health.READ_MINDFULNESS',
     'WEIGHT': 'android.permission.health.READ_WEIGHT',
   };
 
@@ -226,23 +226,12 @@ class MinimalHealthService {
     return totalWater;
   }
 
-  /// Get mindfulness minutes today
+  /// Get mindfulness minutes today (disabled - not supported)
   static Future<double> getMindfulnessMinutesToday() async {
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    
-    final data = await getHealthData(
-      dataType: 'MINDFULNESS',
-      startDate: startOfDay,
-      endDate: now,
-    );
-    
-    double totalMinutes = 0.0;
-    for (final entry in data) {
-      totalMinutes += (entry['value'] as num?)?.toDouble() ?? 0.0;
-    }
-    
-    return totalMinutes;
+    // MINDFULNESS data type is not supported due to platform restrictions
+    // Return 0 to maintain API compatibility
+    AppLogger.info('Mindfulness data not supported - returning 0');
+    return 0.0;
   }
 
   /// Get latest weight
