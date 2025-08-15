@@ -239,6 +239,11 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             ],
             _buildBasicInfoSection(),
             const SizedBox(height: 24),
+            // Health suggestions section
+            if (_healthSuggestions.isNotEmpty) ...[
+              _buildHealthSuggestionsSection(),
+              const SizedBox(height: 24),
+            ],
             _buildFrequencySection(),
             const SizedBox(height: 24),
             _buildNotificationSection(), // Moved notifications below frequency
@@ -1191,6 +1196,92 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           _loadingSuggestions = false;
         });
       }
+    }
+  }
+
+  /// Build health suggestions section
+  Widget _buildHealthSuggestionsSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.health_and_safety,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Health-Based Suggestions',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Based on your health data, here are some personalized habit suggestions:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...(_healthSuggestions.take(3).map((suggestion) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Card(
+                elevation: 1,
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    child: Icon(
+                      _getHealthDataTypeIcon(suggestion.healthDataType),
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    suggestion.name,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Text(
+                    suggestion.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: TextButton(
+                    onPressed: () => _applySuggestion(suggestion),
+                    child: const Text('Apply'),
+                  ),
+                ),
+              ),
+            ))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Get icon for health data type
+  IconData _getHealthDataTypeIcon(String? healthDataType) {
+    switch (healthDataType) {
+      case 'STEPS':
+        return Icons.directions_walk;
+      case 'ACTIVE_ENERGY_BURNED':
+        return Icons.local_fire_department;
+      case 'SLEEP_IN_BED':
+        return Icons.bedtime;
+      case 'WATER':
+        return Icons.water_drop;
+      case 'MINDFULNESS':
+        return Icons.self_improvement;
+      case 'WEIGHT':
+        return Icons.monitor_weight;
+      default:
+        return Icons.health_and_safety;
     }
   }
 
