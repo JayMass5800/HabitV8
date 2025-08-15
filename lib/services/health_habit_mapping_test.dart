@@ -77,7 +77,7 @@ class HealthHabitMappingTest {
         
         if (mapping != null) {
           AppLogger.info('✅ MAPPED: ${habit.name}');
-          AppLogger.info('   Health Type: ${mapping.healthDataType.name}');
+          AppLogger.info('   Health Type: ${mapping.healthDataType}');
           AppLogger.info('   Threshold: ${mapping.threshold} ${mapping.unit}');
           AppLogger.info('   Threshold Level: ${mapping.thresholdLevel}');
           AppLogger.info('   Relevance Score: ${mapping.relevanceScore.toStringAsFixed(3)}');
@@ -111,7 +111,7 @@ class HealthHabitMappingTest {
       
       if (mapping != null) {
         AppLogger.info('✅ Successfully mapped habit: $habitName');
-        AppLogger.info('   Health Type: ${mapping.healthDataType.name}');
+        AppLogger.info('   Health Type: ${mapping.healthDataType}');
         AppLogger.info('   Threshold: ${mapping.threshold} ${mapping.unit}');
         AppLogger.info('   Relevance Score: ${mapping.relevanceScore.toStringAsFixed(3)}');
       } else {

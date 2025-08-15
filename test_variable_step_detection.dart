@@ -8,47 +8,42 @@ void main() async {
   // Test cases for different step count scenarios
   final testHabits = [
     // Medical/Recovery cases (very low step counts)
-    Habit(
-      id: '1',
+    Habit.create(
       name: 'Post-surgery walking 100 steps',
       description: 'Recovery walking after knee surgery',
       category: 'Health',
+      colorValue: 0xFF4CAF50,
       frequency: HabitFrequency.daily,
-      createdAt: DateTime.now(),
     ),
-    Habit(
-      id: '2', 
+    Habit.create(
       name: 'Physical therapy walk',
       description: 'Walk at least 250 steps for rehabilitation',
       category: 'Medical',
+      colorValue: 0xFF2196F3,
       frequency: HabitFrequency.daily,
-      createdAt: DateTime.now(),
     ),
-    Habit(
-      id: '3',
+    Habit.create(
       name: 'Assisted mobility 50 steps',
       description: 'Walking with walker assistance',
       category: 'Recovery',
+      colorValue: 0xFFFF9800,
       frequency: HabitFrequency.daily,
-      createdAt: DateTime.now(),
     ),
     
     // Regular cases
-    Habit(
-      id: '4',
+    Habit.create(
       name: 'Daily walk 5000 steps',
       description: 'Regular daily walking',
       category: 'Fitness',
+      colorValue: 0xFF9C27B0,
       frequency: HabitFrequency.daily,
-      createdAt: DateTime.now(),
     ),
-    Habit(
-      id: '5',
+    Habit.create(
       name: 'Morning walk',
       description: 'Light morning exercise',
       category: 'Exercise',
+      colorValue: 0xFFF44336,
       frequency: HabitFrequency.daily,
-      createdAt: DateTime.now(),
     ),
   ];
   
@@ -65,7 +60,7 @@ void main() async {
     
     if (mapping != null) {
       print('✅ Health mapping found:');
-      print('   Health Type: ${mapping.healthDataType.name}');
+      print('   Health Type: ${mapping.healthDataType}');
       print('   Threshold: ${mapping.threshold} ${mapping.unit}');
       print('   Threshold Level: ${mapping.thresholdLevel}');
       print('   Relevance Score: ${mapping.relevanceScore.toStringAsFixed(2)}');

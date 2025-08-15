@@ -290,6 +290,114 @@ class HealthService {
     }
   }
 
+  /// Get health data for specific types and date range
+  static Future<List<Map<String, dynamic>>> getHealthDataFromTypes({
+    required List<String> types,
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    final results = <Map<String, dynamic>>[];
+    
+    try {
+      for (final type in types) {
+        switch (type) {
+          case 'STEPS':
+            // For now, only support today's data
+            if (_isToday(startTime)) {
+              final steps = await getStepsToday();
+              if (steps > 0) {
+                results.add({
+                  'type': type,
+                  'value': steps.toDouble(),
+                  'timestamp': DateTime.now().millisecondsSinceEpoch,
+                  'unit': 'count',
+                });
+              }
+            }
+            break;
+            
+          case 'ACTIVE_ENERGY_BURNED':
+            if (_isToday(startTime)) {
+              final calories = await getActiveCaloriesToday();
+              if (calories > 0) {
+                results.add({
+                  'type': type,
+                  'value': calories,
+                  'timestamp': DateTime.now().millisecondsSinceEpoch,
+                  'unit': 'kcal',
+                });
+              }
+            }
+            break;
+            
+          case 'SLEEP_IN_BED':
+            if (_isToday(startTime)) {
+              final sleep = await getSleepHoursLastNight();
+              if (sleep > 0) {
+                results.add({
+                  'type': type,
+                  'value': sleep,
+                  'timestamp': DateTime.now().millisecondsSinceEpoch,
+                  'unit': 'hours',
+                });
+              }
+            }
+            break;
+            
+          case 'WATER':
+            if (_isToday(startTime)) {
+              final water = await getWaterIntakeToday();
+              if (water > 0) {
+                results.add({
+                  'type': type,
+                  'value': water,
+                  'timestamp': DateTime.now().millisecondsSinceEpoch,
+                  'unit': 'ml',
+                });
+              }
+            }
+            break;
+            
+          case 'MINDFULNESS':
+            if (_isToday(startTime)) {
+              final mindfulness = await getMindfulnessMinutesToday();
+              if (mindfulness > 0) {
+                results.add({
+                  'type': type,
+                  'value': mindfulness,
+                  'timestamp': DateTime.now().millisecondsSinceEpoch,
+                  'unit': 'minutes',
+                });
+              }
+            }
+            break;
+            
+          case 'WEIGHT':
+            final weight = await getLatestWeight();
+            if (weight != null) {
+              results.add({
+                'type': type,
+                'value': weight,
+                'timestamp': DateTime.now().millisecondsSinceEpoch,
+                'unit': 'kg',
+              });
+            }
+            break;
+        }
+      }
+    } catch (e) {
+      AppLogger.error('Error getting health data from types', e);
+    }
+    
+    return results;
+  }
+  
+  /// Helper method to check if a date is today
+  static bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
+
   /// Check if health data is available
   static Future<bool> isHealthDataAvailable() async {
     try {

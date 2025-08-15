@@ -267,7 +267,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Color(habit.colorValue).withOpacity(0.1),
+                            color: Color(habit.colorValue).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -282,7 +282,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.1),
+                            color: statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -299,7 +299,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.grey.withOpacity(0.1),
+                              color: Colors.grey.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -332,7 +332,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isCompleted ? Colors.green : statusColor.withOpacity(0.1),
+                  color: isCompleted ? Colors.green : statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isCompleted ? Colors.green : statusColor,
@@ -382,7 +382,6 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           // Fallback: use creation date but only show on or after the anniversary
           final habitCreationDate = habit.createdAt;
           final currentYear = date.year;
-          final anniversaryDate = DateTime(currentYear, habitCreationDate.month, habitCreationDate.day);
           
           // Only show if the date is the anniversary and it's on or after the creation year
           return date.month == habitCreationDate.month && 

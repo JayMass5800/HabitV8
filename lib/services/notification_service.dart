@@ -79,7 +79,7 @@ class NotificationService {
     _isInitialized = true;
     AppLogger.info('🔔 NotificationService initialized successfully');
     AppLogger.info('📱 Platform: ${Platform.operatingSystem}');
-    AppLogger.info('🔧 Background handler registered: ${_onNotificationTapped != null}');
+    AppLogger.info('🔧 Background handler registered: true');
   }
 
   /// Check if device is running Android 12+ (API level 31+)

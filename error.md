@@ -1,4 +1,3 @@
-PS C:\HabitV8> flutter analyze  
 Analyzing HabitV8...                                                    
 
    info - Don't invoke 'print' in production code - lib\data\database.dart:40:7 - avoid_print
@@ -19,7 +18,6 @@ Analyzing HabitV8...
    info - Don't invoke 'print' in production code - lib\main.dart:177:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\main.dart:178:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\main.dart:179:5 - avoid_print
-   info - Unnecessary braces in a string interpolation - lib\main.dart:179:34 - unnecessary_brace_in_string_interps
    info - Don't invoke 'print' in production code - lib\main.dart:180:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\main.dart:186:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\main.dart:191:7 - avoid_print
@@ -29,78 +27,118 @@ Analyzing HabitV8...
    info - Don't invoke 'print' in production code - lib\main.dart:246:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\main.dart:249:5 - avoid_print
    info - Don't invoke 'print' in production code - lib\main.dart:260:3 - avoid_print
-   info - Unnecessary braces in a string interpolation - lib\main.dart:260:70 - unnecessary_brace_in_string_interps
    info - Don't invoke 'print' in production code - lib\main.dart:279:9 - avoid_print
    info - Don't invoke 'print' in production code - lib\main.dart:283:9 - avoid_print
-warning - Unused import: 'package:permission_handler/permission_handler.dart' - lib\services\activity_recognition_service.dart:3:8 - unused_import
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\automatic_habit_completion_service.dart:297:85 - undefined_getter
-warning - Unused import: 'health_habit_mapping_service.dart' - lib\services\health_enhanced_habit_creation_service.dart:4:8 - unused_import
 warning - The value of the local variable 'startDate' isn't used - lib\services\health_habit_analytics_service.dart:30:13 - unused_local_variable
-  error - The method 'getHabitCompletions' isn't defined for the type 'HabitService' - lib\services\health_habit_analytics_service.dart:100:46 - undefined_method
-  error - The method 'getCurrentStreak' isn't defined for the type 'HabitService' - lib\services\health_habit_analytics_service.dart:108:52 - undefined_method
-  error - The method 'getLongestStreak' isn't defined for the type 'HabitService' - lib\services\health_habit_analytics_service.dart:109:52 - undefined_method
-  error - The getter 'hasError' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_initialization_service.dart:243:18 - undefined_getter
+  error - The method 'HabitStatsService' isn't defined for the type 'HealthHabitAnalyticsService' - lib\services\health_habit_analytics_service.dart:107:28 - undefined_method
+  error - Undefined name 'completions' - lib\services\health_habit_analytics_service.dart:124:11 - undefined_identifier
+  error - The method 'getIntegrationStatus' isn't defined for the type 'HealthHabitIntegrationService' - lib\services\health_habit_initialization_service.dart:291:69 - undefined_method
+  error - The method 'getIntegrationStatus' isn't defined for the type 'HealthHabitIntegrationService' - lib\services\health_habit_initialization_service.dart:469:75 - undefined_method
+  error - The method 'getIntegrationStatus' isn't defined for the type 'HealthHabitIntegrationService' - lib\services\health_habit_initialization_service.dart:546:69 - undefined_method
 warning - The value of the local variable 'endOfDay' isn't used - lib\services\health_habit_integration_service.dart:188:13 - unused_local_variable
   error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_integration_service.dart:274:65 - undefined_getter
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_integration_service.dart:386:32 - type_test_with_undefined_name
-  error - A value of type 'double' can't be assigned to a variable of type 'int' - lib\services\health_habit_integration_service.dart:387:29 - invalid_assignment
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_integration_service.dart:387:45 - cast_to_non_type
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_integration_service.dart:397:32 - type_test_with_undefined_name
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_integration_service.dart:398:46 - cast_to_non_type
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_integration_service.dart:408:32 - type_test_with_undefined_name
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_integration_service.dart:409:45 - cast_to_non_type
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_integration_service.dart:419:32 - type_test_with_undefined_name
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_integration_service.dart:420:45 - cast_to_non_type
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_integration_service.dart:430:32 - type_test_with_undefined_name
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_integration_service.dart:431:51 - cast_to_non_type
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_integration_service.dart:441:66 - type_test_with_undefined_name
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_integration_service.dart:442:55 - cast_to_non_type
-  error - Undefined name 'healthData' - lib\services\health_habit_integration_service.dart:481:25 - undefined_identifier
-  error - The getter 'dateFrom' isn't defined for the type 'HealthDataPoint' - lib\services\health_habit_integration_service.dart:519:36 - undefined_getter
-  error - The getter 'dateFrom' isn't defined for the type 'HealthDataPoint' - lib\services\health_habit_integration_service.dart:519:57 - undefined_getter
-  error - The getter 'dateFrom' isn't defined for the type 'HealthDataPoint' - lib\services\health_habit_integration_service.dart:519:79 - undefined_getter
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_integration_service.dart:520:28 - type_test_with_undefined_name
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_integration_service.dart:522:31 - cast_to_non_type
-  error - The argument type 'Map<String, dynamic>' can't be assigned to the parameter type 'List<HealthDataPoint>'.  - lib\services\health_habit_integration_service.dart:575:43 - argument_type_not_assignable
-  error - The argument type 'Map<String, dynamic>' can't be assigned to the parameter type 'List<HealthDataPoint>'.  - lib\services\health_habit_integration_service.dart:579:66 - argument_type_not_assignable
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_integration_service.dart:652:37 - undefined_getter
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_integration_service.dart:666:48 - type_test_with_undefined_name
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_integration_service.dart:667:47 - cast_to_non_type
-  error - The operator '+' can't be unconditionally invoked because the receiver can be 'null' - lib\services\health_habit_integration_service.dart:674:59 - unchecked_use_of_nullable_value
-  error - The operator '+' can't be unconditionally invoked because the receiver can be 'null' - lib\services\health_habit_integration_service.dart:675:61 - unchecked_use_of_nullable_value
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_integration_service.dart:718:24 - undefined_getter
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_integration_service.dart:829:52 - undefined_getter
-warning - Unused import: 'minimal_health_service.dart' - lib\services\health_habit_mapping_service.dart:3:8 - unused_import
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:277:52 - undefined_getter
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:322:65 - undefined_getter
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:334:77 - undefined_getter
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:394:89 - undefined_getter
-  error - The method 'getHealthDataFromTypes' isn't defined for the type 'HealthService' - lib\services\health_habit_mapping_service.dart:424:46 - undefined_method
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:456:74 - undefined_getter
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_mapping_service.dart:465:28 - type_test_with_undefined_name
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_mapping_service.dart:466:41 - cast_to_non_type
-  error - The method 'getHealthDataFromTypes' isn't defined for the type 'HealthService' - lib\services\health_habit_mapping_service.dart:643:46 - undefined_method
-  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_mapping_service.dart:661:28 - type_test_with_undefined_name
-  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_mapping_service.dart:662:35 - cast_to_non_type
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:718:49 - undefined_getter
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:934:38 - undefined_getter
-  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:966:39 - undefined_getter
+warning - The declaration '_getHealthMappingForHabit' isn't referenced - lib\services\health_habit_integration_service.dart:293:31 - unused_element
+warning - The declaration '_checkHealthThreshold' isn't referenced - lib\services\health_habit_integration_service.dart:374:26 - unused_element
+  error - A try block must be followed by an 'on', 'catch', or 'finally' clause - lib\services\health_habit_integration_service.dart:381:5 - missing_catch_or_finally
+warning - The value of the local variable 'totalSleep' isn't used - lib\services\health_habit_integration_service.dart:402:18 - unused_local_variable
+  error - Undefined name 'totalSleep' - lib\services\health_habit_integration_service.dart:407:27 - undefined_identifier
+  error - Undefined name 'totalSleep' - lib\services\health_habit_integration_service.dart:408:26 - undefined_identifier
+  error - A break statement can't be used outside of a loop or switch statement - lib\services\health_habit_integration_service.dart:409:11 - break_outside_of_loop
+warning - Dead code - lib\services\health_habit_integration_service.dart:411:9 - dead_code
+  error - 'case' can't be used as an identifier because it's a keyword - lib\services\health_habit_integration_service.dart:411:9 - expected_identifier_but_got_keyword
+  error - Expected a statement - lib\services\health_habit_integration_service.dart:411:9 - missing_statement
+  error - Expected to find ';' - lib\services\health_habit_integration_service.dart:411:9 - expected_token
+  error - Undefined name 'case' - lib\services\health_habit_integration_service.dart:411:9 - undefined_identifier
+  error - Expected to find ';' - lib\services\health_habit_integration_service.dart:411:14 - expected_token
+  error - Expected an identifier - lib\services\health_habit_integration_service.dart:411:21 - missing_identifier
+  error - Unexpected text ':' - lib\services\health_habit_integration_service.dart:411:21 - unexpected_token
+  error - A break statement can't be used outside of a loop or switch statement - lib\services\health_habit_integration_service.dart:418:11 - break_outside_of_loop
+  error - 'case' can't be used as an identifier because it's a keyword - lib\services\health_habit_integration_service.dart:420:9 - expected_identifier_but_got_keyword
+  error - Expected a statement - lib\services\health_habit_integration_service.dart:420:9 - missing_statement
+  error - Expected to find ';' - lib\services\health_habit_integration_service.dart:420:9 - expected_token
+  error - Undefined name 'case' - lib\services\health_habit_integration_service.dart:420:9 - undefined_identifier
+  error - Expected to find ';' - lib\services\health_habit_integration_service.dart:420:14 - expected_token
+  error - Expected an identifier - lib\services\health_habit_integration_service.dart:420:27 - missing_identifier
+  error - Unexpected text ':' - lib\services\health_habit_integration_service.dart:420:27 - unexpected_token
+  error - A break statement can't be used outside of a loop or switch statement - lib\services\health_habit_integration_service.dart:427:11 - break_outside_of_loop
+  error - 'case' can't be used as an identifier because it's a keyword - lib\services\health_habit_integration_service.dart:429:9 - expected_identifier_but_got_keyword
+  error - Expected a statement - lib\services\health_habit_integration_service.dart:429:9 - missing_statement
+  error - Expected to find ';' - lib\services\health_habit_integration_service.dart:429:9 - expected_token
+  error - Undefined name 'case' - lib\services\health_habit_integration_service.dart:429:9 - undefined_identifier
+  error - Expected to find ';' - lib\services\health_habit_integration_service.dart:429:14 - expected_token
+  error - Expected an identifier - lib\services\health_habit_integration_service.dart:429:22 - missing_identifier
+  error - Unexpected text ':' - lib\services\health_habit_integration_service.dart:429:22 - unexpected_token
+  error - A break statement can't be used outside of a loop or switch statement - lib\services\health_habit_integration_service.dart:435:11 - break_outside_of_loop
+  error - Expected a class member - lib\services\health_habit_integration_service.dart:437:7 - expected_class_member
+  error - Expected an identifier - lib\services\health_habit_integration_service.dart:437:13 - missing_identifier
+   info - Missing type annotation - lib\services\health_habit_integration_service.dart:437:14 - strict_top_level_inference
+  error - Undefined name 'healthType' - lib\services\health_habit_integration_service.dart:438:61 - undefined_identifier
+  error - Expected a class member - lib\services\health_habit_integration_service.dart:441:5 - expected_class_member
+   info - An uninitialized field should have an explicit type annotation - lib\services\health_habit_integration_service.dart:441:12 - prefer_typing_uninitialized_variables
+   info - Missing type annotation - lib\services\health_habit_integration_service.dart:441:12 - strict_top_level_inference
+  error - Variables must be declared using the keywords 'const', 'final', 'var' or a type name - lib\services\health_habit_integration_service.dart:441:12 - missing_const_final_var_or_type
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:445:3 - extraneous_modifier
+  error - Undefined name 'healthData' - lib\services\health_habit_integration_service.dart:472:25 - undefined_identifier
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:501:3 - extraneous_modifier
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:547:3 - extraneous_modifier
+  error - The argument type 'Map<String, dynamic>' can't be assigned to the parameter type 'List<HealthDataPoint>'.  - lib\services\health_habit_integration_service.dart:563:43 - argument_type_not_assignable
+  error - The argument type 'Map<String, dynamic>' can't be assigned to the parameter type 'List<HealthDataPoint>'.  - lib\services\health_habit_integration_service.dart:567:66 - argument_type_not_assignable
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:578:3 - extraneous_modifier
+  error - The function '_getHealthMappingForHabit' isn't defined - lib\services\health_habit_integration_service.dart:583:23 - undefined_function
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:596:3 - extraneous_modifier
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:633:3 - extraneous_modifier
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_integration_service.dart:640:37 - undefined_getter
+  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_integration_service.dart:654:48 - type_test_with_undefined_name
+  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_integration_service.dart:655:47 - cast_to_non_type
+  error - The operator '+' can't be unconditionally invoked because the receiver can be 'null' - lib\services\health_habit_integration_service.dart:662:59 - unchecked_use_of_nullable_value
+  error - The operator '+' can't be unconditionally invoked because the receiver can be 'null' - lib\services\health_habit_integration_service.dart:663:61 - unchecked_use_of_nullable_value
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:685:3 - extraneous_modifier
+  error - The function '_getHealthMappingForHabit' isn't defined - lib\services\health_habit_integration_service.dart:695:25 - undefined_function
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_integration_service.dart:706:24 - undefined_getter
+  error - The function '_checkHealthThreshold' isn't defined - lib\services\health_habit_integration_service.dart:709:37 - undefined_function
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:745:3 - extraneous_modifier
+  error - Undefined name '_lastHealthSyncKey' - lib\services\health_habit_integration_service.dart:748:37 - undefined_identifier
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:762:3 - extraneous_modifier
+  error - Undefined name '_lastHealthSyncKey' - lib\services\health_habit_integration_service.dart:765:26 - undefined_identifier
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:772:3 - extraneous_modifier
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:795:3 - extraneous_modifier
+  error - The function 'isAutoCompletionEnabled' isn't defined - lib\services\health_habit_integration_service.dart:803:43 - undefined_function
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_integration_service.dart:817:52 - undefined_getter
+  error - Undefined name '_lastHealthSyncKey' - lib\services\health_habit_integration_service.dart:840:37 - undefined_identifier
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:854:3 - extraneous_modifier
+  error - The function 'performHealthHabitSync' isn't defined - lib\services\health_habit_integration_service.dart:858:18 - undefined_function
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:865:3 - extraneous_modifier
+  error - Undefined name '_healthThresholdsKey' - lib\services\health_habit_integration_service.dart:868:29 - undefined_identifier
+  error - Can't have modifier 'static' here - lib\services\health_habit_integration_service.dart:876:3 - extraneous_modifier
+  error - Undefined name '_healthThresholdsKey' - lib\services\health_habit_integration_service.dart:879:48 - undefined_identifier
+  error - Undefined name '_defaultHealthThresholds' - lib\services\health_habit_integration_service.dart:883:16 - undefined_identifier
+  error - Undefined name '_defaultHealthThresholds' - lib\services\health_habit_integration_service.dart:889:12 - undefined_identifier
+  error - Expected a method, getter, setter or operator declaration - lib\services\health_habit_integration_service.dart:891:1 - expected_executable
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:276:52 - undefined_getter
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:321:65 - undefined_getter
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:333:77 - undefined_getter
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:393:89 - undefined_getter
+  error - The method 'getHealthDataFromTypes' isn't defined for the type 'HealthService' - lib\services\health_habit_mapping_service.dart:423:46 - undefined_method
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:455:74 - undefined_getter
+  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_mapping_service.dart:464:28 - type_test_with_undefined_name
+  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_mapping_service.dart:465:41 - cast_to_non_type
+  error - The method 'getHealthDataFromTypes' isn't defined for the type 'HealthService' - lib\services\health_habit_mapping_service.dart:642:46 - undefined_method
+  error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_mapping_service.dart:660:28 - type_test_with_undefined_name
+  error - The name 'NumericHealthValue' isn't a type, so it can't be used in an 'as' expression - lib\services\health_habit_mapping_service.dart:661:35 - cast_to_non_type
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:717:49 - undefined_getter
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:933:38 - undefined_getter
+  error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_service.dart:965:39 - undefined_getter
   error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_test.dart:80:68 - undefined_getter
   error - The getter 'name' isn't defined for the type 'String' - lib\services\health_habit_mapping_test.dart:114:66 - undefined_getter
+  error - The method 'getIntegrationStatus' isn't defined for the type 'HealthHabitIntegrationService' - lib\services\health_habit_ui_service.dart:23:45 - undefined_method
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\services\health_habit_ui_service.dart:141:22 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\services\health_habit_ui_service.dart:143:41 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\services\health_habit_ui_service.dart:353:22 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\services\health_habit_ui_service.dart:355:41 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\services\health_habit_ui_service.dart:370:34 - deprecated_member_use
-  error - The getter 'hasError' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_ui_service.dart:510:70 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_ui_service.dart:539:33 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_ui_service.dart:542:39 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_ui_service.dart:543:39 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_ui_service.dart:551:33 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_ui_service.dart:554:28 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_ui_service.dart:555:28 - undefined_getter
-  error - The getter 'predictiveInsights' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_ui_service.dart:562:28 - undefined_getter
-  error - The getter 'predictiveInsights' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\services\health_habit_ui_service.dart:568:29 - undefined_getter
+  error - The getter 'habitName' isn't defined for the type 'String' - lib\services\health_habit_ui_service.dart:577:40 - undefined_getter
+  error - The getter 'message' isn't defined for the type 'String' - lib\services\health_habit_ui_service.dart:577:62 - undefined_getter
+  error - The method 'manualSync' isn't defined for the type 'HealthHabitIntegrationService' - lib\services\health_habit_ui_service.dart:727:70 - undefined_method
 warning - The value of the local variable 'healthSummary' isn't used - lib\services\health_habit_ui_service.dart:769:13 - unused_local_variable
   error - Undefined name 'healthData' - lib\services\health_habit_ui_service.dart:785:27 - undefined_identifier
   error - The name 'NumericHealthValue' isn't defined, so it can't be used in an 'is' expression - lib\services\health_habit_ui_service.dart:787:28 - type_test_with_undefined_name
@@ -183,7 +221,6 @@ warning - The operand can't be 'null', so the condition is always 'true' - lib\s
    info - Don't invoke 'print' in production code - lib\services\notification_service.dart:962:11 - avoid_print
    info - Don't invoke 'print' in production code - lib\services\notification_service.dart:968:7 - avoid_print
 warning - The operand can't be 'null', so the condition is always 'true' - lib\services\notification_service.dart:1335:90 - unnecessary_null_comparison
-warning - Unused import: 'dart:io' - lib\services\permission_service.dart:1:8 - unused_import
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\ui\home_screen.dart:36:40 - use_build_context_synchronously
    info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\ui\home_screen.dart:48:40 - use_build_context_synchronously
 warning - The value of the field '_enableHealthIntegration' isn't used - lib\ui\screens\create_habit_screen.dart:38:8 - unused_field
@@ -198,19 +235,14 @@ warning - The value of the field '_loadingSuggestions' isn't used - lib\ui\scree
    info - Don't invoke 'print' in production code - lib\ui\screens\create_habit_screen.dart:1142:9 - avoid_print
    info - Don't invoke 'print' in production code - lib\ui\screens\create_habit_screen.dart:1159:9 - avoid_print
 warning - The declaration '_applySuggestion' isn't referenced - lib\ui\screens\create_habit_screen.dart:1198:8 - unused_element
-  error - The getter 'hasError' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:209:76 - undefined_getter
-  error - The getter 'hasError' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:365:76 - undefined_getter
-  error - The getter 'predictiveInsights' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:379:30 - undefined_getter
-  error - The getter 'predictiveInsights' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:383:30 - undefined_getter
+  error - The getter 'confidence' isn't defined for the type 'String' - lib\ui\screens\health_integration_screen.dart:386:42 - undefined_getter
+  error - The getter 'habitName' isn't defined for the type 'String' - lib\ui\screens\health_integration_screen.dart:388:45 - undefined_getter
+  error - The getter 'message' isn't defined for the type 'String' - lib\ui\screens\health_integration_screen.dart:389:48 - undefined_getter
+  error - The getter 'confidence' isn't defined for the type 'String' - lib\ui\screens\health_integration_screen.dart:390:52 - undefined_getter
   error - The getter 'optimizationRecommendations' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:397:30 - undefined_getter
   error - The getter 'optimizationRecommendations' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:401:30 - undefined_getter
   error - The getter 'benchmarkComparisons' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:424:30 - undefined_getter
   error - The getter 'benchmarkComparisons' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:425:51 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:456:39 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:459:34 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:460:34 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:466:33 - undefined_getter
-  error - The getter 'overallScore' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:473:47 - undefined_getter
   error - The getter 'habitAnalyses' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:484:20 - undefined_getter
   error - The getter 'habitAnalyses' isn't defined for the type 'HealthHabitAnalyticsReport' - lib\ui\screens\health_integration_screen.dart:490:21 - undefined_getter
   error - The name 'BenchmarkComparison' isn't a type, so it can't be used as a type argument - lib\ui\screens\health_integration_screen.dart:561:45 - non_type_as_type_argument
@@ -252,6 +284,7 @@ warning - The value of the local variable 'anniversaryDate' isn't used - lib\ui\
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\widgets\health_habit_dashboard_widget.dart:355:38 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\widgets\health_habit_dashboard_widget.dart:357:57 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\widgets\health_habit_dashboard_widget.dart:440:52 - deprecated_member_use
+  error - The method 'getIntegrationStatus' isn't defined for the type 'HealthHabitIntegrationService' - lib\ui\widgets\health_habit_dashboard_widget.dart:552:64 - undefined_method
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\widgets\health_habit_dashboard_widget.dart:631:49 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\widgets\health_habit_dashboard_widget.dart:634:34 - deprecated_member_use
    info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\widgets\health_habit_dashboard_widget.dart:645:36 - deprecated_member_use
@@ -337,5 +370,3 @@ warning - The value of the local variable 'anniversaryDate' isn't used - lib\ui\
    info - Don't invoke 'print' in production code - test_variable_step_detection.dart:90:5 - avoid_print
    info - Don't invoke 'print' in production code - test_variable_step_detection.dart:91:5 - avoid_print
    info - Don't invoke 'print' in production code - test_variable_step_detection.dart:92:5 - avoid_print
-
-336 issues found. (ran in 2.4s)

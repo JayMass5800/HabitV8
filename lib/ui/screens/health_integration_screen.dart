@@ -381,48 +381,27 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
                       'Predictive Insights',
                       Icons.psychology,
                       report.predictiveInsights.map((insight) => ListTile(
-                        leading: Icon(
+                        leading: const Icon(
                           Icons.lightbulb,
-                          color: insight.confidence > 0.7 ? Colors.green : Colors.orange,
+                          color: Colors.orange,
                         ),
-                        title: Text(insight.habitName),
-                        subtitle: Text(insight.message),
-                        trailing: Text('${(insight.confidence * 100).round()}%'),
+                        title: Text(insight),
                       )).toList(),
                     ),
                     const SizedBox(height: 16),
                   ],
                   
-                  // Optimization recommendations
-                  if (report.optimizationRecommendations.isNotEmpty) ...[
+                  // Recommendations
+                  if (report.recommendations.isNotEmpty) ...[
                     _buildInsightsSection(
-                      'Optimization Recommendations',
+                      'Recommendations',
                       Icons.tune,
-                      report.optimizationRecommendations.map((rec) => ExpansionTile(
+                      report.recommendations.map((rec) => ListTile(
                         leading: const Icon(Icons.trending_up, color: Colors.blue),
-                        title: Text(rec.habitName),
-                        subtitle: Text('${(rec.optimizationPotential * 100).round()}% improvement potential'),
-                        children: rec.recommendations.map((recommendation) => 
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(Icons.arrow_right, size: 16),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(recommendation)),
-                              ],
-                            ),
-                          ),
-                        ).toList(),
+                        title: Text(rec),
                       )).toList(),
                     ),
                     const SizedBox(height: 16),
-                  ],
-                  
-                  // Benchmark comparisons
-                  if (report.benchmarkComparisons.isNotEmpty) ...[
-                    _buildBenchmarkSection(report.benchmarkComparisons),
                   ],
                 ],
               );
@@ -481,13 +460,13 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
         const SizedBox(height: 16),
         
         // Individual habit analyses
-        if (report.habitAnalyses.isNotEmpty) ...[
+        if (report.habitAnalytics.isNotEmpty) ...[
           const Text(
             'Habit Analysis',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 8),
-          ...report.habitAnalyses.map((analysis) => Card(
+          ...report.habitAnalytics.values.map((analysis) => Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -519,9 +498,9 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
                     ],
                   ),
                   const SizedBox(height: 8),
-                  if (analysis.strongestHealthMetric != null)
+                  if (analysis.healthDataType != null)
                     Text(
-                      'Strongest correlation: ${analysis.strongestHealthMetric}',
+                      'Health data type: ${analysis.healthDataType}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                 ],
@@ -558,7 +537,7 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
     );
   }
 
-  Widget _buildBenchmarkSection(Map<String, BenchmarkComparison> benchmarks) {
+  Widget _buildBenchmarkSection(Map<String, dynamic> benchmarks) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -623,9 +602,9 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
       padding: const EdgeInsets.all(8.0),
       margin: const EdgeInsets.symmetric(horizontal: 4.0),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -642,7 +621,7 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
             label,
             style: TextStyle(
               fontSize: 12,
-              color: color.withOpacity(0.8),
+              color: color.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -1140,8 +1119,8 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
                     runSpacing: 6,
                     children: keywords.take(15).map((keyword) => Chip(
                       label: Text(keyword, style: const TextStyle(fontSize: 12)),
-                      backgroundColor: color.withOpacity(0.1),
-                      side: BorderSide(color: color.withOpacity(0.3)),
+                      backgroundColor: color.withValues(alpha: 0.1),
+                      side: BorderSide(color: color.withValues(alpha: 0.3)),
                     )).toList(),
                   ),
                 ),

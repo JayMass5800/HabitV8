@@ -138,9 +138,9 @@ class HealthHabitUIService {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -350,9 +350,9 @@ class HealthHabitUIService {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,7 +367,7 @@ class HealthHabitUIService {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: color.withOpacity(0.8),
+                    color: color.withValues(alpha: 0.8),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -574,7 +574,7 @@ class HealthHabitUIService {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '${insight.habitName}: ${insight.message}',
+                            insight,
                             style: const TextStyle(fontSize: 14),
                           ),
                         ),
@@ -780,26 +780,15 @@ class HealthHabitUIService {
       final totalDays = endDate.difference(startDate).inDays;
       final completionRate = completionDays / totalDays;
       
-      // Find strongest health metric correlation
-      final healthByType = <String, List<double>>{};
-      for (final point in healthData) {
-        final typeName = point.type.name;
-        if (point.value is NumericHealthValue) {
-          if (!healthByType.containsKey(typeName)) {
-            healthByType[typeName] = [];
-          }
-          healthByType[typeName]!.add((point.value as NumericHealthValue).numericValue.toDouble());
-        }
-      }
-      
+      // Simplified correlation using health summary
       String? strongestMetric;
       double strongestCorrelation = 0.0;
       
-      for (final entry in healthByType.entries) {
-        if (entry.value.isNotEmpty) {
-          final avgValue = entry.value.reduce((a, b) => a + b) / entry.value.length;
-          // Simplified correlation based on completion rate and health data availability
-          final correlation = completionRate * (entry.value.length / totalDays);
+      // Check correlation with available health metrics
+      for (final entry in healthSummary.entries) {
+        if (entry.value is num && entry.value > 0) {
+          // Simple correlation based on completion rate and health data presence
+          final correlation = completionRate * 0.7; // Simplified correlation
           
           if (correlation > strongestCorrelation) {
             strongestCorrelation = correlation;

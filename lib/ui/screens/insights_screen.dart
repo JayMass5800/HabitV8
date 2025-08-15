@@ -220,6 +220,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     if (_gamificationStats != null) _buildGamificationCard(),
                     const SizedBox(height: 16),
 
+                    // Health Summary Card
+                    if (_healthSummary != null) _buildHealthCard(),
+                    if (_healthSummary != null) const SizedBox(height: 16),
+
                     // Quick Stats Grid
                     _buildQuickStatsGrid(habits),
                     const SizedBox(height: 16),
@@ -360,7 +364,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.favorite, color: Colors.red, size: 20),
@@ -461,9 +465,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -931,7 +935,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                                   subtitle: Text(
                                     suggestion.description,
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.8),
+                                      color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
                                     ),
                                   ),
                                   trailing: Column(
@@ -947,7 +951,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                                       Text(
                                         '${suggestion.estimatedDuration} min',
                                         style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimaryContainer.withOpacity(0.7),
+                                          color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                                           fontSize: 12,
                                         ),
                                       ),

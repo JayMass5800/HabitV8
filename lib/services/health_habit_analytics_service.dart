@@ -3,6 +3,7 @@ import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'health_service.dart';
 import 'health_habit_mapping_service.dart';
+import 'habit_stats_service.dart';
 import 'logging_service.dart';
 
 /// Advanced Health-Habit Analytics Service
@@ -25,9 +26,6 @@ class HealthHabitAnalyticsService {
     
     try {
       AppLogger.info('Generating health-habit analytics report for $analysisWindowDays days...');
-      
-      final endDate = DateTime.now();
-      final startDate = endDate.subtract(Duration(days: analysisWindowDays));
       
       // Get all habits and filter for health-mappable habits
       final allHabits = await habitService.getAllHabits();
@@ -121,7 +119,7 @@ class HealthHabitAnalyticsService {
         analytics.healthCorrelation = _calculateSimpleCorrelation(
           healthSummary,
           mapping.healthDataType,
-          completions.length,
+          recentCompletions.length,
         );
         
         // Generate insights

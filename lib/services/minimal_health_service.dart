@@ -34,14 +34,13 @@ class MinimalHealthService {
       AppLogger.info('Initializing Minimal Health Service...');
       
       if (Platform.isAndroid) {
-        // Only initialize on Android - iOS doesn't have the same permission issues
+        // Initialize with Health Connect support
         final result = await _channel.invokeMethod('initialize', {
           'supportedTypes': _supportedDataTypes.keys.toList(),
-          'permissions': _supportedDataTypes.values.toList(),
         });
         
         _isInitialized = result == true;
-        AppLogger.info('Minimal Health Service initialized: $_isInitialized');
+        AppLogger.info('Minimal Health Service initialized with Health Connect: $_isInitialized');
       } else {
         // For non-Android platforms, just mark as initialized
         _isInitialized = true;
@@ -75,6 +74,26 @@ class MinimalHealthService {
     }
   }
 
+  /// Check if Health Connect is available
+  static Future<bool> isHealthConnectAvailable() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    
+    try {
+      if (Platform.isAndroid) {
+        final result = await _channel.invokeMethod('isHealthConnectAvailable');
+        return result == true;
+      } else {
+        // Health Connect is Android-specific
+        return false;
+      }
+    } catch (e) {
+      AppLogger.error('Error checking Health Connect availability', e);
+      return false;
+    }
+  }
+
   /// Request health permissions
   static Future<bool> requestPermissions() async {
     if (!_isInitialized) {
@@ -83,9 +102,7 @@ class MinimalHealthService {
     
     try {
       if (Platform.isAndroid) {
-        final result = await _channel.invokeMethod('requestPermissions', {
-          'permissions': _supportedDataTypes.values.toList(),
-        });
+        final result = await _channel.invokeMethod('requestPermissions');
         return result == true;
       } else {
         // For non-Android platforms, assume permissions are granted

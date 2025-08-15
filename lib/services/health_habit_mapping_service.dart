@@ -273,7 +273,7 @@ class HealthHabitMappingService {
         if (relevanceScore > 0) {
           relevanceScore = relevanceScore / mapping.keywords.length;
           matches[healthType] = relevanceScore;
-          AppLogger.info('Health type ${healthType.name} matched with score $relevanceScore ($matchedKeywords keywords)');
+          AppLogger.info('Health type $healthType matched with score $relevanceScore ($matchedKeywords keywords)');
         }
       }
       
@@ -318,7 +318,7 @@ class HealthHabitMappingService {
           
           if (inferredType != null) {
             matches[inferredType] = 0.5; // Medium relevance for category-based inference
-            AppLogger.info('Inferred health type ${inferredType.name} for category-based habit: ${habit.name}');
+            AppLogger.info('Inferred health type $inferredType for category-based habit: ${habit.name}');
           }
         }
         
@@ -330,7 +330,7 @@ class HealthHabitMappingService {
       
       // Find the best match
       final bestMatch = matches.entries.reduce((a, b) => a.value > b.value ? a : b);
-      AppLogger.info('Best match for habit "${habit.name}": ${bestMatch.key.name} (score: ${bestMatch.value})');
+      AppLogger.info('Best match for habit "${habit.name}": ${bestMatch.key} (score: ${bestMatch.value})');
       
       if (bestMatch.value < 0.1) {
         AppLogger.info('Relevance score too low (${bestMatch.value}) for habit: ${habit.name}');
@@ -390,7 +390,7 @@ class HealthHabitMappingService {
         description: mapping.description,
       );
       
-      AppLogger.info('Created health mapping for habit "${habit.name}": ${bestMatch.key.name}, threshold: $threshold ($thresholdLevel)');
+      AppLogger.info('Created health mapping for habit "${habit.name}": ${bestMatch.key}, threshold: $threshold ($thresholdLevel)');
       return result;
       
     } catch (e) {
@@ -452,7 +452,7 @@ class HealthHabitMappingService {
         
         return HabitCompletionResult(
           shouldComplete: false,
-          reason: 'No health data available for ${mapping.healthDataType.name}',
+          reason: 'No health data available for ${mapping.healthDataType}',
         );
       }
       
@@ -461,23 +461,21 @@ class HealthHabitMappingService {
       int dataPoints = 0;
       
       for (final point in healthData) {
-        if (point.value is NumericHealthValue) {
-          final value = (point.value as NumericHealthValue).numericValue;
-          
-          // Special handling for different health types
-          switch (mapping.healthDataType) {
-            case 'SLEEP_IN_BED':
-              // Convert minutes to hours for sleep
-              totalValue += value / 60.0;
-              break;
-            case 'WEIGHT':
-              // For weight, just count measurements
-              dataPoints++;
-              totalValue = dataPoints.toDouble();
-              break;
-            default:
-              totalValue += value;
-          }
+        final value = (point['value'] as num?)?.toDouble() ?? 0.0;
+        
+        // Special handling for different health types
+        switch (mapping.healthDataType) {
+          case 'SLEEP_IN_BED':
+            // Sleep is already in hours from our service
+            totalValue += value;
+            break;
+          case 'WEIGHT':
+            // For weight, just count measurements
+            dataPoints++;
+            totalValue = dataPoints.toDouble();
+            break;
+          default:
+            totalValue += value;
         }
       }
       
@@ -654,19 +652,12 @@ class HealthHabitMappingService {
       final dailyValues = <DateTime, double>{};
       
       for (final point in healthData) {
-        final day = DateTime(point.dateFrom.year, point.dateFrom.month, point.dateFrom.day);
-        double value = 0.0;
+        final timestamp = point['timestamp'] as int? ?? DateTime.now().millisecondsSinceEpoch;
+        final day = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        final dayKey = DateTime(day.year, day.month, day.day);
+        final value = (point['value'] as num?)?.toDouble() ?? 0.0;
         
-        if (point.value is NumericHealthValue) {
-          value = (point.value as NumericHealthValue).numericValue.toDouble();
-          
-          // Convert units as needed
-          if (healthDataType == 'SLEEP_IN_BED') {
-            value = value / 60.0; // Convert minutes to hours
-          }
-        }
-        
-        dailyValues[day] = (dailyValues[day] ?? 0) + value;
+        dailyValues[dayKey] = (dailyValues[dayKey] ?? 0) + value;
       }
       
       final values = dailyValues.values.toList()..sort();
@@ -714,7 +705,7 @@ class HealthHabitMappingService {
       // Count by health data type
       final typeCount = <String, int>{};
       for (final mapping in mappings) {
-        final typeName = mapping.healthDataType.name;
+        final typeName = mapping.healthDataType;
         typeCount[typeName] = (typeCount[typeName] ?? 0) + 1;
       }
       stats['mappingsByType'] = typeCount;
@@ -930,7 +921,7 @@ class HabitHealthMapping {
   
   Map<String, dynamic> toJson() => {
     'habitId': habitId,
-    'healthDataType': healthDataType.name,
+    'healthDataType': healthDataType,
     'threshold': threshold,
     'thresholdLevel': thresholdLevel,
     'relevanceScore': relevanceScore,
@@ -962,7 +953,7 @@ class HabitCompletionResult {
     'reason': reason,
     'healthValue': healthValue,
     'threshold': threshold,
-    'healthDataType': healthDataType?.name,
+    'healthDataType': healthDataType,
     'confidence': confidence,
   };
 }
