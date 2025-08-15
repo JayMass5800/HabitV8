@@ -1,6 +1,6 @@
 import 'dart:math' as math;
-import 'package:health/health.dart';
 import '../domain/model/habit.dart';
+import 'minimal_health_service.dart';
 import 'health_service.dart';
 import 'logging_service.dart';
 
@@ -11,8 +11,8 @@ import 'logging_service.dart';
 class HealthHabitMappingService {
   
   /// Map of health data types to their corresponding habit keywords and thresholds
-  static const Map<HealthDataType, HealthHabitMapping> healthMappings = {
-    HealthDataType.STEPS: HealthHabitMapping(
+  static const Map<String, HealthHabitMapping> healthMappings = {
+    'STEPS': HealthHabitMapping(
       keywords: [
         // Basic walking terms
         'walk', 'walking', 'walked', 'step', 'steps', 'stepping',
@@ -47,7 +47,7 @@ class HealthHabitMappingService {
       description: 'Daily step count for walking and movement habits',
     ),
     
-    HealthDataType.ACTIVE_ENERGY_BURNED: HealthHabitMapping(
+    'ACTIVE_ENERGY_BURNED': HealthHabitMapping(
       keywords: [
         // General exercise terms
         'exercise', 'exercising', 'workout', 'working', 'train', 'training',
@@ -86,7 +86,7 @@ class HealthHabitMappingService {
       description: 'Active energy burned for exercise and fitness habits',
     ),
     
-    HealthDataType.SLEEP_IN_BED: HealthHabitMapping(
+    'SLEEP_IN_BED': HealthHabitMapping(
       keywords: [
         // Basic sleep terms
         'sleep', 'sleeping', 'slept', 'asleep', 'sleepy',
@@ -118,7 +118,7 @@ class HealthHabitMappingService {
       description: 'Sleep duration for rest and recovery habits',
     ),
     
-    HealthDataType.WATER: HealthHabitMapping(
+    'WATER': HealthHabitMapping(
       keywords: [
         // Basic water terms
         'water', 'h2o', 'hydrate', 'hydrating', 'hydration',
@@ -152,7 +152,7 @@ class HealthHabitMappingService {
       description: 'Water intake for hydration habits',
     ),
     
-    HealthDataType.MINDFULNESS: HealthHabitMapping(
+    'MINDFULNESS': HealthHabitMapping(
       keywords: [
         // Meditation terms
         'meditate', 'meditation', 'meditative', 'meditating',
@@ -193,7 +193,7 @@ class HealthHabitMappingService {
       description: 'Mindfulness and meditation practice duration',
     ),
     
-    HealthDataType.WEIGHT: HealthHabitMapping(
+    'WEIGHT': HealthHabitMapping(
       keywords: [
         // Basic weight terms
         'weight', 'weigh', 'weighing', 'weighed', 'pounds', 'lbs',
@@ -248,7 +248,7 @@ class HealthHabitMappingService {
       AppLogger.info('Search text: "$searchText"');
       
       // Find matching health data types
-      final matches = <HealthDataType, double>{};
+      final matches = <String, double>{};
       
       for (final entry in healthMappings.entries) {
         final healthType = entry.key;
@@ -288,12 +288,12 @@ class HealthHabitMappingService {
           
           // For health/fitness category habits without specific keywords,
           // try to infer the most appropriate health data type based on common patterns
-          HealthDataType? inferredType;
+          String? inferredType;
           
           if (searchText.contains('step') || searchText.contains('walk') || 
               searchText.contains('run') || searchText.contains('move') ||
               category == 'fitness' || category == 'exercise') {
-            inferredType = HealthDataType.STEPS;
+            inferredType = 'STEPS';
           } else if (searchText.contains('sleep') || searchText.contains('rest') ||
                      searchText.contains('bed')) {
             inferredType = HealthDataType.SLEEP_IN_BED;
@@ -311,10 +311,10 @@ class HealthHabitMappingService {
             inferredType = HealthDataType.MINDFULNESS;
           } else if (category == 'health') {
             // Default health category habits to steps (most common health tracking)
-            inferredType = HealthDataType.STEPS;
+            inferredType = 'STEPS';
           } else if (category == 'fitness' || category == 'exercise') {
             // Default fitness/exercise habits to steps
-            inferredType = HealthDataType.STEPS;
+            inferredType = 'STEPS';
           }
           
           if (inferredType != null) {

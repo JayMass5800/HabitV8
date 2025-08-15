@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:health/health.dart';
 import '../services/notification_service.dart';
 import 'logging_service.dart';
+import 'minimal_health_service.dart';
 
 class PermissionService {
   static final PermissionService _instance = PermissionService._internal();
@@ -71,81 +71,20 @@ class PermissionService {
   /// All data is processed locally and used solely for habit tracking features.
   /// Users can revoke these permissions at any time through device settings.
   static Future<bool> _requestHealthPermissions() async {
-    // Platform-specific health data types to avoid permission issues
-    List<HealthDataType> types;
-    
-    if (Platform.isAndroid) {
-      // Android Health Connect - minimal essential data types only
-      // Reduced to minimize excessive permissions in Health Connect
-      types = [
-        HealthDataType.STEPS,                    // Primary fitness metric
-        HealthDataType.ACTIVE_ENERGY_BURNED,     // Exercise intensity tracking
-        HealthDataType.SLEEP_IN_BED,             // Sleep duration tracking
-        HealthDataType.WATER,                    // Hydration habits
-        HealthDataType.MINDFULNESS,              // Meditation tracking
-        HealthDataType.WEIGHT,                   // Weight tracking habits
-      ];
-    } else if (Platform.isIOS) {
-      // iOS HealthKit - same minimal essential data types
-      types = [
-        HealthDataType.STEPS,
-        HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.WATER,
-        HealthDataType.MINDFULNESS,
-        HealthDataType.WEIGHT,
-      ];
-    } else {
-      // Other platforms - minimal set
-      types = [
-        HealthDataType.STEPS,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.WATER,
-      ];
-    }
-
-    // Create permissions list that matches the length of types (READ access only)
-    final permissions = types.map((type) => HealthDataAccess.READ).toList();
-
     try {
-      AppLogger.info('Requesting health permissions for ${types.length} data types');
+      AppLogger.info('Requesting health permissions using minimal health service');
       
-      // Request authorization with explicit user consent
-      bool requested = await Health().requestAuthorization(
-        types,
-        permissions: permissions,
-      );
+      // Use our minimal health service instead of the problematic health plugin
+      final bool granted = await MinimalHealthService.requestPermissions();
       
-      if (requested) {
-        AppLogger.info('Health permission request completed');
-        
-        // Add a small delay to allow the system to process the permission changes
-        await Future.delayed(const Duration(milliseconds: 500));
+      if (granted) {
+        AppLogger.info('Health permissions granted successfully');
         
         // Verify that permissions were actually granted
-        final bool hasPermissions = await Health().hasPermissions(types) ?? false;
+        final bool hasPermissions = await MinimalHealthService.hasPermissions();
         AppLogger.info('Health permissions verification: $hasPermissions');
         
-        if (hasPermissions) {
-          AppLogger.info('Health permissions successfully granted for habit tracking features');
-          return true;
-        } else {
-          AppLogger.info('Health permissions were requested but not fully granted');
-          
-          // On Android, sometimes partial permissions are granted
-          // Check individual permissions to provide better feedback
-          if (Platform.isAndroid) {
-            for (final type in types) {
-              final hasIndividualPermission = await Health().hasPermissions([type]) ?? false;
-              AppLogger.info('Permission for $type: $hasIndividualPermission');
-            }
-          }
-          
-          // Return true if at least STEPS permission is granted (minimum requirement)
-          final hasStepsPermission = await Health().hasPermissions([HealthDataType.STEPS]) ?? false;
-          AppLogger.info('Minimum STEPS permission granted: $hasStepsPermission');
-          return hasStepsPermission;
-        }
+        return hasPermissions;
       } else {
         AppLogger.info('Health permissions denied by user');
         return false;
@@ -193,79 +132,12 @@ class PermissionService {
 
   /// Check health permission status
   Future<bool> isHealthPermissionGranted() async {
-    // Use the same platform-specific health data types as we request
-    List<HealthDataType> types;
-    
-    if (Platform.isAndroid) {
-      // Android Health Connect - minimal essential data types only
-      // Reduced to minimize excessive permissions in Health Connect
-      types = [
-        HealthDataType.STEPS,                    // Primary fitness metric
-        HealthDataType.ACTIVE_ENERGY_BURNED,     // Exercise intensity tracking
-        HealthDataType.SLEEP_IN_BED,             // Sleep duration tracking
-        HealthDataType.WATER,                    // Hydration habits
-        HealthDataType.MINDFULNESS,              // Meditation tracking
-        HealthDataType.WEIGHT,                   // Weight tracking habits
-      ];
-    } else if (Platform.isIOS) {
-      // iOS HealthKit - same minimal essential data types
-      types = [
-        HealthDataType.STEPS,
-        HealthDataType.ACTIVE_ENERGY_BURNED,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.WATER,
-        HealthDataType.MINDFULNESS,
-        HealthDataType.WEIGHT,
-      ];
-    } else {
-      // Other platforms - minimal set
-      types = [
-        HealthDataType.STEPS,
-        HealthDataType.SLEEP_IN_BED,
-        HealthDataType.WATER,
-      ];
-    }
-    
     try {
-      final hasPermissions = await Health().hasPermissions(types);
-      AppLogger.info('Health permissions check result: $hasPermissions for ${types.length} types');
+      // Use our minimal health service to check permissions
+      final bool hasPermissions = await MinimalHealthService.hasPermissions();
+      AppLogger.info('Health permissions check result: $hasPermissions');
       
-      if (hasPermissions == true) {
-        return true;
-      }
-      
-      // If full permissions are not granted, check for minimum requirements
-      // At least STEPS permission should be sufficient for basic functionality
-      final hasStepsPermission = await Health().hasPermissions([HealthDataType.STEPS]) ?? false;
-      AppLogger.info('Minimum STEPS permission check: $hasStepsPermission');
-      
-      if (hasStepsPermission) {
-        // Check how many permissions we actually have
-        int grantedCount = 0;
-        for (final type in types) {
-          try {
-            final bool? hasIndividual = await Health().hasPermissions([type]);
-            if (hasIndividual == true) {
-              grantedCount++;
-            }
-          } catch (e) {
-            AppLogger.warning('Error checking individual permission for $type: $e');
-          }
-        }
-        
-        AppLogger.info('Health permissions: $grantedCount/${types.length} granted');
-        
-        // Consider it successful if we have at least 2 permissions including STEPS
-        if (grantedCount >= 2) {
-          AppLogger.info('Sufficient health permissions satisfied');
-          return true;
-        } else {
-          AppLogger.info('Minimum health permissions satisfied (STEPS only)');
-          return true; // Still allow with just STEPS
-        }
-      }
-      
-      return false;
+      return hasPermissions;
     } catch (e) {
       AppLogger.error('Error checking health permissions', e);
       // If there's an error checking permissions, assume they're not granted

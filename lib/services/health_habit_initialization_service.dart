@@ -200,6 +200,31 @@ class HealthHabitInitializationService {
     }
   }
 
+  /// Initialize activity recognition service
+  static Future<bool> _initializeActivityRecognitionService() async {
+    try {
+      AppLogger.info('Initializing Activity Recognition Service...');
+      
+      final initialized = await ActivityRecognitionService.initialize();
+      if (!initialized) {
+        AppLogger.warning('Activity Recognition Service initialization failed');
+        return false;
+      }
+      
+      // Check if permissions are available (don't request them during init)
+      final hasPermissions = await ActivityRecognitionService.hasPermissions();
+      if (!hasPermissions) {
+        AppLogger.info('Activity recognition permissions not granted - will request when needed');
+      }
+      
+      AppLogger.info('Activity Recognition Service initialized successfully');
+      return true;
+    } catch (e) {
+      AppLogger.error('Failed to initialize Activity Recognition Service', e);
+      return false;
+    }
+  }
+
   /// Initialize analytics service
   static Future<bool> _initializeAnalyticsService() async {
     try {
@@ -554,6 +579,7 @@ class HealthHabitInitializationResult {
   bool healthServiceInitialized = false;
   bool integrationServiceInitialized = false;
   bool backgroundServiceInitialized = false;
+  bool activityRecognitionServiceInitialized = false;
   bool analyticsServiceInitialized = false;
   bool healthCheckPassed = false;
   
@@ -564,6 +590,7 @@ class HealthHabitInitializationResult {
       healthServiceInitialized && 
       integrationServiceInitialized && 
       backgroundServiceInitialized && 
+      activityRecognitionServiceInitialized &&
       analyticsServiceInitialized;
 }
 

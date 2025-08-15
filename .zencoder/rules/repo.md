@@ -5,6 +5,8 @@ alwaysApply: true
 
 NO To Do or placeholder code, only complete functional code
 
+ info - Don't invoke 'print' in production code
+
 # HabitV8 Information
 
 ## Summary

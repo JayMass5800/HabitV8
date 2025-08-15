@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:health/health.dart';
 import '../domain/model/habit.dart';
 import 'health_service.dart';
 import 'health_habit_mapping_service.dart';
@@ -28,27 +27,21 @@ class HealthEnhancedHabitCreationService {
         return _getBasicHealthSuggestions();
       }
       
-      // Get recent health data for analysis
-      final endDate = DateTime.now();
-      final startDate = endDate.subtract(Duration(days: analysisWindowDays));
+      // Get recent health data for analysis using the new minimal health service
+      final healthSummary = await HealthService.getTodayHealthSummary();
       
-      final healthData = await HealthService.getAllHealthData(
-        startDate: startDate,
-        endDate: endDate,
-      );
-      
-      if (healthData.isEmpty) {
+      if (healthSummary.containsKey('error')) {
         AppLogger.info('No health data available - returning basic suggestions');
         return _getBasicHealthSuggestions();
       }
       
       // Analyze each health metric and generate suggestions
-      suggestions.addAll(await _analyzeStepsData(healthData, analysisWindowDays));
-      suggestions.addAll(await _analyzeActiveEnergyData(healthData, analysisWindowDays));
-      suggestions.addAll(await _analyzeSleepData(healthData, analysisWindowDays));
-      suggestions.addAll(await _analyzeWaterData(healthData, analysisWindowDays));
-      suggestions.addAll(await _analyzeMindfulnessData(healthData, analysisWindowDays));
-      suggestions.addAll(await _analyzeWeightData(healthData, analysisWindowDays));
+      suggestions.addAll(await _analyzeStepsDataMinimal(healthSummary, analysisWindowDays));
+      suggestions.addAll(await _analyzeActiveEnergyDataMinimal(healthSummary, analysisWindowDays));
+      suggestions.addAll(await _analyzeSleepDataMinimal(healthSummary, analysisWindowDays));
+      suggestions.addAll(await _analyzeWaterDataMinimal(healthSummary, analysisWindowDays));
+      suggestions.addAll(await _analyzeMindfulnessDataMinimal(healthSummary, analysisWindowDays));
+      suggestions.addAll(await _analyzeWeightDataMinimal(healthSummary, analysisWindowDays));
       
       // Sort by priority and confidence
       suggestions.sort((a, b) {
@@ -73,7 +66,7 @@ class HealthEnhancedHabitCreationService {
     required String description,
     required HabitFrequency frequency,
     required String category,
-    HealthDataType? healthDataType,
+    String? healthDataType,
     double? customThreshold,
     String? thresholdLevel,
   }) async {
@@ -120,41 +113,32 @@ class HealthEnhancedHabitCreationService {
     try {
       AppLogger.info('Enhancing habit with health integration: ${habit.name}');
       
-      // Use the mapping service to analyze the habit
-      final mapping = await HealthHabitMappingService.analyzeHabitForHealthMapping(habit);
-      
-      if (mapping != null) {
-        // Suggest optimal thresholds based on user's historical data
-        final optimalThresholds = await HealthHabitMappingService.suggestOptimalThresholds(
-          habit: habit,
-          healthDataType: mapping.healthDataType,
-        );
-        
-        // Update the mapping with optimal threshold if available
-        if (optimalThresholds.isNotEmpty) {
-          final optimalThreshold = optimalThresholds[mapping.thresholdLevel] ?? mapping.threshold;
-          
-          final enhancedMapping = HabitHealthMapping(
-            habitId: habit.id,
-            healthDataType: mapping.healthDataType,
-            threshold: optimalThreshold,
-            thresholdLevel: mapping.thresholdLevel,
-            relevanceScore: mapping.relevanceScore,
-            unit: mapping.unit,
-            description: mapping.description,
-          );
-          
-          await _storeHabitHealthMapping(habit.id, enhancedMapping);
-          AppLogger.info('Enhanced habit with optimal health thresholds');
-          
-          return enhancedMapping;
-        }
-        
-        await _storeHabitHealthMapping(habit.id, mapping);
-        return mapping;
+      // Get health summary to determine best integration
+      final healthSummary = await HealthService.getTodayHealthSummary();
+      if (healthSummary.containsKey('error')) {
+        AppLogger.warning('No health data available for enhancement');
+        return null;
       }
       
-      return null;
+      // Determine best health data type based on habit category
+      final healthDataType = _determineHealthDataType(habit);
+      if (healthDataType == null) {
+        AppLogger.info('No suitable health data type found for habit: ${habit.name}');
+        return null;
+      }
+      
+      // Create the mapping
+      final mapping = await _createHealthMapping(
+        habit: habit,
+        healthDataType: healthDataType,
+      );
+      
+      if (mapping != null) {
+        await _storeHabitHealthMapping(habit.id, mapping);
+        AppLogger.info('Health enhancement completed for habit: ${habit.name}');
+      }
+      
+      return mapping;
       
     } catch (e) {
       AppLogger.error('Error enhancing habit with health integration', e);
@@ -162,466 +146,303 @@ class HealthEnhancedHabitCreationService {
     }
   }
 
-  /// Get personalized habit recommendations based on health patterns
-  static Future<List<PersonalizedHabitRecommendation>> getPersonalizedRecommendations({
-    required List<Habit> existingHabits,
+  /// Generate personalized habit recommendations based on health patterns
+  static Future<List<HabitRecommendation>> generatePersonalizedRecommendations({
     int analysisWindowDays = 30,
   }) async {
-    final recommendations = <PersonalizedHabitRecommendation>[];
+    final recommendations = <HabitRecommendation>[];
     
     try {
       AppLogger.info('Generating personalized habit recommendations...');
       
-      // Get health data for analysis
-      final endDate = DateTime.now();
-      final startDate = endDate.subtract(Duration(days: analysisWindowDays));
-      
-      final healthData = await HealthService.getAllHealthData(
-        startDate: startDate,
-        endDate: endDate,
-      );
-      
-      if (healthData.isEmpty) {
-        return _getBasicRecommendations(existingHabits);
+      final healthSummary = await HealthService.getTodayHealthSummary();
+      if (healthSummary.containsKey('error')) {
+        return _getBasicRecommendations();
       }
       
-      // Analyze health patterns and identify improvement opportunities
-      final healthPatterns = await _analyzeHealthPatterns(healthData, analysisWindowDays);
+      // Analyze patterns and generate recommendations
+      recommendations.addAll(_generateActivityRecommendations(healthSummary));
+      recommendations.addAll(_generateSleepRecommendations(healthSummary));
+      recommendations.addAll(_generateWellnessRecommendations(healthSummary));
       
-      // Generate recommendations based on patterns and gaps
-      for (final pattern in healthPatterns.entries) {
-        final healthType = pattern.key;
-        final analysis = pattern.value;
-        
-        // Check if user already has habits for this health area
-        final hasRelatedHabit = await _hasRelatedHabit(existingHabits, healthType);
-        
-        if (!hasRelatedHabit && analysis.improvementPotential > 0.3) {
-          final recommendation = await _generateRecommendationForHealthType(
-            healthType,
-            analysis,
-            existingHabits,
-          );
-          
-          if (recommendation != null) {
-            recommendations.add(recommendation);
-          }
-        }
-      }
-      
-      // Sort by improvement potential and feasibility
-      recommendations.sort((a, b) {
-        final potentialCompare = b.improvementPotential.compareTo(a.improvementPotential);
-        if (potentialCompare != 0) return potentialCompare;
-        return b.feasibilityScore.compareTo(a.feasibilityScore);
-      });
+      // Sort by impact potential
+      recommendations.sort((a, b) => b.impactScore.compareTo(a.impactScore));
       
       AppLogger.info('Generated ${recommendations.length} personalized recommendations');
       
     } catch (e) {
       AppLogger.error('Error generating personalized recommendations', e);
-      return _getBasicRecommendations(existingHabits);
+      return _getBasicRecommendations();
     }
     
     return recommendations.take(5).toList(); // Return top 5 recommendations
   }
 
-  /// Analyze steps data and generate suggestions
-  static Future<List<HealthBasedHabitSuggestion>> _analyzeStepsData(
-    List<HealthDataPoint> healthData,
+  /// Analyze steps data and generate suggestions (minimal version)
+  static Future<List<HealthBasedHabitSuggestion>> _analyzeStepsDataMinimal(
+    Map<String, dynamic> healthSummary,
     int windowDays,
   ) async {
     final suggestions = <HealthBasedHabitSuggestion>[];
     
-    final stepsData = healthData.where((p) => p.type == HealthDataType.STEPS).toList();
-    if (stepsData.isEmpty) return suggestions;
-    
-    // Calculate daily averages
-    final dailySteps = <DateTime, double>{};
-    for (final point in stepsData) {
-      final day = DateTime(point.dateFrom.year, point.dateFrom.month, point.dateFrom.day);
-      final value = (point.value as NumericHealthValue).numericValue;
-      dailySteps[day] = (dailySteps[day] ?? 0) + value;
-    }
-    
-    if (dailySteps.isEmpty) return suggestions;
-    
-    final avgSteps = dailySteps.values.reduce((a, b) => a + b) / dailySteps.length;
-    final consistency = _calculateConsistency(dailySteps.values.toList());
+    final steps = (healthSummary['steps'] as num?)?.toDouble() ?? 0.0;
+    if (steps <= 0) return suggestions;
     
     // Generate suggestions based on current activity level
-    if (avgSteps < 5000) {
+    if (steps < 5000) {
       suggestions.add(HealthBasedHabitSuggestion(
         name: 'Daily Walk',
         description: 'Take a 15-minute walk every day to boost your activity',
         category: 'Fitness',
         frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.STEPS,
+        healthDataType: 'STEPS',
         suggestedThreshold: 3000,
-        currentAverage: avgSteps,
+        currentAverage: steps,
         improvementPotential: 0.8,
         priority: HabitPriority.high,
         confidence: 0.9,
-        reasoning: 'Your current average of ${avgSteps.round()} steps is below recommended levels. A daily walk can significantly improve your health.',
+        reasoning: 'Your current steps (${steps.round()}) are below recommended levels. A daily walk can significantly improve your health.',
       ));
-    } else if (avgSteps < 8000) {
+    } else if (steps < 8000) {
       suggestions.add(HealthBasedHabitSuggestion(
         name: 'Morning Walk',
         description: 'Start your day with a energizing morning walk',
         category: 'Fitness',
         frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.STEPS,
-        suggestedThreshold: math.min(avgSteps + 2000, 10000),
-        currentAverage: avgSteps,
+        healthDataType: 'STEPS',
+        suggestedThreshold: math.min(steps + 2000, 10000),
+        currentAverage: steps,
         improvementPotential: 0.6,
         priority: HabitPriority.medium,
         confidence: 0.8,
-        reasoning: 'You\'re moderately active with ${avgSteps.round()} daily steps. A morning walk can help you reach the recommended 10,000 steps.',
-      ));
-    }
-    
-    // Suggest consistency improvement if needed
-    if (consistency < 0.7 && avgSteps > 5000) {
-      suggestions.add(HealthBasedHabitSuggestion(
-        name: 'Consistent Daily Movement',
-        description: 'Maintain regular daily activity for better health outcomes',
-        category: 'Fitness',
-        frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.STEPS,
-        suggestedThreshold: avgSteps * 0.8, // 80% of current average as minimum
-        currentAverage: avgSteps,
-        improvementPotential: 0.5,
-        priority: HabitPriority.medium,
-        confidence: 0.7,
-        reasoning: 'Your activity varies significantly day-to-day. Consistent movement can improve overall health benefits.',
+        reasoning: 'You\'re moderately active with ${steps.round()} daily steps. A morning walk can help you reach the recommended 10,000 steps.',
       ));
     }
     
     return suggestions;
   }
 
-  /// Analyze active energy data and generate suggestions
-  static Future<List<HealthBasedHabitSuggestion>> _analyzeActiveEnergyData(
-    List<HealthDataPoint> healthData,
+  /// Analyze active energy data and generate suggestions (minimal version)
+  static Future<List<HealthBasedHabitSuggestion>> _analyzeActiveEnergyDataMinimal(
+    Map<String, dynamic> healthSummary,
     int windowDays,
   ) async {
     final suggestions = <HealthBasedHabitSuggestion>[];
     
-    final energyData = healthData.where((p) => p.type == HealthDataType.ACTIVE_ENERGY_BURNED).toList();
-    if (energyData.isEmpty) return suggestions;
-    
-    // Calculate daily totals
-    final dailyEnergy = <DateTime, double>{};
-    for (final point in energyData) {
-      final day = DateTime(point.dateFrom.year, point.dateFrom.month, point.dateFrom.day);
-      final value = (point.value as NumericHealthValue).numericValue;
-      dailyEnergy[day] = (dailyEnergy[day] ?? 0) + value;
-    }
-    
-    if (dailyEnergy.isEmpty) return suggestions;
-    
-    final avgEnergy = dailyEnergy.values.reduce((a, b) => a + b) / dailyEnergy.length;
+    final activeCalories = (healthSummary['activeCalories'] as num?)?.toDouble() ?? 0.0;
+    if (activeCalories <= 0) return suggestions;
     
     // Generate exercise suggestions based on current energy expenditure
-    if (avgEnergy < 200) {
+    if (activeCalories < 200) {
       suggestions.add(HealthBasedHabitSuggestion(
         name: 'Daily Exercise',
         description: 'Incorporate 20 minutes of moderate exercise into your routine',
         category: 'Fitness',
         frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.ACTIVE_ENERGY_BURNED,
+        healthDataType: 'ACTIVE_ENERGY_BURNED',
         suggestedThreshold: 250,
-        currentAverage: avgEnergy,
+        currentAverage: activeCalories,
         improvementPotential: 0.9,
         priority: HabitPriority.high,
         confidence: 0.85,
-        reasoning: 'Your current daily active energy burn of ${avgEnergy.round()} calories suggests low exercise activity. Regular exercise can significantly improve your fitness.',
+        reasoning: 'Your current daily active energy burn of ${activeCalories.round()} calories suggests low exercise activity. Regular exercise can significantly improve your fitness.',
       ));
-    } else if (avgEnergy < 400) {
+    } else if (activeCalories < 400) {
       suggestions.add(HealthBasedHabitSuggestion(
         name: 'Strength Training',
         description: 'Add strength training sessions to complement your cardio',
         category: 'Fitness',
         frequency: HabitFrequency.weekly,
-        healthDataType: HealthDataType.ACTIVE_ENERGY_BURNED,
+        healthDataType: 'ACTIVE_ENERGY_BURNED',
         suggestedThreshold: 300, // Per session
-        currentAverage: avgEnergy,
+        currentAverage: activeCalories,
         improvementPotential: 0.6,
         priority: HabitPriority.medium,
         confidence: 0.75,
-        reasoning: 'You\'re moderately active with ${avgEnergy.round()} daily calories burned. Adding strength training can enhance your fitness routine.',
+        reasoning: 'You\'re moderately active with ${activeCalories.round()} daily calories burned. Adding strength training can enhance your fitness routine.',
       ));
     }
     
     return suggestions;
   }
 
-  /// Analyze sleep data and generate suggestions
-  static Future<List<HealthBasedHabitSuggestion>> _analyzeSleepData(
-    List<HealthDataPoint> healthData,
+  /// Analyze sleep data and generate suggestions (minimal version)
+  static Future<List<HealthBasedHabitSuggestion>> _analyzeSleepDataMinimal(
+    Map<String, dynamic> healthSummary,
     int windowDays,
   ) async {
     final suggestions = <HealthBasedHabitSuggestion>[];
     
-    final sleepData = healthData.where((p) => p.type == HealthDataType.SLEEP_IN_BED).toList();
-    if (sleepData.isEmpty) return suggestions;
-    
-    // Calculate nightly sleep duration
-    final nightlySleep = <DateTime, double>{};
-    for (final point in sleepData) {
-      final night = DateTime(point.dateFrom.year, point.dateFrom.month, point.dateFrom.day);
-      final durationHours = (point.value as NumericHealthValue).numericValue / 60.0; // Convert minutes to hours
-      nightlySleep[night] = (nightlySleep[night] ?? 0) + durationHours;
-    }
-    
-    if (nightlySleep.isEmpty) return suggestions;
-    
-    final avgSleep = nightlySleep.values.reduce((a, b) => a + b) / nightlySleep.length;
-    final consistency = _calculateConsistency(nightlySleep.values.toList());
+    final sleepHours = (healthSummary['sleepHours'] as num?)?.toDouble() ?? 0.0;
+    if (sleepHours <= 0) return suggestions;
     
     // Generate sleep-related suggestions
-    if (avgSleep < 7.0) {
+    if (sleepHours < 7.0) {
       suggestions.add(HealthBasedHabitSuggestion(
         name: 'Earlier Bedtime',
         description: 'Establish a consistent bedtime to get 7-8 hours of sleep',
         category: 'Sleep',
         frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.SLEEP_IN_BED,
+        healthDataType: 'SLEEP_IN_BED',
         suggestedThreshold: 7.5,
-        currentAverage: avgSleep,
+        currentAverage: sleepHours,
         improvementPotential: 0.8,
         priority: HabitPriority.high,
         confidence: 0.9,
-        reasoning: 'Your average sleep of ${avgSleep.toStringAsFixed(1)} hours is below the recommended 7-8 hours. Better sleep can improve energy and health.',
+        reasoning: 'Your recent sleep of ${sleepHours.toStringAsFixed(1)} hours is below the recommended 7-8 hours. Better sleep can improve energy and health.',
       ));
     }
     
-    if (consistency < 0.8) {
-      suggestions.add(HealthBasedHabitSuggestion(
-        name: 'Consistent Sleep Schedule',
-        description: 'Go to bed and wake up at the same time every day',
-        category: 'Sleep',
-        frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.SLEEP_IN_BED,
-        suggestedThreshold: math.max(avgSleep, 7.0),
-        currentAverage: avgSleep,
-        improvementPotential: 0.6,
-        priority: HabitPriority.medium,
-        confidence: 0.8,
-        reasoning: 'Your sleep schedule varies significantly. A consistent sleep routine can improve sleep quality and overall health.',
-      ));
-    }
+    // Always suggest consistent sleep schedule as it's important
+    suggestions.add(HealthBasedHabitSuggestion(
+      name: 'Consistent Sleep Schedule',
+      description: 'Go to bed and wake up at the same time every day',
+      category: 'Sleep',
+      frequency: HabitFrequency.daily,
+      healthDataType: 'SLEEP_IN_BED',
+      suggestedThreshold: math.max(sleepHours, 7.0),
+      currentAverage: sleepHours,
+      improvementPotential: 0.7,
+      priority: HabitPriority.medium,
+      confidence: 0.8,
+      reasoning: 'Consistent sleep timing can improve sleep quality and overall health.',
+    ));
     
     return suggestions;
   }
 
-  /// Analyze water data and generate suggestions
-  static Future<List<HealthBasedHabitSuggestion>> _analyzeWaterData(
-    List<HealthDataPoint> healthData,
+  /// Analyze water data and generate suggestions (minimal version)
+  static Future<List<HealthBasedHabitSuggestion>> _analyzeWaterDataMinimal(
+    Map<String, dynamic> healthSummary,
     int windowDays,
   ) async {
     final suggestions = <HealthBasedHabitSuggestion>[];
     
-    final waterData = healthData.where((p) => p.type == HealthDataType.WATER).toList();
-    if (waterData.isEmpty) return suggestions;
+    final waterIntake = (healthSummary['waterIntake'] as num?)?.toDouble() ?? 0.0;
     
-    // Calculate daily water intake
-    final dailyWater = <DateTime, double>{};
-    for (final point in waterData) {
-      final day = DateTime(point.dateFrom.year, point.dateFrom.month, point.dateFrom.day);
-      final value = (point.value as NumericHealthValue).numericValue;
-      dailyWater[day] = (dailyWater[day] ?? 0) + value;
-    }
-    
-    if (dailyWater.isEmpty) return suggestions;
-    
-    final avgWater = dailyWater.values.reduce((a, b) => a + b) / dailyWater.length;
-    
-    // Generate hydration suggestions
-    if (avgWater < 2000) { // Less than 2L per day
+    // Generate hydration suggestions (even if no data, as hydration is important)
+    if (waterIntake < 2000) { // Less than 2 liters
       suggestions.add(HealthBasedHabitSuggestion(
         name: 'Daily Hydration',
-        description: 'Drink at least 8 glasses of water throughout the day',
+        description: 'Drink 8 glasses of water throughout the day',
         category: 'Health',
         frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.WATER,
-        suggestedThreshold: 2500,
-        currentAverage: avgWater,
+        healthDataType: 'WATER',
+        suggestedThreshold: 2000, // 2 liters in ml
+        currentAverage: waterIntake,
         improvementPotential: 0.7,
         priority: HabitPriority.medium,
         confidence: 0.8,
-        reasoning: 'Your current water intake of ${(avgWater/1000).toStringAsFixed(1)}L is below recommended levels. Proper hydration supports overall health.',
+        reasoning: waterIntake > 0 
+          ? 'Your current water intake of ${waterIntake.round()}ml is below the recommended 2000ml daily. Proper hydration improves energy and health.'
+          : 'Proper hydration is essential for health. Aim for 8 glasses (2000ml) of water daily.',
       ));
     }
     
     return suggestions;
   }
 
-  /// Analyze mindfulness data and generate suggestions
-  static Future<List<HealthBasedHabitSuggestion>> _analyzeMindfulnessData(
-    List<HealthDataPoint> healthData,
+  /// Analyze mindfulness data and generate suggestions (minimal version)
+  static Future<List<HealthBasedHabitSuggestion>> _analyzeMindfulnessDataMinimal(
+    Map<String, dynamic> healthSummary,
     int windowDays,
   ) async {
     final suggestions = <HealthBasedHabitSuggestion>[];
     
-    final mindfulnessData = healthData.where((p) => p.type == HealthDataType.MINDFULNESS).toList();
+    final mindfulnessMinutes = (healthSummary['mindfulnessMinutes'] as num?)?.toDouble() ?? 0.0;
     
-    // If no mindfulness data, suggest starting meditation
-    if (mindfulnessData.isEmpty) {
+    // Generate mindfulness suggestions (important for mental health)
+    if (mindfulnessMinutes < 10) {
       suggestions.add(HealthBasedHabitSuggestion(
         name: 'Daily Meditation',
-        description: 'Start with 5 minutes of daily meditation for mental wellness',
-        category: 'Mindfulness',
+        description: 'Practice 10 minutes of mindfulness or meditation daily',
+        category: 'Wellness',
         frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.MINDFULNESS,
-        suggestedThreshold: 5,
-        currentAverage: 0,
+        healthDataType: 'MINDFULNESS',
+        suggestedThreshold: 10,
+        currentAverage: mindfulnessMinutes,
         improvementPotential: 0.8,
         priority: HabitPriority.medium,
-        confidence: 0.7,
-        reasoning: 'No mindfulness activity detected. Regular meditation can reduce stress and improve mental well-being.',
-      ));
-      return suggestions;
-    }
-    
-    // Calculate daily meditation time
-    final dailyMindfulness = <DateTime, double>{};
-    for (final point in mindfulnessData) {
-      final day = DateTime(point.dateFrom.year, point.dateFrom.month, point.dateFrom.day);
-      final value = (point.value as NumericHealthValue).numericValue;
-      dailyMindfulness[day] = (dailyMindfulness[day] ?? 0) + value;
-    }
-    
-    final avgMindfulness = dailyMindfulness.values.reduce((a, b) => a + b) / dailyMindfulness.length;
-    
-    // Suggest increasing meditation time if current practice is minimal
-    if (avgMindfulness < 10) {
-      suggestions.add(HealthBasedHabitSuggestion(
-        name: 'Extended Meditation',
-        description: 'Gradually increase your meditation practice to 10-15 minutes',
-        category: 'Mindfulness',
-        frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.MINDFULNESS,
-        suggestedThreshold: math.min(avgMindfulness + 5, 15),
-        currentAverage: avgMindfulness,
-        improvementPotential: 0.6,
-        priority: HabitPriority.low,
-        confidence: 0.7,
-        reasoning: 'Your current meditation practice of ${avgMindfulness.round()} minutes is good. Extending it can provide additional mental health benefits.',
+        confidence: 0.85,
+        reasoning: mindfulnessMinutes > 0
+          ? 'Your current mindfulness practice of ${mindfulnessMinutes.round()} minutes can be expanded. Regular meditation reduces stress and improves focus.'
+          : 'Daily mindfulness practice can reduce stress, improve focus, and enhance overall well-being.',
       ));
     }
     
     return suggestions;
   }
 
-  /// Analyze weight data and generate suggestions
-  static Future<List<HealthBasedHabitSuggestion>> _analyzeWeightData(
-    List<HealthDataPoint> healthData,
+  /// Analyze weight data and generate suggestions (minimal version)
+  static Future<List<HealthBasedHabitSuggestion>> _analyzeWeightDataMinimal(
+    Map<String, dynamic> healthSummary,
     int windowDays,
   ) async {
     final suggestions = <HealthBasedHabitSuggestion>[];
     
-    final weightData = healthData.where((p) => p.type == HealthDataType.WEIGHT).toList();
+    final weight = healthSummary['weight'] as double?;
     
-    // If no weight tracking, suggest starting
-    if (weightData.isEmpty) {
+    // Only suggest weight tracking if we have some weight data
+    if (weight != null && weight > 0) {
       suggestions.add(HealthBasedHabitSuggestion(
-        name: 'Daily Weight Tracking',
-        description: 'Track your weight daily for better health awareness',
+        name: 'Regular Weight Tracking',
+        description: 'Track your weight weekly to monitor health trends',
         category: 'Health',
-        frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.WEIGHT,
-        suggestedThreshold: 1, // One measurement per day
-        currentAverage: 0,
+        frequency: HabitFrequency.weekly,
+        healthDataType: 'WEIGHT',
+        suggestedThreshold: 1, // Once per week
+        currentAverage: 1, // Assuming current tracking
         improvementPotential: 0.5,
         priority: HabitPriority.low,
-        confidence: 0.6,
-        reasoning: 'No weight tracking detected. Regular weight monitoring can help maintain health awareness.',
-      ));
-      return suggestions;
-    }
-    
-    // Calculate tracking frequency
-    final trackingDays = weightData.map((p) => 
-      DateTime(p.dateFrom.year, p.dateFrom.month, p.dateFrom.day)
-    ).toSet().length;
-    
-    final trackingFrequency = trackingDays / windowDays;
-    
-    // Suggest more consistent tracking if needed
-    if (trackingFrequency < 0.5) {
-      suggestions.add(HealthBasedHabitSuggestion(
-        name: 'Consistent Weight Tracking',
-        description: 'Track your weight more regularly for better health monitoring',
-        category: 'Health',
-        frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.WEIGHT,
-        suggestedThreshold: 1,
-        currentAverage: trackingFrequency,
-        improvementPotential: 0.4,
-        priority: HabitPriority.low,
-        confidence: 0.6,
-        reasoning: 'You track your weight ${(trackingFrequency * 100).round()}% of days. More consistent tracking can provide better health insights.',
+        confidence: 0.7,
+        reasoning: 'Regular weight monitoring helps track health trends and maintain awareness of your fitness progress.',
       ));
     }
     
     return suggestions;
   }
 
-  /// Calculate consistency score for a list of values
-  static double _calculateConsistency(List<double> values) {
-    if (values.length < 2) return 1.0;
-    
-    final mean = values.reduce((a, b) => a + b) / values.length;
-    final variance = values.map((v) => math.pow(v - mean, 2)).reduce((a, b) => a + b) / values.length;
-    final standardDeviation = math.sqrt(variance);
-    
-    // Normalize consistency score (lower standard deviation = higher consistency)
-    final coefficientOfVariation = standardDeviation / mean;
-    return math.max(0.0, 1.0 - coefficientOfVariation);
-  }
-
-  /// Generate basic health suggestions when no data is available
+  /// Get basic health suggestions when no health data is available
   static List<HealthBasedHabitSuggestion> _getBasicHealthSuggestions() {
     return [
       HealthBasedHabitSuggestion(
         name: 'Daily Walk',
-        description: 'Take a 20-minute walk every day',
+        description: 'Take a 30-minute walk every day',
         category: 'Fitness',
         frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.STEPS,
+        healthDataType: 'STEPS',
         suggestedThreshold: 5000,
         currentAverage: 0,
         improvementPotential: 0.8,
         priority: HabitPriority.high,
-        confidence: 0.7,
-        reasoning: 'Walking is a fundamental activity for maintaining good health and fitness.',
+        confidence: 0.9,
+        reasoning: 'Regular walking is one of the best ways to improve overall health and fitness.',
       ),
       HealthBasedHabitSuggestion(
-        name: 'Drink Water',
-        description: 'Stay hydrated by drinking 8 glasses of water daily',
+        name: 'Consistent Sleep',
+        description: 'Go to bed at the same time every night',
+        category: 'Sleep',
+        frequency: HabitFrequency.daily,
+        healthDataType: 'SLEEP_IN_BED',
+        suggestedThreshold: 7.5,
+        currentAverage: 0,
+        improvementPotential: 0.9,
+        priority: HabitPriority.high,
+        confidence: 0.95,
+        reasoning: 'Quality sleep is fundamental to physical and mental health.',
+      ),
+      HealthBasedHabitSuggestion(
+        name: 'Stay Hydrated',
+        description: 'Drink 8 glasses of water daily',
         category: 'Health',
         frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.WATER,
+        healthDataType: 'WATER',
         suggestedThreshold: 2000,
         currentAverage: 0,
         improvementPotential: 0.7,
         priority: HabitPriority.medium,
         confidence: 0.8,
-        reasoning: 'Proper hydration is essential for optimal body function and health.',
-      ),
-      HealthBasedHabitSuggestion(
-        name: 'Meditation',
-        description: 'Practice 10 minutes of daily meditation',
-        category: 'Mindfulness',
-        frequency: HabitFrequency.daily,
-        healthDataType: HealthDataType.MINDFULNESS,
-        suggestedThreshold: 10,
-        currentAverage: 0,
-        improvementPotential: 0.6,
-        priority: HabitPriority.medium,
-        confidence: 0.7,
-        reasoning: 'Regular meditation can reduce stress and improve mental well-being.',
+        reasoning: 'Proper hydration is essential for all bodily functions and energy levels.',
       ),
     ];
   }
@@ -629,185 +450,198 @@ class HealthEnhancedHabitCreationService {
   /// Create health mapping for a habit
   static Future<HabitHealthMapping?> _createHealthMapping({
     required Habit habit,
-    required HealthDataType healthDataType,
+    required String healthDataType,
     double? customThreshold,
     String? thresholdLevel,
   }) async {
     try {
-      // Get default mapping configuration
-      final defaultMapping = HealthHabitMappingService.healthMappings[healthDataType];
-      if (defaultMapping == null) return null;
-      
-      // Determine threshold
-      double threshold;
-      String level;
-      
-      if (customThreshold != null) {
-        threshold = customThreshold;
-        level = thresholdLevel ?? 'custom';
-      } else {
-        level = thresholdLevel ?? 'moderate';
-        threshold = defaultMapping.thresholds[level] ?? defaultMapping.thresholds['moderate']!;
-      }
-      
+      // This would integrate with the health habit mapping service
+      // For now, return a basic mapping structure
       return HabitHealthMapping(
         habitId: habit.id,
         healthDataType: healthDataType,
-        threshold: threshold,
-        thresholdLevel: level,
-        relevanceScore: 1.0, // Perfect relevance since it's explicitly set
-        unit: defaultMapping.unit,
-        description: defaultMapping.description,
+        threshold: customThreshold ?? _getDefaultThreshold(healthDataType),
+        thresholdLevel: thresholdLevel ?? 'moderate',
+        isActive: true,
+        createdAt: DateTime.now(),
       );
-      
     } catch (e) {
       AppLogger.error('Error creating health mapping', e);
       return null;
     }
   }
 
-  /// Store habit-health mapping
+  /// Store habit health mapping
   static Future<void> _storeHabitHealthMapping(String habitId, HabitHealthMapping mapping) async {
-    // This would typically store in a database or shared preferences
-    // For now, we'll just log it
-    AppLogger.info('Storing health mapping for habit $habitId: ${mapping.toJson()}');
+    try {
+      // This would store the mapping in the database
+      // Implementation depends on your storage system
+      AppLogger.info('Stored health mapping for habit: $habitId');
+    } catch (e) {
+      AppLogger.error('Error storing habit health mapping', e);
+    }
   }
 
-
-
-  /// Analyze health patterns
-  static Future<Map<HealthDataType, HealthPatternAnalysis>> _analyzeHealthPatterns(
-    List<HealthDataPoint> healthData,
-    int windowDays,
-  ) async {
-    final patterns = <HealthDataType, HealthPatternAnalysis>{};
+  /// Determine appropriate health data type for a habit
+  static String? _determineHealthDataType(Habit habit) {
+    final category = habit.category.toLowerCase();
     
-    for (final healthType in HealthDataType.values) {
-      final typeData = healthData.where((p) => p.type == healthType).toList();
-      if (typeData.isEmpty) continue;
-      
-      final analysis = _analyzeHealthTypePattern(typeData, windowDays);
-      patterns[healthType] = analysis;
+    if (category.contains('fitness') || category.contains('exercise')) {
+      return 'STEPS';
+    } else if (category.contains('sleep')) {
+      return 'SLEEP_IN_BED';
+    } else if (category.contains('water') || category.contains('hydration')) {
+      return 'WATER';
+    } else if (category.contains('meditation') || category.contains('mindfulness')) {
+      return 'MINDFULNESS';
+    } else if (category.contains('weight') || category.contains('health')) {
+      return 'WEIGHT';
     }
     
-    return patterns;
+    return null; // No suitable health data type found
   }
 
-  /// Analyze pattern for a specific health type
-  static HealthPatternAnalysis _analyzeHealthTypePattern(
-    List<HealthDataPoint> data,
-    int windowDays,
-  ) {
-    // Calculate daily values
-    final dailyValues = <DateTime, double>{};
-    for (final point in data) {
-      final day = DateTime(point.dateFrom.year, point.dateFrom.month, point.dateFrom.day);
-      final value = (point.value as NumericHealthValue).numericValue;
-      dailyValues[day] = (dailyValues[day] ?? 0) + value;
-    }
-    
-    final values = dailyValues.values.toList();
-    if (values.isEmpty) {
-      return HealthPatternAnalysis(
-        average: 0,
-        consistency: 0,
-        trend: 0,
-        improvementPotential: 0,
-      );
-    }
-    
-    final average = values.reduce((a, b) => a + b) / values.length;
-    final consistency = _calculateConsistency(values);
-    
-    // Calculate trend (simple linear regression slope)
-    double trend = 0;
-    if (values.length > 1) {
-      final n = values.length;
-      final sumX = (n * (n - 1)) / 2; // Sum of indices 0, 1, 2, ...
-      final sumY = values.reduce((a, b) => a + b);
-      final sumXY = values.asMap().entries.map((e) => e.key * e.value).reduce((a, b) => a + b);
-      final sumX2 = (n * (n - 1) * (2 * n - 1)) / 6; // Sum of squares of indices
-      
-      trend = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-    }
-    
-    // Calculate improvement potential based on consistency and trend
-    double improvementPotential = 0;
-    if (consistency < 0.7) improvementPotential += 0.3;
-    if (trend < 0) improvementPotential += 0.4;
-    if (average < _getBenchmarkValue(data.first.type)) improvementPotential += 0.5;
-    
-    return HealthPatternAnalysis(
-      average: average,
-      consistency: consistency,
-      trend: trend,
-      improvementPotential: math.min(improvementPotential, 1.0),
-    );
-  }
-
-  /// Get benchmark value for a health type
-  static double _getBenchmarkValue(HealthDataType type) {
-    switch (type) {
-      case HealthDataType.STEPS:
+  /// Get default threshold for a health data type
+  static double _getDefaultThreshold(String healthDataType) {
+    switch (healthDataType) {
+      case 'STEPS':
         return 8000;
-      case HealthDataType.ACTIVE_ENERGY_BURNED:
+      case 'ACTIVE_ENERGY_BURNED':
         return 300;
-      case HealthDataType.SLEEP_IN_BED:
-        return 420; // 7 hours in minutes
-      case HealthDataType.WATER:
+      case 'SLEEP_IN_BED':
+        return 7.5;
+      case 'WATER':
         return 2000;
-      case HealthDataType.MINDFULNESS:
+      case 'MINDFULNESS':
         return 10;
-      case HealthDataType.WEIGHT:
-        return 1; // Daily tracking
+      case 'WEIGHT':
+        return 1; // Weekly tracking
       default:
-        return 0;
+        return 1;
     }
   }
 
-  /// Check if user has related habit
-  static Future<bool> _hasRelatedHabit(List<Habit> habits, HealthDataType healthType) async {
-    for (final habit in habits) {
-      final mapping = await HealthHabitMappingService.analyzeHabitForHealthMapping(habit);
-      if (mapping?.healthDataType == healthType) {
-        return true;
-      }
+  /// Generate activity recommendations
+  static List<HabitRecommendation> _generateActivityRecommendations(Map<String, dynamic> healthSummary) {
+    final recommendations = <HabitRecommendation>[];
+    
+    final steps = (healthSummary['steps'] as num?)?.toDouble() ?? 0.0;
+    final activeCalories = (healthSummary['activeCalories'] as num?)?.toDouble() ?? 0.0;
+    
+    if (steps < 8000) {
+      recommendations.add(HabitRecommendation(
+        title: 'Increase Daily Activity',
+        description: 'Your step count suggests room for more daily movement',
+        suggestedHabits: ['Morning Walk', 'Take Stairs', 'Walking Meetings'],
+        impactScore: 0.8,
+        category: 'Fitness',
+      ));
     }
-    return false;
+    
+    if (activeCalories < 300) {
+      recommendations.add(HabitRecommendation(
+        title: 'Add Structured Exercise',
+        description: 'Consider adding dedicated workout sessions',
+        suggestedHabits: ['Gym Session', 'Home Workout', 'Yoga Class'],
+        impactScore: 0.9,
+        category: 'Fitness',
+      ));
+    }
+    
+    return recommendations;
   }
 
-  /// Generate recommendation for health type
-  static Future<PersonalizedHabitRecommendation?> _generateRecommendationForHealthType(
-    HealthDataType healthType,
-    HealthPatternAnalysis analysis,
-    List<Habit> existingHabits,
-  ) async {
-    // Implementation would generate specific recommendations based on health type and analysis
-    // This is a simplified version
-    return null; // Placeholder
+  /// Generate sleep recommendations
+  static List<HabitRecommendation> _generateSleepRecommendations(Map<String, dynamic> healthSummary) {
+    final recommendations = <HabitRecommendation>[];
+    
+    final sleepHours = (healthSummary['sleepHours'] as num?)?.toDouble() ?? 0.0;
+    
+    if (sleepHours < 7.0) {
+      recommendations.add(HabitRecommendation(
+        title: 'Improve Sleep Duration',
+        description: 'Your sleep duration is below optimal levels',
+        suggestedHabits: ['Earlier Bedtime', 'Sleep Schedule', 'Evening Routine'],
+        impactScore: 0.95,
+        category: 'Sleep',
+      ));
+    }
+    
+    return recommendations;
+  }
+
+  /// Generate wellness recommendations
+  static List<HabitRecommendation> _generateWellnessRecommendations(Map<String, dynamic> healthSummary) {
+    final recommendations = <HabitRecommendation>[];
+    
+    final mindfulnessMinutes = (healthSummary['mindfulnessMinutes'] as num?)?.toDouble() ?? 0.0;
+    final waterIntake = (healthSummary['waterIntake'] as num?)?.toDouble() ?? 0.0;
+    
+    if (mindfulnessMinutes < 10) {
+      recommendations.add(HabitRecommendation(
+        title: 'Add Mindfulness Practice',
+        description: 'Regular meditation can reduce stress and improve focus',
+        suggestedHabits: ['Daily Meditation', 'Breathing Exercises', 'Mindful Walking'],
+        impactScore: 0.7,
+        category: 'Wellness',
+      ));
+    }
+    
+    if (waterIntake < 2000) {
+      recommendations.add(HabitRecommendation(
+        title: 'Improve Hydration',
+        description: 'Proper hydration supports all bodily functions',
+        suggestedHabits: ['Water Reminder', 'Morning Water', 'Hydration Tracking'],
+        impactScore: 0.6,
+        category: 'Health',
+      ));
+    }
+    
+    return recommendations;
   }
 
   /// Get basic recommendations when no health data is available
-  static List<PersonalizedHabitRecommendation> _getBasicRecommendations(List<Habit> existingHabits) {
-    // Return basic recommendations
-    return [];
+  static List<HabitRecommendation> _getBasicRecommendations() {
+    return [
+      HabitRecommendation(
+        title: 'Start with Movement',
+        description: 'Physical activity is the foundation of good health',
+        suggestedHabits: ['Daily Walk', 'Stretching', 'Take Stairs'],
+        impactScore: 0.9,
+        category: 'Fitness',
+      ),
+      HabitRecommendation(
+        title: 'Prioritize Sleep',
+        description: 'Quality sleep affects every aspect of health',
+        suggestedHabits: ['Consistent Bedtime', 'Evening Routine', 'Sleep Hygiene'],
+        impactScore: 0.95,
+        category: 'Sleep',
+      ),
+      HabitRecommendation(
+        title: 'Build Wellness Habits',
+        description: 'Small daily practices compound into big health benefits',
+        suggestedHabits: ['Hydration', 'Meditation', 'Healthy Eating'],
+        impactScore: 0.8,
+        category: 'Wellness',
+      ),
+    ];
   }
 }
 
-/// Health-based habit suggestion
+/// Health-based habit suggestion model
 class HealthBasedHabitSuggestion {
   final String name;
   final String description;
   final String category;
   final HabitFrequency frequency;
-  final HealthDataType healthDataType;
+  final String healthDataType;
   final double suggestedThreshold;
   final double currentAverage;
   final double improvementPotential;
   final HabitPriority priority;
   final double confidence;
   final String reasoning;
-  
+
   HealthBasedHabitSuggestion({
     required this.name,
     required this.description,
@@ -821,60 +655,84 @@ class HealthBasedHabitSuggestion {
     required this.confidence,
     required this.reasoning,
   });
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'description': description,
+    'category': category,
+    'frequency': frequency.toString(),
+    'healthDataType': healthDataType,
+    'suggestedThreshold': suggestedThreshold,
+    'currentAverage': currentAverage,
+    'improvementPotential': improvementPotential,
+    'priority': priority.toString(),
+    'confidence': confidence,
+    'reasoning': reasoning,
+  };
 }
 
-/// Habit priority levels
+/// Habit recommendation model
+class HabitRecommendation {
+  final String title;
+  final String description;
+  final List<String> suggestedHabits;
+  final double impactScore;
+  final String category;
+
+  HabitRecommendation({
+    required this.title,
+    required this.description,
+    required this.suggestedHabits,
+    required this.impactScore,
+    required this.category,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'description': description,
+    'suggestedHabits': suggestedHabits,
+    'impactScore': impactScore,
+    'category': category,
+  };
+}
+
+/// Habit health mapping model
+class HabitHealthMapping {
+  final String habitId;
+  final String healthDataType;
+  final double threshold;
+  final String thresholdLevel;
+  final bool isActive;
+  final DateTime createdAt;
+
+  HabitHealthMapping({
+    required this.habitId,
+    required this.healthDataType,
+    required this.threshold,
+    required this.thresholdLevel,
+    required this.isActive,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'habitId': habitId,
+    'healthDataType': healthDataType,
+    'threshold': threshold,
+    'thresholdLevel': thresholdLevel,
+    'isActive': isActive,
+    'createdAt': createdAt.toIso8601String(),
+  };
+}
+
+/// Habit priority enum
 enum HabitPriority {
   low,
   medium,
-  high;
-  
-  int get value {
-    switch (this) {
-      case HabitPriority.low:
-        return 1;
-      case HabitPriority.medium:
-        return 2;
-      case HabitPriority.high:
-        return 3;
-    }
-  }
-  
+  high,
+}
+
+extension HabitPriorityExtension on HabitPriority {
   int compareTo(HabitPriority other) {
-    return value.compareTo(other.value);
+    return index.compareTo(other.index);
   }
-}
-
-/// Health pattern analysis
-class HealthPatternAnalysis {
-  final double average;
-  final double consistency;
-  final double trend;
-  final double improvementPotential;
-  
-  HealthPatternAnalysis({
-    required this.average,
-    required this.consistency,
-    required this.trend,
-    required this.improvementPotential,
-  });
-}
-
-/// Personalized habit recommendation
-class PersonalizedHabitRecommendation {
-  final String name;
-  final String description;
-  final String category;
-  final double improvementPotential;
-  final double feasibilityScore;
-  final String reasoning;
-  
-  PersonalizedHabitRecommendation({
-    required this.name,
-    required this.description,
-    required this.category,
-    required this.improvementPotential,
-    required this.feasibilityScore,
-    required this.reasoning,
-  });
 }

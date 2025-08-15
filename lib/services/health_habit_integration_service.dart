@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:health/health.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/model/habit.dart';
 import '../data/database.dart';
@@ -8,6 +7,30 @@ import 'health_service.dart';
 import 'health_habit_mapping_service.dart';
 import 'logging_service.dart';
 import 'notification_service.dart';
+
+/// Simple health data point replacement to avoid health package dependency
+class HealthDataPoint {
+  final String type;
+  final double value;
+  final DateTime timestamp;
+  final String unit;
+
+  HealthDataPoint({
+    required this.type,
+    required this.value,
+    required this.timestamp,
+    required this.unit,
+  });
+
+  factory HealthDataPoint.fromMap(Map<String, dynamic> map) {
+    return HealthDataPoint(
+      type: map['type'] ?? '',
+      value: (map['value'] as num?)?.toDouble() ?? 0.0,
+      timestamp: DateTime.fromMillisecondsSinceEpoch(map['timestamp'] ?? 0),
+      unit: map['unit'] ?? '',
+    );
+  }
+}
 
 /// Comprehensive Health-Habit Integration Service
 /// 
@@ -164,12 +187,9 @@ class HealthHabitIntegrationService {
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
       
-      final healthData = await HealthService.getAllHealthData(
-        startDate: startOfDay,
-        endDate: endOfDay,
-      );
+      final healthSummary = await HealthService.getTodayHealthSummary();
       
-      if (healthData.isEmpty) {
+      if (healthSummary.containsKey('error')) {
         AppLogger.info('No health data available for today');
         return result;
       }

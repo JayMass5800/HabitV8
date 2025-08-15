@@ -1,6 +1,6 @@
 import 'dart:math' as math;
-import 'package:health/health.dart';
 import '../domain/model/habit.dart';
+import 'health_habit_integration_service.dart'; // For HealthDataPoint
 import '../data/database.dart';
 import 'health_service.dart';
 import 'health_habit_mapping_service.dart';
@@ -39,10 +39,7 @@ class HealthHabitAnalyticsService {
         mappableHabits.any((mapping) => mapping.habitId == habit.id)
       ).toList();
       
-      final healthData = await HealthService.getAllHealthData(
-        startDate: startDate,
-        endDate: endDate,
-      );
+      final healthSummary = await HealthService.getTodayHealthSummary();
       
       if (habits.isEmpty) {
         report.error = 'No health-mappable habits found for analysis';

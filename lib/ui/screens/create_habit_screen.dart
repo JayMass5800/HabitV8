@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:health/health.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
@@ -37,7 +36,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   
   // Health integration fields
   bool _enableHealthIntegration = false;
-  HealthDataType? _selectedHealthDataType;
+  String? _selectedHealthDataType;
   double? _customThreshold;
   String _thresholdLevel = 'moderate';
   List<HealthBasedHabitSuggestion> _healthSuggestions = [];
