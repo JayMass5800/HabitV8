@@ -14,7 +14,7 @@ import 'minimal_health_service.dart';
 /// - Allowing users to revoke permissions at any time
 /// - Supporting background health data access for continuous monitoring
 /// 
-/// CRITICAL: This service ONLY supports 5 health data types to avoid Google Play Console rejection
+/// CRITICAL: This service ONLY supports 6 health data types to avoid Google Play Console rejection
 class HealthService {
   static bool _isInitialized = false;
 
@@ -26,13 +26,13 @@ class HealthService {
   /// and health_permissions.xml to avoid static analysis issues
   static List<String> get _healthDataTypes {
     // FIXED LIST - DO NOT ADD MORE TYPES
-    // These are the ONLY 5 health data types this app will ever request
-    // MINDFULNESS removed due to platform restrictions
+    // These are the ONLY 6 health data types this app will ever request
     const allowedTypes = [
       'STEPS',                    // Steps tracking
       'ACTIVE_ENERGY_BURNED',     // Calories burned (active)
       'SLEEP_IN_BED',             // Sleep duration
       'WATER',                    // Water intake/hydration
+      'MINDFULNESS',              // Meditation/mindfulness
       'WEIGHT',                   // Body weight
     ];
     
@@ -65,9 +65,9 @@ class HealthService {
       }
     }
     
-    // Ensure we only have the exact 5 allowed types
-    if (types.length != 5) {
-      throw Exception('INVALID HEALTH DATA TYPE COUNT: Expected exactly 5 types, got ${types.length}');
+    // Ensure we only have the exact 6 allowed types
+    if (types.length != 6) {
+      throw Exception('INVALID HEALTH DATA TYPE COUNT: Expected exactly 6 types, got ${types.length}');
     }
     
     AppLogger.info('Health data types validation passed: ${types.length} allowed types');
@@ -228,12 +228,18 @@ class HealthService {
     }
   }
 
-  /// Get mindfulness minutes for today (disabled - not supported)
+  /// Get mindfulness minutes for today
   static Future<double> getMindfulnessMinutesToday() async {
-    // MINDFULNESS data type is not supported due to platform restrictions
-    // Return 0 to maintain API compatibility
-    AppLogger.info('Mindfulness data not supported - returning 0');
-    return 0.0;
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      return await MinimalHealthService.getMindfulnessMinutesToday();
+    } catch (e) {
+      AppLogger.error('Error getting mindfulness data', e);
+      return 0.0;
+    }
   }
 
   /// Get latest weight
@@ -353,8 +359,17 @@ class HealthService {
             break;
             
           case 'MINDFULNESS':
-            // MINDFULNESS data type is not supported due to platform restrictions
-            AppLogger.info('MINDFULNESS data type requested but not supported');
+            if (_isToday(startTime)) {
+              final mindfulness = await getMindfulnessMinutesToday();
+              if (mindfulness > 0) {
+                results.add({
+                  'type': type,
+                  'value': mindfulness,
+                  'timestamp': DateTime.now().millisecondsSinceEpoch,
+                  'unit': 'minutes',
+                });
+              }
+            }
             break;
             
           case 'WEIGHT':
