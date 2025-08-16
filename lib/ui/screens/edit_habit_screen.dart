@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
+import '../../services/health_habit_mapping_service.dart';
 
 class EditHabitScreen extends ConsumerStatefulWidget {
   final Habit habit;
@@ -28,16 +29,40 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   late int _targetCount;
   late int _originalHashCode; // Store original hash code for notification management
 
-  final List<String> _categories = [
-    'Health',
-    'Fitness',
-    'Productivity',
-    'Learning',
-    'Personal',
-    'Social',
-    'Finance',
-    'Mindfulness',
-  ];
+  // Dynamic categories that include health-related ones from the mapping service
+  List<String> get _categories {
+    final healthCategories = HealthHabitMappingService.getHealthRelatedCategories();
+    final standardCategories = [
+      'Productivity',
+      'Learning', 
+      'Personal',
+      'Social',
+      'Finance',
+      'Work',
+      'Education',
+      'Hobbies',
+      'Travel',
+      'Other',
+    ];
+    
+    // Combine and sort, with health categories first
+    final allCategories = <String>[];
+    
+    // Add health categories first (capitalize first letter)
+    for (final category in healthCategories) {
+      final capitalized = category[0].toUpperCase() + category.substring(1);
+      allCategories.add(capitalized);
+    }
+    
+    // Add standard categories
+    allCategories.addAll(standardCategories);
+    
+    // Remove duplicates and sort
+    final uniqueCategories = allCategories.toSet().toList();
+    uniqueCategories.sort();
+    
+    return uniqueCategories;
+  }
 
   final List<Color> _colors = [
     Colors.blue,

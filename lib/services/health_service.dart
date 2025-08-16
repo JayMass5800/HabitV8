@@ -2,7 +2,7 @@
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 import 'logging_service.dart';
-import 'minimal_health_service.dart';
+import 'minimal_health_channel.dart';
 
 /// HealthService provides secure, privacy-focused access to health data for habit tracking.
 /// 
@@ -14,25 +14,26 @@ import 'minimal_health_service.dart';
 /// - Allowing users to revoke permissions at any time
 /// - Supporting background health data access for continuous monitoring
 /// 
-/// CRITICAL: This service ONLY supports 6 health data types to avoid Google Play Console rejection
+/// CRITICAL: This service supports essential health data types while avoiding Google Play Console rejection
+/// NOTE: This service ONLY works with real health data - no mock/simulation data is supported
 class HealthService {
   static bool _isInitialized = false;
 
   /// Get platform-specific health data types
-  /// STRICTLY LIMITED to only the 6 essential data types to prevent Google Play Console
+  /// STRICTLY LIMITED to essential data types to prevent Google Play Console
   /// static analysis from detecting broader health permissions
   /// 
   /// CRITICAL: This list MUST match exactly what's declared in AndroidManifest.xml
   /// and health_permissions.xml to avoid static analysis issues
   static List<String> get _healthDataTypes {
     // FIXED LIST - DO NOT ADD MORE TYPES
-    // These are the ONLY 6 health data types this app will ever request
+    // These are the essential health data types this app requests
     const allowedTypes = [
       'STEPS',                    // Steps tracking
       'ACTIVE_ENERGY_BURNED',     // Calories burned (active)
       'SLEEP_IN_BED',             // Sleep duration
       'WATER',                    // Water intake/hydration
-      'MINDFULNESS',              // Meditation/mindfulness
+      'MINDFULNESS',              // Meditation/mindfulness (when available)
       'WEIGHT',                   // Body weight
     ];
     
@@ -56,6 +57,10 @@ class HealthService {
       'NUTRITION',
       'EXERCISE',
       'DISTANCE',
+      'OXYGEN_SATURATION',
+      'ELECTROCARDIOGRAM',
+      'BODY_FAT_PERCENTAGE',
+      'LEAN_BODY_MASS',
       // Add more forbidden types as needed
     ];
     
@@ -65,9 +70,9 @@ class HealthService {
       }
     }
     
-    // Ensure we only have the exact 6 allowed types
-    if (types.length != 6) {
-      throw Exception('INVALID HEALTH DATA TYPE COUNT: Expected exactly 6 types, got ${types.length}');
+    // Validate we have reasonable number of types (not too many to trigger scrutiny)
+    if (types.length > 10) {
+      throw Exception('TOO MANY HEALTH DATA TYPES: ${types.length} types may trigger Google Play Console rejection!');
     }
     
     AppLogger.info('Health data types validation passed: ${types.length} allowed types');
@@ -81,19 +86,37 @@ class HealthService {
     }
 
     try {
-      AppLogger.info('Initializing minimal health service...');
+      AppLogger.info('Initializing health service with custom Health Connect integration...');
       
-      // Use our minimal health service instead of the problematic health plugin
-      final initialized = await MinimalHealthService.initialize();
-      
-      if (initialized) {
+      // Check platform support - currently only Android with Health Connect
+      if (!Platform.isAndroid) {
+        AppLogger.warning('Health data currently only supported on Android with Health Connect');
         _isInitialized = true;
-        AppLogger.info('Minimal health service initialized successfully');
-        return true;
-      } else {
-        AppLogger.error('Failed to initialize minimal health service');
         return false;
       }
+      
+      // Initialize our custom MinimalHealthChannel
+      final bool initialized = await MinimalHealthChannel.initialize();
+      
+      if (initialized) {
+        // Check if Health Connect is available
+        final bool available = await MinimalHealthChannel.isHealthConnectAvailable();
+        
+        if (available) {
+          _isInitialized = true;
+          AppLogger.info('Health service initialized successfully with Health Connect');
+          return true;
+        } else {
+          _isInitialized = true;
+          AppLogger.warning('Health Connect not available on this device');
+          return false;
+        }
+      } else {
+        _isInitialized = true;
+        AppLogger.warning('MinimalHealthChannel initialization failed');
+        return false;
+      }
+      
     } catch (e) {
       AppLogger.error('Failed to initialize health service', e);
       _isInitialized = false;
@@ -111,31 +134,28 @@ class HealthService {
   /// Request health data permissions
   static Future<bool> requestPermissions() async {
     if (!_isInitialized) {
-      final initialized = await initialize();
-      if (!initialized) {
-        AppLogger.error('Failed to initialize health service');
-        return false;
-      }
+      await initialize();
     }
 
     try {
       AppLogger.info('Requesting health permissions for ${_healthDataTypes.length} data types');
       AppLogger.info('Data types: ${_healthDataTypes.join(', ')}');
       
-      final bool granted = await MinimalHealthService.requestPermissions();
-
-      AppLogger.info('Permission request result: $granted');
-
+      // Use our custom MinimalHealthChannel for permission requests
+      final bool granted = await MinimalHealthChannel.requestPermissions();
+      
       if (granted) {
         AppLogger.info('Health permissions granted successfully');
+        
         // Verify permissions were actually granted
-        final bool hasPerms = await hasPermissions();
-        AppLogger.info('Permission verification: $hasPerms');
+        final bool hasPerms = await MinimalHealthChannel.hasPermissions();
+        AppLogger.info('Permission verification result: $hasPerms');
         return hasPerms;
       } else {
         AppLogger.info('Health permissions denied by user');
         return false;
       }
+      
     } catch (e) {
       AppLogger.error('Failed to request health permissions', e);
       return false;
@@ -150,10 +170,9 @@ class HealthService {
     }
 
     try {
-      // Use our minimal health service to check permissions
-      final bool hasPerms = await MinimalHealthService.hasPermissions();
+      // Use our custom MinimalHealthChannel to check permissions
+      final bool hasPerms = await MinimalHealthChannel.hasPermissions();
       AppLogger.info('Health permissions check result: $hasPerms');
-      
       return hasPerms;
     } catch (e) {
       AppLogger.error('Error checking health permissions', e);
@@ -179,7 +198,9 @@ class HealthService {
     }
 
     try {
-      return await MinimalHealthService.getStepsToday();
+      final int steps = await MinimalHealthChannel.getStepsToday();
+      AppLogger.info('Retrieved steps data: $steps');
+      return steps;
     } catch (e) {
       AppLogger.error('Error getting steps data', e);
       return 0;
@@ -193,7 +214,9 @@ class HealthService {
     }
 
     try {
-      return await MinimalHealthService.getActiveCaloriesToday();
+      final double calories = await MinimalHealthChannel.getActiveCaloriesToday();
+      AppLogger.info('Retrieved active calories data: ${calories.round()}');
+      return calories;
     } catch (e) {
       AppLogger.error('Error getting active calories data', e);
       return 0.0;
@@ -207,7 +230,9 @@ class HealthService {
     }
 
     try {
-      return await MinimalHealthService.getSleepHoursLastNight();
+      final double sleepHours = await MinimalHealthChannel.getSleepHoursLastNight();
+      AppLogger.info('Retrieved sleep data: ${sleepHours.toStringAsFixed(1)} hours');
+      return sleepHours;
     } catch (e) {
       AppLogger.error('Error getting sleep data', e);
       return 0.0;
@@ -221,7 +246,9 @@ class HealthService {
     }
 
     try {
-      return await MinimalHealthService.getWaterIntakeToday();
+      final double waterMl = await MinimalHealthChannel.getWaterIntakeToday();
+      AppLogger.info('Retrieved water intake data: ${waterMl.round()}ml');
+      return waterMl;
     } catch (e) {
       AppLogger.error('Error getting water intake data', e);
       return 0.0;
@@ -235,7 +262,9 @@ class HealthService {
     }
 
     try {
-      return await MinimalHealthService.getMindfulnessMinutesToday();
+      final double mindfulnessMinutes = await MinimalHealthChannel.getMindfulnessMinutesToday();
+      AppLogger.info('Retrieved mindfulness data: ${mindfulnessMinutes.round()} minutes');
+      return mindfulnessMinutes;
     } catch (e) {
       AppLogger.error('Error getting mindfulness data', e);
       return 0.0;
@@ -249,32 +278,61 @@ class HealthService {
     }
 
     try {
-      return await MinimalHealthService.getLatestWeight();
+      final double? weight = await MinimalHealthChannel.getLatestWeight();
+      if (weight != null) {
+        AppLogger.info('Retrieved weight data: ${weight.toStringAsFixed(1)}kg');
+      } else {
+        AppLogger.info('No weight data available');
+      }
+      return weight;
     } catch (e) {
       AppLogger.error('Error getting weight data', e);
       return null;
     }
   }
 
-  /// Get today's health summary
+
+
+  /// Get today's health summary with real Health Connect data
   static Future<Map<String, dynamic>> getTodayHealthSummary() async {
     try {
-      final steps = await getStepsToday();
-      final calories = await getActiveCaloriesToday();
-      final sleep = await getSleepHoursLastNight();
-      final water = await getWaterIntakeToday();
-      final mindfulness = await getMindfulnessMinutesToday();
-      final weight = await getLatestWeight();
+      AppLogger.info('Fetching comprehensive health summary from Health Connect...');
+      
+      // Fetch all health data concurrently for better performance
+      final results = await Future.wait([
+        getStepsToday(),
+        getActiveCaloriesToday(),
+        getSleepHoursLastNight(),
+        getWaterIntakeToday(),
+        getMindfulnessMinutesToday(),
+        getLatestWeight(),
+      ]);
 
-      return {
-        'steps': steps,
-        'activeCalories': calories,
-        'sleepHours': sleep,
-        'waterIntake': water,
-        'mindfulnessMinutes': mindfulness,
-        'weight': weight,
+      final summary = {
+        'steps': results[0] as int,
+        'activeCalories': results[1] as double,
+        'sleepHours': results[2] as double,
+        'waterIntake': results[3] as double,
+        'mindfulnessMinutes': results[4] as double,
+        'weight': results[5] as double?,
         'timestamp': DateTime.now().toIso8601String(),
+        'dataSource': 'health_connect',
+        'isInitialized': _isInitialized,
       };
+
+      // Add derived metrics
+      final steps = summary['steps'] as int;
+      summary['caloriesPerStep'] = steps > 0 
+          ? (summary['activeCalories'] as double) / steps
+          : 0.0;
+      
+      summary['hydrationStatus'] = _getHydrationStatus(summary['waterIntake'] as double);
+      summary['sleepQuality'] = _getSleepQuality(summary['sleepHours'] as double);
+      summary['activityLevel'] = _getActivityLevel(summary['steps'] as int);
+
+      AppLogger.info('Health summary retrieved successfully: ${summary['steps']} steps, ${(summary['activeCalories'] as double).round()} cal');
+      return summary;
+      
     } catch (e) {
       AppLogger.error('Error getting health summary', e);
       return {
@@ -286,9 +344,44 @@ class HealthService {
         'weight': null,
         'timestamp': DateTime.now().toIso8601String(),
         'error': e.toString(),
+        'dataSource': 'error',
+        'isInitialized': _isInitialized,
+        'caloriesPerStep': 0.0,
+        'hydrationStatus': 'error',
+        'sleepQuality': 'error',
+        'activityLevel': 'error',
       };
     }
   }
+
+  /// Get hydration status based on water intake
+  static String _getHydrationStatus(double waterIntakeMl) {
+    if (waterIntakeMl >= 3000) return 'excellent';
+    if (waterIntakeMl >= 2000) return 'good';
+    if (waterIntakeMl >= 1500) return 'adequate';
+    if (waterIntakeMl >= 1000) return 'low';
+    return 'very_low';
+  }
+
+  /// Get sleep quality based on hours
+  static String _getSleepQuality(double sleepHours) {
+    if (sleepHours >= 8.5) return 'excellent';
+    if (sleepHours >= 7.5) return 'good';
+    if (sleepHours >= 6.5) return 'adequate';
+    if (sleepHours >= 5.5) return 'poor';
+    return 'very_poor';
+  }
+
+  /// Get activity level based on steps
+  static String _getActivityLevel(int steps) {
+    if (steps >= 12000) return 'very_active';
+    if (steps >= 8000) return 'active';
+    if (steps >= 5000) return 'moderate';
+    if (steps >= 2000) return 'light';
+    return 'sedentary';
+  }
+
+
 
   /// Get health data for specific types and date range
   static Future<List<Map<String, dynamic>>> getHealthDataFromTypes({
@@ -296,107 +389,34 @@ class HealthService {
     required DateTime startTime,
     required DateTime endTime,
   }) async {
-    final results = <Map<String, dynamic>>[];
-    
     try {
+      AppLogger.info('Fetching health data for types: ${types.join(', ')} from ${startTime.toIso8601String()} to ${endTime.toIso8601String()}');
+      
+      final List<Map<String, dynamic>> allData = [];
+      
+      // Fetch data for each requested type
       for (final type in types) {
-        switch (type) {
-          case 'STEPS':
-            // For now, only support today's data
-            if (_isToday(startTime)) {
-              final steps = await getStepsToday();
-              if (steps > 0) {
-                results.add({
-                  'type': type,
-                  'value': steps.toDouble(),
-                  'timestamp': DateTime.now().millisecondsSinceEpoch,
-                  'unit': 'count',
-                });
-              }
-            }
-            break;
-            
-          case 'ACTIVE_ENERGY_BURNED':
-            if (_isToday(startTime)) {
-              final calories = await getActiveCaloriesToday();
-              if (calories > 0) {
-                results.add({
-                  'type': type,
-                  'value': calories,
-                  'timestamp': DateTime.now().millisecondsSinceEpoch,
-                  'unit': 'kcal',
-                });
-              }
-            }
-            break;
-            
-          case 'SLEEP_IN_BED':
-            if (_isToday(startTime)) {
-              final sleep = await getSleepHoursLastNight();
-              if (sleep > 0) {
-                results.add({
-                  'type': type,
-                  'value': sleep,
-                  'timestamp': DateTime.now().millisecondsSinceEpoch,
-                  'unit': 'hours',
-                });
-              }
-            }
-            break;
-            
-          case 'WATER':
-            if (_isToday(startTime)) {
-              final water = await getWaterIntakeToday();
-              if (water > 0) {
-                results.add({
-                  'type': type,
-                  'value': water,
-                  'timestamp': DateTime.now().millisecondsSinceEpoch,
-                  'unit': 'ml',
-                });
-              }
-            }
-            break;
-            
-          case 'MINDFULNESS':
-            if (_isToday(startTime)) {
-              final mindfulness = await getMindfulnessMinutesToday();
-              if (mindfulness > 0) {
-                results.add({
-                  'type': type,
-                  'value': mindfulness,
-                  'timestamp': DateTime.now().millisecondsSinceEpoch,
-                  'unit': 'minutes',
-                });
-              }
-            }
-            break;
-            
-          case 'WEIGHT':
-            final weight = await getLatestWeight();
-            if (weight != null) {
-              results.add({
-                'type': type,
-                'value': weight,
-                'timestamp': DateTime.now().millisecondsSinceEpoch,
-                'unit': 'kg',
-              });
-            }
-            break;
+        try {
+          final data = await MinimalHealthChannel.getHealthData(
+            dataType: type,
+            startDate: startTime,
+            endDate: endTime,
+          );
+          allData.addAll(data);
+        } catch (e) {
+          AppLogger.warning('Failed to get data for type $type: $e');
         }
       }
+      
+      AppLogger.info('Retrieved ${allData.length} total health records');
+      return allData;
     } catch (e) {
       AppLogger.error('Error getting health data from types', e);
+      return <Map<String, dynamic>>[];
     }
-    
-    return results;
   }
   
-  /// Helper method to check if a date is today
-  static bool _isToday(DateTime date) {
-    final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
-  }
+
 
   /// Check if health data is available
   static Future<bool> isHealthDataAvailable() async {
@@ -438,49 +458,138 @@ class HealthService {
     }
 
     try {
-      // For now, assume it's available on Android
-      // In a real implementation, you'd check if Health Connect is installed
-      return true;
+      final bool available = await MinimalHealthChannel.isHealthConnectAvailable();
+      AppLogger.info('Health Connect availability: $available');
+      return available;
     } catch (e) {
       AppLogger.error('Error checking Health Connect availability', e);
       return false;
     }
   }
 
-  /// Get Health Connect debug info
+  /// Get health service debug info
   static Future<Map<String, dynamic>> getHealthConnectDebugInfo() async {
     try {
-      return {
+      final debugInfo = <String, dynamic>{
+        'isInitialized': _isInitialized,
+        'realDataOnly': true,
         'isAvailable': await isHealthConnectAvailable(),
         'hasPermissions': await hasPermissions(),
-        'supportedDataTypes': MinimalHealthService.getSupportedDataTypes(),
+        'allowedDataTypes': _healthDataTypes,
+        'supportedDataTypes': MinimalHealthChannel.getSupportedDataTypes(),
         'platform': Platform.operatingSystem,
+        'channelStatus': MinimalHealthChannel.getServiceStatus(),
         'timestamp': DateTime.now().toIso8601String(),
+        'message': 'Using custom Health Connect integration - real data only',
       };
+
+      // Add current health summary for debugging
+      try {
+        debugInfo['currentHealthSummary'] = await getTodayHealthSummary();
+      } catch (e) {
+        debugInfo['healthSummaryError'] = e.toString();
+      }
+
+      return debugInfo;
     } catch (e) {
       AppLogger.error('Error getting Health Connect debug info', e);
       return {
         'error': e.toString(),
         'timestamp': DateTime.now().toIso8601String(),
+        'isInitialized': _isInitialized,
+        'realDataOnly': true,
       };
     }
   }
 
-  /// Get health insights (simplified version)
+  /// Get health insights with intelligent analysis from real Health Connect data
   static Future<Map<String, dynamic>> getHealthInsights({
     int days = 7,
   }) async {
     try {
       final summary = await getTodayHealthSummary();
+      final insights = <String>[];
+      final recommendations = <String>[];
+      
+      // Analyze activity level
+      final steps = summary['steps'] as int;
+      final activityLevel = summary['activityLevel'] as String;
+      
+      if (activityLevel == 'very_active') {
+        insights.add('🏃‍♂️ Excellent activity level with $steps steps today!');
+        recommendations.add('Keep up the great work! Consider adding strength training.');
+      } else if (activityLevel == 'active') {
+        insights.add('👟 Good activity level with $steps steps today');
+        recommendations.add('Try to reach 10,000+ steps for optimal health benefits.');
+      } else if (activityLevel == 'moderate') {
+        insights.add('🚶‍♂️ Moderate activity with $steps steps today');
+        recommendations.add('Consider increasing daily movement. Take stairs or walk during breaks.');
+      } else if (activityLevel == 'light') {
+        insights.add('🚶 Light activity with $steps steps today');
+        recommendations.add('Try to increase daily movement. Even short walks can help!');
+      } else {
+        insights.add('📱 Low activity detected with only $steps steps today');
+        recommendations.add('Consider setting a daily step goal and taking regular walking breaks.');
+      }
+      
+      // Analyze sleep quality
+      final sleepHours = summary['sleepHours'] as double;
+      final sleepQuality = summary['sleepQuality'] as String;
+      
+      if (sleepQuality == 'excellent') {
+        insights.add('😴 Excellent sleep quality with ${sleepHours.toStringAsFixed(1)} hours');
+      } else if (sleepQuality == 'good') {
+        insights.add('🛏️ Good sleep with ${sleepHours.toStringAsFixed(1)} hours');
+      } else if (sleepQuality == 'adequate') {
+        insights.add('💤 Adequate sleep with ${sleepHours.toStringAsFixed(1)} hours');
+        recommendations.add('Try to get 7-9 hours of sleep for optimal recovery.');
+      } else if (sleepQuality == 'poor') {
+        insights.add('⚠️ Poor sleep quality with only ${sleepHours.toStringAsFixed(1)} hours');
+        recommendations.add('Prioritize sleep hygiene. Aim for 7-9 hours nightly.');
+      } else {
+        insights.add('😴 Very poor sleep with ${sleepHours.toStringAsFixed(1)} hours');
+        recommendations.add('Consider consulting a healthcare provider about sleep quality.');
+      }
+      
+      // Analyze hydration
+      final waterIntake = summary['waterIntake'] as double;
+      final hydrationStatus = summary['hydrationStatus'] as String;
+      
+      if (hydrationStatus == 'excellent') {
+        insights.add('💧 Excellent hydration with ${(waterIntake/1000).toStringAsFixed(1)}L water');
+      } else if (hydrationStatus == 'good') {
+        insights.add('🥤 Good hydration with ${(waterIntake/1000).toStringAsFixed(1)}L water');
+      } else if (hydrationStatus == 'adequate') {
+        insights.add('💦 Adequate hydration with ${(waterIntake/1000).toStringAsFixed(1)}L water');
+        recommendations.add('Try to increase water intake slightly for optimal hydration.');
+      } else {
+        insights.add('🚰 Low hydration with only ${(waterIntake/1000).toStringAsFixed(1)}L water');
+        recommendations.add('Increase water intake. Aim for 2-3 liters daily.');
+      }
+      
+      // Analyze mindfulness
+      final mindfulnessMinutes = summary['mindfulnessMinutes'] as double;
+      if (mindfulnessMinutes > 0) {
+        insights.add('🧘‍♀️ Great job on ${mindfulnessMinutes.round()} minutes of mindfulness today');
+        if (mindfulnessMinutes < 10) {
+          recommendations.add('Consider extending mindfulness sessions to 10+ minutes for greater benefits.');
+        }
+      } else {
+        recommendations.add('Consider adding mindfulness or meditation to your daily routine.');
+      }
+      
+      // Add general insights
+      insights.add('📊 Health data from Health Connect integration');
+      insights.add('🔒 All data processed locally for privacy');
       
       return {
         'period': days,
         'summary': summary,
-        'insights': [
-          'Health data integration is active',
-          'Using minimal health permissions for privacy',
-          'Only essential health data types are accessed',
-        ],
+        'insights': insights,
+        'recommendations': recommendations,
+        'overallScore': _calculateOverallHealthScore(summary),
+        'dataSource': 'health_connect',
+        'realDataOnly': true,
         'timestamp': DateTime.now().toIso8601String(),
       };
     } catch (e) {
@@ -488,7 +597,92 @@ class HealthService {
       return {
         'error': e.toString(),
         'timestamp': DateTime.now().toIso8601String(),
+        'insights': ['Error analyzing health data from Health Connect'],
+        'recommendations': ['Please check Health Connect permissions and data availability'],
+        'realDataOnly': true,
+        'dataSource': 'error',
       };
     }
+  }
+
+  /// Calculate overall health score (0-100) based on real health data
+  static int _calculateOverallHealthScore(Map<String, dynamic> summary) {
+    try {
+      int score = 0;
+      
+      // Activity score (0-30 points)
+      final activityLevel = summary['activityLevel'] as String;
+      switch (activityLevel) {
+        case 'very_active': score += 30; break;
+        case 'active': score += 25; break;
+        case 'moderate': score += 20; break;
+        case 'light': score += 10; break;
+        default: score += 0;
+      }
+      
+      // Sleep score (0-30 points)
+      final sleepQuality = summary['sleepQuality'] as String;
+      switch (sleepQuality) {
+        case 'excellent': score += 30; break;
+        case 'good': score += 25; break;
+        case 'adequate': score += 20; break;
+        case 'poor': score += 10; break;
+        default: score += 0;
+      }
+      
+      // Hydration score (0-20 points)
+      final hydrationStatus = summary['hydrationStatus'] as String;
+      switch (hydrationStatus) {
+        case 'excellent': score += 20; break;
+        case 'good': score += 15; break;
+        case 'adequate': score += 10; break;
+        case 'low': score += 5; break;
+        default: score += 0;
+      }
+      
+      // Mindfulness bonus (0-10 points)
+      final mindfulness = summary['mindfulnessMinutes'] as double;
+      if (mindfulness >= 20) {
+        score += 10;
+      } else if (mindfulness >= 10) {
+        score += 5;
+      } else if (mindfulness > 0) {
+        score += 2;
+      }
+      
+      // Weight tracking bonus (0-10 points)
+      if (summary['weight'] != null) {
+        score += 10;
+      }
+      
+      return score.clamp(0, 100);
+    } catch (e) {
+      AppLogger.error('Error calculating health score', e);
+      return 50; // Default neutral score
+    }
+  }
+
+  /// Reset health service state
+  static Future<void> resetHealthService() async {
+    try {
+      _isInitialized = false;
+      AppLogger.info('Health service reset successfully');
+    } catch (e) {
+      AppLogger.error('Error resetting health service', e);
+    }
+  }
+
+  /// Get service status for monitoring
+  static Map<String, dynamic> getServiceStatus() {
+    return {
+      'isInitialized': _isInitialized,
+      'realDataOnly': true,
+      'supportedDataTypes': _healthDataTypes.length,
+      'platform': Platform.operatingSystem,
+      'integration': 'custom_health_connect',
+      'channelStatus': MinimalHealthChannel.getServiceStatus(),
+      'message': 'Using custom Health Connect integration - real data only',
+      'timestamp': DateTime.now().toIso8601String(),
+    };
   }
 }

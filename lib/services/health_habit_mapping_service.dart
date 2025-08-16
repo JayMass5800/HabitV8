@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 import '../domain/model/habit.dart';
 import 'health_service.dart';
@@ -34,6 +35,13 @@ class HealthHabitMappingService {
         'distance', 'mile', 'miles', 'km', 'kilometer', 'meters',
         // Health category terms that often involve movement
         'health', 'healthy', 'wellness', 'wellbeing',
+        // Category-related terms for better recognition
+        'outdoor', 'nature', 'park', 'trail', 'path', 'sidewalk', 'street',
+        'morning', 'evening', 'daily', 'routine', 'habit', 'goal', 'target',
+        'pace', 'speed', 'brisk', 'leisurely', 'casual', 'power',
+        // Sports and activities that involve steps
+        'sport', 'sports', 'athletic', 'athletics', 'competition', 'training',
+        'practice', 'drill', 'warmup', 'cooldown', 'stretch', 'stretching',
       ],
       thresholds: {
         'recovery': 500,     // Medical recovery/rehabilitation
@@ -74,6 +82,10 @@ class HealthHabitMappingService {
         'intense', 'vigorous', 'hard', 'tough', 'challenging',
         // Calorie-related terms
         'burn', 'burning', 'calories', 'calorie', 'energy',
+        // Additional fitness terms
+        'sweat', 'sweating', 'pump', 'pumping', 'rep', 'reps', 'set', 'sets',
+        'circuit', 'interval', 'tabata', 'burpee', 'burpees', 'pushup', 'pushups',
+        'pullup', 'pullups', 'squat', 'squats', 'lunge', 'lunges', 'plank', 'planks',
       ],
       thresholds: {
         'minimal': 100,     // Light exercise (100 cal)
@@ -140,6 +152,9 @@ class HealthHabitMappingService {
         // Tracking terms
         'intake', 'consumption', 'amount', 'quantity', 'goal',
         'target', 'daily', 'hourly', 'regular', 'consistent',
+        // Additional hydration terms
+        'hydrate', 'hydrating', 'hydration', 'rehydrate', 'rehydrating',
+        'moisture', 'wet', 'refresh', 'refreshing', 'quench', 'thirsty',
       ],
       thresholds: {
         'minimal': 1000,    // 1L minimum
@@ -151,8 +166,40 @@ class HealthHabitMappingService {
       description: 'Water intake for hydration habits',
     ),
     
-    // MINDFULNESS mapping removed due to platform restrictions
-    // Mindfulness habits will be handled as manual tracking only
+    // MINDFULNESS mapping - conditionally available based on platform support
+    'MINDFULNESS': HealthHabitMapping(
+      keywords: [
+        // Basic mindfulness terms
+        'mindful', 'mindfulness', 'meditate', 'meditation', 'meditated',
+        'zen', 'calm', 'calming', 'peace', 'peaceful', 'tranquil',
+        // Breathing and relaxation
+        'breathe', 'breathing', 'breath', 'relax', 'relaxation', 'unwind',
+        'deep', 'inhale', 'exhale', 'pranayama', 'breathwork',
+        // Mental wellness
+        'mental', 'wellness', 'wellbeing', 'stress', 'anxiety', 'worry',
+        'focus', 'concentration', 'awareness', 'present', 'moment',
+        // Spiritual practices
+        'spiritual', 'prayer', 'pray', 'gratitude', 'grateful', 'thankful',
+        'reflection', 'contemplate', 'introspect', 'journal', 'journaling',
+        // Specific practices
+        'yoga', 'tai', 'chi', 'qigong', 'vipassana', 'samatha',
+        'loving', 'kindness', 'compassion', 'metta', 'mantra',
+        // Apps and tools
+        'headspace', 'calm', 'insight', 'timer', 'guided', 'silent',
+        'bell', 'chime', 'cushion', 'mat', 'retreat',
+        // Time-based
+        'minutes', 'minute', 'session', 'practice', 'daily', 'morning',
+        'evening', 'before', 'bed', 'wake', 'routine',
+      ],
+      thresholds: {
+        'minimal': 5.0,      // 5 minutes minimum
+        'moderate': 10.0,    // 10 minutes recommended
+        'active': 20.0,      // 20 minutes good practice
+        'very_active': 30.0, // 30+ minutes advanced
+      },
+      unit: 'minutes',
+      description: 'Mindfulness and meditation practice duration',
+    ),
     
     'WEIGHT': HealthHabitMapping(
       keywords: [
@@ -198,6 +245,150 @@ class HealthHabitMappingService {
     ),
   };
 
+  /// Comprehensive category to health data type mappings
+  static const Map<String, List<CategoryHealthMapping>> categoryMappings = {
+    // Fitness and Exercise Categories
+    'fitness': [
+      CategoryHealthMapping('STEPS', 0.8, 'Most fitness activities involve movement'),
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.9, 'Fitness activities burn calories'),
+    ],
+    'exercise': [
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.9, 'Exercise burns active energy'),
+      CategoryHealthMapping('STEPS', 0.7, 'Many exercises involve movement'),
+    ],
+    'workout': [
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.9, 'Workouts burn calories'),
+      CategoryHealthMapping('STEPS', 0.6, 'Some workouts involve steps'),
+    ],
+    'cardio': [
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.95, 'Cardio burns significant calories'),
+      CategoryHealthMapping('STEPS', 0.8, 'Cardio often involves movement'),
+    ],
+    'strength': [
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.8, 'Strength training burns calories'),
+    ],
+    'running': [
+      CategoryHealthMapping('STEPS', 0.95, 'Running directly correlates with steps'),
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.9, 'Running burns calories'),
+    ],
+    'walking': [
+      CategoryHealthMapping('STEPS', 0.95, 'Walking directly measures steps'),
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.7, 'Walking burns some calories'),
+    ],
+    'sports': [
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.85, 'Sports activities burn calories'),
+      CategoryHealthMapping('STEPS', 0.7, 'Many sports involve movement'),
+    ],
+    
+    // Health and Wellness Categories
+    'health': [
+      CategoryHealthMapping('STEPS', 0.7, 'General health often involves activity'),
+      CategoryHealthMapping('WEIGHT', 0.8, 'Health tracking often includes weight'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Health includes sleep tracking'),
+      CategoryHealthMapping('WATER', 0.6, 'Health includes hydration'),
+    ],
+    'wellness': [
+      CategoryHealthMapping('MINDFULNESS', 0.8, 'Wellness includes mental health'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.7, 'Wellness includes rest'),
+      CategoryHealthMapping('WATER', 0.6, 'Wellness includes hydration'),
+      CategoryHealthMapping('STEPS', 0.6, 'Wellness includes activity'),
+    ],
+    'medical': [
+      CategoryHealthMapping('WEIGHT', 0.8, 'Medical tracking often includes weight'),
+      CategoryHealthMapping('STEPS', 0.7, 'Medical recovery involves movement'),
+    ],
+    'recovery': [
+      CategoryHealthMapping('STEPS', 0.8, 'Recovery involves gradual movement'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.7, 'Recovery requires rest'),
+    ],
+    
+    // Sleep and Rest Categories
+    'sleep': [
+      CategoryHealthMapping('SLEEP_IN_BED', 0.95, 'Sleep category directly maps to sleep tracking'),
+    ],
+    'rest': [
+      CategoryHealthMapping('SLEEP_IN_BED', 0.9, 'Rest includes sleep tracking'),
+      CategoryHealthMapping('MINDFULNESS', 0.6, 'Rest can include relaxation'),
+    ],
+    'bedtime': [
+      CategoryHealthMapping('SLEEP_IN_BED', 0.9, 'Bedtime routines affect sleep'),
+    ],
+    
+    // Nutrition and Hydration Categories
+    'nutrition': [
+      CategoryHealthMapping('WEIGHT', 0.7, 'Nutrition affects weight'),
+      CategoryHealthMapping('WATER', 0.6, 'Nutrition includes hydration'),
+    ],
+    'diet': [
+      CategoryHealthMapping('WEIGHT', 0.8, 'Diet directly affects weight'),
+      CategoryHealthMapping('WATER', 0.5, 'Diet can include hydration'),
+    ],
+    'hydration': [
+      CategoryHealthMapping('WATER', 0.95, 'Hydration directly maps to water intake'),
+    ],
+    'water': [
+      CategoryHealthMapping('WATER', 0.95, 'Water category maps to water tracking'),
+    ],
+    
+    // Mental Health and Mindfulness Categories
+    'mindfulness': [
+      CategoryHealthMapping('MINDFULNESS', 0.95, 'Mindfulness category maps directly'),
+    ],
+    'meditation': [
+      CategoryHealthMapping('MINDFULNESS', 0.95, 'Meditation is mindfulness practice'),
+    ],
+    'mental': [
+      CategoryHealthMapping('MINDFULNESS', 0.8, 'Mental health includes mindfulness'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Mental health includes rest'),
+    ],
+    'stress': [
+      CategoryHealthMapping('MINDFULNESS', 0.8, 'Stress management includes mindfulness'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Stress affects sleep'),
+    ],
+    'relaxation': [
+      CategoryHealthMapping('MINDFULNESS', 0.8, 'Relaxation includes mindfulness'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Relaxation affects sleep'),
+    ],
+    
+    // Activity and Movement Categories
+    'activity': [
+      CategoryHealthMapping('STEPS', 0.8, 'Activity often involves movement'),
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.7, 'Activity burns calories'),
+    ],
+    'movement': [
+      CategoryHealthMapping('STEPS', 0.9, 'Movement directly correlates with steps'),
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.6, 'Movement burns some energy'),
+    ],
+    'outdoor': [
+      CategoryHealthMapping('STEPS', 0.8, 'Outdoor activities often involve walking'),
+      CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.7, 'Outdoor activities burn calories'),
+    ],
+    
+    // Lifestyle Categories
+    'lifestyle': [
+      CategoryHealthMapping('STEPS', 0.6, 'Lifestyle changes often include activity'),
+      CategoryHealthMapping('WATER', 0.5, 'Lifestyle includes hydration'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.5, 'Lifestyle includes sleep habits'),
+    ],
+    'routine': [
+      CategoryHealthMapping('STEPS', 0.5, 'Routines may include activity'),
+      CategoryHealthMapping('WATER', 0.5, 'Routines may include hydration'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Routines often include sleep'),
+    ],
+    
+    // Self-care Categories
+    'selfcare': [
+      CategoryHealthMapping('MINDFULNESS', 0.7, 'Self-care includes mental wellness'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Self-care includes rest'),
+      CategoryHealthMapping('WATER', 0.5, 'Self-care includes hydration'),
+    ],
+    'self-care': [
+      CategoryHealthMapping('MINDFULNESS', 0.7, 'Self-care includes mental wellness'),
+      CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Self-care includes rest'),
+      CategoryHealthMapping('WATER', 0.5, 'Self-care includes hydration'),
+    ],
+  };
+
   /// Analyze a habit and determine its health mapping potential
   static Future<HabitHealthMapping?> analyzeHabitForHealthMapping(Habit habit) async {
     try {
@@ -211,9 +402,16 @@ class HealthHabitMappingService {
       // Find matching health data types
       final matches = <String, double>{};
       
+      // Phase 1: Keyword-based matching
       for (final entry in healthMappings.entries) {
         final healthType = entry.key;
         final mapping = entry.value;
+        
+        // Skip MINDFULNESS if not supported by the current health service
+        if (healthType == 'MINDFULNESS' && !await _isMindfulnessSupported()) {
+          AppLogger.info('Skipping MINDFULNESS mapping - not supported by current health service');
+          continue;
+        }
         
         double relevanceScore = 0.0;
         int matchedKeywords = 0;
@@ -239,62 +437,70 @@ class HealthHabitMappingService {
         }
       }
       
-      // If no keyword matches found, check if habit is in health/fitness categories
+      // Phase 2: Category-based matching (enhanced)
+      final category = habit.category.toLowerCase().trim();
+      final categoryMatches = <String, double>{};
+      
+      // Direct category matching
+      if (categoryMappings.containsKey(category)) {
+        for (final categoryMapping in categoryMappings[category]!) {
+          // Skip MINDFULNESS if not supported
+          if (categoryMapping.healthDataType == 'MINDFULNESS' && !await _isMindfulnessSupported()) {
+            continue;
+          }
+          
+          categoryMatches[categoryMapping.healthDataType] = categoryMapping.relevanceScore;
+          AppLogger.info('Category "$category" matched to ${categoryMapping.healthDataType} with score ${categoryMapping.relevanceScore}');
+        }
+      }
+      
+      // Partial category matching (for compound categories like "health & fitness")
+      for (final categoryKey in categoryMappings.keys) {
+        if (category.contains(categoryKey) && !categoryMatches.containsKey(categoryKey)) {
+          for (final categoryMapping in categoryMappings[categoryKey]!) {
+            // Skip MINDFULNESS if not supported
+            if (categoryMapping.healthDataType == 'MINDFULNESS' && !await _isMindfulnessSupported()) {
+              continue;
+            }
+            
+            // Use slightly lower score for partial matches
+            final partialScore = categoryMapping.relevanceScore * 0.8;
+            if (!categoryMatches.containsKey(categoryMapping.healthDataType) || 
+                categoryMatches[categoryMapping.healthDataType]! < partialScore) {
+              categoryMatches[categoryMapping.healthDataType] = partialScore;
+              AppLogger.info('Partial category match "$categoryKey" in "$category" matched to ${categoryMapping.healthDataType} with score $partialScore');
+            }
+          }
+        }
+      }
+      
+      // Combine keyword and category matches
+      for (final entry in categoryMatches.entries) {
+        final healthType = entry.key;
+        final categoryScore = entry.value;
+        
+        if (matches.containsKey(healthType)) {
+          // Combine scores: keyword match gets priority, category adds bonus
+          matches[healthType] = matches[healthType]! + (categoryScore * 0.3);
+          AppLogger.info('Combined score for $healthType: keyword + category bonus = ${matches[healthType]}');
+        } else {
+          // Use category score directly
+          matches[healthType] = categoryScore;
+          AppLogger.info('Category-only match for $healthType: $categoryScore');
+        }
+      }
+      
+      // Final fallback for unmapped habits
       if (matches.isEmpty) {
-        final category = habit.category.toLowerCase();
-        AppLogger.info('No keyword matches found for habit: ${habit.name}, checking category: $category');
-        
-        if (category == 'health' || category == 'fitness' || category == 'exercise' || 
-            category == 'wellness' || category == 'medical') {
-          
-          // For health/fitness category habits without specific keywords,
-          // try to infer the most appropriate health data type based on common patterns
-          String? inferredType;
-          
-          if (searchText.contains('step') || searchText.contains('walk') || 
-              searchText.contains('run') || searchText.contains('move') ||
-              category == 'fitness' || category == 'exercise') {
-            inferredType = 'STEPS';
-          } else if (searchText.contains('sleep') || searchText.contains('rest') ||
-                     searchText.contains('bed')) {
-            inferredType = 'SLEEP_IN_BED';
-          } else if (searchText.contains('water') || searchText.contains('drink') ||
-                     searchText.contains('hydrat')) {
-            inferredType = 'WATER';
-          } else if (searchText.contains('weight') || searchText.contains('weigh') ||
-                     searchText.contains('med') || searchText.contains('medication') ||
-                     searchText.contains('pill') || searchText.contains('tablet') ||
-                     searchText.contains('drug') || searchText.contains('prescription') ||
-                     searchText.contains('vitamin') || searchText.contains('supplement')) {
-            inferredType = 'WEIGHT';
-          } else if (searchText.contains('meditat') || searchText.contains('mindful') ||
-                     searchText.contains('calm') || searchText.contains('relax')) {
-            inferredType = 'MINDFULNESS';
-          } else if (category == 'health') {
-            // Default health category habits to steps (most common health tracking)
-            inferredType = 'STEPS';
-          } else if (category == 'fitness' || category == 'exercise') {
-            // Default fitness/exercise habits to steps
-            inferredType = 'STEPS';
-          }
-          
-          if (inferredType != null) {
-            matches[inferredType] = 0.5; // Medium relevance for category-based inference
-            AppLogger.info('Inferred health type $inferredType for category-based habit: ${habit.name}');
-          }
-        }
-        
-        if (matches.isEmpty) {
-          AppLogger.info('No health mappings found for habit: ${habit.name}');
-          return null;
-        }
+        AppLogger.info('No health mappings found for habit: ${habit.name} (category: $category)');
+        return null;
       }
       
       // Find the best match
       final bestMatch = matches.entries.reduce((a, b) => a.value > b.value ? a : b);
       AppLogger.info('Best match for habit "${habit.name}": ${bestMatch.key} (score: ${bestMatch.value})');
       
-      if (bestMatch.value < 0.1) {
+      if (bestMatch.value < 0.05) {
         AppLogger.info('Relevance score too low (${bestMatch.value}) for habit: ${habit.name}');
         return null; // Too weak correlation
       }
@@ -409,6 +615,14 @@ class HealthHabitMappingService {
           return HabitCompletionResult(
             shouldComplete: false,
             reason: 'No water intake data found. Water must be manually logged in your health app (Apple Health, Google Health, etc.) to enable auto-completion.',
+          );
+        }
+        
+        // Special handling for mindfulness
+        if (mapping.healthDataType == 'MINDFULNESS') {
+          return HabitCompletionResult(
+            shouldComplete: false,
+            reason: 'No mindfulness data found. Mindfulness sessions must be logged in your health app or meditation app to enable auto-completion.',
           );
         }
         
@@ -759,6 +973,76 @@ class HealthHabitMappingService {
     };
   }
 
+  /// Get category suggestions for better health mapping
+  static List<String> getCategorySuggestions(String habitName, String? habitDescription) {
+    final searchText = '$habitName ${habitDescription ?? ''}'.toLowerCase();
+    final suggestions = <String>[];
+    
+    // Analyze the habit text and suggest appropriate categories
+    for (final entry in categoryMappings.entries) {
+      final category = entry.key;
+      final mappings = entry.value;
+      
+      // Check if any keywords from the health mappings match this habit
+      for (final mapping in mappings) {
+        final healthMapping = healthMappings[mapping.healthDataType];
+        if (healthMapping != null) {
+          for (final keyword in healthMapping.keywords) {
+            if (searchText.contains(keyword)) {
+              if (!suggestions.contains(category)) {
+                suggestions.add(category);
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // Sort by relevance (categories with higher scoring mappings first)
+    suggestions.sort((a, b) {
+      final aMaxScore = categoryMappings[a]?.map((m) => m.relevanceScore).reduce((a, b) => a > b ? a : b) ?? 0.0;
+      final bMaxScore = categoryMappings[b]?.map((m) => m.relevanceScore).reduce((a, b) => a > b ? a : b) ?? 0.0;
+      return bMaxScore.compareTo(aMaxScore);
+    });
+    
+    return suggestions.take(5).toList(); // Return top 5 suggestions
+  }
+
+  /// Get all available health-related categories
+  static List<String> getHealthRelatedCategories() {
+    return categoryMappings.keys.toList()..sort();
+  }
+
+  /// Get health data types that a category can map to
+  static List<String> getHealthDataTypesForCategory(String category) {
+    final mappings = categoryMappings[category.toLowerCase()];
+    if (mappings == null) return [];
+    
+    return mappings.map((m) => m.healthDataType).toList();
+  }
+
+  /// Check if mindfulness data type is supported by the current health service
+  static Future<bool> _isMindfulnessSupported() async {
+    try {
+      // Check if the health service supports mindfulness
+      // Since we're using real data only, check if health service has permissions
+      final hasPermissions = await HealthService.hasPermissions();
+      
+      // Only return true if we have real health permissions and platform supports it
+      if (hasPermissions) {
+        // Check if platform supports mindfulness (typically iOS and Android)
+        return Platform.isAndroid || Platform.isIOS;
+      }
+      
+      // Default to false for safety (mindfulness often has platform restrictions)
+      return false;
+    } catch (e) {
+      AppLogger.error('Error checking mindfulness support', e);
+      return false; // Default to not supported on error
+    }
+  }
+
   /// Extract custom threshold from habit name/description
   static double? _extractCustomThreshold(String searchText, String healthType) {
     try {
@@ -890,6 +1174,15 @@ class HabitHealthMapping {
     'unit': unit,
     'description': description,
   };
+}
+
+/// Category to health data type mapping
+class CategoryHealthMapping {
+  final String healthDataType;
+  final double relevanceScore;
+  final String reason;
+  
+  const CategoryHealthMapping(this.healthDataType, this.relevanceScore, this.reason);
 }
 
 /// Result of habit completion check

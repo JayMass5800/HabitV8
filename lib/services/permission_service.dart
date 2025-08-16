@@ -1,7 +1,7 @@
 import 'package:permission_handler/permission_handler.dart';
 import '../services/notification_service.dart';
 import 'logging_service.dart';
-import 'minimal_health_service.dart';
+import 'health_service.dart';
 
 class PermissionService {
   static final PermissionService _instance = PermissionService._internal();
@@ -71,16 +71,16 @@ class PermissionService {
   /// Users can revoke these permissions at any time through device settings.
   static Future<bool> _requestHealthPermissions() async {
     try {
-      AppLogger.info('Requesting health permissions using minimal health service');
+      AppLogger.info('Requesting health permissions using health service');
       
-      // Use our minimal health service instead of the problematic health plugin
-      final bool granted = await MinimalHealthService.requestPermissions();
+      // Use our health service for real health data access
+      final bool granted = await HealthService.requestPermissions();
       
       if (granted) {
         AppLogger.info('Health permissions granted successfully');
         
         // Verify that permissions were actually granted
-        final bool hasPermissions = await MinimalHealthService.hasPermissions();
+        final bool hasPermissions = await HealthService.hasPermissions();
         AppLogger.info('Health permissions verification: $hasPermissions');
         
         return hasPermissions;
@@ -132,8 +132,8 @@ class PermissionService {
   /// Check health permission status
   Future<bool> isHealthPermissionGranted() async {
     try {
-      // Use our minimal health service to check permissions
-      final bool hasPermissions = await MinimalHealthService.hasPermissions();
+      // Use our health service to check permissions
+      final bool hasPermissions = await HealthService.hasPermissions();
       AppLogger.info('Health permissions check result: $hasPermissions');
       
       return hasPermissions;

@@ -7,6 +7,7 @@ import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/health_enhanced_habit_creation_service.dart';
+import '../../services/health_habit_mapping_service.dart';
 import '../../services/logging_service.dart';
 
 class CreateHabitScreen extends ConsumerStatefulWidget {
@@ -42,16 +43,40 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   List<HealthBasedHabitSuggestion> _healthSuggestions = [];
   bool _loadingSuggestions = false;
 
-  final List<String> _categories = [
-    'Health',
-    'Fitness',
-    'Productivity',
-    'Learning',
-    'Personal',
-    'Social',
-    'Finance',
-    'Mindfulness',
-  ];
+  // Dynamic categories that include health-related ones from the mapping service
+  List<String> get _categories {
+    final healthCategories = HealthHabitMappingService.getHealthRelatedCategories();
+    final standardCategories = [
+      'Productivity',
+      'Learning', 
+      'Personal',
+      'Social',
+      'Finance',
+      'Work',
+      'Education',
+      'Hobbies',
+      'Travel',
+      'Other',
+    ];
+    
+    // Combine and sort, with health categories first
+    final allCategories = <String>[];
+    
+    // Add health categories first (capitalize first letter)
+    for (final category in healthCategories) {
+      final capitalized = category[0].toUpperCase() + category.substring(1);
+      allCategories.add(capitalized);
+    }
+    
+    // Add standard categories
+    allCategories.addAll(standardCategories);
+    
+    // Remove duplicates and sort
+    final uniqueCategories = allCategories.toSet().toList();
+    uniqueCategories.sort();
+    
+    return uniqueCategories;
+  }
 
   final List<Color> _colors = [
     Colors.blue,
@@ -71,6 +96,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     super.initState();
     _initializeFromPrefilledData();
     _loadHealthSuggestions();
+    
+    // Add listeners to text controllers for category suggestions
+    _nameController.addListener(_onHabitTextChanged);
+    _descriptionController.addListener(_onHabitTextChanged);
   }
 
   void _initializeFromPrefilledData() {
@@ -295,27 +324,70 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedCategory,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-              ),
-              items: _categories.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Text(category),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedCategory = value!;
-                });
-              },
-            ),
+            _buildCategorySection(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCategorySection() {
+    final suggestions = _getCategorySuggestions();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: _selectedCategory,
+          decoration: const InputDecoration(
+            labelText: 'Category',
+            border: OutlineInputBorder(),
+          ),
+          items: _categories.map((category) {
+            return DropdownMenuItem(
+              value: category,
+              child: Text(category),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedCategory = value!;
+            });
+          },
+        ),
+        if (suggestions.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Suggested categories:',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: suggestions.take(3).map((suggestion) {
+              final isSelected = _selectedCategory == suggestion;
+              return ActionChip(
+                label: Text(suggestion),
+                onPressed: () {
+                  setState(() {
+                    _selectedCategory = suggestion;
+                  });
+                },
+                backgroundColor: isSelected 
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
+                    : null,
+                side: isSelected 
+                    ? BorderSide(color: Theme.of(context).colorScheme.primary)
+                    : null,
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
   }
 
@@ -1197,6 +1269,29 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         });
       }
     }
+  }
+
+  // Get category suggestions based on habit name and description
+  List<String> _getCategorySuggestions() {
+    final habitName = _nameController.text;
+    final habitDescription = _descriptionController.text;
+    
+    if (habitName.isEmpty) return [];
+    
+    final suggestions = HealthHabitMappingService.getCategorySuggestions(
+      habitName, 
+      habitDescription.isEmpty ? null : habitDescription
+    );
+    
+    // Capitalize suggestions to match our category format
+    return suggestions.map((s) => s[0].toUpperCase() + s.substring(1)).toList();
+  }
+
+  // Update category suggestions when text changes
+  void _onHabitTextChanged() {
+    setState(() {
+      // This will trigger a rebuild and update category suggestions
+    });
   }
 
   /// Build health suggestions section
