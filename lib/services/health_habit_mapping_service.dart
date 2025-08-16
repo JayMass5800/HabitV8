@@ -227,12 +227,6 @@ class HealthHabitMappingService {
         // Emotional/motivational
         'motivation', 'motivated', 'discipline', 'commitment',
         'accountability', 'responsible', 'mindful',
-        // Medication and supplement tracking (using weight as proxy for daily tracking)
-        'med', 'meds', 'medication', 'medications', 'medicine', 'medicines',
-        'pill', 'pills', 'tablet', 'tablets', 'capsule', 'capsules',
-        'drug', 'drugs', 'prescription', 'prescriptions', 'rx',
-        'vitamin', 'vitamins', 'supplement', 'supplements', 'take', 'taking',
-        'dose', 'dosage', 'treatment', 'therapy', 'pharmaceutical',
       ],
       thresholds: {
         'minimal': 1,       // Any weight measurement
@@ -242,6 +236,42 @@ class HealthHabitMappingService {
       },
       unit: 'measurements',
       description: 'Weight tracking for body monitoring habits',
+    ),
+    
+    'MEDICATION': HealthHabitMapping(
+      keywords: [
+        // Basic medication terms
+        'med', 'meds', 'medication', 'medications', 'medicine', 'medicines',
+        'pill', 'pills', 'tablet', 'tablets', 'capsule', 'capsules',
+        'drug', 'drugs', 'prescription', 'prescriptions', 'rx',
+        'dose', 'dosage', 'treatment', 'therapy', 'pharmaceutical',
+        // Supplement terms
+        'vitamin', 'vitamins', 'supplement', 'supplements', 'multivitamin',
+        'probiotic', 'omega', 'calcium', 'iron', 'magnesium', 'zinc',
+        // Action terms
+        'take', 'taking', 'took', 'swallow', 'consume', 'ingest',
+        // Medical conditions and treatments
+        'blood', 'pressure', 'diabetes', 'cholesterol', 'thyroid',
+        'antibiotic', 'antibiotics', 'painkiller', 'aspirin', 'ibuprofen',
+        'antidepressant', 'antacid', 'allergy', 'antihistamine',
+        // Timing and routine
+        'morning', 'evening', 'bedtime', 'daily', 'twice', 'thrice',
+        'before', 'after', 'meal', 'meals', 'food', 'empty', 'stomach',
+        // Medical administration
+        'oral', 'sublingual', 'injection', 'inhaler', 'topical', 'patch',
+        'drops', 'spray', 'liquid', 'syrup', 'powder',
+        // Health management
+        'chronic', 'condition', 'maintenance', 'preventive', 'therapeutic',
+        'compliance', 'adherence', 'regimen', 'schedule', 'reminder',
+      ],
+      thresholds: {
+        'minimal': 1,       // Any medication taken
+        'moderate': 1,      // Daily medication
+        'active': 1,        // Multiple medications
+        'very_active': 1,   // Complex regimen
+      },
+      unit: 'doses',
+      description: 'Medication and supplement tracking for health management',
     ),
   };
 
@@ -282,8 +312,9 @@ class HealthHabitMappingService {
     
     // Health and Wellness Categories
     'health': [
-      CategoryHealthMapping('STEPS', 0.7, 'General health often involves activity'),
-      CategoryHealthMapping('WEIGHT', 0.8, 'Health tracking often includes weight'),
+      CategoryHealthMapping('MEDICATION', 0.8, 'Health management often involves medication'),
+      CategoryHealthMapping('WEIGHT', 0.7, 'Health tracking often includes weight'),
+      CategoryHealthMapping('STEPS', 0.6, 'General health often involves activity'),
       CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Health includes sleep tracking'),
       CategoryHealthMapping('WATER', 0.6, 'Health includes hydration'),
     ],
@@ -294,12 +325,37 @@ class HealthHabitMappingService {
       CategoryHealthMapping('STEPS', 0.6, 'Wellness includes activity'),
     ],
     'medical': [
-      CategoryHealthMapping('WEIGHT', 0.8, 'Medical tracking often includes weight'),
-      CategoryHealthMapping('STEPS', 0.7, 'Medical recovery involves movement'),
+      CategoryHealthMapping('MEDICATION', 0.9, 'Medical category primarily involves medication tracking'),
+      CategoryHealthMapping('WEIGHT', 0.7, 'Medical tracking often includes weight'),
+      CategoryHealthMapping('STEPS', 0.6, 'Medical recovery involves movement'),
     ],
     'recovery': [
       CategoryHealthMapping('STEPS', 0.8, 'Recovery involves gradual movement'),
       CategoryHealthMapping('SLEEP_IN_BED', 0.7, 'Recovery requires rest'),
+    ],
+    
+    // Medication and Treatment Categories
+    'medication': [
+      CategoryHealthMapping('MEDICATION', 0.95, 'Medication category directly maps to medication tracking'),
+    ],
+    'medicine': [
+      CategoryHealthMapping('MEDICATION', 0.95, 'Medicine category directly maps to medication tracking'),
+    ],
+    'pill': [
+      CategoryHealthMapping('MEDICATION', 0.9, 'Pill category maps to medication tracking'),
+    ],
+    'supplement': [
+      CategoryHealthMapping('MEDICATION', 0.85, 'Supplement category maps to medication tracking'),
+    ],
+    'vitamin': [
+      CategoryHealthMapping('MEDICATION', 0.85, 'Vitamin category maps to medication tracking'),
+    ],
+    'prescription': [
+      CategoryHealthMapping('MEDICATION', 0.9, 'Prescription category maps to medication tracking'),
+    ],
+    'treatment': [
+      CategoryHealthMapping('MEDICATION', 0.8, 'Treatment often involves medication'),
+      CategoryHealthMapping('WEIGHT', 0.5, 'Treatment may involve weight monitoring'),
     ],
     
     // Sleep and Rest Categories

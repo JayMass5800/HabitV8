@@ -165,6 +165,11 @@ class HealthHabitAnalyticsService {
         case 'WEIGHT':
           healthValue = (healthSummary['weight'] as num?)?.toDouble() ?? 0.0;
           break;
+        case 'MEDICATION':
+          // For medication, we can use a simple binary approach (1 if any medication data exists, 0 otherwise)
+          // This could be enhanced in the future to track actual medication adherence
+          healthValue = (healthSummary['medicationAdherence'] as num?)?.toDouble() ?? 1.0;
+          break;
       }
       
       // Simple correlation based on whether both values are above average
