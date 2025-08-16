@@ -46,8 +46,9 @@ class NotificationActionService {
           AppLogger.info('_handleCompleteAction completed for habit: $habitId');
           break;
         case 'snooze':
-          // Snooze is already handled in the notification service
-          AppLogger.info('Habit snoozed: $habitId');
+          AppLogger.info('Processing snooze action for habit: $habitId');
+          await _handleSnoozeAction(habitId);
+          AppLogger.info('Snooze action completed for habit: $habitId');
           break;
         default:
           AppLogger.warning('Unknown notification action: $action');
@@ -120,6 +121,46 @@ class NotificationActionService {
       );
     } catch (e, stackTrace) {
       AppLogger.error('Error in _handleCompleteAction for habit $habitId', e);
+      AppLogger.error('Stack trace: $stackTrace');
+    }
+  }
+  
+  /// Handle the snooze action
+  static Future<void> _handleSnoozeAction(String habitId) async {
+    try {
+      AppLogger.info('Starting snooze action for habit: $habitId');
+      
+      // Get the habit service from the provider to get habit details for better notification
+      final habitServiceAsync = _container!.read(habitServiceProvider);
+      
+      habitServiceAsync.when(
+        data: (habitService) async {
+          try {
+            // Get the habit for better notification content
+            final habit = await habitService.getHabitById(habitId);
+            if (habit != null) {
+              AppLogger.info('Found habit for snooze: ${habit.name}');
+              // The actual snooze scheduling is handled in the notification service
+              // This callback is just for any additional business logic if needed
+            } else {
+              AppLogger.warning('Habit not found for snooze: $habitId');
+            }
+          } catch (e, stackTrace) {
+            AppLogger.error('Error getting habit details for snooze', e);
+            AppLogger.error('Stack trace: $stackTrace');
+          }
+        },
+        loading: () {
+          AppLogger.info('Habit service loading for snooze...');
+        },
+        error: (error, stack) {
+          AppLogger.error('Error accessing habit service for snooze', error);
+        },
+      );
+      
+      AppLogger.info('✅ Snooze action processed for habit: $habitId');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error in _handleSnoozeAction for habit $habitId', e);
       AppLogger.error('Stack trace: $stackTrace');
     }
   }

@@ -421,9 +421,23 @@ class NotificationService {
       await cancelNotification(notificationId);
       AppLogger.info('❌ Cancelled current notification for habit: $habitId');
       
-      // For snooze from background, just log success and call callback
-      // Don't try to schedule new notification as it may fail due to context issues
-      AppLogger.info('😴 Snooze action processed - notification dismissed');
+      // Schedule a new notification for 30 minutes later
+      final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
+      AppLogger.info('⏰ Scheduling snoozed notification for: $snoozeTime');
+      
+      try {
+        await scheduleHabitNotification(
+          id: notificationId,
+          habitId: habitId,
+          title: 'Habit Reminder',
+          body: 'Time to complete your habit!',
+          scheduledTime: snoozeTime,
+        );
+        AppLogger.info('✅ Snoozed notification scheduled successfully for habit: $habitId');
+      } catch (scheduleError) {
+        AppLogger.error('❌ Failed to schedule snoozed notification for habit: $habitId', scheduleError);
+        // Still call the callback even if scheduling fails
+      }
       
       // Call the callback if set
       if (onNotificationAction != null) {
@@ -431,6 +445,7 @@ class NotificationService {
         AppLogger.info('📞 Snooze action callback executed for habit: $habitId');
       } else {
         AppLogger.warning('⚠️ No notification action callback set for snooze');
+        _storeActionForLaterProcessing(habitId, 'snooze');
       }
       
       AppLogger.info('✅ Snooze action completed for habit: $habitId');
