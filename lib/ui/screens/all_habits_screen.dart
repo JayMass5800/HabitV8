@@ -132,14 +132,6 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                 ),
               ),
               
-              // Health-Habit Integration Dashboard
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: CompactHealthHabitDashboard(
-                  onTap: () => context.push('/health-integration'),
-                ),
-              ),
-              
               // Current filters display
               if (_selectedCategory != 'All' || _selectedSort != 'Recent')
                 Padding(

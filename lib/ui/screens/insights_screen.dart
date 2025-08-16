@@ -228,12 +228,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     _buildQuickStatsGrid(habits),
                     const SizedBox(height: 16),
 
-                    // Health-Habit Integration Dashboard
-                    HealthHabitDashboardWidget(
-                      showFullDetails: true,
-                      onTap: () => context.push('/health-integration'),
-                    ),
-                    const SizedBox(height: 16),
+                    // Health-Habit Integration (embedded directly)
+                    if (_healthSummary != null) _buildHealthIntegrationSection(),
+                    if (_healthSummary != null) const SizedBox(height: 16),
 
                     // Recent Insights
                     _buildRecentInsightsCard(habits),
@@ -1099,6 +1096,181 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         ),
       );
     }
+  }
+
+  Widget _buildHealthIntegrationSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.health_and_safety,
+                  color: Colors.green,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Health Integration',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.auto_awesome, size: 14, color: Colors.green.shade700),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Active',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Health Analytics Overview
+            _buildHealthAnalyticsOverview(),
+            const SizedBox(height: 16),
+            
+            // Health-Habit Correlations
+            _buildHealthHabitCorrelations(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHealthAnalyticsOverview() {
+    final health = _healthSummary!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Today\'s Health Metrics',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildHealthMetricTile(
+                'Steps',
+                '${health['steps']}',
+                Icons.directions_walk,
+                Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildHealthMetricTile(
+                'Calories',
+                '${(health['activeCalories'] as double).round()}',
+                Icons.local_fire_department,
+                Colors.orange,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildHealthMetricTile(
+                'Sleep',
+                '${(health['sleepHours'] as double).toStringAsFixed(1)}h',
+                Icons.bedtime,
+                Colors.purple,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHealthMetricTile(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHealthHabitCorrelations() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Health-Habit Insights',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.insights, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Your health data is being used to automatically complete related habits and provide personalized insights.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Color _getCategoryColor(String category) {

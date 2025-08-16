@@ -186,7 +186,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   Widget _buildYearlyStats(List<Habit> habits) {
-    final hasEnoughData = _hasEnoughDataForPeriod(habits, 90);
+    final hasEnoughData = _hasEnoughDataForPeriod(habits, 60); // Changed from 90 to 60 days (2 months)
 
     if (!hasEnoughData) {
       return const Center(
@@ -201,7 +201,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             ),
             SizedBox(height: 8),
             Text(
-              'Build three months of habit data to unlock your yearly insights.',
+              'Build two months of habit data to unlock your yearly insights.',
               style: TextStyle(color: Colors.grey),
               textAlign: TextAlign.center,
             ),
