@@ -8,6 +8,8 @@ import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/health_enhanced_habit_creation_service.dart';
 import '../../services/health_habit_mapping_service.dart';
+import '../../services/category_suggestion_service.dart';
+import '../../services/comprehensive_habit_suggestions_service.dart';
 import '../../services/logging_service.dart';
 
 class CreateHabitScreen extends ConsumerStatefulWidget {
@@ -43,39 +45,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   List<HealthBasedHabitSuggestion> _healthSuggestions = [];
   bool _loadingSuggestions = false;
 
-  // Dynamic categories that include health-related ones from the mapping service
+  // Comprehensive categories from the category suggestion service
   List<String> get _categories {
-    final healthCategories = HealthHabitMappingService.getHealthRelatedCategories();
-    final standardCategories = [
-      'Productivity',
-      'Learning', 
-      'Personal',
-      'Social',
-      'Finance',
-      'Work',
-      'Education',
-      'Hobbies',
-      'Travel',
-      'Other',
-    ];
-    
-    // Combine and sort, with health categories first
-    final allCategories = <String>[];
-    
-    // Add health categories first (capitalize first letter)
-    for (final category in healthCategories) {
-      final capitalized = category[0].toUpperCase() + category.substring(1);
-      allCategories.add(capitalized);
-    }
-    
-    // Add standard categories
-    allCategories.addAll(standardCategories);
-    
-    // Remove duplicates and sort
-    final uniqueCategories = allCategories.toSet().toList();
-    uniqueCategories.sort();
-    
-    return uniqueCategories;
+    return CategorySuggestionService.getAllCategories();
   }
 
   final List<Color> _colors = [
@@ -1278,13 +1250,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     
     if (habitName.isEmpty) return [];
     
-    final suggestions = HealthHabitMappingService.getCategorySuggestions(
+    return CategorySuggestionService.getCategorySuggestions(
       habitName, 
       habitDescription.isEmpty ? null : habitDescription
     );
-    
-    // Capitalize suggestions to match our category format
-    return suggestions.map((s) => s[0].toUpperCase() + s.substring(1)).toList();
   }
 
   // Update category suggestions when text changes
