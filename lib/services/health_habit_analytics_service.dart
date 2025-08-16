@@ -245,6 +245,15 @@ class HealthHabitAnalyticsService {
           }
           break;
           
+        case 'MEDICATION':
+          final adherence = (healthSummary['medicationAdherence'] as num?)?.toDouble() ?? 1.0;
+          if (adherence >= threshold) {
+            insights.add('Your medication adherence is on track. Keep maintaining your routine.');
+          } else {
+            insights.add('Consider setting reminders to maintain consistent medication timing.');
+          }
+          break;
+          
         default:
           insights.add('Health data tracking is active for this habit.');
       }

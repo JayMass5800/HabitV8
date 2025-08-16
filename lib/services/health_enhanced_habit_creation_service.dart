@@ -515,6 +515,8 @@ class HealthEnhancedHabitCreationService {
         return 10;
       case 'WEIGHT':
         return 1; // Weekly tracking
+      case 'MEDICATION':
+        return 1; // Daily medication adherence
       default:
         return 1;
     }
