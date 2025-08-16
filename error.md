@@ -1,12 +1,51 @@
-The stats page needs to be updated to work with the new catagories for all sections ,weekly , monthly, yearly ... monthly and yearly need to have a two week and two month delay in showing data at first, they should display a message stating more data needs gathering before analysis will be visible so analysis will be more useful.
+Step-by-Step Plan for Application Improvement
 
+Phase 1: Stats Page Enhancement
+Update Stats Page Structure
+Modify stats page to work with new categories across all time periods (weekly, monthly, yearly)
+Implement data sufficiency checks for monthly and yearly views
+Add placeholder messages for insufficient data periods (2 weeks for monthly, 2 months for yearly)
+Create consistent category-based analytics across all time periods
 
-The insights pages need updating. Integrate the overview, analytics and insights from the health integration dashboard into the insights pages leave the settings and help sections where they are, update the layout and design it should be general habit focused but with full health data integrated too, however the health data should only show up when health data is activated. Remove the health integration link at the top of the all habits page.
+Phase 2: Insights Page Consolidation
+Integrate Health Dashboard Components
+Move overview, analytics, and insights from health integration dashboard into main insights pages
+Keep settings and help sections in their current locations
+Create unified insights layout that's habit-focused with integrated health data
+Implement conditional health data display (only when health data is activated)
+Remove health integration link from all habits page header
 
+Phase 3: Habit Creation & Editing Consistency
+Expand Category Suggestions
 
-lets expand the suggested category feature on the habit creation page to cover all habit types not just health types. and update the habit edit screen to be a match to the creation screen for consistency and ease of use.
+Extend suggested category feature to cover all habit types (not just health)
+Create comprehensive category suggestion system for all habit categories
+Update habit edit screen to match creation screen layout and functionality
+Ensure consistent UI/UX between creation and editing flows
+Improve Habit Suggestions
 
-Let's change the health based habit suggestions on the habit creation page to be a drop down section that suggests habits of all types and when health data is activated includes health related habits .
+Convert health-based habit suggestions to dropdown section
+Include suggestions for all habit types
+Conditionally show health-related habits when health data is activated
+Create more comprehensive and contextual habit suggestions
+
+Phase 4: UI/UX Consistency & Flow
+Design Consistency
+
+Standardize layouts across all screens
+Implement consistent navigation patterns
+Ensure uniform styling and component usage
+Create smooth transitions between sections
+Data Flow Optimization
+
+Reduce scattered data presentation
+Create logical information hierarchy
+Implement progressive disclosure for complex features
+Ensure data consistency across all views
+Implementation Priority:
+High Priority: Stats page updates and insights consolidation (core user experience)
+Medium Priority: Habit creation/editing consistency (user workflow improvement)
+Lower Priority: UI polish and advanced suggestions (enhancement features)
 
 
 the snooze notification button doesnt seem to actualy work, it closes the notification but never sends a reminder, here are he flutter logs from pressing it, it looks like its working so perhaps its the notification scheduling thats at fault for this button?

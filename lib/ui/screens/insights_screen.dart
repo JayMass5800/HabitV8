@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/trend_analysis_service.dart';
-import '../../services/smart_recommendations_service.dart';
+
 import '../../services/achievements_service.dart';
 import '../../services/health_service.dart';
 import '../../services/logging_service.dart';
@@ -21,7 +21,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   Map<String, dynamic>? _trendAnalysis;
-  List<HabitRecommendation>? _recommendations;
   Map<String, dynamic>? _gamificationStats;
   Map<String, dynamic>? _healthSummary;
   bool _isLoading = true;
@@ -29,7 +28,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadAllData();
   }
 
@@ -76,12 +75,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             completions: allCompletions,
           );
 
-          // Load smart recommendations
-          _recommendations = await SmartRecommendationsService.generateRecommendations(
-            existingHabits: habitsData,
-            userPreferences: {'preferredTimeSlot': 'morning'},
-            healthData: _healthSummary,
-          );
+
 
           // Load gamification stats
           _gamificationStats = await AchievementsService.getGamificationStats(
@@ -161,7 +155,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             Tab(text: 'Overview'),
             Tab(text: 'Trends'),
             Tab(text: 'Achievements'),
-            Tab(text: 'Recommendations'),
           ],
         ),
       ),
@@ -173,7 +166,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 _buildOverviewTab(),
                 _buildTrendsTab(),
                 _buildAchievementsTab(),
-                _buildRecommendationsTab(),
               ],
             ),
     );
@@ -833,270 +825,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-  Widget _buildRecommendationsTab() {
-    if (_recommendations == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
 
-    if (_recommendations!.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.lightbulb_outline, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            const Text(
-              'No new recommendations',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            FutureBuilder<int>(
-              future: SmartRecommendationsService.getDaysUntilRefresh(),
-              builder: (context, snapshot) {
-                final daysUntilRefresh = snapshot.data ?? 0;
-                return Text(
-                  daysUntilRefresh > 0
-                      ? 'You\'ve used all available recommendations!\nNew ones will appear in $daysUntilRefresh day${daysUntilRefresh == 1 ? '' : 's'}, or you can refresh now.'
-                      : 'You\'ve used all available recommendations!\nNew ones are ready, or you can refresh now.',
-                  style: const TextStyle(color: Colors.grey),
-                  textAlign: TextAlign.center,
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _refreshRecommendations,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Refresh Recommendations'),
-            ),
-          ],
-        ),
-      );
-    }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Contextual Suggestions
-          Consumer(
-            builder: (context, ref, child) {
-              final habitServiceAsync = ref.watch(habitServiceProvider);
-              return habitServiceAsync.when(
-                data: (habitService) => FutureBuilder<List<Habit>>(
-                  future: habitService.getAllHabits(),
-                  builder: (context, habitSnapshot) {
-                    final habits = habitSnapshot.data ?? [];
-                    final habitsData = habits.map((h) => {
-                      'id': h.id,
-                      'name': h.name,
-                      'category': h.category,
-                      'currentStreak': h.currentStreak,
-                      'completionRate': h.completionRate,
-                      'reminderTime': h.reminderTime?.toString(),
-                      'difficulty': h.difficulty.name,
-                    }).toList();
-
-                    return FutureBuilder<List<HabitRecommendation>>(
-                      future: Future.value(SmartRecommendationsService.getContextualSuggestions(
-                        currentTime: DateTime.now(),
-                        existingHabits: habitsData,
-                      )),
-                      builder: (context, contextSnapshot) {
-                        final contextualSuggestions = contextSnapshot.data ?? [];
-
-                        if (contextualSuggestions.isNotEmpty) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Perfect Time Suggestions',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: 8),
-                              ...contextualSuggestions.map((suggestion) => Card(
-                                color: Theme.of(context).colorScheme.primaryContainer,
-                                child: ListTile(
-                                  leading: Icon(
-                                    Icons.access_time,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                  title: Text(
-                                    suggestion.title,
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    suggestion.description,
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-                                    ),
-                                  ),
-                                  trailing: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        suggestion.suggestedTime,
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${suggestion.estimatedDuration} min',
-                                        style: TextStyle(
-                                          color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )),
-                              const SizedBox(height: 16),
-                            ],
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    );
-                  },
-                ),
-                loading: () => const SizedBox.shrink(),
-                error: (error, stack) => const SizedBox.shrink(),
-              );
-            },
-          ),
-
-          // Main Recommendations
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Personalized Recommendations',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              TextButton.icon(
-                onPressed: _refreshRecommendations,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Refresh'),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ..._recommendations!.map((recommendation) => Card(
-            child: ExpansionTile(
-              leading: CircleAvatar(
-                backgroundColor: _getCategoryColor(recommendation.category),
-                child: Icon(
-                  _getCategoryIcon(recommendation.category),
-                  color: Colors.white,
-                ),
-              ),
-              title: Text(recommendation.title),
-              subtitle: Text(recommendation.category),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(_getDifficultyIcon(recommendation.difficulty)),
-                  Text('Priority: ${recommendation.priority}'),
-                ],
-              ),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        recommendation.description,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Why: ${recommendation.reason}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Duration: ${recommendation.estimatedDuration} min'),
-                          Text('Best time: ${recommendation.suggestedTime}'),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => _createHabitFromRecommendation(recommendation),
-                          child: const Text('Create This Habit'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          )),
-        ],
-      ),
-    );
-  }
-
-  void _createHabitFromRecommendation(HabitRecommendation recommendation) async {
-    // Mark recommendation as used
-    await SmartRecommendationsService.markRecommendationAsUsed(recommendation);
-    
-    // Navigate to create habit screen with pre-filled data using GoRouter
-    if (mounted) {
-      final result = await context.push('/create-habit', extra: {
-        'name': recommendation.title,
-        'description': recommendation.description,
-        'category': recommendation.category,
-        'difficulty': recommendation.difficulty,
-        'suggestedTime': recommendation.suggestedTime,
-        'estimatedDuration': recommendation.estimatedDuration,
-        'recommendationId': SmartRecommendationsService.getRecommendationId(recommendation),
-      });
-      
-      // Refresh recommendations when returning from create habit screen
-      if (result == true || result == null) {
-        _loadAllData();
-      }
-    }
-  }
-
-  Future<void> _refreshRecommendations() async {
-    // Manually refresh recommendations
-    await SmartRecommendationsService.refreshRecommendations();
-    
-    // Show loading indicator
-    setState(() => _isLoading = true);
-    
-    // Reload all data
-    await _loadAllData();
-    
-    // Show success message
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Recommendations refreshed!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
-  }
 
   Widget _buildHealthIntegrationSection() {
     return Card(

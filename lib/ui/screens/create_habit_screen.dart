@@ -42,8 +42,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   String? _selectedHealthDataType;
   double? _customThreshold;
   String _thresholdLevel = 'moderate';
-  List<HealthBasedHabitSuggestion> _healthSuggestions = [];
+  List<HabitSuggestion> _habitSuggestions = [];
   bool _loadingSuggestions = false;
+  bool _showSuggestions = false;
 
   // Comprehensive categories from the category suggestion service
   List<String> get _categories {
