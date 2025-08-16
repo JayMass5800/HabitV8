@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/trend_analysis_service.dart';
-
 import '../../services/achievements_service.dart';
 import '../../services/health_service.dart';
 import '../../services/logging_service.dart';
-import '../widgets/health_habit_dashboard_widget.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
   const InsightsScreen({super.key});
@@ -1003,58 +1000,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-  Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'health':
-        return Colors.red;
-      case 'fitness':
-        return Colors.orange;
-      case 'mental health':
-        return Colors.purple;
-      case 'learning':
-        return Colors.blue;
-      case 'social':
-        return Colors.green;
-      case 'personal development':
-        return Colors.indigo;
-      default:
-        return Colors.grey;
-    }
-  }
 
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'health':
-        return Icons.favorite;
-      case 'fitness':
-        return Icons.fitness_center;
-      case 'mental health':
-        return Icons.psychology;
-      case 'learning':
-        return Icons.school;
-      case 'social':
-        return Icons.people;
-      case 'personal development':
-        return Icons.self_improvement;
-      default:
-        return Icons.category;
-    }
-  }
-
-  IconData _getDifficultyIcon(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'very easy':
-        return Icons.sentiment_very_satisfied;
-      case 'easy':
-        return Icons.sentiment_satisfied;
-      case 'medium':
-        return Icons.sentiment_neutral;
-      case 'hard':
-        return Icons.sentiment_dissatisfied;
-      default:
-        return Icons.help;
-    }
-  }
 
   IconData _getTrendIcon(String direction) {
     switch (direction.toLowerCase()) {

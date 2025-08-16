@@ -68,7 +68,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   void initState() {
     super.initState();
     _initializeFromPrefilledData();
-    _loadHealthSuggestions();
+    _loadHabitSuggestions();
     
     // Add listeners to text controllers for category suggestions
     _nameController.addListener(_onHabitTextChanged);
@@ -242,8 +242,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             _buildBasicInfoSection(),
             const SizedBox(height: 24),
             // Health suggestions section
-            if (_healthSuggestions.isNotEmpty) ...[
-              _buildHealthSuggestionsSection(),
+            if (_habitSuggestions.isNotEmpty) ...[
+              _buildHabitSuggestionsDropdown(),
               const SizedBox(height: 24),
             ],
             _buildFrequencySection(),
@@ -1220,22 +1220,22 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     }
   }
 
-  /// Load health-based habit suggestions
-  Future<void> _loadHealthSuggestions() async {
+  /// Load comprehensive habit suggestions
+  Future<void> _loadHabitSuggestions() async {
     setState(() {
       _loadingSuggestions = true;
     });
 
     try {
-      final suggestions = await HealthEnhancedHabitCreationService.generateHealthBasedSuggestions();
+      final suggestions = await ComprehensiveHabitSuggestionsService.generateSuggestions();
       if (mounted) {
         setState(() {
-          _healthSuggestions = suggestions;
+          _habitSuggestions = suggestions;
           _loadingSuggestions = false;
         });
       }
     } catch (e) {
-      AppLogger.error('Error loading health suggestions', e);
+      AppLogger.error('Error loading habit suggestions', e);
       if (mounted) {
         setState(() {
           _loadingSuggestions = false;
@@ -1264,8 +1264,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     });
   }
 
-  /// Build health suggestions section
-  Widget _buildHealthSuggestionsSection() {
+  /// Build comprehensive habit suggestions dropdown
+  Widget _buildHabitSuggestionsDropdown() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1275,36 +1275,106 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             Row(
               children: [
                 Icon(
-                  Icons.health_and_safety,
+                  Icons.lightbulb,
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Health-Based Suggestions',
+                  'Habit Suggestions',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showSuggestions = !_showSuggestions;
+                    });
+                  },
+                  icon: Icon(
+                    _showSuggestions ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                  ),
+                  label: Text(_showSuggestions ? 'Hide' : 'Show'),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
-              'Based on your health data, here are some personalized habit suggestions:',
+              'Get inspired with personalized habit suggestions based on popular categories and your health data.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.grey[600],
               ),
             ),
-            const SizedBox(height: 16),
-            ...(_healthSuggestions.take(3).map((suggestion) => Padding(
+            if (_showSuggestions) ...[
+              const SizedBox(height: 16),
+              _buildSuggestionsGrid(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsGrid() {
+    if (_loadingSuggestions) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Group suggestions by type
+    final groupedSuggestions = <String, List<HabitSuggestion>>{};
+    for (final suggestion in _habitSuggestions) {
+      groupedSuggestions.putIfAbsent(suggestion.type, () => []).add(suggestion);
+    }
+
+    return Column(
+      children: groupedSuggestions.entries.map((entry) {
+        final type = entry.key;
+        final suggestions = entry.value.take(3).toList(); // Show max 3 per category
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    _getTypeIcon(type),
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    type,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ...suggestions.map((suggestion) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Card(
                 elevation: 1,
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    backgroundColor: suggestion.isHealthBased 
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Theme.of(context).colorScheme.primaryContainer,
                     child: Icon(
-                      _getHealthDataTypeIcon(suggestion.healthDataType),
-                      color: Theme.of(context).colorScheme.primary,
+                      _getIconData(suggestion.icon),
+                      color: suggestion.isHealthBased 
+                          ? Colors.green
+                          : Theme.of(context).colorScheme.primary,
                       size: 20,
                     ),
                   ),
@@ -1317,16 +1387,39 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  trailing: TextButton(
-                    onPressed: () => _applySuggestion(suggestion),
-                    child: const Text('Apply'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (suggestion.isHealthBased)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Health',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () => _applySuggestion(suggestion),
+                        child: const Text('Apply'),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ))),
+            )),
+            const SizedBox(height: 8),
           ],
-        ),
-      ),
+        );
+      }).toList(),
     );
   }
 
@@ -1350,17 +1443,109 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     }
   }
 
-  /// Apply a health-based suggestion to the form
-  void _applySuggestion(HealthBasedHabitSuggestion suggestion) {
+  /// Get icon for suggestion type
+  IconData _getTypeIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'health':
+        return Icons.health_and_safety;
+      case 'productivity':
+        return Icons.work;
+      case 'learning':
+        return Icons.school;
+      case 'personal':
+        return Icons.self_improvement;
+      case 'social':
+        return Icons.people;
+      case 'finance':
+        return Icons.account_balance_wallet;
+      case 'lifestyle':
+        return Icons.home;
+      case 'hobbies':
+        return Icons.palette;
+      default:
+        return Icons.category;
+    }
+  }
+
+  /// Get IconData from string
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'checklist':
+        return Icons.checklist;
+      case 'email':
+        return Icons.email;
+      case 'psychology':
+        return Icons.psychology;
+      case 'menu_book':
+        return Icons.menu_book;
+      case 'translate':
+        return Icons.translate;
+      case 'school':
+        return Icons.school;
+      case 'favorite':
+        return Icons.favorite;
+      case 'self_improvement':
+        return Icons.self_improvement;
+      case 'lightbulb':
+        return Icons.lightbulb;
+      case 'phone':
+        return Icons.phone;
+      case 'message':
+        return Icons.message;
+      case 'people':
+        return Icons.people;
+      case 'account_balance_wallet':
+        return Icons.account_balance_wallet;
+      case 'trending_up':
+        return Icons.trending_up;
+      case 'savings':
+        return Icons.savings;
+      case 'bed':
+        return Icons.bed;
+      case 'home':
+        return Icons.home;
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'palette':
+        return Icons.palette;
+      case 'music_note':
+        return Icons.music_note;
+      case 'camera_alt':
+        return Icons.camera_alt;
+      case 'directions_walk':
+        return Icons.directions_walk;
+      case 'local_fire_department':
+        return Icons.local_fire_department;
+      case 'bedtime':
+        return Icons.bedtime;
+      case 'water_drop':
+        return Icons.water_drop;
+      case 'monitor_weight':
+        return Icons.monitor_weight;
+      case 'medication':
+        return Icons.medication;
+      case 'health_and_safety':
+        return Icons.health_and_safety;
+      default:
+        return Icons.star;
+    }
+  }
+
+  /// Apply a habit suggestion to the form
+  void _applySuggestion(HabitSuggestion suggestion) {
     setState(() {
       _nameController.text = suggestion.name;
       _descriptionController.text = suggestion.description;
       _selectedCategory = suggestion.category;
       _selectedFrequency = suggestion.frequency;
-      _enableHealthIntegration = true;
-      _selectedHealthDataType = suggestion.healthDataType;
-      _customThreshold = suggestion.suggestedThreshold;
-      _thresholdLevel = 'custom';
+      
+      // Enable health integration if it's a health-based suggestion
+      if (suggestion.isHealthBased) {
+        _enableHealthIntegration = true;
+        _selectedHealthDataType = suggestion.healthDataType;
+        _customThreshold = suggestion.suggestedThreshold;
+        _thresholdLevel = 'custom';
+      }
     });
 
     // Show success message
