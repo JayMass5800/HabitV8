@@ -20,7 +20,7 @@
 - [ ] **TODO**: Modify stats page to work with new categories across all time periods (weekly, monthly, yearly)
 - [ ] **TODO**: Implement data sufficiency checks for monthly and yearly views
 - [ ] **TODO**: Add placeholder messages for insufficient data periods (2 weeks for monthly, 2 months for yearly)
-- [ ] **TODO**: Create consistent category-based analytics across all time periods
+- [ ] **TODO**: Create or modify consistent category-based analytics across all time periods
 
 **Status**: ⏳ **NOT STARTED**
 
@@ -48,8 +48,6 @@
 - [ ] **TODO**: Ensure consistent UI/UX between creation and editing flows
 
 ### Improve Habit Suggestions
-- [ ] **TODO**: Convert health-based habit suggestions to dropdown section
-- [ ] **TODO**: Include suggestions for all habit types
 - [ ] **TODO**: Conditionally show health-related habits when health data is activated
 - [ ] **TODO**: Create more comprehensive and contextual habit suggestions
 
