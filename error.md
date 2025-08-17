@@ -33,16 +33,19 @@
 
 ---
 
-## Phase 2: Insights Page Consolidation ⏳ **PENDING**
+## Phase 2: Insights Page Consolidation ⏳ **IN PROGRESS**
 
 ### Integrate Health Dashboard Components
-- [ ] **TODO**: Move overview, analytics, and insights from health integration dashboard into main insights pages
+- [x] **COMPLETED**: Move overview, analytics, and insights from health integration dashboard into main insights pages
+  - **Details**: `insights_screen.dart` now embeds health summary, enhanced integration section, and detailed health analytics when permissions are granted
+- [x] **COMPLETED**: Implement conditional health data display (only when health data is activated)
+  - **Details**: Health cards and analytics render only if `HealthService.hasPermissions()` is true
 - [ ] **TODO**: Keep settings and help sections in their current locations
-- [ ] **TODO**: Create unified insights layout that's habit-focused with integrated health data
-- [ ] **TODO**: Implement conditional health data display (only when health data is activated)
-- [ ] **TODO**: Remove health integration link from all habits page header
+- [x] **COMPLETED**: Create unified insights layout that's habit-focused with integrated health data
+  - **Details**: Overview tab now prioritizes quick nav, habit stats, and recent insights, followed by conditional health sections
+- [x] **TODO**: Remove health integration link from all habits page header (verify and remove if present)
 
-**Status**: ⏳ **NOT STARTED**
+**Status**: ⏳ **PARTIALLY COMPLETE**
 
 ---
 

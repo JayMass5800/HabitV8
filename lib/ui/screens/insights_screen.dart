@@ -218,28 +218,50 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Gamification Stats Card
-                    if (_gamificationStats != null) _buildGamificationCard(),
+                    // Quick Navigation to deep insights
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => setState(() => _tabController.index = 1),
+                            icon: const Icon(Icons.trending_up, size: 18),
+                            label: const Text('Trends'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => setState(() => _tabController.index = 2),
+                            icon: const Icon(Icons.emoji_events, size: 18),
+                            label: const Text('Achievements'),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
 
-                    // Health Summary Card
-                    if (_healthSummary != null) _buildHealthCard(),
-                    if (_healthSummary != null) const SizedBox(height: 16),
-
-                    // Quick Stats Grid
+                    // Quick Stats Grid (habit-first)
                     _buildQuickStatsGrid(habits),
                     const SizedBox(height: 16),
 
-                    // Enhanced Health-Habit Integration (embedded directly)
+                    // Recent Insights (habit-focused)
+                    _buildRecentInsightsCard(habits),
+                    const SizedBox(height: 16),
+
+                    // Health Summary Card (conditional)
+                    if (_healthSummary != null) _buildHealthCard(),
+                    if (_healthSummary != null) const SizedBox(height: 16),
+
+                    // Enhanced Health-Habit Integration (conditional)
                     if (_healthSummary != null) _buildEnhancedHealthIntegrationSection(),
                     if (_healthSummary != null) const SizedBox(height: 16),
 
-                    // Health Analytics & Insights (moved from health integration dashboard)
+                    // Health Analytics & Insights (conditional)
                     if (_healthAnalytics != null && !_healthAnalytics!.hasError) _buildHealthAnalyticsSection(),
                     if (_healthAnalytics != null && !_healthAnalytics!.hasError) const SizedBox(height: 16),
 
-                    // Recent Insights
-                    _buildRecentInsightsCard(habits),
+                    // Gamification Stats Card (supporting)
+                    if (_gamificationStats != null) _buildGamificationCard(),
                   ],
                 ),
               );
