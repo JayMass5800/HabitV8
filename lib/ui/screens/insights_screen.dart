@@ -31,8 +31,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   @override
   void initState() {
     super.initState();
-    // Only one tab (Overview) remains after removing Trends and Achievements
-    _tabController = TabController(length: 1, vsync: this);
+    // Restore all three tabs: Overview, Trends, and Achievements
+    _tabController = TabController(length: 3, vsync: this);
     _loadAllData();
   }
 
@@ -164,11 +164,13 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Insights'),
-        // Single-tab layout: only Overview remains
+        // Three-tab layout: Overview, Trends, and Achievements
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
             Tab(text: 'Overview'),
+            Tab(text: 'Trends'),
+            Tab(text: 'Achievements'),
           ],
         ),
       ),
@@ -178,6 +180,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               controller: _tabController,
               children: [
                 _buildOverviewTab(),
+                _buildTrendsTab(),
+                _buildAchievementsTab(),
               ],
             ),
     );
