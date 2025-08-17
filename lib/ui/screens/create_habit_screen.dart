@@ -1182,6 +1182,18 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
       await habitService.addHabit(habit);
 
+      // Analyze habit for health mapping after creation
+      try {
+        final healthMapping = await HealthHabitMappingService.analyzeHabitForHealthMapping(habit);
+        if (healthMapping != null) {
+          // Log successful health mapping analysis
+          // Health mapping found for habit: ${habit.name} -> ${healthMapping.healthDataType}
+        }
+      } catch (e) {
+        // Log health mapping analysis error but don't fail the creation operation
+        // Error analyzing habit for health mapping: $e
+      }
+
       // Schedule notifications if enabled
       if (_notificationsEnabled) {
         await NotificationService.scheduleHabitNotifications(habit);

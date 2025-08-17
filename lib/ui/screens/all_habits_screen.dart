@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/logging_service.dart';
-import '../widgets/health_habit_dashboard_widget.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/create_habit_fab.dart';
