@@ -5,6 +5,8 @@ import '../../domain/model/habit.dart';
 import '../../services/trend_analysis_service.dart';
 import '../../services/achievements_service.dart';
 import '../../services/health_service.dart';
+import '../../services/health_habit_analytics_service.dart';
+import '../../services/health_habit_integration_service.dart';
 import '../../services/logging_service.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
@@ -20,6 +22,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   Map<String, dynamic>? _trendAnalysis;
   Map<String, dynamic>? _gamificationStats;
   Map<String, dynamic>? _healthSummary;
+  HealthHabitAnalyticsReport? _healthAnalytics;
+  Map<String, dynamic>? _integrationStatus;
   bool _isLoading = true;
 
   @override
@@ -94,6 +98,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           try {
             if (await HealthService.hasPermissions()) {
               _healthSummary = await HealthService.getTodayHealthSummary();
+              
+              // Load comprehensive health analytics
+              _healthAnalytics = await HealthHabitAnalyticsService.generateDetailedReport(
+                habits: habitsData,
+                completions: allCompletions,
+              );
+              
+              // Load integration status
+              _integrationStatus = await HealthHabitIntegrationService.getIntegrationStatus();
             }
           } catch (e) {
             // Handle health service error quietly
@@ -217,9 +230,13 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     _buildQuickStatsGrid(habits),
                     const SizedBox(height: 16),
 
-                    // Health-Habit Integration (embedded directly)
-                    if (_healthSummary != null) _buildHealthIntegrationSection(),
+                    // Enhanced Health-Habit Integration (embedded directly)
+                    if (_healthSummary != null) _buildEnhancedHealthIntegrationSection(),
                     if (_healthSummary != null) const SizedBox(height: 16),
+
+                    // Health Analytics & Insights (moved from health integration dashboard)
+                    if (_healthAnalytics != null && !_healthAnalytics!.hasError) _buildHealthAnalyticsSection(),
+                    if (_healthAnalytics != null && !_healthAnalytics!.hasError) const SizedBox(height: 16),
 
                     // Recent Insights
                     _buildRecentInsightsCard(habits),
@@ -825,7 +842,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
 
 
-  Widget _buildHealthIntegrationSection() {
+  Widget _buildEnhancedHealthIntegrationSection() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1000,7 +1017,294 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
+  /// Enhanced Health Analytics Section (moved from health integration dashboard)
+  Widget _buildHealthAnalyticsSection() {
+    final report = _healthAnalytics!;
+    
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.analytics, color: Colors.blue, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Health Analytics & Insights',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Overall Health-Habit Score
+            _buildHealthScoreCard(report),
+            const SizedBox(height: 16),
+            
+            // Predictive Insights
+            if (report.predictiveInsights.isNotEmpty) ...[
+              _buildPredictiveInsightsCard(report.predictiveInsights),
+              const SizedBox(height: 16),
+            ],
+            
+            // Recommendations
+            if (report.recommendations.isNotEmpty) ...[
+              _buildRecommendationsCard(report.recommendations),
+              const SizedBox(height: 16),
+            ],
+            
+            // Integration Status Overview
+            if (_integrationStatus != null) _buildIntegrationStatusOverview(),
+          ],
+        ),
+      ),
+    );
+  }
 
+  Widget _buildHealthScoreCard(HealthHabitAnalyticsReport report) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            report.overallScore >= 75 ? Colors.green.shade50 : 
+            report.overallScore >= 50 ? Colors.orange.shade50 : Colors.red.shade50,
+            Colors.white,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: report.overallScore >= 75 ? Colors.green.withValues(alpha: 0.3) : 
+                 report.overallScore >= 50 ? Colors.orange.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.health_and_safety,
+                color: report.overallScore >= 75 ? Colors.green : 
+                       report.overallScore >= 50 ? Colors.orange : Colors.red,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Overall Health-Habit Score',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: LinearProgressIndicator(
+                  value: report.overallScore / 100,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    report.overallScore >= 75 ? Colors.green :
+                    report.overallScore >= 50 ? Colors.orange : Colors.red,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${report.overallScore.round()}/100',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: report.overallScore >= 75 ? Colors.green :
+                         report.overallScore >= 50 ? Colors.orange : Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPredictiveInsightsCard(List<String> insights) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.purple.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.psychology, color: Colors.purple, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Predictive Insights',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.purple.shade700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...insights.take(3).map((insight) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.lightbulb, size: 16, color: Colors.orange),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    insight,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecommendationsCard(List<String> recommendations) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.tune, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Recommendations',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...recommendations.take(3).map((rec) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.trending_up, size: 16, color: Colors.blue),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    rec,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIntegrationStatusOverview() {
+    final status = _integrationStatus!;
+    final mappedHabits = status['healthMappedHabits'] ?? 0;
+    final totalHabits = status['totalHabits'] ?? 0;
+    final mappingPercentage = status['mappingPercentage'] ?? 0;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.link, color: Colors.green, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Integration Status',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green.shade700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatusMetric('Mapped Habits', '$mappedHabits/$totalHabits', Icons.link),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatusMetric('Auto-Complete', '$mappingPercentage%', Icons.auto_awesome),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusMetric(String label, String value, IconData icon) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: Colors.green.shade600),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.green.shade600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.green.shade700,
+          ),
+        ),
+      ],
+    );
+  }
 
   IconData _getTrendIcon(String direction) {
     switch (direction.toLowerCase()) {
