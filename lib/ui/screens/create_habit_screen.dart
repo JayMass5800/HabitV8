@@ -365,7 +365,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   }
 
   Widget _buildFrequencySection() {
-    print('DEBUG: Building frequency section, current frequency: $_selectedFrequency'); // Debug print
+    AppLogger.debug('Building frequency section, current frequency: $_selectedFrequency');
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -383,13 +383,13 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               spacing: 8,
               runSpacing: 8,
               children: HabitFrequency.values.map((frequency) {
-                print('DEBUG: Creating choice chip for frequency: $frequency'); // Debug print
+                AppLogger.debug('Creating choice chip for frequency: $frequency');
                 return ChoiceChip(
                   label: Text(_getFrequencyDisplayName(frequency)),
                   selected: _selectedFrequency == frequency,
                   onSelected: (selected) {
                     if (selected) {
-                      print('DEBUG: Selected frequency: $frequency'); // Debug print
+                      AppLogger.debug('Selected frequency: $frequency');
                       setState(() {
                         _selectedFrequency = frequency;
                         _selectedWeekdays.clear();
@@ -1150,48 +1150,80 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         );
       }
       
-      final habit = Habit.create(
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        category: _selectedCategory,
-        colorValue: _selectedColor.toARGB32(), // Fixed: Use toARGB32() to get ARGB int
-        frequency: _selectedFrequency,
-        targetCount: 1, // Default to 1 since we removed the UI
-        notificationsEnabled: _notificationsEnabled,
-        notificationTime: notificationDateTime,
-        // Add frequency-specific data for notification scheduling
-        selectedWeekdays: _selectedWeekdays,
-        selectedMonthDays: _selectedMonthDays,
-        hourlyTimes: _hourlyTimes.map((time) => '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}').toList(),
-        selectedYearlyDates: _selectedYearlyDates.map((date) => '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}').toList(),
-      );
+      // Create habit - use health-integrated creation if health integration is enabled
+      final Habit habit;
+      if (_enableHealthIntegration && _selectedHealthDataType != null) {
+        // Create health-integrated habit with custom threshold and level
+        final baseHabit = await HealthEnhancedHabitCreationService.createHealthIntegratedHabit(
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          frequency: _selectedFrequency,
+          category: _selectedCategory,
+          healthDataType: _selectedHealthDataType,
+          customThreshold: _customThreshold,
+          thresholdLevel: _thresholdLevel,
+        );
+        
+        // Update with UI-specific properties
+        baseHabit.colorValue = _selectedColor.toARGB32();
+        baseHabit.targetCount = 1;
+        baseHabit.notificationsEnabled = _notificationsEnabled;
+        baseHabit.notificationTime = notificationDateTime;
+        baseHabit.selectedWeekdays = _selectedWeekdays;
+        baseHabit.selectedMonthDays = _selectedMonthDays;
+        baseHabit.hourlyTimes = _hourlyTimes.map((time) => '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}').toList();
+        baseHabit.selectedYearlyDates = _selectedYearlyDates.map((date) => '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}').toList();
+        
+        habit = baseHabit;
+      } else {
+        // Create regular habit
+        habit = Habit.create(
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          category: _selectedCategory,
+          colorValue: _selectedColor.toARGB32(),
+          frequency: _selectedFrequency,
+          targetCount: 1,
+          notificationsEnabled: _notificationsEnabled,
+          notificationTime: notificationDateTime,
+          selectedWeekdays: _selectedWeekdays,
+          selectedMonthDays: _selectedMonthDays,
+          hourlyTimes: _hourlyTimes.map((time) => '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}').toList(),
+          selectedYearlyDates: _selectedYearlyDates.map((date) => '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}').toList(),
+        );
+      }
 
       // Get HabitService instead of direct database access
       final habitServiceAsync = ref.read(habitServiceProvider);
       final habitService = habitServiceAsync.value;
       
       if (habitService == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Habit service not available'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Habit service not available'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
 
       await habitService.addHabit(habit);
 
-      // Analyze habit for health mapping after creation
-      try {
-        final healthMapping = await HealthHabitMappingService.analyzeHabitForHealthMapping(habit);
-        if (healthMapping != null) {
-          // Log successful health mapping analysis
-          // Health mapping found for habit: ${habit.name} -> ${healthMapping.healthDataType}
+      // Log health integration status and analyze for additional mappings
+      if (_enableHealthIntegration && _selectedHealthDataType != null) {
+        AppLogger.info('Health-integrated habit created: ${habit.name} -> $_selectedHealthDataType (threshold: $_customThreshold, level: $_thresholdLevel)');
+      } else {
+        // Analyze habit for automatic health mapping
+        try {
+          final healthMapping = await HealthHabitMappingService.analyzeHabitForHealthMapping(habit);
+          if (healthMapping != null) {
+            AppLogger.info('Automatic health mapping found for habit: ${habit.name} -> ${healthMapping.healthDataType}');
+          }
+        } catch (e) {
+          AppLogger.warning('Error analyzing habit for health mapping: ${habit.name} - $e');
         }
-      } catch (e) {
-        // Log health mapping analysis error but don't fail the creation operation
-        // Error analyzing habit for health mapping: $e
       }
 
       // Schedule notifications if enabled
@@ -1201,7 +1233,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
       // Log the habit creation
       if (mounted) {
-        print('Habit created: ${habit.name}'); // Using print instead of LoggingService for now
+        AppLogger.info('Habit created: ${habit.name}');
       }
 
       // Show success message
@@ -1218,7 +1250,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       }
     } catch (e) {
       if (mounted) {
-        print('Failed to create habit: $e'); // Using print instead of LoggingService for now
+        AppLogger.error('Failed to create habit', e);
       }
       
       if (mounted) {
@@ -1433,26 +1465,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         );
       }).toList(),
     );
-  }
-
-  /// Get icon for health data type
-  IconData _getHealthDataTypeIcon(String? healthDataType) {
-    switch (healthDataType) {
-      case 'STEPS':
-        return Icons.directions_walk;
-      case 'ACTIVE_ENERGY_BURNED':
-        return Icons.local_fire_department;
-      case 'SLEEP_IN_BED':
-        return Icons.bedtime;
-      case 'WATER':
-        return Icons.water_drop;
-      case 'MINDFULNESS':
-        return Icons.self_improvement;
-      case 'WEIGHT':
-        return Icons.monitor_weight;
-      default:
-        return Icons.health_and_safety;
-    }
   }
 
   /// Get icon for suggestion type
