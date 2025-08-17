@@ -8,7 +8,6 @@ import '../../services/health_service.dart';
 import '../../services/health_habit_analytics_service.dart';
 import '../../services/health_habit_integration_service.dart';
 import '../../services/logging_service.dart';
-import '../widgets/smooth_transitions.dart';
 import '../widgets/progressive_disclosure.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
@@ -224,7 +223,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
+                    // Motivational Header
+                    _buildMotivationalHeader('Your Insights Dashboard',
+                        'Discover patterns and unlock your potential! 🚀'),
+                    const SizedBox(height: 24),
 
                     // Quick Stats Grid (habit-first)
                     _buildQuickStatsGrid(habits),
@@ -259,6 +261,42 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMotivationalHeader(String title, String subtitle) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade400, Colors.purple.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -598,6 +636,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Motivational Header
+          _buildMotivationalHeader('Trend Analysis',
+              'Spot patterns and optimize your habit journey! 📈'),
+          const SizedBox(height: 24),
+          
           // Overall Trends Card
           _buildOverallTrendsCard(analysis['overallTrends']),
           const SizedBox(height: 16),
@@ -784,6 +827,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Motivational Header
+              _buildMotivationalHeader('Achievements & Rewards',
+                  'Celebrate your progress and unlock new milestones! 🏆'),
+              const SizedBox(height: 24),
+              
               // Progress Overview Card
               Card(
                 child: Padding(

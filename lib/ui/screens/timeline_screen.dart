@@ -4,10 +4,8 @@ import 'package:intl/intl.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../widgets/category_filter_widget.dart';
-import '../widgets/loading_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/smooth_transitions.dart';
-import '../widgets/progressive_disclosure.dart';
 
 class TimelineScreen extends ConsumerStatefulWidget {
   const TimelineScreen({super.key});
@@ -447,6 +445,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         }
 
         await habitService.updateHabit(habit);
+        // Force UI refresh by invalidating the provider
         ref.invalidate(habitServiceProvider);
       },
       loading: () {},
