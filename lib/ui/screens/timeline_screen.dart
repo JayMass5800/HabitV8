@@ -3,6 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
+import '../widgets/category_filter_widget.dart';
+import '../widgets/loading_widget.dart';
+import '../widgets/create_habit_fab.dart';
+import '../widgets/smooth_transitions.dart';
+import '../widgets/progressive_disclosure.dart';
 
 class TimelineScreen extends ConsumerStatefulWidget {
   const TimelineScreen({super.key});
@@ -15,45 +20,19 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   String _selectedCategory = 'All';
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _categories = [
-    'All',
-    'Health',
-    'Fitness',
-    'Productivity',
-    'Learning',
-    'Personal',
-    'Social',
-    'Finance',
-    'Mindfulness',
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Timeline'),
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
+          CategoryFilterWidget(
+            selectedCategory: _selectedCategory,
+            onCategoryChanged: (value) {
               setState(() {
                 _selectedCategory = value;
               });
             },
-            itemBuilder: (BuildContext context) {
-              return _categories.map((String choice) {
-                return PopupMenuItem<String>(
-                  value: choice,
-                  child: Row(
-                    children: [
-                      if (choice == _selectedCategory) const Icon(Icons.check, size: 20),
-                      if (choice == _selectedCategory) const SizedBox(width: 8),
-                      Text(choice),
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-            child: const Icon(Icons.filter_list),
           ),
         ],
       ),
@@ -63,6 +42,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           Expanded(child: _buildHabitsList()),
         ],
       ),
+      floatingActionButton: const CreateHabitFAB(),
     );
   }
 
@@ -199,7 +179,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 itemCount: todayHabits.length,
                 itemBuilder: (context, index) {
                   final habit = todayHabits[index];
-                  return _buildHabitCard(habit);
+                  return SmoothTransitions.slideTransition(
+                    show: true,
+                    duration: Duration(milliseconds: 300 + (index * 50)),
+                    child: _buildHabitCard(habit),
+                  );
                 },
               );
             },
@@ -328,7 +312,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 ),
               ),
               const SizedBox(width: 16),
-              Container(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
@@ -339,10 +325,20 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                     width: 2,
                   ),
                 ),
-                child: Icon(
-                  isCompleted ? Icons.check : Icons.circle_outlined,
-                  color: isCompleted ? Colors.white : statusColor,
-                  size: 20,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) {
+                    return ScaleTransition(
+                      scale: animation,
+                      child: child,
+                    );
+                  },
+                  child: Icon(
+                    isCompleted ? Icons.check : Icons.circle_outlined,
+                    key: ValueKey(isCompleted),
+                    color: isCompleted ? Colors.white : statusColor,
+                    size: 20,
+                  ),
                 ),
               ),
             ],

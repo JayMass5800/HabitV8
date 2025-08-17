@@ -4,6 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
+import '../widgets/smooth_transitions.dart';
+import '../widgets/progressive_disclosure.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
   const StatsScreen({super.key});
@@ -883,77 +885,90 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   Widget _buildHabitPerformanceRanking(List<Habit> habits, String period) {
     final rankedHabits = _getRankedHabits(habits, period);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Habit Performance Ranking',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+    return ProgressiveDisclosure(
+      title: 'Habit Performance Ranking',
+      subtitle: 'View detailed performance metrics for all habits',
+      summary: Column(
+        children: rankedHabits.take(3).map((habitData) {
+          final habit = habitData['habit'] as Habit;
+          final rate = habitData['rate'] as double;
+
+          return SmoothTransitions.slideTransition(
+            show: true,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: Color(habit.colorValue),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          habit.name,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '${(rate * 100).toInt()}% success rate',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getCompletionRateColor(rate).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${(rate * 100).toInt()}%',
+                      style: TextStyle(
+                        color: _getCompletionRateColor(rate),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            ...rankedHabits.take(5).map((habitData) {
-              final habit = habitData['habit'] as Habit;
-              final completions = habitData['completions'] as int;
-              final rate = habitData['rate'] as double;
+          );
+        }).toList(),
+      ),
+      details: Column(
+        children: rankedHabits.map((habitData) {
+          final habit = habitData['habit'] as Habit;
+          final completions = habitData['completions'] as int;
+          final rate = habitData['rate'] as double;
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Color(habit.colorValue),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            habit.name,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            '$completions completions • ${(rate * 100).toInt()}% success rate',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getCompletionRateColor(rate).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${(rate * 100).toInt()}%',
-                        style: TextStyle(
-                          color: _getCompletionRateColor(rate),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
+          return HabitStatsDisclosure(
+            habitName: habit.name,
+            currentStreak: habit.currentStreak,
+            completionRate: rate,
+            recentCompletions: habit.completions,
+            detailedStats: {
+              'totalCompletions': completions,
+              'bestStreak': habit.longestStreak,
+              'averagePerWeek': (completions / 4).toStringAsFixed(1),
+              'lastCompleted': habit.completions.isNotEmpty 
+                  ? DateFormat('MMM d, y').format(habit.completions.last)
+                  : 'Never',
+            },
+          );
+        }).toList(),
       ),
     );
   }

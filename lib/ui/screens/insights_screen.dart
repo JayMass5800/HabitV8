@@ -8,6 +8,8 @@ import '../../services/health_service.dart';
 import '../../services/health_habit_analytics_service.dart';
 import '../../services/health_habit_integration_service.dart';
 import '../../services/logging_service.dart';
+import '../widgets/smooth_transitions.dart';
+import '../widgets/progressive_disclosure.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
   const InsightsScreen({super.key});
@@ -22,14 +24,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   Map<String, dynamic>? _trendAnalysis;
   Map<String, dynamic>? _gamificationStats;
   Map<String, dynamic>? _healthSummary;
-  HealthHabitAnalyticsReport? _healthAnalytics;
+  HealthHabitAnalyticsReport? _healthAnalytics; // from HealthHabitAnalyticsService
   Map<String, dynamic>? _integrationStatus;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    // Only one tab (Overview) remains after removing Trends and Achievements
+    _tabController = TabController(length: 1, vsync: this);
     _loadAllData();
   }
 
@@ -100,13 +103,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               _healthSummary = await HealthService.getTodayHealthSummary();
               
               // Load comprehensive health analytics
-              _healthAnalytics = await HealthHabitAnalyticsService.generateDetailedReport(
-                habits: habitsData,
-                completions: allCompletions,
+              _healthAnalytics = await HealthHabitAnalyticsService.generateAnalyticsReport(
+                habitService: habitService,
               );
               
               // Load integration status
-              _integrationStatus = await HealthHabitIntegrationService.getIntegrationStatus();
+              _integrationStatus = await HealthHabitIntegrationService.getIntegrationStatus(
+                habitService: habitService,
+              );
             }
           } catch (e) {
             // Handle health service error quietly
@@ -137,6 +141,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         title: const Text('🎉 New Achievement!'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          // Keep achievement modal logic intact; only the Achievements tab UI was removed
           children: achievements.map((achievement) => ListTile(
             leading: Text(achievement.icon, style: const TextStyle(fontSize: 24)),
             title: Text(achievement.title),
@@ -159,12 +164,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Insights'),
+        // Single-tab layout: only Overview remains
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
             Tab(text: 'Overview'),
-            Tab(text: 'Trends'),
-            Tab(text: 'Achievements'),
           ],
         ),
       ),
@@ -174,8 +178,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               controller: _tabController,
               children: [
                 _buildOverviewTab(),
-                _buildTrendsTab(),
-                _buildAchievementsTab(),
               ],
             ),
     );
@@ -218,27 +220,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Quick Navigation to deep insights
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => setState(() => _tabController.index = 1),
-                            icon: const Icon(Icons.trending_up, size: 18),
-                            label: const Text('Trends'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => setState(() => _tabController.index = 2),
-                            icon: const Icon(Icons.emoji_events, size: 18),
-                            label: const Text('Achievements'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+
 
                     // Quick Stats Grid (habit-first)
                     _buildQuickStatsGrid(habits),
@@ -278,41 +260,72 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   Widget _buildGamificationCard() {
     final stats = _gamificationStats!;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.emoji_events, color: Colors.amber),
-                const SizedBox(width: 8),
-                Text(
-                  'Level ${stats['level']} ${stats['rank']}',
-                  style: Theme.of(context).textTheme.titleLarge,
+    return ProgressiveDisclosure(
+      title: 'Level ${stats['level']} ${stats['rank']}',
+      subtitle: 'View detailed achievements and progress',
+      summary: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: LinearProgressIndicator(
+                  value: stats['levelProgress'],
+                  backgroundColor: Colors.grey[300],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            LinearProgressIndicator(
-              value: stats['levelProgress'],
-              backgroundColor: Colors.grey[300],
-            ),
-            const SizedBox(height: 8),
-            Text('${stats['xp']} / ${stats['nextLevelXP']} XP'),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem('Achievements', '${stats['achievementsUnlocked']}/${stats['totalAchievements']}'),
-                _buildStatItem('Max Streak', '${stats['maxStreak']} days'),
-                _buildStatItem('Completion Rate', '${(stats['completionRate'] * 100).toStringAsFixed(1)}%'),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${stats['xp']} XP',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem('Achievements', '${stats['achievementsUnlocked']}'),
+              _buildStatItem('Max Streak', '${stats['maxStreak']}'),
+              _buildStatItem('Rate', '${(stats['completionRate'] * 100).toInt()}%'),
+            ],
+          ),
+        ],
       ),
+      details: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Detailed Progress',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildDetailRow('Current Level', 'Level ${stats['level']}'),
+          _buildDetailRow('Rank', stats['rank']),
+          _buildDetailRow('Total XP', '${stats['xp']} / ${stats['nextLevelXP']}'),
+          _buildDetailRow('Achievements Unlocked', '${stats['achievementsUnlocked']} / ${stats['totalAchievements']}'),
+          _buildDetailRow('Maximum Streak', '${stats['maxStreak']} days'),
+          _buildDetailRow('Overall Completion Rate', '${(stats['completionRate'] * 100).toStringAsFixed(1)}%'),
+          const SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: stats['levelProgress'],
+            backgroundColor: Colors.grey[300],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Progress to next level: ${((stats['levelProgress'] as double) * 100).toInt()}%',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+      headerColor: Colors.amber,
     );
   }
 
@@ -512,6 +525,27 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w500,
             ),
           ),

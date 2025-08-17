@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
-import '../../services/health_habit_integration_service.dart';
 import '../../services/health_habit_analytics_service.dart';
 import '../../services/health_habit_background_service.dart';
 import '../../services/health_habit_ui_service.dart';
@@ -27,7 +26,7 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -43,12 +42,8 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
         title: const Text('Health Integration'),
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: true,
           tabs: const [
-            Tab(icon: Icon(Icons.dashboard), text: 'Overview'),
-            Tab(icon: Icon(Icons.analytics), text: 'Analytics'),
             Tab(icon: Icon(Icons.settings), text: 'Settings'),
-            Tab(icon: Icon(Icons.insights), text: 'Insights'),
             Tab(icon: Icon(Icons.help_outline), text: 'Help'),
           ],
         ),
@@ -62,174 +57,8 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildOverviewTab(),
-          _buildAnalyticsTab(),
           _buildSettingsTab(),
-          _buildInsightsTab(),
           _buildHelpTab(),
-        ],
-      ),
-    );
-  }
-
-  /// Overview tab showing integration status and recent activity
-  Widget _buildOverviewTab() {
-    return RefreshIndicator(
-      onRefresh: _refreshData,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Health permissions status
-            FutureBuilder<bool>(
-              future: HealthService.hasPermissions(),
-              builder: (context, snapshot) {
-                final hasPermissions = snapshot.data ?? false;
-                
-                return Card(
-                  child: ListTile(
-                    leading: Icon(
-                      hasPermissions ? Icons.check_circle : Icons.warning,
-                      color: hasPermissions ? Colors.green : Colors.orange,
-                    ),
-                    title: const Text('Health Permissions'),
-                    subtitle: Text(
-                      hasPermissions 
-                          ? 'Health data access granted'
-                          : 'Health permissions needed for full integration',
-                    ),
-                    trailing: hasPermissions 
-                        ? null 
-                        : ElevatedButton(
-                            onPressed: _requestHealthPermissions,
-                            child: const Text('Grant'),
-                          ),
-                  ),
-                );
-              },
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Integration status card
-            FutureBuilder<HabitService>(
-              future: _getHabitService(),
-              builder: (context, habitServiceSnapshot) {
-                if (!habitServiceSnapshot.hasData) {
-                  return const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  );
-                }
-                
-                return HealthHabitUIService.buildIntegrationStatusCard(
-                  context: context,
-                  habitService: habitServiceSnapshot.data!,
-                );
-              },
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Today's health metrics
-            HealthHabitUIService.buildHealthMetricsSummary(context: context),
-            
-            const SizedBox(height: 16),
-            
-            // Background service status
-            HealthHabitUIService.buildBackgroundServiceStatus(context: context),
-            
-            const SizedBox(height: 16),
-            
-            // Recent sync results
-            StreamBuilder<HealthHabitSyncResult>(
-              stream: HealthHabitBackgroundService.syncResultStream,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const SizedBox.shrink();
-                }
-                
-                return HealthHabitUIService.buildSyncResultsCard(
-                  context: context,
-                  syncStream: HealthHabitBackgroundService.syncResultStream!,
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Analytics tab showing detailed health-habit correlations and insights
-  Widget _buildAnalyticsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Analytics summary
-          FutureBuilder<HabitService>(
-            future: _getHabitService(),
-            builder: (context, habitServiceSnapshot) {
-              if (!habitServiceSnapshot.hasData) {
-                return const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                );
-              }
-              
-              return HealthHabitUIService.buildAnalyticsSummary(
-                context: context,
-                habitService: habitServiceSnapshot.data!,
-              );
-            },
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Detailed analytics report
-          FutureBuilder<HealthHabitAnalyticsReport>(
-            future: _generateDetailedAnalytics(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                );
-              }
-              
-              if (snapshot.hasError || !snapshot.hasData || snapshot.data!.hasError) {
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.error, size: 48, color: Colors.red),
-                        const SizedBox(height: 8),
-                        const Text('Analytics Unavailable'),
-                        const SizedBox(height: 4),
-                        Text(
-                          snapshot.data?.error ?? 'Failed to generate analytics',
-                          style: Theme.of(context).textTheme.bodySmall,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              
-              return _buildAnalyticsReport(snapshot.data!);
-            },
-          ),
         ],
       ),
     );
@@ -342,260 +171,13 @@ class _HealthIntegrationScreenState extends ConsumerState<HealthIntegrationScree
     );
   }
 
-  /// Insights tab showing predictive insights and recommendations
-  Widget _buildInsightsTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Health-Habit Insights',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-          
-          FutureBuilder<HealthHabitAnalyticsReport>(
-            future: _generateDetailedAnalytics(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              
-              if (snapshot.hasError || !snapshot.hasData || snapshot.data!.hasError) {
-                return const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('Insights unavailable'),
-                  ),
-                );
-              }
-              
-              final report = snapshot.data!;
-              
-              return Column(
-                children: [
-                  // Predictive insights
-                  if (report.predictiveInsights.isNotEmpty) ...[
-                    _buildInsightsSection(
-                      'Predictive Insights',
-                      Icons.psychology,
-                      report.predictiveInsights.map((insight) => ListTile(
-                        leading: const Icon(
-                          Icons.lightbulb,
-                          color: Colors.orange,
-                        ),
-                        title: Text(insight),
-                      )).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  // Recommendations
-                  if (report.recommendations.isNotEmpty) ...[
-                    _buildInsightsSection(
-                      'Recommendations',
-                      Icons.tune,
-                      report.recommendations.map((rec) => ListTile(
-                        leading: const Icon(Icons.trending_up, color: Colors.blue),
-                        title: Text(rec),
-                      )).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildAnalyticsReport(HealthHabitAnalyticsReport report) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Overall score card
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Overall Health-Habit Score',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: report.overallScore / 100,
-                        backgroundColor: Colors.grey[300],
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          report.overallScore >= 75 ? Colors.green :
-                          report.overallScore >= 50 ? Colors.orange : Colors.red,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      '${report.overallScore.round()}/100',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _getScoreDescription(report.overallScore),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ),
-        
-        const SizedBox(height: 16),
-        
-        // Individual habit analyses
-        if (report.habitAnalytics.isNotEmpty) ...[
-          const Text(
-            'Habit Analysis',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 8),
-          ...report.habitAnalytics.values.map((analysis) => Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    analysis.habitName,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildMetricTile(
-                          'Completion',
-                          '${(analysis.completionRate * 100).round()}%',
-                          Icons.check_circle,
-                          Colors.green,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildMetricTile(
-                          'Streak',
-                          '${analysis.currentStreak}',
-                          Icons.local_fire_department,
-                          Colors.orange,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (analysis.healthDataType != null)
-                    Text(
-                      'Health data type: ${analysis.healthDataType}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                ],
-              ),
-            ),
-          )),
-        ],
-      ],
-    );
-  }
 
-  Widget _buildInsightsSection(String title, IconData icon, List<Widget> children) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildBenchmarkSection(Map<String, dynamic> benchmarks) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.leaderboard, color: Colors.purple),
-                SizedBox(width: 8),
-                Text(
-                  'Benchmark Comparison',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...benchmarks.entries.map((entry) {
-              final comparison = entry.value;
-              final percentage = comparison.percentageOfBenchmark;
-              
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(comparison.metric),
-                        Text(
-                          '${comparison.userValue.round()} ${comparison.unit}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    LinearProgressIndicator(
-                      value: (percentage / 100).clamp(0.0, 1.0),
-                      backgroundColor: Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        comparison.exceedsBenchmark ? Colors.green : Colors.orange,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${percentage.round()}% of benchmark (${comparison.benchmarkValue.round()} ${comparison.unit})',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
+
+
+
+
 
   Widget _buildMetricTile(String label, String value, IconData icon, Color color) {
     return Container(

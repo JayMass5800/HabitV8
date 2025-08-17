@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/health_habit_mapping_service.dart';
+import '../../services/category_suggestion_service.dart';
+import '../../services/logging_service.dart';
 
 class EditHabitScreen extends ConsumerStatefulWidget {
   final Habit habit;
@@ -29,39 +31,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   late int _targetCount;
   late int _originalHashCode; // Store original hash code for notification management
 
-  // Dynamic categories that include health-related ones from the mapping service
+  // Comprehensive categories from the category suggestion service
   List<String> get _categories {
-    final healthCategories = HealthHabitMappingService.getHealthRelatedCategories();
-    final standardCategories = [
-      'Productivity',
-      'Learning', 
-      'Personal',
-      'Social',
-      'Finance',
-      'Work',
-      'Education',
-      'Hobbies',
-      'Travel',
-      'Other',
-    ];
-    
-    // Combine and sort, with health categories first
-    final allCategories = <String>[];
-    
-    // Add health categories first (capitalize first letter)
-    for (final category in healthCategories) {
-      final capitalized = category[0].toUpperCase() + category.substring(1);
-      allCategories.add(capitalized);
-    }
-    
-    // Add standard categories
-    allCategories.addAll(standardCategories);
-    
-    // Remove duplicates and sort
-    final uniqueCategories = allCategories.toSet().toList();
-    uniqueCategories.sort();
-    
-    return uniqueCategories;
+    return CategorySuggestionService.getAllCategories();
   }
 
   final List<Color> _colors = [
@@ -97,6 +69,82 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     _selectedMonthDays = List<int>.from(widget.habit.monthlySchedule);
     _targetCount = widget.habit.targetCount;
     _originalHashCode = widget.habit.hashCode; // Store original for notification cleanup
+    
+    // Add listeners to text controllers for category suggestions
+    _nameController.addListener(_onHabitTextChanged);
+    _descriptionController.addListener(_onHabitTextChanged);
+  }
+  
+  void _onHabitTextChanged() {
+    // Trigger rebuild to update category suggestions
+    setState(() {});
+  }
+  
+  List<String> _getCategorySuggestions() {
+    return CategorySuggestionService.getCategorySuggestions(
+      _nameController.text,
+      _descriptionController.text,
+    );
+  }
+  
+  Widget _buildCategorySection() {
+    final suggestions = _getCategorySuggestions();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: _selectedCategory,
+          decoration: const InputDecoration(
+            labelText: 'Category',
+            border: OutlineInputBorder(),
+          ),
+          items: _categories.map((category) {
+            return DropdownMenuItem(
+              value: category,
+              child: Text(category),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedCategory = value!;
+            });
+          },
+        ),
+        if (suggestions.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Suggested categories:',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: suggestions.take(3).map((suggestion) {
+              final isSelected = _selectedCategory == suggestion;
+              return ActionChip(
+                label: Text(suggestion),
+                onPressed: () {
+                  setState(() {
+                    _selectedCategory = suggestion;
+                  });
+                },
+                backgroundColor: isSelected 
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
+                    : null,
+                side: isSelected 
+                    ? BorderSide(color: Theme.of(context).colorScheme.primary)
+                    : null,
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -120,37 +168,18 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: SingleChildScrollView(
+        child: ListView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildBasicInfoSection(),
-              const SizedBox(height: 24),
-              _buildFrequencySection(),
-              const SizedBox(height: 24),
-              _buildNotificationSection(),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _saveHabit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _selectedColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Save Changes',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          children: [
+            _buildBasicInfoSection(),
+            const SizedBox(height: 24),
+            _buildFrequencySection(),
+            const SizedBox(height: 24),
+            _buildNotificationSection(),
+            const SizedBox(height: 24),
+            _buildCustomizationSection(),
+            const SizedBox(height: 32),
+          ],
         ),
       ),
     );
@@ -195,30 +224,25 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
+            _buildCategorySection(),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildCustomizationSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              'Category',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              'Customization',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _categories.map((category) {
-                final isSelected = category == _selectedCategory;
-                return FilterChip(
-                  label: Text(category),
-                  selected: isSelected,
-                  onSelected: (_) {
-                    setState(() {
-                      _selectedCategory = category;
-                    });
-                  },
-                  selectedColor: _selectedColor.withValues(alpha: 0.2),
-                  checkmarkColor: _selectedColor,
-                );
-              }).toList(),
             ),
             const SizedBox(height: 16),
             Text(

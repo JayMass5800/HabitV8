@@ -5,6 +5,9 @@ import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/calendar_service.dart';
 import '../widgets/day_detail_sheet.dart';
+import '../widgets/category_filter_widget.dart';
+import '../widgets/loading_widget.dart';
+import '../widgets/create_habit_fab.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -17,18 +20,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   String _selectedCategory = 'All';
   bool _calendarSyncEnabled = false;
-
-  final List<String> _categories = [
-    'All',
-    'Health',
-    'Fitness',
-    'Productivity',
-    'Learning',
-    'Personal',
-    'Social',
-    'Finance',
-    'Mindfulness',
-  ];
 
   @override
   void initState() {
@@ -216,28 +207,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ],
         ),
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
+          CategoryFilterWidget(
+            selectedCategory: _selectedCategory,
+            onCategoryChanged: (value) {
               setState(() {
                 _selectedCategory = value;
               });
             },
-            itemBuilder: (BuildContext context) {
-              return _categories.map((String choice) {
-                return PopupMenuItem<String>(
-                  value: choice,
-                  child: Row(
-                    children: [
-                      if (choice == _selectedCategory) 
-                        Icon(Icons.check, size: 20, color: Theme.of(context).primaryColor),
-                      if (choice == _selectedCategory) const SizedBox(width: 8),
-                      Text(choice),
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-            icon: const Icon(Icons.filter_list),
           ),
         ],
       ),
@@ -250,7 +226,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               future: habitService.getAllHabits(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const LoadingWidget(message: 'Loading calendar...');
                 }
 
                 if (!snapshot.hasData) {
@@ -278,7 +254,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 );
               },
             ),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const LoadingWidget(message: 'Loading calendar...'),
             error: (error, stackTrace) => Center(
               child: Text(
                 'Error: $error',
@@ -288,6 +264,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           );
         },
       ),
+      floatingActionButton: const CreateHabitFAB(),
     );
   }
 

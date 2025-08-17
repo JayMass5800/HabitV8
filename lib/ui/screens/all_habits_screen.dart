@@ -5,6 +5,9 @@ import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/logging_service.dart';
 import '../widgets/health_habit_dashboard_widget.dart';
+import '../widgets/category_filter_widget.dart';
+import '../widgets/loading_widget.dart';
+import '../widgets/create_habit_fab.dart';
 import 'edit_habit_screen.dart';
 
 class AllHabitsScreen extends ConsumerStatefulWidget {
@@ -18,18 +21,6 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
   String _selectedFilter = 'All';
   String _selectedCategory = 'All';
   String _selectedSort = 'Recent'; // New sorting option
-
-  final List<String> _categories = [
-    'All',
-    'Health',
-    'Fitness',
-    'Productivity',
-    'Learning',
-    'Personal',
-    'Social',
-    'Finance',
-    'Mindfulness',
-  ];
 
   final List<String> _sortOptions = [
     'Recent',
@@ -75,31 +66,13 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
             icon: const Icon(Icons.sort),
           ),
           // Category Filter Menu
-          PopupMenuButton<String>(
-            onSelected: (value) {
+          CategoryFilterWidget(
+            selectedCategory: _selectedCategory,
+            onCategoryChanged: (value) {
               setState(() {
                 _selectedCategory = value;
               });
             },
-            itemBuilder: (BuildContext context) {
-              return _categories.map((String choice) {
-                return PopupMenuItem<String>(
-                  value: choice,
-                  child: Row(
-                    children: [
-                      Icon(_getCategoryIcon(choice), size: 20),
-                      const SizedBox(width: 8),
-                      Text(choice),
-                      if (choice == _selectedCategory) ...[
-                        const Spacer(),
-                        const Icon(Icons.check, size: 16, color: Colors.green),
-                      ],
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-            icon: const Icon(Icons.filter_list),
           ),
         ],
         bottom: PreferredSize(
@@ -168,26 +141,18 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
               future: habitService.getAllHabits(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const LoadingWidget(message: 'Loading habits...');
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.track_changes, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text(
-                          'No habits yet',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Create your first habit to get started!',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ],
+                  return EmptyStateWidget(
+                    icon: Icons.track_changes,
+                    title: 'No habits yet',
+                    subtitle: 'Create your first habit to get started!',
+                    action: ElevatedButton.icon(
+                      onPressed: () => context.push('/create-habit'),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Create Habit'),
                     ),
                   );
                 }
@@ -196,28 +161,19 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                 final filteredHabits = _filterAndSortHabits(allHabits);
 
                 if (filteredHabits.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.search_off, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No habits match your filters',
-                          style: const TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedFilter = 'All';
-                              _selectedCategory = 'All';
-                              _selectedSort = 'Recent';
-                            });
-                          },
-                          child: const Text('Clear Filters'),
-                        ),
-                      ],
+                  return EmptyStateWidget(
+                    icon: Icons.search_off,
+                    title: 'No habits match your filters',
+                    subtitle: 'Try adjusting your filters or create a new habit',
+                    action: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedFilter = 'All';
+                          _selectedCategory = 'All';
+                          _selectedSort = 'Recent';
+                        });
+                      },
+                      child: const Text('Clear Filters'),
                     ),
                   );
                 }
@@ -238,20 +194,15 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                 );
               },
             ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stack) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text('Error loading habits: $error'),
-                ],
-              ),
+            loading: () => const LoadingWidget(message: 'Loading habits...'),
+            error: (error, stack) => ErrorStateWidget(
+              message: 'Error loading habits: $error',
+              onRetry: () => setState(() {}),
             ),
           );
         },
       ),
+      floatingActionButton: const CreateHabitExtendedFAB(),
     );
   }
 

@@ -15,6 +15,8 @@ import '../../services/automatic_habit_completion_service.dart';
 import '../../data/database.dart';
 import '../widgets/calendar_selection_dialog.dart';
 import '../widgets/health_education_dialog.dart';
+import '../widgets/smooth_transitions.dart';
+import '../widgets/progressive_disclosure.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -311,9 +313,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
             ],
           ),
           const SizedBox(height: 24),
-          _SettingsSection(
+          SettingsDisclosure(
             title: 'Integrations',
-            children: [
+            description: 'Connect with external apps and services',
+            basicSettings: [
               SwitchListTile(
                 title: const Text('Calendar Sync'),
                 subtitle: const Text('Sync habits with your device calendar'),
@@ -321,21 +324,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 onChanged: (value) => _toggleCalendarSync(value),
                 secondary: const Icon(Icons.calendar_today),
               ),
-              if (_calendarSync) ...[
-                _SettingsTile(
-                  title: 'Select Calendar',
-                  subtitle: 'Choose which calendar to sync habits to',
-                  leading: const Icon(Icons.calendar_month),
-                  onTap: () => _showCalendarSelection(),
-                ),
-                _SettingsTile(
-                  title: 'Calendar Renewal Status',
-                  subtitle: 'View and manage automatic calendar sync renewal',
-                  leading: const Icon(Icons.refresh),
-                  onTap: () => _showCalendarRenewalStatus(),
-                ),
-              ],
-
               SwitchListTile(
                 title: const Text('Health Data'),
                 subtitle: const Text('Connect with health apps for insights'),
@@ -343,46 +331,71 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 onChanged: (value) => _toggleHealthDataSync(value),
                 secondary: const Icon(Icons.favorite),
               ),
-
-              // Auto-completion settings (only show if health data is enabled)
-              if (_healthDataSync) ...[
-                const Divider(),
-                SwitchListTile(
-                  title: const Text('Automatic Habit Completion'),
-                  subtitle: const Text('Auto-complete habits based on health data'),
-                  value: _autoCompletionEnabled,
-                  onChanged: (value) => _toggleAutoCompletion(value),
-                  secondary: const Icon(Icons.auto_awesome),
+            ],
+            advancedSettings: [
+              if (_calendarSync) ...[
+                SmoothTransitions.fadeTransition(
+                  show: _calendarSync,
+                  child: Column(
+                    children: [
+                      _SettingsTile(
+                        title: 'Select Calendar',
+                        subtitle: 'Choose which calendar to sync habits to',
+                        leading: const Icon(Icons.calendar_month),
+                        onTap: () => _showCalendarSelection(),
+                      ),
+                      _SettingsTile(
+                        title: 'Calendar Renewal Status',
+                        subtitle: 'View and manage automatic calendar sync renewal',
+                        leading: const Icon(Icons.refresh),
+                        onTap: () => _showCalendarRenewalStatus(),
+                      ),
+                    ],
+                  ),
                 ),
-                
-                if (_autoCompletionEnabled)
-                  ListTile(
-                    title: const Text('Check Interval'),
-                    subtitle: Text('Check every $_autoCompletionInterval minutes'),
-                    leading: const Icon(Icons.schedule),
-                    trailing: PopupMenuButton<int>(
-                      onSelected: (value) => _setAutoCompletionInterval(value),
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(value: 15, child: Text('15 minutes')),
-                        const PopupMenuItem(value: 30, child: Text('30 minutes')),
-                        const PopupMenuItem(value: 60, child: Text('1 hour')),
-                        const PopupMenuItem(value: 120, child: Text('2 hours')),
-                        const PopupMenuItem(value: 240, child: Text('4 hours')),
-                      ],
-                      child: const Icon(Icons.more_vert),
-                    ),
-                  ),
-                
-                if (_autoCompletionEnabled)
-                  ListTile(
-                    title: const Text('Health Integration Dashboard'),
-                    subtitle: const Text('View detailed health-habit integration'),
-                    leading: const Icon(Icons.dashboard),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/health-integration'),
-                  ),
               ],
-
+              if (_healthDataSync) ...[
+                SmoothTransitions.fadeTransition(
+                  show: _healthDataSync,
+                  child: Column(
+                    children: [
+                      const Divider(),
+                      SwitchListTile(
+                        title: const Text('Automatic Habit Completion'),
+                        subtitle: const Text('Auto-complete habits based on health data'),
+                        value: _autoCompletionEnabled,
+                        onChanged: (value) => _toggleAutoCompletion(value),
+                        secondary: const Icon(Icons.auto_awesome),
+                      ),
+                      if (_autoCompletionEnabled) ...[
+                        ListTile(
+                          title: const Text('Check Interval'),
+                          subtitle: Text('Check every $_autoCompletionInterval minutes'),
+                          leading: const Icon(Icons.schedule),
+                          trailing: PopupMenuButton<int>(
+                            onSelected: (value) => _setAutoCompletionInterval(value),
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(value: 15, child: Text('15 minutes')),
+                              const PopupMenuItem(value: 30, child: Text('30 minutes')),
+                              const PopupMenuItem(value: 60, child: Text('1 hour')),
+                              const PopupMenuItem(value: 120, child: Text('2 hours')),
+                              const PopupMenuItem(value: 240, child: Text('4 hours')),
+                            ],
+                            child: const Icon(Icons.more_vert),
+                          ),
+                        ),
+                        ListTile(
+                          title: const Text('Health Integration Dashboard'),
+                          subtitle: const Text('View detailed health-habit integration'),
+                          leading: const Icon(Icons.dashboard),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push('/health-integration'),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 24),
