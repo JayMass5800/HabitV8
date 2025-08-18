@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/logging_service.dart';
-import '../widgets/category_filter_widget.dart';
+
 import '../widgets/loading_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import 'edit_habit_screen.dart';
@@ -17,9 +17,8 @@ class AllHabitsScreen extends ConsumerStatefulWidget {
 }
 
 class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
-  String _selectedFilter = 'All';
   String _selectedCategory = 'All';
-  String _selectedSort = 'Recent'; // New sorting option
+  String _selectedSort = 'Recent';
 
   final List<String> _sortOptions = [
     'Recent',
@@ -51,55 +50,65 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                   child: Row(
                     children: [
                       Icon(_getSortIcon(choice), size: 20),
-      // Only show the current filters display, no filter chips
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(40),
-        child: (_selectedCategory != 'All' || _selectedSort != 'Recent')
-            ? Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Row(
-                  children: [
-                    if (_selectedCategory != 'All')
-                      Chip(
-                        label: Text(_selectedCategory),
-                        deleteIcon: const Icon(Icons.close, size: 16),
-                        onDeleted: () => setState(() => _selectedCategory = 'All'),
-                      ),
-                    if (_selectedCategory != 'All' && _selectedSort != 'Recent')
                       const SizedBox(width: 8),
-                    if (_selectedSort != 'Recent')
-                      Chip(
-                        label: Text(_selectedSort),
-                        deleteIcon: const Icon(Icons.close, size: 16),
-                        onDeleted: () => setState(() => _selectedSort = 'Recent'),
-                      ),
-                    if (_selectedCategory != 'All' || _selectedSort != 'Recent')
-                      const Spacer(),
-                    if (_selectedCategory != 'All' || _selectedSort != 'Recent')
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _selectedFilter = 'All';
-                            _selectedCategory = 'All';
-                            _selectedSort = 'Recent';
-                          });
-                        },
-                        child: const Text('Clear Filters'),
-                      ),
-                  ],
-                ),
-              )
-            : const SizedBox.shrink(),
-      ),
+                      Text(choice),
+                    ],
+                  ),
+                );
+              }).toList();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(_getSortIcon(_selectedSort)),
+                  const SizedBox(width: 4),
+                  Text(_selectedSort),
+                  const Icon(Icons.arrow_drop_down),
+                ],
+              ),
+            ),
+          ),
+        ],
+        // Only show the current filters display, no filter chips
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(40),
+          child: (_selectedCategory != 'All' || _selectedSort != 'Recent')
+              ? Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                  child: Row(
+                    children: [
+                      if (_selectedCategory != 'All')
+                        Chip(
+                          label: Text(_selectedCategory),
+                          deleteIcon: const Icon(Icons.close, size: 16),
+                          onDeleted: () => setState(() => _selectedCategory = 'All'),
+                        ),
+                      if (_selectedCategory != 'All' && _selectedSort != 'Recent')
+                        const SizedBox(width: 8),
+                      if (_selectedSort != 'Recent')
+                        Chip(
                           label: Text('Sort: $_selectedSort'),
                           deleteIcon: const Icon(Icons.close, size: 16),
                           onDeleted: () => setState(() => _selectedSort = 'Recent'),
                         ),
+                      if (_selectedCategory != 'All' || _selectedSort != 'Recent')
+                        const Spacer(),
+                      if (_selectedCategory != 'All' || _selectedSort != 'Recent')
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedCategory = 'All';
+                              _selectedSort = 'Recent';
+                            });
+                          },
+                          child: const Text('Clear Filters'),
+                        ),
                     ],
                   ),
-                ),
-            ],
-          ),
+                )
+              : const SizedBox.shrink(),
         ),
       ),
       body: Consumer(
@@ -130,7 +139,55 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                 final allHabits = snapshot.data!;
                 final filteredHabits = _filterAndSortHabits(allHabits);
 
-                // ...existing code...
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredHabits.length,
+                  itemBuilder: (context, index) {
+                    final habit = filteredHabits[index];
+                    final rank = _selectedSort == 'Top Performers' ||
+                            _selectedSort == 'Bottom Performers' ||
+                            _selectedSort == 'Longest Streak'
+                        ? index + 1
+                        : null;
+
+                    return _HabitCard(
+                      habit: habit,
+                      rank: rank,
+                      showPerformanceIndicator: _selectedSort.contains('Performers'),
+                    );
+                  },
+                );
+              },
+            ),
+            loading: () => const LoadingWidget(message: 'Loading habits...'),
+            error: (error, stack) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('Error loading habits: $error'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => ref.invalidate(habitServiceProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+      floatingActionButton: const CreateHabitFAB(),
+    );
+  }
+
+  List<Habit> _filterAndSortHabits(List<Habit> habits) {
+    List<Habit> filtered = List.from(habits);
+
+    // Apply category filter
+    if (_selectedCategory != 'All') {
+      filtered = filtered.where((habit) => habit.category == _selectedCategory).toList();
     }
 
     // Apply sort
@@ -199,77 +256,6 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       default:
         return Icons.apps;
     }
-  }
-}
-
-// Top-level helper classes
-
-class _HabitCard extends ConsumerWidget {
-  final Habit habit;
-  final int? rank;
-  final bool showPerformanceIndicator;
-
-  const _HabitCard({
-    required this.habit,
-    this.rank,
-    this.showPerformanceIndicator = false,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // ...existing code...
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ...existing code...
-          ],
-        ),
-      ),
-    );
-  }
-  // ...existing code...
-}
-
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // ...existing code...
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 20),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-      ],
-    );
   }
 }
 
@@ -788,5 +774,3 @@ class _StatItem extends StatelessWidget {
     );
   }
 }
-
-// ...existing code...
