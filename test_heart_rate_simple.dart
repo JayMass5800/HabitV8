@@ -41,12 +41,16 @@ void main() async {
     print('✅ Health category ${heartRateInHealth ? 'includes' : 'does not include'} heart rate');
   }
   
-  // Test helper methods
-  print('\n=== Testing Helper Methods ===');
-  print('Is "cardio workout" exercise-related? ${HealthHabitMappingService._isExerciseRelated('cardio workout')}');
-  print('Is "meditation session" meditation-related? ${HealthHabitMappingService._isMeditationRelated('meditation session')}');
-  print('Is "heart rate monitor" exercise-related? ${HealthHabitMappingService._isExerciseRelated('heart rate monitor')}');
-  print('Is "breathing exercise" meditation-related? ${HealthHabitMappingService._isMeditationRelated('breathing exercise')}');
+  // Test category suggestions
+  print('\n=== Testing Category Suggestions ===');
+  final cardioSuggestions = HealthHabitMappingService.getCategorySuggestions('cardio workout', 'heart rate training');
+  print('Cardio workout suggestions: $cardioSuggestions');
+  
+  final meditationSuggestions = HealthHabitMappingService.getCategorySuggestions('meditation', 'lower heart rate');
+  print('Meditation suggestions: $meditationSuggestions');
+  
+  final heartRateSuggestions = HealthHabitMappingService.getCategorySuggestions('heart rate monitor', 'track bpm');
+  print('Heart rate monitor suggestions: $heartRateSuggestions');
   
   print('\n=== Heart Rate Integration Test Complete ===');
   print('✅ Heart rate has been successfully integrated into the habit mapping system!');

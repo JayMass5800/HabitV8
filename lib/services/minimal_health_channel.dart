@@ -338,6 +338,35 @@ class MinimalHealthChannel {
     }
   }
 
+  /// Get latest heart rate reading
+  static Future<double?> getLatestHeartRate() async {
+    try {
+      final now = DateTime.now();
+      final startTime = now.subtract(const Duration(hours: 1)); // Look back 1 hour
+      
+      final data = await getHealthData(
+        dataType: 'HEART_RATE',
+        startDate: startTime,
+        endDate: now,
+      );
+
+      if (data.isEmpty) {
+        AppLogger.info('No recent heart rate data found');
+        return null;
+      }
+
+      // Get the most recent reading
+      data.sort((a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
+      final latestReading = data.first['value'] as double;
+
+      AppLogger.info('Latest heart rate: ${latestReading.round()} bpm');
+      return latestReading;
+    } catch (e) {
+      AppLogger.error('Error getting latest heart rate', e);
+      return null;
+    }
+  }
+
   /// Get resting heart rate for today
   static Future<double?> getRestingHeartRateToday() async {
     try {
