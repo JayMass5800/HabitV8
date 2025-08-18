@@ -32,11 +32,11 @@ import kotlin.reflect.KClass
 /**
  * Minimal Health Plugin
  * 
- * This plugin ONLY handles the 6 essential health permissions needed by the app.
+ * This plugin ONLY handles the 7 essential health permissions needed by the app.
  * It does NOT reference any other health permissions, preventing Google Play Console
  * static analysis from detecting unwanted permissions.
  * 
- * CRITICAL: This plugin MUST NOT reference any health permissions other than the 6 allowed ones.
+ * CRITICAL: This plugin MUST NOT reference any health permissions other than the 7 allowed ones.
  */
 class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener {
     private lateinit var channel: MethodChannel
@@ -53,7 +53,8 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         "ACTIVE_ENERGY_BURNED" to ActiveCaloriesBurnedRecord::class,
         "SLEEP_IN_BED" to SleepSessionRecord::class,
         "WATER" to HydrationRecord::class,
-        "WEIGHT" to WeightRecord::class
+        "WEIGHT" to WeightRecord::class,
+        "HEART_RATE" to HeartRateRecord::class
     ).apply {
         // Try to add MindfulnessSessionRecord if available
         try {
@@ -71,7 +72,8 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
         HealthPermission.getReadPermission(SleepSessionRecord::class),
         HealthPermission.getReadPermission(HydrationRecord::class),
-        HealthPermission.getReadPermission(WeightRecord::class)
+        HealthPermission.getReadPermission(WeightRecord::class),
+        HealthPermission.getReadPermission(HeartRateRecord::class)
     ).apply {
         // Try to add MindfulnessSessionRecord permission if available
         try {
@@ -293,6 +295,34 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 }
                 map["value"] = record.weight.inKilograms
                 map["unit"] = "kg"
+            }
+            is HeartRateRecord -> {
+                // HeartRateRecord is an InstantRecord, so it should have a 'time' property
+                try {
+                    val timeMethod = record.javaClass.getMethod("getTime")
+                    val time = timeMethod.invoke(record) as Instant
+                    map["timestamp"] = time.toEpochMilli()
+                } catch (e: Exception) {
+                    Log.w("MinimalHealthPlugin", "Error getting time from HeartRateRecord", e)
+                    map["timestamp"] = System.currentTimeMillis()
+                }
+                // HeartRateRecord has samples, we'll take the first one or average
+                try {
+                    val samplesMethod = record.javaClass.getMethod("getSamples")
+                    val samples = samplesMethod.invoke(record) as List<*>
+                    if (samples.isNotEmpty()) {
+                        val firstSample = samples.first()
+                        val beatsPerMinuteMethod = firstSample!!.javaClass.getMethod("getBeatsPerMinute")
+                        val bpm = beatsPerMinuteMethod.invoke(firstSample) as Long
+                        map["value"] = bpm.toDouble()
+                    } else {
+                        map["value"] = 0.0
+                    }
+                } catch (e: Exception) {
+                    Log.w("MinimalHealthPlugin", "Error getting heart rate samples", e)
+                    map["value"] = 0.0
+                }
+                map["unit"] = "bpm"
             }
             else -> {
                 // Handle MindfulnessSessionRecord dynamically if available
