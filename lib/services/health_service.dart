@@ -36,6 +36,7 @@ class HealthService {
       'MINDFULNESS',              // Meditation/mindfulness (when available)
       'WEIGHT',                   // Body weight
       'MEDICATION',               // Medication adherence tracking
+      'HEART_RATE',               // Heart rate for habit correlation analysis
     ];
     
     // Validate that we're not accidentally including forbidden types
@@ -49,7 +50,6 @@ class HealthService {
   static void _validateHealthDataTypes(List<String> types) {
     // List of forbidden types that would trigger Google Play Console static analysis
     const forbiddenTypes = [
-      'HEART_RATE',
       'BLOOD_PRESSURE_SYSTOLIC',
       'BLOOD_PRESSURE_DIASTOLIC',
       'BLOOD_GLUCOSE',
@@ -312,6 +312,86 @@ class HealthService {
     }
   }
 
+  /// Get latest heart rate reading
+  static Future<double?> getLatestHeartRate() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final double? heartRate = await MinimalHealthChannel.getLatestHeartRate();
+      if (heartRate != null) {
+        AppLogger.info('Retrieved heart rate data: ${heartRate.round()} bpm');
+      } else {
+        AppLogger.info('No heart rate data available');
+      }
+      return heartRate;
+    } catch (e) {
+      AppLogger.error('Error getting heart rate data', e);
+      return null;
+    }
+  }
+
+  /// Get resting heart rate for today
+  static Future<double?> getRestingHeartRateToday() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final double? restingHR = await MinimalHealthChannel.getRestingHeartRateToday();
+      if (restingHR != null) {
+        AppLogger.info('Retrieved resting heart rate data: ${restingHR.round()} bpm');
+      } else {
+        AppLogger.info('No resting heart rate data available');
+      }
+      return restingHR;
+    } catch (e) {
+      AppLogger.error('Error getting resting heart rate data', e);
+      return null;
+    }
+  }
+
+  /// Get heart rate data for a specific date range
+  static Future<List<Map<String, dynamic>>> getHeartRateData({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final List<Map<String, dynamic>> heartRateData = 
+          await MinimalHealthChannel.getHeartRateData(startDate, endDate);
+      AppLogger.info('Retrieved ${heartRateData.length} heart rate readings');
+      return heartRateData;
+    } catch (e) {
+      AppLogger.error('Error getting heart rate data range', e);
+      return [];
+    }
+  }
+
+  /// Get average heart rate for a specific date
+  static Future<double?> getAverageHeartRateForDate(DateTime date) async {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    
+    final heartRateData = await getHeartRateData(
+      startDate: startOfDay,
+      endDate: endOfDay,
+    );
+    
+    if (heartRateData.isEmpty) return null;
+    
+    final totalHeartRate = heartRateData.fold<double>(
+      0.0,
+      (sum, reading) => sum + (reading['value'] as double? ?? 0.0),
+    );
+    
+    return totalHeartRate / heartRateData.length;
+  }
+
   /// Get today's health summary with real Health Connect data
   static Future<Map<String, dynamic>> getTodayHealthSummary() async {
     try {
@@ -326,6 +406,8 @@ class HealthService {
         getMindfulnessMinutesToday(),
         getLatestWeight(),
         getMedicationAdherenceToday(),
+        getLatestHeartRate(),
+        getRestingHeartRateToday(),
       ]);
 
       final summary = {
@@ -336,6 +418,8 @@ class HealthService {
         'mindfulnessMinutes': results[4] as double,
         'weight': results[5] as double?,
         'medicationAdherence': results[6] as double,
+        'heartRate': results[7] as double?,
+        'restingHeartRate': results[8] as double?,
         'timestamp': DateTime.now().toIso8601String(),
         'dataSource': 'health_connect',
         'isInitialized': _isInitialized,

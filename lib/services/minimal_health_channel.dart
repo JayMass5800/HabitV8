@@ -21,6 +21,7 @@ class MinimalHealthChannel {
     'WATER',
     'WEIGHT',
     'MINDFULNESS', // Available if supported by Health Connect version
+    'HEART_RATE', // Heart rate for habit correlation analysis
   ];
 
   /// Initialize the minimal health channel
@@ -305,6 +306,91 @@ class MinimalHealthChannel {
     } catch (e) {
       AppLogger.error('Error getting latest weight', e);
       return null;
+    }
+  }
+
+  /// Get latest heart rate reading
+  static Future<double?> getLatestHeartRate() async {
+    try {
+      final now = DateTime.now();
+      final startTime = now.subtract(const Duration(hours: 24)); // Last 24 hours
+
+      final data = await getHealthData(
+        dataType: 'HEART_RATE',
+        startDate: startTime,
+        endDate: now,
+      );
+
+      if (data.isEmpty) {
+        AppLogger.info('No heart rate data found in the last 24 hours');
+        return null;
+      }
+
+      // Sort by timestamp and get the latest
+      data.sort((a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
+      final latestHeartRate = data.first['value'] as double;
+
+      AppLogger.info('Latest heart rate: ${latestHeartRate.round()} bpm');
+      return latestHeartRate;
+    } catch (e) {
+      AppLogger.error('Error getting latest heart rate', e);
+      return null;
+    }
+  }
+
+  /// Get resting heart rate for today
+  static Future<double?> getRestingHeartRateToday() async {
+    try {
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final data = await getHealthData(
+        dataType: 'HEART_RATE',
+        startDate: startOfDay,
+        endDate: endOfDay,
+      );
+
+      if (data.isEmpty) {
+        AppLogger.info('No heart rate data found for today');
+        return null;
+      }
+
+      // Calculate resting heart rate (lowest 10% of readings)
+      final heartRates = data.map((record) => record['value'] as double).toList();
+      heartRates.sort();
+      
+      final restingCount = (heartRates.length * 0.1).ceil();
+      if (restingCount == 0) return heartRates.first;
+      
+      final restingRates = heartRates.take(restingCount);
+      final restingHeartRate = restingRates.reduce((a, b) => a + b) / restingRates.length;
+
+      AppLogger.info('Resting heart rate today: ${restingHeartRate.round()} bpm');
+      return restingHeartRate;
+    } catch (e) {
+      AppLogger.error('Error getting resting heart rate', e);
+      return null;
+    }
+  }
+
+  /// Get heart rate data for a specific date range
+  static Future<List<Map<String, dynamic>>> getHeartRateData(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    try {
+      final data = await getHealthData(
+        dataType: 'HEART_RATE',
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+      AppLogger.info('Retrieved ${data.length} heart rate readings');
+      return data;
+    } catch (e) {
+      AppLogger.error('Error getting heart rate data range', e);
+      return [];
     }
   }
 
