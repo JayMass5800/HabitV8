@@ -10,25 +10,25 @@ import java.util.ArrayList;
  * Health Permission Override Class
  * 
  * This class overrides the health plugin's default behavior to ensure
- * only the 6 essential health permissions are ever referenced or requested.
+ * only the 7 essential health permissions are ever referenced or requested.
  * This prevents Google Play Console static analysis from detecting
  * unwanted health permissions.
  */
 public class HealthPermissionOverride {
     
-    // ONLY these 6 health permissions are allowed
+    // ONLY these 7 health permissions are allowed
     private static final List<String> ALLOWED_HEALTH_PERMISSIONS = Arrays.asList(
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_ACTIVE_CALORIES_BURNED", 
         "android.permission.health.READ_SLEEP",
         "android.permission.health.READ_HYDRATION",
         "android.permission.health.READ_MINDFULNESS",
-        "android.permission.health.READ_WEIGHT"
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_HEART_RATE"
     );
     
     // All other health permissions are FORBIDDEN and will be filtered out
     private static final List<String> FORBIDDEN_HEALTH_PERMISSIONS = Arrays.asList(
-        "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_BLOOD_PRESSURE",
         "android.permission.health.READ_BLOOD_GLUCOSE",
         "android.permission.health.READ_BODY_TEMPERATURE",

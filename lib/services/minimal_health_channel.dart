@@ -5,7 +5,7 @@ import 'logging_service.dart';
 /// MinimalHealthChannel provides a direct interface to our custom MinimalHealthPlugin
 /// 
 /// This service communicates with the native Android plugin that ONLY accesses
-/// the 6 essential health data types, preventing Google Play Console rejection.
+/// the 7 essential health data types, preventing Google Play Console rejection.
 /// 
 /// CRITICAL: This service ONLY works with real Health Connect data on Android.
 /// No mock data, no simulation - only authentic health data from the user's device.

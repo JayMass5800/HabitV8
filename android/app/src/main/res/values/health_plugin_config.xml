@@ -4,7 +4,7 @@
     <!-- This prevents the plugin from declaring unwanted permissions -->
     
     <!-- Explicitly disable all health data types except the ones we use -->
-    <bool name="health_plugin_heart_rate_enabled">false</bool>
+    <bool name="health_plugin_heart_rate_enabled">true</bool>
     <bool name="health_plugin_blood_pressure_enabled">false</bool>
     <bool name="health_plugin_blood_glucose_enabled">false</bool>
     <bool name="health_plugin_body_temperature_enabled">false</bool>
@@ -37,7 +37,7 @@
     <bool name="health_plugin_cervical_position_enabled">false</bool>
     <bool name="health_plugin_skin_temperature_enabled">false</bool>
     
-    <!-- Enable only the 6 data types we actually use -->
+    <!-- Enable only the 7 data types we actually use -->
     <bool name="health_plugin_steps_enabled">true</bool>
     <bool name="health_plugin_active_energy_burned_enabled">true</bool>
     <bool name="health_plugin_sleep_enabled">true</bool>

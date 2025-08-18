@@ -233,30 +233,6 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
         return Icons.access_time;
     }
   }
-
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'health':
-        return Icons.favorite;
-      case 'fitness':
-        return Icons.fitness_center;
-      case 'productivity':
-        return Icons.work;
-      case 'learning':
-        return Icons.school;
-      case 'personal':
-        return Icons.person;
-      case 'social':
-        return Icons.people;
-      case 'finance':
-        return Icons.attach_money;
-      case 'mindfulness':
-        return Icons.self_improvement;
-      case 'all':
-      default:
-        return Icons.apps;
-    }
-  }
 }
 
 class _HabitCard extends ConsumerWidget {
@@ -430,8 +406,8 @@ class _HabitCard extends ConsumerWidget {
                   child: _StatItem(
                     icon: Icons.calendar_today,
                     label: 'Total',
-                    value: '${habit.completedDates.length}',
-                    color: habit.completedDates.isNotEmpty ? Colors.blue : Colors.grey,
+                    value: '${habit.completions.length}',
+                    color: habit.completions.isNotEmpty ? Colors.blue : Colors.grey,
                   ),
                 ),
               ],
@@ -497,7 +473,7 @@ class _HabitCard extends ConsumerWidget {
           await habitServiceAsync.when(
             data: (habitService) async {
               try {
-                await habitService.deleteHabit(habit.id);
+                await habitService.deleteHabit(habit);
                 
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
