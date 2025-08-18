@@ -273,6 +273,48 @@ class HealthHabitMappingService {
       unit: 'doses',
       description: 'Medication and supplement tracking for health management',
     ),
+    
+    'HEART_RATE': HealthHabitMapping(
+      keywords: [
+        // Basic heart rate terms
+        'heart', 'heartrate', 'hr', 'bpm', 'beats', 'pulse', 'cardiac',
+        'cardiovascular', 'cardio', 'rhythm', 'rate', 'monitor',
+        // Exercise and fitness context
+        'exercise', 'workout', 'training', 'fitness', 'active', 'activity',
+        'run', 'running', 'jog', 'jogging', 'bike', 'biking', 'cycle', 'cycling',
+        'swim', 'swimming', 'aerobic', 'aerobics', 'hiit', 'interval',
+        // Meditation and relaxation context
+        'meditate', 'meditation', 'mindful', 'mindfulness', 'breathe', 'breathing',
+        'relax', 'relaxation', 'calm', 'calming', 'zen', 'peaceful', 'tranquil',
+        'stress', 'anxiety', 'worry', 'tension', 'unwind', 'decompress',
+        // Health monitoring
+        'health', 'healthy', 'wellness', 'wellbeing', 'vital', 'vitals',
+        'track', 'tracking', 'monitor', 'monitoring', 'measure', 'measuring',
+        'check', 'checking', 'record', 'recording', 'log', 'logging',
+        // Medical and recovery
+        'recovery', 'recover', 'rest', 'resting', 'sleep', 'sleeping',
+        'medical', 'doctor', 'physician', 'checkup', 'appointment',
+        'condition', 'chronic', 'maintenance', 'therapeutic', 'treatment',
+        // Intensity and zones
+        'zone', 'zones', 'target', 'max', 'maximum', 'resting', 'elevated',
+        'intense', 'intensity', 'moderate', 'light', 'vigorous', 'peak',
+        // Emotional and mental states
+        'emotion', 'emotional', 'mood', 'feeling', 'mental', 'psychological',
+        'excited', 'nervous', 'anxious', 'happy', 'sad', 'angry', 'frustrated',
+        // Time-based patterns
+        'morning', 'evening', 'daily', 'routine', 'regular', 'consistent',
+        'before', 'after', 'during', 'throughout', 'continuous', 'periodic',
+      ],
+      thresholds: {
+        'resting': 60,        // Resting heart rate (meditation, relaxation)
+        'light': 100,         // Light activity heart rate
+        'moderate': 130,      // Moderate exercise heart rate
+        'vigorous': 160,      // Vigorous exercise heart rate
+        'maximum': 180,       // High-intensity exercise
+      },
+      unit: 'bpm',
+      description: 'Heart rate monitoring for exercise, meditation, and health tracking',
+    ),
   };
 
   /// Comprehensive category to health data type mappings
@@ -281,18 +323,22 @@ class HealthHabitMappingService {
     'fitness': [
       CategoryHealthMapping('STEPS', 0.8, 'Most fitness activities involve movement'),
       CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.9, 'Fitness activities burn calories'),
+      CategoryHealthMapping('HEART_RATE', 0.8, 'Fitness activities elevate heart rate'),
     ],
     'exercise': [
       CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.9, 'Exercise burns active energy'),
       CategoryHealthMapping('STEPS', 0.7, 'Many exercises involve movement'),
+      CategoryHealthMapping('HEART_RATE', 0.85, 'Exercise elevates heart rate'),
     ],
     'workout': [
       CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.9, 'Workouts burn calories'),
       CategoryHealthMapping('STEPS', 0.6, 'Some workouts involve steps'),
+      CategoryHealthMapping('HEART_RATE', 0.85, 'Workouts elevate heart rate'),
     ],
     'cardio': [
       CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.95, 'Cardio burns significant calories'),
       CategoryHealthMapping('STEPS', 0.8, 'Cardio often involves movement'),
+      CategoryHealthMapping('HEART_RATE', 0.95, 'Cardio significantly elevates heart rate'),
     ],
     'strength': [
       CategoryHealthMapping('ACTIVE_ENERGY_BURNED', 0.8, 'Strength training burns calories'),
@@ -314,6 +360,7 @@ class HealthHabitMappingService {
     'health': [
       CategoryHealthMapping('MEDICATION', 0.8, 'Health management often involves medication'),
       CategoryHealthMapping('WEIGHT', 0.7, 'Health tracking often includes weight'),
+      CategoryHealthMapping('HEART_RATE', 0.7, 'Health monitoring includes heart rate'),
       CategoryHealthMapping('STEPS', 0.6, 'General health often involves activity'),
       CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Health includes sleep tracking'),
       CategoryHealthMapping('WATER', 0.6, 'Health includes hydration'),
@@ -321,6 +368,7 @@ class HealthHabitMappingService {
     'wellness': [
       CategoryHealthMapping('MINDFULNESS', 0.8, 'Wellness includes mental health'),
       CategoryHealthMapping('SLEEP_IN_BED', 0.7, 'Wellness includes rest'),
+      CategoryHealthMapping('HEART_RATE', 0.6, 'Wellness includes heart rate monitoring'),
       CategoryHealthMapping('WATER', 0.6, 'Wellness includes hydration'),
       CategoryHealthMapping('STEPS', 0.6, 'Wellness includes activity'),
     ],
@@ -389,21 +437,26 @@ class HealthHabitMappingService {
     // Mental Health and Mindfulness Categories
     'mindfulness': [
       CategoryHealthMapping('MINDFULNESS', 0.95, 'Mindfulness category maps directly'),
+      CategoryHealthMapping('HEART_RATE', 0.7, 'Mindfulness affects heart rate variability'),
     ],
     'meditation': [
       CategoryHealthMapping('MINDFULNESS', 0.95, 'Meditation is mindfulness practice'),
+      CategoryHealthMapping('HEART_RATE', 0.8, 'Meditation lowers resting heart rate'),
     ],
     'mental': [
       CategoryHealthMapping('MINDFULNESS', 0.8, 'Mental health includes mindfulness'),
       CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Mental health includes rest'),
+      CategoryHealthMapping('HEART_RATE', 0.6, 'Mental health affects heart rate'),
     ],
     'stress': [
       CategoryHealthMapping('MINDFULNESS', 0.8, 'Stress management includes mindfulness'),
       CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Stress affects sleep'),
+      CategoryHealthMapping('HEART_RATE', 0.7, 'Stress management affects heart rate'),
     ],
     'relaxation': [
       CategoryHealthMapping('MINDFULNESS', 0.8, 'Relaxation includes mindfulness'),
       CategoryHealthMapping('SLEEP_IN_BED', 0.6, 'Relaxation affects sleep'),
+      CategoryHealthMapping('HEART_RATE', 0.7, 'Relaxation lowers heart rate'),
     ],
     
     // Activity and Movement Categories
@@ -682,6 +735,14 @@ class HealthHabitMappingService {
           );
         }
         
+        // Special handling for heart rate
+        if (mapping.healthDataType == 'HEART_RATE') {
+          return HabitCompletionResult(
+            shouldComplete: false,
+            reason: 'No heart rate data found. Heart rate must be monitored by a fitness tracker, smartwatch, or health app to enable auto-completion.',
+          );
+        }
+        
         return HabitCompletionResult(
           shouldComplete: false,
           reason: 'No health data available for ${mapping.healthDataType}',
@@ -705,6 +766,31 @@ class HealthHabitMappingService {
             // For weight, just count measurements
             dataPoints++;
             totalValue = dataPoints.toDouble();
+            break;
+          case 'HEART_RATE':
+            // For heart rate, we need to determine the appropriate metric
+            // based on the habit type (exercise vs meditation)
+            final habitName = habit.name.toLowerCase();
+            final habitDescription = (habit.description ?? '').toLowerCase();
+            final searchText = '$habitName $habitDescription';
+            
+            if (_isExerciseRelated(searchText)) {
+              // For exercise habits, look for elevated heart rate
+              if (value >= mapping.threshold) {
+                dataPoints++;
+                totalValue = math.max(totalValue, value); // Use peak heart rate
+              }
+            } else if (_isMeditationRelated(searchText)) {
+              // For meditation habits, look for sustained periods of lower heart rate
+              if (value <= mapping.threshold) {
+                dataPoints++;
+                totalValue += 1.0; // Count minutes of low heart rate
+              }
+            } else {
+              // General heart rate monitoring - use average
+              totalValue += value;
+              dataPoints++;
+            }
             break;
           default:
             totalValue += value;
@@ -1183,6 +1269,38 @@ class HealthHabitMappingService {
       AppLogger.error('Error extracting custom threshold from: $searchText', e);
       return null;
     }
+  }
+
+  /// Check if a habit is exercise-related based on keywords
+  static bool _isExerciseRelated(String searchText) {
+    const exerciseKeywords = [
+      'exercise', 'workout', 'training', 'fitness', 'gym', 'cardio',
+      'run', 'running', 'jog', 'jogging', 'bike', 'biking', 'cycle', 'cycling',
+      'swim', 'swimming', 'aerobic', 'aerobics', 'hiit', 'interval',
+      'strength', 'weights', 'lifting', 'crossfit', 'pilates', 'yoga',
+      'dance', 'dancing', 'boxing', 'kickboxing', 'martial', 'sports',
+      'tennis', 'basketball', 'football', 'soccer', 'volleyball',
+      'hike', 'hiking', 'climb', 'climbing', 'ski', 'skiing',
+      'intense', 'vigorous', 'active', 'activity', 'sweat', 'sweating',
+    ];
+    
+    return exerciseKeywords.any((keyword) => searchText.contains(keyword));
+  }
+
+  /// Check if a habit is meditation/relaxation-related based on keywords
+  static bool _isMeditationRelated(String searchText) {
+    const meditationKeywords = [
+      'meditate', 'meditation', 'mindful', 'mindfulness', 'zen', 'calm', 'calming',
+      'peace', 'peaceful', 'tranquil', 'breathe', 'breathing', 'breath',
+      'relax', 'relaxation', 'unwind', 'stress', 'anxiety', 'worry',
+      'focus', 'concentration', 'awareness', 'present', 'moment',
+      'spiritual', 'prayer', 'pray', 'gratitude', 'grateful', 'thankful',
+      'reflection', 'contemplate', 'introspect', 'journal', 'journaling',
+      'tai', 'chi', 'qigong', 'vipassana', 'samatha', 'loving', 'kindness',
+      'compassion', 'metta', 'mantra', 'guided', 'silent', 'retreat',
+    ];
+    
+    return meditationKeywords.any((keyword) => searchText.contains(keyword));
   }
 }
 

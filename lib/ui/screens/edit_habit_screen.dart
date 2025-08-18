@@ -93,7 +93,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
-          value: _selectedCategory,
+          initialValue: _selectedCategory,
           decoration: const InputDecoration(
             labelText: 'Category',
             border: OutlineInputBorder(),
@@ -430,7 +430,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                   _notificationsEnabled = value;
                 });
               },
-              activeColor: _selectedColor,
+              activeThumbColor: _selectedColor,
             ),
             // Only show time picker for non-hourly habits
             if (_notificationsEnabled && _selectedFrequency != HabitFrequency.hourly) ...[

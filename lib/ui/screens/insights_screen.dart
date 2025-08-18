@@ -2259,13 +2259,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.indigo.shade200),
           ),
-          child: const Center(
-            child: Text(
-              'Sleep correlation chart would appear here\n(requires health data integration)',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
+          child: _buildSleepCorrelationChart(habits),
         ),
         const SizedBox(height: 12),
         Container(
@@ -2280,7 +2274,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'On days following 7+ hours of sleep, your overall habit completion rate increases by an average of 18%.',
+                  _generateSleepInsight(habits),
                   style: TextStyle(
                     color: Colors.indigo[700],
                     fontWeight: FontWeight.w500,
@@ -2313,13 +2307,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.orange.shade200),
           ),
-          child: const Center(
-            child: Text(
-              'Activity correlation chart would appear here\n(requires health data integration)',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
+          child: _buildActivityCorrelationChart(habits),
         ),
         const SizedBox(height: 12),
         Container(
@@ -2334,7 +2322,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'You\'re twice as likely to complete \'Focus Work\' on days you log a workout of at least 30 minutes.',
+                  _generateActivityInsight(habits),
                   style: TextStyle(
                     color: Colors.orange[700],
                     fontWeight: FontWeight.w500,
@@ -2367,13 +2355,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.purple.shade200),
           ),
-          child: const Center(
-            child: Text(
-              'Heart rate trend chart would appear here\n(requires health data integration)',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
+          child: _buildHeartRateTrendChart(habits),
         ),
         const SizedBox(height: 12),
         Container(
@@ -2388,7 +2370,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Your average Resting Heart Rate is 3 bpm lower on days you complete your \'Morning Meditation\' habit.',
+                  _generateHeartRateInsight(habits),
                   style: TextStyle(
                     color: Colors.purple[700],
                     fontWeight: FontWeight.w500,
