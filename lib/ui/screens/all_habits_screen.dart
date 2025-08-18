@@ -51,75 +51,46 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                   child: Row(
                     children: [
                       Icon(_getSortIcon(choice), size: 20),
-                      const SizedBox(width: 8),
-                      Text(choice),
-                      if (choice == _selectedSort) ...[
-                        const Spacer(),
-                        const Icon(Icons.check, size: 16, color: Colors.green),
-                      ],
-                    ],
-                  ),
-                );
-              }).toList();
-            },
-            icon: const Icon(Icons.sort),
-          ),
-          // Category Filter Menu
-          CategoryFilterWidget(
-            selectedCategory: _selectedCategory,
-            onCategoryChanged: (value) {
-              setState(() {
-                _selectedCategory = value;
-              });
-            },
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Column(
-            children: [
-              // Filter Chips
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      // Only show the current filters display, no filter chips
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(40),
+        child: (_selectedCategory != 'All' || _selectedSort != 'Recent')
+            ? Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                 child: Row(
                   children: [
-                    _FilterChip(
-                      label: 'All',
-                      isSelected: _selectedFilter == 'All',
-                      onSelected: () => setState(() => _selectedFilter = 'All'),
-                    ),
-                    const SizedBox(width: 8),
-                    _FilterChip(
-                      label: 'Active',
-                      isSelected: _selectedFilter == 'Active',
-                      onSelected: () => setState(() => _selectedFilter = 'Active'),
-                    ),
-                    const SizedBox(width: 8),
-                    _FilterChip(
-                      label: 'Struggling',
-                      isSelected: _selectedFilter == 'Struggling',
-                      onSelected: () => setState(() => _selectedFilter = 'Struggling'),
-                    ),
+                    if (_selectedCategory != 'All')
+                      Chip(
+                        label: Text(_selectedCategory),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () => setState(() => _selectedCategory = 'All'),
+                      ),
+                    if (_selectedCategory != 'All' && _selectedSort != 'Recent')
+                      const SizedBox(width: 8),
+                    if (_selectedSort != 'Recent')
+                      Chip(
+                        label: Text(_selectedSort),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () => setState(() => _selectedSort = 'Recent'),
+                      ),
+                    if (_selectedCategory != 'All' || _selectedSort != 'Recent')
+                      const Spacer(),
+                    if (_selectedCategory != 'All' || _selectedSort != 'Recent')
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedFilter = 'All';
+                            _selectedCategory = 'All';
+                            _selectedSort = 'Recent';
+                          });
+                        },
+                        child: const Text('Clear Filters'),
+                      ),
                   ],
                 ),
-              ),
-              
-              // Current filters display
-              if (_selectedCategory != 'All' || _selectedSort != 'Recent')
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                  child: Row(
-                    children: [
-                      if (_selectedCategory != 'All')
-                        Chip(
-                          label: Text(_selectedCategory),
-                          deleteIcon: const Icon(Icons.close, size: 16),
-                          onDeleted: () => setState(() => _selectedCategory = 'All'),
-                        ),
-                      if (_selectedCategory != 'All' && _selectedSort != 'Recent')
-                        const SizedBox(width: 8),
-                      if (_selectedSort != 'Recent')
-                        Chip(
+              )
+            : const SizedBox.shrink(),
+      ),
                           label: Text('Sort: $_selectedSort'),
                           deleteIcon: const Icon(Icons.close, size: 16),
                           onDeleted: () => setState(() => _selectedSort = 'Recent'),
@@ -159,92 +130,25 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                 final allHabits = snapshot.data!;
                 final filteredHabits = _filterAndSortHabits(allHabits);
 
-                if (filteredHabits.isEmpty) {
-                  return EmptyStateWidget(
-                    icon: Icons.search_off,
-                    title: 'No habits match your filters',
-                    subtitle: 'Try adjusting your filters or create a new habit',
-                    action: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedFilter = 'All';
-                          _selectedCategory = 'All';
-                          _selectedSort = 'Recent';
-                        });
-                      },
-                      child: const Text('Clear Filters'),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredHabits.length,
-                  itemBuilder: (context, index) {
-                    final habit = filteredHabits[index];
-                    return _HabitCard(
-                      habit: habit,
-                      rank: _selectedSort.contains('Performers') || _selectedSort == 'Completion Rate'
-                          ? index + 1
-                          : null,
-                      showPerformanceIndicator: _selectedSort.contains('Performers'),
-                    );
-                  },
-                );
-              },
-            ),
-            loading: () => const LoadingWidget(message: 'Loading habits...'),
-            error: (error, stack) => ErrorStateWidget(
-              message: 'Error loading habits: $error',
-              onRetry: () => setState(() {}),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: const CreateHabitExtendedFAB(),
-    );
-  }
-
-  List<Habit> _filterAndSortHabits(List<Habit> habits) {
-    List<Habit> filtered = habits;
-
-    // Apply category filter
-    if (_selectedCategory != 'All') {
-      filtered = filtered.where((habit) =>
-        habit.category == _selectedCategory).toList();
+                // ...existing code...
     }
 
-    // Apply status filter
-    switch (_selectedFilter) {
-      case 'Active':
-        filtered = filtered.where((habit) => habit.currentStreak > 0).toList();
-        break;
-      case 'Struggling':
-        filtered = filtered.where((habit) =>
-          habit.completionRate < 0.5 || habit.currentStreak == 0).toList();
-        break;
-      case 'All':
-      default:
-        // No additional filtering
-        break;
-    }
-
-    // Apply sorting
+    // Apply sort
     switch (_selectedSort) {
-      case 'Top Performers':
-        filtered.sort((a, b) => b.completionRate.compareTo(a.completionRate));
-        break;
-      case 'Bottom Performers':
-        filtered.sort((a, b) => a.completionRate.compareTo(b.completionRate));
-        break;
-      case 'Longest Streak':
-        filtered.sort((a, b) => b.currentStreak.compareTo(a.currentStreak));
-        break;
       case 'Alphabetical':
         filtered.sort((a, b) => a.name.compareTo(b.name));
         break;
       case 'Completion Rate':
         filtered.sort((a, b) => b.completionRate.compareTo(a.completionRate));
+        break;
+      case 'Top Performers':
+        filtered.sort((a, b) => b.currentStreak.compareTo(a.currentStreak));
+        break;
+      case 'Bottom Performers':
+        filtered.sort((a, b) => a.currentStreak.compareTo(b.currentStreak));
+        break;
+      case 'Longest Streak':
+        filtered.sort((a, b) => b.longestStreak.compareTo(a.longestStreak));
         break;
       case 'Recent':
       default:
@@ -295,6 +199,77 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       default:
         return Icons.apps;
     }
+  }
+}
+
+// Top-level helper classes
+
+class _HabitCard extends ConsumerWidget {
+  final Habit habit;
+  final int? rank;
+  final bool showPerformanceIndicator;
+
+  const _HabitCard({
+    required this.habit,
+    this.rank,
+    this.showPerformanceIndicator = false,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // ...existing code...
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ...existing code...
+          ],
+        ),
+      ),
+    );
+  }
+  // ...existing code...
+}
+
+class _StatItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // ...existing code...
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -814,25 +789,4 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onSelected;
-
-  const _FilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => onSelected(),
-      selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-      checkmarkColor: Theme.of(context).primaryColor,
-    );
-  }
-}
+// ...existing code...
