@@ -104,13 +104,13 @@ foreach ($manifestFile in $manifestFiles) {
         
         # Find all health permissions
         $healthPermissionPattern = 'android\.permission\.health\.[A-Z_]+'
-        $matches = [regex]::Matches($content, $healthPermissionPattern)
+        $healthMatches = [regex]::Matches($content, $healthPermissionPattern)
         
-        if ($matches.Count -eq 0) {
+        if ($healthMatches.Count -eq 0) {
             Write-Host "  ℹ️  No health permissions found in this manifest" -ForegroundColor Gray
         }
         
-        foreach ($match in $matches) {
+        foreach ($match in $healthMatches) {
             $permission = $match.Value
             if ($allHealthPermissions -notcontains $permission) {
                 $allHealthPermissions += $permission

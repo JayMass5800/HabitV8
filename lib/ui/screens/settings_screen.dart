@@ -1,8 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../services/permission_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/theme_service.dart';
@@ -17,6 +20,7 @@ import '../widgets/calendar_selection_dialog.dart';
 import '../widgets/health_education_dialog.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/progressive_disclosure.dart';
+import '../widgets/radio_group.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -25,7 +29,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBindingObserver {
+class _SettingsScreenState extends ConsumerState<SettingsScreen>
+    with WidgetsBindingObserver {
   bool _notificationsEnabled = false;
   bool _calendarSync = false;
   bool _healthDataSync = false;
@@ -71,7 +76,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     // When app resumes, refresh health permissions in case they were changed externally
     if (state == AppLifecycleState.resumed) {
       AppLogger.info('App resumed, refreshing health permissions');
@@ -84,22 +89,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
     try {
       final permissionService = PermissionService();
 
-      final notificationStatus = await permissionService.isNotificationPermissionGranted();
-      
+      final notificationStatus = await permissionService
+          .isNotificationPermissionGranted();
+
       // Load calendar sync status using the calendar service
       final calendarSyncEnabled = await CalendarService.isCalendarSyncEnabled();
 
       // Load health sync preference and verify actual permissions
       // Load auto-completion settings
-      final autoCompletionEnabled = await AutomaticHabitCompletionService.isServiceEnabled();
-      final autoCompletionInterval = await AutomaticHabitCompletionService.getCheckIntervalMinutes();
+      final autoCompletionEnabled =
+          await AutomaticHabitCompletionService.isServiceEnabled();
+      final autoCompletionInterval =
+          await AutomaticHabitCompletionService.getCheckIntervalMinutes();
       final healthSyncPreference = await _loadHealthSyncPreference();
       bool healthStatus = false;
-      
+
       if (healthSyncPreference) {
         // If user previously enabled health sync, check if permissions are still valid
         healthStatus = await permissionService.isHealthPermissionGranted();
-        
+
         // If permissions were revoked externally, update the preference
         if (!healthStatus) {
           await _saveHealthSyncPreference(false);
@@ -175,44 +183,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
   Future<void> _refreshHealthPermissions() async {
     try {
       AppLogger.info('Refreshing health permissions status');
-      
+
       // Use the new refresh method from HealthService
       final bool hasPermissions = await HealthService.refreshPermissions();
-      
+
       // Update the UI state if permissions changed
       if (mounted && hasPermissions != _healthDataSync) {
         setState(() {
           _healthDataSync = hasPermissions;
         });
-        
+
         // Update the saved preference to match the actual permission state
         await _saveHealthSyncPreference(hasPermissions);
-        
-        if (hasPermissions) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Health permissions detected! Health data sync is now enabled. 🎉'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        } else {
-          // Permissions were revoked externally
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Health permissions were revoked. Health data sync is now disabled.'),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
-            ),
-          );
+
+        if (mounted) {
+          if (hasPermissions) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Health permissions detected! Health data sync is now enabled. 🎉',
+                ),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          } else {
+            // Permissions were revoked externally
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Health permissions were revoked. Health data sync is now disabled.',
+                ),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
         }
-        
+
         AppLogger.info('Health permissions status updated: $hasPermissions');
       } else if (mounted) {
         // Even if state didn't change, show feedback that refresh was performed
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Health permissions refreshed. Status: ${hasPermissions ? 'Enabled' : 'Disabled'}'),
+            content: Text(
+              'Health permissions refreshed. Status: ${hasPermissions ? 'Enabled' : 'Disabled'}',
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -222,7 +238,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Error refreshing health permissions. Please try again.'),
+            content: Text(
+              'Error refreshing health permissions. Please try again.',
+            ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 3),
           ),
@@ -237,19 +255,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
 
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Settings'),
-        ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        appBar: AppBar(title: const Text('Settings')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -267,7 +279,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                       _saveDefaultScreen(newValue);
                     }
                   },
-                  items: _availableScreens.map<DropdownMenuItem<String>>((String value) {
+                  items: _availableScreens.map<DropdownMenuItem<String>>((
+                    String value,
+                  ) {
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Text(value),
@@ -309,7 +323,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 onChanged: (value) => _toggleNotifications(value),
                 secondary: const Icon(Icons.notifications),
               ),
-
             ],
           ),
           const SizedBox(height: 24),
@@ -346,7 +359,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                       ),
                       _SettingsTile(
                         title: 'Calendar Renewal Status',
-                        subtitle: 'View and manage automatic calendar sync renewal',
+                        subtitle:
+                            'View and manage automatic calendar sync renewal',
                         leading: const Icon(Icons.refresh),
                         onTap: () => _showCalendarRenewalStatus(),
                       ),
@@ -362,7 +376,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                       const Divider(),
                       SwitchListTile(
                         title: const Text('Automatic Habit Completion'),
-                        subtitle: const Text('Auto-complete habits based on health data'),
+                        subtitle: const Text(
+                          'Auto-complete habits based on health data',
+                        ),
                         value: _autoCompletionEnabled,
                         onChanged: (value) => _toggleAutoCompletion(value),
                         secondary: const Icon(Icons.auto_awesome),
@@ -370,23 +386,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                       if (_autoCompletionEnabled) ...[
                         ListTile(
                           title: const Text('Check Interval'),
-                          subtitle: Text('Check every $_autoCompletionInterval minutes'),
+                          subtitle: Text(
+                            'Check every $_autoCompletionInterval minutes',
+                          ),
                           leading: const Icon(Icons.schedule),
                           trailing: PopupMenuButton<int>(
-                            onSelected: (value) => _setAutoCompletionInterval(value),
+                            onSelected: (value) =>
+                                _setAutoCompletionInterval(value),
                             itemBuilder: (context) => [
-                              const PopupMenuItem(value: 15, child: Text('15 minutes')),
-                              const PopupMenuItem(value: 30, child: Text('30 minutes')),
-                              const PopupMenuItem(value: 60, child: Text('1 hour')),
-                              const PopupMenuItem(value: 120, child: Text('2 hours')),
-                              const PopupMenuItem(value: 240, child: Text('4 hours')),
+                              const PopupMenuItem(
+                                value: 15,
+                                child: Text('15 minutes'),
+                              ),
+                              const PopupMenuItem(
+                                value: 30,
+                                child: Text('30 minutes'),
+                              ),
+                              const PopupMenuItem(
+                                value: 60,
+                                child: Text('1 hour'),
+                              ),
+                              const PopupMenuItem(
+                                value: 120,
+                                child: Text('2 hours'),
+                              ),
+                              const PopupMenuItem(
+                                value: 240,
+                                child: Text('4 hours'),
+                              ),
                             ],
                             child: const Icon(Icons.more_vert),
                           ),
                         ),
                         ListTile(
                           title: const Text('Health Integration Dashboard'),
-                          subtitle: const Text('View detailed health-habit integration'),
+                          subtitle: const Text(
+                            'View detailed health-habit integration',
+                          ),
                           leading: const Icon(Icons.dashboard),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => context.push('/health-integration'),
@@ -486,32 +522,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioListTile<ThemeMode>(
-              title: const Text('Light'),
-              value: ThemeMode.light,
-              groupValue: themeState.themeMode,
+            RadioGroup<ThemeMode>(
+              value: themeState.themeMode,
               onChanged: (value) {
-                ref.read(themeProvider.notifier).setThemeMode(value!);
+                ref.read(themeProvider.notifier).setThemeMode(value);
                 Navigator.of(context).pop();
               },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('Dark'),
-              value: ThemeMode.dark,
-              groupValue: themeState.themeMode,
-              onChanged: (value) {
-                ref.read(themeProvider.notifier).setThemeMode(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('System'),
-              value: ThemeMode.system,
-              groupValue: themeState.themeMode,
-              onChanged: (value) {
-                ref.read(themeProvider.notifier).setThemeMode(value!);
-                Navigator.of(context).pop();
-              },
+              children: [
+                RadioListTile<ThemeMode>(
+                  title: const Text('Light'),
+                  value: ThemeMode.light,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: const Text('Dark'),
+                  value: ThemeMode.dark,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: const Text('System'),
+                  value: ThemeMode.system,
+                ),
+              ],
             ),
           ],
         ),
@@ -549,11 +579,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                       : null,
                 ),
                 child: themeState.primaryColor == color
-                    ? Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 20,
-                      )
+                    ? Icon(Icons.check, color: Colors.white, size: 20)
                     : null,
               ),
             );
@@ -567,7 +593,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
     final permissionService = PermissionService();
 
     if (value) {
-      final granted = await permissionService.requestPermission(Permission.notification);
+      final granted = await permissionService.requestPermission(
+        Permission.notification,
+      );
       if (granted) {
         setState(() => _notificationsEnabled = true);
         _showSnackBar('Notifications enabled successfully! 🔔');
@@ -587,56 +615,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
       // Initialize calendar service with provider container for habit access
       final container = ProviderScope.containerOf(context);
       final initialized = await CalendarService.initialize(container);
-      
+
       if (initialized) {
         setState(() {
           _calendarSync = true;
         });
-        
+
         // Save the preference using the service
         await CalendarService.setCalendarSyncEnabled(true);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Calendar sync enabled! Please select a calendar to sync to. 📅'),
+              content: Text(
+                'Calendar sync enabled! Please select a calendar to sync to. 📅',
+              ),
               backgroundColor: Colors.green,
               duration: Duration(seconds: 3),
             ),
           );
-          
+
           // Show calendar selection dialog
           Future.delayed(const Duration(milliseconds: 500), () {
             _showCalendarSelection();
           });
         }
-        
-        AppLogger.info('Calendar sync enabled with device calendar integration');
+
+        AppLogger.info(
+          'Calendar sync enabled with device calendar integration',
+        );
       } else {
         setState(() {
           _calendarSync = false;
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Calendar sync initialization failed. Using basic calendar view.'),
+              content: Text(
+                'Calendar sync initialization failed. Using basic calendar view.',
+              ),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 3),
             ),
           );
         }
-        
+
         AppLogger.warning('Calendar sync failed to initialize');
       }
     } else {
       setState(() {
         _calendarSync = false;
       });
-      
+
       // Save the preference using the service
       await CalendarService.setCalendarSyncEnabled(false);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -646,7 +680,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
           ),
         );
       }
-      
+
       AppLogger.info('Calendar sync disabled');
     }
   }
@@ -658,7 +692,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
         context: context,
         builder: (context) => const CalendarSelectionDialog(),
       );
-      
+
       if (result == true) {
         // Calendar was selected successfully
         AppLogger.info('Calendar selection updated');
@@ -667,10 +701,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
       AppLogger.error('Error showing calendar selection', e);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -725,11 +756,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
 
         // First check if permissions are already granted (in case they were granted externally)
         bool hasPermissions = await HealthService.refreshPermissions();
-        
+
         if (!hasPermissions) {
           // Request health permissions if not already granted
           hasPermissions = await HealthService.requestPermissions();
-          
+
           // If permissions were requested but not immediately granted,
           // they might have been granted in Health Connect but need time to sync
           if (!hasPermissions) {
@@ -738,7 +769,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
             hasPermissions = await HealthService.refreshPermissions();
           }
         }
-        
+
         // Update UI state immediately
         setState(() {
           _healthDataSync = hasPermissions;
@@ -747,7 +778,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
         if (hasPermissions) {
           // Save the health sync preference to persist across app restarts
           await _saveHealthSyncPreference(true);
-          
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -760,7 +791,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Health permissions are required for this feature. Please grant permissions in Health Connect and return to the app.'),
+                content: const Text(
+                  'Health permissions are required for this feature. Please grant permissions in Health Connect and return to the app.',
+                ),
                 backgroundColor: Colors.orange,
                 duration: const Duration(seconds: 8),
                 action: SnackBarAction(
@@ -786,15 +819,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
     } else {
       // Save the disabled preference
       await _saveHealthSyncPreference(false);
-      
+
       setState(() {
         _healthDataSync = false;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Health data sync disabled'),
-          ),
+          const SnackBar(content: Text('Health data sync disabled')),
         );
       }
     }
@@ -805,16 +836,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
     setState(() {
       _autoCompletionEnabled = value;
     });
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('auto_completion_enabled', value);
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(value 
-            ? 'Automatic habit completion enabled' 
-            : 'Automatic habit completion disabled'),
+          content: Text(
+            value
+                ? 'Automatic habit completion enabled'
+                : 'Automatic habit completion disabled',
+          ),
         ),
       );
     }
@@ -825,44 +858,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
     setState(() {
       _autoCompletionInterval = minutes;
     });
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('auto_completion_interval', minutes);
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Check interval set to $minutes minutes'),
-        ),
+        SnackBar(content: Text('Check interval set to $minutes minutes')),
       );
     }
   }
 
-  Future<void> _testNotifications() async {
+  Future<void> _exportData() async {
     try {
-      // Send a regular test notification first
-      await NotificationService.showTestNotification();
+      setState(() {
+        _isLoading = true;
+      });
 
-      // Test notification with action buttons (Complete/Snooze)
-      await Future.delayed(const Duration(seconds: 1));
-      await NotificationService.scheduleHabitNotification(
-        id: 1001,
-        habitId: 'test-habit-action-buttons',
-        title: '🧪 Test Action Buttons',
-        body: 'Tap Complete or Snooze to test the notification action buttons!',
-        scheduledTime: DateTime.now().add(const Duration(seconds: 2)),
-      );
+      // Get habit data
+      final habitServiceAsync = ref.read(habitServiceProvider);
+      final habitService = habitServiceAsync.value;
+      if (habitService == null) {
+        _showSnackBar('Error: Habit service not available');
+        return;
+      }
 
-      _showSnackBar('Test notifications sent! Check the Complete/Snooze buttons 🚀');
+      final habits = await habitService.getAllHabits();
+
+      // Export to JSON file
+      final directory = await getApplicationDocumentsDirectory();
+      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+      final filePath = '${directory.path}/habitv8_export_$timestamp.json';
+
+      // Convert habits to JSON
+      final jsonData = habits.map((habit) => habit.toJson()).toList();
+      final jsonString = jsonEncode(jsonData);
+
+      // Write to file
+      final file = File(filePath);
+      await file.writeAsString(jsonString);
+
+      if (mounted) {
+        _showSnackBar('Data exported to: $filePath');
+        AppLogger.info('Data exported to: $filePath');
+      }
     } catch (e) {
-      _showSnackBar('Error sending test notification: $e');
-      AppLogger.error('Test notification error', e);
+      if (mounted) {
+        _showSnackBar('Error exporting data: $e');
+      }
+      AppLogger.error('Data export error', e);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
-  }
-
-  void _exportData() {
-    // TODO: Implement data export functionality
-    _showSnackBar('Data export feature coming soon!');
   }
 
   Future<void> _resetOnboarding() async {
@@ -914,7 +965,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 ),
                 SizedBox(width: 16),
                 Text('Clearing all data...'),
@@ -990,7 +1044,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
       applicationVersion: '1.0.0',
       applicationIcon: const Icon(Icons.track_changes, size: 48),
       children: [
-        const Text('A beautiful and intuitive habit tracking application built with Flutter.'),
+        const Text(
+          'A beautiful and intuitive habit tracking application built with Flutter.',
+        ),
         const SizedBox(height: 16),
         const Text('Features:'),
         const Text('• Visual habit tracking'),
@@ -1023,81 +1079,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
     );
   }
 
-  /// Debug calendar sync status
-  Future<void> _debugCalendarSync() async {
-    try {
-      // Print debug status to logs
-      await CalendarService.debugCalendarStatus();
-      
-      // Get detailed status for display
-      final status = await CalendarService.getCalendarSyncStatus();
-      
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Calendar Sync Debug'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Initialized: ${status['isInitialized']}'),
-                  Text('Sync Enabled: ${status['enabled']}'),
-                  Text('Has Permissions: ${status['hasPermissions']}'),
-                  Text('Device Calendar Available: ${status['deviceCalendarAvailable']}'),
-                  Text('Selected Calendar: ${status['selectedCalendar'] ?? 'None'}'),
-                  Text('Available Calendars: ${status['availableCalendarsCount']}'),
-                  const SizedBox(height: 16),
-                  const Text('Check the app logs for detailed debug information.'),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  // Test sync with existing habits
-                  final habitServiceAsync = ref.read(habitServiceProvider);
-                  final habitService = habitServiceAsync.value;
-                  if (habitService != null) {
-                    final habits = await habitService.getAllHabits();
-                    if (habits.isNotEmpty) {
-                      await CalendarService.syncAllHabitsToCalendar(habits);
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Test sync completed - check logs for details'),
-                            backgroundColor: Colors.blue,
-                          ),
-                        );
-                      }
-                    }
-                  }
-                },
-                child: const Text('Test Sync'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      AppLogger.error('Error in debug calendar sync', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Debug error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   /// Manage health permissions
   Future<void> _manageHealthPermissions() async {
     showDialog(
@@ -1109,7 +1090,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('This app can integrate with your health data to provide better insights:'),
+              Text(
+                'This app can integrate with your health data to provide better insights:',
+              ),
               SizedBox(height: 16),
               Text('• Step count tracking'),
               Text('• Sleep pattern analysis'),
@@ -1145,9 +1128,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(granted
-                        ? 'Health permissions granted!'
-                        : 'Health permissions denied'),
+                      content: Text(
+                        granted
+                            ? 'Health permissions granted!'
+                            : 'Health permissions denied',
+                      ),
                       backgroundColor: granted ? Colors.green : Colors.red,
                     ),
                   );
@@ -1169,7 +1154,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
         if (opened) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Health Connect opened! Grant permissions for HabitV8, then return to the app.'),
+              content: const Text(
+                'Health Connect opened! Grant permissions for HabitV8, then return to the app.',
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 5),
               action: SnackBarAction(
@@ -1194,7 +1181,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
   /// Show manual instructions for Health Connect
   void _showHealthConnectInstructions() {
     if (!mounted) return;
-    
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -1216,7 +1203,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 SizedBox(height: 8),
                 Text('3. Find "HabitV8" in the list'),
                 SizedBox(height: 8),
-                Text('4. Grant permissions for the data types you want to share'),
+                Text(
+                  '4. Grant permissions for the data types you want to share',
+                ),
                 SizedBox(height: 8),
                 Text('5. Return to HabitV8 and tap "Refresh Health Status"'),
                 SizedBox(height: 16),
@@ -1249,7 +1238,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
   Future<void> _showHealthConnectDebugInfo() async {
     try {
       final debugInfo = await HealthService.getHealthConnectDebugInfo();
-      
+
       if (mounted) {
         showDialog(
           context: context,
@@ -1298,7 +1287,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
   Future<void> _showCalendarRenewalStatus() async {
     try {
       final status = await CalendarRenewalService.getRenewalStatus();
-      
+
       if (mounted) {
         showDialog(
           context: context,
@@ -1315,20 +1304,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStatusRow('Service Active', status['isActive'] ?? false),
+                  _buildStatusRow(
+                    'Service Active',
+                    status['isActive'] ?? false,
+                  ),
                   const SizedBox(height: 8),
-                  _buildStatusRow('Needs Renewal', status['needsRenewal'] ?? true),
+                  _buildStatusRow(
+                    'Needs Renewal',
+                    status['needsRenewal'] ?? true,
+                  ),
                   const SizedBox(height: 8),
                   if (status['lastRenewal'] != null) ...[
-                    Text('Last Renewal: ${_formatDateTime(status['lastRenewal'])}'),
+                    Text(
+                      'Last Renewal: ${_formatDateTime(status['lastRenewal'])}',
+                    ),
                     const SizedBox(height: 8),
                   ],
                   if (status['nextRenewal'] != null) ...[
-                    Text('Next Renewal: ${_formatDateTime(status['nextRenewal'])}'),
+                    Text(
+                      'Next Renewal: ${_formatDateTime(status['nextRenewal'])}',
+                    ),
                     const SizedBox(height: 8),
                   ],
                   if (status['daysSinceRenewal'] != null) ...[
-                    Text('Days Since Last Renewal: ${status['daysSinceRenewal']}'),
+                    Text(
+                      'Days Since Last Renewal: ${status['daysSinceRenewal']}',
+                    ),
                     const SizedBox(height: 16),
                   ],
                   const Text(
@@ -1458,9 +1459,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Show health data settings dialog
@@ -1485,20 +1486,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 16),
-              
+
               _buildHealthSettingSection(
                 icon: Icons.directions_walk,
                 title: 'Step Tracking',
-                description: 'Automatically complete walking/exercise habits based on daily step count',
+                description:
+                    'Automatically complete walking/exercise habits based on daily step count',
                 items: [
                   'Default threshold: 8,000 steps/day',
                   'Syncs with fitness trackers',
                   'Updates every 30 minutes',
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               _buildHealthSettingSection(
                 icon: Icons.bedtime,
                 title: 'Sleep Monitoring',
@@ -1509,9 +1511,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                   'Bedtime consistency tracking',
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               _buildHealthSettingSection(
                 icon: Icons.water_drop,
                 title: 'Hydration Tracking',
@@ -1522,9 +1524,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                   'Progress visualization',
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               _buildHealthSettingSection(
                 icon: Icons.fitness_center,
                 title: 'Exercise Metrics',
@@ -1535,9 +1537,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                   'Heart rate zones',
                 ],
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -1600,39 +1602,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 16),
-              
+
               _buildHelpSection(
                 icon: Icons.auto_awesome,
                 title: 'Automatic Habit Completion',
-                description: 'When enabled, the app monitors your health data and automatically marks habits as complete when you meet the criteria. For example, if you have a "Walk 8,000 steps" habit and your step counter shows 8,500 steps, the habit will be marked complete automatically.',
+                description:
+                    'When enabled, the app monitors your health data and automatically marks habits as complete when you meet the criteria. For example, if you have a "Walk 8,000 steps" habit and your step counter shows 8,500 steps, the habit will be marked complete automatically.',
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               _buildHelpSection(
                 icon: Icons.insights,
                 title: 'Smart Insights',
-                description: 'Health data helps provide personalized insights about your habits. You\'ll see correlations between your habits and health metrics, optimal timing suggestions, and progress trends.',
+                description:
+                    'Health data helps provide personalized insights about your habits. You\'ll see correlations between your habits and health metrics, optimal timing suggestions, and progress trends.',
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               _buildHelpSection(
                 icon: Icons.security,
                 title: 'Privacy & Security',
-                description: 'All health data processing happens locally on your device. No health information is sent to external servers. You control which data types to share and can revoke permissions at any time.',
+                description:
+                    'All health data processing happens locally on your device. No health information is sent to external servers. You control which data types to share and can revoke permissions at any time.',
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               _buildHelpSection(
                 icon: Icons.troubleshoot,
                 title: 'Troubleshooting',
-                description: 'If automatic completion isn\'t working:\n• Check Health Connect permissions\n• Ensure data sources are connected\n• Verify habit thresholds are realistic\n• Check that auto-completion is enabled',
+                description:
+                    'If automatic completion isn\'t working:\n• Check Health Connect permissions\n• Ensure data sources are connected\n• Verify habit thresholds are realistic\n• Check that auto-completion is enabled',
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -1704,33 +1710,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
             children: [
               Icon(icon, size: 20, color: Colors.blue),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(fontSize: 13),
-          ),
+          Text(description, style: const TextStyle(fontSize: 13)),
           const SizedBox(height: 8),
-          ...items.map((item) => Padding(
-            padding: const EdgeInsets.only(left: 16, bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('• ', style: TextStyle(color: Colors.blue)),
-                Expanded(
-                  child: Text(
-                    item,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(left: 16, bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('• ', style: TextStyle(color: Colors.blue)),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )),
+          ),
         ],
       ),
     );
@@ -1750,10 +1752,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
               Text(
                 description,
@@ -1769,17 +1768,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with WidgetsBin
       ],
     );
   }
-
 }
 
 class _SettingsSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-  });
+  const _SettingsSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -1796,9 +1791,7 @@ class _SettingsSection extends StatelessWidget {
             ),
           ),
         ),
-        Card(
-          child: Column(children: children),
-        ),
+        Card(child: Column(children: children)),
       ],
     );
   }
@@ -1825,10 +1818,7 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: leading,
-      title: Text(
-        title,
-        style: TextStyle(color: textColor),
-      ),
+      title: Text(title, style: TextStyle(color: textColor)),
       subtitle: subtitle != null ? Text(subtitle!) : null,
       trailing: trailing ?? const Icon(Icons.chevron_right),
       onTap: onTap,

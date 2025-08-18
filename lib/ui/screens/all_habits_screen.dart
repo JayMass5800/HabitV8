@@ -7,6 +7,7 @@ import '../../services/logging_service.dart';
 
 import '../widgets/loading_widget.dart';
 import '../widgets/create_habit_fab.dart';
+import '../widgets/category_filter_widget.dart';
 import 'edit_habit_screen.dart';
 
 class AllHabitsScreen extends ConsumerStatefulWidget {
@@ -35,6 +36,15 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       appBar: AppBar(
         title: const Text('All Habits'),
         actions: [
+          // Category Filter
+          CategoryFilterWidget(
+            selectedCategory: _selectedCategory,
+            onCategoryChanged: (value) {
+              setState(() {
+                _selectedCategory = value;
+              });
+            },
+          ),
           // Sort Menu
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -52,23 +62,23 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                       Icon(_getSortIcon(choice), size: 20),
                       const SizedBox(width: 8),
                       Text(choice),
+                      if (choice == _selectedSort) ...[
+                        const Spacer(),
+                        const Icon(Icons.check, size: 16, color: Colors.green),
+                      ],
                     ],
                   ),
                 );
               }).toList();
             },
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(_getSortIcon(_selectedSort)),
-                  const SizedBox(width: 4),
-                  Text(_selectedSort),
-                  const Icon(Icons.arrow_drop_down),
-                ],
-              ),
+            icon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(_getSortIcon(_selectedSort)),
+                const Icon(Icons.arrow_drop_down),
+              ],
             ),
+            tooltip: 'Sort habits',
           ),
         ],
         // Only show the current filters display, no filter chips
@@ -83,19 +93,24 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                         Chip(
                           label: Text(_selectedCategory),
                           deleteIcon: const Icon(Icons.close, size: 16),
-                          onDeleted: () => setState(() => _selectedCategory = 'All'),
+                          onDeleted: () =>
+                              setState(() => _selectedCategory = 'All'),
                         ),
-                      if (_selectedCategory != 'All' && _selectedSort != 'Recent')
+                      if (_selectedCategory != 'All' &&
+                          _selectedSort != 'Recent')
                         const SizedBox(width: 8),
                       if (_selectedSort != 'Recent')
                         Chip(
                           label: Text('Sort: $_selectedSort'),
                           deleteIcon: const Icon(Icons.close, size: 16),
-                          onDeleted: () => setState(() => _selectedSort = 'Recent'),
+                          onDeleted: () =>
+                              setState(() => _selectedSort = 'Recent'),
                         ),
-                      if (_selectedCategory != 'All' || _selectedSort != 'Recent')
+                      if (_selectedCategory != 'All' ||
+                          _selectedSort != 'Recent')
                         const Spacer(),
-                      if (_selectedCategory != 'All' || _selectedSort != 'Recent')
+                      if (_selectedCategory != 'All' ||
+                          _selectedSort != 'Recent')
                         ElevatedButton(
                           onPressed: () {
                             setState(() {
@@ -124,15 +139,10 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return EmptyStateWidget(
+                  return const EmptyStateWidget(
                     icon: Icons.track_changes,
                     title: 'No habits yet',
                     subtitle: 'Create your first habit to get started!',
-                    action: ElevatedButton.icon(
-                      onPressed: () => context.push('/create-habit'),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Create Habit'),
-                    ),
                   );
                 }
 
@@ -144,7 +154,8 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                   itemCount: filteredHabits.length,
                   itemBuilder: (context, index) {
                     final habit = filteredHabits[index];
-                    final rank = _selectedSort == 'Top Performers' ||
+                    final rank =
+                        _selectedSort == 'Top Performers' ||
                             _selectedSort == 'Bottom Performers' ||
                             _selectedSort == 'Longest Streak'
                         ? index + 1
@@ -153,7 +164,9 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                     return _HabitCard(
                       habit: habit,
                       rank: rank,
-                      showPerformanceIndicator: _selectedSort.contains('Performers'),
+                      showPerformanceIndicator: _selectedSort.contains(
+                        'Performers',
+                      ),
                     );
                   },
                 );
@@ -187,7 +200,9 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
 
     // Apply category filter
     if (_selectedCategory != 'All') {
-      filtered = filtered.where((habit) => habit.category == _selectedCategory).toList();
+      filtered = filtered
+          .where((habit) => habit.category == _selectedCategory)
+          .toList();
     }
 
     // Apply sort
@@ -289,9 +304,8 @@ class _HabitCard extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               habit.name,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
                           // Performance indicator
@@ -382,7 +396,9 @@ class _HabitCard extends ConsumerWidget {
                     icon: Icons.local_fire_department,
                     label: 'Current',
                     value: '${habit.currentStreak}',
-                    color: habit.currentStreak > 0 ? Colors.orange : Colors.grey,
+                    color: habit.currentStreak > 0
+                        ? Colors.orange
+                        : Colors.grey,
                   ),
                 ),
                 Expanded(
@@ -398,8 +414,11 @@ class _HabitCard extends ConsumerWidget {
                     icon: Icons.percent,
                     label: 'Rate',
                     value: '${(habit.completionRate * 100).round()}%',
-                    color: habit.completionRate > 0.7 ? Colors.green : 
-                           habit.completionRate > 0.4 ? Colors.orange : Colors.red,
+                    color: habit.completionRate > 0.7
+                        ? Colors.green
+                        : habit.completionRate > 0.4
+                        ? Colors.orange
+                        : Colors.red,
                   ),
                 ),
                 Expanded(
@@ -407,7 +426,9 @@ class _HabitCard extends ConsumerWidget {
                     icon: Icons.calendar_today,
                     label: 'Total',
                     value: '${habit.completions.length}',
-                    color: habit.completions.isNotEmpty ? Colors.blue : Colors.grey,
+                    color: habit.completions.isNotEmpty
+                        ? Colors.blue
+                        : Colors.grey,
                   ),
                 ),
               ],
@@ -419,8 +440,11 @@ class _HabitCard extends ConsumerWidget {
               value: habit.completionRate,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(
-                habit.completionRate > 0.7 ? Colors.green : 
-                habit.completionRate > 0.4 ? Colors.orange : Colors.red,
+                habit.completionRate > 0.7
+                    ? Colors.green
+                    : habit.completionRate > 0.4
+                    ? Colors.orange
+                    : Colors.red,
               ),
             ),
           ],
@@ -438,20 +462,22 @@ class _HabitCard extends ConsumerWidget {
             builder: (context) => EditHabitScreen(habit: habit),
           ),
         );
-        
+
         if (result == true) {
           // Refresh the habits list
           ref.invalidate(habitServiceProvider);
         }
         break;
-        
+
       case 'delete':
         // Show confirmation dialog
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Delete Habit'),
-            content: Text('Are you sure you want to delete "${habit.name}"? This action cannot be undone.'),
+            content: Text(
+              'Are you sure you want to delete "${habit.name}"? This action cannot be undone.',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
@@ -465,22 +491,24 @@ class _HabitCard extends ConsumerWidget {
             ],
           ),
         );
-        
+
         if (confirmed == true) {
           // Use Riverpod to access the habitServiceProvider
           final habitServiceAsync = ref.watch(habitServiceProvider);
-          
+
           await habitServiceAsync.when(
             data: (habitService) async {
               try {
                 await habitService.deleteHabit(habit);
-                
+
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${habit.name} deleted successfully')),
+                    SnackBar(
+                      content: Text('${habit.name} deleted successfully'),
+                    ),
                   );
                 }
-                
+
                 // Refresh the habits list
                 ref.invalidate(habitServiceProvider);
               } catch (e) {
@@ -495,16 +523,18 @@ class _HabitCard extends ConsumerWidget {
             loading: () async {
               // Show loading indicator
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Loading...')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Loading...')));
               }
             },
             error: (error, stack) async {
               AppLogger.error('Error accessing habit service', error);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Error accessing habit service')),
+                  const SnackBar(
+                    content: Text('Error accessing habit service'),
+                  ),
                 );
               }
             },
@@ -584,7 +614,7 @@ class _HabitCard extends ConsumerWidget {
           }
         }
         return 'Hourly';
-      
+
       case HabitFrequency.daily:
       case HabitFrequency.weekly:
       case HabitFrequency.monthly:
@@ -619,18 +649,9 @@ class _StatItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: color),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
       ],
     );
   }
