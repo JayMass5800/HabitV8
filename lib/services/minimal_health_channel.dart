@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'logging_service.dart';
 
 /// MinimalHealthChannel provides a direct interface to our custom MinimalHealthPlugin
-/// 
+///
 /// This service communicates with the native Android plugin that ONLY accesses
 /// the 7 essential health data types, preventing Google Play Console rejection.
-/// 
+///
 /// CRITICAL: This service ONLY works with real Health Connect data on Android.
 /// No mock data, no simulation - only authentic health data from the user's device.
 class MinimalHealthChannel {
@@ -16,7 +16,7 @@ class MinimalHealthChannel {
   /// Supported health data types (matching the native plugin)
   static const List<String> _supportedDataTypes = [
     'STEPS',
-    'ACTIVE_ENERGY_BURNED', 
+    'ACTIVE_ENERGY_BURNED',
     'SLEEP_IN_BED',
     'WATER',
     'WEIGHT',
@@ -33,10 +33,12 @@ class MinimalHealthChannel {
 
     try {
       AppLogger.info('Initializing MinimalHealthChannel...');
-      
+
       // Only initialize on Android - iOS would need a separate implementation
       if (!Platform.isAndroid) {
-        AppLogger.warning('MinimalHealthChannel only supports Android with Health Connect');
+        AppLogger.warning(
+          'MinimalHealthChannel only supports Android with Health Connect',
+        );
         return false;
       }
 
@@ -46,13 +48,15 @@ class MinimalHealthChannel {
       });
 
       _isInitialized = result;
-      
+
       if (_isInitialized) {
         AppLogger.info('MinimalHealthChannel initialized successfully');
       } else {
-        AppLogger.warning('MinimalHealthChannel initialization failed - Health Connect may not be available');
+        AppLogger.warning(
+          'MinimalHealthChannel initialization failed - Health Connect may not be available',
+        );
       }
-      
+
       return _isInitialized;
     } catch (e) {
       AppLogger.error('Failed to initialize MinimalHealthChannel', e);
@@ -67,8 +71,10 @@ class MinimalHealthChannel {
       if (!Platform.isAndroid) {
         return false;
       }
-      
-      final bool available = await _channel.invokeMethod('isHealthConnectAvailable');
+
+      final bool available = await _channel.invokeMethod(
+        'isHealthConnectAvailable',
+      );
       AppLogger.info('Health Connect availability: $available');
       return available;
     } catch (e) {
@@ -84,7 +90,9 @@ class MinimalHealthChannel {
     }
 
     try {
-      final bool hasPerms = await _channel.invokeMethod('hasPermissions');
+      final bool hasPerms = await _channel.invokeMethod('hasPermissions', {
+        'supportedTypes': _supportedDataTypes,
+      });
       AppLogger.info('Health permissions status: $hasPerms');
       return hasPerms;
     } catch (e) {
@@ -100,8 +108,12 @@ class MinimalHealthChannel {
     }
 
     try {
-      AppLogger.info('Requesting health permissions...');
-      final bool granted = await _channel.invokeMethod('requestPermissions');
+      AppLogger.info(
+        'Requesting health permissions for types: ${_supportedDataTypes.join(', ')}',
+      );
+      final bool granted = await _channel.invokeMethod('requestPermissions', {
+        'supportedTypes': _supportedDataTypes,
+      });
       AppLogger.info('Health permissions request result: $granted');
       return granted;
     } catch (e) {
@@ -127,13 +139,16 @@ class MinimalHealthChannel {
         return [];
       }
 
-      AppLogger.info('Fetching health data for $dataType from ${startDate.toIso8601String()} to ${endDate.toIso8601String()}');
-      
-      final List<dynamic> result = await _channel.invokeMethod('getHealthData', {
-        'dataType': dataType,
-        'startDate': startDate.millisecondsSinceEpoch,
-        'endDate': endDate.millisecondsSinceEpoch,
-      });
+      AppLogger.info(
+        'Fetching health data for $dataType from ${startDate.toIso8601String()} to ${endDate.toIso8601String()}',
+      );
+
+      final List<dynamic> result = await _channel
+          .invokeMethod('getHealthData', {
+            'dataType': dataType,
+            'startDate': startDate.millisecondsSinceEpoch,
+            'endDate': endDate.millisecondsSinceEpoch,
+          });
 
       final List<Map<String, dynamic>> healthData = result
           .map((item) => Map<String, dynamic>.from(item))
@@ -204,7 +219,12 @@ class MinimalHealthChannel {
     try {
       final now = DateTime.now();
       final yesterday = now.subtract(const Duration(days: 1));
-      final startTime = DateTime(yesterday.year, yesterday.month, yesterday.day, 18); // 6 PM yesterday
+      final startTime = DateTime(
+        yesterday.year,
+        yesterday.month,
+        yesterday.day,
+        18,
+      ); // 6 PM yesterday
       final endTime = DateTime(now.year, now.month, now.day, 12); // 12 PM today
 
       final data = await getHealthData(
@@ -219,7 +239,9 @@ class MinimalHealthChannel {
       }
 
       final sleepHours = totalSleepMinutes / 60.0;
-      AppLogger.info('Sleep hours last night: ${sleepHours.toStringAsFixed(1)}');
+      AppLogger.info(
+        'Sleep hours last night: ${sleepHours.toStringAsFixed(1)}',
+      );
       return sleepHours;
     } catch (e) {
       AppLogger.error('Error getting sleep hours', e);
@@ -298,7 +320,9 @@ class MinimalHealthChannel {
       }
 
       // Sort by timestamp and get the latest
-      data.sort((a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
+      data.sort(
+        (a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int),
+      );
       final latestWeight = data.first['value'] as double;
 
       AppLogger.info('Latest weight: ${latestWeight.toStringAsFixed(1)}kg');
@@ -313,7 +337,9 @@ class MinimalHealthChannel {
   static Future<double?> getLatestHeartRate() async {
     try {
       final now = DateTime.now();
-      final startTime = now.subtract(const Duration(hours: 24)); // Last 24 hours
+      final startTime = now.subtract(
+        const Duration(hours: 24),
+      ); // Last 24 hours
 
       final data = await getHealthData(
         dataType: 'HEART_RATE',
@@ -327,7 +353,9 @@ class MinimalHealthChannel {
       }
 
       // Sort by timestamp and get the latest
-      data.sort((a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int));
+      data.sort(
+        (a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int),
+      );
       final latestHeartRate = data.first['value'] as double;
 
       AppLogger.info('Latest heart rate: ${latestHeartRate.round()} bpm');
@@ -359,16 +387,21 @@ class MinimalHealthChannel {
       }
 
       // Calculate resting heart rate (lowest 10% of readings)
-      final heartRates = data.map((record) => record['value'] as double).toList();
+      final heartRates = data
+          .map((record) => record['value'] as double)
+          .toList();
       heartRates.sort();
-      
+
       final restingCount = (heartRates.length * 0.1).ceil();
       if (restingCount == 0) return heartRates.first;
-      
-      final restingRates = heartRates.take(restingCount);
-      final restingHeartRate = restingRates.reduce((a, b) => a + b) / restingRates.length;
 
-      AppLogger.info('Resting heart rate today: ${restingHeartRate.round()} bpm');
+      final restingRates = heartRates.take(restingCount);
+      final restingHeartRate =
+          restingRates.reduce((a, b) => a + b) / restingRates.length;
+
+      AppLogger.info(
+        'Resting heart rate today: ${restingHeartRate.round()} bpm',
+      );
       return restingHeartRate;
     } catch (e) {
       AppLogger.error('Error getting resting heart rate', e);

@@ -32,7 +32,7 @@ class HealthDataPoint {
 }
 
 /// Comprehensive Health-Habit Integration Service
-/// 
+///
 /// This service provides deep integration between health metrics and habit tracking:
 /// - Automatic habit completion based on health data
 /// - Health-habit correlation analysis
@@ -43,7 +43,7 @@ class HealthHabitIntegrationService {
   static const String _lastHealthSyncKey = 'last_health_sync';
   static const String _autoCompletionEnabledKey = 'auto_completion_enabled';
   static const String _healthThresholdsKey = 'health_thresholds';
-  
+
   // Health data thresholds for automatic habit completion
   static const Map<String, Map<String, dynamic>> _defaultHealthThresholds = {
     'STEPS': {
@@ -84,26 +84,67 @@ class HealthHabitIntegrationService {
   static Future<bool> initialize() async {
     try {
       AppLogger.info('Initializing Health-Habit Integration Service...');
-      
+
       // Initialize health service first
       final healthInitialized = await HealthService.initialize();
       if (!healthInitialized) {
-        AppLogger.warning('Health service not initialized, continuing with limited functionality');
+        AppLogger.warning(
+          'Health service not initialized, continuing with limited functionality',
+        );
       }
-      
+
+      // Ensure we have all necessary health permissions, including heart rate
+      final hasPermissions = await HealthService.hasPermissions();
+      if (!hasPermissions) {
+        AppLogger.info(
+          'Health permissions not granted, requesting permissions...',
+        );
+        final permissionsGranted = await HealthService.requestPermissions();
+        if (permissionsGranted) {
+          AppLogger.info(
+            'Health permissions successfully granted during integration service initialization',
+          );
+        } else {
+          AppLogger.warning(
+            'Failed to grant health permissions during integration service initialization',
+          );
+        }
+      }
+
       // Set up default thresholds if not exists
       await _initializeDefaultThresholds();
-      
+
       // Enable auto-completion by default
       final prefs = await SharedPreferences.getInstance();
       if (!prefs.containsKey(_autoCompletionEnabledKey)) {
         await prefs.setBool(_autoCompletionEnabledKey, true);
       }
-      
-      AppLogger.info('Health-Habit Integration Service initialized successfully');
+
+      // Verify heart rate access specifically
+      try {
+        final heartRate = await HealthService.getLatestHeartRate();
+        if (heartRate != null) {
+          AppLogger.info(
+            'Heart rate access verified: ${heartRate.round()} bpm',
+          );
+        } else {
+          AppLogger.info(
+            'No heart rate data available, but access appears to be granted',
+          );
+        }
+      } catch (e) {
+        AppLogger.warning('Heart rate access verification failed: $e');
+      }
+
+      AppLogger.info(
+        'Health-Habit Integration Service initialized successfully',
+      );
       return true;
     } catch (e) {
-      AppLogger.error('Failed to initialize Health-Habit Integration Service', e);
+      AppLogger.error(
+        'Failed to initialize Health-Habit Integration Service',
+        e,
+      );
       return false;
     }
   }
@@ -153,42 +194,47 @@ class HealthHabitIntegrationService {
     bool forceSync = false,
   }) async {
     final result = HealthHabitSyncResult();
-    
+
     try {
       AppLogger.info('Starting comprehensive health-habit sync...');
-      
+
       // Check if auto-completion is enabled
       final autoCompletionEnabled = await isAutoCompletionEnabled();
       if (!autoCompletionEnabled && !forceSync) {
         AppLogger.info('Auto-completion disabled, skipping sync');
         return result;
       }
-      
+
       // Check if we need to sync (avoid too frequent syncs)
       if (!forceSync && !await _shouldPerformSync()) {
         AppLogger.info('Sync not needed at this time');
         return result;
       }
-      
+
       // Get all active habits and filter for health-mappable habits
       final allHabits = await habitService.getActiveHabits();
-      final mappableHabits = await HealthHabitMappingService.getMappableHabits(allHabits);
-      final habits = allHabits.where((habit) => 
-        mappableHabits.any((mapping) => mapping.habitId == habit.id)
-      ).toList();
+      final mappableHabits = await HealthHabitMappingService.getMappableHabits(
+        allHabits,
+      );
+      final habits = allHabits
+          .where(
+            (habit) =>
+                mappableHabits.any((mapping) => mapping.habitId == habit.id),
+          )
+          .toList();
       if (habits.isEmpty) {
         AppLogger.info('No active health-mappable habits found');
         return result;
       }
-      
+
       // Get today's health data
       final healthSummary = await HealthService.getTodayHealthSummary();
-      
+
       if (healthSummary.containsKey('error')) {
         AppLogger.info('No health data available for today');
         return result;
       }
-      
+
       // Process each habit for potential auto-completion
       for (final habit in habits) {
         try {
@@ -197,41 +243,44 @@ class HealthHabitIntegrationService {
             healthSummary: healthSummary,
             habitService: habitService,
           );
-          
+
           if (completionResult.completed) {
             result.completedHabits.add(completionResult);
           }
-          
+
           // Analyze habit-health correlation
           final correlation = await _analyzeHabitHealthCorrelation(
             habit: habit,
             healthSummary: healthSummary,
           );
           result.correlations[habit.id] = correlation;
-          
         } catch (e) {
           AppLogger.error('Error processing habit ${habit.name}', e);
         }
       }
-      
+
       // Update last sync time
       await _updateLastSyncTime();
-      
+
       // Generate health insights for habits
-      result.insights = await _generateHealthHabitInsights(habits, healthSummary);
-      
-      AppLogger.info('Health-habit sync completed: ${result.completedHabits.length} habits auto-completed');
-      
+      result.insights = await _generateHealthHabitInsights(
+        habits,
+        healthSummary,
+      );
+
+      AppLogger.info(
+        'Health-habit sync completed: ${result.completedHabits.length} habits auto-completed',
+      );
+
       // Send notification if habits were completed
       if (result.completedHabits.isNotEmpty) {
         await _sendAutoCompletionNotification(result.completedHabits);
       }
-      
     } catch (e) {
       AppLogger.error('Failed to perform health-habit sync', e);
       result.error = e.toString();
     }
-    
+
     return result;
   }
 
@@ -246,41 +295,46 @@ class HealthHabitIntegrationService {
       habitName: habit.name,
       completed: false,
     );
-    
+
     try {
       // Skip if already completed today
       if (habit.isCompletedToday) {
         result.reason = 'Already completed today';
         return result;
       }
-      
+
       // Use the advanced mapping service to check for completion
-      final completionCheck = await HealthHabitMappingService.checkHabitCompletion(
-        habit: habit,
-        date: DateTime.now(),
-      );
-      
+      final completionCheck =
+          await HealthHabitMappingService.checkHabitCompletion(
+            habit: habit,
+            date: DateTime.now(),
+          );
+
       if (completionCheck.shouldComplete) {
         // Auto-complete the habit
         await habitService.markHabitComplete(habit.id, DateTime.now());
-        
+
         result.completed = true;
         result.reason = completionCheck.reason;
         result.healthDataType = completionCheck.healthDataType;
         result.healthValue = completionCheck.healthValue;
         result.threshold = completionCheck.threshold;
         result.confidence = completionCheck.confidence;
-        
-        AppLogger.info('Auto-completed habit "${habit.name}": ${completionCheck.reason}');
+
+        AppLogger.info(
+          'Auto-completed habit "${habit.name}": ${completionCheck.reason}',
+        );
       } else {
         result.reason = completionCheck.reason;
       }
-      
     } catch (e) {
-      AppLogger.error('Error processing habit ${habit.name} for auto-completion', e);
+      AppLogger.error(
+        'Error processing habit ${habit.name} for auto-completion',
+        e,
+      );
       result.error = e.toString();
     }
-    
+
     return result;
   }
 
@@ -289,83 +343,99 @@ class HealthHabitIntegrationService {
     final mapping = <String, dynamic>{};
     final habitName = habit.name.toLowerCase();
     final habitCategory = habit.category.toLowerCase();
-    
+
     // Steps-based habits
-    if (habitName.contains('walk') || habitName.contains('step') || 
-        habitName.contains('run') || habitName.contains('jog') ||
-        habitCategory.contains('fitness') || habitCategory.contains('exercise')) {
-      
+    if (habitName.contains('walk') ||
+        habitName.contains('step') ||
+        habitName.contains('run') ||
+        habitName.contains('jog') ||
+        habitCategory.contains('fitness') ||
+        habitCategory.contains('exercise')) {
       if (habitName.contains('morning')) {
         mapping['STEPS'] = _defaultHealthThresholds['STEPS']!['morning_walk'];
       } else if (habitName.contains('evening')) {
         mapping['STEPS'] = _defaultHealthThresholds['STEPS']!['evening_walk'];
-      } else if (habitName.contains('exercise') || habitName.contains('workout')) {
+      } else if (habitName.contains('exercise') ||
+          habitName.contains('workout')) {
         mapping['STEPS'] = _defaultHealthThresholds['STEPS']!['exercise'];
       } else {
         mapping['STEPS'] = _defaultHealthThresholds['STEPS']!['daily_walk'];
       }
     }
-    
+
     // Active energy-based habits
-    if (habitName.contains('workout') || habitName.contains('exercise') || 
-        habitName.contains('gym') || habitName.contains('cardio') ||
+    if (habitName.contains('workout') ||
+        habitName.contains('exercise') ||
+        habitName.contains('gym') ||
+        habitName.contains('cardio') ||
         habitName.contains('training')) {
-      
       if (habitName.contains('cardio')) {
-        mapping['ACTIVE_ENERGY_BURNED'] = _defaultHealthThresholds['ACTIVE_ENERGY_BURNED']!['cardio'];
+        mapping['ACTIVE_ENERGY_BURNED'] =
+            _defaultHealthThresholds['ACTIVE_ENERGY_BURNED']!['cardio'];
       } else if (habitName.contains('gym')) {
-        mapping['ACTIVE_ENERGY_BURNED'] = _defaultHealthThresholds['ACTIVE_ENERGY_BURNED']!['gym'];
+        mapping['ACTIVE_ENERGY_BURNED'] =
+            _defaultHealthThresholds['ACTIVE_ENERGY_BURNED']!['gym'];
       } else {
-        mapping['ACTIVE_ENERGY_BURNED'] = _defaultHealthThresholds['ACTIVE_ENERGY_BURNED']!['workout'];
+        mapping['ACTIVE_ENERGY_BURNED'] =
+            _defaultHealthThresholds['ACTIVE_ENERGY_BURNED']!['workout'];
       }
     }
-    
+
     // Sleep-based habits
-    if (habitName.contains('sleep') || habitName.contains('bed') || 
-        habitName.contains('rest') || habitCategory.contains('sleep')) {
-      
+    if (habitName.contains('sleep') ||
+        habitName.contains('bed') ||
+        habitName.contains('rest') ||
+        habitCategory.contains('sleep')) {
       if (habitName.contains('bedtime')) {
-        mapping['SLEEP_IN_BED'] = _defaultHealthThresholds['SLEEP_IN_BED']!['bedtime'];
+        mapping['SLEEP_IN_BED'] =
+            _defaultHealthThresholds['SLEEP_IN_BED']!['bedtime'];
       } else {
-        mapping['SLEEP_IN_BED'] = _defaultHealthThresholds['SLEEP_IN_BED']!['sleep'];
+        mapping['SLEEP_IN_BED'] =
+            _defaultHealthThresholds['SLEEP_IN_BED']!['sleep'];
       }
     }
-    
+
     // Water-based habits
-    if (habitName.contains('water') || habitName.contains('hydrat') || 
-        habitName.contains('drink') || habitCategory.contains('hydration')) {
-      
+    if (habitName.contains('water') ||
+        habitName.contains('hydrat') ||
+        habitName.contains('drink') ||
+        habitCategory.contains('hydration')) {
       if (habitName.contains('hydration')) {
         mapping['WATER'] = _defaultHealthThresholds['WATER']!['hydration'];
       } else {
         mapping['WATER'] = _defaultHealthThresholds['WATER']!['drink_water'];
       }
     }
-    
+
     // Mindfulness-based habits
-    if (habitName.contains('meditat') || habitName.contains('mindful') || 
-        habitName.contains('breathing') || habitName.contains('relax') ||
-        habitCategory.contains('mental') || habitCategory.contains('wellness')) {
-      
+    if (habitName.contains('meditat') ||
+        habitName.contains('mindful') ||
+        habitName.contains('breathing') ||
+        habitName.contains('relax') ||
+        habitCategory.contains('mental') ||
+        habitCategory.contains('wellness')) {
       if (habitName.contains('breathing')) {
-        mapping['MINDFULNESS'] = _defaultHealthThresholds['MINDFULNESS']!['breathing'];
+        mapping['MINDFULNESS'] =
+            _defaultHealthThresholds['MINDFULNESS']!['breathing'];
       } else if (habitName.contains('relax')) {
-        mapping['MINDFULNESS'] = _defaultHealthThresholds['MINDFULNESS']!['relaxation'];
+        mapping['MINDFULNESS'] =
+            _defaultHealthThresholds['MINDFULNESS']!['relaxation'];
       } else {
-        mapping['MINDFULNESS'] = _defaultHealthThresholds['MINDFULNESS']!['meditation'];
+        mapping['MINDFULNESS'] =
+            _defaultHealthThresholds['MINDFULNESS']!['meditation'];
       }
     }
-    
+
     // Weight-based habits
-    if (habitName.contains('weight') || habitName.contains('weigh') || 
+    if (habitName.contains('weight') ||
+        habitName.contains('weigh') ||
         habitCategory.contains('weight')) {
-      mapping['WEIGHT'] = _defaultHealthThresholds['WEIGHT']!['weight_tracking'];
+      mapping['WEIGHT'] =
+          _defaultHealthThresholds['WEIGHT']!['weight_tracking'];
     }
-    
+
     return mapping;
   }
-
-
 
   /// Analyze correlation between habit completion and health metrics
   static Future<HabitHealthCorrelation> _analyzeHabitHealthCorrelation({
@@ -376,44 +446,45 @@ class HealthHabitIntegrationService {
       habitId: habit.id,
       correlations: {},
     );
-    
+
     try {
       // Get habit completion history for the last 30 days
       final now = DateTime.now();
       final thirtyDaysAgo = now.subtract(const Duration(days: 30));
-      
+
       final completionDays = habit.completions
           .where((completion) => completion.isAfter(thirtyDaysAgo))
-          .map((completion) => DateTime(completion.year, completion.month, completion.day))
+          .map(
+            (completion) =>
+                DateTime(completion.year, completion.month, completion.day),
+          )
           .toSet()
           .toList();
-      
+
       if (completionDays.length < 5) {
         // Not enough data for meaningful correlation
         return correlation;
       }
-      
+
       // Simplified correlation analysis using health summary
       for (final entry in healthSummary.entries) {
         final healthType = entry.key;
         final healthValue = entry.value;
-        
+
         if (healthValue is num && healthValue > 0) {
           // Simple correlation based on completion rate and health value presence
           final completionRate = completionDays.length / 30.0;
-          final correlationValue = completionRate * 0.7; // Simplified correlation
+          final correlationValue =
+              completionRate * 0.7; // Simplified correlation
           correlation.correlations[healthType] = correlationValue;
         }
       }
-      
     } catch (e) {
       AppLogger.error('Error analyzing habit-health correlation', e);
     }
-    
+
     return correlation;
   }
-
-
 
   /// Generate comprehensive health-habit insights
   static Future<Map<String, dynamic>> _generateHealthHabitInsights(
@@ -421,35 +492,40 @@ class HealthHabitIntegrationService {
     Map<String, dynamic> healthSummary,
   ) async {
     final insights = <String, dynamic>{};
-    
+
     try {
       // Overall health-habit integration score
-      final integrationScore = _calculateIntegrationScore(habits, healthSummary);
+      final integrationScore = _calculateIntegrationScore(
+        habits,
+        healthSummary,
+      );
       insights['integrationScore'] = integrationScore;
-      
+
       // Health-driven habit suggestions
       final suggestions = await _generateHealthDrivenSuggestions(healthSummary);
       insights['suggestions'] = suggestions;
-      
+
       // Health trend analysis
       final trends = _analyzeHealthTrends(healthSummary);
       insights['trends'] = trends;
-      
+
       // Habit completion predictions
       final predictions = _generateCompletionPredictions(habits, healthSummary);
       insights['predictions'] = predictions;
-      
     } catch (e) {
       AppLogger.error('Error generating health-habit insights', e);
     }
-    
+
     return insights;
   }
 
   /// Calculate overall health-habit integration score (0-100)
-  static double _calculateIntegrationScore(List<Habit> habits, Map<String, dynamic> healthSummary) {
+  static double _calculateIntegrationScore(
+    List<Habit> habits,
+    Map<String, dynamic> healthSummary,
+  ) {
     if (habits.isEmpty || healthSummary.containsKey('error')) return 0.0;
-    
+
     int healthMappedHabits = 0;
     for (final habit in habits) {
       final mapping = _getHealthMappingForHabit(habit);
@@ -457,65 +533,75 @@ class HealthHabitIntegrationService {
         healthMappedHabits++;
       }
     }
-    
+
     final mappingScore = (healthMappedHabits / habits.length) * 50;
     final dataAvailabilityScore = healthSummary.isNotEmpty ? 50.0 : 0.0;
-    
+
     return mappingScore + dataAvailabilityScore;
   }
 
   /// Generate health-driven habit suggestions
-  static Future<List<String>> _generateHealthDrivenSuggestions(Map<String, dynamic> healthSummary) async {
+  static Future<List<String>> _generateHealthDrivenSuggestions(
+    Map<String, dynamic> healthSummary,
+  ) async {
     final suggestions = <String>[];
-    
+
     try {
-      
       // Steps-based suggestions
       final steps = healthSummary['steps'] ?? 0;
       if (steps < 8000) {
-        suggestions.add('Consider adding a "Daily Walk" habit - you\'re at $steps steps today');
+        suggestions.add(
+          'Consider adding a "Daily Walk" habit - you\'re at $steps steps today',
+        );
       }
-      
+
       // Sleep-based suggestions
       final sleepHours = healthSummary['averageSleepHours'] ?? 8.0;
       if (sleepHours < 7.0) {
-        suggestions.add('Add an "Earlier Bedtime" habit - averaging ${sleepHours.toStringAsFixed(1)} hours');
+        suggestions.add(
+          'Add an "Earlier Bedtime" habit - averaging ${sleepHours.toStringAsFixed(1)} hours',
+        );
       }
-      
+
       // Water-based suggestions
       final water = healthSummary['waterIntake'] ?? 0;
       if (water < 2000) {
-        suggestions.add('Create a "Hydration" habit - only ${water.round()}ml consumed today');
+        suggestions.add(
+          'Create a "Hydration" habit - only ${water.round()}ml consumed today',
+        );
       }
-      
+
       // Mindfulness-based suggestions
       final mindfulness = healthSummary['mindfulnessMinutes'] ?? 0;
       if (mindfulness < 10) {
-        suggestions.add('Try a "Daily Meditation" habit - ${mindfulness.round()} minutes today');
+        suggestions.add(
+          'Try a "Daily Meditation" habit - ${mindfulness.round()} minutes today',
+        );
       }
-      
     } catch (e) {
       AppLogger.error('Error generating health-driven suggestions', e);
     }
-    
+
     return suggestions;
   }
 
   /// Analyze health trends for insights
-  static Map<String, dynamic> _analyzeHealthTrends(Map<String, dynamic> healthSummary) {
+  static Map<String, dynamic> _analyzeHealthTrends(
+    Map<String, dynamic> healthSummary,
+  ) {
     final trends = <String, dynamic>{};
-    
+
     try {
       // Simplified trend analysis using health summary
       for (final entry in healthSummary.entries) {
         final type = entry.key;
         final value = entry.value;
-        
+
         if (value is num && value > 0) {
           // Simple trend analysis based on current values
           String trendDirection = 'stable';
           String trendDescription = '';
-          
+
           switch (type) {
             case 'steps':
               if (value >= 10000) {
@@ -545,7 +631,7 @@ class HealthHabitIntegrationService {
               trendDirection = 'stable';
               trendDescription = 'Data available';
           }
-          
+
           trends[type] = {
             'direction': trendDirection,
             'description': trendDescription,
@@ -553,11 +639,10 @@ class HealthHabitIntegrationService {
           };
         }
       }
-      
     } catch (e) {
       AppLogger.error('Error analyzing health trends', e);
     }
-    
+
     return trends;
   }
 
@@ -567,20 +652,20 @@ class HealthHabitIntegrationService {
     Map<String, dynamic> healthSummary,
   ) {
     final predictions = <String, dynamic>{};
-    
+
     try {
       for (final habit in habits) {
         if (habit.isCompletedToday) continue;
-        
+
         final mapping = _getHealthMappingForHabit(habit);
         if (mapping.isEmpty) continue;
-        
+
         double completionProbability = 0.0;
         String reason = '';
-        
+
         // Simplified prediction based on health summary
         final habitName = habit.name.toLowerCase();
-        
+
         if (habitName.contains('walk') || habitName.contains('step')) {
           final steps = (healthSummary['steps'] as num?)?.toDouble() ?? 0.0;
           if (steps >= 8000) {
@@ -591,7 +676,8 @@ class HealthHabitIntegrationService {
             reason = 'Progress: ${(completionProbability * 100).round()}%';
           }
         } else if (habitName.contains('sleep')) {
-          final sleep = (healthSummary['sleepHours'] as num?)?.toDouble() ?? 0.0;
+          final sleep =
+              (healthSummary['sleepHours'] as num?)?.toDouble() ?? 0.0;
           if (sleep >= 7.5) {
             completionProbability = 1.0;
             reason = 'Sleep goal achieved';
@@ -600,7 +686,8 @@ class HealthHabitIntegrationService {
             reason = 'Progress: ${(completionProbability * 100).round()}%';
           }
         } else if (habitName.contains('water')) {
-          final water = (healthSummary['waterIntake'] as num?)?.toDouble() ?? 0.0;
+          final water =
+              (healthSummary['waterIntake'] as num?)?.toDouble() ?? 0.0;
           if (water >= 2000) {
             completionProbability = 1.0;
             reason = 'Hydration goal achieved';
@@ -609,7 +696,7 @@ class HealthHabitIntegrationService {
             reason = 'Progress: ${(completionProbability * 100).round()}%';
           }
         }
-        
+
         if (completionProbability > 0.1) {
           predictions[habit.id] = {
             'habitName': habit.name,
@@ -618,11 +705,10 @@ class HealthHabitIntegrationService {
           };
         }
       }
-      
     } catch (e) {
       AppLogger.error('Error generating completion predictions', e);
     }
-    
+
     return predictions;
   }
 
@@ -632,10 +718,10 @@ class HealthHabitIntegrationService {
       final prefs = await SharedPreferences.getInstance();
       final lastSync = prefs.getInt(_lastHealthSyncKey) ?? 0;
       final now = DateTime.now().millisecondsSinceEpoch;
-      
+
       // Sync at most every 30 minutes
       const syncInterval = 30 * 60 * 1000; // 30 minutes in milliseconds
-      
+
       return (now - lastSync) >= syncInterval;
     } catch (e) {
       AppLogger.error('Error checking sync timing', e);
@@ -647,7 +733,10 @@ class HealthHabitIntegrationService {
   static Future<void> _updateLastSyncTime() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_lastHealthSyncKey, DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(
+        _lastHealthSyncKey,
+        DateTime.now().millisecondsSinceEpoch,
+      );
     } catch (e) {
       AppLogger.error('Error updating last sync time', e);
     }
@@ -662,13 +751,15 @@ class HealthHabitIntegrationService {
         await NotificationService.showNotification(
           id: 9999,
           title: 'Habit Auto-Completed! 🎉',
-          body: 'Great job! "${completedHabits.first.habitName}" was completed based on your health data.',
+          body:
+              'Great job! "${completedHabits.first.habitName}" was completed based on your health data.',
         );
       } else {
         await NotificationService.showNotification(
           id: 9999,
           title: 'Habits Auto-Completed! 🎉',
-          body: '${completedHabits.length} habits completed based on your health data.',
+          body:
+              '${completedHabits.length} habits completed based on your health data.',
         );
       }
     } catch (e) {
@@ -681,19 +772,21 @@ class HealthHabitIntegrationService {
     required HabitService habitService,
   }) async {
     final status = <String, dynamic>{};
-    
+
     try {
       final allHabits = await habitService.getActiveHabits();
       final healthPermissions = await HealthService.hasPermissions();
       final autoCompletionEnabled = await isAutoCompletionEnabled();
-      
+
       int healthMappedHabits = 0;
       final habitMappings = <String, dynamic>{};
-      
+
       // Use the mapping service to find all mappable habits (regardless of category)
-      final mappableHabits = await HealthHabitMappingService.getMappableHabits(allHabits);
+      final mappableHabits = await HealthHabitMappingService.getMappableHabits(
+        allHabits,
+      );
       healthMappedHabits = mappableHabits.length;
-      
+
       for (final mapping in mappableHabits) {
         final habit = allHabits.firstWhere((h) => h.id == mapping.habitId);
         habitMappings[habit.id] = {
@@ -705,33 +798,38 @@ class HealthHabitIntegrationService {
           'relevanceScore': mapping.relevanceScore,
         };
       }
-      
+
       // Count health-related habits by category for reference
-      final healthCategoryHabits = allHabits.where((habit) => 
-        habit.category == 'Health' || habit.category == 'Fitness'
-      ).length;
-      
+      final healthCategoryHabits = allHabits
+          .where(
+            (habit) =>
+                habit.category == 'Health' || habit.category == 'Fitness',
+          )
+          .length;
+
       status['totalHabits'] = allHabits.length;
-      status['healthCategoryHabits'] = healthCategoryHabits; // Habits specifically categorized as Health/Fitness
+      status['healthCategoryHabits'] =
+          healthCategoryHabits; // Habits specifically categorized as Health/Fitness
       status['healthMappedHabits'] = healthMappedHabits;
-      status['mappingPercentage'] = allHabits.isNotEmpty ? 
-          (healthMappedHabits / allHabits.length * 100).round() : 0;
+      status['mappingPercentage'] = allHabits.isNotEmpty
+          ? (healthMappedHabits / allHabits.length * 100).round()
+          : 0;
       status['healthPermissions'] = healthPermissions;
       status['autoCompletionEnabled'] = autoCompletionEnabled;
       status['habitMappings'] = habitMappings;
-      
+
       // Get recent sync info
       final prefs = await SharedPreferences.getInstance();
       final lastSync = prefs.getInt(_lastHealthSyncKey) ?? 0;
       status['lastSyncTime'] = lastSync;
-      status['lastSyncDate'] = lastSync > 0 ? 
-          DateTime.fromMillisecondsSinceEpoch(lastSync).toIso8601String() : null;
-      
+      status['lastSyncDate'] = lastSync > 0
+          ? DateTime.fromMillisecondsSinceEpoch(lastSync).toIso8601String()
+          : null;
     } catch (e) {
       AppLogger.error('Error getting integration status', e);
       status['error'] = e.toString();
     }
-    
+
     return status;
   }
 
@@ -747,7 +845,9 @@ class HealthHabitIntegrationService {
   }
 
   /// Update health thresholds for specific habit types
-  static Future<void> updateHealthThresholds(Map<String, Map<String, dynamic>> newThresholds) async {
+  static Future<void> updateHealthThresholds(
+    Map<String, Map<String, dynamic>> newThresholds,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_healthThresholdsKey, newThresholds.toString());
@@ -770,7 +870,7 @@ class HealthHabitIntegrationService {
     } catch (e) {
       AppLogger.error('Error getting health thresholds', e);
     }
-    
+
     return _defaultHealthThresholds;
   }
 }
@@ -781,7 +881,7 @@ class HealthHabitSyncResult {
   final Map<String, HabitHealthCorrelation> correlations = {};
   Map<String, dynamic> insights = {};
   String? error;
-  
+
   bool get hasError => error != null;
   bool get hasCompletions => completedHabits.isNotEmpty;
   int get completionCount => completedHabits.length;
@@ -798,7 +898,7 @@ class HabitAutoCompletionResult {
   dynamic threshold;
   double confidence;
   String? error;
-  
+
   HabitAutoCompletionResult({
     required this.habitId,
     required this.habitName,
@@ -816,24 +916,22 @@ class HabitAutoCompletionResult {
 class HabitHealthCorrelation {
   final String habitId;
   final Map<String, double> correlations;
-  
-  HabitHealthCorrelation({
-    required this.habitId,
-    required this.correlations,
-  });
-  
+
+  HabitHealthCorrelation({required this.habitId, required this.correlations});
+
   /// Get the strongest correlation
   MapEntry<String, double>? get strongestCorrelation {
     if (correlations.isEmpty) return null;
-    
-    return correlations.entries.reduce((a, b) => 
-        a.value.abs() > b.value.abs() ? a : b);
+
+    return correlations.entries.reduce(
+      (a, b) => a.value.abs() > b.value.abs() ? a : b,
+    );
   }
-  
+
   /// Get correlations above a threshold
   Map<String, double> getSignificantCorrelations({double threshold = 0.3}) {
     return Map.fromEntries(
-      correlations.entries.where((entry) => entry.value.abs() >= threshold)
+      correlations.entries.where((entry) => entry.value.abs() >= threshold),
     );
   }
 }
@@ -842,6 +940,6 @@ class HabitHealthCorrelation {
 class ThresholdResult {
   bool meets;
   dynamic value;
-  
+
   ThresholdResult({required this.meets, required this.value});
 }
