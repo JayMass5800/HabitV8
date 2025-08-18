@@ -37,8 +37,8 @@ class DatabaseService {
       _habitBox = await Hive.openBox<Habit>('habits');
     } catch (e) {
       // If there's an adapter error with existing data, delete the box and recreate it
-      print('Error opening habits box: $e');
-      print('Clearing habits box due to adapter registration issues...');
+      AppLogger.error('Error opening habits box', e);
+      AppLogger.info('Clearing habits box due to adapter registration issues...');
       await Hive.deleteBoxFromDisk('habits');
       _habitBox = await Hive.openBox<Habit>('habits');
     }
@@ -55,7 +55,7 @@ class DatabaseService {
   static Future<void> resetDatabase() async {
     await closeDatabase();
     await Hive.deleteBoxFromDisk('habits');
-    print('Database reset completed. All habit data has been cleared.');
+    AppLogger.info('Database reset completed. All habit data has been cleared.');
   }
 }
 

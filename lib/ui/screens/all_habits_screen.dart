@@ -382,16 +382,6 @@ class _HabitCard extends ConsumerWidget {
                       ),
                     ),
                     const PopupMenuItem(
-                      value: 'complete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.check, size: 20),
-                          SizedBox(width: 8),
-                          Text('Mark Complete'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
@@ -406,29 +396,43 @@ class _HabitCard extends ConsumerWidget {
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Stats row
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _StatItem(
-                  icon: Icons.local_fire_department,
-                  label: 'Streak',
-                  value: '${habit.currentStreak}',
-                  color: habit.currentStreak > 0 ? Colors.orange : Colors.grey,
+                Expanded(
+                  child: _StatItem(
+                    icon: Icons.local_fire_department,
+                    label: 'Current',
+                    value: '${habit.currentStreak}',
+                    color: habit.currentStreak > 0 ? Colors.orange : Colors.grey,
+                  ),
                 ),
-                _StatItem(
-                  icon: Icons.percent,
-                  label: 'Success',
-                  value: '${(habit.completionRate * 100).toStringAsFixed(0)}%',
-                  color: _getCompletionRateColor(habit.completionRate),
+                Expanded(
+                  child: _StatItem(
+                    icon: Icons.emoji_events,
+                    label: 'Best',
+                    value: '${habit.longestStreak}',
+                    color: habit.longestStreak > 0 ? Colors.amber : Colors.grey,
+                  ),
                 ),
-                _StatItem(
-                  icon: Icons.check_circle,
-                  label: 'Total',
-                  value: '${habit.completions.length}',
-                  color: Colors.blue,
+                Expanded(
+                  child: _StatItem(
+                    icon: Icons.percent,
+                    label: 'Rate',
+                    value: '${(habit.completionRate * 100).round()}%',
+                    color: habit.completionRate > 0.7 ? Colors.green : 
+                           habit.completionRate > 0.4 ? Colors.orange : Colors.red,
+                  ),
+                ),
+                Expanded(
+                  child: _StatItem(
+                    icon: Icons.calendar_today,
+                    label: 'Total',
+                    value: '${habit.completedDates.length}',
+                    color: habit.completedDates.isNotEmpty ? Colors.blue : Colors.grey,
+                  ),
                 ),
               ],
             ),
@@ -439,7 +443,8 @@ class _HabitCard extends ConsumerWidget {
               value: habit.completionRate,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(
-                _getCompletionRateColor(habit.completionRate),
+                habit.completionRate > 0.7 ? Colors.green : 
+                habit.completionRate > 0.4 ? Colors.orange : Colors.red,
               ),
             ),
           ],
@@ -448,242 +453,122 @@ class _HabitCard extends ConsumerWidget {
     );
   }
 
-  void _handleAction(BuildContext context, String action, WidgetRef ref) {
+  void _handleAction(BuildContext context, String action, WidgetRef ref) async {
     switch (action) {
       case 'edit':
-        Navigator.of(context).push(
+        // Navigate to edit screen
+        final result = await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => EditHabitScreen(habit: habit),
           ),
         );
+        
+        if (result == true) {
+          // Refresh the habits list
+          ref.invalidate(habitServiceProvider);
+        }
         break;
-      case 'complete':
-        // Handle marking habit as complete for the current period
-        AppLogger.info('Marking habit as complete: ${habit.name}');
-        _markHabitComplete(context, ref);
-        break;
+        
       case 'delete':
-        _showDeleteDialog(context, ref);
+        // Show confirmation dialog
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Delete Habit'),
+            content: Text('Are you sure you want to delete "${habit.name}"? This action cannot be undone.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        );
+        
+        if (confirmed == true) {
+          // Use Riverpod to access the habitServiceProvider
+          final habitServiceAsync = ref.watch(habitServiceProvider);
+          
+          await habitServiceAsync.when(
+            data: (habitService) async {
+              try {
+                await habitService.deleteHabit(habit.id);
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${habit.name} deleted successfully')),
+                  );
+                }
+                
+                // Refresh the habits list
+                ref.invalidate(habitServiceProvider);
+              } catch (e) {
+                AppLogger.error('Error deleting habit', e);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Error deleting habit')),
+                  );
+                }
+              }
+            },
+            loading: () async {
+              // Show loading indicator
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Loading...')),
+                );
+              }
+            },
+            error: (error, stack) async {
+              AppLogger.error('Error accessing habit service', error);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Error accessing habit service')),
+                );
+              }
+            },
+          );
+        }
         break;
     }
   }
-  
-  void _markHabitComplete(BuildContext context, WidgetRef ref) {
-    final now = DateTime.now();
-    
-    // Use Riverpod to access the habitServiceProvider
-    final habitServiceAsync = ref.watch(habitServiceProvider);
-    
-    habitServiceAsync.when(
-      data: (habitService) async {
-        try {
-          // Check if the habit is already completed today
-          final isCompleted = habit.isCompletedToday;
-          
-          if (isCompleted) {
-            // If already completed, show a confirmation dialog to remove completion
-            _showRemoveCompletionDialog(context, habitService, ref);
-          } else {
-            // Mark the habit as complete for today
-            await habitService.markHabitComplete(habit.id, now);
-            
-            // Refresh the UI
-            ref.invalidate(habitServiceProvider);
-            
-            // Show success message
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${habit.name} marked as complete for today!'),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          }
-        } catch (e) {
-          // Show error message
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          AppLogger.error('Error marking habit as complete', e);
-        }
-      },
-      loading: () {
-        // Show loading indicator
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Loading...')),
-        );
-      },
-      error: (error, stack) {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $error')),
-        );
-        AppLogger.error('Error accessing habit service', error);
-      },
-    );
-  }
-  
-  void _showRemoveCompletionDialog(BuildContext context, HabitService habitService, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Already Completed'),
-        content: Text('${habit.name} is already marked as complete for today. Do you want to remove this completion?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final now = DateTime.now();
-              
-              try {
-                // Remove the completion for today
-                await habitService.removeHabitCompletion(habit.id, now);
-                
-                // Refresh the UI
-                ref.invalidate(habitServiceProvider);
-                
-                // Show success message
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Removed completion for ${habit.name}'),
-                      backgroundColor: Colors.orange,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
-              } catch (e) {
-                // Show error message
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-                AppLogger.error('Error removing habit completion', e);
-              }
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Habit'),
-        content: Text('Are you sure you want to delete "${habit.name}"? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Handle delete
-              _deleteHabit(context, ref);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  void _deleteHabit(BuildContext context, WidgetRef ref) {
-    final habitServiceAsync = ref.watch(habitServiceProvider);
-    
-    habitServiceAsync.when(
-      data: (habitService) async {
-        try {
-          AppLogger.info('Deleting habit: ${habit.name}');
-          await habitService.deleteHabit(habit);
-          
-          // Refresh the UI
-          ref.invalidate(habitServiceProvider);
-          
-          // Show success message
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('${habit.name} has been deleted'),
-                backgroundColor: Colors.blue,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          }
-        } catch (e) {
-          // Show error message
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error deleting habit: $e'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          AppLogger.error('Error deleting habit', e);
-        }
-      },
-      loading: () {
-        // Show loading indicator
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Loading...')),
-        );
-      },
-      error: (error, stack) {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $error')),
-        );
-        AppLogger.error('Error accessing habit service', error);
-      },
-    );
-  }
 
   Color _getRankColor(int rank) {
-    if (rank == 1) return Colors.amber; // Gold
-    if (rank == 2) return Colors.grey[400]!; // Silver
-    if (rank == 3) return Colors.orange[400]!; // Bronze
-    return Colors.blue;
+    switch (rank) {
+      case 1:
+        return Colors.amber; // Gold
+      case 2:
+        return Colors.grey[400]!; // Silver
+      case 3:
+        return Colors.brown[400]!; // Bronze
+      default:
+        return Colors.blue;
+    }
   }
 
   IconData _getPerformanceIcon() {
-    if (habit.completionRate >= 0.8) return Icons.trending_up;
-    if (habit.completionRate >= 0.5) return Icons.trending_flat;
-    return Icons.trending_down;
+    if (habit.completionRate > 0.8) {
+      return Icons.trending_up;
+    } else if (habit.completionRate < 0.3) {
+      return Icons.trending_down;
+    } else {
+      return Icons.trending_flat;
+    }
   }
 
   Color _getPerformanceColor() {
-    if (habit.completionRate >= 0.8) return Colors.green;
-    if (habit.completionRate >= 0.5) return Colors.orange;
-    return Colors.red;
-  }
-
-  Color _getCompletionRateColor(double rate) {
-    if (rate >= 0.8) return Colors.green;
-    if (rate >= 0.6) return Colors.blue;
-    if (rate >= 0.4) return Colors.orange;
-    return Colors.red;
+    if (habit.completionRate > 0.8) {
+      return Colors.green;
+    } else if (habit.completionRate < 0.3) {
+      return Colors.red;
+    } else {
+      return Colors.orange;
+    }
   }
 
   IconData _getCategoryIcon(String category) {

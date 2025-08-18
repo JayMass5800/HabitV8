@@ -135,7 +135,7 @@ void _initializeHealthHabitIntegration() async {
 
 Future<void> _setCorrectTimezone() async {
   try {
-    print('DEBUG: Setting up timezone...');
+    AppLogger.debug('Setting up timezone...');
     
     // Get device local time info
     final now = DateTime.now();
@@ -144,20 +144,20 @@ Future<void> _setCorrectTimezone() async {
     final deviceOffsetMinutes = deviceOffset.inMinutes % 60;
     final timeZoneName = now.timeZoneName;
     
-    print('DEBUG: Device timezone offset: ${deviceOffset.toString()} (${deviceOffsetHours}h ${deviceOffsetMinutes}m)');
-    print('DEBUG: Device timezone name: $timeZoneName');
-    print('DEBUG: Current date: ${now.toIso8601String()}');
+    AppLogger.debug('Device timezone offset: ${deviceOffset.toString()} (${deviceOffsetHours}h ${deviceOffsetMinutes}m)');
+    AppLogger.debug('Device timezone name: $timeZoneName');
+    AppLogger.debug('Current date: ${now.toIso8601String()}');
     
     // Try to get system timezone name first
     String? detectedTimezoneName = await _getSystemTimezone();
     
     if (detectedTimezoneName != null && detectedTimezoneName.isNotEmpty) {
-      print('DEBUG: Using system-detected timezone: $detectedTimezoneName');
+      AppLogger.debug('Using system-detected timezone: $detectedTimezoneName');
       try {
         tz.setLocalLocation(tz.getLocation(detectedTimezoneName));
-        print('DEBUG: Successfully set timezone to: $detectedTimezoneName');
+        AppLogger.debug('Successfully set timezone to: $detectedTimezoneName');
       } catch (e) {
-        print('DEBUG: Failed to set system timezone $detectedTimezoneName: $e');
+        AppLogger.debug('Failed to set system timezone $detectedTimezoneName: $e');
         detectedTimezoneName = null; // Fall back to offset detection
       }
     }
