@@ -20,7 +20,7 @@ import '../widgets/calendar_selection_dialog.dart';
 import '../widgets/health_education_dialog.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/progressive_disclosure.dart';
-import '../widgets/radio_group.dart';
+import '../widgets/radio_group.dart' as custom_widgets;
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -522,7 +522,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioGroup<ThemeMode>(
+            custom_widgets.RadioGroup<ThemeMode>(
               value: themeState.themeMode,
               onChanged: (value) {
                 ref.read(themeProvider.notifier).setThemeMode(value);

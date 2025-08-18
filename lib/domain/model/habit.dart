@@ -202,9 +202,17 @@ class Habit extends HiveObject {
       case HabitFrequency.weekly:
         return lastCompletion.add(const Duration(days: 7));
       case HabitFrequency.monthly:
-        return DateTime(lastCompletion.year, lastCompletion.month + 1, lastCompletion.day);
+        return DateTime(
+          lastCompletion.year,
+          lastCompletion.month + 1,
+          lastCompletion.day,
+        );
       case HabitFrequency.yearly:
-        return DateTime(lastCompletion.year + 1, lastCompletion.month, lastCompletion.day);
+        return DateTime(
+          lastCompletion.year + 1,
+          lastCompletion.month,
+          lastCompletion.day,
+        );
     }
   }
 
@@ -242,6 +250,35 @@ class Habit extends HiveObject {
   Future<void> delete() async {
     invalidateCache();
     await super.delete();
+  }
+
+  // Convert habit to JSON for export
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'category': category,
+      'colorValue': colorValue,
+      'createdAt': createdAt.toIso8601String(),
+      'nextDueDate': nextDueDate?.toIso8601String(),
+      'frequency': frequency.toString().split('.').last,
+      'targetCount': targetCount,
+      'completions': completions.map((date) => date.toIso8601String()).toList(),
+      'currentStreak': currentStreak,
+      'longestStreak': longestStreak,
+      'isActive': isActive,
+      'notificationsEnabled': notificationsEnabled,
+      'notificationTime': notificationTime?.toIso8601String(),
+      'weeklySchedule': weeklySchedule,
+      'monthlySchedule': monthlySchedule,
+      'reminderTime': reminderTime?.toIso8601String(),
+      'difficulty': difficulty.toString().split('.').last,
+      'selectedWeekdays': selectedWeekdays,
+      'selectedMonthDays': selectedMonthDays,
+      'hourlyTimes': hourlyTimes,
+      'selectedYearlyDates': selectedYearlyDates,
+    };
   }
 }
 
