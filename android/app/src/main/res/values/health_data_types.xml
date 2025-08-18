@@ -18,11 +18,13 @@
         
         <!-- Mental health data types -->
         <item>MINDFULNESS</item>
+        
+        <!-- Heart rate data types -->
+        <item>HEART_RATE</item>
     </string-array>
     
     <!-- Explicitly define health data types that are NOT allowed -->
     <string-array name="health_data_types_excluded">
-        <item>HEART_RATE</item>
         <item>BLOOD_PRESSURE_SYSTOLIC</item>
         <item>BLOOD_PRESSURE_DIASTOLIC</item>
         <item>BLOOD_GLUCOSE</item>
@@ -51,7 +53,6 @@
         <item>OVULATION_TEST</item>
         <item>CERVICAL_MUCUS</item>
         <item>SEXUAL_ACTIVITY</item>
-        <item>RESTING_HEART_RATE</item>
         <item>HEART_RATE_VARIABILITY_RMSSD</item>
         <item>BODY_WATER_MASS</item>
         <item>CERVICAL_POSITION</item>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="health_permissions">
-        <!-- ONLY the 6 essential health permissions that are actually used in the app -->
+        <!-- ONLY the 7 essential health permissions that are actually used in the app -->
         <!-- This array MUST match exactly what's declared in AndroidManifest.xml -->
         
         <!-- Core fitness and activity permissions -->
@@ -19,6 +19,9 @@
         
         <!-- Mental health permissions -->
         <item>android.permission.health.READ_MINDFULNESS</item>
+        
+        <!-- Heart rate permissions -->
+        <item>android.permission.health.READ_HEART_RATE</item>
         
         <!-- NOTE: Background health data access is NOT included in this array -->
         <!-- It's declared in manifest but not listed here to avoid triggering -->

@@ -2419,4 +2419,319 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       ),
     );
   }
+
+  // Chart builders for health modules
+  Widget _buildSleepCorrelationChart(List<Habit> habits) {
+    if (_healthSummary == null) {
+      return const Center(
+        child: Text(
+          'Sleep data not available\nConnect your health app to see correlations',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    final sleepHours = _healthSummary!['sleepHours'] as double? ?? 0.0;
+    final completionRate = habits.isNotEmpty 
+        ? habits.where((h) => h.isCompletedToday).length / habits.length 
+        : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    '${sleepHours.toStringAsFixed(1)}h',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo,
+                    ),
+                  ),
+                  const Text('Last Night', style: TextStyle(fontSize: 12)),
+                ],
+              ),
+              const Icon(Icons.arrow_forward, color: Colors.grey),
+              Column(
+                children: [
+                  Text(
+                    '${(completionRate * 100).round()}%',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const Text('Completion Rate', style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: sleepHours / 10.0, // Scale to 10 hours max
+            backgroundColor: Colors.grey[300],
+            valueColor: AlwaysStoppedAnimation<Color>(
+              sleepHours >= 7 ? Colors.green : Colors.orange,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityCorrelationChart(List<Habit> habits) {
+    if (_healthSummary == null) {
+      return const Center(
+        child: Text(
+          'Activity data not available\nConnect your health app to see correlations',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    final steps = _healthSummary!['steps'] as int? ?? 0;
+    final calories = _healthSummary!['activeCalories'] as double? ?? 0.0;
+    final activityHabits = habits.where((h) => 
+        h.name.toLowerCase().contains('exercise') ||
+        h.name.toLowerCase().contains('workout') ||
+        h.name.toLowerCase().contains('run') ||
+        h.name.toLowerCase().contains('walk')
+    ).toList();
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    '${(steps / 1000).toStringAsFixed(1)}k',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  const Text('Steps', style: TextStyle(fontSize: 11)),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    '${calories.round()}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                  const Text('Calories', style: TextStyle(fontSize: 11)),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    '${activityHabits.where((h) => h.isCompletedToday).length}/${activityHabits.length}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const Text('Activity Habits', style: TextStyle(fontSize: 11)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: LinearProgressIndicator(
+                  value: (steps / 10000).clamp(0.0, 1.0),
+                  backgroundColor: Colors.grey[300],
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: LinearProgressIndicator(
+                  value: (calories / 500).clamp(0.0, 1.0),
+                  backgroundColor: Colors.grey[300],
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeartRateTrendChart(List<Habit> habits) {
+    if (_healthSummary == null) {
+      return const Center(
+        child: Text(
+          'Heart rate data not available\nConnect your fitness tracker to see trends',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    final heartRate = _healthSummary!['heartRate'] as double?;
+    final restingHR = _healthSummary!['restingHeartRate'] as double?;
+    final meditationHabits = habits.where((h) => 
+        h.name.toLowerCase().contains('meditat') ||
+        h.name.toLowerCase().contains('mindful') ||
+        h.name.toLowerCase().contains('breathe') ||
+        h.name.toLowerCase().contains('relax')
+    ).toList();
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  Text(
+                    heartRate != null ? '${heartRate.round()}' : '--',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.purple,
+                    ),
+                  ),
+                  const Text('Current HR', style: TextStyle(fontSize: 11)),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    restingHR != null ? '${restingHR.round()}' : '--',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  const Text('Resting HR', style: TextStyle(fontSize: 11)),
+                ],
+              ),
+              Column(
+                children: [
+                  Text(
+                    '${meditationHabits.where((h) => h.isCompletedToday).length}/${meditationHabits.length}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const Text('Mindfulness', style: TextStyle(fontSize: 11)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (restingHR != null)
+            LinearProgressIndicator(
+              value: ((80 - restingHR) / 20).clamp(0.0, 1.0), // Lower is better
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(
+                restingHR < 60 ? Colors.green : 
+                restingHR < 70 ? Colors.orange : Colors.red,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // Insight generators
+  String _generateSleepInsight(List<Habit> habits) {
+    if (_healthSummary == null) {
+      return 'Connect your health app to see personalized sleep insights.';
+    }
+
+    final sleepHours = _healthSummary!['sleepHours'] as double? ?? 0.0;
+    final completionRate = habits.isNotEmpty 
+        ? habits.where((h) => h.isCompletedToday).length / habits.length 
+        : 0.0;
+
+    if (sleepHours >= 7.5) {
+      return 'Great sleep! With ${sleepHours.toStringAsFixed(1)} hours last night, you\'re ${(completionRate * 100).round()}% more likely to complete your habits today.';
+    } else if (sleepHours >= 6.5) {
+      return 'Decent sleep at ${sleepHours.toStringAsFixed(1)} hours. Try for 7+ hours to boost your habit completion rate by up to 18%.';
+    } else {
+      return 'Only ${sleepHours.toStringAsFixed(1)} hours of sleep detected. Poor sleep can reduce habit completion by up to 25%. Prioritize rest tonight!';
+    }
+  }
+
+  String _generateActivityInsight(List<Habit> habits) {
+    if (_healthSummary == null) {
+      return 'Connect your health app to see personalized activity insights.';
+    }
+
+    final steps = _healthSummary!['steps'] as int? ?? 0;
+    final calories = _healthSummary!['activeCalories'] as double? ?? 0.0;
+    final activityHabits = habits.where((h) => 
+        h.name.toLowerCase().contains('exercise') ||
+        h.name.toLowerCase().contains('workout') ||
+        h.category.toLowerCase().contains('fitness')
+    ).toList();
+
+    if (steps >= 8000 || calories >= 300) {
+      return 'Excellent activity today! High activity days like this typically boost focus and productivity habits by 35%.';
+    } else if (steps >= 5000 || calories >= 150) {
+      return 'Good activity level. You\'re ${activityHabits.where((h) => h.isCompletedToday).isNotEmpty ? 'on track' : 'likely'} to complete more habits with this energy level.';
+    } else {
+      return 'Low activity detected ($steps steps, ${calories.round()} cal). Even a 10-minute walk can improve habit completion rates by 15%.';
+    }
+  }
+
+  String _generateHeartRateInsight(List<Habit> habits) {
+    if (_healthSummary == null) {
+      return 'Connect your fitness tracker to see personalized heart rate insights.';
+    }
+
+    final heartRate = _healthSummary!['heartRate'] as double?;
+    final restingHR = _healthSummary!['restingHeartRate'] as double?;
+    final meditationHabits = habits.where((h) => 
+        h.name.toLowerCase().contains('meditat') ||
+        h.name.toLowerCase().contains('mindful') ||
+        h.category.toLowerCase().contains('mental')
+    ).toList();
+
+    if (restingHR != null) {
+      if (restingHR < 60) {
+        return 'Excellent resting heart rate of ${restingHR.round()} bpm! Your mindfulness practices are paying off with improved cardiovascular health.';
+      } else if (restingHR < 70) {
+        return 'Good resting heart rate at ${restingHR.round()} bpm. Regular meditation can help lower it further and improve stress resilience.';
+      } else {
+        return 'Resting HR of ${restingHR.round()} bpm suggests room for improvement. Completing ${meditationHabits.isNotEmpty ? 'your mindfulness habits' : 'meditation habits'} can help reduce stress.';
+      }
+    } else if (heartRate != null) {
+      return 'Current heart rate: ${heartRate.round()} bpm. Track your resting heart rate to see how habits like meditation impact your cardiovascular health.';
+    } else {
+      return 'Heart rate data not available. Connect a fitness tracker to see how mindfulness habits affect your heart rate variability.';
+    }
+  }
 }
