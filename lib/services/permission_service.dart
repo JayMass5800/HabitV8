@@ -2,6 +2,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/notification_service.dart';
 import 'logging_service.dart';
 import 'health_service.dart';
+import 'minimal_health_channel.dart';
 
 class PermissionService {
   static final PermissionService _instance = PermissionService._internal();
@@ -150,8 +151,25 @@ class PermissionService {
   Future<bool> requestActivityRecognitionPermission() async {
     try {
       AppLogger.info('Requesting activity recognition permission');
+
+      // Request the permission
       final status = await Permission.activityRecognition.request();
       AppLogger.info('Activity recognition permission request result: $status');
+
+      // If permission is granted, try to start background monitoring
+      if (status == PermissionStatus.granted) {
+        try {
+          // Start background monitoring to ensure the service is running
+          final backgroundStarted =
+              await MinimalHealthChannel.startBackgroundMonitoring();
+          AppLogger.info(
+            'Background monitoring service started: $backgroundStarted',
+          );
+        } catch (e) {
+          AppLogger.error('Error starting background monitoring', e);
+        }
+      }
+
       return status == PermissionStatus.granted;
     } catch (e) {
       AppLogger.error('Error requesting activity recognition permission', e);

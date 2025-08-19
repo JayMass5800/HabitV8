@@ -22,6 +22,7 @@ class MinimalHealthChannel {
     'WEIGHT',
     'MINDFULNESS', // Available if supported by Health Connect version
     'HEART_RATE', // Heart rate for habit correlation analysis
+    'BACKGROUND_HEALTH_DATA', // Background health data access
   ];
 
   /// Initialize the minimal health channel
@@ -478,6 +479,36 @@ class MinimalHealthChannel {
       return result;
     } catch (e) {
       AppLogger.error('Error checking background monitoring status', e);
+      return false;
+    }
+  }
+
+  /// Check if background health data access is granted
+  static Future<bool> hasBackgroundHealthDataAccess() async {
+    try {
+      final now = DateTime.now();
+      final oneHourAgo = now.subtract(const Duration(hours: 1));
+
+      final data = await getHealthData(
+        dataType: 'BACKGROUND_HEALTH_DATA',
+        startDate: oneHourAgo,
+        endDate: now,
+      );
+
+      if (data.isEmpty) {
+        AppLogger.info(
+          'No background health data access information available',
+        );
+        return false;
+      }
+
+      final isGranted = data.first['isGranted'] as bool? ?? false;
+      AppLogger.info(
+        'Background health data access: ${isGranted ? "GRANTED" : "DENIED"}',
+      );
+      return isGranted;
+    } catch (e) {
+      AppLogger.error('Error checking background health data access', e);
       return false;
     }
   }

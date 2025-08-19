@@ -64,6 +64,11 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         } catch (e: ClassNotFoundException) {
             Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord not available in this Health Connect version")
         }
+        
+        // Add a special type for background health data access
+        // This doesn't correspond to an actual record type but is used for permission handling
+        this["BACKGROUND_HEALTH_DATA"] = StepsRecord::class // Using StepsRecord as a placeholder
+        Log.i("MinimalHealthPlugin", "Added BACKGROUND_HEALTH_DATA type")
     }
 
     // Health Connect permissions for our allowed data types
@@ -84,17 +89,14 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord permission not available")
         }
         
-        // Add background health data access permission
+        // Add background health data access permission directly
         try {
-            // Use reflection to get the READ_HEALTH_DATA_IN_BACKGROUND permission
-            // This avoids direct reference that might cause issues with older Health Connect versions
-            val healthPermissionClass = HealthPermission::class.java
-            val getReadHealthDataInBackgroundMethod = healthPermissionClass.getDeclaredMethod("getReadHealthDataInBackground")
-            val backgroundPermission = getReadHealthDataInBackgroundMethod.invoke(null) as String
-            this.add(backgroundPermission)
-            Log.i("MinimalHealthPlugin", "Background health data access permission added")
+            // Use direct string reference for the background permission
+            // This is more reliable than reflection
+            this.add("android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND")
+            Log.i("MinimalHealthPlugin", "Background health data access permission added directly")
         } catch (e: Exception) {
-            Log.w("MinimalHealthPlugin", "Background health data access permission not available", e)
+            Log.w("MinimalHealthPlugin", "Error adding background health data access permission", e)
         }
     }
 
@@ -107,13 +109,23 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
         
-        // Initialize Health Connect client if available
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        // Initialize Health Connect client - removed SDK version check to ensure it works on all Android versions
+        try {
+            healthConnectClient = HealthConnectClient.getOrCreate(context)
+            Log.i("MinimalHealthPlugin", "Health Connect client initialized successfully")
+            
+            // Log the Health Connect client details
+            val packageInfo = context.packageManager.getPackageInfo("com.google.android.apps.healthdata", 0)
+            Log.i("MinimalHealthPlugin", "Health Connect package info: ${packageInfo.versionName}")
+        } catch (e: Exception) {
+            Log.w("MinimalHealthPlugin", "Health Connect not available or not installed", e)
+            
+            // Try to check if Health Connect is installed
             try {
-                healthConnectClient = HealthConnectClient.getOrCreate(context)
-                Log.i("MinimalHealthPlugin", "Health Connect client initialized")
+                context.packageManager.getPackageInfo("com.google.android.apps.healthdata", 0)
+                Log.i("MinimalHealthPlugin", "Health Connect is installed but client initialization failed")
             } catch (e: Exception) {
-                Log.w("MinimalHealthPlugin", "Health Connect not available", e)
+                Log.w("MinimalHealthPlugin", "Health Connect is not installed", e)
             }
         }
         
@@ -253,9 +265,34 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         coroutineScope.launch {
             try {
                 val grantedPermissions = healthConnectClient!!.permissionController.getGrantedPermissions()
+                
+                // Log all granted permissions for debugging
+                Log.i("MinimalHealthPlugin", "Granted permissions (${grantedPermissions.size}):")
+                grantedPermissions.forEach { permission ->
+                    Log.i("MinimalHealthPlugin", "  - $permission")
+                }
+                
+                // Log all required permissions
+                Log.i("MinimalHealthPlugin", "Required permissions (${HEALTH_PERMISSIONS.size}):")
+                HEALTH_PERMISSIONS.forEach { permission ->
+                    val isGranted = permission in grantedPermissions
+                    Log.i("MinimalHealthPlugin", "  - $permission: ${if (isGranted) "GRANTED" else "MISSING"}")
+                }
+                
+                // Check for heart rate permission specifically
+                val heartRatePermission = "android.permission.health.READ_HEART_RATE"
+                val hasHeartRatePermission = heartRatePermission in grantedPermissions
+                Log.i("MinimalHealthPlugin", "Heart rate permission: ${if (hasHeartRatePermission) "GRANTED" else "MISSING"}")
+                
+                // Check for background permission specifically
+                val backgroundPermission = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
+                val hasBackgroundPermission = backgroundPermission in grantedPermissions
+                Log.i("MinimalHealthPlugin", "Background permission: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
+                
+                // Check if all required permissions are granted
                 val allGranted = HEALTH_PERMISSIONS.all { it in grantedPermissions }
                 
-                Log.i("MinimalHealthPlugin", "Permissions check result: $allGranted (${grantedPermissions.size}/${HEALTH_PERMISSIONS.size})")
+                Log.i("MinimalHealthPlugin", "All permissions granted: $allGranted")
                 result.success(allGranted)
             } catch (e: Exception) {
                 Log.e("MinimalHealthPlugin", "Error checking permissions", e)
@@ -278,12 +315,25 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         }
 
         try {
+            // Log all permissions being requested for debugging
+            Log.i("MinimalHealthPlugin", "Requesting permissions:")
+            HEALTH_PERMISSIONS.forEach { permission ->
+                Log.i("MinimalHealthPlugin", "  - $permission")
+            }
+            
+            // Ensure background permission is included
+            val allPermissions = HEALTH_PERMISSIONS.toMutableSet()
+            if (!allPermissions.contains("android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND")) {
+                allPermissions.add("android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND")
+                Log.i("MinimalHealthPlugin", "Added missing background permission")
+            }
+            
             pendingResult = result
             val permissionContract = PermissionController.createRequestPermissionResultContract()
-            val intent = permissionContract.createIntent(context, HEALTH_PERMISSIONS)
+            val intent = permissionContract.createIntent(context, allPermissions)
             
             activityBinding?.activity?.startActivityForResult(intent, HEALTH_CONNECT_REQUEST_CODE)
-            Log.i("MinimalHealthPlugin", "Permission request started for ${HEALTH_PERMISSIONS.size} permissions")
+            Log.i("MinimalHealthPlugin", "Permission request started for ${allPermissions.size} permissions")
         } catch (e: Exception) {
             Log.e("MinimalHealthPlugin", "Error requesting permissions", e)
             result.error("PERMISSION_ERROR", e.message, null)
@@ -302,6 +352,37 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             val dataType = call.argument<String>("dataType") ?: ""
             val startDate = call.argument<Long>("startDate") ?: 0L
             val endDate = call.argument<Long>("endDate") ?: 0L
+            
+            // Special handling for BACKGROUND_HEALTH_DATA
+            if (dataType == "BACKGROUND_HEALTH_DATA") {
+                Log.i("MinimalHealthPlugin", "Checking background health data access permission")
+                
+                coroutineScope.launch {
+                    try {
+                        val grantedPermissions = healthConnectClient!!.permissionController.getGrantedPermissions()
+                        val hasBackgroundPermission = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" in grantedPermissions
+                        
+                        Log.i("MinimalHealthPlugin", "Background health data access permission: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
+                        
+                        // Return a dummy record to indicate permission status
+                        val dummyData = listOf(
+                            mapOf(
+                                "type" to "BACKGROUND_HEALTH_DATA",
+                                "timestamp" to System.currentTimeMillis(),
+                                "value" to if (hasBackgroundPermission) 1.0 else 0.0,
+                                "unit" to "permission",
+                                "isGranted" to hasBackgroundPermission
+                            )
+                        )
+                        
+                        result.success(dummyData)
+                    } catch (e: Exception) {
+                        Log.e("MinimalHealthPlugin", "Error checking background health data access", e)
+                        result.error("DATA_ERROR", e.message, null)
+                    }
+                }
+                return
+            }
             
             // Validate data type
             if (!ALLOWED_DATA_TYPES.containsKey(dataType)) {
@@ -475,6 +556,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     // ActivityResultListener implementation
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         if (requestCode == HEALTH_CONNECT_REQUEST_CODE) {
+            Log.i("MinimalHealthPlugin", "Received activity result with code: $resultCode")
             val result = pendingResult
             pendingResult = null
             
@@ -483,7 +565,34 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 coroutineScope.launch {
                     try {
                         val grantedPermissions = healthConnectClient?.permissionController?.getGrantedPermissions() ?: emptySet()
+                        
+                        // Log all granted permissions for debugging
+                        Log.i("MinimalHealthPlugin", "Granted permissions after request (${grantedPermissions.size}):")
+                        grantedPermissions.forEach { permission ->
+                            Log.i("MinimalHealthPlugin", "  - $permission")
+                        }
+                        
+                        // Check for heart rate permission specifically
+                        val heartRatePermission = "android.permission.health.READ_HEART_RATE"
+                        val hasHeartRatePermission = heartRatePermission in grantedPermissions
+                        Log.i("MinimalHealthPlugin", "Heart rate permission after request: ${if (hasHeartRatePermission) "GRANTED" else "MISSING"}")
+                        
+                        // Check for background permission specifically
+                        val backgroundPermission = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
+                        val hasBackgroundPermission = backgroundPermission in grantedPermissions
+                        Log.i("MinimalHealthPlugin", "Background permission after request: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
+                        
+                        // Check if all required permissions are granted
                         val allGranted = HEALTH_PERMISSIONS.all { it in grantedPermissions }
+                        
+                        // Log missing permissions if any
+                        if (!allGranted) {
+                            val missingPermissions = HEALTH_PERMISSIONS.filter { it !in grantedPermissions }
+                            Log.w("MinimalHealthPlugin", "Missing permissions after request (${missingPermissions.size}):")
+                            missingPermissions.forEach { permission ->
+                                Log.w("MinimalHealthPlugin", "  - $permission")
+                            }
+                        }
                         
                         Log.i("MinimalHealthPlugin", "Permission request result: $allGranted")
                         result.success(allGranted)

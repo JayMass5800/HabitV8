@@ -233,15 +233,22 @@ class HealthService {
     }
   }
 
-  /// Force request all health permissions, including heart rate
+  /// Force request all health permissions, including heart rate and background access
   static Future<bool> forceRequestAllPermissions() async {
     try {
       AppLogger.info(
-        'Force requesting all health permissions, including heart rate',
+        'Force requesting all health permissions, including heart rate and background access',
       );
 
       // Reinitialize to ensure we have the latest data types
       await reinitialize();
+
+      // Start background monitoring to ensure the service is running
+      final backgroundStarted =
+          await MinimalHealthChannel.startBackgroundMonitoring();
+      AppLogger.info(
+        'Background monitoring service started: $backgroundStarted',
+      );
 
       // Request permissions explicitly
       final granted = await requestPermissions();
@@ -258,8 +265,28 @@ class HealthService {
             'Heart rate permission may not be granted: no data accessible',
           );
         }
+
+        // Check if background monitoring is active
+        final isBackgroundActive =
+            await MinimalHealthChannel.isBackgroundMonitoringActive();
+        AppLogger.info('Background monitoring active: $isBackgroundActive');
+
+        // If permissions are granted but background monitoring is not active, try to start it again
+        if (!isBackgroundActive) {
+          final restartResult =
+              await MinimalHealthChannel.startBackgroundMonitoring();
+          AppLogger.info('Restarted background monitoring: $restartResult');
+        }
       } else {
         AppLogger.warning('Failed to grant all health permissions');
+
+        // Try one more time with a direct approach
+        AppLogger.info('Trying one more time with direct approach...');
+        await Future.delayed(const Duration(seconds: 1));
+        final retryGranted = await requestPermissions();
+        AppLogger.info('Retry permission request result: $retryGranted');
+
+        return retryGranted;
       }
 
       return granted;
@@ -666,6 +693,20 @@ class HealthService {
     }
   }
 
+  /// Check if background health data access is granted
+  static Future<bool> hasBackgroundHealthDataAccess() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      return await MinimalHealthChannel.hasBackgroundHealthDataAccess();
+    } catch (e) {
+      AppLogger.error('Error checking background health data access', e);
+      return false;
+    }
+  }
+
   /// Get health service debug info
   static Future<Map<String, dynamic>> getHealthConnectDebugInfo() async {
     try {
@@ -674,6 +715,10 @@ class HealthService {
         'realDataOnly': true,
         'isAvailable': await isHealthConnectAvailable(),
         'hasPermissions': await hasPermissions(),
+        'hasBackgroundAccess': await hasBackgroundHealthDataAccess(),
+        'hasHeartRatePermission': await getLatestHeartRate() != null,
+        'isBackgroundMonitoringActive':
+            await MinimalHealthChannel.isBackgroundMonitoringActive(),
         'allowedDataTypes': _healthDataTypes,
         'supportedDataTypes': MinimalHealthChannel.getSupportedDataTypes(),
         'platform': Platform.operatingSystem,
