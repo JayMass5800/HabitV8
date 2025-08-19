@@ -10,10 +10,10 @@ class HealthDebugInfo {
     try {
       // Get debug info
       final debugInfo = await HealthService.getHealthConnectDebugInfo();
-      
+
       // Log debug info
-      AppLogger.info('Health debug info: \');
-      
+      AppLogger.info('Health debug info: $debugInfo');
+
       // Show dialog
       if (context.mounted) {
         showDialog(
@@ -25,18 +25,72 @@ class HealthDebugInfo {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Initialized: \'),
-                  Text('Available: \'),
-                  Text('Has Permissions: \'),
-                  Text('Has Background Access: \'),
-                  Text('Has Heart Rate Permission: \'),
-                  Text('Background Monitoring Active: \'),
+                  Text(
+                    'Initialized: ${debugInfo['isInitialized'] ?? 'Unknown'}',
+                  ),
+                  Text('Available: ${debugInfo['isAvailable'] ?? 'Unknown'}'),
+                  Text(
+                    'Has Permissions: ${debugInfo['hasPermissions'] ?? 'Unknown'}',
+                  ),
+                  Text(
+                    'Has Background Access: ${debugInfo['hasBackgroundAccess'] ?? 'Unknown'}',
+                  ),
+                  Text(
+                    'Has Heart Rate Permission: ${debugInfo['hasHeartRatePermission'] ?? 'Unknown'}',
+                  ),
+                  Text(
+                    'Background Monitoring Active: ${debugInfo['isBackgroundMonitoringActive'] ?? 'Unknown'}',
+                  ),
                   const SizedBox(height: 16),
-                  const Text('Allowed Data Types:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('\'),
+                  const Text(
+                    'Allowed Data Types:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '${debugInfo['allowedDataTypes']?.join(', ') ?? 'None'}',
+                  ),
                   const SizedBox(height: 16),
-                  const Text('Supported Data Types:', style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('\'),
+                  const Text(
+                    'Supported Data Types:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '${debugInfo['supportedDataTypes']?.join(', ') ?? 'None'}',
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Platform:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text('${debugInfo['platform'] ?? 'Unknown'}'),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Message:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text('${debugInfo['message'] ?? 'No message'}'),
+                  if (debugInfo['currentHealthSummary'] != null) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Current Health Summary:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text('${debugInfo['currentHealthSummary']}'),
+                  ],
+                  if (debugInfo['error'] != null) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Error:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                    Text(
+                      '${debugInfo['error']}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -67,16 +121,16 @@ class HealthDebugInfo {
       AppLogger.error('Error showing health debug info', e);
     }
   }
-  
+
   /// Force request permissions
   static Future<void> _forceRequestPermissions(BuildContext context) async {
     try {
       final result = await HealthService.forceRequestAllPermissions();
-      
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Force request permissions result: \'),
+            content: Text('Force request permissions result: $result'),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -85,12 +139,13 @@ class HealthDebugInfo {
       AppLogger.error('Error force requesting permissions', e);
     }
   }
-  
+
   /// Toggle background monitoring
   static Future<void> _toggleBackgroundMonitoring(BuildContext context) async {
     try {
-      final isActive = await MinimalHealthChannel.isBackgroundMonitoringActive();
-      
+      final isActive =
+          await MinimalHealthChannel.isBackgroundMonitoringActive();
+
       if (isActive) {
         await MinimalHealthChannel.stopBackgroundMonitoring();
         if (context.mounted) {

@@ -25,7 +25,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   Map<String, dynamic>? _trendAnalysis;
   Map<String, dynamic>? _gamificationStats;
   Map<String, dynamic>? _healthSummary;
-  HealthHabitAnalyticsReport? _healthAnalytics; // from HealthHabitAnalyticsService
+  HealthHabitAnalyticsReport?
+  _healthAnalytics; // from HealthHabitAnalyticsService
   Map<String, dynamic>? _integrationStatus;
   bool _isLoading = true;
 
@@ -51,27 +52,40 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       await habitServiceAsync.when(
         data: (habitService) async {
           final habits = await habitService.getAllHabits();
-          final habitsData = habits.map((h) => {
-            'id': h.id,
-            'name': h.name,
-            'category': h.category,
-            'currentStreak': h.currentStreak,
-            'completionRate': h.completionRate,
-            'reminderTime': h.reminderTime?.toString(),
-            'difficulty': h.difficulty.name,
-            'completions': h.completions.map((c) => {
-              'id': DateTime.now().millisecondsSinceEpoch.toString(),
-              'habitId': h.id,
-              'completedAt': c,
-            }).toList(),
-          }).toList();
+          final habitsData = habits
+              .map(
+                (h) => {
+                  'id': h.id,
+                  'name': h.name,
+                  'category': h.category,
+                  'currentStreak': h.currentStreak,
+                  'completionRate': h.completionRate,
+                  'reminderTime': h.reminderTime?.toString(),
+                  'difficulty': h.difficulty.name,
+                  'completions': h.completions
+                      .map(
+                        (c) => {
+                          'id': DateTime.now().millisecondsSinceEpoch
+                              .toString(),
+                          'habitId': h.id,
+                          'completedAt': c,
+                        },
+                      )
+                      .toList(),
+                },
+              )
+              .toList();
 
           final allCompletions = habits
-              .expand((h) => h.completions.map((c) => {
-                'id': DateTime.now().millisecondsSinceEpoch.toString(),
-                'habitId': h.id,
-                'completedAt': c,
-              }))
+              .expand(
+                (h) => h.completions.map(
+                  (c) => {
+                    'id': DateTime.now().millisecondsSinceEpoch.toString(),
+                    'habitId': h.id,
+                    'completedAt': c,
+                  },
+                ),
+              )
               .toList();
 
           // Load trend analysis (only if enough data)
@@ -80,8 +94,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             completions: allCompletions,
           );
 
-
-
           // Load gamification stats
           _gamificationStats = await AchievementsService.getGamificationStats(
             habits: habitsData,
@@ -89,10 +101,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           );
 
           // Check for new achievements
-          final newAchievements = await AchievementsService.checkForNewAchievements(
-            habits: habitsData,
-            completions: allCompletions,
-          );
+          final newAchievements =
+              await AchievementsService.checkForNewAchievements(
+                habits: habitsData,
+                completions: allCompletions,
+              );
 
           if (newAchievements.isNotEmpty && mounted) {
             _showNewAchievements(newAchievements);
@@ -100,22 +113,70 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
           // Load health summary if available
           try {
-            if (await HealthService.hasPermissions()) {
+            AppLogger.info('Checking health permissions...');
+            final hasPermissions = await HealthService.hasPermissions();
+            AppLogger.info('Health permissions status: $hasPermissions');
+
+            if (hasPermissions) {
+              AppLogger.info('Loading health summary...');
               _healthSummary = await HealthService.getTodayHealthSummary();
-              
+              AppLogger.info(
+                'Health summary loaded: ${_healthSummary?.keys.join(', ')}',
+              );
+
+              // Check if we got actual data
+              if (_healthSummary != null &&
+                  _healthSummary!.containsKey('error')) {
+                AppLogger.warning(
+                  'Health summary contains error: ${_healthSummary!['error']}',
+                );
+                // Still keep the summary to show the error state
+              }
+
               // Load comprehensive health analytics
-              _healthAnalytics = await HealthHabitAnalyticsService.generateAnalyticsReport(
-                habitService: habitService,
-              );
-              
+              try {
+                _healthAnalytics =
+                    await HealthHabitAnalyticsService.generateAnalyticsReport(
+                      habitService: habitService,
+                    );
+                AppLogger.info('Health analytics loaded successfully');
+              } catch (analyticsError) {
+                AppLogger.error(
+                  'Failed to load health analytics',
+                  analyticsError,
+                );
+                _healthAnalytics = null;
+              }
+
               // Load integration status
-              _integrationStatus = await HealthHabitIntegrationService.getIntegrationStatus(
-                habitService: habitService,
+              try {
+                _integrationStatus =
+                    await HealthHabitIntegrationService.getIntegrationStatus(
+                      habitService: habitService,
+                    );
+                AppLogger.info('Integration status loaded successfully');
+              } catch (integrationError) {
+                AppLogger.error(
+                  'Failed to load integration status',
+                  integrationError,
+                );
+                _integrationStatus = null;
+              }
+            } else {
+              AppLogger.info(
+                'Health permissions not granted, skipping health data load',
               );
+              _healthSummary = null;
+              _healthAnalytics = null;
+              _integrationStatus = null;
             }
           } catch (e) {
             // Handle health service error quietly
             AppLogger.error('Failed to load health summary', e);
+            // Set empty health summary to show placeholder
+            _healthSummary = null;
+            _healthAnalytics = null;
+            _integrationStatus = null;
           }
         },
         loading: () async {
@@ -143,12 +204,19 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           // Keep achievement modal logic intact; only the Achievements tab UI was removed
-          children: achievements.map((achievement) => ListTile(
-            leading: Text(achievement.icon, style: const TextStyle(fontSize: 24)),
-            title: Text(achievement.title),
-            subtitle: Text(achievement.description),
-            trailing: Text('+${achievement.xpReward} XP'),
-          )).toList(),
+          children: achievements
+              .map(
+                (achievement) => ListTile(
+                  leading: Text(
+                    achievement.icon,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                  title: Text(achievement.title),
+                  subtitle: Text(achievement.description),
+                  trailing: Text('+${achievement.xpReward} XP'),
+                ),
+              )
+              .toList(),
         ),
         actions: [
           TextButton(
@@ -202,7 +270,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.lightbulb_outline, size: 64, color: Colors.grey),
+                      Icon(
+                        Icons.lightbulb_outline,
+                        size: 64,
+                        color: Colors.grey,
+                      ),
                       SizedBox(height: 16),
                       Text(
                         'No insights yet',
@@ -241,9 +313,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             },
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Text('Error loading data: $error'),
-          ),
+          error: (error, stack) =>
+              Center(child: Text('Error loading data: $error')),
         );
       },
     );
@@ -275,10 +346,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 16,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 16),
           ),
         ],
       ),
@@ -305,9 +373,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               const SizedBox(width: 8),
               Text(
                 '${stats['xp']} XP',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -315,9 +383,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem('Achievements', '${stats['achievementsUnlocked']}'),
+              _buildStatItem(
+                'Achievements',
+                '${stats['achievementsUnlocked']}',
+              ),
               _buildStatItem('Max Streak', '${stats['maxStreak']}'),
-              _buildStatItem('Rate', '${(stats['completionRate'] * 100).toInt()}%'),
+              _buildStatItem(
+                'Rate',
+                '${(stats['completionRate'] * 100).toInt()}%',
+              ),
             ],
           ),
         ],
@@ -327,17 +401,26 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         children: [
           Text(
             'Detailed Progress',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           _buildDetailRow('Current Level', 'Level ${stats['level']}'),
           _buildDetailRow('Rank', stats['rank']),
-          _buildDetailRow('Total XP', '${stats['xp']} / ${stats['nextLevelXP']}'),
-          _buildDetailRow('Achievements Unlocked', '${stats['achievementsUnlocked']} / ${stats['totalAchievements']}'),
+          _buildDetailRow(
+            'Total XP',
+            '${stats['xp']} / ${stats['nextLevelXP']}',
+          ),
+          _buildDetailRow(
+            'Achievements Unlocked',
+            '${stats['achievementsUnlocked']} / ${stats['totalAchievements']}',
+          ),
           _buildDetailRow('Maximum Streak', '${stats['maxStreak']} days'),
-          _buildDetailRow('Overall Completion Rate', '${(stats['completionRate'] * 100).toStringAsFixed(1)}%'),
+          _buildDetailRow(
+            'Overall Completion Rate',
+            '${(stats['completionRate'] * 100).toStringAsFixed(1)}%',
+          ),
           const SizedBox(height: 12),
           LinearProgressIndicator(
             value: stats['levelProgress'],
@@ -346,9 +429,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           const SizedBox(height: 8),
           Text(
             'Progress to next level: ${((stats['levelProgress'] as double) * 100).toInt()}%',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.grey[600],
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
@@ -359,7 +442,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   Widget _buildQuickStatsGrid(List<Habit> habits) {
     final totalHabits = habits.length;
     final activeHabits = habits.where((h) => h.currentStreak > 0).length;
-    final totalCompletions = habits.fold<int>(0, (sum, h) => sum + h.completions.length);
+    final totalCompletions = habits.fold<int>(
+      0,
+      (sum, h) => sum + h.completions.length,
+    );
     final avgStreak = habits.isNotEmpty
         ? habits.fold<int>(0, (sum, h) => sum + h.currentStreak) / habits.length
         : 0.0;
@@ -372,10 +458,26 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       crossAxisSpacing: 8,
       childAspectRatio: 1.5,
       children: [
-        _buildQuickStatCard('Total Habits', totalHabits.toString(), Icons.list_alt),
-        _buildQuickStatCard('Active Streaks', activeHabits.toString(), Icons.local_fire_department),
-        _buildQuickStatCard('Total Completions', totalCompletions.toString(), Icons.check_circle),
-        _buildQuickStatCard('Avg Streak', '${avgStreak.toStringAsFixed(1)} days', Icons.trending_up),
+        _buildQuickStatCard(
+          'Total Habits',
+          totalHabits.toString(),
+          Icons.list_alt,
+        ),
+        _buildQuickStatCard(
+          'Active Streaks',
+          activeHabits.toString(),
+          Icons.local_fire_department,
+        ),
+        _buildQuickStatCard(
+          'Total Completions',
+          totalCompletions.toString(),
+          Icons.check_circle,
+        ),
+        _buildQuickStatCard(
+          'Avg Streak',
+          '${avgStreak.toStringAsFixed(1)} days',
+          Icons.trending_up,
+        ),
       ],
     );
   }
@@ -391,9 +493,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             const SizedBox(height: 8),
             Text(
               value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             Text(
               title,
@@ -432,7 +534,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.favorite, color: Colors.red, size: 20),
+                    child: const Icon(
+                      Icons.favorite,
+                      color: Colors.red,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -449,11 +555,26 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   if (health['steps'] != null)
-                    _buildHealthStatItem('Steps', '${health['steps']}', Icons.directions_walk, Colors.green),
+                    _buildHealthStatItem(
+                      'Steps',
+                      '${health['steps']}',
+                      Icons.directions_walk,
+                      Colors.green,
+                    ),
                   if (health['exerciseMinutes'] != null)
-                    _buildHealthStatItem('Exercise', '${health['exerciseMinutes']} min', Icons.fitness_center, Colors.orange),
+                    _buildHealthStatItem(
+                      'Exercise',
+                      '${health['exerciseMinutes']} min',
+                      Icons.fitness_center,
+                      Colors.orange,
+                    ),
                   if (health['waterIntake'] != null)
-                    _buildHealthStatItem('Water', '${health['waterIntake'].toStringAsFixed(1)}L', Icons.water_drop, Colors.blue),
+                    _buildHealthStatItem(
+                      'Water',
+                      '${health['waterIntake'].toStringAsFixed(1)}L',
+                      Icons.water_drop,
+                      Colors.blue,
+                    ),
                 ],
               ),
             ],
@@ -469,20 +590,33 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     // Generate insights based on current data
     final completionRates = habits.map((h) => h.completionRate).toList();
     if (completionRates.isNotEmpty) {
-      final avgRate = completionRates.reduce((a, b) => a + b) / completionRates.length;
+      final avgRate =
+          completionRates.reduce((a, b) => a + b) / completionRates.length;
       if (avgRate > 0.8) {
-        insights.add('🎯 You\'re doing great! Your average completion rate is ${(avgRate * 100).toStringAsFixed(1)}%');
+        insights.add(
+          '🎯 You\'re doing great! Your average completion rate is ${(avgRate * 100).toStringAsFixed(1)}%',
+        );
       } else if (avgRate < 0.5) {
-        insights.add('💪 Focus on consistency. Your completion rate could improve.');
+        insights.add(
+          '💪 Focus on consistency. Your completion rate could improve.',
+        );
       }
     }
 
-    final bestHabit = habits.where((h) => h.completions.isNotEmpty)
-        .fold<Habit?>(null, (best, habit) =>
-          best == null || habit.currentStreak > best.currentStreak ? habit : best);
+    final bestHabit = habits
+        .where((h) => h.completions.isNotEmpty)
+        .fold<Habit?>(
+          null,
+          (best, habit) =>
+              best == null || habit.currentStreak > best.currentStreak
+              ? habit
+              : best,
+        );
 
     if (bestHabit != null && bestHabit.currentStreak > 7) {
-      insights.add('🔥 ${bestHabit.name} is on fire with a ${bestHabit.currentStreak}-day streak!');
+      insights.add(
+        '🔥 ${bestHabit.name} is on fire with a ${bestHabit.currentStreak}-day streak!',
+      );
     }
 
     return Card(
@@ -499,10 +633,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             if (insights.isEmpty)
               const Text('Keep tracking habits to unlock insights!')
             else
-              ...insights.map((insight) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(insight),
-              )),
+              ...insights.map(
+                (insight) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(insight),
+                ),
+              ),
           ],
         ),
       ),
@@ -514,19 +650,21 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       children: [
         Text(
           value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }
 
-  Widget _buildHealthStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildHealthStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -566,15 +704,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -583,9 +718,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   Widget _buildTrendsTab() {
     if (_trendAnalysis == null) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     final analysis = _trendAnalysis!;
@@ -622,10 +755,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Motivational Header
-          _buildMotivationalHeader('Trend Analysis',
-              'Spot patterns and optimize your habit journey! 📈'),
+          _buildMotivationalHeader(
+            'Trend Analysis',
+            'Spot patterns and optimize your habit journey! 📈',
+          ),
           const SizedBox(height: 24),
-          
+
           // Overall Trends Card
           _buildOverallTrendsCard(analysis['overallTrends']),
           const SizedBox(height: 16),
@@ -639,7 +774,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             _buildIndividualTrendsCard(analysis['habitTrends']),
 
           // Insights and Recommendations
-          if (analysis['insights'] != null || analysis['recommendations'] != null)
+          if (analysis['insights'] != null ||
+              analysis['recommendations'] != null)
             _buildTrendInsightsCard(analysis),
         ],
       ),
@@ -705,7 +841,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     const Text('Best Day'),
                     Text(
                       weeklyPatterns['bestDay'] ?? 'N/A',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
                     ),
                   ],
                 ),
@@ -714,7 +853,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     const Text('Worst Day'),
                     Text(
                       weeklyPatterns['worstDay'] ?? 'N/A',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
                     ),
                   ],
                 ),
@@ -747,7 +889,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 ),
                 title: Text(trendData['habitName'] ?? 'Unknown Habit'),
                 subtitle: Text(trendData['message'] ?? ''),
-                trailing: Text('${(trendData['completionRate'] * 100).toStringAsFixed(1)}%'),
+                trailing: Text(
+                  '${(trendData['completionRate'] * 100).toStringAsFixed(1)}%',
+                ),
               );
             }),
           ],
@@ -772,19 +916,29 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ),
             const SizedBox(height: 16),
             if (insights.isNotEmpty) ...[
-              const Text('💡 Insights:', style: TextStyle(fontWeight: FontWeight.bold)),
-              ...insights.map((insight) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text('• $insight'),
-              )),
+              const Text(
+                '💡 Insights:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              ...insights.map(
+                (insight) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text('• $insight'),
+                ),
+              ),
               const SizedBox(height: 8),
             ],
             if (recommendations.isNotEmpty) ...[
-              const Text('🎯 Recommendations:', style: TextStyle(fontWeight: FontWeight.bold)),
-              ...recommendations.map((rec) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text('• $rec'),
-              )),
+              const Text(
+                '🎯 Recommendations:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              ...recommendations.map(
+                (rec) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text('• $rec'),
+                ),
+              ),
             ],
           ],
         ),
@@ -813,10 +967,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Motivational Header
-              _buildMotivationalHeader('Achievements & Rewards',
-                  'Celebrate your progress and unlock new milestones! 🏆'),
+              _buildMotivationalHeader(
+                'Achievements & Rewards',
+                'Celebrate your progress and unlock new milestones! 🏆',
+              ),
               const SizedBox(height: 24),
-              
+
               // Progress Overview Card
               Card(
                 child: Padding(
@@ -830,11 +986,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       ),
                       const SizedBox(height: 16),
                       LinearProgressIndicator(
-                        value: unlockedAchievements.length / allAchievements.length,
+                        value:
+                            unlockedAchievements.length /
+                            allAchievements.length,
                         backgroundColor: Colors.grey[300],
                       ),
                       const SizedBox(height: 8),
-                      Text('${unlockedAchievements.length} / ${allAchievements.length} achievements unlocked'),
+                      Text(
+                        '${unlockedAchievements.length} / ${allAchievements.length} achievements unlocked',
+                      ),
                     ],
                   ),
                 ),
@@ -848,17 +1008,24 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                ...unlockedAchievements.take(5).map((achievement) => Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.amber,
-                      child: Text(achievement.icon, style: const TextStyle(fontSize: 20)),
+                ...unlockedAchievements
+                    .take(5)
+                    .map(
+                      (achievement) => Card(
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.amber,
+                            child: Text(
+                              achievement.icon,
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                          ),
+                          title: Text(achievement.title),
+                          subtitle: Text(achievement.description),
+                          trailing: Text('+${achievement.xpReward} XP'),
+                        ),
+                      ),
                     ),
-                    title: Text(achievement.title),
-                    subtitle: Text(achievement.description),
-                    trailing: Text('+${achievement.xpReward} XP'),
-                  ),
-                )),
                 const SizedBox(height: 16),
               ],
 
@@ -878,14 +1045,19 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
                   return Column(
                     children: allAchievements.map((achievement) {
-                      final isUnlocked = unlockedAchievements.any((a) => a.id == achievement.id);
-                      final achievementProgress = progress[achievement.id] ?? 0.0;
+                      final isUnlocked = unlockedAchievements.any(
+                        (a) => a.id == achievement.id,
+                      );
+                      final achievementProgress =
+                          progress[achievement.id] ?? 0.0;
 
                       return Card(
                         color: isUnlocked ? Colors.amber[50] : null,
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: isUnlocked ? Colors.amber : Colors.grey,
+                            backgroundColor: isUnlocked
+                                ? Colors.amber
+                                : Colors.grey,
                             child: Text(
                               isUnlocked ? achievement.icon : '🔒',
                               style: const TextStyle(fontSize: 20),
@@ -908,14 +1080,20 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                                   value: achievementProgress,
                                   backgroundColor: Colors.grey[300],
                                 ),
-                                Text('Progress: ${(achievementProgress * 100).toStringAsFixed(0)}%'),
+                                Text(
+                                  'Progress: ${(achievementProgress * 100).toStringAsFixed(0)}%',
+                                ),
                               ],
                             ],
                           ),
                           trailing: Text(
-                            isUnlocked ? 'Unlocked!' : '+${achievement.xpReward} XP',
+                            isUnlocked
+                                ? 'Unlocked!'
+                                : '+${achievement.xpReward} XP',
                             style: TextStyle(
-                              color: isUnlocked ? Colors.amber[700] : Colors.grey,
+                              color: isUnlocked
+                                  ? Colors.amber[700]
+                                  : Colors.grey,
                               fontWeight: isUnlocked ? FontWeight.bold : null,
                             ),
                           ),
@@ -932,9 +1110,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-
-
-
   Widget _buildEnhancedHealthIntegrationSection() {
     return Card(
       child: Padding(
@@ -944,10 +1119,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.health_and_safety,
-                  color: Colors.green,
-                ),
+                Icon(Icons.health_and_safety, color: Colors.green),
                 const SizedBox(width: 8),
                 Text(
                   'Health Integration',
@@ -957,16 +1129,25 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: Colors.green.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.auto_awesome, size: 14, color: Colors.green.shade700),
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 14,
+                        color: Colors.green.shade700,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'Active',
@@ -982,11 +1163,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Health Analytics Overview
             _buildHealthAnalyticsOverview(),
             const SizedBox(height: 16),
-            
+
             // Health-Habit Correlations
             _buildHealthHabitCorrelations(),
           ],
@@ -1002,9 +1183,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       children: [
         Text(
           'Today\'s Health Metrics',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Row(
@@ -1041,7 +1222,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-  Widget _buildHealthMetricTile(String title, String value, IconData icon, Color color) {
+  Widget _buildHealthMetricTile(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1055,18 +1241,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: color),
           ),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
+          Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         ],
       ),
     );
@@ -1078,9 +1255,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       children: [
         Text(
           'Health-Habit Insights',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Container(
@@ -1097,10 +1274,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               Expanded(
                 child: Text(
                   'Your health data is being used to automatically complete related habits and provide personalized insights.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                 ),
               ),
             ],
@@ -1113,7 +1287,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   /// Enhanced Health Analytics Section (moved from health integration dashboard)
   Widget _buildHealthAnalyticsSection() {
     final report = _healthAnalytics!;
-    
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -1129,7 +1303,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.analytics, color: Colors.blue, size: 20),
+                  child: const Icon(
+                    Icons.analytics,
+                    color: Colors.blue,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -1141,23 +1319,23 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Overall Health-Habit Score
             _buildHealthScoreCard(report),
             const SizedBox(height: 16),
-            
+
             // Predictive Insights
             if (report.predictiveInsights.isNotEmpty) ...[
               _buildPredictiveInsightsCard(report.predictiveInsights),
               const SizedBox(height: 16),
             ],
-            
+
             // Recommendations
             if (report.recommendations.isNotEmpty) ...[
               _buildRecommendationsCard(report.recommendations),
               const SizedBox(height: 16),
             ],
-            
+
             // Integration Status Overview
             if (_integrationStatus != null) _buildIntegrationStatusOverview(),
           ],
@@ -1172,8 +1350,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            report.overallScore >= 75 ? Colors.green.shade50 : 
-            report.overallScore >= 50 ? Colors.orange.shade50 : Colors.red.shade50,
+            report.overallScore >= 75
+                ? Colors.green.shade50
+                : report.overallScore >= 50
+                ? Colors.orange.shade50
+                : Colors.red.shade50,
             Colors.white,
           ],
           begin: Alignment.topLeft,
@@ -1181,8 +1362,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: report.overallScore >= 75 ? Colors.green.withValues(alpha: 0.3) : 
-                 report.overallScore >= 50 ? Colors.orange.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3),
+          color: report.overallScore >= 75
+              ? Colors.green.withValues(alpha: 0.3)
+              : report.overallScore >= 50
+              ? Colors.orange.withValues(alpha: 0.3)
+              : Colors.red.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -1192,15 +1376,18 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             children: [
               Icon(
                 Icons.health_and_safety,
-                color: report.overallScore >= 75 ? Colors.green : 
-                       report.overallScore >= 50 ? Colors.orange : Colors.red,
+                color: report.overallScore >= 75
+                    ? Colors.green
+                    : report.overallScore >= 50
+                    ? Colors.orange
+                    : Colors.red,
               ),
               const SizedBox(width: 8),
               Text(
                 'Overall Health-Habit Score',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -1212,8 +1399,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   value: report.overallScore / 100,
                   backgroundColor: Colors.grey[300],
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    report.overallScore >= 75 ? Colors.green :
-                    report.overallScore >= 50 ? Colors.orange : Colors.red,
+                    report.overallScore >= 75
+                        ? Colors.green
+                        : report.overallScore >= 50
+                        ? Colors.orange
+                        : Colors.red,
                   ),
                 ),
               ),
@@ -1222,8 +1412,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 '${report.overallScore.round()}/100',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: report.overallScore >= 75 ? Colors.green :
-                         report.overallScore >= 50 ? Colors.orange : Colors.red,
+                  color: report.overallScore >= 75
+                      ? Colors.green
+                      : report.overallScore >= 50
+                      ? Colors.orange
+                      : Colors.red,
                 ),
               ),
             ],
@@ -1258,22 +1451,30 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ],
           ),
           const SizedBox(height: 12),
-          ...insights.take(3).map((insight) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.lightbulb, size: 16, color: Colors.orange),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    insight,
-                    style: Theme.of(context).textTheme.bodySmall,
+          ...insights
+              .take(3)
+              .map(
+                (insight) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.lightbulb,
+                        size: 16,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          insight,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          )),
+              ),
         ],
       ),
     );
@@ -1304,22 +1505,30 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ],
           ),
           const SizedBox(height: 12),
-          ...recommendations.take(3).map((rec) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.trending_up, size: 16, color: Colors.blue),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    rec,
-                    style: Theme.of(context).textTheme.bodySmall,
+          ...recommendations
+              .take(3)
+              .map(
+                (rec) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.trending_up,
+                        size: 16,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          rec,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          )),
+              ),
         ],
       ),
     );
@@ -1330,7 +1539,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final mappedHabits = status['healthMappedHabits'] ?? 0;
     final totalHabits = status['totalHabits'] ?? 0;
     final mappingPercentage = status['mappingPercentage'] ?? 0;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1358,11 +1567,19 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           Row(
             children: [
               Expanded(
-                child: _buildStatusMetric('Mapped Habits', '$mappedHabits/$totalHabits', Icons.link),
+                child: _buildStatusMetric(
+                  'Mapped Habits',
+                  '$mappedHabits/$totalHabits',
+                  Icons.link,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: _buildStatusMetric('Auto-Complete', '$mappingPercentage%', Icons.auto_awesome),
+                child: _buildStatusMetric(
+                  'Auto-Complete',
+                  '$mappingPercentage%',
+                  Icons.auto_awesome,
+                ),
               ),
             ],
           ),
@@ -1381,9 +1598,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             const SizedBox(width: 4),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.green.shade600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.green.shade600),
             ),
           ],
         ),
@@ -1463,15 +1680,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
     if (habits.isNotEmpty) {
       // Calculate current 30-day completion rate
-      final completionRates = habits.map((h) => statsService.getCompletionRate(h, days: 30)).toList();
-      totalCompletionRate = completionRates.reduce((a, b) => a + b) / completionRates.length;
+      final completionRates = habits
+          .map((h) => statsService.getCompletionRate(h, days: 30))
+          .toList();
+      totalCompletionRate =
+          completionRates.reduce((a, b) => a + b) / completionRates.length;
 
       // Calculate previous 30-day completion rate for comparison
       final now = DateTime.now();
       final previousPeriodHabits = habits.map((h) {
-        final previousCompletions = h.completions.where((c) =>
-            c.isBefore(now.subtract(const Duration(days: 30))) &&
-            c.isAfter(now.subtract(const Duration(days: 60)))).toList();
+        final previousCompletions = h.completions
+            .where(
+              (c) =>
+                  c.isBefore(now.subtract(const Duration(days: 30))) &&
+                  c.isAfter(now.subtract(const Duration(days: 60))),
+            )
+            .toList();
         // Create a temporary habit with previous period completions for calculation
         final tempHabit = Habit.create(
           name: h.name,
@@ -1485,31 +1709,44 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         tempHabit.createdAt = h.createdAt;
         return tempHabit;
       }).toList();
-      
+
       if (previousPeriodHabits.isNotEmpty) {
-        final previousRates = previousPeriodHabits.map((h) => statsService.getCompletionRate(h, days: 30)).toList();
-        previousCompletionRate = previousRates.reduce((a, b) => a + b) / previousRates.length;
+        final previousRates = previousPeriodHabits
+            .map((h) => statsService.getCompletionRate(h, days: 30))
+            .toList();
+        previousCompletionRate =
+            previousRates.reduce((a, b) => a + b) / previousRates.length;
       }
 
       // Generate sparkline data for last 4 weeks
       for (int week = 3; week >= 0; week--) {
         final weekStart = now.subtract(Duration(days: (week + 1) * 7));
         final weekEnd = now.subtract(Duration(days: week * 7));
-        final weekCompletions = habits.expand((h) => h.completions.where((c) =>
-            c.isAfter(weekStart) && c.isBefore(weekEnd))).length;
+        final weekCompletions = habits
+            .expand(
+              (h) => h.completions.where(
+                (c) => c.isAfter(weekStart) && c.isBefore(weekEnd),
+              ),
+            )
+            .length;
         final expectedCompletions = habits.length * 7; // Assuming daily habits
-        sparklineData.add(expectedCompletions > 0 ? weekCompletions / expectedCompletions : 0.0);
+        sparklineData.add(
+          expectedCompletions > 0 ? weekCompletions / expectedCompletions : 0.0,
+        );
       }
     }
 
-    final percentageChange = previousCompletionRate > 0 
-        ? ((totalCompletionRate - previousCompletionRate) / previousCompletionRate * 100)
+    final percentageChange = previousCompletionRate > 0
+        ? ((totalCompletionRate - previousCompletionRate) /
+              previousCompletionRate *
+              100)
         : 0.0;
 
     return _buildPerformanceCard(
       title: 'Overall Completion Rate',
       value: '${(totalCompletionRate * 100).toStringAsFixed(0)}%',
-      insight: '${percentageChange >= 0 ? '+' : ''}${percentageChange.toStringAsFixed(1)}% vs. previous 30 days',
+      insight:
+          '${percentageChange >= 0 ? '+' : ''}${percentageChange.toStringAsFixed(1)}% vs. previous 30 days',
       gradient: [Colors.green.shade400, Colors.green.shade600],
       icon: Icons.check_circle,
       sparklineData: sparklineData,
@@ -1543,7 +1780,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     return _buildPerformanceCard(
       title: 'Current Streak',
       value: '$longestCurrentStreak Days',
-      insight: bestHabitName.isNotEmpty 
+      insight: bestHabitName.isNotEmpty
           ? '(for \'$bestHabitName\')\nYour best streak ever is $bestEverStreak days'
           : 'Start a habit to build streaks!',
       gradient: [Colors.orange.shade400, Colors.deepOrange.shade600],
@@ -1558,8 +1795,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     String consistencyLabel = 'Getting Started';
 
     if (habits.isNotEmpty) {
-      final consistencyScores = habits.map((h) => statsService.getConsistencyScore(h)).toList();
-      averageConsistency = consistencyScores.reduce((a, b) => a + b) / consistencyScores.length;
+      final consistencyScores = habits
+          .map((h) => statsService.getConsistencyScore(h))
+          .toList();
+      averageConsistency =
+          consistencyScores.reduce((a, b) => a + b) / consistencyScores.length;
 
       if (averageConsistency >= 80) {
         consistencyLabel = 'Highly Consistent';
@@ -1602,7 +1842,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         final weeklyPattern = statsService.getWeeklyPattern(habit);
         for (int i = 0; i < 7; i++) {
           final dayOfWeek = i + 1; // Monday = 1, Sunday = 7
-          dayCompletions[dayOfWeek] = (dayCompletions[dayOfWeek] ?? 0) + (weeklyPattern[i] * 100).round();
+          dayCompletions[dayOfWeek] =
+              (dayCompletions[dayOfWeek] ?? 0) +
+              (weeklyPattern[i] * 100).round();
           dayTotals[dayOfWeek] = (dayTotals[dayOfWeek] ?? 0) + 100;
         }
       }
@@ -1611,7 +1853,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       double bestRate = 0.0;
       int bestDay = 1;
       for (int day = 1; day <= 7; day++) {
-        final rate = dayTotals[day]! > 0 ? dayCompletions[day]! / dayTotals[day]! : 0.0;
+        final rate = dayTotals[day]! > 0
+            ? dayCompletions[day]! / dayTotals[day]!
+            : 0.0;
         if (rate > bestRate) {
           bestRate = rate;
           bestDay = day;
@@ -1621,18 +1865,31 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       // Calculate average rate for comparison
       final totalCompletions = dayCompletions.values.reduce((a, b) => a + b);
       final totalPossible = dayTotals.values.reduce((a, b) => a + b);
-      final averageRate = totalPossible > 0 ? totalCompletions / totalPossible : 0.0;
+      final averageRate = totalPossible > 0
+          ? totalCompletions / totalPossible
+          : 0.0;
 
-      improvementPercentage = averageRate > 0 ? ((bestRate - averageRate) / averageRate * 100) : 0.0;
+      improvementPercentage = averageRate > 0
+          ? ((bestRate - averageRate) / averageRate * 100)
+          : 0.0;
 
-      final dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      final dayNames = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
       mostPowerfulDay = dayNames[bestDay - 1];
     }
 
     return _buildPerformanceCard(
       title: 'Most Powerful Day',
       value: mostPowerfulDay,
-      insight: 'You complete ${improvementPercentage.toStringAsFixed(0)}% more habits on this day than your average',
+      insight:
+          'You complete ${improvementPercentage.toStringAsFixed(0)}% more habits on this day than your average',
       gradient: [Colors.purple.shade600, Colors.purple.shade800],
       icon: Icons.star,
     );
@@ -1728,7 +1985,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList(),
+            spots: data
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value))
+                .toList(),
             isCurved: true,
             color: Colors.white,
             barWidth: 2,
@@ -1763,11 +2024,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Trend Analysis Chart
             _buildTrendAnalysisChart(habits),
             const SizedBox(height: 24),
-            
+
             // AI-Generated Insights
             _buildAIGeneratedInsights(habits),
           ],
@@ -1793,15 +2054,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     for (int week = 11; week >= 0; week--) {
       final weekStart = now.subtract(Duration(days: (week + 1) * 7));
       final weekEnd = now.subtract(Duration(days: week * 7));
-      
+
       int totalCompletions = 0;
       int expectedCompletions = 0;
-      
+
       for (final habit in habits) {
-        final weekCompletions = habit.completions.where((c) =>
-            c.isAfter(weekStart) && c.isBefore(weekEnd)).length;
+        final weekCompletions = habit.completions
+            .where((c) => c.isAfter(weekStart) && c.isBefore(weekEnd))
+            .length;
         totalCompletions += weekCompletions;
-        
+
         // Calculate expected completions based on habit frequency
         switch (habit.frequency) {
           case HabitFrequency.daily:
@@ -1811,16 +2073,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             expectedCompletions += 1;
             break;
           case HabitFrequency.monthly:
-            expectedCompletions += (week == 0) ? 1 : 0; // Only count if it's the current week
+            expectedCompletions += (week == 0)
+                ? 1
+                : 0; // Only count if it's the current week
             break;
           default:
             expectedCompletions += 7; // Default to daily
         }
       }
-      
-      final completionRate = expectedCompletions > 0 ? (totalCompletions / expectedCompletions) : 0.0;
+
+      final completionRate = expectedCompletions > 0
+          ? (totalCompletions / expectedCompletions)
+          : 0.0;
       weeklyData.add(FlSpot((11 - week).toDouble(), completionRate * 100));
-      volumeData.add(FlSpot((11 - week).toDouble(), totalCompletions.toDouble()));
+      volumeData.add(
+        FlSpot((11 - week).toDouble(), totalCompletions.toDouble()),
+      );
     }
 
     return Column(
@@ -1828,9 +2096,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       children: [
         Text(
           'Weekly Completion Rate (%)',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -1842,10 +2110,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 drawVerticalLine: false,
                 horizontalInterval: 20,
                 getDrawingHorizontalLine: (value) {
-                  return FlLine(
-                    color: Colors.grey[300]!,
-                    strokeWidth: 1,
-                  );
+                  return FlLine(color: Colors.grey[300]!, strokeWidth: 1);
                 },
               ),
               titlesData: FlTitlesData(
@@ -1856,10 +2121,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     getTitlesWidget: (value, meta) {
                       return Text(
                         '${value.toInt()}%',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       );
                     },
                   ),
@@ -1873,16 +2135,17 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       final weeksAgo = 11 - value.toInt();
                       return Text(
                         '${weeksAgo}w',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       );
                     },
                   ),
                 ),
-                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
               ),
               borderData: FlBorderData(
                 show: true,
@@ -1944,42 +2207,44 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   Widget _buildAIGeneratedInsights(List<Habit> habits) {
     final insights = _generateDynamicInsights(habits);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'AI-Generated Insights',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
-        ...insights.map((insight) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                margin: const EdgeInsets.only(top: 6, right: 12),
-                decoration: BoxDecoration(
-                  color: Colors.blue[600],
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  insight,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    height: 1.4,
+        ...insights.map(
+          (insight) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  margin: const EdgeInsets.only(top: 6, right: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[600],
+                    shape: BoxShape.circle,
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: Text(
+                    insight,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(height: 1.4),
+                  ),
+                ),
+              ],
+            ),
           ),
-        )),
+        ),
       ],
     );
   }
@@ -1995,18 +2260,26 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     // Analyze weekend vs weekday performance
     final weekendHabits = <String, double>{};
     final weekdayHabits = <String, double>{};
-    
+
     for (final habit in habits) {
       final weeklyPattern = statsService.getWeeklyPattern(habit);
-      final weekdayAvg = (weeklyPattern[0] + weeklyPattern[1] + weeklyPattern[2] + weeklyPattern[3] + weeklyPattern[4]) / 5;
+      final weekdayAvg =
+          (weeklyPattern[0] +
+              weeklyPattern[1] +
+              weeklyPattern[2] +
+              weeklyPattern[3] +
+              weeklyPattern[4]) /
+          5;
       final weekendAvg = (weeklyPattern[5] + weeklyPattern[6]) / 2;
-      
+
       weekdayHabits[habit.name] = weekdayAvg;
       weekendHabits[habit.name] = weekendAvg;
-      
+
       // Check for significant weekend drops
       if (weekdayAvg > 0.5 && weekendAvg < weekdayAvg * 0.6) {
-        insights.add("We've noticed a trend: Your completion rate for '${habit.name}' drops by ${((1 - weekendAvg / weekdayAvg) * 100).toStringAsFixed(0)}% on weekends. Consider scheduling it earlier in the day.");
+        insights.add(
+          "We've noticed a trend: Your completion rate for '${habit.name}' drops by ${((1 - weekendAvg / weekdayAvg) * 100).toStringAsFixed(0)}% on weekends. Consider scheduling it earlier in the day.",
+        );
       }
     }
 
@@ -2018,7 +2291,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
     if (consistentHabits.isNotEmpty) {
       final habit = consistentHabits.first;
-      insights.add("You've successfully completed '${habit.name}' consistently for the past 2 weeks. Amazing work!");
+      insights.add(
+        "You've successfully completed '${habit.name}' consistently for the past 2 weeks. Amazing work!",
+      );
     }
 
     // Analyze category performance
@@ -2039,7 +2314,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     });
 
     if (bestCategory != null && bestCategoryRate > 0.8) {
-      insights.add("Your '$bestCategory' category has a ${(bestCategoryRate * 100).toStringAsFixed(0)}% completion rate, making it your most consistent category.");
+      insights.add(
+        "Your '$bestCategory' category has a ${(bestCategoryRate * 100).toStringAsFixed(0)}% completion rate, making it your most consistent category.",
+      );
     }
 
     // Analyze momentum trends
@@ -2049,7 +2326,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     }).toList();
 
     if (momentumHabits.isNotEmpty) {
-      insights.add("You're building great momentum! ${momentumHabits.length} of your habits show positive trends this week.");
+      insights.add(
+        "You're building great momentum! ${momentumHabits.length} of your habits show positive trends this week.",
+      );
     }
 
     // Default insights if none generated
@@ -2070,7 +2349,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       future: HealthService.hasPermissions(),
       builder: (context, snapshot) {
         final hasPermissions = snapshot.data ?? false;
-        
+
         if (!hasPermissions) {
           return _buildHealthPermissionCard();
         } else {
@@ -2082,15 +2361,24 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   // Default State (Permissions NOT Granted)
   Widget _buildHealthPermissionCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.teal.shade50, Colors.blue.shade50],
+          colors: isDark
+              ? [theme.colorScheme.surface, theme.colorScheme.surfaceContainerHighest]
+              : [Colors.teal.shade50, Colors.blue.shade50],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.teal.shade200),
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outline.withOpacity(0.3)
+              : Colors.teal.shade200,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -2100,29 +2388,33 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.teal.shade100,
+                color: isDark
+                    ? theme.colorScheme.primaryContainer
+                    : Colors.teal.shade100,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.health_and_safety,
                 size: 40,
-                color: Colors.teal.shade600,
+                color: isDark
+                    ? theme.colorScheme.onPrimaryContainer
+                    : Colors.teal.shade600,
               ),
             ),
             const SizedBox(height: 20),
             Text(
               'Unlock Deeper Insights into Your Health',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+                color: theme.colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               'Grant permission to Health Connect / HealthKit to see how your habits impact key metrics like sleep, heart rate, and activity levels. Discover the direct link between your efforts and your well-being.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -2131,11 +2423,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ElevatedButton(
               onPressed: () async {
                 try {
-                  await HealthService.initialize();
-                  if (mounted) {
+                  final success = await HealthService.requestPermissions();
+                  if (success && mounted) {
                     setState(() {
                       _loadAllData(); // Reload data after permissions granted
                     });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Health permissions granted successfully!',
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Health permissions were not granted. Please try again or check your device settings.',
+                        ),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
                   }
                 } catch (e) {
                   if (mounted) {
@@ -2149,19 +2458,19 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal.shade600,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Text(
                 'Connect to Health Data',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -2172,6 +2481,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   // Active State (Permissions GRANTED)
   Widget _buildActiveHealthHub(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -2185,12 +2497,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.teal.shade100,
+                    color: isDark
+                        ? theme.colorScheme.primaryContainer
+                        : Colors.teal.shade100,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.favorite,
-                    color: Colors.teal.shade600,
+                    color: isDark
+                        ? theme.colorScheme.onPrimaryContainer
+                        : Colors.teal.shade600,
                     size: 24,
                   ),
                 ),
@@ -2198,23 +2514,21 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 Expanded(
                   child: Text(
                     'Your Health & Habit Connection',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            
+
             // Health Data Modules
-            if (_healthAnalytics != null && !_healthAnalytics!.hasError)
-              ..._buildHealthDataModules(habits),
-            
-            // Fallback if no health analytics available
-            if (_healthAnalytics == null || _healthAnalytics!.hasError)
-              _buildHealthDataPlaceholder(),
+            if (_healthSummary != null) ..._buildHealthDataModules(habits),
+
+            // Fallback if no health data available
+            if (_healthSummary == null) _buildHealthDataPlaceholder(),
           ],
         ),
       ),
@@ -2223,41 +2537,50 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   List<Widget> _buildHealthDataModules(List<Habit> habits) {
     final modules = <Widget>[];
-    
+
     // Module: Sleep & Habit Performance
     modules.add(_buildSleepHabitModule(habits));
     modules.add(const SizedBox(height: 20));
-    
+
     // Module: Activity & Energy Levels
     modules.add(_buildActivityEnergyModule(habits));
     modules.add(const SizedBox(height: 20));
-    
+
     // Module: Mindfulness & Heart Rate (if available)
     if (_healthSummary != null) {
       modules.add(_buildMindfulnessHeartRateModule(habits));
     }
-    
+
     return modules;
   }
 
   Widget _buildSleepHabitModule(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Sleep & Habit Performance',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: Colors.indigo[700],
+            color: isDark ? theme.colorScheme.primary : Colors.indigo[700],
           ),
         ),
         const SizedBox(height: 12),
         Container(
           height: 150,
           decoration: BoxDecoration(
-            color: Colors.indigo.shade50,
+            color: isDark
+                ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                : Colors.indigo.shade50,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.indigo.shade200),
+            border: Border.all(
+              color: isDark
+                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  : Colors.indigo.shade200,
+            ),
           ),
           child: _buildSleepCorrelationChart(habits),
         ),
@@ -2265,18 +2588,26 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.indigo.shade50,
+            color: isDark
+                ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                : Colors.indigo.shade50,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
-              Icon(Icons.lightbulb, color: Colors.indigo[600], size: 20),
+              Icon(
+                Icons.lightbulb,
+                color: isDark ? theme.colorScheme.primary : Colors.indigo[600],
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _generateSleepInsight(habits),
                   style: TextStyle(
-                    color: Colors.indigo[700],
+                    color: isDark
+                        ? theme.colorScheme.onSurface
+                        : Colors.indigo[700],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -2289,23 +2620,32 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildActivityEnergyModule(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Activity & Energy Levels',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: Colors.orange[700],
+            color: isDark ? theme.colorScheme.secondary : Colors.orange[700],
           ),
         ),
         const SizedBox(height: 12),
         Container(
           height: 150,
           decoration: BoxDecoration(
-            color: Colors.orange.shade50,
+            color: isDark
+                ? theme.colorScheme.secondaryContainer.withOpacity(0.3)
+                : Colors.orange.shade50,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.orange.shade200),
+            border: Border.all(
+              color: isDark
+                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  : Colors.orange.shade200,
+            ),
           ),
           child: _buildActivityCorrelationChart(habits),
         ),
@@ -2313,18 +2653,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.orange.shade50,
+            color: isDark
+                ? theme.colorScheme.secondaryContainer.withOpacity(0.3)
+                : Colors.orange.shade50,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
-              Icon(Icons.lightbulb, color: Colors.orange[600], size: 20),
+              Icon(
+                Icons.lightbulb,
+                color: isDark
+                    ? theme.colorScheme.secondary
+                    : Colors.orange[600],
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _generateActivityInsight(habits),
                   style: TextStyle(
-                    color: Colors.orange[700],
+                    color: isDark
+                        ? theme.colorScheme.onSurface
+                        : Colors.orange[700],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -2337,23 +2687,32 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildMindfulnessHeartRateModule(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Mindfulness & Heart Rate',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: Colors.purple[700],
+            color: isDark ? theme.colorScheme.tertiary : Colors.purple[700],
           ),
         ),
         const SizedBox(height: 12),
         Container(
           height: 150,
           decoration: BoxDecoration(
-            color: Colors.purple.shade50,
+            color: isDark
+                ? theme.colorScheme.tertiaryContainer.withOpacity(0.3)
+                : Colors.purple.shade50,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.purple.shade200),
+            border: Border.all(
+              color: isDark
+                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  : Colors.purple.shade200,
+            ),
           ),
           child: _buildHeartRateTrendChart(habits),
         ),
@@ -2361,18 +2720,26 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.purple.shade50,
+            color: isDark
+                ? theme.colorScheme.tertiaryContainer.withOpacity(0.3)
+                : Colors.purple.shade50,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
-              Icon(Icons.lightbulb, color: Colors.purple[600], size: 20),
+              Icon(
+                Icons.lightbulb,
+                color: isDark ? theme.colorScheme.tertiary : Colors.purple[600],
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _generateHeartRateInsight(habits),
                   style: TextStyle(
-                    color: Colors.purple[700],
+                    color: isDark
+                        ? theme.colorScheme.onSurface
+                        : Colors.purple[700],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -2385,36 +2752,81 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildHealthDataPlaceholder() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
+            : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outline.withOpacity(0.3)
+              : Colors.grey.shade200,
+        ),
       ),
       child: Column(
         children: [
           Icon(
             Icons.analytics,
             size: 48,
-            color: Colors.grey.shade400,
+            color: isDark
+                ? theme.colorScheme.onSurface.withOpacity(0.6)
+                : Colors.grey.shade400,
           ),
           const SizedBox(height: 16),
           Text(
-            'Health Analytics Loading',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.grey[600],
+            _healthSummary == null
+                ? 'Health Data Not Available'
+                : 'Health Analytics Loading',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.8),
               fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Your health and habit correlations will appear here once data is processed.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[500],
+            _healthSummary == null
+                ? 'Connect to Health Connect to see personalized insights about how your habits impact your health metrics.'
+                : 'Your health and habit correlations will appear here once data is processed.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
             ),
             textAlign: TextAlign.center,
           ),
+          if (_healthSummary == null) ...[
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () async {
+                try {
+                  final success = await HealthService.requestPermissions();
+                  if (success && mounted) {
+                    setState(() {
+                      _loadAllData();
+                    });
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to connect: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.health_and_safety, size: 18),
+              label: const Text('Connect Health Data'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -2422,19 +2834,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   // Chart builders for health modules
   Widget _buildSleepCorrelationChart(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     if (_healthSummary == null) {
-      return const Center(
+      return Center(
         child: Text(
           'Sleep data not available\nConnect your health app to see correlations',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
         ),
       );
     }
 
     final sleepHours = _healthSummary!['sleepHours'] as double? ?? 0.0;
-    final completionRate = habits.isNotEmpty 
-        ? habits.where((h) => h.isCompletedToday).length / habits.length 
+    final completionRate = habits.isNotEmpty
+        ? habits.where((h) => h.isCompletedToday).length / habits.length
         : 0.0;
 
     return Padding(
@@ -2449,27 +2864,42 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 children: [
                   Text(
                     '${sleepHours.toStringAsFixed(1)}h',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.indigo,
+                      color: isDark ? theme.colorScheme.primary : Colors.indigo,
                     ),
                   ),
-                  const Text('Last Night', style: TextStyle(fontSize: 12)),
+                  Text(
+                    'Last Night',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
-              const Icon(Icons.arrow_forward, color: Colors.grey),
+              Icon(
+                Icons.arrow_forward,
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
               Column(
                 children: [
                   Text(
                     '${(completionRate * 100).round()}%',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                      color: isDark ? Colors.greenAccent : Colors.green,
                     ),
                   ),
-                  const Text('Completion Rate', style: TextStyle(fontSize: 12)),
+                  Text(
+                    'Completion Rate',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -2477,9 +2907,13 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: sleepHours / 10.0, // Scale to 10 hours max
-            backgroundColor: Colors.grey[300],
+            backgroundColor: isDark
+                ? theme.colorScheme.outline.withOpacity(0.3)
+                : Colors.grey[300],
             valueColor: AlwaysStoppedAnimation<Color>(
-              sleepHours >= 7 ? Colors.green : Colors.orange,
+              sleepHours >= 7
+                  ? (isDark ? Colors.greenAccent : Colors.green)
+                  : (isDark ? Colors.orangeAccent : Colors.orange),
             ),
           ),
         ],
@@ -2488,24 +2922,30 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildActivityCorrelationChart(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     if (_healthSummary == null) {
-      return const Center(
+      return Center(
         child: Text(
           'Activity data not available\nConnect your health app to see correlations',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
         ),
       );
     }
 
     final steps = _healthSummary!['steps'] as int? ?? 0;
     final calories = _healthSummary!['activeCalories'] as double? ?? 0.0;
-    final activityHabits = habits.where((h) => 
-        h.name.toLowerCase().contains('exercise') ||
-        h.name.toLowerCase().contains('workout') ||
-        h.name.toLowerCase().contains('run') ||
-        h.name.toLowerCase().contains('walk')
-    ).toList();
+    final activityHabits = habits
+        .where(
+          (h) =>
+              h.name.toLowerCase().contains('exercise') ||
+              h.name.toLowerCase().contains('workout') ||
+              h.name.toLowerCase().contains('run') ||
+              h.name.toLowerCase().contains('walk'),
+        )
+        .toList();
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -2519,39 +2959,57 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 children: [
                   Text(
                     '${(steps / 1000).toStringAsFixed(1)}k',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.orange,
+                      color: isDark ? Colors.orangeAccent : Colors.orange,
                     ),
                   ),
-                  const Text('Steps', style: TextStyle(fontSize: 11)),
+                  Text(
+                    'Steps',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
               Column(
                 children: [
                   Text(
                     '${calories.round()}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.red,
+                      color: isDark ? Colors.redAccent : Colors.red,
                     ),
                   ),
-                  const Text('Calories', style: TextStyle(fontSize: 11)),
+                  Text(
+                    'Calories',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
               Column(
                 children: [
                   Text(
                     '${activityHabits.where((h) => h.isCompletedToday).length}/${activityHabits.length}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                      color: isDark ? Colors.greenAccent : Colors.green,
                     ),
                   ),
-                  const Text('Activity Habits', style: TextStyle(fontSize: 11)),
+                  Text(
+                    'Activity Habits',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -2563,7 +3021,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 child: LinearProgressIndicator(
                   value: (steps / 10000).clamp(0.0, 1.0),
                   backgroundColor: Colors.grey[300],
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    Colors.orange,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -2582,24 +3042,30 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildHeartRateTrendChart(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     if (_healthSummary == null) {
-      return const Center(
+      return Center(
         child: Text(
           'Heart rate data not available\nConnect your fitness tracker to see trends',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
         ),
       );
     }
 
     final heartRate = _healthSummary!['heartRate'] as double?;
     final restingHR = _healthSummary!['restingHeartRate'] as double?;
-    final meditationHabits = habits.where((h) => 
-        h.name.toLowerCase().contains('meditat') ||
-        h.name.toLowerCase().contains('mindful') ||
-        h.name.toLowerCase().contains('breathe') ||
-        h.name.toLowerCase().contains('relax')
-    ).toList();
+    final meditationHabits = habits
+        .where(
+          (h) =>
+              h.name.toLowerCase().contains('meditat') ||
+              h.name.toLowerCase().contains('mindful') ||
+              h.name.toLowerCase().contains('breathe') ||
+              h.name.toLowerCase().contains('relax'),
+        )
+        .toList();
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -2613,39 +3079,59 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 children: [
                   Text(
                     heartRate != null ? '${heartRate.round()}' : '--',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.purple,
+                      color: isDark
+                          ? theme.colorScheme.tertiary
+                          : Colors.purple,
                     ),
                   ),
-                  const Text('Current HR', style: TextStyle(fontSize: 11)),
+                  Text(
+                    'Current HR',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
               Column(
                 children: [
                   Text(
                     restingHR != null ? '${restingHR.round()}' : '--',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                      color: isDark ? Colors.blueAccent : Colors.blue,
                     ),
                   ),
-                  const Text('Resting HR', style: TextStyle(fontSize: 11)),
+                  Text(
+                    'Resting HR',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
               Column(
                 children: [
                   Text(
                     '${meditationHabits.where((h) => h.isCompletedToday).length}/${meditationHabits.length}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                      color: isDark ? Colors.greenAccent : Colors.green,
                     ),
                   ),
-                  const Text('Mindfulness', style: TextStyle(fontSize: 11)),
+                  Text(
+                    'Mindfulness',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -2654,10 +3140,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           if (restingHR != null)
             LinearProgressIndicator(
               value: ((80 - restingHR) / 20).clamp(0.0, 1.0), // Lower is better
-              backgroundColor: Colors.grey[300],
+              backgroundColor: isDark
+                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  : Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(
-                restingHR < 60 ? Colors.green : 
-                restingHR < 70 ? Colors.orange : Colors.red,
+                restingHR < 60
+                    ? (isDark ? Colors.greenAccent : Colors.green)
+                    : restingHR < 70
+                    ? (isDark ? Colors.orangeAccent : Colors.orange)
+                    : (isDark ? Colors.redAccent : Colors.red),
               ),
             ),
         ],
@@ -2672,8 +3163,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     }
 
     final sleepHours = _healthSummary!['sleepHours'] as double? ?? 0.0;
-    final completionRate = habits.isNotEmpty 
-        ? habits.where((h) => h.isCompletedToday).length / habits.length 
+    final completionRate = habits.isNotEmpty
+        ? habits.where((h) => h.isCompletedToday).length / habits.length
         : 0.0;
 
     if (sleepHours >= 7.5) {
@@ -2692,11 +3183,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
     final steps = _healthSummary!['steps'] as int? ?? 0;
     final calories = _healthSummary!['activeCalories'] as double? ?? 0.0;
-    final activityHabits = habits.where((h) => 
-        h.name.toLowerCase().contains('exercise') ||
-        h.name.toLowerCase().contains('workout') ||
-        h.category.toLowerCase().contains('fitness')
-    ).toList();
+    final activityHabits = habits
+        .where(
+          (h) =>
+              h.name.toLowerCase().contains('exercise') ||
+              h.name.toLowerCase().contains('workout') ||
+              h.category.toLowerCase().contains('fitness'),
+        )
+        .toList();
 
     if (steps >= 8000 || calories >= 300) {
       return 'Excellent activity today! High activity days like this typically boost focus and productivity habits by 35%.';
@@ -2714,11 +3208,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
     final heartRate = _healthSummary!['heartRate'] as double?;
     final restingHR = _healthSummary!['restingHeartRate'] as double?;
-    final meditationHabits = habits.where((h) => 
-        h.name.toLowerCase().contains('meditat') ||
-        h.name.toLowerCase().contains('mindful') ||
-        h.category.toLowerCase().contains('mental')
-    ).toList();
+    final meditationHabits = habits
+        .where(
+          (h) =>
+              h.name.toLowerCase().contains('meditat') ||
+              h.name.toLowerCase().contains('mindful') ||
+              h.category.toLowerCase().contains('mental'),
+        )
+        .toList();
 
     if (restingHR != null) {
       if (restingHR < 60) {
