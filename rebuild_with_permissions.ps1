@@ -19,4 +19,4 @@ Write-Host "Building the app with new permissions..." -ForegroundColor Cyan
 flutter build apk --release
 
 Write-Host "Build completed. Check the APK for the new permissions." -ForegroundColor Green
-Write-Host "APK location: c:\HabitV8\build\app\outputs\flutter-apk\app-release.apk" -ForegroundColor Yellow
+Write-Host "APK location: C:\HabitV8\android\app\build\outputs\flutter-apk\app-release.apk" -ForegroundColor Yellow

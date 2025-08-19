@@ -19,7 +19,7 @@ Write-Host "Building the app with all permission fixes..." -ForegroundColor Cyan
 flutter build apk --debug
 
 Write-Host "Build completed. Check the APK for the fixed permissions." -ForegroundColor Green
-Write-Host "APK location: c:\HabitV8\build\app\outputs\flutter-apk\app-debug.apk" -ForegroundColor Yellow
+Write-Host "APK location: C:\HabitV8\android\app\build\outputs\flutter-apk\app-debug.apk" -ForegroundColor Yellow
 
 Write-Host "Summary of fixes:" -ForegroundColor Cyan
 Write-Host "1. Fixed release AndroidManifest.xml - removed heart rate permission removal" -ForegroundColor Yellow

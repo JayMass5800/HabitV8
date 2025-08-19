@@ -33,5 +33,3 @@ allprojects {
         }
     }
 }
-
-rootProject.layout.buildDirectory = file("../build")

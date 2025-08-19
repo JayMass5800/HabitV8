@@ -19,7 +19,7 @@ Write-Host "Building the app with fixed permissions..." -ForegroundColor Cyan
 flutter build apk --debug
 
 Write-Host "Build completed. Check the APK for the fixed permissions." -ForegroundColor Green
-Write-Host "APK location: c:\HabitV8\build\app\outputs\flutter-apk\app-debug.apk" -ForegroundColor Yellow
+Write-Host "APK location: C:\HabitV8\android\app\build\outputs\flutter-apk\app-debug.apk" -ForegroundColor Yellow
 
 Write-Host "Adding debug info to help diagnose permission issues..." -ForegroundColor Cyan
 $debugInfoFile = "c:\HabitV8\lib\services\health_debug_info.dart"
