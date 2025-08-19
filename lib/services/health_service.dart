@@ -4,6 +4,99 @@ import 'dart:io';
 import 'logging_service.dart';
 import 'minimal_health_channel.dart';
 
+/// Result of a health permission request with detailed status information
+class HealthPermissionResult {
+  final bool granted;
+  final bool needsHealthConnect;
+  final bool needsManualSetup;
+  final String message;
+
+  const HealthPermissionResult({
+    required this.granted,
+    this.needsHealthConnect = false,
+    this.needsManualSetup = false,
+    required this.message,
+  });
+
+  /// Whether the user needs to install or set up Health Connect
+  bool get requiresHealthConnectSetup => needsHealthConnect;
+
+  /// Whether the user needs to manually enable permissions in Health Connect
+  bool get requiresManualPermissionSetup => needsManualSetup;
+
+  /// Whether any user action is required
+  bool get requiresUserAction => needsHealthConnect || needsManualSetup;
+}
+
+/// Health Connect setup status
+enum HealthConnectStatus {
+  notInstalled,
+  installed,
+  configured,
+  permissionsGranted,
+}
+
+/// Utility class for Health Connect operations
+class HealthConnectUtils {
+  /// Open Health Connect app
+  static Future<bool> openHealthConnect() async {
+    try {
+      // Try to open Health Connect app directly
+      const healthConnectPackage = 'com.google.android.apps.healthdata';
+      final uri = Uri.parse('package:$healthConnectPackage');
+
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+        return true;
+      }
+
+      // Fallback to Play Store
+      final playStoreUri = Uri.parse(
+        'market://details?id=$healthConnectPackage',
+      );
+      if (await canLaunchUrl(playStoreUri)) {
+        await launchUrl(playStoreUri);
+        return true;
+      }
+
+      // Final fallback to web Play Store
+      final webPlayStoreUri = Uri.parse(
+        'https://play.google.com/store/apps/details?id=$healthConnectPackage',
+      );
+      if (await canLaunchUrl(webPlayStoreUri)) {
+        await launchUrl(webPlayStoreUri, mode: LaunchMode.externalApplication);
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      AppLogger.error('Failed to open Health Connect', e);
+      return false;
+    }
+  }
+
+  /// Open Health Connect permissions settings
+  static Future<bool> openHealthConnectPermissions() async {
+    try {
+      // Try to open Health Connect permissions directly
+      final uri = Uri.parse(
+        'android-app://com.google.android.apps.healthdata/permissions',
+      );
+
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+        return true;
+      }
+
+      // Fallback to opening the main app
+      return await openHealthConnect();
+    } catch (e) {
+      AppLogger.error('Failed to open Health Connect permissions', e);
+      return await openHealthConnect();
+    }
+  }
+}
+
 /// HealthService provides secure, privacy-focused access to health data for habit tracking.
 ///
 /// This service complies with Android 16 Health Connect permissions and guidelines by:
@@ -150,8 +243,8 @@ class HealthService {
     return await initialize();
   }
 
-  /// Request health data permissions
-  static Future<bool> requestPermissions() async {
+  /// Request health data permissions with enhanced user guidance
+  static Future<HealthPermissionResult> requestPermissions() async {
     if (!_isInitialized) {
       await initialize();
     }
@@ -162,6 +255,18 @@ class HealthService {
       );
       AppLogger.info('Data types: ${_healthDataTypes.join(', ')}');
 
+      // First check if Health Connect is available and installed
+      final bool healthConnectAvailable =
+          await MinimalHealthChannel.isHealthConnectAvailable();
+      if (!healthConnectAvailable) {
+        AppLogger.warning('Health Connect is not available or not installed');
+        return HealthPermissionResult(
+          granted: false,
+          needsHealthConnect: true,
+          message: 'Health Connect app is required but not installed',
+        );
+      }
+
       // Use our custom MinimalHealthChannel for permission requests
       final bool granted = await MinimalHealthChannel.requestPermissions();
 
@@ -171,15 +276,44 @@ class HealthService {
         // Verify permissions were actually granted
         final bool hasPerms = await MinimalHealthChannel.hasPermissions();
         AppLogger.info('Permission verification result: $hasPerms');
-        return hasPerms;
+
+        return HealthPermissionResult(
+          granted: hasPerms,
+          needsHealthConnect: false,
+          message: hasPerms
+              ? 'Health permissions granted successfully'
+              : 'Permission verification failed',
+        );
       } else {
         AppLogger.info('Health permissions denied by user');
-        return false;
+
+        // Check if this is because Health Connect needs setup
+        final bool stillAvailable =
+            await MinimalHealthChannel.isHealthConnectAvailable();
+
+        return HealthPermissionResult(
+          granted: false,
+          needsHealthConnect: !stillAvailable,
+          needsManualSetup: stillAvailable,
+          message: stillAvailable
+              ? 'Permissions denied. You may need to enable them manually in Health Connect.'
+              : 'Health Connect needs to be set up first.',
+        );
       }
     } catch (e) {
       AppLogger.error('Failed to request health permissions', e);
-      return false;
+      return HealthPermissionResult(
+        granted: false,
+        needsHealthConnect: false,
+        message: 'Error requesting permissions: $e',
+      );
     }
+  }
+
+  /// Legacy method for backward compatibility
+  static Future<bool> requestPermissionsLegacy() async {
+    final result = await requestPermissions();
+    return result.granted;
   }
 
   /// Check if health permissions are granted
@@ -200,37 +334,100 @@ class HealthService {
     }
   }
 
-  /// Refresh and re-check health permissions
-  static Future<bool> refreshPermissions() async {
+  /// Get detailed Health Connect status
+  static Future<HealthConnectStatus> getHealthConnectStatus() async {
+    try {
+      if (!_isInitialized) {
+        await initialize();
+      }
+
+      // Get detailed status from native plugin
+      final Map<String, dynamic> statusData =
+          await MinimalHealthChannel.getHealthConnectStatus();
+      final String status = statusData['status'] ?? 'ERROR';
+
+      AppLogger.info('Native Health Connect status: $status');
+      AppLogger.info('Status details: ${statusData['message']}');
+
+      switch (status) {
+        case 'NOT_INSTALLED':
+        case 'NOT_SUPPORTED':
+        case 'ERROR':
+          return HealthConnectStatus.notInstalled;
+        case 'PERMISSIONS_GRANTED':
+          return HealthConnectStatus.permissionsGranted;
+        case 'INSTALLED':
+        default:
+          return HealthConnectStatus.installed;
+      }
+    } catch (e) {
+      AppLogger.error('Error checking Health Connect status', e);
+      return HealthConnectStatus.notInstalled;
+    }
+  }
+
+  /// Refresh and re-check health permissions with detailed status
+  static Future<HealthPermissionResult> refreshPermissions() async {
     try {
       AppLogger.info('Refreshing health permissions status');
 
-      // First check current permissions
+      // Force re-initialization to ensure we have the latest state
+      await reinitialize();
+
+      // Check current permissions
       final currentPermissions = await hasPermissions();
       if (currentPermissions) {
         AppLogger.info('Health permissions already granted');
-        return true;
-      }
-
-      // If permissions not granted, try to request them
-      AppLogger.info(
-        'Health permissions not granted, requesting permissions...',
-      );
-      final granted = await requestPermissions();
-
-      if (granted) {
-        AppLogger.info(
-          'Health permissions successfully granted during refresh',
+        return HealthPermissionResult(
+          granted: true,
+          message: 'Health permissions are already granted',
         );
-      } else {
-        AppLogger.warning('Failed to grant health permissions during refresh');
       }
 
-      return granted;
+      // Check Health Connect status
+      final status = await getHealthConnectStatus();
+
+      switch (status) {
+        case HealthConnectStatus.notInstalled:
+          return HealthPermissionResult(
+            granted: false,
+            needsHealthConnect: true,
+            message: 'Health Connect app needs to be installed',
+          );
+
+        case HealthConnectStatus.installed:
+          return HealthPermissionResult(
+            granted: false,
+            needsManualSetup: true,
+            message:
+                'Health Connect is installed but permissions need to be enabled',
+          );
+
+        case HealthConnectStatus.permissionsGranted:
+          return HealthPermissionResult(
+            granted: true,
+            message: 'Health permissions are granted',
+          );
+
+        default:
+          return HealthPermissionResult(
+            granted: false,
+            message: 'Unknown Health Connect status',
+          );
+      }
     } catch (e) {
       AppLogger.error('Error refreshing health permissions', e);
-      return false;
+      return HealthPermissionResult(
+        granted: false,
+        message: 'Error refreshing permissions: $e',
+      );
     }
+  }
+
+  /// Legacy method for backward compatibility
+  static Future<bool> refreshPermissionsLegacy() async {
+    final result = await refreshPermissions();
+    return result.granted;
   }
 
   /// Force request all health permissions, including heart rate and background access
@@ -251,7 +448,8 @@ class HealthService {
       );
 
       // Request permissions explicitly
-      final granted = await requestPermissions();
+      final result = await requestPermissions();
+      final granted = result.granted;
 
       if (granted) {
         AppLogger.info('All health permissions successfully granted');
@@ -283,10 +481,12 @@ class HealthService {
         // Try one more time with a direct approach
         AppLogger.info('Trying one more time with direct approach...');
         await Future.delayed(const Duration(seconds: 1));
-        final retryGranted = await requestPermissions();
-        AppLogger.info('Retry permission request result: $retryGranted');
+        final retryResult = await requestPermissions();
+        AppLogger.info(
+          'Retry permission request result: ${retryResult.granted}',
+        );
 
-        return retryGranted;
+        return retryResult.granted;
       }
 
       return granted;

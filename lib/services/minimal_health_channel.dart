@@ -84,6 +84,34 @@ class MinimalHealthChannel {
     }
   }
 
+  /// Get detailed Health Connect status
+  static Future<Map<String, dynamic>> getHealthConnectStatus() async {
+    try {
+      if (!Platform.isAndroid) {
+        return {
+          'status': 'NOT_SUPPORTED',
+          'message': 'Health Connect is only available on Android',
+        };
+      }
+
+      final Map<dynamic, dynamic> result = await _channel.invokeMethod(
+        'getHealthConnectStatus',
+      );
+
+      final Map<String, dynamic> status = Map<String, dynamic>.from(result);
+      AppLogger.info('Health Connect detailed status: ${status['status']}');
+      AppLogger.info('Status message: ${status['message']}');
+
+      return status;
+    } catch (e) {
+      AppLogger.error('Error getting Health Connect status', e);
+      return {
+        'status': 'ERROR',
+        'message': 'Error checking Health Connect status: $e',
+      };
+    }
+  }
+
   /// Check if health permissions are granted
   static Future<bool> hasPermissions() async {
     if (!_isInitialized) {

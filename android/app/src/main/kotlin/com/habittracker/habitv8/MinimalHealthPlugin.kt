@@ -147,7 +147,10 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 getHealthData(call, result)
             }
             "isHealthConnectAvailable" -> {
-                result.success(healthConnectClient != null)
+                checkHealthConnectAvailability(result)
+            }
+            "getHealthConnectStatus" -> {
+                getHealthConnectStatus(result)
             }
             "startBackgroundMonitoring" -> {
                 startBackgroundMonitoring(result)
@@ -161,6 +164,88 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             else -> {
                 result.notImplemented()
             }
+        }
+    }
+    
+    // Check Health Connect availability with detailed status
+    private fun checkHealthConnectAvailability(result: Result) {
+        try {
+            if (healthConnectClient == null) {
+                Log.w("MinimalHealthPlugin", "Health Connect client is null")
+                result.success(false)
+                return
+            }
+            
+            // Try to check if Health Connect is actually functional
+            coroutineScope.launch {
+                try {
+                    // Try to get granted permissions as a test
+                    val grantedPermissions = healthConnectClient!!.permissionController.getGrantedPermissions()
+                    Log.i("MinimalHealthPlugin", "Health Connect is available and functional")
+                    result.success(true)
+                } catch (e: Exception) {
+                    Log.w("MinimalHealthPlugin", "Health Connect client exists but not functional", e)
+                    result.success(false)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error checking Health Connect availability", e)
+            result.success(false)
+        }
+    }
+    
+    // Get detailed Health Connect status
+    private fun getHealthConnectStatus(result: Result) {
+        try {
+            if (healthConnectClient == null) {
+                Log.w("MinimalHealthPlugin", "Health Connect not available")
+                result.success(mapOf(
+                    "status" to "NOT_INSTALLED",
+                    "message" to "Health Connect is not installed or not available"
+                ))
+                return
+            }
+            
+            coroutineScope.launch {
+                try {
+                    val grantedPermissions = healthConnectClient!!.permissionController.getGrantedPermissions()
+                    
+                    // Check if all required permissions are granted
+                    val allGranted = HEALTH_PERMISSIONS.all { it in grantedPermissions }
+                    
+                    val status = if (allGranted) {
+                        "PERMISSIONS_GRANTED"
+                    } else {
+                        "INSTALLED"
+                    }
+                    
+                    Log.i("MinimalHealthPlugin", "Health Connect status: $status")
+                    Log.i("MinimalHealthPlugin", "Granted permissions: ${grantedPermissions.size}/${HEALTH_PERMISSIONS.size}")
+                    
+                    result.success(mapOf(
+                        "status" to status,
+                        "grantedPermissions" to grantedPermissions.size,
+                        "totalPermissions" to HEALTH_PERMISSIONS.size,
+                        "message" to when (status) {
+                            "PERMISSIONS_GRANTED" -> "All health permissions are granted"
+                            "INSTALLED" -> "Health Connect is installed but permissions need to be enabled"
+                            else -> "Unknown status"
+                        }
+                    ))
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error getting Health Connect status", e)
+                    result.success(mapOf(
+                        "status" to "ERROR",
+                        "message" to "Error checking Health Connect status: ${e.message}"
+                    ))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error in getHealthConnectStatus", e)
+            result.success(mapOf(
+                "status" to "ERROR",
+                "message" to "Error checking status: ${e.message}"
+            ))
         }
     }
     

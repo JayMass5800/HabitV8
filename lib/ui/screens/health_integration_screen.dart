@@ -243,14 +243,35 @@ class _HealthIntegrationScreenState
     });
 
     try {
-      // Refresh health permissions
-      await HealthService.refreshPermissions();
+      // Refresh health permissions with enhanced status
+      final permissionResult = await HealthService.refreshPermissions();
 
-      // Force a background sync if enabled
-      final isEnabled =
-          await HealthHabitBackgroundService.isBackgroundServiceEnabled();
-      if (isEnabled) {
-        await HealthHabitBackgroundService.forceSyncNow();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(permissionResult.message),
+            backgroundColor: permissionResult.granted
+                ? Colors.green
+                : Colors.orange,
+            action: permissionResult.requiresUserAction
+                ? SnackBarAction(
+                    label: 'Setup',
+                    onPressed: () {
+                      HealthHabitUIService.showHealthPermissionsDialog(context);
+                    },
+                  )
+                : null,
+          ),
+        );
+      }
+
+      // Force a background sync if enabled and permissions are granted
+      if (permissionResult.granted) {
+        final isEnabled =
+            await HealthHabitBackgroundService.isBackgroundServiceEnabled();
+        if (isEnabled) {
+          await HealthHabitBackgroundService.forceSyncNow();
+        }
       }
     } catch (e) {
       AppLogger.error('Error refreshing health integration data', e);
