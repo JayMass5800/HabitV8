@@ -23,8 +23,10 @@
         <!-- Heart rate permissions -->
         <item>android.permission.health.READ_HEART_RATE</item>
         
-        <!-- NOTE: Background health data access is NOT included in this array -->
-        <!-- It's declared in manifest but not listed here to avoid triggering -->
-        <!-- Google Play Console's broad health data access detection -->
+        <!-- Background health data access permission -->
+        <!-- Including it explicitly to ensure proper functionality -->
+        <item>android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND</item>
+        
+        <!-- Activity recognition is handled separately in the manifest -->
     </string-array>
 </resources>

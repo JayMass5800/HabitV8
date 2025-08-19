@@ -13,6 +13,7 @@
 
     <!-- Health and fitness permissions -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
     
     <!-- Health Connect permissions for Android 16+ -->
     <!-- Only essential health permissions that are actually used in the app -->
@@ -26,6 +27,10 @@
     
     <!-- Background health data access for continuous monitoring -->
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
+    
+    <!-- Foreground service permission for background health monitoring -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
     
     <!-- Explicitly remove unwanted health permissions that might be added by plugins -->
     <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" tools:node="remove" />
@@ -114,6 +119,13 @@
         
         <!-- Notification action receiver for handling button presses -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
+        
+        <!-- Background health monitoring service -->
+        <service
+            android:name=".HealthMonitoringService"
+            android:foregroundServiceType="health"
+            android:enabled="true"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"

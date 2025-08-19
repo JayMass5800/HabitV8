@@ -49,4 +49,10 @@
     <bool name="health_plugin_restricted_mode">true</bool>
     <bool name="health_plugin_minimal_permissions">true</bool>
     <string name="health_plugin_mode">minimal</string>
+    
+    <!-- Background health data access configuration -->
+    <bool name="health_plugin_background_access_enabled">true</bool>
+    <bool name="health_plugin_activity_recognition_enabled">true</bool>
+    <bool name="health_plugin_heart_rate_background_enabled">true</bool>
+    <integer name="health_plugin_background_sync_interval">30</integer> <!-- in minutes -->
 </resources>

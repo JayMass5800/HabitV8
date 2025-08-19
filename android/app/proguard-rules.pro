@@ -66,19 +66,60 @@
 -keep class com.dexterous.** { *; }
 -keep class androidx.work.** { *; }
 
-# Keep health plugin classes but remove unused permission references
+# Keep health plugin classes and all permission references
 -keep class cachet.plugins.health.** { *; }
+-keep class androidx.health.** { *; }
+-keep class androidx.health.connect.** { *; }
+-keep class androidx.health.platform.** { *; }
 
-# Remove unused health permission metadata to prevent static analysis detection
--assumenosideeffects class androidx.health.platform.client.** {
-    public static *** getPermissions(...);
+# Explicitly keep heart rate permission references
+-keepclassmembers class * {
+    public static final *** *HEART_RATE*;
 }
 
-# Strip unused health data type references
--assumenosideeffects class androidx.health.connect.client.** {
-    public static *** getAllDataTypes(...);
-    public static *** getUnusedDataTypes(...);
+# Keep health permission metadata
+-keep class androidx.health.platform.client.** { *; }
+-keep class androidx.health.connect.client.** { *; }
+-keep class androidx.health.connect.client.permission.** { *; }
+-keep class androidx.health.connect.client.records.** { *; }
+-keep class androidx.health.connect.client.aggregate.** { *; }
+-keep class androidx.health.connect.client.changes.** { *; }
+-keep class androidx.health.connect.client.time.** { *; }
+-keep class androidx.health.connect.client.request.** { *; }
+-keep class androidx.health.connect.client.response.** { *; }
+
+# Keep heart rate specific classes
+-keep class androidx.health.connect.client.records.HeartRateRecord { *; }
+-keep class androidx.health.connect.client.records.HeartRateRecord$* { *; }
+-keep class androidx.health.connect.client.permission.HealthPermission { *; }
+
+# Explicitly keep heart rate permission
+-keepclassmembers class androidx.health.connect.client.permission.HealthPermission {
+    public static final *** READ_HEART_RATE;
 }
+
+# Keep background health data access permissions
+-keepclassmembers class * {
+    public static final *** *READ_HEALTH_DATA_IN_BACKGROUND*;
+}
+
+# Keep activity recognition permissions and classes
+-keep class com.google.android.gms.location.ActivityRecognition { *; }
+-keep class com.google.android.gms.location.ActivityRecognitionClient { *; }
+-keep class com.google.android.gms.location.ActivityRecognitionResult { *; }
+-keep class com.google.android.gms.location.DetectedActivity { *; }
+-keep class android.app.PendingIntent { *; }
+
+# Keep activity recognition permission
+-keepclassmembers class * {
+    public static final *** *ACTIVITY_RECOGNITION*;
+}
+
+# Keep background service classes
+-keep class **.HealthHabitBackgroundService { *; }
+-keep class **.HealthService { *; }
+-keep class **.BackgroundWorker { *; }
+-keep class androidx.work.** { *; }
 
 # Keep permission handler classes
 -keep class com.baseflow.permissionhandler.** { *; }
