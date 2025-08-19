@@ -434,6 +434,54 @@ class MinimalHealthChannel {
     return List.from(_supportedDataTypes);
   }
 
+  /// Start background health monitoring service
+  static Future<bool> startBackgroundMonitoring() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      AppLogger.info('Starting background health monitoring service');
+      final bool result = await _channel.invokeMethod(
+        'startBackgroundMonitoring',
+      );
+      AppLogger.info('Background monitoring service started: $result');
+      return result;
+    } catch (e) {
+      AppLogger.error('Error starting background health monitoring', e);
+      return false;
+    }
+  }
+
+  /// Stop background health monitoring service
+  static Future<bool> stopBackgroundMonitoring() async {
+    try {
+      AppLogger.info('Stopping background health monitoring service');
+      final bool result = await _channel.invokeMethod(
+        'stopBackgroundMonitoring',
+      );
+      AppLogger.info('Background monitoring service stopped: $result');
+      return result;
+    } catch (e) {
+      AppLogger.error('Error stopping background health monitoring', e);
+      return false;
+    }
+  }
+
+  /// Check if background monitoring is active
+  static Future<bool> isBackgroundMonitoringActive() async {
+    try {
+      final bool result = await _channel.invokeMethod(
+        'isBackgroundMonitoringActive',
+      );
+      AppLogger.info('Background monitoring active: $result');
+      return result;
+    } catch (e) {
+      AppLogger.error('Error checking background monitoring status', e);
+      return false;
+    }
+  }
+
   /// Get service status for debugging
   static Map<String, dynamic> getServiceStatus() {
     return {

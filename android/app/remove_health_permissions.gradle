@@ -16,7 +16,15 @@ android.applicationVariants.all { variant ->
                         
                         // List of permissions to remove (these trigger Google Play Console issues)
                         def permissionsToRemove = [
-                            // 'android.permission.health.READ_HEART_RATE', // KEEP this permission - needed for heart rate tracking
+                            // KEEP these permissions - needed for our app
+                            // 'android.permission.health.READ_HEART_RATE', 
+                            // 'android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND',
+                            // 'android.permission.ACTIVITY_RECOGNITION',
+                            // 'com.google.android.gms.permission.ACTIVITY_RECOGNITION',
+                            // 'android.permission.FOREGROUND_SERVICE',
+                            // 'android.permission.FOREGROUND_SERVICE_HEALTH',
+                            
+                            // Remove all other health permissions
                             'android.permission.health.READ_BLOOD_PRESSURE',
                             'android.permission.health.READ_BLOOD_GLUCOSE',
                             'android.permission.health.READ_BODY_TEMPERATURE',

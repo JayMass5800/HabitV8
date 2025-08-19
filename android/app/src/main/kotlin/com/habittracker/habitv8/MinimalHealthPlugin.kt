@@ -83,6 +83,19 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         } catch (e: ClassNotFoundException) {
             Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord permission not available")
         }
+        
+        // Add background health data access permission
+        try {
+            // Use reflection to get the READ_HEALTH_DATA_IN_BACKGROUND permission
+            // This avoids direct reference that might cause issues with older Health Connect versions
+            val healthPermissionClass = HealthPermission::class.java
+            val getReadHealthDataInBackgroundMethod = healthPermissionClass.getDeclaredMethod("getReadHealthDataInBackground")
+            val backgroundPermission = getReadHealthDataInBackgroundMethod.invoke(null) as String
+            this.add(backgroundPermission)
+            Log.i("MinimalHealthPlugin", "Background health data access permission added")
+        } catch (e: Exception) {
+            Log.w("MinimalHealthPlugin", "Background health data access permission not available", e)
+        }
     }
 
     companion object {
@@ -124,9 +137,88 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             "isHealthConnectAvailable" -> {
                 result.success(healthConnectClient != null)
             }
+            "startBackgroundMonitoring" -> {
+                startBackgroundMonitoring(result)
+            }
+            "stopBackgroundMonitoring" -> {
+                stopBackgroundMonitoring(result)
+            }
+            "isBackgroundMonitoringActive" -> {
+                isBackgroundMonitoringActive(result)
+            }
             else -> {
                 result.notImplemented()
             }
+        }
+    }
+    
+    // Start background health monitoring service
+    private fun startBackgroundMonitoring(result: Result) {
+        try {
+            if (activityBinding?.activity == null) {
+                Log.e("MinimalHealthPlugin", "Activity not available for starting background service")
+                result.error("NO_ACTIVITY", "Activity is required to start background monitoring", null)
+                return
+            }
+            
+            val activity = activityBinding!!.activity
+            val intent = Intent(activity, HealthMonitoringService::class.java)
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                activity.startForegroundService(intent)
+            } else {
+                activity.startService(intent)
+            }
+            
+            Log.i("MinimalHealthPlugin", "Background health monitoring service started")
+            result.success(true)
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error starting background monitoring", e)
+            result.error("SERVICE_ERROR", e.message, null)
+        }
+    }
+    
+    // Stop background health monitoring service
+    private fun stopBackgroundMonitoring(result: Result) {
+        try {
+            if (activityBinding?.activity == null) {
+                Log.e("MinimalHealthPlugin", "Activity not available for stopping background service")
+                result.error("NO_ACTIVITY", "Activity is required to stop background monitoring", null)
+                return
+            }
+            
+            val activity = activityBinding!!.activity
+            val intent = Intent(activity, HealthMonitoringService::class.java)
+            activity.stopService(intent)
+            
+            Log.i("MinimalHealthPlugin", "Background health monitoring service stopped")
+            result.success(true)
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error stopping background monitoring", e)
+            result.error("SERVICE_ERROR", e.message, null)
+        }
+    }
+    
+    // Check if background monitoring is active
+    private fun isBackgroundMonitoringActive(result: Result) {
+        try {
+            if (activityBinding?.activity == null) {
+                result.success(false)
+                return
+            }
+            
+            val activity = activityBinding!!.activity
+            val sharedPreferences = activity.getSharedPreferences(
+                "com.habittracker.habitv8.health", 
+                Context.MODE_PRIVATE
+            )
+            val isActive = sharedPreferences.getBoolean("health_monitoring_enabled", false)
+            
+            Log.i("MinimalHealthPlugin", "Background monitoring status: $isActive")
+            result.success(isActive)
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error checking background monitoring status", e)
+            result.success(false)
         }
     }
 

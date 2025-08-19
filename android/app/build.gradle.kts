@@ -145,5 +145,15 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }
 
-// Custom health permissions cleanup script removed due to compatibility issues
-// The manifest-based approach should be sufficient
+// Apply custom health permissions scripts
+apply(from = "remove_health_permissions.gradle")
+apply(from = "add_health_permissions.gradle")
+
+// Add Health Connect dependencies with explicit versions
+dependencies {
+    // Health Connect for heart rate and background monitoring
+    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
+    
+    // Activity recognition
+    implementation("com.google.android.gms:play-services-location:21.2.0")
+}

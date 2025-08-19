@@ -1,0 +1,72 @@
+// Custom Gradle script to ensure critical health permissions are included in the AAB
+// This addresses the need for heart rate, background health data, and activity recognition
+
+android.applicationVariants.all { variant ->
+    if (variant.buildType.name == 'release') {
+        variant.outputs.all { output ->
+            // Task to add required permissions after build
+            def addPermissionsTask = tasks.create("add${variant.name.capitalize()}HealthPermissions") {
+                doLast {
+                    println "Adding critical health permissions for ${variant.name}"
+                    
+                    // Find the merged manifest
+                    def mergedManifest = file("${buildDir}/intermediates/merged_manifests/${variant.name}/AndroidManifest.xml")
+                    if (mergedManifest.exists()) {
+                        def manifestText = mergedManifest.text
+                        
+                        // Check if manifest already has the permissions
+                        def requiredPermissions = [
+                            'android.permission.health.READ_HEART_RATE',
+                            'android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND',
+                            'android.permission.ACTIVITY_RECOGNITION',
+                            'com.google.android.gms.permission.ACTIVITY_RECOGNITION',
+                            'android.permission.FOREGROUND_SERVICE',
+                            'android.permission.FOREGROUND_SERVICE_HEALTH'
+                        ]
+                        
+                        def manifestUpdated = false
+                        def updatedManifest = manifestText
+                        
+                        // Add each permission if it's not already in the manifest
+                        requiredPermissions.each { permission ->
+                            if (!manifestText.contains("android:name=\"${permission}\"")) {
+                                println "Adding missing permission: ${permission}"
+                                
+                                // Find the position to insert the permission (after the last uses-permission)
+                                def lastPermissionIndex = updatedManifest.lastIndexOf("</uses-permission>")
+                                if (lastPermissionIndex > 0) {
+                                    def insertPosition = lastPermissionIndex + "</uses-permission>".length()
+                                    def permissionTag = "\n    <uses-permission android:name=\"${permission}\" />"
+                                    
+                                    updatedManifest = new StringBuilder(updatedManifest).insert(insertPosition, permissionTag).toString()
+                                    manifestUpdated = true
+                                }
+                            }
+                        }
+                        
+                        // Write updated manifest back if changes were made
+                        if (manifestUpdated) {
+                            mergedManifest.text = updatedManifest
+                            println "Added missing health permissions to manifest"
+                        } else {
+                            println "All required permissions already present in manifest"
+                        }
+                    }
+                }
+            }
+            
+            // Make sure our task runs after manifest processing but before packaging
+            tasks.whenTaskAdded { task ->
+                if (task.name.contains("process${variant.name.capitalize()}Manifest")) {
+                    addPermissionsTask.dependsOn task
+                }
+                if (task.name.contains("package${variant.name.capitalize()}")) {
+                    task.dependsOn addPermissionsTask
+                }
+                if (task.name.contains("bundle${variant.name.capitalize()}")) {
+                    task.dependsOn addPermissionsTask
+                }
+            }
+        }
+    }
+}
