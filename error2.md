@@ -1,3 +1,61 @@
+lib/services/permission_service.dart:84:28: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+      final bool granted = await HealthService.requestPermissions();
+                           ^
+lib/services/health_habit_initialization_service.dart:165:13: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+        if (permissionsGranted) {
+            ^
+lib/ui/screens/insights_screen.dart:2427:23: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+                  if (success && mounted) {
+                      ^
+lib/ui/screens/insights_screen.dart:2806:23: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+                  if (success && mounted) {
+                      ^
+lib/ui/screens/settings_screen.dart:188:35: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+      final bool hasPermissions = await HealthService.refreshPermissions();
+                                  ^
+lib/ui/screens/settings_screen.dart:758:31: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+        bool hasPermissions = await HealthService.refreshPermissions();
+                              ^
+lib/ui/screens/settings_screen.dart:762:28: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+          hasPermissions = await HealthService.requestPermissions();
+                           ^
+lib/ui/screens/settings_screen.dart:769:30: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+            hasPermissions = await HealthService.refreshPermissions();
+                             ^
+lib/ui/screens/settings_screen.dart:1132:25: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+                        granted
+                        ^
+lib/ui/screens/settings_screen.dart:1136:40: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+                      backgroundColor: granted ? Colors.green : Colors.red,
+                                       ^
+lib/services/health_habit_integration_service.dart:103:13: Error: A value of type 'HealthPermissionResult' can't be assigned to a variable of type 'bool'.
+ - 'HealthPermissionResult' is from 'package:habitv8/services/health_service.dart' ('lib/services/health_service.dart').
+        if (permissionsGranted) {
+            ^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+
+
+
+
+
+
+
+
+
 [{
 	"resource": "/C:/HabitV8/lib/services/health_habit_initialization_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#4",
