@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/logging_service.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
-import '../../services/health_habit_analytics_service.dart';
 import '../../services/health_habit_background_service.dart';
 import '../../services/health_habit_ui_service.dart';
 import '../../services/health_service.dart';
