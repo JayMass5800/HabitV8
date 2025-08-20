@@ -14,11 +14,11 @@ class NotificationService {
 
   // Callback for handling notification actions
   static Function(String habitId, String action)? onNotificationAction;
-  
+
   // Debug tracking for callback state
   static int _callbackSetCount = 0;
   static DateTime? _lastCallbackSetTime;
-  
+
   // Queue for storing pending actions when callback is not available
   static final List<Map<String, String>> _pendingActions = [];
 
@@ -34,40 +34,41 @@ class NotificationService {
     // iOS initialization settings with notification categories
     final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-      notificationCategories: [
-        DarwinNotificationCategory(
-          'habit_category',
-          actions: [
-            DarwinNotificationAction.plain(
-              'complete',
-              'Complete',
-              options: {DarwinNotificationActionOption.foreground},
-            ),
-            DarwinNotificationAction.plain(
-              'snooze',
-              'Snooze 30min',
-              options: {DarwinNotificationActionOption.foreground},
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+          notificationCategories: [
+            DarwinNotificationCategory(
+              'habit_category',
+              actions: [
+                DarwinNotificationAction.plain(
+                  'complete',
+                  'Complete',
+                  options: {DarwinNotificationActionOption.foreground},
+                ),
+                DarwinNotificationAction.plain(
+                  'snooze',
+                  'Snooze 30min',
+                  options: {DarwinNotificationActionOption.foreground},
+                ),
+              ],
             ),
           ],
-        ),
-      ],
-    );
+        );
 
     // Combined initialization settings
     final InitializationSettings initializationSettings =
         InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     // Initialize the plugin
     await _notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
-      onDidReceiveBackgroundNotificationResponse: onBackgroundNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse:
+          onBackgroundNotificationResponse,
     );
 
     // Request permissions for Android 13+
@@ -104,44 +105,56 @@ class NotificationService {
   /// Create Android notification channels
   static Future<void> _createNotificationChannels() async {
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
     if (androidImplementation != null) {
       // Create habit notification channel
-      const AndroidNotificationChannel habitChannel = AndroidNotificationChannel(
-        'habit_channel',
-        'Habit Notifications',
-        description: 'Notifications for habit reminders',
-        importance: Importance.max,
-        playSound: true,
-        enableVibration: true,
-      );
+      const AndroidNotificationChannel habitChannel =
+          AndroidNotificationChannel(
+            'habit_channel',
+            'Habit Notifications',
+            description: 'Notifications for habit reminders',
+            importance: Importance.max,
+            playSound: true,
+            enableVibration: true,
+          );
 
       // Create scheduled habit notification channel
-      const AndroidNotificationChannel scheduledHabitChannel = AndroidNotificationChannel(
-        'habit_scheduled_channel',
-        'Scheduled Habit Notifications',
-        description: 'Scheduled notifications for habit reminders',
-        importance: Importance.max,
-        playSound: true,
-        enableVibration: true,
-      );
+      const AndroidNotificationChannel scheduledHabitChannel =
+          AndroidNotificationChannel(
+            'habit_scheduled_channel',
+            'Scheduled Habit Notifications',
+            description: 'Scheduled notifications for habit reminders',
+            importance: Importance.max,
+            playSound: true,
+            enableVibration: true,
+          );
 
       await androidImplementation.createNotificationChannel(habitChannel);
-      await androidImplementation.createNotificationChannel(scheduledHabitChannel);
-      
+      await androidImplementation.createNotificationChannel(
+        scheduledHabitChannel,
+      );
+
       AppLogger.info('Notification channels created successfully');
-      AppLogger.info('Habit channel: ${habitChannel.id} - ${habitChannel.name}');
-      AppLogger.info('Scheduled habit channel: ${scheduledHabitChannel.id} - ${scheduledHabitChannel.name}');
+      AppLogger.info(
+        'Habit channel: ${habitChannel.id} - ${habitChannel.name}',
+      );
+      AppLogger.info(
+        'Scheduled habit channel: ${scheduledHabitChannel.id} - ${scheduledHabitChannel.name}',
+      );
     }
   }
 
   /// Request Android notification permissions with enhanced exact alarm handling
   static Future<void> _requestAndroidPermissions() async {
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
     if (androidImplementation != null) {
       // Request notification permission
@@ -151,25 +164,33 @@ class NotificationService {
       final bool isAndroid12Plus = await _isAndroid12Plus();
 
       if (isAndroid12Plus) {
-        AppLogger.info('Android 12+ detected - requesting exact alarm permissions');
+        AppLogger.info(
+          'Android 12+ detected - requesting exact alarm permissions',
+        );
 
         // Request exact alarms permission (Android 12+)
         try {
-          final bool? exactAlarmPermission =
-              await androidImplementation.requestExactAlarmsPermission();
-          AppLogger.info('Exact alarm permission granted: $exactAlarmPermission');
+          final bool? exactAlarmPermission = await androidImplementation
+              .requestExactAlarmsPermission();
+          AppLogger.info(
+            'Exact alarm permission granted: $exactAlarmPermission',
+          );
 
           if (exactAlarmPermission != true) {
             AppLogger.warning(
-                'WARNING: Exact alarm permission not granted. Scheduled notifications may not work on Android 12+');
+              'WARNING: Exact alarm permission not granted. Scheduled notifications may not work on Android 12+',
+            );
             AppLogger.warning(
-                'User may need to manually enable "Alarms & reminders" in app settings');
+              'User may need to manually enable "Alarms & reminders" in app settings',
+            );
           }
         } catch (e) {
           AppLogger.error('Error requesting exact alarm permission', e);
         }
       } else {
-        AppLogger.info('Android 11 or below detected - exact alarm permissions not required');
+        AppLogger.info(
+          'Android 11 or below detected - exact alarm permissions not required',
+        );
       }
     }
   }
@@ -177,17 +198,21 @@ class NotificationService {
   /// Handle background notification responses (when app is not in foreground)
   /// This method is called when the app is not running or in background
   @pragma('vm:entry-point')
-  static void onBackgroundNotificationResponse(NotificationResponse notificationResponse) {
+  static void onBackgroundNotificationResponse(
+    NotificationResponse notificationResponse,
+  ) {
     AppLogger.info('=== BACKGROUND NOTIFICATION RESPONSE ===');
     AppLogger.info('Background notification ID: ${notificationResponse.id}');
     AppLogger.info('Background action ID: ${notificationResponse.actionId}');
     AppLogger.info('Background payload: ${notificationResponse.payload}');
-    AppLogger.info('Background response type: ${notificationResponse.notificationResponseType}');
+    AppLogger.info(
+      'Background response type: ${notificationResponse.notificationResponseType}',
+    );
     AppLogger.info('Background input: ${notificationResponse.input}');
-    
+
     // Log the raw response object for debugging
     AppLogger.info('Raw background response: $notificationResponse');
-    
+
     // Handle the notification response directly in background
     final String? payload = notificationResponse.payload;
     if (payload != null) {
@@ -195,9 +220,11 @@ class NotificationService {
         final Map<String, dynamic> data = jsonDecode(payload);
         final String? habitId = data['habitId'];
         final String? action = notificationResponse.actionId;
-        
+
         if (habitId != null && action != null && action.isNotEmpty) {
-          AppLogger.info('Processing background action: $action for habit: $habitId');
+          AppLogger.info(
+            'Processing background action: $action for habit: $habitId',
+          );
           _handleNotificationAction(habitId, action);
         }
       } catch (e) {
@@ -208,59 +235,76 @@ class NotificationService {
 
   /// Handle notification tap and actions
   @pragma('vm:entry-point')
-  static void _onNotificationTapped(NotificationResponse notificationResponse) async {
+  static void _onNotificationTapped(
+    NotificationResponse notificationResponse,
+  ) async {
     // CRITICAL: Add debug statements that will show in Flutter console
     AppLogger.debug('🚨🚨🚨 FLUTTER NOTIFICATION HANDLER CALLED! 🚨🚨🚨');
     AppLogger.debug('🔔 Notification ID: ${notificationResponse.id}');
     AppLogger.debug('🔔 Action ID: ${notificationResponse.actionId}');
-    AppLogger.debug('🔔 Response Type: ${notificationResponse.notificationResponseType}');
+    AppLogger.debug(
+      '🔔 Response Type: ${notificationResponse.notificationResponseType}',
+    );
     AppLogger.debug('🔔 Payload: ${notificationResponse.payload}');
-    
+
     AppLogger.info('=== NOTIFICATION RESPONSE DEBUG ===');
     AppLogger.info('🔔 NOTIFICATION RECEIVED!');
     AppLogger.info('Notification ID: ${notificationResponse.id}');
     AppLogger.info('Action ID: ${notificationResponse.actionId}');
     AppLogger.info('Input: ${notificationResponse.input}');
     AppLogger.info('Payload: ${notificationResponse.payload}');
-    AppLogger.info('Notification response type: ${notificationResponse.notificationResponseType}');
-    
+    AppLogger.info(
+      'Notification response type: ${notificationResponse.notificationResponseType}',
+    );
+
     // Log the raw response object for complete debugging
     AppLogger.info('Raw notification response: $notificationResponse');
-    
+
     // Additional debugging for action button presses
-    if (notificationResponse.actionId != null && notificationResponse.actionId!.isNotEmpty) {
-      AppLogger.debug('🔥🔥🔥 ACTION BUTTON DETECTED: ${notificationResponse.actionId} 🔥🔥🔥');
-      AppLogger.info('🔥🔥🔥 ACTION BUTTON PRESSED: ${notificationResponse.actionId}');
-      AppLogger.info('Response type for action: ${notificationResponse.notificationResponseType}');
+    if (notificationResponse.actionId != null &&
+        notificationResponse.actionId!.isNotEmpty) {
+      AppLogger.debug(
+        '🔥🔥🔥 ACTION BUTTON DETECTED: ${notificationResponse.actionId} 🔥🔥🔥',
+      );
+      AppLogger.info(
+        '🔥🔥🔥 ACTION BUTTON PRESSED: ${notificationResponse.actionId}',
+      );
+      AppLogger.info(
+        'Response type for action: ${notificationResponse.notificationResponseType}',
+      );
       AppLogger.info('Action button working! Processing action...');
     } else {
       AppLogger.debug('📱 REGULAR NOTIFICATION TAP (no action button)');
       AppLogger.info('📱 NOTIFICATION TAPPED (no action button)');
     }
-    
+
     // Always log that we received something
     AppLogger.info('✅ Notification handler called successfully');
-    
+
     final String? payload = notificationResponse.payload;
     if (payload != null) {
       AppLogger.debug('📦 Processing payload: $payload');
       AppLogger.info('Processing notification with payload: $payload');
-      
+
       try {
         final Map<String, dynamic> data = jsonDecode(payload);
         final String? habitId = data['habitId'];
         final String? action = notificationResponse.actionId;
-        
+
         AppLogger.debug('🎯 Parsed habitId: $habitId');
         AppLogger.debug('⚡ Parsed action: $action');
         AppLogger.info('Parsed habitId: $habitId');
         AppLogger.info('Parsed action: $action');
-        
+
         if (habitId != null) {
           if (action != null && action.isNotEmpty) {
             // Handle the action button press
-            AppLogger.debug('🚀 CALLING _handleNotificationAction with: $action, $habitId');
-            AppLogger.info('Processing action button: $action for habit: $habitId');
+            AppLogger.debug(
+              '🚀 CALLING _handleNotificationAction with: $action, $habitId',
+            );
+            AppLogger.info(
+              'Processing action button: $action for habit: $habitId',
+            );
             _handleNotificationAction(habitId, action);
           } else {
             // Handle regular notification tap (no action button)
@@ -281,77 +325,101 @@ class NotificationService {
       AppLogger.debug('❌ No payload provided!');
       AppLogger.warning('Notification tapped but no payload provided');
     }
-    
+
     AppLogger.debug('✅ _onNotificationTapped completed');
   }
 
   /// Handle notification actions (Complete/Snooze)
   @pragma('vm:entry-point')
   static void _handleNotificationAction(String habitId, String action) async {
-    AppLogger.debug('🚀 DEBUG: _handleNotificationAction called with habitId: $habitId, action: $action');
+    AppLogger.debug(
+      '🚀 DEBUG: _handleNotificationAction called with habitId: $habitId, action: $action',
+    );
     AppLogger.info('Handling notification action: $action for habit: $habitId');
-    
+
     // Check callback status for debugging
     ensureCallbackIsSet();
-    
+
     try {
       // Normalize action IDs to handle both iOS and Android formats
       final normalizedAction = action.toLowerCase().replaceAll('_action', '');
       AppLogger.debug('🔄 DEBUG: Normalized action: $normalizedAction');
-      
+
       switch (normalizedAction) {
         case 'complete':
-          AppLogger.debug('✅ DEBUG: Processing complete action for habit: $habitId');
+          AppLogger.debug(
+            '✅ DEBUG: Processing complete action for habit: $habitId',
+          );
           AppLogger.info('🔥 Processing complete action for habit: $habitId');
-          
+
           // Always cancel the notification first for complete action
           final notificationId = habitId.hashCode;
           await cancelNotification(notificationId);
-          AppLogger.debug('🗑️ DEBUG: Notification cancelled with ID: $notificationId');
-          AppLogger.info('✅ Notification cancelled for complete action for habit: $habitId');
-          
+          AppLogger.debug(
+            '🗑️ DEBUG: Notification cancelled with ID: $notificationId',
+          );
+          AppLogger.info(
+            '✅ Notification cancelled for complete action for habit: $habitId',
+          );
+
           // Call the callback if set
           if (onNotificationAction != null) {
             AppLogger.debug('📞 DEBUG: Calling notification action callback');
-            AppLogger.info('📞 Calling complete action callback for habit: $habitId');
-            AppLogger.info('🔍 Callback state: set $_callbackSetCount times, last at $_lastCallbackSetTime');
+            AppLogger.info(
+              '📞 Calling complete action callback for habit: $habitId',
+            );
+            AppLogger.info(
+              '🔍 Callback state: set $_callbackSetCount times, last at $_lastCallbackSetTime',
+            );
             onNotificationAction!(habitId, 'complete');
             AppLogger.debug('✅ DEBUG: Callback executed successfully');
-            AppLogger.info('✅ Complete action callback executed for habit: $habitId');
+            AppLogger.info(
+              '✅ Complete action callback executed for habit: $habitId',
+            );
           } else {
             AppLogger.debug('❌ DEBUG: No notification action callback set!');
-            AppLogger.warning('❌ No notification action callback set - action will be lost');
-            AppLogger.warning('🔍 Callback debug: set $_callbackSetCount times, last at $_lastCallbackSetTime');
+            AppLogger.warning(
+              '❌ No notification action callback set - action will be lost',
+            );
+            AppLogger.warning(
+              '🔍 Callback debug: set $_callbackSetCount times, last at $_lastCallbackSetTime',
+            );
             AppLogger.warning('🔍 Current time: ${DateTime.now()}');
-            
+
             // The callback should be set by now. If not, there's a deeper issue.
-            
+
             // Store the action for later processing if callback is not set
             _storeActionForLaterProcessing(habitId, 'complete');
           }
           break;
-          
+
         case 'snooze':
-          print('😴 DEBUG: Processing snooze action for habit: $habitId');
+          AppLogger.debug('😴 Processing snooze action for habit: $habitId');
           AppLogger.info('😴 Processing snooze action for habit: $habitId');
           // Handle snooze action
           await _handleSnoozeAction(habitId);
           AppLogger.info('✅ Snooze action completed for habit: $habitId');
           break;
-          
+
         default:
-          print('❓ DEBUG: Unknown action: $action (normalized: $normalizedAction)');
-          AppLogger.warning('Unknown notification action: $action (normalized: $normalizedAction)');
+          AppLogger.debug(
+            '❓ Unknown action: $action (normalized: $normalizedAction)',
+          );
+          AppLogger.warning(
+            'Unknown notification action: $action (normalized: $normalizedAction)',
+          );
       }
     } catch (e) {
-      print('💥 DEBUG: Error in _handleNotificationAction: $e');
+      AppLogger.debug('💥 Error in _handleNotificationAction: $e');
       AppLogger.error('Error handling notification action: $action', e);
     }
   }
-  
+
   /// Store action for later processing if callback is not available
   static void _storeActionForLaterProcessing(String habitId, String action) {
-    AppLogger.warning('Storing action for later processing: $action for habit: $habitId');
+    AppLogger.warning(
+      'Storing action for later processing: $action for habit: $habitId',
+    );
     _pendingActions.add({
       'habitId': habitId,
       'action': action,
@@ -359,72 +427,91 @@ class NotificationService {
     });
     AppLogger.info('Pending actions queue size: ${_pendingActions.length}');
   }
-  
+
   /// Set the notification action callback and process any pending actions
-  static void setNotificationActionCallback(Function(String habitId, String action) callback) {
+  static void setNotificationActionCallback(
+    Function(String habitId, String action) callback,
+  ) {
     onNotificationAction = callback;
     _callbackSetCount++;
     _lastCallbackSetTime = DateTime.now();
-    AppLogger.info('🔗 Notification action callback set (count: $_callbackSetCount, time: $_lastCallbackSetTime)');
-    
+    AppLogger.info(
+      '🔗 Notification action callback set (count: $_callbackSetCount, time: $_lastCallbackSetTime)',
+    );
+
     // Process any pending actions
     if (_pendingActions.isNotEmpty) {
-      AppLogger.info('📦 Processing ${_pendingActions.length} pending notification actions');
-      
+      AppLogger.info(
+        '📦 Processing ${_pendingActions.length} pending notification actions',
+      );
+
       final actionsToProcess = List<Map<String, String>>.from(_pendingActions);
       _pendingActions.clear();
-      
+
       for (final actionData in actionsToProcess) {
         final habitId = actionData['habitId']!;
         final action = actionData['action']!;
         final timestamp = actionData['timestamp']!;
-        
-        AppLogger.info('⚡ Processing pending action: $action for habit: $habitId (queued at: $timestamp)');
-        
+
+        AppLogger.info(
+          '⚡ Processing pending action: $action for habit: $habitId (queued at: $timestamp)',
+        );
+
         try {
           callback(habitId, action);
-          AppLogger.info('✅ Successfully processed pending action: $action for habit: $habitId');
+          AppLogger.info(
+            '✅ Successfully processed pending action: $action for habit: $habitId',
+          );
         } catch (e) {
-          AppLogger.error('❌ Error processing pending action: $action for habit: $habitId', e);
+          AppLogger.error(
+            '❌ Error processing pending action: $action for habit: $habitId',
+            e,
+          );
         }
       }
-      
+
       AppLogger.info('🎉 All pending actions processed');
     } else {
       AppLogger.info('📭 No pending actions to process');
     }
   }
-  
+
   /// Get the number of pending actions (for debugging)
   static int getPendingActionsCount() {
     return _pendingActions.length;
   }
-  
+
   /// Check if callback is set and re-initialize if needed
   static bool ensureCallbackIsSet() {
     final isSet = onNotificationAction != null;
     AppLogger.info('🔍 Callback check: ${isSet ? "SET" : "NOT SET"}');
     if (!isSet) {
-      AppLogger.warning('⚠️ Callback is not set! This may cause notification actions to fail.');
-      AppLogger.info('🔍 Callback was set $_callbackSetCount times, last at $_lastCallbackSetTime');
+      AppLogger.warning(
+        '⚠️ Callback is not set! This may cause notification actions to fail.',
+      );
+      AppLogger.info(
+        '🔍 Callback was set $_callbackSetCount times, last at $_lastCallbackSetTime',
+      );
     }
     return isSet;
   }
-  
+
   /// Handle snooze action specifically
   static Future<void> _handleSnoozeAction(String habitId) async {
     try {
       final notificationId = habitId.hashCode;
-      AppLogger.info('🔔 Starting snooze process for habit: $habitId (notification ID: $notificationId)');
-      
+      AppLogger.info(
+        '🔔 Starting snooze process for habit: $habitId (notification ID: $notificationId)',
+      );
+
       // Cancel the current notification
       await cancelNotification(notificationId);
       AppLogger.info('❌ Cancelled current notification for habit: $habitId');
-      
+
       // Schedule a new notification for 30 minutes later
       final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
       AppLogger.info('⏰ Scheduling snoozed notification for: $snoozeTime');
-      
+
       try {
         await scheduleHabitNotification(
           id: notificationId,
@@ -433,21 +520,28 @@ class NotificationService {
           body: 'Time to complete your habit!',
           scheduledTime: snoozeTime,
         );
-        AppLogger.info('✅ Snoozed notification scheduled successfully for habit: $habitId');
+        AppLogger.info(
+          '✅ Snoozed notification scheduled successfully for habit: $habitId',
+        );
       } catch (scheduleError) {
-        AppLogger.error('❌ Failed to schedule snoozed notification for habit: $habitId', scheduleError);
+        AppLogger.error(
+          '❌ Failed to schedule snoozed notification for habit: $habitId',
+          scheduleError,
+        );
         // Still call the callback even if scheduling fails
       }
-      
+
       // Call the callback if set
       if (onNotificationAction != null) {
         onNotificationAction!(habitId, 'snooze');
-        AppLogger.info('📞 Snooze action callback executed for habit: $habitId');
+        AppLogger.info(
+          '📞 Snooze action callback executed for habit: $habitId',
+        );
       } else {
         AppLogger.warning('⚠️ No notification action callback set for snooze');
         _storeActionForLaterProcessing(habitId, 'snooze');
       }
-      
+
       AppLogger.info('✅ Snooze action completed for habit: $habitId');
     } catch (e) {
       AppLogger.error('❌ Error handling snooze action for habit: $habitId', e);
@@ -465,13 +559,13 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'habit_channel',
-      'Habit Notifications',
-      channelDescription: 'Notifications for habit reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
-    );
+          'habit_channel',
+          'Habit Notifications',
+          channelDescription: 'Notifications for habit reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: false,
+        );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails();
@@ -502,12 +596,12 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'habit_scheduled_channel',
-      'Scheduled Habit Notifications',
-      channelDescription: 'Scheduled notifications for habit reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
+          'habit_scheduled_channel',
+          'Scheduled Habit Notifications',
+          channelDescription: 'Scheduled notifications for habit reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+        );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails();
@@ -526,12 +620,16 @@ class NotificationService {
     print('DEBUG: Original scheduled time: $scheduledTime');
     print('DEBUG: Local scheduled time: $localScheduledTime');
     print('DEBUG: Device timezone offset: ${deviceNow.timeZoneOffset}');
-    print('DEBUG: Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds');
+    print(
+      'DEBUG: Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds',
+    );
 
     // Validate scheduling time
     if (localScheduledTime.isBefore(deviceNow)) {
       print('DEBUG: WARNING - Scheduled time is in the past!');
-      print('DEBUG: Past by: ${deviceNow.difference(localScheduledTime).inSeconds} seconds');
+      print(
+        'DEBUG: Past by: ${deviceNow.difference(localScheduledTime).inSeconds} seconds',
+      );
     }
 
     // Create TZDateTime with better error handling
@@ -571,10 +669,14 @@ class NotificationService {
 
     print('DEBUG: TZ Local timezone: ${tz.local.name}');
     print('DEBUG: TZ offset: ${tzScheduledTime.timeZoneOffset}');
-    print('DEBUG: Device vs TZ offset match: ${deviceNow.timeZoneOffset == tzScheduledTime.timeZoneOffset}');
+    print(
+      'DEBUG: Device vs TZ offset match: ${deviceNow.timeZoneOffset == tzScheduledTime.timeZoneOffset}',
+    );
 
     // Additional validation
-    final secondsUntilNotification = tzScheduledTime.difference(tz.TZDateTime.now(tz.local)).inSeconds;
+    final secondsUntilNotification = tzScheduledTime
+        .difference(tz.TZDateTime.now(tz.local))
+        .inSeconds;
     print('DEBUG: Seconds until TZ notification: $secondsUntilNotification');
 
     if (secondsUntilNotification < 0) {
@@ -584,7 +686,9 @@ class NotificationService {
 
     AppLogger.info('Device current time: $deviceNow');
     AppLogger.info('Target scheduled time: $localScheduledTime');
-    AppLogger.info('Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds');
+    AppLogger.info(
+      'Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds',
+    );
     AppLogger.info('TZ Scheduled time: $tzScheduledTime');
     AppLogger.info('TZ Local timezone: ${tz.local.name}');
 
@@ -596,7 +700,8 @@ class NotificationService {
         tzScheduledTime,
         platformChannelSpecifics,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
       );
       print('DEBUG: Notification successfully scheduled with plugin');
@@ -619,12 +724,13 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'habit_daily_channel',
-      'Daily Habit Notifications',
-      channelDescription: 'Daily recurring notifications for habit reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
+          'habit_daily_channel',
+          'Daily Habit Notifications',
+          channelDescription:
+              'Daily recurring notifications for habit reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+        );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails();
@@ -656,7 +762,8 @@ class NotificationService {
       scheduledDate,
       platformChannelSpecifics,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
       payload: payload,
     );
@@ -706,25 +813,34 @@ class NotificationService {
     // Cancel related notifications with safe approach - try common patterns
     // For weekly notifications (7 days)
     for (int weekday = 1; weekday <= 7; weekday++) {
-      await _notificationsPlugin.cancel(generateSafeId('${habitId}_week_$weekday'));
+      await _notificationsPlugin.cancel(
+        generateSafeId('${habitId}_week_$weekday'),
+      );
     }
 
     // For monthly notifications (31 days)
     for (int monthDay = 1; monthDay <= 31; monthDay++) {
-      await _notificationsPlugin.cancel(generateSafeId('${habitId}_month_$monthDay'));
+      await _notificationsPlugin.cancel(
+        generateSafeId('${habitId}_month_$monthDay'),
+      );
     }
 
     // For yearly notifications (12 months x 31 days)
     for (int month = 1; month <= 12; month++) {
       for (int day = 1; day <= 31; day++) {
-        await _notificationsPlugin.cancel(generateSafeId('${habitId}_year_${month}_$day'));
+        await _notificationsPlugin.cancel(
+          generateSafeId('${habitId}_year_${month}_$day'),
+        );
       }
     }
 
     // For hourly notifications (24 hours x 60 minutes)
     for (int hour = 0; hour < 24; hour++) {
-      for (int minute = 0; minute < 60; minute += 15) { // Check every 15 minutes
-        await _notificationsPlugin.cancel(generateSafeId('${habitId}_hour_${hour}_$minute'));
+      for (int minute = 0; minute < 60; minute += 15) {
+        // Check every 15 minutes
+        await _notificationsPlugin.cancel(
+          generateSafeId('${habitId}_hour_${hour}_$minute'),
+        );
       }
     }
 
@@ -736,7 +852,7 @@ class NotificationService {
     print('DEBUG: Starting notification scheduling for habit: ${habit.name}');
     print('DEBUG: Notifications enabled: ${habit.notificationsEnabled}');
     print('DEBUG: Notification time: ${habit.notificationTime}');
-    
+
     if (!_isInitialized) {
       print('DEBUG: Initializing notification service');
       await initialize();
@@ -760,7 +876,7 @@ class NotificationService {
     final notificationTime = habit.notificationTime;
     int hour = 9; // Default hour for hourly habits
     int minute = 0; // Default minute for hourly habits
-    
+
     if (notificationTime != null) {
       hour = notificationTime.hour;
       minute = notificationTime.minute;
@@ -771,12 +887,16 @@ class NotificationService {
 
     try {
       // Cancel any existing notifications for this habit first
-      await cancelHabitNotifications(generateSafeId(habit.id)); // Use safe ID generation
-      print('DEBUG: Cancelled existing notifications for habit ID: ${habit.id}');
+      await cancelHabitNotifications(
+        generateSafeId(habit.id),
+      ); // Use safe ID generation
+      print(
+        'DEBUG: Cancelled existing notifications for habit ID: ${habit.id}',
+      );
 
       final frequency = habit.frequency.toString().split('.').last;
       print('DEBUG: Habit frequency: $frequency');
-      
+
       switch (frequency) {
         case 'daily':
           print('DEBUG: Scheduling daily notifications');
@@ -808,28 +928,47 @@ class NotificationService {
           AppLogger.warning('Unknown habit frequency: ${habit.frequency}');
       }
 
-      print('DEBUG: Successfully scheduled notifications for habit: ${habit.name}');
-      AppLogger.info('Successfully scheduled notifications for habit: ${habit.name}');
+      print(
+        'DEBUG: Successfully scheduled notifications for habit: ${habit.name}',
+      );
+      AppLogger.info(
+        'Successfully scheduled notifications for habit: ${habit.name}',
+      );
     } catch (e) {
       print('DEBUG: Error scheduling notifications: $e');
-      AppLogger.error('Failed to schedule notifications for habit: ${habit.name}', e);
+      AppLogger.error(
+        'Failed to schedule notifications for habit: ${habit.name}',
+        e,
+      );
       rethrow; // Re-throw so the UI can show the error
     }
   }
 
   /// Schedule daily habit notifications
-  static Future<void> _scheduleDailyHabitNotifications(dynamic habit, int hour, int minute) async {
+  static Future<void> _scheduleDailyHabitNotifications(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
     print('DEBUG: Scheduling daily notifications for ${habit.name}');
     final now = DateTime.now();
-    DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, minute);
-    
+    DateTime nextNotification = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+
     print('DEBUG: Current time: $now');
     print('DEBUG: Initial notification time: $nextNotification');
 
     // If the time has passed today, schedule for tomorrow
     if (nextNotification.isBefore(now)) {
       nextNotification = nextNotification.add(const Duration(days: 1));
-      print('DEBUG: Time has passed today, scheduling for tomorrow: $nextNotification');
+      print(
+        'DEBUG: Time has passed today, scheduling for tomorrow: $nextNotification',
+      );
     } else {
       print('DEBUG: Scheduling for today: $nextNotification');
     }
@@ -842,7 +981,9 @@ class NotificationService {
         body: 'Time to complete your daily habit! Keep your streak going.',
         scheduledTime: nextNotification,
       );
-      print('DEBUG: Successfully scheduled daily notification for ${habit.name}');
+      print(
+        'DEBUG: Successfully scheduled daily notification for ${habit.name}',
+      );
     } catch (e) {
       print('DEBUG: Error scheduling daily notification: $e');
       rethrow;
@@ -850,12 +991,22 @@ class NotificationService {
   }
 
   /// Schedule weekly habit notifications
-  static Future<void> _scheduleWeeklyHabitNotifications(dynamic habit, int hour, int minute) async {
+  static Future<void> _scheduleWeeklyHabitNotifications(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
     final selectedWeekdays = habit.selectedWeekdays ?? <int>[];
     final now = DateTime.now();
 
     for (int weekday in selectedWeekdays) {
-      DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, minute);
+      DateTime nextNotification = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        hour,
+        minute,
+      );
 
       // Find the next occurrence of this weekday
       while (nextNotification.weekday != weekday) {
@@ -868,7 +1019,9 @@ class NotificationService {
       }
 
       await scheduleHabitNotification(
-        id: generateSafeId(habit.id + '_week_$weekday'), // Use string concatenation for uniqueness
+        id: generateSafeId(
+          habit.id + '_week_$weekday',
+        ), // Use string concatenation for uniqueness
         habitId: habit.id.toString(),
         title: '🎯 ${habit.name}',
         body: 'Time to complete your weekly habit! Don\'t break your streak.',
@@ -878,28 +1031,52 @@ class NotificationService {
   }
 
   /// Schedule monthly habit notifications
-  static Future<void> _scheduleMonthlyHabitNotifications(dynamic habit, int hour, int minute) async {
+  static Future<void> _scheduleMonthlyHabitNotifications(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
     final selectedMonthDays = habit.selectedMonthDays ?? <int>[];
     final now = DateTime.now();
 
     for (int monthDay in selectedMonthDays) {
-      DateTime nextNotification = DateTime(now.year, now.month, monthDay, hour, minute);
+      DateTime nextNotification = DateTime(
+        now.year,
+        now.month,
+        monthDay,
+        hour,
+        minute,
+      );
 
       // If the day has passed this month, schedule for next month
       if (nextNotification.isBefore(now)) {
-        nextNotification = DateTime(now.year, now.month + 1, monthDay, hour, minute);
+        nextNotification = DateTime(
+          now.year,
+          now.month + 1,
+          monthDay,
+          hour,
+          minute,
+        );
       }
 
       // Handle case where the day doesn't exist in the target month
       try {
-        nextNotification = DateTime(nextNotification.year, nextNotification.month, monthDay, hour, minute);
+        nextNotification = DateTime(
+          nextNotification.year,
+          nextNotification.month,
+          monthDay,
+          hour,
+          minute,
+        );
       } catch (e) {
         // Skip this month if the day doesn't exist (e.g., Feb 30)
         continue;
       }
 
       await scheduleHabitNotification(
-        id: generateSafeId(habit.id + '_month_$monthDay'), // Use string concatenation for uniqueness
+        id: generateSafeId(
+          habit.id + '_month_$monthDay',
+        ), // Use string concatenation for uniqueness
         habitId: habit.id.toString(),
         title: '🎯 ${habit.name}',
         body: 'Time to complete your monthly habit! Stay consistent.',
@@ -909,7 +1086,11 @@ class NotificationService {
   }
 
   /// Schedule yearly habit notifications
-  static Future<void> _scheduleYearlyHabitNotifications(dynamic habit, int hour, int minute) async {
+  static Future<void> _scheduleYearlyHabitNotifications(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
     final selectedYearlyDates = habit.selectedYearlyDates ?? <String>[];
     final now = DateTime.now();
 
@@ -918,11 +1099,17 @@ class NotificationService {
         // Parse the date string (format: "yyyy-MM-dd")
         final parts = dateString.split('-');
         if (parts.length != 3) continue;
-        
+
         final month = int.parse(parts[1]);
         final day = int.parse(parts[2]);
-        
-        DateTime nextNotification = DateTime(now.year, month, day, hour, minute);
+
+        DateTime nextNotification = DateTime(
+          now.year,
+          month,
+          day,
+          hour,
+          minute,
+        );
 
         // If the date has passed this year, schedule for next year
         if (nextNotification.isBefore(now)) {
@@ -930,7 +1117,9 @@ class NotificationService {
         }
 
         await scheduleHabitNotification(
-          id: generateSafeId(habit.id + '_year_${month}_$day'), // Use string concatenation for uniqueness
+          id: generateSafeId(
+            habit.id + '_year_${month}_$day',
+          ), // Use string concatenation for uniqueness
           habitId: habit.id.toString(),
           title: '🎯 ${habit.name}',
           body: 'Time to complete your yearly habit! This is your special day.',
@@ -945,52 +1134,79 @@ class NotificationService {
   /// Schedule hourly habit notifications
   static Future<void> _scheduleHourlyHabitNotifications(dynamic habit) async {
     final now = DateTime.now();
-    
+
     // For hourly habits, use the specific times set by the user
     if (habit.hourlyTimes != null && habit.hourlyTimes.isNotEmpty) {
-      print('DEBUG: Scheduling hourly notifications for specific times: ${habit.hourlyTimes}');
-      
+      print(
+        'DEBUG: Scheduling hourly notifications for specific times: ${habit.hourlyTimes}',
+      );
+
       for (String timeString in habit.hourlyTimes) {
         try {
           // Parse the time string (format: "HH:mm")
           final timeParts = timeString.split(':');
           final hour = int.tryParse(timeParts[0]) ?? 9;
-          final minute = timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
-          
-          DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, minute);
-          
+          final minute = timeParts.length > 1
+              ? (int.tryParse(timeParts[1]) ?? 0)
+              : 0;
+
+          DateTime nextNotification = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            hour,
+            minute,
+          );
+
           // If the time has passed today, schedule for tomorrow
           if (nextNotification.isBefore(now)) {
             nextNotification = nextNotification.add(const Duration(days: 1));
           }
 
           await scheduleHabitNotification(
-            id: generateSafeId('${habit.id}_hourly_${hour}_$minute'), // Use hour and minute for uniqueness
+            id: generateSafeId(
+              '${habit.id}_hourly_${hour}_$minute',
+            ), // Use hour and minute for uniqueness
             habitId: habit.id.toString(),
             title: '⏰ ${habit.name}',
             body: 'Time for your habit! Scheduled for $timeString',
             scheduledTime: nextNotification,
           );
-          
-          print('DEBUG: Scheduled hourly notification for $timeString at $nextNotification');
+
+          print(
+            'DEBUG: Scheduled hourly notification for $timeString at $nextNotification',
+          );
         } catch (e) {
           print('DEBUG: Error parsing hourly time "$timeString": $e');
-          AppLogger.error('Error parsing hourly time "$timeString" for habit ${habit.name}', e);
+          AppLogger.error(
+            'Error parsing hourly time "$timeString" for habit ${habit.name}',
+            e,
+          );
         }
       }
     } else {
       // Fallback: For hourly habits without specific times, schedule every hour during active hours (8 AM - 10 PM)
-      print('DEBUG: No specific hourly times set, using default hourly schedule (8 AM - 10 PM)');
+      print(
+        'DEBUG: No specific hourly times set, using default hourly schedule (8 AM - 10 PM)',
+      );
       for (int hour = 8; hour <= 22; hour++) {
-        DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, 0);
-        
+        DateTime nextNotification = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          hour,
+          0,
+        );
+
         // If the time has passed today, schedule for tomorrow
         if (nextNotification.isBefore(now)) {
           nextNotification = nextNotification.add(const Duration(days: 1));
         }
 
         await scheduleHabitNotification(
-          id: generateSafeId('${habit.id}_hourly_$hour'), // Use string concatenation for uniqueness
+          id: generateSafeId(
+            '${habit.id}_hourly_$hour',
+          ), // Use string concatenation for uniqueness
           habitId: habit.id.toString(),
           title: '⏰ ${habit.name}',
           body: 'Hourly reminder: Time for your habit!',
@@ -1005,14 +1221,17 @@ class NotificationService {
     // Generate a much smaller base hash to leave room for multiplications and additions
     int hash = 0;
     for (int i = 0; i < habitId.length; i++) {
-      hash = ((hash << 3) - hash + habitId.codeUnitAt(i)) & 0xFFFFFF; // Use 24 bits max
+      hash =
+          ((hash << 3) - hash + habitId.codeUnitAt(i)) &
+          0xFFFFFF; // Use 24 bits max
     }
     // Ensure we have a reasonable range for the base ID (1-16777215)
     return (hash % 16777215) + 1;
   }
 
   /// Get pending notifications
-  static Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+  static Future<List<PendingNotificationRequest>>
+  getPendingNotifications() async {
     return await _notificationsPlugin.pendingNotificationRequests();
   }
 
@@ -1020,8 +1239,10 @@ class NotificationService {
   static Future<bool> areNotificationsEnabled() async {
     if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+          _notificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
 
       if (androidImplementation != null) {
         return await androidImplementation.areNotificationsEnabled() ?? false;
@@ -1053,46 +1274,41 @@ class NotificationService {
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'habit_channel',
-      'Habit Notifications',
-      channelDescription: 'Notifications for habit reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
-      enableVibration: true,
-      playSound: true,
-      actions: [
-        const AndroidNotificationAction(
-          'complete',
-          '✅ Complete',
-          showsUserInterface: false,
-          cancelNotification: true,
-          allowGeneratedReplies: false,
-        ),
-        const AndroidNotificationAction(
-          'snooze',
-          '⏰ Snooze 30min',
-          showsUserInterface: false,
-          cancelNotification: true,
-          allowGeneratedReplies: false,
-        ),
-      ],
-    );
+          'habit_channel',
+          'Habit Notifications',
+          channelDescription: 'Notifications for habit reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: false,
+          enableVibration: true,
+          playSound: true,
+          actions: [
+            const AndroidNotificationAction(
+              'complete',
+              '✅ Complete',
+              showsUserInterface: false,
+              cancelNotification: true,
+              allowGeneratedReplies: false,
+            ),
+            const AndroidNotificationAction(
+              'snooze',
+              '⏰ Snooze 30min',
+              showsUserInterface: false,
+              cancelNotification: true,
+              allowGeneratedReplies: false,
+            ),
+          ],
+        );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-      categoryIdentifier: 'habit_category',
-    );
+        DarwinNotificationDetails(categoryIdentifier: 'habit_category');
 
     final NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
       iOS: iOSPlatformChannelSpecifics,
     );
 
-    final payload = jsonEncode({
-      'habitId': habitId,
-      'type': 'habit_reminder',
-    });
+    final payload = jsonEncode({'habitId': habitId, 'type': 'habit_reminder'});
 
     await _notificationsPlugin.show(
       id,
@@ -1115,33 +1331,31 @@ class NotificationService {
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'habit_scheduled_channel',
-      'Scheduled Habit Notifications',
-      channelDescription: 'Scheduled notifications for habit reminders',
-      importance: Importance.max,
-      priority: Priority.high,
-      actions: [
-        const AndroidNotificationAction(
-          'complete',
-          '✅ Complete',
-          showsUserInterface: true,
-          cancelNotification: true,
-          allowGeneratedReplies: false,
-        ),
-        const AndroidNotificationAction(
-          'snooze',
-          '⏰ Snooze 30min',
-          showsUserInterface: true,
-          cancelNotification: true,
-          allowGeneratedReplies: false,
-        ),
-      ],
-    );
+          'habit_scheduled_channel',
+          'Scheduled Habit Notifications',
+          channelDescription: 'Scheduled notifications for habit reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+          actions: [
+            const AndroidNotificationAction(
+              'complete',
+              '✅ Complete',
+              showsUserInterface: true,
+              cancelNotification: true,
+              allowGeneratedReplies: false,
+            ),
+            const AndroidNotificationAction(
+              'snooze',
+              '⏰ Snooze 30min',
+              showsUserInterface: true,
+              cancelNotification: true,
+              allowGeneratedReplies: false,
+            ),
+          ],
+        );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-      categoryIdentifier: 'habit_category',
-    );
+        DarwinNotificationDetails(categoryIdentifier: 'habit_category');
 
     final NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
@@ -1153,17 +1367,16 @@ class NotificationService {
 
     AppLogger.info('Device current time: $deviceNow');
     AppLogger.info('Target scheduled time: $localScheduledTime');
-    AppLogger.info('Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds');
+    AppLogger.info(
+      'Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds',
+    );
 
     final tzScheduledTime = tz.TZDateTime.from(localScheduledTime, tz.local);
 
     AppLogger.info('TZ Scheduled time: $tzScheduledTime');
     AppLogger.info('TZ Local timezone: ${tz.local.name}');
 
-    final payload = jsonEncode({
-      'habitId': habitId,
-      'type': 'habit_reminder',
-    });
+    final payload = jsonEncode({'habitId': habitId, 'type': 'habit_reminder'});
 
     await _notificationsPlugin.zonedSchedule(
       id,
@@ -1172,7 +1385,8 @@ class NotificationService {
       tzScheduledTime,
       platformChannelSpecifics,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
   }
@@ -1185,15 +1399,15 @@ class NotificationService {
     required String body,
   }) async {
     AppLogger.info('🔄 Snoozing notification ID: $id for habit: $habitId');
-    
+
     // Cancel the current notification
     await _notificationsPlugin.cancel(id);
     AppLogger.info('❌ Current notification cancelled');
-    
+
     // Schedule a new one for 30 minutes later
     final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
     AppLogger.info('⏰ Scheduling new notification for: $snoozeTime');
-    
+
     await scheduleHabitNotification(
       id: id,
       habitId: habitId,
@@ -1201,8 +1415,10 @@ class NotificationService {
       body: body,
       scheduledTime: snoozeTime,
     );
-    
-    AppLogger.info('✅ Notification snoozed for 30 minutes - new notification scheduled');
+
+    AppLogger.info(
+      '✅ Notification snoozed for 30 minutes - new notification scheduled',
+    );
   }
 
   /// Debug method to check exact alarm permissions and timezone
@@ -1211,11 +1427,14 @@ class NotificationService {
 
     if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
+          _notificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
 
       if (androidImplementation != null) {
-        debugInfo['notificationsEnabled'] = await androidImplementation.areNotificationsEnabled();
+        debugInfo['notificationsEnabled'] = await androidImplementation
+            .areNotificationsEnabled();
 
         // Check exact alarm permission status
         final bool canScheduleExact = await canScheduleExactAlarms();
@@ -1262,7 +1481,9 @@ class NotificationService {
 
     AppLogger.info('Current time: $now');
     AppLogger.info('Scheduled time: $scheduledTime');
-    AppLogger.info('Time difference: ${scheduledTime.difference(now).inSeconds} seconds');
+    AppLogger.info(
+      'Time difference: ${scheduledTime.difference(now).inSeconds} seconds',
+    );
 
     try {
       // Cancel any existing test notifications first
@@ -1272,7 +1493,8 @@ class NotificationService {
       await scheduleNotification(
         id: 1001,
         title: '🔔 Debug Scheduled Test',
-        body: 'This notification was scheduled at ${now.toString().substring(11, 19)} and should fire at ${scheduledTime.toString().substring(11, 19)}',
+        body:
+            'This notification was scheduled at ${now.toString().substring(11, 19)} and should fire at ${scheduledTime.toString().substring(11, 19)}',
         scheduledTime: scheduledTime.toLocal(),
         payload: 'debug_scheduled_test',
       );
@@ -1282,13 +1504,16 @@ class NotificationService {
       final pending = await getPendingNotifications();
       AppLogger.info('Pending notifications: ${pending.length}');
       for (var notification in pending) {
-        AppLogger.info('- ID: ${notification.id}, Title: ${notification.title}');
+        AppLogger.info(
+          '- ID: ${notification.id}, Title: ${notification.title}',
+        );
       }
 
       // Add a verification step
-      AppLogger.info('Verification: Notification system should deliver the notification in 10 seconds');
+      AppLogger.info(
+        'Verification: Notification system should deliver the notification in 10 seconds',
+      );
       AppLogger.info('Watch your device for the notification!');
-
     } catch (e) {
       AppLogger.error('Error scheduling notification', e);
       AppLogger.error('Stack trace: ${StackTrace.current}');
@@ -1300,8 +1525,10 @@ class NotificationService {
     if (!Platform.isAndroid) return true;
 
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
     if (androidImplementation != null) {
       try {
@@ -1310,7 +1537,8 @@ class NotificationService {
 
         if (isAndroid12Plus) {
           // On Android 12+, check if exact alarms are permitted
-          final bool? canSchedule = await androidImplementation.canScheduleExactNotifications();
+          final bool? canSchedule = await androidImplementation
+              .canScheduleExactNotifications();
           AppLogger.info('Can schedule exact alarms: $canSchedule');
           return canSchedule ?? false;
         } else {
@@ -1330,8 +1558,10 @@ class NotificationService {
     if (!Platform.isAndroid) return;
 
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
     if (androidImplementation != null) {
       try {
@@ -1348,7 +1578,7 @@ class NotificationService {
     AppLogger.info('🧪 Creating test notification with action buttons...');
     AppLogger.info('📱 Platform: ${Platform.operatingSystem}');
     AppLogger.info('🔧 Background handler registered: true');
-    
+
     await showHabitNotification(
       id: 999999,
       habitId: 'test-habit-id',
@@ -1357,21 +1587,20 @@ class NotificationService {
     );
     AppLogger.info('✅ Test notification with actions shown with ID: 999999');
     AppLogger.info('🔘 Action buttons: complete, snooze');
-    AppLogger.info('💡 Tap the notification or use the action buttons to test functionality');
+    AppLogger.info(
+      '💡 Tap the notification or use the action buttons to test functionality',
+    );
   }
 
   /// Show a simple test notification to verify basic functionality
   static Future<void> showSimpleTestNotification() async {
     AppLogger.info('🧪 Creating simple test notification...');
-    
+
     await showNotification(
       id: 888888,
       title: '🔔 Simple Test Notification',
       body: 'This is a basic test notification without actions. Tap me!',
-      payload: jsonEncode({
-        'habitId': 'simple-test',
-        'type': 'test',
-      }),
+      payload: jsonEncode({'habitId': 'simple-test', 'type': 'test'}),
     );
     AppLogger.info('✅ Simple test notification shown with ID: 888888');
   }
@@ -1386,29 +1615,34 @@ class NotificationService {
     AppLogger.info('🔍 Last callback set time: $_lastCallbackSetTime');
     AppLogger.info('🔍 Current time: ${DateTime.now()}');
     AppLogger.info('📋 Pending actions: ${_pendingActions.length}');
-    
+
     if (_pendingActions.isNotEmpty) {
       AppLogger.info('📋 Pending actions details:');
       for (int i = 0; i < _pendingActions.length; i++) {
         final action = _pendingActions[i];
-        AppLogger.info('  [$i] ${action['action']} for ${action['habitId']} at ${action['timestamp']}');
+        AppLogger.info(
+          '  [$i] ${action['action']} for ${action['habitId']} at ${action['timestamp']}',
+        );
       }
     }
-    
+
     if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      
+          _notificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
+
       if (androidImplementation != null) {
-        final bool? notificationsEnabled = await androidImplementation.areNotificationsEnabled();
+        final bool? notificationsEnabled = await androidImplementation
+            .areNotificationsEnabled();
         AppLogger.info('🔔 Notifications enabled: $notificationsEnabled');
-        
+
         final bool canScheduleExact = await canScheduleExactAlarms();
         AppLogger.info('⏰ Can schedule exact alarms: $canScheduleExact');
       }
     }
-    
+
     AppLogger.info('🔍 === END DEBUG ===');
   }
 }

@@ -70,10 +70,7 @@ void main() async {
   // Initialize health-habit integration (non-blocking)
   _initializeHealthHabitIntegration();
 
-  runApp(UncontrolledProviderScope(
-    container: container,
-    child: const MyApp(),
-  ));
+  runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
 }
 
 /// Request only essential permissions that don't require user interaction
@@ -106,26 +103,35 @@ void _initializeHealthHabitIntegration() async {
   try {
     // Delay to let the app finish core initialization
     await Future.delayed(const Duration(seconds: 3));
-    
+
     AppLogger.info('Starting health-habit integration initialization...');
     final result = await HealthHabitInitializationService.initialize();
-    
+
     if (result.success) {
       AppLogger.info('Health-habit integration initialized successfully');
       if (result.hasWarnings) {
-        AppLogger.warning('Health-habit integration warnings: ${result.warnings.join(', ')}');
+        AppLogger.warning(
+          'Health-habit integration warnings: ${result.warnings.join(', ')}',
+        );
       }
-      
+
       // Initialize automatic habit completion service
       AppLogger.info('Initializing automatic habit completion service...');
-      final completionServiceInitialized = await AutomaticHabitCompletionService.initialize();
+      final completionServiceInitialized =
+          await AutomaticHabitCompletionService.initialize();
       if (completionServiceInitialized) {
-        AppLogger.info('Automatic habit completion service initialized successfully');
+        AppLogger.info(
+          'Automatic habit completion service initialized successfully',
+        );
       } else {
-        AppLogger.error('Failed to initialize automatic habit completion service');
+        AppLogger.error(
+          'Failed to initialize automatic habit completion service',
+        );
       }
     } else {
-      AppLogger.error('Health-habit integration initialization failed: ${result.message}');
+      AppLogger.error(
+        'Health-habit integration initialization failed: ${result.message}',
+      );
     }
   } catch (e) {
     AppLogger.error('Error initializing health-habit integration', e);
@@ -136,62 +142,70 @@ void _initializeHealthHabitIntegration() async {
 Future<void> _setCorrectTimezone() async {
   try {
     AppLogger.debug('Setting up timezone...');
-    
+
     // Get device local time info
     final now = DateTime.now();
     final deviceOffset = now.timeZoneOffset;
     final deviceOffsetHours = deviceOffset.inHours;
     final deviceOffsetMinutes = deviceOffset.inMinutes % 60;
     final timeZoneName = now.timeZoneName;
-    
-    AppLogger.debug('Device timezone offset: ${deviceOffset.toString()} (${deviceOffsetHours}h ${deviceOffsetMinutes}m)');
+
+    AppLogger.debug(
+      'Device timezone offset: ${deviceOffset.toString()} (${deviceOffsetHours}h ${deviceOffsetMinutes}m)',
+    );
     AppLogger.debug('Device timezone name: $timeZoneName');
     AppLogger.debug('Current date: ${now.toIso8601String()}');
-    
+
     // Try to get system timezone name first
     String? detectedTimezoneName = await _getSystemTimezone();
-    
+
     if (detectedTimezoneName != null && detectedTimezoneName.isNotEmpty) {
       AppLogger.debug('Using system-detected timezone: $detectedTimezoneName');
       try {
         tz.setLocalLocation(tz.getLocation(detectedTimezoneName));
         AppLogger.debug('Successfully set timezone to: $detectedTimezoneName');
       } catch (e) {
-        AppLogger.debug('Failed to set system timezone $detectedTimezoneName: $e');
+        AppLogger.debug(
+          'Failed to set system timezone $detectedTimezoneName: $e',
+        );
         detectedTimezoneName = null; // Fall back to offset detection
       }
     }
-    
+
     if (detectedTimezoneName == null) {
       // Better fallback using more comprehensive timezone detection
-      detectedTimezoneName = _detectTimezoneFromOffset(deviceOffsetHours, deviceOffsetMinutes);
-      print('DEBUG: Using offset-detected timezone: $detectedTimezoneName');
+      detectedTimezoneName = _detectTimezoneFromOffset(
+        deviceOffsetHours,
+        deviceOffsetMinutes,
+      );
+      AppLogger.debug('Using offset-detected timezone: $detectedTimezoneName');
       tz.setLocalLocation(tz.getLocation(detectedTimezoneName));
     }
-    
+
     // Verify the timezone was set correctly
     final tzLocal = tz.local;
     final tzNow = tz.TZDateTime.now(tzLocal);
-    print('DEBUG: Final timezone set to: ${tzLocal.name}');
-    print('DEBUG: Current TZ time: $tzNow');
-    print('DEBUG: Current device time: $now');
-    print('DEBUG: TZ offset: ${tzNow.timeZoneOffset}');
-    print('DEBUG: Device offset: $deviceOffset');
-    print('DEBUG: TZ offset matches device: ${tzNow.timeZoneOffset == deviceOffset}');
-    
+    AppLogger.debug('Final timezone set to: ${tzLocal.name}');
+    AppLogger.debug('Current TZ time: $tzNow');
+    AppLogger.debug('Current device time: $now');
+    AppLogger.debug('TZ offset: ${tzNow.timeZoneOffset}');
+    AppLogger.debug('Device offset: $deviceOffset');
+    AppLogger.debug(
+      'TZ offset matches device: ${tzNow.timeZoneOffset == deviceOffset}',
+    );
+
     // Log success
     AppLogger.info('Timezone successfully set to: ${tzLocal.name}');
-    
   } catch (e) {
-    print('DEBUG: Error setting timezone: $e');
+    AppLogger.debug('Error setting timezone: $e');
     AppLogger.error('Error setting timezone', e);
     try {
       // Use UTC as ultimate fallback
       tz.setLocalLocation(tz.UTC);
-      print('DEBUG: Fallback to UTC timezone');
+      AppLogger.debug('Fallback to UTC timezone');
       AppLogger.warning('Timezone fallback to UTC due to error');
     } catch (fallbackError) {
-      print('DEBUG: Critical timezone error: $fallbackError');
+      AppLogger.debug('Critical timezone error: $fallbackError');
       AppLogger.error('Fallback timezone setting failed', fallbackError);
     }
   }
@@ -202,7 +216,7 @@ Future<String?> _getSystemTimezone() async {
     // Try to get timezone from DateTime.now().timeZoneName
     final now = DateTime.now();
     final timeZoneName = now.timeZoneName;
-    
+
     // Map common timezone abbreviations and names to IANA timezone names
     final timezoneMap = {
       'PST': 'America/Los_Angeles',
@@ -210,7 +224,7 @@ Future<String?> _getSystemTimezone() async {
       'Pacific Standard Time': 'America/Los_Angeles',
       'Pacific Daylight Time': 'America/Los_Angeles',
       'Pacific Summer Time': 'America/Los_Angeles', // Windows uses this for PDT
-      'MST': 'America/Denver', 
+      'MST': 'America/Denver',
       'MDT': 'America/Denver',
       'Mountain Standard Time': 'America/Denver',
       'Mountain Daylight Time': 'America/Denver',
@@ -231,22 +245,26 @@ Future<String?> _getSystemTimezone() async {
       'GMT': 'Europe/London',
       'UTC': 'UTC',
     };
-    
+
     if (timezoneMap.containsKey(timeZoneName)) {
-      print('DEBUG: Mapped timezone abbreviation $timeZoneName to ${timezoneMap[timeZoneName]}');
+      AppLogger.debug(
+        'Mapped timezone abbreviation $timeZoneName to ${timezoneMap[timeZoneName]}',
+      );
       return timezoneMap[timeZoneName];
     }
-    
+
     // If we get a full IANA name, try to use it directly
     if (timeZoneName.contains('/')) {
-      print('DEBUG: Using IANA timezone name: $timeZoneName');
+      AppLogger.debug('Using IANA timezone name: $timeZoneName');
       return timeZoneName;
     }
-    
-    print('DEBUG: Unknown timezone name: $timeZoneName, falling back to offset detection');
+
+    AppLogger.debug(
+      'Unknown timezone name: $timeZoneName, falling back to offset detection',
+    );
     return null;
   } catch (e) {
-    print('DEBUG: Error getting system timezone: $e');
+    AppLogger.debug('Error getting system timezone: $e');
     return null;
   }
 }
@@ -256,16 +274,22 @@ String _detectTimezoneFromOffset(int hours, int minutes) {
   final totalMinutes = hours * 60 + minutes;
   final now = DateTime.now();
   final isDST = _isDaylightSavingTime(now);
-  
-  print('DEBUG: Detecting timezone for offset ${hours}h ${minutes}m ($totalMinutes minutes), DST: $isDST');
-  
+
+  AppLogger.debug(
+    'Detecting timezone for offset ${hours}h ${minutes}m ($totalMinutes minutes), DST: $isDST',
+  );
+
   // Common timezone mappings with DST awareness
   switch (totalMinutes) {
-    case -720: return 'Pacific/Wake'; // UTC-12
-    case -660: return 'Pacific/Midway'; // UTC-11
-    case -600: return 'Pacific/Honolulu'; // UTC-10 (no DST)
-    case -540: return 'America/Anchorage'; // UTC-9 (AKST) or UTC-8 (AKDT)
-    case -480: 
+    case -720:
+      return 'Pacific/Wake'; // UTC-12
+    case -660:
+      return 'Pacific/Midway'; // UTC-11
+    case -600:
+      return 'Pacific/Honolulu'; // UTC-10 (no DST)
+    case -540:
+      return 'America/Anchorage'; // UTC-9 (AKST) or UTC-8 (AKDT)
+    case -480:
       // Could be Pacific Standard Time (UTC-8) or Alaska Daylight Time (UTC-8)
       // In most cases, this is Pacific Time
       return 'America/Los_Angeles'; // UTC-8 (PST) or UTC-7 (PDT)
@@ -276,44 +300,97 @@ String _detectTimezoneFromOffset(int hours, int minutes) {
       // We need to make an educated guess based on the time of year
       if (isDST) {
         // During DST period, UTC-7 is more likely to be Pacific Daylight Time
-        print('DEBUG: UTC-7 during DST period, assuming Pacific Time (Los Angeles)');
+        AppLogger.debug(
+          'UTC-7 during DST period, assuming Pacific Time (Los Angeles)',
+        );
         return 'America/Los_Angeles';
       } else {
         // During standard time, UTC-7 is Mountain Standard Time
-        print('DEBUG: UTC-7 during standard time, assuming Mountain Time (Denver)');
+        AppLogger.debug(
+          'UTC-7 during standard time, assuming Mountain Time (Denver)',
+        );
         return 'America/Denver';
       }
-    case -360: return 'America/Chicago'; // UTC-6 (CST) or UTC-5 (CDT)
-    case -300: return 'America/New_York'; // UTC-5 (EST) or UTC-4 (EDT)
-    case -240: return 'America/Halifax'; // UTC-4
-    case -180: return 'America/Sao_Paulo'; // UTC-3
-    case -120: return 'America/Noronha'; // UTC-2
-    case -60: return 'Atlantic/Azores'; // UTC-1
-    case 0: return 'Europe/London'; // UTC+0
-    case 60: return 'Europe/Paris'; // UTC+1
-    case 120: return 'Europe/Berlin'; // UTC+2
-    case 180: return 'Europe/Moscow'; // UTC+3
-    case 240: return 'Asia/Dubai'; // UTC+4
-    case 300: return 'Asia/Karachi'; // UTC+5
-    case 330: return 'Asia/Kolkata'; // UTC+5:30
-    case 360: return 'Asia/Dhaka'; // UTC+6
-    case 420: return 'Asia/Bangkok'; // UTC+7
-    case 480: return 'Asia/Shanghai'; // UTC+8
-    case 540: return 'Asia/Tokyo'; // UTC+9
-    case 570: return 'Australia/Adelaide'; // UTC+9:30
-    case 600: return 'Australia/Sydney'; // UTC+10
-    case 660: return 'Pacific/Guadalcanal'; // UTC+11
-    case 720: return 'Pacific/Fiji'; // UTC+12
+    case -360:
+      return 'America/Chicago'; // UTC-6 (CST) or UTC-5 (CDT)
+    case -300:
+      return 'America/New_York'; // UTC-5 (EST) or UTC-4 (EDT)
+    case -240:
+      return 'America/Halifax'; // UTC-4
+    case -180:
+      return 'America/Sao_Paulo'; // UTC-3
+    case -120:
+      return 'America/Noronha'; // UTC-2
+    case -60:
+      return 'Atlantic/Azores'; // UTC-1
+    case 0:
+      return 'Europe/London'; // UTC+0
+    case 60:
+      return 'Europe/Paris'; // UTC+1
+    case 120:
+      return 'Europe/Berlin'; // UTC+2
+    case 180:
+      return 'Europe/Moscow'; // UTC+3
+    case 240:
+      return 'Asia/Dubai'; // UTC+4
+    case 300:
+      return 'Asia/Karachi'; // UTC+5
+    case 330:
+      return 'Asia/Kolkata'; // UTC+5:30
+    case 360:
+      return 'Asia/Dhaka'; // UTC+6
+    case 420:
+      return 'Asia/Bangkok'; // UTC+7
+    case 480:
+      return 'Asia/Shanghai'; // UTC+8
+    case 540:
+      return 'Asia/Tokyo'; // UTC+9
+    case 570:
+      return 'Australia/Adelaide'; // UTC+9:30
+    case 600:
+      return 'Australia/Sydney'; // UTC+10
+    case 660:
+      return 'Pacific/Guadalcanal'; // UTC+11
+    case 720:
+      return 'Pacific/Fiji'; // UTC+12
     default:
       // For unusual offsets, try to find closest match
       if (totalMinutes < -720) return 'Pacific/Wake';
       if (totalMinutes > 720) return 'Pacific/Fiji';
-      
+
       // Find closest standard timezone
-      final standardOffsets = [-720, -660, -600, -540, -480, -420, -360, -300, -240, -180, -120, -60, 0, 60, 120, 180, 240, 300, 330, 360, 420, 480, 540, 570, 600, 660, 720];
+      final standardOffsets = [
+        -720,
+        -660,
+        -600,
+        -540,
+        -480,
+        -420,
+        -360,
+        -300,
+        -240,
+        -180,
+        -120,
+        -60,
+        0,
+        60,
+        120,
+        180,
+        240,
+        300,
+        330,
+        360,
+        420,
+        480,
+        540,
+        570,
+        600,
+        660,
+        720,
+      ];
       int closest = standardOffsets.first;
       int minDiff = (totalMinutes - closest).abs();
-      
+
       for (int offset in standardOffsets) {
         int diff = (totalMinutes - offset).abs();
         if (diff < minDiff) {
@@ -321,7 +398,7 @@ String _detectTimezoneFromOffset(int hours, int minutes) {
           closest = offset;
         }
       }
-      
+
       return _detectTimezoneFromOffset(closest ~/ 60, closest % 60);
   }
 }
@@ -331,16 +408,16 @@ String _detectTimezoneFromOffset(int hours, int minutes) {
 bool _isDaylightSavingTime(DateTime dateTime) {
   final month = dateTime.month;
   final day = dateTime.day;
-  
+
   // DST in the US typically runs from the second Sunday in March to the first Sunday in November
   // This is a simplified check - not 100% accurate but good enough for timezone detection
   if (month < 3 || month > 11) return false; // Definitely standard time
-  if (month > 3 && month < 11) return true;  // Definitely daylight time
-  
+  if (month > 3 && month < 11) return true; // Definitely daylight time
+
   // March and November need more careful checking, but for simplicity:
   if (month == 3) return day > 10; // Rough approximation
-  if (month == 11) return day < 7;  // Rough approximation
-  
+  if (month == 11) return day < 7; // Rough approximation
+
   return false;
 }
 
@@ -369,7 +446,7 @@ final GoRouter _router = GoRouter(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
     ),
-    
+
     // Main app shell with navigation
     ShellRoute(
       builder: (context, state, child) {
@@ -380,10 +457,7 @@ final GoRouter _router = GoRouter(
           path: '/timeline',
           builder: (context, state) => const TimelineScreen(),
         ),
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const AppWrapper(),
-        ),
+        GoRoute(path: '/', builder: (context, state) => const AppWrapper()),
         GoRoute(
           path: '/all-habits',
           builder: (context, state) => const AllHabitsScreen(),
@@ -586,11 +660,7 @@ class _AppWrapperState extends State<AppWrapper> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_shouldShowOnboarding) {
