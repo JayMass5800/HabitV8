@@ -7,6 +7,14 @@ import '../widgets/category_filter_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/smooth_transitions.dart';
 
+// Helper class to represent a habit with an optional time slot (for hourly habits)
+class HabitTimeSlot {
+  final Habit habit;
+  final TimeOfDay? timeSlot;
+
+  HabitTimeSlot({required this.habit, this.timeSlot});
+}
+
 class TimelineScreen extends ConsumerStatefulWidget {
   const TimelineScreen({super.key});
 
@@ -147,18 +155,60 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                         .where((habit) => habit.category == _selectedCategory)
                         .toList();
 
-              final todayHabits = filteredHabits
-                  .where((habit) => _isHabitDueOnDate(habit, _selectedDate))
-                  .toList();
+              // Expand hourly habits into separate entries for each time slot
+              final expandedHabits = <HabitTimeSlot>[];
 
-              // Sort habits chronologically by notification time
-              todayHabits.sort((a, b) {
-                // If both habits have notification times, sort by time
-                if (a.notificationTime != null && b.notificationTime != null) {
-                  final timeA = a.notificationTime!;
-                  final timeB = b.notificationTime!;
+              for (final habit in filteredHabits) {
+                if (_isHabitDueOnDate(habit, _selectedDate)) {
+                  if (habit.frequency == HabitFrequency.hourly &&
+                      habit.hourlyTimes.isNotEmpty) {
+                    // Create separate entries for each hourly time slot
+                    for (final timeStr in habit.hourlyTimes) {
+                      final timeParts = timeStr.split(':');
+                      if (timeParts.length == 2) {
+                        final hour = int.tryParse(timeParts[0]);
+                        final minute = int.tryParse(timeParts[1]);
+                        if (hour != null && minute != null) {
+                          expandedHabits.add(
+                            HabitTimeSlot(
+                              habit: habit,
+                              timeSlot: TimeOfDay(hour: hour, minute: minute),
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  } else {
+                    // Non-hourly habits or hourly habits without specific times
+                    expandedHabits.add(HabitTimeSlot(habit: habit));
+                  }
+                }
+              }
 
-                  // Compare by hour first, then by minute
+              // Sort expanded habits chronologically by time
+              expandedHabits.sort((a, b) {
+                // If both have time slots, sort by time
+                if (a.timeSlot != null && b.timeSlot != null) {
+                  if (a.timeSlot!.hour != b.timeSlot!.hour) {
+                    return a.timeSlot!.hour.compareTo(b.timeSlot!.hour);
+                  }
+                  return a.timeSlot!.minute.compareTo(b.timeSlot!.minute);
+                }
+
+                // If only one has time slot, prioritize it
+                if (a.timeSlot != null && b.timeSlot == null) {
+                  return -1;
+                }
+                if (a.timeSlot == null && b.timeSlot != null) {
+                  return 1;
+                }
+
+                // If both have notification times, sort by time
+                if (a.habit.notificationTime != null &&
+                    b.habit.notificationTime != null) {
+                  final timeA = a.habit.notificationTime!;
+                  final timeB = b.habit.notificationTime!;
+
                   if (timeA.hour != timeB.hour) {
                     return timeA.hour.compareTo(timeB.hour);
                   }
@@ -166,18 +216,20 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 }
 
                 // If only one has notification time, prioritize it
-                if (a.notificationTime != null && b.notificationTime == null) {
-                  return -1; // a comes first
+                if (a.habit.notificationTime != null &&
+                    b.habit.notificationTime == null) {
+                  return -1;
                 }
-                if (a.notificationTime == null && b.notificationTime != null) {
-                  return 1; // b comes first
+                if (a.habit.notificationTime == null &&
+                    b.habit.notificationTime != null) {
+                  return 1;
                 }
 
                 // If neither has notification time, sort by creation date (newest first)
-                return b.createdAt.compareTo(a.createdAt);
+                return b.habit.createdAt.compareTo(a.habit.createdAt);
               });
 
-              if (todayHabits.isEmpty) {
+              if (expandedHabits.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -204,13 +256,13 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: todayHabits.length,
+                itemCount: expandedHabits.length,
                 itemBuilder: (context, index) {
-                  final habit = todayHabits[index];
+                  final habitTimeSlot = expandedHabits[index];
                   return SmoothTransitions.slideTransition(
                     show: true,
                     duration: Duration(milliseconds: 300 + (index * 50)),
-                    child: _buildHabitCard(habit),
+                    child: _buildHabitCard(habitTimeSlot),
                   );
                 },
               );
@@ -228,15 +280,22 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     );
   }
 
-  Widget _buildHabitCard(Habit habit) {
-    final isCompleted = _isHabitCompletedOnDate(habit, _selectedDate);
+  Widget _buildHabitCard(HabitTimeSlot habitTimeSlot) {
+    final habit = habitTimeSlot.habit;
+    final timeSlot = habitTimeSlot.timeSlot;
+
+    final isCompleted = timeSlot != null
+        ? _isHourlyHabitCompletedAtTime(habit, _selectedDate, timeSlot)
+        : _isHabitCompletedOnDate(habit, _selectedDate);
     final status = _getHabitStatus(habit, _selectedDate);
     final statusColor = _getStatusColor(status);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => _toggleHabitCompletion(habit),
+        onTap: () => timeSlot != null
+            ? _toggleHourlyHabitCompletion(habit, timeSlot)
+            : _toggleHabitCompletion(habit),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -256,7 +315,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      habit.name,
+                      timeSlot != null
+                          ? '${habit.name} (${timeSlot.format(context)})'
+                          : habit.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         decoration: isCompleted
@@ -394,6 +455,10 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   bool _isHabitDueOnDate(Habit habit, DateTime date) {
     switch (habit.frequency) {
       case HabitFrequency.hourly:
+        final weekday = date.weekday;
+        // Check both old and new fields for backward compatibility
+        return habit.selectedWeekdays.contains(weekday) ||
+            habit.weeklySchedule.contains(weekday);
       case HabitFrequency.daily:
         return true;
       case HabitFrequency.weekly:

@@ -79,7 +79,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                 }
 
                 final habits = snapshot.data!;
-                final hasData = habits.any((habit) => habit.completions.isNotEmpty);
+                final hasData = habits.any(
+                  (habit) => habit.completions.isNotEmpty,
+                );
 
                 if (!hasData) {
                   return const Center(
@@ -114,9 +116,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
               },
             ),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stack) => Center(
-              child: Text('Error: $error'),
-            ),
+            error: (error, stack) => Center(child: Text('Error: $error')),
           );
         },
       ),
@@ -129,8 +129,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildMotivationalHeader('This Week\'s Progress',
-              'You\'re building amazing habits! Keep up the great work! 🌟'),
+          _buildMotivationalHeader(
+            'This Week\'s Progress',
+            'You\'re building amazing habits! Keep up the great work! 🌟',
+          ),
           const SizedBox(height: 24),
           _buildWeeklyCompletionChart(habits),
           const SizedBox(height: 24),
@@ -174,8 +176,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildMotivationalHeader('Monthly Overview',
-              'Your consistency is paying off! Look at those beautiful patterns! 📈'),
+          _buildMotivationalHeader(
+            'Monthly Overview',
+            'Your consistency is paying off! Look at those beautiful patterns! 📈',
+          ),
           const SizedBox(height: 24),
           _buildMonthlyHeatmap(habits),
           const SizedBox(height: 24),
@@ -188,7 +192,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   Widget _buildYearlyStats(List<Habit> habits) {
-    final hasEnoughData = _hasEnoughDataForPeriod(habits, 60); // Changed from 90 to 60 days (2 months)
+    final hasEnoughData = _hasEnoughDataForPeriod(
+      habits,
+      60,
+    ); // Changed from 90 to 60 days (2 months)
 
     if (!hasEnoughData) {
       return const Center(
@@ -219,8 +226,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildMotivationalHeader('Yearly Journey',
-              'Incredible transformation! You\'ve built lasting habits! 🏆'),
+          _buildMotivationalHeader(
+            'Yearly Journey',
+            'Incredible transformation! You\'ve built lasting habits! 🏆',
+          ),
           const SizedBox(height: 24),
           _buildYearlyOverviewCards(habits),
           const SizedBox(height: 24),
@@ -264,10 +273,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 16,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 16),
           ),
         ],
       ),
@@ -285,9 +291,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           children: [
             Text(
               'Daily Completions This Week',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -296,7 +302,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
                   maxY: weekData.values.isNotEmpty
-                      ? weekData.values.reduce((a, b) => a > b ? a : b).toDouble() + 2
+                      ? weekData.values
+                                .reduce((a, b) => a > b ? a : b)
+                                .toDouble() +
+                            2
                       : 10,
                   barTouchData: BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
@@ -305,8 +314,17 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                          if (value.toInt() >= 0 && value.toInt() < days.length) {
+                          const days = [
+                            'Mon',
+                            'Tue',
+                            'Wed',
+                            'Thu',
+                            'Fri',
+                            'Sat',
+                            'Sun',
+                          ];
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < days.length) {
                             return Text(days[value.toInt()]);
                           }
                           return const Text('');
@@ -322,12 +340,24 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                         },
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   borderData: FlBorderData(show: false),
                   barGroups: List.generate(7, (index) {
-                    final dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][index];
+                    final dayName = [
+                      'Monday',
+                      'Tuesday',
+                      'Wednesday',
+                      'Thursday',
+                      'Friday',
+                      'Saturday',
+                      'Sunday',
+                    ][index];
                     final completions = weekData[dayName] ?? 0;
                     return BarChartGroupData(
                       x: index,
@@ -359,9 +389,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           children: [
             Text(
               'Monthly Activity Heatmap',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildHeatmapGrid(habits),
@@ -421,9 +451,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           children: [
             Text(
               'Yearly Completion Trend',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -436,9 +466,22 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (value, meta) {
-                          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                          if (value.toInt() >= 0 && value.toInt() < months.length) {
+                          const months = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul',
+                            'Aug',
+                            'Sep',
+                            'Oct',
+                            'Nov',
+                            'Dec',
+                          ];
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < months.length) {
                             return Text(months[value.toInt()]);
                           }
                           return const Text('');
@@ -454,14 +497,21 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                         },
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   borderData: FlBorderData(show: true),
                   lineBarsData: [
                     LineChartBarData(
                       spots: monthlyData.asMap().entries.map((entry) {
-                        return FlSpot(entry.key.toDouble(), entry.value.toDouble());
+                        return FlSpot(
+                          entry.key.toDouble(),
+                          entry.value.toDouble(),
+                        );
                       }).toList(),
                       isCurved: true,
                       color: Colors.blue,
@@ -504,7 +554,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.trending_up, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  Icons.trending_up,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Monthly Category Performance',
@@ -517,9 +570,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             const SizedBox(height: 8),
             Text(
               'Track how each habit category performs throughout the month',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -573,8 +626,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                         },
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   borderData: FlBorderData(
                     show: true,
@@ -584,10 +641,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                     final categoryIndex = entry.key;
                     final category = entry.value;
                     final data = categoryTrendData[category]!;
-                    
+
                     return LineChartBarData(
                       spots: data.asMap().entries.map((dayEntry) {
-                        return FlSpot(dayEntry.key.toDouble() + 1, dayEntry.value.toDouble());
+                        return FlSpot(
+                          dayEntry.key.toDouble() + 1,
+                          dayEntry.value.toDouble(),
+                        );
                       }).toList(),
                       isCurved: true,
                       color: colors[categoryIndex % colors.length],
@@ -606,7 +666,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                       ),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: colors[categoryIndex % colors.length].withValues(alpha: 0.1),
+                        color: colors[categoryIndex % colors.length].withValues(
+                          alpha: 0.1,
+                        ),
                       ),
                     );
                   }).toList(),
@@ -633,10 +695,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      category,
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    Text(category, style: const TextStyle(fontSize: 12)),
                   ],
                 );
               }).toList(),
@@ -670,7 +729,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.analytics, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  Icons.analytics,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Yearly Category Evolution',
@@ -683,9 +745,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             const SizedBox(height: 8),
             Text(
               'See how your habit categories have evolved throughout the year',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -716,9 +778,22 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                         showTitles: true,
                         reservedSize: 30,
                         getTitlesWidget: (value, meta) {
-                          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                          if (value.toInt() >= 0 && value.toInt() < months.length) {
+                          const months = [
+                            'Jan',
+                            'Feb',
+                            'Mar',
+                            'Apr',
+                            'May',
+                            'Jun',
+                            'Jul',
+                            'Aug',
+                            'Sep',
+                            'Oct',
+                            'Nov',
+                            'Dec',
+                          ];
+                          if (value.toInt() >= 0 &&
+                              value.toInt() < months.length) {
                             return Text(
                               months[value.toInt()],
                               style: const TextStyle(fontSize: 11),
@@ -740,8 +815,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                         },
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   borderData: FlBorderData(
                     show: true,
@@ -751,10 +830,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                     final categoryIndex = entry.key;
                     final category = entry.value;
                     final data = yearlyData[category]!;
-                    
+
                     return LineChartBarData(
                       spots: data.asMap().entries.map((monthEntry) {
-                        return FlSpot(monthEntry.key.toDouble(), monthEntry.value.toDouble());
+                        return FlSpot(
+                          monthEntry.key.toDouble(),
+                          monthEntry.value.toDouble(),
+                        );
                       }).toList(),
                       isCurved: true,
                       color: colors[categoryIndex % colors.length],
@@ -773,7 +855,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                       ),
                       belowBarData: BarAreaData(
                         show: true,
-                        color: colors[categoryIndex % colors.length].withValues(alpha: 0.15),
+                        color: colors[categoryIndex % colors.length].withValues(
+                          alpha: 0.15,
+                        ),
                       ),
                     );
                   }).toList(),
@@ -786,9 +870,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
               children: categories.asMap().entries.map((entry) {
                 final categoryIndex = entry.key;
                 final category = entry.value;
-                final totalCompletions = yearlyData[category]!.fold(0, (sum, value) => sum + value);
+                final totalCompletions = yearlyData[category]!.fold(
+                  0,
+                  (sum, value) => sum + value,
+                );
                 final avgPerMonth = totalCompletions / 12;
-                
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
@@ -805,7 +892,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                       Expanded(
                         child: Text(
                           category,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                       Text(
@@ -846,9 +936,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           children: [
             Text(
               'Category Breakdown',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -856,8 +946,17 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
               child: PieChart(
                 PieChartData(
                   sections: categoryData.entries.map((entry) {
-                    final colors = [Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.red, Colors.teal];
-                    final colorIndex = categoryData.keys.toList().indexOf(entry.key) % colors.length;
+                    final colors = [
+                      Colors.blue,
+                      Colors.green,
+                      Colors.orange,
+                      Colors.purple,
+                      Colors.red,
+                      Colors.teal,
+                    ];
+                    final colorIndex =
+                        categoryData.keys.toList().indexOf(entry.key) %
+                        colors.length;
 
                     return PieChartSectionData(
                       value: entry.value.toDouble(),
@@ -914,23 +1013,26 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                       children: [
                         Text(
                           habit.name,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         Text(
                           '${(rate * 100).toInt()}% success rate',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.grey[600]),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: _getCompletionRateColor(rate).withValues(alpha: 0.1),
+                      color: _getCompletionRateColor(
+                        rate,
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -963,7 +1065,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
               'totalCompletions': completions,
               'bestStreak': habit.longestStreak,
               'averagePerWeek': (completions / 4).toStringAsFixed(1),
-              'lastCompleted': habit.completions.isNotEmpty 
+              'lastCompleted': habit.completions.isNotEmpty
                   ? DateFormat('MMM d, y').format(habit.completions.last)
                   : 'Never',
             },
@@ -978,8 +1080,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     final now = DateTime.now();
     final cutoffDate = now.subtract(Duration(days: minDays));
 
-    return habits.any((habit) =>
-        habit.completions.any((completion) => completion.isAfter(cutoffDate)));
+    return habits.any(
+      (habit) =>
+          habit.completions.any((completion) => completion.isAfter(cutoffDate)),
+    );
   }
 
   Map<String, int> _getWeeklyCompletionData(List<Habit> habits) {
@@ -1002,7 +1106,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
     for (final habit in habits) {
       for (final completion in habit.completions) {
-        final completionDate = DateTime(completion.year, completion.month, completion.day);
+        final completionDate = DateTime(
+          completion.year,
+          completion.month,
+          completion.day,
+        );
         if (completionDate == dateOnly) {
           count++;
         }
@@ -1041,15 +1149,28 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
         startDate = now.subtract(const Duration(days: 7));
     }
 
-    return habit.completions.where((completion) =>
-        completion.isAfter(startDate) && completion.isBefore(now.add(const Duration(days: 1)))).length;
+    return habit.completions
+        .where(
+          (completion) =>
+              completion.isAfter(startDate) &&
+              completion.isBefore(now.add(const Duration(days: 1))),
+        )
+        .length;
   }
 
-  List<Map<String, dynamic>> _getRankedHabits(List<Habit> habits, String period) {
+  List<Map<String, dynamic>> _getRankedHabits(
+    List<Habit> habits,
+    String period,
+  ) {
     final rankedData = habits.map((habit) {
       final completions = _getCompletionsForPeriod(habit, period);
-      final expectedCompletions = _getExpectedCompletionsForPeriod(habit, period);
-      final rate = expectedCompletions > 0 ? completions / expectedCompletions : 0.0;
+      final expectedCompletions = _getExpectedCompletionsForPeriod(
+        habit,
+        period,
+      );
+      final rate = expectedCompletions > 0
+          ? completions / expectedCompletions
+          : 0.0;
 
       return {
         'habit': habit,
@@ -1058,7 +1179,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       };
     }).toList();
 
-    rankedData.sort((a, b) => (b['rate'] as double).compareTo(a['rate'] as double));
+    rankedData.sort(
+      (a, b) => (b['rate'] as double).compareTo(a['rate'] as double),
+    );
     return rankedData;
   }
 
@@ -1084,9 +1207,15 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       case HabitFrequency.daily:
         return days;
       case HabitFrequency.weekly:
-        return (days / 7).ceil() * habit.weeklySchedule.length;
+        final weeklyDays = habit.selectedWeekdays.isNotEmpty
+            ? habit.selectedWeekdays.length
+            : habit.weeklySchedule.length;
+        return (days / 7).ceil() * weeklyDays;
       case HabitFrequency.monthly:
-        return (days / 30).ceil() * habit.monthlySchedule.length;
+        final monthlyDays = habit.selectedMonthDays.isNotEmpty
+            ? habit.selectedMonthDays.length
+            : habit.monthlySchedule.length;
+        return (days / 30).ceil() * monthlyDays;
       default:
         return days;
     }
@@ -1104,8 +1233,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
       int monthCompletions = 0;
       for (final habit in habits) {
-        monthCompletions += habit.completions.where((completion) =>
-            completion.year == now.year && completion.month == month).length;
+        monthCompletions += habit.completions
+            .where(
+              (completion) =>
+                  completion.year == now.year && completion.month == month,
+            )
+            .length;
       }
       data.add(monthCompletions);
     }
@@ -1121,7 +1254,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
   Widget _buildYearlyOverviewCards(List<Habit> habits) {
     final yearlyStats = _getYearlyOverviewStats(habits);
-    
+
     return Row(
       children: [
         Expanded(
@@ -1154,7 +1287,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     );
   }
 
-  Widget _buildOverviewCard(String title, String value, IconData icon, Color color) {
+  Widget _buildOverviewCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       elevation: 3,
       child: Padding(
@@ -1174,10 +1312,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             const SizedBox(height: 4),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1188,7 +1323,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
   Widget _buildYearlyConsistencyHeatmap(List<Habit> habits) {
     final heatmapData = _getYearlyHeatmapData(habits);
-    
+
     return Card(
       elevation: 4,
       child: Padding(
@@ -1198,7 +1333,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.calendar_view_week, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  Icons.calendar_view_week,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Yearly Consistency Heatmap',
@@ -1211,9 +1349,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             const SizedBox(height: 8),
             Text(
               'Visual representation of your daily habit completions throughout the year',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -1242,7 +1380,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Less', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const Text(
+                  'Less',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
                 Row(
                   children: List.generate(5, (index) {
                     return Container(
@@ -1256,7 +1397,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                     );
                   }),
                 ),
-                const Text('More', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                const Text(
+                  'More',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
           ],
@@ -1267,7 +1411,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
   Widget _buildYearlyMilestones(List<Habit> habits) {
     final milestones = _getYearlyMilestones(habits);
-    
+
     return Card(
       elevation: 4,
       child: Padding(
@@ -1277,7 +1421,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.emoji_events, color: Theme.of(context).colorScheme.primary),
+                Icon(
+                  Icons.emoji_events,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Yearly Milestones & Achievements',
@@ -1290,68 +1437,73 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
             const SizedBox(height: 8),
             Text(
               'Celebrate your major accomplishments this year',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 20),
-            ...milestones.map((milestone) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: milestone['color'].withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      milestone['icon'],
-                      color: milestone['color'],
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          milestone['title'],
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          milestone['description'],
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: milestone['color'],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      milestone['value'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+            ...milestones.map(
+              (milestone) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: milestone['color'].withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        milestone['icon'],
+                        color: milestone['color'],
+                        size: 24,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            milestone['title'],
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            milestone['description'],
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: milestone['color'],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        milestone['value'],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            )),
+            ),
           ],
         ),
       ),
@@ -1362,64 +1514,76 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     final now = DateTime.now();
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
     final daysInMonth = lastDayOfMonth.day;
-    
+
     final categoryData = <String, List<int>>{};
-    
+
     // Initialize categories with empty data
     for (final habit in habits) {
       if (!categoryData.containsKey(habit.category)) {
         categoryData[habit.category] = List.filled(daysInMonth, 0);
       }
     }
-    
+
     // Fill in the completion data for each day
     for (int day = 1; day <= daysInMonth; day++) {
       final currentDate = DateTime(now.year, now.month, day);
-      
+
       for (final habit in habits) {
         final completionsForDay = habit.completions.where((completion) {
-          final completionDate = DateTime(completion.year, completion.month, completion.day);
+          final completionDate = DateTime(
+            completion.year,
+            completion.month,
+            completion.day,
+          );
           return completionDate == currentDate;
         }).length;
-        
+
         if (categoryData.containsKey(habit.category)) {
           categoryData[habit.category]![day - 1] += completionsForDay;
         }
       }
     }
-    
+
     // Remove categories with no data
-    categoryData.removeWhere((key, value) => value.every((element) => element == 0));
-    
+    categoryData.removeWhere(
+      (key, value) => value.every((element) => element == 0),
+    );
+
     return categoryData;
   }
 
   Map<String, List<int>> _getYearlyCategoryData(List<Habit> habits) {
     final now = DateTime.now();
     final categoryData = <String, List<int>>{};
-    
+
     // Initialize categories with empty data for 12 months
     for (final habit in habits) {
       if (!categoryData.containsKey(habit.category)) {
         categoryData[habit.category] = List.filled(12, 0);
       }
     }
-    
+
     // Fill in the completion data for each month
     for (int month = 1; month <= 12; month++) {
       for (final habit in habits) {
-        final completionsForMonth = habit.completions.where((completion) =>
-            completion.year == now.year && completion.month == month).length;
-        
+        final completionsForMonth = habit.completions
+            .where(
+              (completion) =>
+                  completion.year == now.year && completion.month == month,
+            )
+            .length;
+
         if (categoryData.containsKey(habit.category)) {
           categoryData[habit.category]![month - 1] += completionsForMonth;
         }
       }
     }
-    
+
     // Remove categories with no data
-    categoryData.removeWhere((key, value) => value.every((element) => element == 0));
-    
+    categoryData.removeWhere(
+      (key, value) => value.every((element) => element == 0),
+    );
+
     return categoryData;
   }
 
@@ -1434,20 +1598,40 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       for (final completion in habit.completions) {
         if (completion.year == now.year) {
           totalCompletions++;
-          monthlyCompletions[completion.month] = (monthlyCompletions[completion.month] ?? 0) + 1;
-          completedDays.add('${completion.year}-${completion.month}-${completion.day}');
+          monthlyCompletions[completion.month] =
+              (monthlyCompletions[completion.month] ?? 0) + 1;
+          completedDays.add(
+            '${completion.year}-${completion.month}-${completion.day}',
+          );
         }
       }
     }
 
     daysWithCompletions = completedDays.length;
     final daysSoFar = now.difference(DateTime(now.year, 1, 1)).inDays + 1;
-    final consistencyRate = daysSoFar > 0 ? ((daysWithCompletions / daysSoFar) * 100).round() : 0;
+    final consistencyRate = daysSoFar > 0
+        ? ((daysWithCompletions / daysSoFar) * 100).round()
+        : 0;
 
     String bestMonth = 'N/A';
     if (monthlyCompletions.isNotEmpty) {
-      final bestMonthNum = monthlyCompletions.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final bestMonthNum = monthlyCompletions.entries
+          .reduce((a, b) => a.value > b.value ? a : b)
+          .key;
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       bestMonth = months[bestMonthNum - 1];
     }
 
@@ -1470,19 +1654,30 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
       for (final habit in habits) {
         completionsForDay += habit.completions.where((completion) {
-          final completionDate = DateTime(completion.year, completion.month, completion.day);
-          return completionDate == DateTime(currentDate.year, currentDate.month, currentDate.day);
+          final completionDate = DateTime(
+            completion.year,
+            completion.month,
+            completion.day,
+          );
+          return completionDate ==
+              DateTime(currentDate.year, currentDate.month, currentDate.day);
         }).length;
       }
 
       // Normalize intensity (0.0 to 1.0)
       final maxPossibleCompletions = habits.length;
-      final intensity = maxPossibleCompletions > 0 ? completionsForDay / maxPossibleCompletions : 0.0;
+      final intensity = maxPossibleCompletions > 0
+          ? completionsForDay / maxPossibleCompletions
+          : 0.0;
       heatmapData.add(intensity.clamp(0.0, 1.0));
     }
 
     // Fill remaining days of the year with 0
-    final totalDaysInYear = DateTime(now.year + 1, 1, 1).difference(startOfYear).inDays;
+    final totalDaysInYear = DateTime(
+      now.year + 1,
+      1,
+      1,
+    ).difference(startOfYear).inDays;
     while (heatmapData.length < totalDaysInYear) {
       heatmapData.add(0.0);
     }
@@ -1501,21 +1696,22 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   List<Map<String, dynamic>> _getYearlyMilestones(List<Habit> habits) {
     final now = DateTime.now();
     final milestones = <Map<String, dynamic>>[];
-    
+
     // Calculate various milestone metrics
     int totalCompletions = 0;
     int longestStreak = 0;
 
     final habitCompletions = <String, int>{};
     final monthlyCompletions = <int, int>{};
-    
+
     for (final habit in habits) {
       int habitTotal = 0;
       for (final completion in habit.completions) {
         if (completion.year == now.year) {
           totalCompletions++;
           habitTotal++;
-          monthlyCompletions[completion.month] = (monthlyCompletions[completion.month] ?? 0) + 1;
+          monthlyCompletions[completion.month] =
+              (monthlyCompletions[completion.month] ?? 0) + 1;
         }
       }
       habitCompletions[habit.name] = habitTotal;
@@ -1526,20 +1722,24 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     for (final habit in habits) {
       for (final completion in habit.completions) {
         if (completion.year == now.year) {
-          sortedDates.add(DateTime(completion.year, completion.month, completion.day));
+          sortedDates.add(
+            DateTime(completion.year, completion.month, completion.day),
+          );
         }
       }
     }
     sortedDates.sort();
-    
+
     if (sortedDates.isNotEmpty) {
       int tempStreak = 1;
-      
+
       for (int i = 1; i < sortedDates.length; i++) {
-        if (sortedDates[i].difference(sortedDates[i-1]).inDays == 1) {
+        if (sortedDates[i].difference(sortedDates[i - 1]).inDays == 1) {
           tempStreak++;
         } else {
-          longestStreak = longestStreak > tempStreak ? longestStreak : tempStreak;
+          longestStreak = longestStreak > tempStreak
+              ? longestStreak
+              : tempStreak;
           tempStreak = 1;
         }
       }
@@ -1568,11 +1768,27 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     }
 
     if (monthlyCompletions.isNotEmpty) {
-      final bestMonth = monthlyCompletions.entries.reduce((a, b) => a.value > b.value ? a : b);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final bestMonth = monthlyCompletions.entries.reduce(
+        (a, b) => a.value > b.value ? a : b,
+      );
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       milestones.add({
         'title': 'Peak Performance',
-        'description': 'Your most productive month was ${months[bestMonth.key - 1]}',
+        'description':
+            'Your most productive month was ${months[bestMonth.key - 1]}',
         'value': bestMonth.value.toString(),
         'icon': Icons.trending_up,
         'color': Colors.blue.shade600,

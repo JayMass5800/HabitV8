@@ -71,14 +71,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   bool _isHabitDueOnDate(Habit habit, DateTime date) {
     switch (habit.frequency) {
       case HabitFrequency.hourly:
+        final weekday = date.weekday;
+        // Check both old and new fields for backward compatibility
+        return habit.selectedWeekdays.contains(weekday) ||
+            habit.weeklySchedule.contains(weekday);
       case HabitFrequency.daily:
         return true;
       case HabitFrequency.weekly:
         final weekday = date.weekday;
-        return habit.weeklySchedule.contains(weekday);
+        // Check both old and new fields for backward compatibility
+        return habit.selectedWeekdays.contains(weekday) ||
+            habit.weeklySchedule.contains(weekday);
       case HabitFrequency.monthly:
         final day = date.day;
-        return habit.monthlySchedule.contains(day);
+        // Check both old and new fields for backward compatibility
+        return habit.selectedMonthDays.contains(day) ||
+            habit.monthlySchedule.contains(day);
       case HabitFrequency.yearly:
         return habit.selectedYearlyDates.any((dateStr) {
           final parts = dateStr.split('-');
@@ -95,7 +103,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   bool _isHabitCompletedOnDate(Habit habit, DateTime date) {
     final dateOnly = DateTime(date.year, date.month, date.day);
     return habit.completions.any((completion) {
-      final completionDate = DateTime(completion.year, completion.month, completion.day);
+      final completionDate = DateTime(
+        completion.year,
+        completion.month,
+        completion.day,
+      );
       return completionDate == dateOnly;
     });
   }
@@ -111,11 +123,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               const SizedBox(width: 8),
               Tooltip(
                 message: 'Calendar sync enabled',
-                child: Icon(
-                  Icons.sync,
-                  size: 16,
-                  color: Colors.green.shade600,
-                ),
+                child: Icon(Icons.sync, size: 16, color: Colors.green.shade600),
               ),
             ],
           ],
@@ -133,7 +141,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   value: choice,
                   child: Row(
                     children: [
-                      if (choice == _selectedCategory) const Icon(Icons.check, size: 20),
+                      if (choice == _selectedCategory)
+                        const Icon(Icons.check, size: 20),
                       if (choice == _selectedCategory) const SizedBox(width: 8),
                       Text(choice),
                     ],
@@ -158,23 +167,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 }
 
                 if (!snapshot.hasData) {
-                  return const Center(
-                    child: Text('No habits found'),
-                  );
+                  return const Center(child: Text('No habits found'));
                 }
 
                 final allHabits = snapshot.data!;
                 final filteredHabits = _selectedCategory == 'All'
                     ? allHabits
-                    : allHabits.where((habit) => habit.category == _selectedCategory).toList();
+                    : allHabits
+                          .where((habit) => habit.category == _selectedCategory)
+                          .toList();
 
                 return Column(
                   children: [
                     _buildCalendar(filteredHabits),
                     const SizedBox(height: 8.0),
-                    Expanded(
-                      child: _buildHabitsList(filteredHabits),
-                    ),
+                    Expanded(child: _buildHabitsList(filteredHabits)),
                   ],
                 );
               },
@@ -226,10 +233,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           children: [
             Text(
               DateFormat('MMMM yyyy').format(_focusedDay),
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
             Row(
@@ -263,64 +267,67 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
   }
 
   Widget _buildCustomCalendar(List<Habit> habits) {
     final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
-    final startDate = firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday % 7));
-    
+    final startDate = firstDayOfMonth.subtract(
+      Duration(days: firstDayOfMonth.weekday % 7),
+    );
+
     return Column(
       children: [
         // Weekday headers
         Row(
           children: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-              .map((day) => Expanded(
-                    child: Center(
-                      child: Text(
-                        day,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: day == 'Sun' || day == 'Sat' 
-                              ? Colors.red.shade600 
-                              : Colors.grey.shade700,
-                        ),
+              .map(
+                (day) => Expanded(
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: day == 'Sun' || day == 'Sat'
+                            ? Colors.red.shade600
+                            : Colors.grey.shade700,
                       ),
                     ),
-                  ))
+                  ),
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: 8),
         // Calendar grid
         ...List.generate(6, (weekIndex) {
           final weekStart = startDate.add(Duration(days: weekIndex * 7));
-          final weekDays = List.generate(7, (dayIndex) => 
-              weekStart.add(Duration(days: dayIndex)));
-          
+          final weekDays = List.generate(
+            7,
+            (dayIndex) => weekStart.add(Duration(days: dayIndex)),
+          );
+
           // Skip empty weeks
-          if (weekDays.every((day) => 
-              day.month != _focusedDay.month && 
-              (weekIndex == 0 || weekIndex == 5))) {
+          if (weekDays.every(
+            (day) =>
+                day.month != _focusedDay.month &&
+                (weekIndex == 0 || weekIndex == 5),
+          )) {
             return const SizedBox.shrink();
           }
-          
+
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: Row(
-              children: weekDays.map((day) => 
-                  Expanded(child: _buildCalendarDay(day, habits))).toList(),
+              children: weekDays
+                  .map((day) => Expanded(child: _buildCalendarDay(day, habits)))
+                  .toList(),
             ),
           );
         }),
@@ -333,19 +340,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final isToday = isSameDay(day, DateTime.now());
     final isSelected = isSameDay(day, _selectedDay);
     final events = _getEventsForDay(day, habits);
-    final completedCount = events.where((habit) => _isHabitCompletedOnDate(habit, day)).length;
+    final completedCount = events
+        .where((habit) => _isHabitCompletedOnDate(habit, day))
+        .length;
     final totalCount = events.length;
-    
+
     Color? backgroundColor;
     Color textColor = Colors.black87;
-    
+
     if (isSelected) {
       backgroundColor = Theme.of(context).primaryColor;
       textColor = Colors.white;
     } else if (isToday) {
       backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.2);
     }
-    
+
     return GestureDetector(
       onTap: () => _onDaySelected(day, day),
       child: Container(
@@ -354,7 +363,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(8),
-          border: isToday && !isSelected 
+          border: isToday && !isSelected
               ? Border.all(color: Theme.of(context).primaryColor, width: 2)
               : null,
         ),
@@ -417,8 +426,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     return Colors.orange;
   }
 
-
-
   Widget _buildHabitsList(List<Habit> habits) {
     if (_selectedDay == null) {
       return const Center(
@@ -474,10 +481,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '${selectedDayHabits.where((h) => _isHabitCompletedOnDate(h, _selectedDay!)).length} of ${selectedDayHabits.length} habits completed',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
               ],
@@ -520,8 +524,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     itemCount: selectedDayHabits.length,
                     itemBuilder: (context, index) {
                       final habit = selectedDayHabits[index];
-                      final isCompleted = _isHabitCompletedOnDate(habit, _selectedDay!);
-                      
+                      final isCompleted = _isHabitCompletedOnDate(
+                        habit,
+                        _selectedDay!,
+                      );
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
@@ -557,15 +564,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                   // Habit details
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           habit.name,
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
-                                            decoration: isCompleted ? TextDecoration.lineThrough : null,
-                                            color: isCompleted ? Colors.grey.shade600 : Colors.black87,
+                                            decoration: isCompleted
+                                                ? TextDecoration.lineThrough
+                                                : null,
+                                            color: isCompleted
+                                                ? Colors.grey.shade600
+                                                : Colors.black87,
                                           ),
                                         ),
                                         if (habit.description != null) ...[
@@ -582,15 +594,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                         Row(
                                           children: [
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: Color(habit.colorValue).withValues(alpha: 0.15),
-                                                borderRadius: BorderRadius.circular(12),
+                                                color: Color(
+                                                  habit.colorValue,
+                                                ).withValues(alpha: 0.15),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                               ),
                                               child: Text(
                                                 habit.category,
                                                 style: TextStyle(
-                                                  color: Color(habit.colorValue),
+                                                  color: Color(
+                                                    habit.colorValue,
+                                                  ),
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w600,
                                                 ),
@@ -598,13 +619,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.grey.shade100,
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
                                               child: Text(
-                                                _getFrequencyDisplayName(habit.frequency),
+                                                _getFrequencyDisplayName(
+                                                  habit.frequency,
+                                                ),
                                                 style: TextStyle(
                                                   fontSize: 11,
                                                   color: Colors.grey.shade600,
@@ -622,14 +650,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                     width: 40,
                                     height: 40,
                                     decoration: BoxDecoration(
-                                      color: isCompleted 
-                                          ? Colors.green 
+                                      color: isCompleted
+                                          ? Colors.green
                                           : Colors.grey.shade200,
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
-                                      isCompleted ? Icons.check : Icons.circle_outlined,
-                                      color: isCompleted ? Colors.white : Colors.grey.shade500,
+                                      isCompleted
+                                          ? Icons.check
+                                          : Icons.circle_outlined,
+                                      color: isCompleted
+                                          ? Colors.white
+                                          : Colors.grey.shade500,
                                       size: 22,
                                     ),
                                   ),
@@ -679,29 +711,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     try {
       final isCompleted = _isHabitCompletedOnDate(habit, _selectedDay!);
-      
+
       if (isCompleted) {
         await habitService.removeHabitCompletion(habit.id, _selectedDay!);
       } else {
         await habitService.markHabitComplete(habit.id, _selectedDay!);
       }
-      
+
       setState(() {
         // Trigger rebuild to update UI
       });
-      
+
       // Sync changes if calendar sync is enabled
       if (_calendarSyncEnabled) {
         await CalendarService.syncHabitChanges(habit);
       }
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isCompleted 
-                  ? 'Habit completion removed' 
-                  : 'Habit completed! 🎉',
+              isCompleted ? 'Habit completion removed' : 'Habit completed! 🎉',
             ),
             backgroundColor: isCompleted ? Colors.orange : Colors.green,
             duration: const Duration(seconds: 2),

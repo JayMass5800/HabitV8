@@ -577,8 +577,11 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               _notificationTime!.minute,
             )
           : null;
+      // Save to both old and new fields for backward compatibility
       widget.habit.weeklySchedule = List<int>.from(_selectedWeekdays);
+      widget.habit.selectedWeekdays = List<int>.from(_selectedWeekdays);
       widget.habit.monthlySchedule = List<int>.from(_selectedMonthDays);
+      widget.habit.selectedMonthDays = List<int>.from(_selectedMonthDays);
 
       // Save to database
       await widget.habit.save();
