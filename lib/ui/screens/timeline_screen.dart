@@ -624,4 +624,78 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         return '';
     }
   }
+
+  // Check if an hourly habit is completed at a specific time slot
+  bool _isHourlyHabitCompletedAtTime(
+    Habit habit,
+    DateTime date,
+    TimeOfDay timeSlot,
+  ) {
+    final targetDateTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      timeSlot.hour,
+      timeSlot.minute,
+    );
+
+    return habit.completions.any((completion) {
+      return completion.year == targetDateTime.year &&
+          completion.month == targetDateTime.month &&
+          completion.day == targetDateTime.day &&
+          completion.hour == targetDateTime.hour &&
+          completion.minute == targetDateTime.minute;
+    });
+  }
+
+  // Toggle completion for a specific hourly time slot
+  Future<void> _toggleHourlyHabitCompletion(
+    Habit habit,
+    TimeOfDay timeSlot,
+  ) async {
+    final targetDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      timeSlot.hour,
+      timeSlot.minute,
+    );
+
+    final isCompleted = _isHourlyHabitCompletedAtTime(
+      habit,
+      _selectedDate,
+      timeSlot,
+    );
+    final habitServiceAsync = ref.read(habitServiceProvider);
+
+    habitServiceAsync.when(
+      data: (habitService) async {
+        if (isCompleted) {
+          // Remove completion for this specific time slot
+          habit.completions.removeWhere((completion) {
+            return completion.year == targetDateTime.year &&
+                completion.month == targetDateTime.month &&
+                completion.day == targetDateTime.day &&
+                completion.hour == targetDateTime.hour &&
+                completion.minute == targetDateTime.minute;
+          });
+        } else {
+          // Add completion for this specific time slot
+          habit.completions.add(targetDateTime);
+        }
+
+        await habitService.updateHabit(habit);
+        // Force UI refresh by invalidating the provider
+        ref.invalidate(habitServiceProvider);
+      },
+      loading: () {},
+      error: (error, stack) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $error')));
+        }
+      },
+    );
+  }
 }
