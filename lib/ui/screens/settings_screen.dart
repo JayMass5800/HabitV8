@@ -35,7 +35,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   bool _calendarSync = false;
   bool _healthDataSync = false;
   bool _autoCompletionEnabled = false;
-  int _autoCompletionInterval = 30;
   bool _isLoading = true;
   String _defaultScreen = 'Timeline'; // Default startup screen
 
@@ -99,8 +98,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       // Load auto-completion settings
       final autoCompletionEnabled =
           await AutomaticHabitCompletionService.isServiceEnabled();
-      final autoCompletionInterval =
-          await AutomaticHabitCompletionService.getCheckIntervalMinutes();
       final healthSyncPreference = await _loadHealthSyncPreference();
       bool healthStatus = false;
 
@@ -119,7 +116,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         _calendarSync = calendarSyncEnabled;
         _healthDataSync = healthStatus;
         _autoCompletionEnabled = autoCompletionEnabled;
-        _autoCompletionInterval = autoCompletionInterval;
         _isLoading = false;
       });
     } catch (e) {
@@ -386,43 +382,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       ),
                       if (_autoCompletionEnabled) ...[
                         ListTile(
-                          title: const Text('Check Interval'),
-                          subtitle: Text(
-                            'Check every $_autoCompletionInterval minutes',
-                          ),
-                          leading: const Icon(Icons.schedule),
-                          trailing: PopupMenuButton<int>(
-                            onSelected: (value) =>
-                                _setAutoCompletionInterval(value),
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 15,
-                                child: Text('15 minutes'),
-                              ),
-                              const PopupMenuItem(
-                                value: 30,
-                                child: Text('30 minutes'),
-                              ),
-                              const PopupMenuItem(
-                                value: 60,
-                                child: Text('1 hour'),
-                              ),
-                              const PopupMenuItem(
-                                value: 120,
-                                child: Text('2 hours'),
-                              ),
-                              const PopupMenuItem(
-                                value: 240,
-                                child: Text('4 hours'),
-                              ),
-                            ],
-                            child: const Icon(Icons.more_vert),
-                          ),
-                        ),
-                        ListTile(
                           title: const Text('Health Integration Dashboard'),
                           subtitle: const Text(
-                            'View detailed health-habit integration',
+                            'View detailed health-habit integration and settings',
                           ),
                           leading: const Icon(Icons.dashboard),
                           trailing: const Icon(Icons.chevron_right),
@@ -430,18 +392,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         ),
                       ],
                       const Divider(),
-                      _SettingsTile(
-                        title: 'Health Data Settings',
-                        subtitle: 'Configure data types and thresholds',
-                        leading: const Icon(Icons.tune),
-                        onTap: () => _showHealthDataSettings(),
-                      ),
-                      _SettingsTile(
-                        title: 'Health Data Help',
-                        subtitle: 'Learn about health integration features',
-                        leading: const Icon(Icons.help_outline),
-                        onTap: () => _showHealthDataHelp(),
-                      ),
                       _SettingsTile(
                         title: 'Manage Health Permissions',
                         subtitle: 'Review and update health data permissions',
@@ -853,22 +803,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 : 'Automatic habit completion disabled',
           ),
         ),
-      );
-    }
-  }
-
-  /// Set auto completion check interval
-  Future<void> _setAutoCompletionInterval(int minutes) async {
-    setState(() {
-      _autoCompletionInterval = minutes;
-    });
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('auto_completion_interval', minutes);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Check interval set to $minutes minutes')),
       );
     }
   }
@@ -1470,311 +1404,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  /// Show health data settings dialog
-  void _showHealthDataSettings() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.tune, color: Colors.blue),
-            SizedBox(width: 8),
-            Text('Health Data Settings'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Configure Health Data Integration',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-
-              _buildHealthSettingSection(
-                icon: Icons.directions_walk,
-                title: 'Step Tracking',
-                description:
-                    'Automatically complete walking/exercise habits based on daily step count',
-                items: [
-                  'Default threshold: 8,000 steps/day',
-                  'Syncs with fitness trackers',
-                  'Updates every 30 minutes',
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              _buildHealthSettingSection(
-                icon: Icons.bedtime,
-                title: 'Sleep Monitoring',
-                description: 'Track sleep habits and quality metrics',
-                items: [
-                  'Minimum sleep: 7 hours',
-                  'Sleep quality scoring',
-                  'Bedtime consistency tracking',
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              _buildHealthSettingSection(
-                icon: Icons.water_drop,
-                title: 'Hydration Tracking',
-                description: 'Monitor daily water intake',
-                items: [
-                  'Daily goal: 8 glasses (64 oz)',
-                  'Smart reminders',
-                  'Progress visualization',
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              _buildHealthSettingSection(
-                icon: Icons.fitness_center,
-                title: 'Exercise Metrics',
-                description: 'Track workout duration and intensity',
-                items: [
-                  'Active energy burned',
-                  'Workout duration',
-                  'Heart rate zones',
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.shade200),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info, color: Colors.orange),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Thresholds and settings can be customized per habit when creating or editing habits.',
-                        style: TextStyle(fontSize: 13),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.push('/health-integration');
-            },
-            child: const Text('View Dashboard'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Show health data help dialog
-  void _showHealthDataHelp() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.help_outline, color: Colors.green),
-            SizedBox(width: 8),
-            Text('Health Data Help'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Health Integration Guide',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 16),
-
-              _buildHelpSection(
-                icon: Icons.auto_awesome,
-                title: 'Automatic Habit Completion',
-                description:
-                    'When enabled, the app monitors your health data and automatically marks habits as complete when you meet the criteria. For example, if you have a "Walk 8,000 steps" habit and your step counter shows 8,500 steps, the habit will be marked complete automatically.',
-              ),
-
-              const SizedBox(height: 16),
-
-              _buildHelpSection(
-                icon: Icons.insights,
-                title: 'Smart Insights',
-                description:
-                    'Health data helps provide personalized insights about your habits. You\'ll see correlations between your habits and health metrics, optimal timing suggestions, and progress trends.',
-              ),
-
-              const SizedBox(height: 16),
-
-              _buildHelpSection(
-                icon: Icons.security,
-                title: 'Privacy & Security',
-                description:
-                    'All health data processing happens locally on your device. No health information is sent to external servers. You control which data types to share and can revoke permissions at any time.',
-              ),
-
-              const SizedBox(height: 16),
-
-              _buildHelpSection(
-                icon: Icons.troubleshoot,
-                title: 'Troubleshooting',
-                description:
-                    'If automatic completion isn\'t working:\n• Check Health Connect permissions\n• Ensure data sources are connected\n• Verify habit thresholds are realistic\n• Check that auto-completion is enabled',
-              ),
-
-              const SizedBox(height: 20),
-
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.lightbulb, color: Colors.blue),
-                        SizedBox(width: 8),
-                        Text(
-                          'Pro Tips',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '• Start with realistic thresholds and adjust as needed\n'
-                      '• Use the dashboard to monitor integration status\n'
-                      '• Combine manual tracking with automatic completion\n'
-                      '• Review permissions regularly for optimal performance',
-                      style: TextStyle(fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await HealthEducationDialog.show(context);
-            },
-            child: const Text('Learn More'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHealthSettingSection({
-    required IconData icon,
-    required String title,
-    required String description,
-    required List<String> items,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20, color: Colors.blue),
-              const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(description, style: const TextStyle(fontSize: 13)),
-          const SizedBox(height: 8),
-          ...items.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(left: 16, bottom: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('• ', style: TextStyle(color: Colors.blue)),
-                  Expanded(
-                    child: Text(
-                      item,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHelpSection({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[700],
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 }
 

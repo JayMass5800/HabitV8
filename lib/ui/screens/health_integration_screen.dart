@@ -723,7 +723,12 @@ class _HealthIntegrationScreenState
             const SizedBox(height: 8),
             Text(
               description,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -748,9 +753,21 @@ class _HealthIntegrationScreenState
                               keyword,
                               style: const TextStyle(fontSize: 12),
                             ),
-                            backgroundColor: color.withValues(alpha: 0.1),
+                            backgroundColor: color.withValues(
+                              alpha:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? 0.2
+                                  : 0.1,
+                            ),
                             side: BorderSide(
-                              color: color.withValues(alpha: 0.3),
+                              color: color.withValues(
+                                alpha:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? 0.5
+                                    : 0.3,
+                              ),
                             ),
                           ),
                         )
@@ -764,7 +781,9 @@ class _HealthIntegrationScreenState
                       '...and ${keywords.length - 15} more',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                       ),
                     ),
                   ),

@@ -3,10 +3,6 @@ description: Repository Information Overview
 alwaysApply: true
 ---
 
-NO To Do or placeholder code, only complete functional code
-
- info - Don't invoke 'print' in production code
-
 # HabitV8 Information
 
 ## Summary
@@ -101,3 +97,181 @@ flutter test
 - Smart recommendations using TensorFlow Lite
 - Notifications and reminders
 - Multi-platform support (mobile, web, desktop)
+
+## Application Interaction Map
+
+### Core Components and Data Flow
+
+#### 1. Data Layer
+- **Habit Model** (`domain/model/habit.dart`): Central data structure storing habit information including:
+  - Basic properties (name, description, category, color)
+  - Frequency settings (hourly, daily, weekly, monthly, yearly)
+  - Completion tracking (completions, streaks)
+  - Notification settings
+  - Custom schedules for different frequencies
+
+- **Database Service** (`data/database.dart`): Manages Hive database operations:
+  - CRUD operations for habits
+  - Data persistence
+  - Cache management for performance optimization
+  - Integration with calendar for habit events
+
+#### 2. Service Layer
+- **Notification System**:
+  - `NotificationService`: Manages local notifications with platform-specific implementations
+  - `NotificationActionService`: Handles notification action responses (complete/snooze)
+  - Bidirectional connection with habit completion tracking
+
+- **Health Integration**:
+  - `HealthService`: Interfaces with device health APIs
+  - `HealthHabitIntegrationService`: Maps health data to habits
+  - `HealthHabitMappingService`: Determines which habits can be auto-completed
+  - `AutomaticHabitCompletionService`: Completes habits based on health metrics
+  - `HealthHabitAnalyticsService`: Analyzes correlations between habits and health
+
+- **Calendar Integration**:
+  - `CalendarService`: Syncs habits with device calendar
+  - `CalendarRenewalService`: Manages recurring calendar events
+
+- **Analytics & Insights**:
+  - `HabitStatsService`: Calculates statistics (streaks, completion rates)
+  - `TrendAnalysisService`: Identifies patterns in habit completion
+  - `ComprehensiveHabitSuggestionsService`: Generates habit recommendations
+
+- **System Services**:
+  - `PermissionService`: Manages permission requests
+  - `LoggingService`: Centralized logging
+  - `ThemeService`: UI theme management
+  - `CacheService`: Performance optimization
+
+#### 3. UI Layer
+- **Screens**:
+  - `TimelineScreen`: Main habit tracking view
+  - `AllHabitsScreen`: List of all habits
+  - `CalendarScreen`: Calendar view of habits
+  - `StatsScreen`: Statistics and analytics
+  - `InsightsScreen`: AI-powered habit insights
+  - `SettingsScreen`: App configuration
+  - `CreateHabitScreen`/`EditHabitScreen`: Habit management
+  - `HealthIntegrationScreen`: Health data connection
+
+- **State Management**:
+  - Uses Riverpod for dependency injection and state management
+  - Provider containers for service access
+  - Reactive UI updates based on habit changes
+
+### Key Interaction Flows
+
+#### 1. Habit Creation & Management Flow
+```
+User → CreateHabitScreen → HabitService.addHabit() → Database
+                         → NotificationService (schedule notifications)
+                         → CalendarService (create calendar events)
+                         → HealthHabitMappingService (if health-related)
+```
+
+#### 2. Habit Completion Flow
+```
+User → TimelineScreen → HabitService.markHabitComplete() → Database
+                      → HabitStatsService (update statistics)
+                      → CalendarService (update calendar)
+                      → NotificationService (cancel notifications)
+```
+
+#### 3. Health-Based Auto-Completion Flow
+```
+HealthService → HealthHabitIntegrationService → HealthHabitMappingService
+              → AutomaticHabitCompletionService → HabitService.markHabitComplete()
+              → NotificationService (send completion notification)
+```
+
+#### 4. Notification Action Flow
+```
+System Notification → NotificationActionService → HabitService
+                    → Database (update habit)
+                    → UI refresh via Riverpod
+```
+
+#### 5. Analytics & Insights Flow
+```
+HabitStatsService ← Database
+                  → TrendAnalysisService
+                  → ComprehensiveHabitSuggestionsService
+                  → InsightsScreen
+```
+
+### Cross-Component Dependencies
+
+#### 1. Database Dependencies
+- **HabitService** depends on Hive database
+- **HabitStatsService** depends on habit data from database
+- All UI screens depend on database for habit data
+
+#### 2. Service Interdependencies
+- **NotificationService** depends on PermissionService
+- **HealthService** depends on PermissionService
+- **CalendarService** depends on PermissionService
+- **AutomaticHabitCompletionService** depends on HealthService and HabitService
+- **HealthHabitIntegrationService** depends on HealthService, HabitService, and NotificationService
+
+#### 3. UI Dependencies
+- All screens depend on Riverpod providers for state management
+- Screens access services through provider containers
+- UI updates reactively when underlying data changes
+
+### Initialization Sequence
+
+1. **Application Start**:
+   - Initialize Flutter binding
+   - Set up system UI appearance
+   - Initialize timezone data
+
+2. **Core Services Initialization**:
+   - Initialize NotificationService
+   - Request essential permissions
+   - Create Riverpod provider container
+   - Initialize NotificationActionService
+
+3. **Background Services Initialization**:
+   - Initialize CalendarRenewalService (delayed)
+   - Initialize HealthHabitIntegration (delayed)
+   - Initialize AutomaticHabitCompletionService (after health integration)
+
+4. **UI Initialization**:
+   - Set up navigation routes
+   - Check onboarding status
+   - Display appropriate initial screen
+
+### Data Synchronization Mechanisms
+
+1. **Health Data Sync**:
+   - Periodic background sync via HealthHabitIntegrationService
+   - On-demand sync when viewing health-related screens
+   - Automatic habit completion based on health thresholds
+
+2. **Calendar Sync**:
+   - Two-way sync between habits and device calendar
+   - Calendar events created/updated when habits change
+   - Calendar renewal for recurring habits
+
+3. **Cache Management**:
+   - Performance optimization via CacheService
+   - Cached habit statistics with TTL (time-to-live)
+   - Cache invalidation on habit updates
+
+### Error Handling & Recovery
+
+1. **Notification Failures**:
+   - Graceful degradation if notifications unavailable
+   - Retry mechanisms for scheduled notifications
+   - Fallback to in-app notifications
+
+2. **Health Integration Failures**:
+   - Continues with limited functionality if health permissions denied
+   - Fallback to manual habit tracking
+   - Periodic permission re-requests
+
+3. **Database Errors**:
+   - Recovery mechanisms for corrupted database
+   - Automatic database reset if adapter issues detected
+   - Logging of database operations for debugging
