@@ -180,10 +180,7 @@ class HabitService {
         break;
 
       case HabitFrequency.daily:
-      case HabitFrequency.weekly:
-      case HabitFrequency.monthly:
-      case HabitFrequency.yearly:
-        // For other frequencies, prevent duplicates on the same day
+        // For daily habits, prevent duplicates on the same day
         final today = DateTime(
           completionDate.year,
           completionDate.month,
@@ -196,6 +193,56 @@ class HabitService {
             completion.day,
           );
           return completionDay.isAtSameMomentAs(today);
+        });
+        break;
+
+      case HabitFrequency.weekly:
+        // For weekly habits, prevent duplicates within the same week
+        final weekStart = _getWeekStart(completionDate);
+        final weekEnd = weekStart.add(
+          const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+        );
+        alreadyCompleted = habit.completions.any((completion) {
+          return completion.isAfter(
+                weekStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              completion.isBefore(weekEnd.add(const Duration(seconds: 1)));
+        });
+        break;
+
+      case HabitFrequency.monthly:
+        // For monthly habits, prevent duplicates within the same month
+        final monthStart = DateTime(
+          completionDate.year,
+          completionDate.month,
+          1,
+        );
+        final monthEnd = DateTime(
+          completionDate.year,
+          completionDate.month + 1,
+          1,
+        ).subtract(const Duration(seconds: 1));
+        alreadyCompleted = habit.completions.any((completion) {
+          return completion.isAfter(
+                monthStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              completion.isBefore(monthEnd.add(const Duration(seconds: 1)));
+        });
+        break;
+
+      case HabitFrequency.yearly:
+        // For yearly habits, prevent duplicates within the same year
+        final yearStart = DateTime(completionDate.year, 1, 1);
+        final yearEnd = DateTime(
+          completionDate.year + 1,
+          1,
+          1,
+        ).subtract(const Duration(seconds: 1));
+        alreadyCompleted = habit.completions.any((completion) {
+          return completion.isAfter(
+                yearStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              completion.isBefore(yearEnd.add(const Duration(seconds: 1)));
         });
         break;
     }
@@ -356,9 +403,6 @@ class HabitService {
         });
 
       case HabitFrequency.daily:
-      case HabitFrequency.weekly:
-      case HabitFrequency.monthly:
-      case HabitFrequency.yearly:
         // Check if completed today
         final today = DateTime(checkTime.year, checkTime.month, checkTime.day);
         return habit.completions.any((completion) {
@@ -369,7 +413,61 @@ class HabitService {
           );
           return completionDay.isAtSameMomentAs(today);
         });
+
+      case HabitFrequency.weekly:
+        // Check if completed in the current week (Monday to Sunday)
+        final weekStart = _getWeekStart(checkTime);
+        final weekEnd = weekStart.add(
+          const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+        );
+        return habit.completions.any((completion) {
+          return completion.isAfter(
+                weekStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              completion.isBefore(weekEnd.add(const Duration(seconds: 1)));
+        });
+
+      case HabitFrequency.monthly:
+        // Check if completed in the current month
+        final monthStart = DateTime(checkTime.year, checkTime.month, 1);
+        final monthEnd = DateTime(
+          checkTime.year,
+          checkTime.month + 1,
+          1,
+        ).subtract(const Duration(seconds: 1));
+        return habit.completions.any((completion) {
+          return completion.isAfter(
+                monthStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              completion.isBefore(monthEnd.add(const Duration(seconds: 1)));
+        });
+
+      case HabitFrequency.yearly:
+        // Check if completed in the current year
+        final yearStart = DateTime(checkTime.year, 1, 1);
+        final yearEnd = DateTime(
+          checkTime.year + 1,
+          1,
+          1,
+        ).subtract(const Duration(seconds: 1));
+        return habit.completions.any((completion) {
+          return completion.isAfter(
+                yearStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              completion.isBefore(yearEnd.add(const Duration(seconds: 1)));
+        });
     }
+  }
+
+  /// Get the start of the week (Monday) for a given date
+  DateTime _getWeekStart(DateTime date) {
+    // Get the Monday of the current week
+    final daysFromMonday = (date.weekday - 1) % 7;
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(Duration(days: daysFromMonday));
   }
 
   void _updateStreaks(Habit habit) {

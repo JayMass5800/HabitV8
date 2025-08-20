@@ -147,6 +147,19 @@ class Habit extends HiveObject {
     );
   }
 
+  // Check if habit was completed for the current period based on frequency (cached)
+  bool get isCompletedForCurrentPeriod {
+    final now = DateTime.now();
+    final periodKey = _getPeriodKey(now);
+
+    return _statsService.cache.getOrCompute(
+      'completed_period_${id}_$periodKey',
+      () => _checkCompletedForCurrentPeriod(now),
+      ttl: const Duration(hours: 1),
+      dependsOn: ['habit_completions_$id'],
+    );
+  }
+
   bool _checkCompletedToday() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -159,6 +172,115 @@ class Habit extends HiveObject {
       );
       return completionDay.isAtSameMomentAs(today);
     });
+  }
+
+  bool _checkCompletedForCurrentPeriod(DateTime checkTime) {
+    switch (frequency) {
+      case HabitFrequency.hourly:
+        // Check if completed in the current hour
+        final currentHour = DateTime(
+          checkTime.year,
+          checkTime.month,
+          checkTime.day,
+          checkTime.hour,
+        );
+        return completions.any((completion) {
+          final completionHour = DateTime(
+            completion.year,
+            completion.month,
+            completion.day,
+            completion.hour,
+          );
+          return completionHour.isAtSameMomentAs(currentHour);
+        });
+
+      case HabitFrequency.daily:
+        // Check if completed today
+        final today = DateTime(checkTime.year, checkTime.month, checkTime.day);
+        return completions.any((completion) {
+          final completionDay = DateTime(
+            completion.year,
+            completion.month,
+            completion.day,
+          );
+          return completionDay.isAtSameMomentAs(today);
+        });
+
+      case HabitFrequency.weekly:
+        // Check if completed in the current week (Monday to Sunday)
+        final weekStart = _getWeekStart(checkTime);
+        final weekEnd = weekStart.add(
+          const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+        );
+        return completions.any((completion) {
+          return completion.isAfter(
+                weekStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              completion.isBefore(weekEnd.add(const Duration(seconds: 1)));
+        });
+
+      case HabitFrequency.monthly:
+        // Check if completed in the current month
+        final monthStart = DateTime(checkTime.year, checkTime.month, 1);
+        final monthEnd = DateTime(
+          checkTime.year,
+          checkTime.month + 1,
+          1,
+        ).subtract(const Duration(seconds: 1));
+        return completions.any((completion) {
+          return completion.isAfter(
+                monthStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              completion.isBefore(monthEnd.add(const Duration(seconds: 1)));
+        });
+
+      case HabitFrequency.yearly:
+        // Check if completed in the current year
+        final yearStart = DateTime(checkTime.year, 1, 1);
+        final yearEnd = DateTime(
+          checkTime.year + 1,
+          1,
+          1,
+        ).subtract(const Duration(seconds: 1));
+        return completions.any((completion) {
+          return completion.isAfter(
+                yearStart.subtract(const Duration(seconds: 1)),
+              ) &&
+              completion.isBefore(yearEnd.add(const Duration(seconds: 1)));
+        });
+    }
+  }
+
+  String _getPeriodKey(DateTime date) {
+    switch (frequency) {
+      case HabitFrequency.hourly:
+        return '${date.year}-${date.month}-${date.day}-${date.hour}';
+      case HabitFrequency.daily:
+        return '${date.year}-${date.month}-${date.day}';
+      case HabitFrequency.weekly:
+        final weekStart = _getWeekStart(date);
+        return '${weekStart.year}-W${_getWeekOfYear(weekStart)}';
+      case HabitFrequency.monthly:
+        return '${date.year}-${date.month}';
+      case HabitFrequency.yearly:
+        return '${date.year}';
+    }
+  }
+
+  DateTime _getWeekStart(DateTime date) {
+    // Get the Monday of the current week
+    final daysFromMonday = (date.weekday - 1) % 7;
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(Duration(days: daysFromMonday));
+  }
+
+  int _getWeekOfYear(DateTime date) {
+    final firstDayOfYear = DateTime(date.year, 1, 1);
+    final daysSinceFirstDay = date.difference(firstDayOfYear).inDays;
+    return (daysSinceFirstDay / 7).ceil();
   }
 
   // Get days since last completion (cached)
