@@ -371,6 +371,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   child: Column(
                     children: [
                       const Divider(),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ListTile(
+                                title: const Text(
+                                  'Health Integration Dashboard',
+                                ),
+                                subtitle: const Text(
+                                  'Access all health integration settings',
+                                ),
+                                leading: const Icon(Icons.dashboard),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () =>
+                                    context.push('/health-integration'),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                                child: Text(
+                                  'Includes: Sync interval, background sync, auto-completion, and detailed health data settings',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                          ),
+                        ),
+                      ),
                       SwitchListTile(
                         title: const Text('Automatic Habit Completion'),
                         subtitle: const Text(
@@ -380,18 +413,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         onChanged: (value) => _toggleAutoCompletion(value),
                         secondary: const Icon(Icons.auto_awesome),
                       ),
-                      if (_autoCompletionEnabled) ...[
-                        ListTile(
-                          title: const Text('Health Integration Dashboard'),
-                          subtitle: const Text(
-                            'View detailed health-habit integration and settings',
-                          ),
-                          leading: const Icon(Icons.dashboard),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => context.push('/health-integration'),
-                        ),
-                      ],
-                      const Divider(),
                       _SettingsTile(
                         title: 'Manage Health Permissions',
                         subtitle: 'Review and update health data permissions',

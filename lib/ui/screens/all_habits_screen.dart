@@ -332,6 +332,26 @@ class _HabitCard extends ConsumerWidget {
                               fontSize: 12,
                             ),
                           ),
+                          // Add frequency type
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              _getFrequencyTypeDisplay(habit.frequency),
+                              style: const TextStyle(
+                                color: Colors.purple,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                           // Add time display
                           if (_getHabitTimeDisplay(habit).isNotEmpty) ...[
                             const SizedBox(width: 8),
@@ -623,6 +643,21 @@ class _HabitCard extends ConsumerWidget {
           return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
         }
         return '';
+    }
+  }
+
+  String _getFrequencyTypeDisplay(HabitFrequency frequency) {
+    switch (frequency) {
+      case HabitFrequency.hourly:
+        return 'Hourly';
+      case HabitFrequency.daily:
+        return 'Daily';
+      case HabitFrequency.weekly:
+        return 'Weekly';
+      case HabitFrequency.monthly:
+        return 'Monthly';
+      case HabitFrequency.yearly:
+        return 'Yearly';
     }
   }
 }

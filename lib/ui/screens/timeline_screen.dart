@@ -61,7 +61,10 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
             child: GestureDetector(
               onTap: _selectDate,
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(8),
@@ -90,10 +93,26 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   Widget _buildHabitsList() {
     return Consumer(
       builder: (context, ref, child) {
+        // Use ref.watch to automatically rebuild when habitServiceProvider changes
         final habitServiceAsync = ref.watch(habitServiceProvider);
+
+        // Add a listener to the habitServiceProvider to ensure updates
+        ref.listen<AsyncValue<HabitService>>(habitServiceProvider, (
+          previous,
+          next,
+        ) {
+          // This will trigger a rebuild when the provider changes
+          if (previous != next) {
+            setState(() {
+              // Force rebuild
+            });
+          }
+        });
 
         return habitServiceAsync.when(
           data: (habitService) => FutureBuilder<List<Habit>>(
+            // Add a key to force rebuild when habitServiceProvider changes
+            key: ValueKey(DateTime.now().millisecondsSinceEpoch),
             future: habitService.getAllHabits(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -124,24 +143,28 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
               final allHabits = snapshot.data!;
               final filteredHabits = _selectedCategory == 'All'
                   ? allHabits
-                  : allHabits.where((habit) => habit.category == _selectedCategory).toList();
+                  : allHabits
+                        .where((habit) => habit.category == _selectedCategory)
+                        .toList();
 
-              final todayHabits = filteredHabits.where((habit) => _isHabitDueOnDate(habit, _selectedDate)).toList();
-              
+              final todayHabits = filteredHabits
+                  .where((habit) => _isHabitDueOnDate(habit, _selectedDate))
+                  .toList();
+
               // Sort habits chronologically by notification time
               todayHabits.sort((a, b) {
                 // If both habits have notification times, sort by time
                 if (a.notificationTime != null && b.notificationTime != null) {
                   final timeA = a.notificationTime!;
                   final timeB = b.notificationTime!;
-                  
+
                   // Compare by hour first, then by minute
                   if (timeA.hour != timeB.hour) {
                     return timeA.hour.compareTo(timeB.hour);
                   }
                   return timeA.minute.compareTo(timeB.minute);
                 }
-                
+
                 // If only one has notification time, prioritize it
                 if (a.notificationTime != null && b.notificationTime == null) {
                   return -1; // a comes first
@@ -149,7 +172,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 if (a.notificationTime == null && b.notificationTime != null) {
                   return 1; // b comes first
                 }
-                
+
                 // If neither has notification time, sort by creation date (newest first)
                 return b.createdAt.compareTo(a.createdAt);
               });
@@ -159,13 +182,20 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 64,
+                        color: Colors.green,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         _selectedCategory == 'All'
                             ? 'No habits scheduled for this day'
                             : 'No $_selectedCategory habits for this day',
-                        style: const TextStyle(fontSize: 18, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -229,7 +259,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                       habit.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        decoration: isCompleted ? TextDecoration.lineThrough : null,
+                        decoration: isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     if (habit.description != null) ...[
@@ -247,39 +279,52 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: Color(habit.colorValue).withValues(alpha: 0.1),
+                            color: Color(
+                              habit.colorValue,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             habit.category,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Color(habit.colorValue),
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Color(habit.colorValue),
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             status,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: statusColor,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
                           ),
                         ),
                         // Add time display
                         if (_getHabitTimeDisplay(habit).isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.grey.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
@@ -295,10 +340,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   _getHabitTimeDisplay(habit),
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                 ),
                               ],
                             ),
@@ -316,7 +362,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isCompleted ? Colors.green : statusColor.withValues(alpha: 0.1),
+                  color: isCompleted
+                      ? Colors.green
+                      : statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isCompleted ? Colors.green : statusColor,
@@ -326,10 +374,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   transitionBuilder: (child, animation) {
-                    return ScaleTransition(
-                      scale: animation,
-                      child: child,
-                    );
+                    return ScaleTransition(scale: animation, child: child);
                   },
                   child: Icon(
                     isCompleted ? Icons.check : Icons.circle_outlined,
@@ -376,11 +421,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           // Fallback: use creation date but only show on or after the anniversary
           final habitCreationDate = habit.createdAt;
           final currentYear = date.year;
-          
+
           // Only show if the date is the anniversary and it's on or after the creation year
-          return date.month == habitCreationDate.month && 
-                 date.day == habitCreationDate.day &&
-                 currentYear >= habitCreationDate.year;
+          return date.month == habitCreationDate.month &&
+              date.day == habitCreationDate.day &&
+              currentYear >= habitCreationDate.year;
         }
     }
   }
@@ -388,7 +433,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   bool _isHabitCompletedOnDate(Habit habit, DateTime date) {
     final dateOnly = DateTime(date.year, date.month, date.day);
     return habit.completions.any((completion) {
-      final completionDate = DateTime(completion.year, completion.month, completion.day);
+      final completionDate = DateTime(
+        completion.year,
+        completion.month,
+        completion.day,
+      );
       return completionDate == dateOnly;
     });
   }
@@ -435,8 +484,16 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         if (isCompleted) {
           // Remove completion
           habit.completions.removeWhere((completion) {
-            final completionDate = DateTime(completion.year, completion.month, completion.day);
-            final selectedDate = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+            final completionDate = DateTime(
+              completion.year,
+              completion.month,
+              completion.day,
+            );
+            final selectedDate = DateTime(
+              _selectedDate.year,
+              _selectedDate.month,
+              _selectedDate.day,
+            );
             return completionDate == selectedDate;
           });
         } else {
@@ -451,9 +508,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       loading: () {},
       error: (error, stack) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $error')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $error')));
         }
       },
     );
@@ -486,7 +543,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           }
         }
         return 'Hourly';
-      
+
       case HabitFrequency.daily:
       case HabitFrequency.weekly:
       case HabitFrequency.monthly:

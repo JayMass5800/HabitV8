@@ -297,15 +297,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // A. Quick Stats Grid - Overview at a glance
-                    _buildQuickStatsGrid(habits),
+                    // Moved: Conditional Health Hub (formerly at the bottom)
+                    _buildConditionalHealthHub(habits),
                     const SizedBox(height: 24),
-
-                    // B. Gamification Card - User progress and achievements
-                    if (_gamificationStats != null) ...[
-                      _buildGamificationCard(),
-                      const SizedBox(height: 24),
-                    ],
 
                     // C. Recent Insights - Personalized motivational messages
                     _buildRecentInsightsCard(habits),
@@ -319,28 +313,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     _buildHabitPerformanceDeepDive(habits),
                     const SizedBox(height: 24),
 
-                    // F. Health Integration
-                    if (_healthSummary != null &&
-                        _healthSummary!.isNotEmpty) ...[
-                      _buildHealthCard(),
-                      const SizedBox(height: 24),
-                    ],
-
                     // G. Enhanced Health Integration
                     if (_integrationStatus != null) ...[
                       _buildEnhancedHealthIntegrationSection(),
                       const SizedBox(height: 24),
                     ],
-
-                    // H. Health Analytics
-                    if (_healthAnalytics != null) ...[
-                      _buildHealthAnalyticsSection(),
-                      const SizedBox(height: 24),
-                    ],
-
-                    // I. Conditional Health Hub
-                    _buildConditionalHealthHub(habits),
-                    const SizedBox(height: 24),
 
                     // J. Debug Section (temporary for troubleshooting)
                     _buildDebugSection(),
@@ -1003,6 +980,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Gamification Card moved to the top of achievements tab
+              if (_gamificationStats != null) ...[
+                _buildGamificationCard(),
+                const SizedBox(height: 24),
+              ],
+
               // Motivational Header
               _buildMotivationalHeader(
                 'Achievements & Rewards',
