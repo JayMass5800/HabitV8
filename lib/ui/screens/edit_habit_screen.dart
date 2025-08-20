@@ -28,7 +28,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   late final List<int> _selectedWeekdays;
   late final List<int> _selectedMonthDays;
   late int _targetCount;
-  late int _originalHashCode; // Store original hash code for notification management
+  late int
+  _originalHashCode; // Store original hash code for notification management
 
   // Comprehensive categories from the category suggestion service
   List<String> get _categories {
@@ -54,7 +55,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
     // Initialize controllers and state with existing habit data
     _nameController = TextEditingController(text: widget.habit.name);
-    _descriptionController = TextEditingController(text: widget.habit.description ?? '');
+    _descriptionController = TextEditingController(
+      text: widget.habit.description ?? '',
+    );
 
     _selectedFrequency = widget.habit.frequency;
     _selectedCategory = widget.habit.category;
@@ -64,31 +67,37 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     _notificationTime = widget.habit.notificationTime != null
         ? TimeOfDay.fromDateTime(widget.habit.notificationTime!)
         : null;
-    _selectedWeekdays = List<int>.from(widget.habit.weeklySchedule);
-    _selectedMonthDays = List<int>.from(widget.habit.monthlySchedule);
+    // Load from new fields first, fall back to old fields for backward compatibility
+    _selectedWeekdays = widget.habit.selectedWeekdays.isNotEmpty
+        ? List<int>.from(widget.habit.selectedWeekdays)
+        : List<int>.from(widget.habit.weeklySchedule);
+    _selectedMonthDays = widget.habit.selectedMonthDays.isNotEmpty
+        ? List<int>.from(widget.habit.selectedMonthDays)
+        : List<int>.from(widget.habit.monthlySchedule);
     _targetCount = widget.habit.targetCount;
-    _originalHashCode = widget.habit.hashCode; // Store original for notification cleanup
-    
+    _originalHashCode =
+        widget.habit.hashCode; // Store original for notification cleanup
+
     // Add listeners to text controllers for category suggestions
     _nameController.addListener(_onHabitTextChanged);
     _descriptionController.addListener(_onHabitTextChanged);
   }
-  
+
   void _onHabitTextChanged() {
     // Trigger rebuild to update category suggestions
     setState(() {});
   }
-  
+
   List<String> _getCategorySuggestions() {
     return CategorySuggestionService.getCategorySuggestions(
       _nameController.text,
       _descriptionController.text,
     );
   }
-  
+
   Widget _buildCategorySection() {
     final suggestions = _getCategorySuggestions();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -99,10 +108,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
             border: OutlineInputBorder(),
           ),
           items: _categories.map((category) {
-            return DropdownMenuItem(
-              value: category,
-              child: Text(category),
-            );
+            return DropdownMenuItem(value: category, child: Text(category));
           }).toList(),
           onChanged: (value) {
             setState(() {
@@ -132,10 +138,12 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                     _selectedCategory = suggestion;
                   });
                 },
-                backgroundColor: isSelected 
-                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
+                backgroundColor: isSelected
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.2)
                     : null,
-                side: isSelected 
+                side: isSelected
                     ? BorderSide(color: Theme.of(context).colorScheme.primary)
                     : null,
               );
@@ -158,12 +166,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Habit'),
-        actions: [
-          TextButton(
-            onPressed: _saveHabit,
-            child: const Text('Save'),
-          ),
-        ],
+        actions: [TextButton(onPressed: _saveHabit, child: const Text('Save'))],
       ),
       body: Form(
         key: _formKey,
@@ -193,9 +196,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           children: [
             Text(
               'Basic Information',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -229,7 +232,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       ),
     );
   }
-  
+
   Widget _buildCustomizationSection() {
     return Card(
       child: Padding(
@@ -239,16 +242,16 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           children: [
             Text(
               'Customization',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Text(
               'Color',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -295,9 +298,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           children: [
             Text(
               'Frequency',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -325,9 +328,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               const SizedBox(height: 16),
               Text(
                 'Select Days',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               _buildWeekdaySelector(),
@@ -336,9 +339,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               const SizedBox(height: 16),
               Text(
                 'Select Days of Month',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               _buildMonthDaySelector(),
@@ -414,16 +417,18 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           children: [
             Text(
               'Notifications',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
               title: const Text('Enable Notifications'),
-              subtitle: Text(_selectedFrequency == HabitFrequency.hourly 
-                  ? 'Get reminded at your selected times throughout the day'
-                  : 'Get reminded when it\'s time for your habit'),
+              subtitle: Text(
+                _selectedFrequency == HabitFrequency.hourly
+                    ? 'Get reminded at your selected times throughout the day'
+                    : 'Get reminded when it\'s time for your habit',
+              ),
               value: _notificationsEnabled,
               onChanged: (value) {
                 setState(() {
@@ -433,13 +438,16 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               activeThumbColor: _selectedColor,
             ),
             // Only show time picker for non-hourly habits
-            if (_notificationsEnabled && _selectedFrequency != HabitFrequency.hourly) ...[
+            if (_notificationsEnabled &&
+                _selectedFrequency != HabitFrequency.hourly) ...[
               const SizedBox(height: 16),
               ListTile(
                 title: const Text('Notification Time'),
-                subtitle: Text(_notificationTime != null
-                    ? _notificationTime!.format(context)
-                    : 'No time selected'),
+                subtitle: Text(
+                  _notificationTime != null
+                      ? _notificationTime!.format(context)
+                      : 'No time selected',
+                ),
                 trailing: const Icon(Icons.access_time),
                 onTap: () async {
                   final time = await showTimePicker(
@@ -455,14 +463,17 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               ),
             ],
             // Show info for hourly habits
-            if (_notificationsEnabled && _selectedFrequency == HabitFrequency.hourly) ...[
+            if (_notificationsEnabled &&
+                _selectedFrequency == HabitFrequency.hourly) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _selectedColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _selectedColor.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: _selectedColor.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -471,9 +482,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                     Expanded(
                       child: Text(
                         'Hourly habits will send notifications every hour during your active hours (8 AM - 10 PM)',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: _selectedColor,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: _selectedColor),
                       ),
                     ),
                   ],
@@ -507,7 +518,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     }
 
     // Validate schedule selections
-    if (_selectedFrequency == HabitFrequency.weekly && _selectedWeekdays.isEmpty) {
+    if (_selectedFrequency == HabitFrequency.weekly &&
+        _selectedWeekdays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select at least one day for weekly habits'),
@@ -517,7 +529,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       return;
     }
 
-    if (_selectedFrequency == HabitFrequency.monthly && _selectedMonthDays.isEmpty) {
+    if (_selectedFrequency == HabitFrequency.monthly &&
+        _selectedMonthDays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select at least one day for monthly habits'),
@@ -528,7 +541,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     }
 
     // Only require notification time for non-hourly habits
-    if (_notificationsEnabled && _selectedFrequency != HabitFrequency.hourly && _notificationTime == null) {
+    if (_notificationsEnabled &&
+        _selectedFrequency != HabitFrequency.hourly &&
+        _notificationTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a notification time'),
@@ -554,7 +569,13 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       widget.habit.notificationsEnabled = _notificationsEnabled;
       // Convert TimeOfDay? back to DateTime? for storage
       widget.habit.notificationTime = _notificationTime != null
-          ? DateTime(2000, 1, 1, _notificationTime!.hour, _notificationTime!.minute)
+          ? DateTime(
+              2000,
+              1,
+              1,
+              _notificationTime!.hour,
+              _notificationTime!.minute,
+            )
           : null;
       widget.habit.weeklySchedule = List<int>.from(_selectedWeekdays);
       widget.habit.monthlySchedule = List<int>.from(_selectedMonthDays);
@@ -564,7 +585,10 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
       // Analyze habit for health mapping after saving
       try {
-        final healthMapping = await HealthHabitMappingService.analyzeHabitForHealthMapping(widget.habit);
+        final healthMapping =
+            await HealthHabitMappingService.analyzeHabitForHealthMapping(
+              widget.habit,
+            );
         if (healthMapping != null) {
           // Log successful health mapping analysis
           // Health mapping found for habit: ${widget.habit.name} -> ${healthMapping.healthDataType}
@@ -612,19 +636,25 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
         case HabitFrequency.weekly:
           for (int weekday in widget.habit.weeklySchedule) {
-            await NotificationService.cancelNotification(_originalHashCode + weekday);
+            await NotificationService.cancelNotification(
+              _originalHashCode + weekday,
+            );
           }
           break;
 
         case HabitFrequency.monthly:
           for (int monthDay in widget.habit.monthlySchedule) {
-            await NotificationService.cancelNotification(_originalHashCode + monthDay + 1000);
+            await NotificationService.cancelNotification(
+              _originalHashCode + monthDay + 1000,
+            );
           }
           break;
 
         case HabitFrequency.hourly:
           for (int i = 1; i <= 24; i++) {
-            await NotificationService.cancelNotification(_originalHashCode + i + 2000);
+            await NotificationService.cancelNotification(
+              _originalHashCode + i + 2000,
+            );
           }
           break;
 
@@ -667,13 +697,19 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       switch (habit.frequency) {
         case HabitFrequency.daily:
           final now = DateTime.now();
-          DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, minute);
-          
+          DateTime nextNotification = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            hour,
+            minute,
+          );
+
           // If the time has passed today, schedule for tomorrow
           if (nextNotification.isBefore(now)) {
             nextNotification = nextNotification.add(const Duration(days: 1));
           }
-          
+
           await NotificationService.scheduleHabitNotification(
             id: habit.hashCode,
             habitId: habit.id,
@@ -686,7 +722,13 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         case HabitFrequency.weekly:
           for (int weekday in habit.weeklySchedule) {
             final now = DateTime.now();
-            DateTime nextNotification = DateTime(now.year, now.month, now.day, hour, minute);
+            DateTime nextNotification = DateTime(
+              now.year,
+              now.month,
+              now.day,
+              hour,
+              minute,
+            );
 
             while (nextNotification.weekday != weekday) {
               nextNotification = nextNotification.add(const Duration(days: 1));
@@ -709,10 +751,22 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         case HabitFrequency.monthly:
           for (int monthDay in habit.monthlySchedule) {
             final now = DateTime.now();
-            DateTime nextNotification = DateTime(now.year, now.month, monthDay, hour, minute);
+            DateTime nextNotification = DateTime(
+              now.year,
+              now.month,
+              monthDay,
+              hour,
+              minute,
+            );
 
             if (nextNotification.isBefore(now)) {
-              nextNotification = DateTime(now.year, now.month + 1, monthDay, hour, minute);
+              nextNotification = DateTime(
+                now.year,
+                now.month + 1,
+                monthDay,
+                hour,
+                minute,
+              );
             }
 
             await NotificationService.scheduleHabitNotification(
@@ -728,7 +782,13 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         case HabitFrequency.yearly:
           // For yearly habits, schedule next occurrence
           final now = DateTime.now();
-          DateTime nextNotification = DateTime(now.year + 1, now.month, now.day, hour, minute);
+          DateTime nextNotification = DateTime(
+            now.year + 1,
+            now.month,
+            now.day,
+            hour,
+            minute,
+          );
 
           await NotificationService.scheduleHabitNotification(
             id: habit.hashCode,

@@ -398,10 +398,14 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         return true;
       case HabitFrequency.weekly:
         final weekday = date.weekday;
-        return habit.weeklySchedule.contains(weekday);
+        // Check both old and new fields for backward compatibility
+        return habit.selectedWeekdays.contains(weekday) ||
+            habit.weeklySchedule.contains(weekday);
       case HabitFrequency.monthly:
         final day = date.day;
-        return habit.monthlySchedule.contains(day);
+        // Check both old and new fields for backward compatibility
+        return habit.selectedMonthDays.contains(day) ||
+            habit.monthlySchedule.contains(day);
       case HabitFrequency.yearly:
         // For yearly habits, check if the selected date matches the habit's yearly schedule
         // Use selectedYearlyDates if available, otherwise fall back to creation date

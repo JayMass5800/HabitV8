@@ -250,6 +250,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Widget build(BuildContext context) {
     final themeState = ref.watch(themeProvider);
 
+    // Debug: Print health data sync status
+    AppLogger.info('Settings build - Health data sync: $_healthDataSync');
+
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Settings')),
@@ -365,6 +368,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ),
                 ),
               ],
+              // Debug: Health data sync status
               if (_healthDataSync) ...[
                 SmoothTransitions.fadeTransition(
                   show: _healthDataSync,
@@ -753,6 +757,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         if (hasPermissions) {
           // Save the health sync preference to persist across app restarts
           await _saveHealthSyncPreference(true);
+
+          // Force a rebuild to ensure the health integration dashboard appears
+          if (mounted) {
+            setState(() {});
+          }
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(

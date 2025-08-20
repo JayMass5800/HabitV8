@@ -297,15 +297,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Moved: Conditional Health Hub (formerly at the bottom)
-                    _buildConditionalHealthHub(habits),
-                    const SizedBox(height: 24),
-
-                    // C. Recent Insights - Personalized motivational messages
-                    _buildRecentInsightsCard(habits),
-                    const SizedBox(height: 24),
-
-                    // D. The "Big Four" Performance Cards
+                    // D. The "Big Four" Performance Cards - moved to top
                     _buildBigFourPerformanceCards(habits),
                     const SizedBox(height: 24),
 
@@ -319,8 +311,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       const SizedBox(height: 24),
                     ],
 
-                    // J. Debug Section (temporary for troubleshooting)
-                    _buildDebugSection(),
+                    // Moved: Conditional Health Hub (Your Health & Habit Connection)
+                    _buildConditionalHealthHub(habits),
                   ],
                 ),
               );
@@ -980,46 +972,18 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Gamification Card moved to the top of achievements tab
-              if (_gamificationStats != null) ...[
-                _buildGamificationCard(),
-                const SizedBox(height: 24),
-              ],
-
-              // Motivational Header
+              // Motivational Header - moved to top
               _buildMotivationalHeader(
                 'Achievements & Rewards',
                 'Celebrate your progress and unlock new milestones! 🏆',
               ),
               const SizedBox(height: 24),
 
-              // Progress Overview Card
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Achievement Progress',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      LinearProgressIndicator(
-                        value:
-                            unlockedAchievements.length /
-                            allAchievements.length,
-                        backgroundColor: Colors.grey[300],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${unlockedAchievements.length} / ${allAchievements.length} achievements unlocked',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              // Gamification Card below the banner
+              if (_gamificationStats != null) ...[
+                _buildGamificationCard(),
+                const SizedBox(height: 24),
+              ],
 
               // Recent Achievements
               if (unlockedAchievements.isNotEmpty) ...[
