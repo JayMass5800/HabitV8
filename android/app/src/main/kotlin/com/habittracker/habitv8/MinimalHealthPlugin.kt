@@ -523,10 +523,37 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 map["unit"] = "calories"
             }
             is SleepSessionRecord -> {
-                map["timestamp"] = record.startTime.toEpochMilli()
-                map["value"] = (record.endTime.toEpochMilli() - record.startTime.toEpochMilli()) / (1000.0 * 60.0) // minutes
+                val startTime = record.startTime.toEpochMilli()
+                val endTime = record.endTime.toEpochMilli()
+                val durationMinutes = (endTime - startTime) / (1000.0 * 60.0)
+                
+                map["timestamp"] = startTime
+                map["value"] = durationMinutes
                 map["unit"] = "minutes"
-                map["endTime"] = record.endTime.toEpochMilli()
+                map["endTime"] = endTime
+                
+                // Try to get sleep stage information if available
+                try {
+                    val stagesMethod = record.javaClass.getMethod("getStages")
+                    val stages = stagesMethod.invoke(record) as List<*>
+                    map["stageCount"] = stages.size
+                    
+                    Log.d("MinimalHealthPlugin", "Sleep record: ${durationMinutes.toInt()} minutes from ${Instant.ofEpochMilli(startTime)} to ${Instant.ofEpochMilli(endTime)}, stages: ${stages.size}")
+                } catch (e: Exception) {
+                    Log.d("MinimalHealthPlugin", "Sleep record: ${durationMinutes.toInt()} minutes from ${Instant.ofEpochMilli(startTime)} to ${Instant.ofEpochMilli(endTime)} (no stage info)")
+                }
+                
+                // Log additional details for debugging
+                try {
+                    val titleMethod = record.javaClass.getMethod("getTitle")
+                    val title = titleMethod.invoke(record) as String?
+                    if (title != null) {
+                        map["title"] = title
+                        Log.d("MinimalHealthPlugin", "Sleep record title: $title")
+                    }
+                } catch (e: Exception) {
+                    // Title method not available, ignore
+                }
             }
             is HydrationRecord -> {
                 // HydrationRecord is an InstantRecord, so it should have a 'time' property
@@ -573,8 +600,11 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                         val beatsPerMinuteMethod = firstSample!!.javaClass.getMethod("getBeatsPerMinute")
                         val bpm = beatsPerMinuteMethod.invoke(firstSample) as Long
                         map["value"] = bpm.toDouble()
+                        
+                        Log.d("MinimalHealthPlugin", "Heart rate record: ${bpm} bpm at ${Instant.ofEpochMilli(map["timestamp"] as Long)}, samples: ${samples.size}")
                     } else {
                         map["value"] = 0.0
+                        Log.w("MinimalHealthPlugin", "Heart rate record has no samples")
                     }
                 } catch (e: Exception) {
                     Log.w("MinimalHealthPlugin", "Error getting heart rate samples", e)

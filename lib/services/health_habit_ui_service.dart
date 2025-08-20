@@ -920,6 +920,8 @@ class HealthHabitUIService {
     // First check the current Health Connect status
     final status = await HealthService.getHealthConnectStatus();
 
+    if (!context.mounted) return;
+
     switch (status) {
       case HealthConnectStatus.notInstalled:
         return _showHealthConnectInstallDialog(context);

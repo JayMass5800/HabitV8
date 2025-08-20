@@ -536,11 +536,88 @@ class HealthService {
     }
 
     try {
+      AppLogger.info('Attempting to retrieve sleep data for last night...');
+
+      // First check if we have permissions
+      final hasPerms = await hasPermissions();
+      AppLogger.info('Sleep data request - Has permissions: $hasPerms');
+
+      if (!hasPerms) {
+        AppLogger.warning('No health permissions - cannot retrieve sleep data');
+        return 0.0;
+      }
+
       final double sleepHours =
           await MinimalHealthChannel.getSleepHoursLastNight();
       AppLogger.info(
         'Retrieved sleep data: ${sleepHours.toStringAsFixed(1)} hours',
       );
+
+      // If we got 0 hours, let's debug further
+      if (sleepHours == 0.0) {
+        AppLogger.warning('Sleep data returned 0 hours - investigating...');
+
+        // Try to get raw sleep data for debugging
+        final now = DateTime.now();
+        final yesterday = now.subtract(const Duration(days: 1));
+        final startTime = DateTime(
+          yesterday.year,
+          yesterday.month,
+          yesterday.day,
+          18,
+        ); // 6 PM yesterday
+        final endTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          12,
+        ); // 12 PM today
+
+        AppLogger.info(
+          'Checking sleep data from ${startTime.toIso8601String()} to ${endTime.toIso8601String()}',
+        );
+
+        try {
+          final rawSleepData = await MinimalHealthChannel.getHealthData(
+            dataType: 'SLEEP_IN_BED',
+            startDate: startTime,
+            endDate: endTime,
+          );
+
+          AppLogger.info(
+            'Raw sleep data records found: ${rawSleepData.length}',
+          );
+          for (int i = 0; i < rawSleepData.length && i < 5; i++) {
+            final record = rawSleepData[i];
+            AppLogger.info('Sleep record $i: ${record.toString()}');
+          }
+
+          if (rawSleepData.isEmpty) {
+            AppLogger.warning(
+              'No sleep records found in Health Connect for the specified time range',
+            );
+            AppLogger.info('This could mean:');
+            AppLogger.info(
+              '1. Your smartwatch data is not syncing to Health Connect',
+            );
+            AppLogger.info(
+              '2. Sleep data is stored under a different time range',
+            );
+            AppLogger.info(
+              '3. Sleep data permissions are not properly granted',
+            );
+            AppLogger.info(
+              '4. Your smartwatch app is not compatible with Health Connect',
+            );
+          }
+        } catch (debugError) {
+          AppLogger.error(
+            'Error getting raw sleep data for debugging',
+            debugError,
+          );
+        }
+      }
+
       return sleepHours;
     } catch (e) {
       AppLogger.error('Error getting sleep data', e);
@@ -630,11 +707,90 @@ class HealthService {
     }
 
     try {
+      AppLogger.info('Attempting to retrieve latest heart rate data...');
+
+      // First check if we have permissions
+      final hasPerms = await hasPermissions();
+      AppLogger.info('Heart rate data request - Has permissions: $hasPerms');
+
+      if (!hasPerms) {
+        AppLogger.warning(
+          'No health permissions - cannot retrieve heart rate data',
+        );
+        return null;
+      }
+
       final double? heartRate = await MinimalHealthChannel.getLatestHeartRate();
       if (heartRate != null) {
         AppLogger.info('Retrieved heart rate data: ${heartRate.round()} bpm');
       } else {
-        AppLogger.info('No heart rate data available');
+        AppLogger.info('No heart rate data available - investigating...');
+
+        // Try to get raw heart rate data for debugging
+        final now = DateTime.now();
+        final startTime = now.subtract(
+          const Duration(hours: 24),
+        ); // Last 24 hours
+
+        AppLogger.info(
+          'Checking heart rate data from ${startTime.toIso8601String()} to ${now.toIso8601String()}',
+        );
+
+        try {
+          final rawHeartRateData = await MinimalHealthChannel.getHealthData(
+            dataType: 'HEART_RATE',
+            startDate: startTime,
+            endDate: now,
+          );
+
+          AppLogger.info(
+            'Raw heart rate data records found: ${rawHeartRateData.length}',
+          );
+          for (int i = 0; i < rawHeartRateData.length && i < 5; i++) {
+            final record = rawHeartRateData[i];
+            AppLogger.info('Heart rate record $i: ${record.toString()}');
+          }
+
+          if (rawHeartRateData.isEmpty) {
+            AppLogger.warning(
+              'No heart rate records found in Health Connect for the last 24 hours',
+            );
+            AppLogger.info('This could mean:');
+            AppLogger.info(
+              '1. Your smartwatch heart rate data is not syncing to Health Connect',
+            );
+            AppLogger.info(
+              '2. Heart rate data permissions are not properly granted',
+            );
+            AppLogger.info(
+              '3. Your smartwatch app is not compatible with Health Connect',
+            );
+            AppLogger.info(
+              '4. Heart rate data is stored in a different format or location',
+            );
+
+            // Try a wider time range
+            final widerStartTime = now.subtract(
+              const Duration(days: 7),
+            ); // Last 7 days
+            AppLogger.info('Trying wider time range: last 7 days...');
+
+            final widerRangeData = await MinimalHealthChannel.getHealthData(
+              dataType: 'HEART_RATE',
+              startDate: widerStartTime,
+              endDate: now,
+            );
+
+            AppLogger.info(
+              'Heart rate data in last 7 days: ${widerRangeData.length} records',
+            );
+          }
+        } catch (debugError) {
+          AppLogger.error(
+            'Error getting raw heart rate data for debugging',
+            debugError,
+          );
+        }
       }
       return heartRate;
     } catch (e) {
@@ -944,6 +1100,103 @@ class HealthService {
         'realDataOnly': true,
       };
     }
+  }
+
+  /// Comprehensive Health Connect diagnostic tool
+  static Future<Map<String, dynamic>> runHealthConnectDiagnostics() async {
+    final diagnostics = <String, dynamic>{};
+
+    try {
+      AppLogger.info('Running comprehensive Health Connect diagnostics...');
+
+      // 1. Check initialization
+      diagnostics['isInitialized'] = _isInitialized;
+
+      // 2. Check Health Connect availability
+      final isAvailable = await MinimalHealthChannel.isHealthConnectAvailable();
+      diagnostics['healthConnectAvailable'] = isAvailable;
+
+      // 3. Get detailed Health Connect status
+      final status = await getHealthConnectStatus();
+      diagnostics['healthConnectStatus'] = status.name;
+
+      // 4. Check permissions
+      final hasPerms = await hasPermissions();
+      diagnostics['hasPermissions'] = hasPerms;
+
+      // 5. Test data retrieval for each type
+      final dataTypes = [
+        'STEPS',
+        'SLEEP_IN_BED',
+        'HEART_RATE',
+        'ACTIVE_ENERGY_BURNED',
+      ];
+      final now = DateTime.now();
+      final yesterday = now.subtract(const Duration(days: 1));
+
+      for (final dataType in dataTypes) {
+        try {
+          final data = await MinimalHealthChannel.getHealthData(
+            dataType: dataType,
+            startDate: yesterday,
+            endDate: now,
+          );
+          diagnostics['${dataType.toLowerCase()}_records'] = data.length;
+          diagnostics['${dataType.toLowerCase()}_sample'] = data
+              .take(2)
+              .toList();
+        } catch (e) {
+          diagnostics['${dataType.toLowerCase()}_error'] = e.toString();
+        }
+      }
+
+      // 6. Check specific time ranges for sleep
+      final sleepStart = DateTime(
+        yesterday.year,
+        yesterday.month,
+        yesterday.day,
+        18,
+      );
+      final sleepEnd = DateTime(now.year, now.month, now.day, 12);
+
+      try {
+        final sleepData = await MinimalHealthChannel.getHealthData(
+          dataType: 'SLEEP_IN_BED',
+          startDate: sleepStart,
+          endDate: sleepEnd,
+        );
+        diagnostics['sleep_extended_range_records'] = sleepData.length;
+        diagnostics['sleep_time_range'] =
+            '${sleepStart.toIso8601String()} to ${sleepEnd.toIso8601String()}';
+      } catch (e) {
+        diagnostics['sleep_extended_range_error'] = e.toString();
+      }
+
+      // 7. Check heart rate over longer period
+      final heartRateStart = now.subtract(const Duration(days: 7));
+      try {
+        final heartRateData = await MinimalHealthChannel.getHealthData(
+          dataType: 'HEART_RATE',
+          startDate: heartRateStart,
+          endDate: now,
+        );
+        diagnostics['heart_rate_7day_records'] = heartRateData.length;
+      } catch (e) {
+        diagnostics['heart_rate_7day_error'] = e.toString();
+      }
+
+      diagnostics['timestamp'] = DateTime.now().toIso8601String();
+      diagnostics['success'] = true;
+
+      AppLogger.info('Health Connect diagnostics completed successfully');
+      AppLogger.info('Diagnostics summary: ${diagnostics.toString()}');
+    } catch (e) {
+      diagnostics['error'] = e.toString();
+      diagnostics['success'] = false;
+      AppLogger.error('Health Connect diagnostics failed', e);
+    }
+
+    return diagnostics;
   }
 
   /// Get health insights with intelligent analysis from real Health Connect data

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/database.dart';
 import '../../services/health_habit_background_service.dart';
 import '../../services/health_habit_ui_service.dart';
 import '../../services/health_service.dart';
@@ -328,11 +327,6 @@ class _HealthIntegrationScreenState
         });
       }
     }
-  }
-
-  Future<HabitService> _getHabitService() async {
-    final habitBox = await DatabaseService.getInstance();
-    return HabitService(habitBox);
   }
 
   /// Help tab with comprehensive guide on how health integration works

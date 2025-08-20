@@ -297,16 +297,53 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // A. The "Big Four" Performance Cards
+                    // A. Quick Stats Grid - Overview at a glance
+                    _buildQuickStatsGrid(habits),
+                    const SizedBox(height: 24),
+
+                    // B. Gamification Card - User progress and achievements
+                    if (_gamificationStats != null) ...[
+                      _buildGamificationCard(),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // C. Recent Insights - Personalized motivational messages
+                    _buildRecentInsightsCard(habits),
+                    const SizedBox(height: 24),
+
+                    // D. The "Big Four" Performance Cards
                     _buildBigFourPerformanceCards(habits),
                     const SizedBox(height: 24),
 
-                    // B. Habit Performance Deep Dive
+                    // E. Habit Performance Deep Dive
                     _buildHabitPerformanceDeepDive(habits),
                     const SizedBox(height: 24),
 
-                    // C. Conditional Health Hub
+                    // F. Health Integration
+                    if (_healthSummary != null &&
+                        _healthSummary!.isNotEmpty) ...[
+                      _buildHealthCard(),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // G. Enhanced Health Integration
+                    if (_integrationStatus != null) ...[
+                      _buildEnhancedHealthIntegrationSection(),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // H. Health Analytics
+                    if (_healthAnalytics != null) ...[
+                      _buildHealthAnalyticsSection(),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // I. Conditional Health Hub
                     _buildConditionalHealthHub(habits),
+                    const SizedBox(height: 24),
+
+                    // J. Debug Section (temporary for troubleshooting)
+                    _buildDebugSection(),
                   ],
                 ),
               );
@@ -3242,6 +3279,223 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       return 'Current heart rate: ${heartRate.round()} bpm. Track your resting heart rate to see how habits like meditation impact your cardiovascular health.';
     } else {
       return 'Heart rate data not available. Connect a fitness tracker to see how mindfulness habits affect your heart rate variability.';
+    }
+  }
+
+  // Debug section for troubleshooting health data issues
+  Widget _buildDebugSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.bug_report, color: Colors.orange),
+                const SizedBox(width: 8),
+                const Text(
+                  'Health Data Debug',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'If sleep or heart rate data is not showing, tap the button below to run diagnostics:',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _runHealthDiagnostics,
+              icon: const Icon(Icons.health_and_safety),
+              label: const Text('Run Health Connect Diagnostics'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _requestHealthPermissions,
+              icon: const Icon(Icons.security),
+              label: const Text('Re-request Health Permissions'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _runHealthDiagnostics() async {
+    if (!mounted) return;
+
+    try {
+      AppLogger.info('User requested health diagnostics');
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Running Health Connect diagnostics...'),
+            ],
+          ),
+        ),
+      );
+
+      final diagnostics = await HealthService.runHealthConnectDiagnostics();
+
+      if (!mounted) return;
+
+      Navigator.of(context).pop(); // Close loading dialog
+
+      // Show results dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Health Connect Diagnostics'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Status: ${diagnostics['success'] ? 'SUCCESS' : 'FAILED'}',
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Health Connect Available: ${diagnostics['healthConnectAvailable']}',
+                  ),
+                  Text('Has Permissions: ${diagnostics['hasPermissions']}'),
+                  Text('Status: ${diagnostics['healthConnectStatus']}'),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Data Records Found:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text('Steps: ${diagnostics['steps_records'] ?? 'Error'}'),
+                  Text(
+                    'Sleep: ${diagnostics['sleep_in_bed_records'] ?? 'Error'}',
+                  ),
+                  Text(
+                    'Heart Rate: ${diagnostics['heart_rate_records'] ?? 'Error'}',
+                  ),
+                  Text(
+                    'Sleep (Extended): ${diagnostics['sleep_extended_range_records'] ?? 'Error'}',
+                  ),
+                  Text(
+                    'Heart Rate (7 days): ${diagnostics['heart_rate_7day_records'] ?? 'Error'}',
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Check the app logs for detailed information.',
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Close loading dialog if open
+
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Diagnostics Error'),
+              content: Text('Failed to run diagnostics: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+      AppLogger.error('Failed to run health diagnostics', e);
+    }
+  }
+
+  Future<void> _requestHealthPermissions() async {
+    if (!mounted) return;
+
+    try {
+      AppLogger.info('User requested health permissions');
+
+      final result = await HealthService.requestPermissions();
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(
+              result.granted ? 'Permissions Granted' : 'Permissions Required',
+            ),
+            content: Text(result.message),
+            actions: [
+              if (result.requiresUserAction)
+                TextButton(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    await HealthConnectUtils.openHealthConnectPermissions();
+                  },
+                  child: const Text('Open Health Connect'),
+                ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  if (result.granted) {
+                    _loadAllData(); // Reload data if permissions were granted
+                  }
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Permission Error'),
+            content: Text('Failed to request permissions: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+      AppLogger.error('Failed to request health permissions', e);
     }
   }
 }

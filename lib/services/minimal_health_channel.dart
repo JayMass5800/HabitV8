@@ -256,20 +256,34 @@ class MinimalHealthChannel {
       ); // 6 PM yesterday
       final endTime = DateTime(now.year, now.month, now.day, 12); // 12 PM today
 
+      AppLogger.info(
+        'MinimalHealthChannel: Requesting sleep data from ${startTime.toIso8601String()} to ${endTime.toIso8601String()}',
+      );
+
       final data = await getHealthData(
         dataType: 'SLEEP_IN_BED',
         startDate: startTime,
         endDate: endTime,
       );
 
+      AppLogger.info(
+        'MinimalHealthChannel: Received ${data.length} sleep records',
+      );
+
       double totalSleepMinutes = 0.0;
-      for (final record in data) {
-        totalSleepMinutes += record['value'] as double;
+      for (int i = 0; i < data.length; i++) {
+        final record = data[i];
+        final minutes = record['value'] as double;
+        totalSleepMinutes += minutes;
+
+        AppLogger.info(
+          'Sleep record $i: ${minutes.toStringAsFixed(1)} minutes, timestamp: ${record['timestamp']}, unit: ${record['unit']}',
+        );
       }
 
       final sleepHours = totalSleepMinutes / 60.0;
       AppLogger.info(
-        'Sleep hours last night: ${sleepHours.toStringAsFixed(1)}',
+        'Sleep hours last night: ${sleepHours.toStringAsFixed(1)} (from ${totalSleepMinutes.toStringAsFixed(1)} minutes)',
       );
       return sleepHours;
     } catch (e) {
@@ -370,15 +384,31 @@ class MinimalHealthChannel {
         const Duration(hours: 24),
       ); // Last 24 hours
 
+      AppLogger.info(
+        'MinimalHealthChannel: Requesting heart rate data from ${startTime.toIso8601String()} to ${now.toIso8601String()}',
+      );
+
       final data = await getHealthData(
         dataType: 'HEART_RATE',
         startDate: startTime,
         endDate: now,
       );
 
+      AppLogger.info(
+        'MinimalHealthChannel: Received ${data.length} heart rate records',
+      );
+
       if (data.isEmpty) {
         AppLogger.info('No heart rate data found in the last 24 hours');
         return null;
+      }
+
+      // Log first few records for debugging
+      for (int i = 0; i < data.length && i < 3; i++) {
+        final record = data[i];
+        AppLogger.info(
+          'Heart rate record $i: ${record['value']} bpm, timestamp: ${record['timestamp']}, unit: ${record['unit']}',
+        );
       }
 
       // Sort by timestamp and get the latest
@@ -387,7 +417,9 @@ class MinimalHealthChannel {
       );
       final latestHeartRate = data.first['value'] as double;
 
-      AppLogger.info('Latest heart rate: ${latestHeartRate.round()} bpm');
+      AppLogger.info(
+        'Latest heart rate: ${latestHeartRate.round()} bpm (from ${data.length} total records)',
+      );
       return latestHeartRate;
     } catch (e) {
       AppLogger.error('Error getting latest heart rate', e);
