@@ -1127,10 +1127,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ),
             ElevatedButton(
               onPressed: () async {
-                Navigator.of(context).pop();
+                final navigator = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
+                navigator.pop();
                 final result = await HealthService.requestPermissions();
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     SnackBar(
                       content: Text(
                         result.granted

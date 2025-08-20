@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'lib/domain/model/habit.dart';
-import 'lib/data/database.dart';
 import 'lib/services/logging_service.dart';
 
 /// Test script to verify that notification complete/snooze buttons work correctly
@@ -16,31 +15,31 @@ void main() async {
     Habit.create(
       name: 'Hourly Water',
       category: 'Health',
-      colorValue: Colors.blue.value,
+      colorValue: Colors.blue.toARGB32(),
       frequency: HabitFrequency.hourly,
     ),
     Habit.create(
       name: 'Daily Exercise',
       category: 'Fitness',
-      colorValue: Colors.green.value,
+      colorValue: Colors.green.toARGB32(),
       frequency: HabitFrequency.daily,
     ),
     Habit.create(
       name: 'Weekly Review',
       category: 'Productivity',
-      colorValue: Colors.orange.value,
+      colorValue: Colors.orange.toARGB32(),
       frequency: HabitFrequency.weekly,
     ),
     Habit.create(
       name: 'Monthly Budget',
       category: 'Finance',
-      colorValue: Colors.purple.value,
+      colorValue: Colors.purple.toARGB32(),
       frequency: HabitFrequency.monthly,
     ),
     Habit.create(
       name: 'Yearly Health Checkup',
       category: 'Health',
-      colorValue: Colors.red.value,
+      colorValue: Colors.red.toARGB32(),
       frequency: HabitFrequency.yearly,
     ),
   ];
@@ -65,7 +64,6 @@ void main() async {
     AppLogger.info('  After completion: $isCompletedAfter');
 
     // Test 4: Try to add another completion in the same period (should be prevented)
-    final initialCompletionCount = habit.completions.length;
     habit.completions.add(now.add(const Duration(minutes: 30))); // Same period
 
     // For testing, we'll simulate the duplicate prevention logic

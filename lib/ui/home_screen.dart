@@ -13,9 +13,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('HabitV8'),
-      ),
+      appBar: AppBar(title: const Text('HabitV8')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -31,9 +29,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Quick notification test (keeping the working functionality)
             ElevatedButton(
               onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
                 await NotificationService.showTestNotification();
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  messenger.showSnackBar(
                     const SnackBar(content: Text('Test notification sent!')),
                   );
                 }
@@ -43,10 +42,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
                 await NotificationService.testScheduledNotification();
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Scheduled notification in 10s!')),
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Scheduled notification in 10s!'),
+                    ),
                   );
                 }
               },
@@ -65,7 +67,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     SizedBox(height: 8),
                     Text(
                       'Habit Features Coming Soon',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SizedBox(height: 8),
                     Text('The notification system is now working perfectly!'),
