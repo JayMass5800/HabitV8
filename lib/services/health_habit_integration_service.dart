@@ -99,8 +99,8 @@ class HealthHabitIntegrationService {
         AppLogger.info(
           'Health permissions not granted, requesting permissions...',
         );
-        final permissionsGranted = await HealthService.requestPermissions();
-        if (permissionsGranted) {
+        final permissionResult = await HealthService.requestPermissions();
+        if (permissionResult.granted) {
           AppLogger.info(
             'Health permissions successfully granted during integration service initialization',
           );

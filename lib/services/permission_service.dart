@@ -81,7 +81,8 @@ class PermissionService {
       AppLogger.info('Requesting health permissions using health service');
 
       // Use our health service for real health data access
-      final bool granted = await HealthService.requestPermissions();
+      final result = await HealthService.requestPermissions();
+      final bool granted = result.granted;
 
       if (granted) {
         AppLogger.info('Health permissions granted successfully');

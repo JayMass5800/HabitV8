@@ -185,7 +185,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       AppLogger.info('Refreshing health permissions status');
 
       // Use the new refresh method from HealthService
-      final bool hasPermissions = await HealthService.refreshPermissions();
+      final result = await HealthService.refreshPermissions();
+      final bool hasPermissions = result.granted;
 
       // Update the UI state if permissions changed
       if (mounted && hasPermissions != _healthDataSync) {
@@ -755,18 +756,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         }
 
         // First check if permissions are already granted (in case they were granted externally)
-        bool hasPermissions = await HealthService.refreshPermissions();
+        var permissionResult = await HealthService.refreshPermissions();
+        bool hasPermissions = permissionResult.granted;
 
         if (!hasPermissions) {
           // Request health permissions if not already granted
-          hasPermissions = await HealthService.requestPermissions();
+          permissionResult = await HealthService.requestPermissions();
+          hasPermissions = permissionResult.granted;
 
           // If permissions were requested but not immediately granted,
           // they might have been granted in Health Connect but need time to sync
           if (!hasPermissions) {
             // Wait a bit longer and check again
             await Future.delayed(const Duration(seconds: 1));
-            hasPermissions = await HealthService.refreshPermissions();
+            permissionResult = await HealthService.refreshPermissions();
+            hasPermissions = permissionResult.granted;
           }
         }
 
@@ -1124,16 +1128,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                final granted = await HealthService.requestPermissions();
+                final result = await HealthService.requestPermissions();
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        granted
+                        result.granted
                             ? 'Health permissions granted!'
                             : 'Health permissions denied',
                       ),
-                      backgroundColor: granted ? Colors.green : Colors.red,
+                      backgroundColor: result.granted
+                          ? Colors.green
+                          : Colors.red,
                     ),
                   );
                 }

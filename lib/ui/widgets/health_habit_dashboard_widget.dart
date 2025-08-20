@@ -6,13 +6,13 @@ import '../../services/health_service.dart';
 import '../../services/logging_service.dart';
 
 /// Comprehensive Health-Habit Dashboard Widget
-/// 
+///
 /// This widget provides a complete overview of health-habit integration
 /// that can be embedded in any screen for quick access to key information.
 class HealthHabitDashboardWidget extends ConsumerStatefulWidget {
   final bool showFullDetails;
   final VoidCallback? onTap;
-  
+
   const HealthHabitDashboardWidget({
     super.key,
     this.showFullDetails = false,
@@ -20,10 +20,12 @@ class HealthHabitDashboardWidget extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<HealthHabitDashboardWidget> createState() => _HealthHabitDashboardWidgetState();
+  ConsumerState<HealthHabitDashboardWidget> createState() =>
+      _HealthHabitDashboardWidgetState();
 }
 
-class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboardWidget> {
+class _HealthHabitDashboardWidgetState
+    extends ConsumerState<HealthHabitDashboardWidget> {
   bool _isLoading = false;
   Map<String, dynamic>? _integrationStatus;
   List<HabitAutoCompletionResult>? _recentCompletions;
@@ -84,7 +86,9 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade300),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.blue.shade300,
+                    ),
                   ),
                 ),
               ],
@@ -99,8 +103,9 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
 
   Widget _buildHeader() {
     final hasPermissions = _integrationStatus?['healthPermissions'] ?? false;
-    final autoCompletionEnabled = _integrationStatus?['autoCompletionEnabled'] ?? false;
-    
+    final autoCompletionEnabled =
+        _integrationStatus?['autoCompletionEnabled'] ?? false;
+
     return Row(
       children: [
         Icon(
@@ -124,7 +129,11 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.auto_awesome, size: 14, color: Colors.green.shade700),
+                Icon(
+                  Icons.auto_awesome,
+                  size: 14,
+                  color: Colors.green.shade700,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'Active',
@@ -148,7 +157,7 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
     final mappedHabits = _integrationStatus?['healthMappedHabits'] ?? 0;
     final mappingPercentage = _integrationStatus?['mappingPercentage'] ?? 0;
     final hasPermissions = _integrationStatus?['healthPermissions'] ?? false;
-    
+
     return Column(
       children: [
         // Quick stats row
@@ -173,9 +182,9 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
             ),
           ],
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Health permissions status
         if (!hasPermissions)
           Container(
@@ -202,11 +211,11 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
               ],
             ),
           ),
-        
+
         // Recent auto-completions
         if (_recentCompletions != null && _recentCompletions!.isNotEmpty)
           _buildRecentCompletions(),
-        
+
         // Today's health summary
         if (_todayHealthSummary != null && _todayHealthSummary!.isNotEmpty)
           _buildTodayHealthSummary(),
@@ -214,7 +223,12 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
     );
   }
 
-  Widget _buildStatTile(String label, String value, IconData icon, Color color) {
+  Widget _buildStatTile(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -272,37 +286,42 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
               const SizedBox(width: 4),
               const Text(
                 'Recent Auto-Completions',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          ..._recentCompletions!.take(3).map((completion) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              children: [
-                const Icon(Icons.auto_awesome, size: 12, color: Colors.green),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    completion.habitName,
-                    style: const TextStyle(fontSize: 12),
+          ..._recentCompletions!
+              .take(3)
+              .map(
+                (completion) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.auto_awesome,
+                        size: 12,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          completion.habitName,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      if (completion.healthValue != null)
+                        Text(
+                          '${(completion.healthValue as num).round()}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                if (completion.healthValue != null)
-                  Text(
-                    '${(completion.healthValue as num).round()}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
-                  ),
-              ],
-            ),
-          )),
+              ),
         ],
       ),
     );
@@ -348,7 +367,7 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
             children: _todayHealthSummary!.entries.map((entry) {
               final icon = _getHealthMetricIcon(entry.key);
               final value = _formatHealthValue(entry.key, entry.value);
-              
+
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -389,7 +408,7 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
           style: TextStyle(fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
-        
+
         if (_integrationStatus?['habitMappings'] != null) ...[
           ..._integrationStatus!['habitMappings'].entries.map((entry) {
             final habitData = entry.value as Map<String, dynamic>;
@@ -398,7 +417,7 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
             final unit = habitData['unit'] as String?;
             final category = habitData['category'] as String?;
             final relevanceScore = habitData['relevanceScore'] as double?;
-            
+
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Column(
@@ -415,7 +434,10 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
                       Expanded(
                         child: Text(
                           habitData['name'] as String,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                       if (threshold != null && unit != null)
@@ -435,14 +457,20 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
                         children: [
                           if (category != null) ...[
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.grey.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 category,
-                                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -452,8 +480,11 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
                               'Match: ${(relevanceScore * 100).round()}%',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: relevanceScore > 0.7 ? Colors.green : 
-                                       relevanceScore > 0.4 ? Colors.orange : Colors.grey,
+                                color: relevanceScore > 0.7
+                                    ? Colors.green
+                                    : relevanceScore > 0.4
+                                    ? Colors.orange
+                                    : Colors.grey,
                               ),
                             ),
                         ],
@@ -466,10 +497,7 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
         ] else ...[
           const Text(
             'No health-mapped habits found',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey,
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey),
           ),
         ],
       ],
@@ -497,7 +525,7 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
 
   IconData _getHealthDataTypeIcon(String? healthType) {
     if (healthType == null) return Icons.health_and_safety;
-    
+
     switch (healthType.toUpperCase()) {
       case 'STEPS':
         return Icons.directions_walk;
@@ -518,7 +546,7 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
 
   String _formatHealthValue(String metric, dynamic value) {
     if (value == null) return 'N/A';
-    
+
     switch (metric.toLowerCase()) {
       case 'steps':
         return '${value.round()} steps';
@@ -548,17 +576,17 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
       // Load integration status
       final habitBox = await DatabaseService.getInstance();
       final habitService = HabitService(habitBox);
-      
-      _integrationStatus = await HealthHabitIntegrationService.getIntegrationStatus(
-        habitService: habitService,
-      );
+
+      _integrationStatus =
+          await HealthHabitIntegrationService.getIntegrationStatus(
+            habitService: habitService,
+          );
 
       // Load recent completions (mock data for now)
       _recentCompletions = []; // Would load from actual sync results
 
       // Load today's health summary
       _todayHealthSummary = await HealthService.getTodayHealthSummary();
-
     } catch (e) {
       AppLogger.error('Error loading dashboard data', e);
     } finally {
@@ -572,16 +600,18 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
 
   Future<void> _requestHealthPermissions() async {
     try {
-      final granted = await HealthService.requestPermissions();
-      
-      if (granted) {
+      final result = await HealthService.requestPermissions();
+
+      if (result.granted) {
         // Reload dashboard data
         await _loadDashboardData();
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Health permissions granted! Integration is now active.'),
+              content: Text(
+                'Health permissions granted! Integration is now active.',
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -590,7 +620,9 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Health permissions are needed for automatic habit completion.'),
+              content: Text(
+                'Health permissions are needed for automatic habit completion.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -612,11 +644,8 @@ class _HealthHabitDashboardWidgetState extends ConsumerState<HealthHabitDashboar
 /// Compact version of the health-habit dashboard for smaller spaces
 class CompactHealthHabitDashboard extends StatelessWidget {
   final VoidCallback? onTap;
-  
-  const CompactHealthHabitDashboard({
-    super.key,
-    this.onTap,
-  });
+
+  const CompactHealthHabitDashboard({super.key, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -670,10 +699,7 @@ class CompactHealthHabitDashboard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     'Auto-complete habits with health data',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -681,11 +707,7 @@ class CompactHealthHabitDashboard extends StatelessWidget {
               ),
             ),
             if (onTap != null)
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey[600],
-                size: 18,
-              ),
+              Icon(Icons.chevron_right, color: Colors.grey[600], size: 18),
           ],
         ),
       ),

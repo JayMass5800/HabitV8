@@ -2368,7 +2368,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
-              ? [theme.colorScheme.surface, theme.colorScheme.surfaceContainerHighest]
+              ? [
+                  theme.colorScheme.surface,
+                  theme.colorScheme.surfaceContainerHighest,
+                ]
               : [Colors.teal.shade50, Colors.blue.shade50],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -2423,8 +2426,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ElevatedButton(
               onPressed: () async {
                 try {
-                  final success = await HealthService.requestPermissions();
-                  if (success && mounted) {
+                  final result = await HealthService.requestPermissions();
+                  if (result.granted && mounted) {
                     setState(() {
                       _loadAllData(); // Reload data after permissions granted
                     });
@@ -2802,8 +2805,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ElevatedButton.icon(
               onPressed: () async {
                 try {
-                  final success = await HealthService.requestPermissions();
-                  if (success && mounted) {
+                  final result = await HealthService.requestPermissions();
+                  if (result.granted && mounted) {
                     setState(() {
                       _loadAllData();
                     });

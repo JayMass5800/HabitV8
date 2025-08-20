@@ -161,8 +161,8 @@ class HealthHabitInitializationService {
         AppLogger.info(
           'Health permissions not granted - attempting to request now',
         );
-        final permissionsGranted = await HealthService.requestPermissions();
-        if (permissionsGranted) {
+        final permissionResult = await HealthService.requestPermissions();
+        if (permissionResult.granted) {
           AppLogger.info(
             'Health permissions successfully granted during initialization',
           );
