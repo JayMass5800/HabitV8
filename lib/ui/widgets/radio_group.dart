@@ -66,29 +66,83 @@ class InheritedRadioGroup<T> extends InheritedWidget {
 
 /// Extension on RadioListTile to work with RadioGroup
 extension RadioListTileExtension<T> on RadioListTile<T> {
-  /// Creates a new RadioListTile that gets its groupValue and onChanged from
+  /// Creates a new ListTile with Radio that gets its groupValue and onChanged from
   /// the nearest RadioGroup ancestor.
-  RadioListTile<T> withRadioGroup(BuildContext context) {
+  Widget withRadioGroup(BuildContext context) {
     final group = InheritedRadioGroup.of<T>(context);
     if (group == null) {
       return this;
     }
 
-    return RadioListTile<T>(
-      value: value,
-      groupValue: group.value,
-      onChanged: (_) => group.onChanged(value),
+    return ListTile(
+      leading: controlAffinity == ListTileControlAffinity.leading
+          ? GestureDetector(
+              onTap: () => group.onChanged(value),
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: group.value == value
+                        ? (activeColor ?? Colors.blue)
+                        : Colors.grey,
+                    width: 2,
+                  ),
+                ),
+                child: group.value == value
+                    ? Center(
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: activeColor ?? Colors.blue,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+            )
+          : secondary,
       title: title,
       subtitle: subtitle,
-      secondary: secondary,
+      trailing: controlAffinity == ListTileControlAffinity.trailing
+          ? GestureDetector(
+              onTap: () => group.onChanged(value),
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: group.value == value
+                        ? (activeColor ?? Colors.blue)
+                        : Colors.grey,
+                    width: 2,
+                  ),
+                ),
+                child: group.value == value
+                    ? Center(
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: activeColor ?? Colors.blue,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+            )
+          : null,
       isThreeLine: isThreeLine,
       dense: dense,
       contentPadding: contentPadding,
       selected: selected,
-      controlAffinity: controlAffinity,
+      onTap: () => group.onChanged(value),
       autofocus: autofocus,
-      activeColor: activeColor,
-      toggleable: toggleable,
       enableFeedback: enableFeedback,
       shape: shape,
       tileColor: tileColor,

@@ -9,10 +9,12 @@ class CalendarSelectionDialog extends ConsumerStatefulWidget {
   const CalendarSelectionDialog({super.key});
 
   @override
-  ConsumerState<CalendarSelectionDialog> createState() => _CalendarSelectionDialogState();
+  ConsumerState<CalendarSelectionDialog> createState() =>
+      _CalendarSelectionDialogState();
 }
 
-class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialog> {
+class _CalendarSelectionDialogState
+    extends ConsumerState<CalendarSelectionDialog> {
   List<Calendar> _calendars = [];
   String? _selectedCalendarId;
   bool _isLoading = true;
@@ -51,10 +53,7 @@ class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialo
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Select Calendar'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: _buildContent(),
-      ),
+      content: SizedBox(width: double.maxFinite, child: _buildContent()),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -72,9 +71,7 @@ class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialo
     if (_isLoading) {
       return const SizedBox(
         height: 200,
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -85,11 +82,7 @@ class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialo
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Colors.red.shade400,
-              ),
+              Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
               const SizedBox(height: 16),
               Text(
                 _error!,
@@ -122,19 +115,13 @@ class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialo
               const SizedBox(height: 16),
               Text(
                 'No writable calendars found',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 8),
               Text(
                 'Please create a calendar in your device\'s calendar app first.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade500,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
               ),
             ],
           ),
@@ -148,10 +135,7 @@ class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialo
       children: [
         Text(
           'Choose which calendar to sync your habits to:',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
         ),
         const SizedBox(height: 16),
         Flexible(
@@ -162,12 +146,42 @@ class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialo
               final calendar = _calendars[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 8),
-                child: RadioListTile<String>(
-                  value: calendar.id!,
-                  groupValue: _selectedCalendarId,
-                  onChanged: (value) {
+                child: ListTile(
+                  leading: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedCalendarId = calendar.id!;
+                      });
+                    },
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _selectedCalendarId == calendar.id!
+                              ? Theme.of(context).primaryColor
+                              : Colors.grey,
+                          width: 2,
+                        ),
+                      ),
+                      child: _selectedCalendarId == calendar.id!
+                          ? Center(
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+                  onTap: () {
                     setState(() {
-                      _selectedCalendarId = value;
+                      _selectedCalendarId = calendar.id!;
                     });
                   },
                   title: Text(
@@ -183,12 +197,12 @@ class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialo
                           ),
                         )
                       : null,
-                  secondary: Container(
+                  trailing: Container(
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: calendar.color != null 
-                          ? Color(calendar.color!) 
+                      color: calendar.color != null
+                          ? Color(calendar.color!)
                           : Colors.blue,
                       shape: BoxShape.circle,
                     ),
@@ -201,8 +215,6 @@ class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialo
       ],
     );
   }
-
-
 
   Future<void> _saveSelection() async {
     if (_selectedCalendarId == null) return;
@@ -223,29 +235,33 @@ class _CalendarSelectionDialogState extends ConsumerState<CalendarSelectionDialo
         ),
       );
 
-      final success = await CalendarService.setSelectedCalendar(_selectedCalendarId!);
-      
+      final success = await CalendarService.setSelectedCalendar(
+        _selectedCalendarId!,
+      );
+
       if (success) {
         // Get all existing habits and sync them to the calendar
         final habitServiceAsync = ref.read(habitServiceProvider);
         final habitService = habitServiceAsync.value;
-        
+
         if (habitService != null) {
           final allHabits = await habitService.getAllHabits();
-          AppLogger.info('Syncing ${allHabits.length} existing habits to calendar');
-          
+          AppLogger.info(
+            'Syncing ${allHabits.length} existing habits to calendar',
+          );
+
           // Sync all habits to the newly selected calendar
           await CalendarService.syncAllHabitsToCalendar(allHabits);
-          
+
           AppLogger.info('Successfully synced all habits to calendar');
         }
-        
+
         if (mounted) {
           // Close loading dialog
           Navigator.of(context).pop();
           // Close selection dialog
           Navigator.of(context).pop(true);
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Calendar selection saved and habits synced! 📅'),

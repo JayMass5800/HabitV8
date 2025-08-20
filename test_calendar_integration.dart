@@ -1,64 +1,67 @@
 import 'package:flutter/material.dart';
 import 'lib/services/calendar_service.dart';
 import 'lib/domain/model/habit.dart';
+import 'lib/services/logging_service.dart';
 
 /// Simple test script to verify calendar integration
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  print('=== Calendar Integration Test ===');
-  
+
+  AppLogger.info('=== Calendar Integration Test ===');
+
   try {
     // Initialize calendar service
-    print('1. Initializing calendar service...');
+    AppLogger.info('1. Initializing calendar service...');
     final initialized = await CalendarService.initialize();
-    print('   Calendar service initialized: $initialized');
-    
+    AppLogger.info('   Calendar service initialized: $initialized');
+
     // Check permissions
-    print('2. Checking calendar permissions...');
+    AppLogger.info('2. Checking calendar permissions...');
     final hasPermissions = await CalendarService.hasPermissions();
-    print('   Has calendar permissions: $hasPermissions');
-    
+    AppLogger.info('   Has calendar permissions: $hasPermissions');
+
     // Check if sync is enabled
-    print('3. Checking calendar sync status...');
+    AppLogger.info('3. Checking calendar sync status...');
     final syncEnabled = await CalendarService.isCalendarSyncEnabled();
-    print('   Calendar sync enabled: $syncEnabled');
-    
+    AppLogger.info('   Calendar sync enabled: $syncEnabled');
+
     // Get available calendars
-    print('4. Getting available calendars...');
+    AppLogger.info('4. Getting available calendars...');
     final calendars = await CalendarService.getAvailableCalendars();
-    print('   Found ${calendars.length} writable calendars:');
+    AppLogger.info('   Found ${calendars.length} writable calendars:');
     for (final calendar in calendars) {
-      print('     - ${calendar.name} (${calendar.id})');
+      AppLogger.info('     - ${calendar.name} (${calendar.id})');
     }
-    
+
     // Get selected calendar
-    print('5. Getting selected calendar...');
+    AppLogger.info('5. Getting selected calendar...');
     final selectedCalendarId = CalendarService.getSelectedCalendarId();
-    print('   Selected calendar ID: $selectedCalendarId');
-    
+    AppLogger.info('   Selected calendar ID: $selectedCalendarId');
+
     if (selectedCalendarId != null) {
       final selectedCalendar = await CalendarService.getSelectedCalendar();
-      print('   Selected calendar name: ${selectedCalendar?.name}');
+      AppLogger.info('   Selected calendar name: ${selectedCalendar?.name}');
     }
-    
+
     // Get sync status
-    print('6. Getting detailed sync status...');
+    AppLogger.info('6. Getting detailed sync status...');
     final syncStatus = await CalendarService.getCalendarSyncStatus();
-    print('   Sync status: $syncStatus');
-    
-    print('\n=== Test Results ===');
-    print('Calendar service working: ${initialized ? "✓" : "✗"}');
-    print('Has permissions: ${hasPermissions ? "✓" : "✗"}');
-    print('Sync enabled: ${syncEnabled ? "✓" : "✗"}');
-    print('Calendars available: ${calendars.isNotEmpty ? "✓" : "✗"}');
-    print('Calendar selected: ${selectedCalendarId != null ? "✓" : "✗"}');
-    
+    AppLogger.info('   Sync status: $syncStatus');
+
+    AppLogger.info('\n=== Test Results ===');
+    AppLogger.info('Calendar service working: ${initialized ? "✓" : "✗"}');
+    AppLogger.info('Has permissions: ${hasPermissions ? "✓" : "✗"}');
+    AppLogger.info('Sync enabled: ${syncEnabled ? "✓" : "✗"}');
+    AppLogger.info('Calendars available: ${calendars.isNotEmpty ? "✓" : "✗"}');
+    AppLogger.info(
+      'Calendar selected: ${selectedCalendarId != null ? "✓" : "✗"}',
+    );
+
     if (syncEnabled && selectedCalendarId != null && hasPermissions) {
-      print('\n🎉 Calendar integration is properly configured!');
-      
+      AppLogger.info('\n🎉 Calendar integration is properly configured!');
+
       // Test creating a sample habit event
-      print('\n7. Testing habit sync...');
+      AppLogger.info('\n7. Testing habit sync...');
       final testHabit = Habit.create(
         name: 'Test Calendar Sync',
         description: 'Testing calendar integration',
@@ -71,21 +74,25 @@ void main() async {
         hourlyTimes: [],
         selectedYearlyDates: [],
       );
-      
+
       await CalendarService.syncHabitChanges(testHabit);
-      print('   Test habit sync completed');
-      
+      AppLogger.info('   Test habit sync completed');
     } else {
-      print('\n⚠️  Calendar integration needs setup:');
-      if (!hasPermissions) print('   - Grant calendar permissions');
-      if (!syncEnabled) print('   - Enable calendar sync in settings');
-      if (selectedCalendarId == null) print('   - Select a calendar in settings');
+      AppLogger.info('\n⚠️  Calendar integration needs setup:');
+      if (!hasPermissions) {
+        AppLogger.info('   - Grant calendar permissions');
+      }
+      if (!syncEnabled) {
+        AppLogger.info('   - Enable calendar sync in settings');
+      }
+      if (selectedCalendarId == null) {
+        AppLogger.info('   - Select a calendar in settings');
+      }
     }
-    
   } catch (e, stackTrace) {
-    print('❌ Error during calendar integration test: $e');
-    print('Stack trace: $stackTrace');
+    AppLogger.error('❌ Error during calendar integration test', e);
+    AppLogger.debug('Stack trace: $stackTrace');
   }
-  
-  print('\n=== Test Complete ===');
+
+  AppLogger.info('\n=== Test Complete ===');
 }

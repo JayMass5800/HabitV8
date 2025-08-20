@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../services/logging_service.dart';
 
 /// Educational dialog explaining Health Connect data flow and privacy
 /// Helps users understand how health data is gathered and used
@@ -26,55 +27,59 @@ class HealthEducationDialog extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 12),
-            
+
             _buildInfoSection(
               icon: Icons.smartphone,
               title: 'Data Sources',
-              description: 'Health data comes from:\n'
+              description:
+                  'Health data comes from:\n'
                   '• Your phone\'s built-in sensors\n'
                   '• Connected fitness trackers (Fitbit, Garmin, etc.)\n'
                   '• Health apps you use\n'
                   '• Manual entries you make',
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             _buildInfoSection(
               icon: Icons.security,
               title: 'Privacy & Security',
-              description: 'Your health data is:\n'
+              description:
+                  'Your health data is:\n'
                   '• Processed locally on your device only\n'
                   '• Never sent to external servers\n'
                   '• Used only to enhance your habit tracking\n'
                   '• Controlled entirely by you',
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             _buildInfoSection(
               icon: Icons.insights,
               title: 'How We Use It',
-              description: 'Health data helps by:\n'
+              description:
+                  'Health data helps by:\n'
                   '• Automatically tracking fitness habits\n'
                   '• Providing personalized insights\n'
                   '• Correlating habits with health metrics\n'
                   '• Suggesting optimal habit timing',
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             _buildInfoSection(
               icon: Icons.tune,
               title: 'You\'re In Control',
-              description: 'You can:\n'
+              description:
+                  'You can:\n'
                   '• Grant or deny specific data types\n'
                   '• Revoke permissions anytime\n'
                   '• Use the app without health data\n'
                   '• Manage permissions in Health Connect',
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -129,10 +134,7 @@ class HealthEducationDialog extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
               Text(
                 description,
@@ -164,7 +166,7 @@ class HealthEducationDialog extends StatelessWidget {
       }
     } catch (e) {
       // If all else fails, do nothing
-      print('Could not open settings: $e');
+      AppLogger.debug('Could not open settings: $e');
     }
   }
 

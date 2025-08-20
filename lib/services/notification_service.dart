@@ -615,20 +615,20 @@ class NotificationService {
     final deviceNow = DateTime.now();
     final localScheduledTime = scheduledTime.toLocal();
 
-    print('DEBUG: === Notification Scheduling Debug ===');
-    print('DEBUG: Device current time: $deviceNow');
-    print('DEBUG: Original scheduled time: $scheduledTime');
-    print('DEBUG: Local scheduled time: $localScheduledTime');
-    print('DEBUG: Device timezone offset: ${deviceNow.timeZoneOffset}');
-    print(
-      'DEBUG: Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds',
+    AppLogger.debug('=== Notification Scheduling Debug ===');
+    AppLogger.debug('Device current time: $deviceNow');
+    AppLogger.debug('Original scheduled time: $scheduledTime');
+    AppLogger.debug('Local scheduled time: $localScheduledTime');
+    AppLogger.debug('Device timezone offset: ${deviceNow.timeZoneOffset}');
+    AppLogger.debug(
+      'Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds',
     );
 
     // Validate scheduling time
     if (localScheduledTime.isBefore(deviceNow)) {
-      print('DEBUG: WARNING - Scheduled time is in the past!');
-      print(
-        'DEBUG: Past by: ${deviceNow.difference(localScheduledTime).inSeconds} seconds',
+      AppLogger.debug('WARNING - Scheduled time is in the past!');
+      AppLogger.debug(
+        'Past by: ${deviceNow.difference(localScheduledTime).inSeconds} seconds',
       );
     }
 
@@ -637,9 +637,9 @@ class NotificationService {
     try {
       // First try to create from the local scheduled time
       tzScheduledTime = tz.TZDateTime.from(localScheduledTime, tz.local);
-      print('DEBUG: TZ Scheduled time (method 1): $tzScheduledTime');
+      AppLogger.debug('TZ Scheduled time (method 1): $tzScheduledTime');
     } catch (e) {
-      print('DEBUG: TZDateTime.from failed: $e');
+      AppLogger.debug('TZDateTime.from failed: $e');
       // Fallback: create manually
       try {
         tzScheduledTime = tz.TZDateTime(
@@ -651,9 +651,9 @@ class NotificationService {
           localScheduledTime.minute,
           localScheduledTime.second,
         );
-        print('DEBUG: TZ Scheduled time (method 2): $tzScheduledTime');
+        AppLogger.debug('TZ Scheduled time (method 2): $tzScheduledTime');
       } catch (e2) {
-        print('DEBUG: Manual TZDateTime creation failed: $e2');
+        AppLogger.debug('Manual TZDateTime creation failed: $e2');
         // Ultimate fallback: use UTC
         tzScheduledTime = tz.TZDateTime.utc(
           localScheduledTime.year,
@@ -663,24 +663,24 @@ class NotificationService {
           localScheduledTime.minute,
           localScheduledTime.second,
         );
-        print('DEBUG: TZ Scheduled time (UTC fallback): $tzScheduledTime');
+        AppLogger.debug('TZ Scheduled time (UTC fallback): $tzScheduledTime');
       }
     }
 
-    print('DEBUG: TZ Local timezone: ${tz.local.name}');
-    print('DEBUG: TZ offset: ${tzScheduledTime.timeZoneOffset}');
-    print(
-      'DEBUG: Device vs TZ offset match: ${deviceNow.timeZoneOffset == tzScheduledTime.timeZoneOffset}',
+    AppLogger.debug('TZ Local timezone: ${tz.local.name}');
+    AppLogger.debug('TZ offset: ${tzScheduledTime.timeZoneOffset}');
+    AppLogger.debug(
+      'Device vs TZ offset match: ${deviceNow.timeZoneOffset == tzScheduledTime.timeZoneOffset}',
     );
 
     // Additional validation
     final secondsUntilNotification = tzScheduledTime
         .difference(tz.TZDateTime.now(tz.local))
         .inSeconds;
-    print('DEBUG: Seconds until TZ notification: $secondsUntilNotification');
+    AppLogger.debug('Seconds until TZ notification: $secondsUntilNotification');
 
     if (secondsUntilNotification < 0) {
-      print('DEBUG: ERROR - TZ scheduled time is in the past!');
+      AppLogger.debug('ERROR - TZ scheduled time is in the past!');
       return; // Don't schedule past notifications
     }
 
@@ -704,9 +704,9 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
       );
-      print('DEBUG: Notification successfully scheduled with plugin');
+      AppLogger.debug('Notification successfully scheduled with plugin');
     } catch (e) {
-      print('DEBUG: Plugin scheduling failed: $e');
+      AppLogger.debug('Plugin scheduling failed: $e');
       throw Exception('Failed to schedule notification: $e');
     }
   }
@@ -849,18 +849,20 @@ class NotificationService {
 
   /// Schedule notifications for a habit based on its frequency and settings
   static Future<void> scheduleHabitNotifications(dynamic habit) async {
-    print('DEBUG: Starting notification scheduling for habit: ${habit.name}');
-    print('DEBUG: Notifications enabled: ${habit.notificationsEnabled}');
-    print('DEBUG: Notification time: ${habit.notificationTime}');
+    AppLogger.debug(
+      'Starting notification scheduling for habit: ${habit.name}',
+    );
+    AppLogger.debug('Notifications enabled: ${habit.notificationsEnabled}');
+    AppLogger.debug('Notification time: ${habit.notificationTime}');
 
     if (!_isInitialized) {
-      print('DEBUG: Initializing notification service');
+      AppLogger.debug('Initializing notification service');
       await initialize();
     }
 
     // Skip if notifications are disabled
     if (!habit.notificationsEnabled) {
-      print('DEBUG: Skipping notifications - disabled');
+      AppLogger.debug('Skipping notifications - disabled');
       AppLogger.info('Notifications disabled for habit: ${habit.name}');
       return;
     }
@@ -868,7 +870,9 @@ class NotificationService {
     // For non-hourly habits, require notification time
     final frequency = habit.frequency.toString().split('.').last;
     if (frequency != 'hourly' && habit.notificationTime == null) {
-      print('DEBUG: Skipping notifications - no time set for non-hourly habit');
+      AppLogger.debug(
+        'Skipping notifications - no time set for non-hourly habit',
+      );
       AppLogger.info('No notification time set for habit: ${habit.name}');
       return;
     }
@@ -880,9 +884,9 @@ class NotificationService {
     if (notificationTime != null) {
       hour = notificationTime.hour;
       minute = notificationTime.minute;
-      print('DEBUG: Scheduling for $hour:$minute');
+      AppLogger.debug('Scheduling for $hour:$minute');
     } else {
-      print('DEBUG: Using default time for hourly habit');
+      AppLogger.debug('Using default time for hourly habit');
     }
 
     try {
@@ -890,52 +894,52 @@ class NotificationService {
       await cancelHabitNotifications(
         generateSafeId(habit.id),
       ); // Use safe ID generation
-      print(
-        'DEBUG: Cancelled existing notifications for habit ID: ${habit.id}',
+      AppLogger.debug(
+        'Cancelled existing notifications for habit ID: ${habit.id}',
       );
 
       final frequency = habit.frequency.toString().split('.').last;
-      print('DEBUG: Habit frequency: $frequency');
+      AppLogger.debug('Habit frequency: $frequency');
 
       switch (frequency) {
         case 'daily':
-          print('DEBUG: Scheduling daily notifications');
+          AppLogger.debug('Scheduling daily notifications');
           await _scheduleDailyHabitNotifications(habit, hour, minute);
           break;
 
         case 'weekly':
-          print('DEBUG: Scheduling weekly notifications');
+          AppLogger.debug('Scheduling weekly notifications');
           await _scheduleWeeklyHabitNotifications(habit, hour, minute);
           break;
 
         case 'monthly':
-          print('DEBUG: Scheduling monthly notifications');
+          AppLogger.debug('Scheduling monthly notifications');
           await _scheduleMonthlyHabitNotifications(habit, hour, minute);
           break;
 
         case 'yearly':
-          print('DEBUG: Scheduling yearly notifications');
+          AppLogger.debug('Scheduling yearly notifications');
           await _scheduleYearlyHabitNotifications(habit, hour, minute);
           break;
 
         case 'hourly':
-          print('DEBUG: Scheduling hourly notifications');
+          AppLogger.debug('Scheduling hourly notifications');
           await _scheduleHourlyHabitNotifications(habit);
           break;
 
         default:
-          print('DEBUG: Unknown frequency: $frequency');
+          AppLogger.debug('Unknown frequency: $frequency');
           AppLogger.warning('Unknown habit frequency: ${habit.frequency}');
       }
 
-      print(
-        'DEBUG: Successfully scheduled notifications for habit: ${habit.name}',
+      AppLogger.debug(
+        'Successfully scheduled notifications for habit: ${habit.name}',
       );
       AppLogger.info(
         'Successfully scheduled notifications for habit: ${habit.name}',
       );
     } catch (e) {
-      print('DEBUG: Error scheduling notifications: $e');
+      AppLogger.debug('Error scheduling notifications: $e');
       AppLogger.error(
         'Failed to schedule notifications for habit: ${habit.name}',
         e,
@@ -950,7 +954,7 @@ class NotificationService {
     int hour,
     int minute,
   ) async {
-    print('DEBUG: Scheduling daily notifications for ${habit.name}');
+    AppLogger.debug('Scheduling daily notifications for ${habit.name}');
     final now = DateTime.now();
     DateTime nextNotification = DateTime(
       now.year,
@@ -960,17 +964,17 @@ class NotificationService {
       minute,
     );
 
-    print('DEBUG: Current time: $now');
-    print('DEBUG: Initial notification time: $nextNotification');
+    AppLogger.debug('Current time: $now');
+    AppLogger.debug('Initial notification time: $nextNotification');
 
     // If the time has passed today, schedule for tomorrow
     if (nextNotification.isBefore(now)) {
       nextNotification = nextNotification.add(const Duration(days: 1));
-      print(
-        'DEBUG: Time has passed today, scheduling for tomorrow: $nextNotification',
+      AppLogger.debug(
+        'Time has passed today, scheduling for tomorrow: $nextNotification',
       );
     } else {
-      print('DEBUG: Scheduling for today: $nextNotification');
+      AppLogger.debug('Scheduling for today: $nextNotification');
     }
 
     try {
@@ -981,11 +985,11 @@ class NotificationService {
         body: 'Time to complete your daily habit! Keep your streak going.',
         scheduledTime: nextNotification,
       );
-      print(
-        'DEBUG: Successfully scheduled daily notification for ${habit.name}',
+      AppLogger.debug(
+        'Successfully scheduled daily notification for ${habit.name}',
       );
     } catch (e) {
-      print('DEBUG: Error scheduling daily notification: $e');
+      AppLogger.debug('Error scheduling daily notification: $e');
       rethrow;
     }
   }
@@ -1137,8 +1141,8 @@ class NotificationService {
 
     // For hourly habits, use the specific times set by the user
     if (habit.hourlyTimes != null && habit.hourlyTimes.isNotEmpty) {
-      print(
-        'DEBUG: Scheduling hourly notifications for specific times: ${habit.hourlyTimes}',
+      AppLogger.debug(
+        'Scheduling hourly notifications for specific times: ${habit.hourlyTimes}',
       );
 
       for (String timeString in habit.hourlyTimes) {
@@ -1173,11 +1177,11 @@ class NotificationService {
             scheduledTime: nextNotification,
           );
 
-          print(
-            'DEBUG: Scheduled hourly notification for $timeString at $nextNotification',
+          AppLogger.debug(
+            'Scheduled hourly notification for $timeString at $nextNotification',
           );
         } catch (e) {
-          print('DEBUG: Error parsing hourly time "$timeString": $e');
+          AppLogger.debug('Error parsing hourly time "$timeString": $e');
           AppLogger.error(
             'Error parsing hourly time "$timeString" for habit ${habit.name}',
             e,
@@ -1186,8 +1190,8 @@ class NotificationService {
       }
     } else {
       // Fallback: For hourly habits without specific times, schedule every hour during active hours (8 AM - 10 PM)
-      print(
-        'DEBUG: No specific hourly times set, using default hourly schedule (8 AM - 10 PM)',
+      AppLogger.debug(
+        'No specific hourly times set, using default hourly schedule (8 AM - 10 PM)',
       );
       for (int hour = 8; hour <= 22; hour++) {
         DateTime nextNotification = DateTime(

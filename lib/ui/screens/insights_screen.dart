@@ -2379,7 +2379,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? theme.colorScheme.outline.withOpacity(0.3)
+              ? theme.colorScheme.outline.withValues(alpha: 0.3)
               : Colors.teal.shade200,
         ),
       ),
@@ -2417,7 +2417,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             Text(
               'Grant permission to Health Connect / HealthKit to see how your habits impact key metrics like sleep, heart rate, and activity levels. Discover the direct link between your efforts and your well-being.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -2576,12 +2576,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           height: 150,
           decoration: BoxDecoration(
             color: isDark
-                ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                ? theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  )
                 : Colors.indigo.shade50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDark
-                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  ? theme.colorScheme.outline.withValues(alpha: 0.3)
                   : Colors.indigo.shade200,
             ),
           ),
@@ -2592,7 +2594,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isDark
-                ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                ? theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.3,
+                  )
                 : Colors.indigo.shade50,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -2641,12 +2645,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           height: 150,
           decoration: BoxDecoration(
             color: isDark
-                ? theme.colorScheme.secondaryContainer.withOpacity(0.3)
+                ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
                 : Colors.orange.shade50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDark
-                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  ? theme.colorScheme.outline.withValues(alpha: 0.3)
                   : Colors.orange.shade200,
             ),
           ),
@@ -2657,7 +2661,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isDark
-                ? theme.colorScheme.secondaryContainer.withOpacity(0.3)
+                ? theme.colorScheme.secondaryContainer.withValues(alpha: 0.3)
                 : Colors.orange.shade50,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -2708,12 +2712,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           height: 150,
           decoration: BoxDecoration(
             color: isDark
-                ? theme.colorScheme.tertiaryContainer.withOpacity(0.3)
+                ? theme.colorScheme.tertiaryContainer.withValues(alpha: 0.3)
                 : Colors.purple.shade50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDark
-                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  ? theme.colorScheme.outline.withValues(alpha: 0.3)
                   : Colors.purple.shade200,
             ),
           ),
@@ -2724,7 +2728,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: isDark
-                ? theme.colorScheme.tertiaryContainer.withOpacity(0.3)
+                ? theme.colorScheme.tertiaryContainer.withValues(alpha: 0.3)
                 : Colors.purple.shade50,
             borderRadius: BorderRadius.circular(8),
           ),
@@ -2762,12 +2766,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark
-            ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
+            ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
             : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? theme.colorScheme.outline.withOpacity(0.3)
+              ? theme.colorScheme.outline.withValues(alpha: 0.3)
               : Colors.grey.shade200,
         ),
       ),
@@ -2777,7 +2781,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             Icons.analytics,
             size: 48,
             color: isDark
-                ? theme.colorScheme.onSurface.withOpacity(0.6)
+                ? theme.colorScheme.onSurface.withValues(alpha: 0.6)
                 : Colors.grey.shade400,
           ),
           const SizedBox(height: 16),
@@ -2786,7 +2790,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 ? 'Health Data Not Available'
                 : 'Health Analytics Loading',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.8),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -2796,7 +2800,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 ? 'Connect to Health Connect to see personalized insights about how your habits impact your health metrics.'
                 : 'Your health and habit correlations will appear here once data is processed.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -2845,7 +2849,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         child: Text(
           'Sleep data not available\nConnect your health app to see correlations',
           textAlign: TextAlign.center,
-          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
         ),
       );
     }
@@ -2877,14 +2883,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Last Night',
                     style: TextStyle(
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
               ),
               Icon(
                 Icons.arrow_forward,
-                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               Column(
                 children: [
@@ -2900,7 +2906,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Completion Rate',
                     style: TextStyle(
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -2911,7 +2917,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           LinearProgressIndicator(
             value: sleepHours / 10.0, // Scale to 10 hours max
             backgroundColor: isDark
-                ? theme.colorScheme.outline.withOpacity(0.3)
+                ? theme.colorScheme.outline.withValues(alpha: 0.3)
                 : Colors.grey[300],
             valueColor: AlwaysStoppedAnimation<Color>(
               sleepHours >= 7
@@ -2933,7 +2939,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         child: Text(
           'Activity data not available\nConnect your health app to see correlations',
           textAlign: TextAlign.center,
-          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
         ),
       );
     }
@@ -2972,7 +2980,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Steps',
                     style: TextStyle(
                       fontSize: 11,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -2991,7 +2999,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Calories',
                     style: TextStyle(
                       fontSize: 11,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -3010,7 +3018,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Activity Habits',
                     style: TextStyle(
                       fontSize: 11,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -3053,7 +3061,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         child: Text(
           'Heart rate data not available\nConnect your fitness tracker to see trends',
           textAlign: TextAlign.center,
-          style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6)),
+          style: TextStyle(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
         ),
       );
     }
@@ -3094,7 +3104,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Current HR',
                     style: TextStyle(
                       fontSize: 11,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -3113,7 +3123,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Resting HR',
                     style: TextStyle(
                       fontSize: 11,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -3132,7 +3142,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Mindfulness',
                     style: TextStyle(
                       fontSize: 11,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -3144,7 +3154,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             LinearProgressIndicator(
               value: ((80 - restingHR) / 20).clamp(0.0, 1.0), // Lower is better
               backgroundColor: isDark
-                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  ? theme.colorScheme.outline.withValues(alpha: 0.3)
                   : Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(
                 restingHR < 60
