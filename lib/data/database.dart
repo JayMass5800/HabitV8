@@ -161,21 +161,14 @@ class HabitService {
     // Check for duplicates based on habit frequency
     switch (habit.frequency) {
       case HabitFrequency.hourly:
-        // For hourly habits, prevent duplicates within the same hour
-        final completionHour = DateTime(
-          completionDate.year,
-          completionDate.month,
-          completionDate.day,
-          completionDate.hour,
-        );
+        // For hourly habits, prevent exact duplicates (same hour and minute)
+        // but allow multiple completions per hour at different minutes
         alreadyCompleted = habit.completions.any((completion) {
-          final existingHour = DateTime(
-            completion.year,
-            completion.month,
-            completion.day,
-            completion.hour,
-          );
-          return existingHour.isAtSameMomentAs(completionHour);
+          return completion.year == completionDate.year &&
+              completion.month == completionDate.month &&
+              completion.day == completionDate.day &&
+              completion.hour == completionDate.hour &&
+              completion.minute == completionDate.minute;
         });
         break;
 

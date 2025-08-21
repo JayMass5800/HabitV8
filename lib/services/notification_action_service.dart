@@ -80,6 +80,19 @@ class NotificationActionService {
     try {
       AppLogger.info('Starting complete action for habit: $habitId');
 
+      // Parse habitId to extract actual habit ID and time slot (for hourly habits)
+      String actualHabitId = habitId;
+      String? timeSlot;
+
+      if (habitId.contains('|')) {
+        final parts = habitId.split('|');
+        actualHabitId = parts[0];
+        timeSlot = parts.length > 1 ? parts[1] : null;
+        AppLogger.info(
+          'Parsed hourly habit - ID: $actualHabitId, Time slot: $timeSlot',
+        );
+      }
+
       // Get the habit service from the provider
       final habitServiceAsync = _container!.read(habitServiceProvider);
 
@@ -89,31 +102,73 @@ class NotificationActionService {
             AppLogger.info('Habit service obtained successfully');
 
             // Get the habit
-            final habit = await habitService.getHabitById(habitId);
+            final habit = await habitService.getHabitById(actualHabitId);
             if (habit == null) {
-              AppLogger.warning('Habit not found: $habitId');
+              AppLogger.warning('Habit not found: $actualHabitId');
               return;
             }
 
             AppLogger.info('Found habit: ${habit.name}');
 
-            // Check if already completed for the current time period
-            final now = DateTime.now();
-            final isCompleted = habitService.isHabitCompletedForCurrentPeriod(
-              habitId,
-              now,
-            );
+            // For hourly habits with time slots, use the specific time for completion
+            DateTime completionTime = DateTime.now();
+            if (timeSlot != null && habit.frequency == HabitFrequency.hourly) {
+              try {
+                final timeParts = timeSlot.split(':');
+                final hour = int.parse(timeParts[0]);
+                final minute = int.parse(timeParts[1]);
+
+                // Use the specific time slot for completion
+                completionTime = DateTime(
+                  completionTime.year,
+                  completionTime.month,
+                  completionTime.day,
+                  hour,
+                  minute,
+                );
+                AppLogger.info(
+                  'Using specific time slot for completion: $completionTime',
+                );
+              } catch (e) {
+                AppLogger.warning(
+                  'Failed to parse time slot $timeSlot, using current time: $e',
+                );
+              }
+            }
+
+            // For hourly habits, check if this specific time slot is already completed
+            bool isCompleted = false;
+            if (habit.frequency == HabitFrequency.hourly && timeSlot != null) {
+              // Check if this specific time slot is already completed
+              isCompleted = habit.completions.any((completion) {
+                return completion.year == completionTime.year &&
+                    completion.month == completionTime.month &&
+                    completion.day == completionTime.day &&
+                    completion.hour == completionTime.hour &&
+                    completion.minute == completionTime.minute;
+              });
+            } else {
+              // For non-hourly habits, use the existing logic
+              isCompleted = habitService.isHabitCompletedForCurrentPeriod(
+                actualHabitId,
+                completionTime,
+              );
+            }
 
             AppLogger.info('Habit completion status: $isCompleted');
 
             if (!isCompleted) {
               // Mark the habit as complete for this time period
-              await habitService.markHabitComplete(habitId, now);
+              await habitService.markHabitComplete(
+                actualHabitId,
+                completionTime,
+              );
 
               // Log with frequency-specific message
               final frequencyText = _getFrequencyText(habit.frequency);
+              final timeInfo = timeSlot != null ? ' at $timeSlot' : '';
               AppLogger.info(
-                '✅ SUCCESS: Habit marked as complete from notification: ${habit.name} $frequencyText',
+                '✅ SUCCESS: Habit marked as complete from notification: ${habit.name} $frequencyText$timeInfo',
               );
 
               // Force save to ensure persistence
@@ -122,8 +177,9 @@ class NotificationActionService {
             } else {
               // Log with frequency-specific message
               final frequencyText = _getFrequencyText(habit.frequency);
+              final timeInfo = timeSlot != null ? ' at $timeSlot' : '';
               AppLogger.info(
-                'ℹ️ INFO: Habit already completed $frequencyText: ${habit.name}',
+                'ℹ️ INFO: Habit already completed $frequencyText$timeInfo: ${habit.name}',
               );
             }
           } catch (e, stackTrace) {

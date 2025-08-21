@@ -1171,7 +1171,8 @@ class NotificationService {
             id: generateSafeId(
               '${habit.id}_hourly_${hour}_$minute',
             ), // Use hour and minute for uniqueness
-            habitId: habit.id.toString(),
+            habitId:
+                '${habit.id}|$hour:${minute.toString().padLeft(2, '0')}', // Include time slot in habitId
             title: '⏰ ${habit.name}',
             body: 'Time for your habit! Scheduled for $timeString',
             scheduledTime: nextNotification,
@@ -1211,7 +1212,7 @@ class NotificationService {
           id: generateSafeId(
             '${habit.id}_hourly_$hour',
           ), // Use string concatenation for uniqueness
-          habitId: habit.id.toString(),
+          habitId: '${habit.id}|$hour:00', // Include time slot in habitId
           title: '⏰ ${habit.name}',
           body: 'Hourly reminder: Time for your habit!',
           scheduledTime: nextNotification,
