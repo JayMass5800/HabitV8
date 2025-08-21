@@ -44,10 +44,12 @@ class _DayDetailSheetState extends State<DayDetailSheet>
   }
 
   bool _isHabitCompletedOnDate(Habit habit, DateTime date) {
-    return habit.completions.any((completedDate) =>
-        completedDate.year == date.year &&
-        completedDate.month == date.month &&
-        completedDate.day == date.day);
+    return habit.completions.any(
+      (completedDate) =>
+          completedDate.year == date.year &&
+          completedDate.month == date.month &&
+          completedDate.day == date.day,
+    );
   }
 
   Color _getCategoryColor(String category) {
@@ -138,7 +140,7 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                
+
                 // Header
                 Padding(
                   padding: const EdgeInsets.all(20),
@@ -149,7 +151,9 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Icon(
@@ -164,10 +168,13 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  DateFormat('EEEE, MMMM d').format(widget.selectedDay),
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  DateFormat(
+                                    'EEEE, MMMM d',
+                                  ).format(widget.selectedDay),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
@@ -179,8 +186,12 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.green.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: Colors.green.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Text(
                                           'Today',
@@ -200,8 +211,12 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.grey.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: Colors.grey.withValues(
+                                            alpha: 0.1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Text(
                                           'Past',
@@ -215,10 +230,16 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                                       const SizedBox(width: 8),
                                     ],
                                     Text(
-                                      DateFormat('yyyy').format(widget.selectedDay),
+                                      DateFormat(
+                                        'yyyy',
+                                      ).format(widget.selectedDay),
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.color
+                                            ?.withValues(alpha: 0.7),
                                       ),
                                     ),
                                   ],
@@ -228,22 +249,30 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                           ),
                         ],
                       ),
-                      
+
                       if (totalCount > 0) ...[
                         const SizedBox(height: 20),
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: _getProgressColor(completedCount, totalCount).withValues(alpha: 0.1),
+                            color: _getProgressColor(
+                              completedCount,
+                              totalCount,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: _getProgressColor(completedCount, totalCount).withValues(alpha: 0.3),
+                              color: _getProgressColor(
+                                completedCount,
+                                totalCount,
+                              ).withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
                             children: [
                               CircularProgressIndicator(
-                                value: totalCount > 0 ? completedCount / totalCount : 0,
+                                value: totalCount > 0
+                                    ? completedCount / totalCount
+                                    : 0,
                                 backgroundColor: Colors.grey.shade200,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   _getProgressColor(completedCount, totalCount),
@@ -264,10 +293,17 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      _getProgressMessage(completedCount, totalCount),
+                                      _getProgressMessage(
+                                        completedCount,
+                                        totalCount,
+                                      ),
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.color
+                                            ?.withValues(alpha: 0.7),
                                       ),
                                     ),
                                   ],
@@ -280,7 +316,7 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                     ],
                   ),
                 ),
-                
+
                 // Habits list
                 Expanded(
                   child: widget.habits.isEmpty
@@ -290,8 +326,11 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                           itemCount: widget.habits.length,
                           itemBuilder: (context, index) {
                             final habit = widget.habits[index];
-                            final isCompleted = _isHabitCompletedOnDate(habit, widget.selectedDay);
-                            
+                            final isCompleted = _isHabitCompletedOnDate(
+                              habit,
+                              widget.selectedDay,
+                            );
+
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _buildHabitCard(habit, isCompleted),
@@ -329,10 +368,7 @@ class _DayDetailSheetState extends State<DayDetailSheet>
           const SizedBox(height: 8),
           Text(
             'Enjoy your free day!',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
         ],
       ),
@@ -360,15 +396,11 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                   color: categoryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  categoryIcon,
-                  color: categoryColor,
-                  size: 20,
-                ),
+                child: Icon(categoryIcon, color: categoryColor, size: 20),
               ),
-              
+
               const SizedBox(width: 16),
-              
+
               // Habit details
               Expanded(
                 child: Column(
@@ -379,29 +411,44 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        decoration: isCompleted ? TextDecoration.lineThrough : null,
-                        color: isCompleted 
-                            ? Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6)
+                        decoration: isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                        color: isCompleted
+                            ? Theme.of(context).textTheme.bodyMedium?.color
+                                  ?.withValues(alpha: 0.6)
                             : null,
                       ),
                     ),
-                    if (habit.description != null && habit.description!.isNotEmpty) ...[
+                    if (habit.description != null &&
+                        habit.description!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
                         habit.description!,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                          color: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                     const SizedBox(height: 8),
+                    // Show hourly times for hourly habits
+                    if (habit.frequency == HabitFrequency.hourly &&
+                        habit.hourlyTimes.isNotEmpty) ...[
+                      _buildHourlyTimesDisplay(habit),
+                      const SizedBox(height: 8),
+                    ],
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: categoryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -417,13 +464,18 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            habit.frequency.name.toUpperCase(),
+                            habit.frequency == HabitFrequency.hourly
+                                ? 'HOURLY (${habit.hourlyTimes.length} times)'
+                                : habit.frequency.name.toUpperCase(),
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade600,
@@ -436,7 +488,7 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                   ],
                 ),
               ),
-              
+
               // Completion checkbox
               Container(
                 width: 32,
@@ -450,11 +502,7 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: isCompleted
-                    ? const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 20,
-                      )
+                    ? const Icon(Icons.check, color: Colors.white, size: 20)
                     : null,
               ),
             ],
@@ -462,6 +510,95 @@ class _DayDetailSheetState extends State<DayDetailSheet>
         ),
       ),
     );
+  }
+
+  Widget _buildHourlyTimesDisplay(Habit habit) {
+    final completedTimes = _getCompletedHourlyTimes(habit, widget.selectedDay);
+    final totalTimes = habit.hourlyTimes.length;
+    final completedCount = completedTimes.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.schedule, size: 14, color: Colors.grey.shade600),
+            const SizedBox(width: 4),
+            Text(
+              'Times: $completedCount/$totalTimes completed',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: habit.hourlyTimes.map((timeString) {
+            final isCompleted = completedTimes.contains(timeString);
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isCompleted
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isCompleted
+                      ? Colors.green.withValues(alpha: 0.3)
+                      : Colors.grey.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isCompleted) ...[
+                    Icon(
+                      Icons.check_circle,
+                      size: 12,
+                      color: Colors.green.shade600,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Text(
+                    timeString,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isCompleted
+                          ? Colors.green.shade700
+                          : Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  List<String> _getCompletedHourlyTimes(Habit habit, DateTime date) {
+    final completedTimes = <String>[];
+
+    for (final completion in habit.completions) {
+      if (completion.year == date.year &&
+          completion.month == date.month &&
+          completion.day == date.day) {
+        final timeString =
+            '${completion.hour.toString().padLeft(2, '0')}:${completion.minute.toString().padLeft(2, '0')}';
+        if (habit.hourlyTimes.contains(timeString)) {
+          completedTimes.add(timeString);
+        }
+      }
+    }
+
+    return completedTimes;
   }
 
   Color _getProgressColor(int completed, int total) {

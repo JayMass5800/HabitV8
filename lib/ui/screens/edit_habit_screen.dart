@@ -30,6 +30,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   late int _targetCount;
   late int
   _originalHashCode; // Store original hash code for notification management
+  final List<TimeOfDay> _hourlyTimes = []; // For hourly habits
 
   // Comprehensive categories from the category suggestion service
   List<String> get _categories {
@@ -77,6 +78,19 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     _targetCount = widget.habit.targetCount;
     _originalHashCode =
         widget.habit.hashCode; // Store original for notification cleanup
+
+    // Initialize hourly times from existing habit data
+    _hourlyTimes.clear();
+    for (final timeString in widget.habit.hourlyTimes) {
+      final parts = timeString.split(':');
+      if (parts.length == 2) {
+        final hour = int.tryParse(parts[0]);
+        final minute = int.tryParse(parts[1]);
+        if (hour != null && minute != null) {
+          _hourlyTimes.add(TimeOfDay(hour: hour, minute: minute));
+        }
+      }
+    }
 
     // Add listeners to text controllers for category suggestions
     _nameController.addListener(_onHabitTextChanged);
@@ -346,6 +360,19 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               const SizedBox(height: 8),
               _buildMonthDaySelector(),
             ],
+            if (_selectedFrequency == HabitFrequency.hourly) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Select Days',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              _buildWeekdaySelector(),
+              const SizedBox(height: 16),
+              _buildHourlyTimeSelector(),
+            ],
           ],
         ),
       ),
@@ -406,6 +433,114 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         );
       }),
     );
+  }
+
+  Widget _buildHourlyTimeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Select Times',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Add Time'),
+              onPressed: _addHourlyTime,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_hourlyTimes.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'No times selected. Add times when you want to be reminded.',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _hourlyTimes.map((time) {
+              return Chip(
+                label: Text(time.format(context)),
+                deleteIcon: const Icon(Icons.close, size: 18),
+                onDeleted: () {
+                  setState(() {
+                    _hourlyTimes.remove(time);
+                  });
+                },
+                backgroundColor: _selectedColor.withValues(alpha: 0.1),
+                side: BorderSide(color: _selectedColor.withValues(alpha: 0.3)),
+              );
+            }).toList(),
+          ),
+        if (_hourlyTimes.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            '${_hourlyTimes.length} times selected',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: _selectedColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _addHourlyTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (picked != null) {
+      // Check if time already exists
+      bool timeExists = _hourlyTimes.any(
+        (time) => time.hour == picked.hour && time.minute == picked.minute,
+      );
+
+      if (!timeExists) {
+        setState(() {
+          _hourlyTimes.add(picked);
+          // Sort times chronologically
+          _hourlyTimes.sort((a, b) {
+            if (a.hour != b.hour) return a.hour.compareTo(b.hour);
+            return a.minute.compareTo(b.minute);
+          });
+        });
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('This time is already selected'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Widget _buildNotificationSection() {
@@ -540,6 +675,19 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       return;
     }
 
+    if (_selectedFrequency == HabitFrequency.hourly &&
+        (_selectedWeekdays.isEmpty || _hourlyTimes.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please select at least one day and one time for hourly habits',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Only require notification time for non-hourly habits
     if (_notificationsEnabled &&
         _selectedFrequency != HabitFrequency.hourly &&
@@ -582,6 +730,13 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       widget.habit.selectedWeekdays = List<int>.from(_selectedWeekdays);
       widget.habit.monthlySchedule = List<int>.from(_selectedMonthDays);
       widget.habit.selectedMonthDays = List<int>.from(_selectedMonthDays);
+      // Save hourly times
+      widget.habit.hourlyTimes = _hourlyTimes
+          .map(
+            (time) =>
+                '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+          )
+          .toList();
 
       // Save to database
       await widget.habit.save();

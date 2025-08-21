@@ -102,15 +102,25 @@ class HabitStatsService {
     final now = DateTime.now();
     final startDate = now.subtract(Duration(days: days));
 
-    final recentCompletions = habit.completions.where((completion) =>
-        completion.isAfter(startDate) &&
-        completion.isBefore(now.add(const Duration(days: 1)))).length;
+    final recentCompletions = habit.completions
+        .where(
+          (completion) =>
+              completion.isAfter(startDate) &&
+              completion.isBefore(now.add(const Duration(days: 1))),
+        )
+        .length;
 
     // Expected completions based on frequency
     int expectedCompletions;
     switch (habit.frequency) {
       case HabitFrequency.hourly:
-        expectedCompletions = days * 24; // Assuming 24 opportunities per day
+        // For hourly habits, calculate based on actual scheduled times and days
+        final scheduledTimesPerDay = habit.hourlyTimes.length;
+        final scheduledDaysPerWeek = habit.selectedWeekdays.length;
+        final weeksInPeriod = (days / 7).ceil();
+        expectedCompletions =
+            (scheduledTimesPerDay * scheduledDaysPerWeek * weeksInPeriod)
+                .round();
         break;
       case HabitFrequency.daily:
         expectedCompletions = days;
@@ -126,13 +136,21 @@ class HabitStatsService {
         break;
     }
 
-    return (recentCompletions / math.max(expectedCompletions, 1)).clamp(0.0, 1.0);
+    return (recentCompletions / math.max(expectedCompletions, 1)).clamp(
+      0.0,
+      1.0,
+    );
   }
 
   /// Calculate streak information (expensive operation)
   StreakInfo _calculateStreakInfo(Habit habit) {
     if (habit.completions.isEmpty) {
       return StreakInfo(current: 0, longest: 0, lastCompletion: null);
+    }
+
+    // For hourly habits, use a different calculation based on daily completion targets
+    if (habit.frequency == HabitFrequency.hourly) {
+      return _calculateHourlyStreakInfo(habit);
     }
 
     final sortedCompletions = habit.completions.toList()
@@ -157,9 +175,9 @@ class HabitStatsService {
 
       for (int i = 1; i < sortedCompletions.length; i++) {
         final current = DateTime(
-          sortedCompletions[i-1].year,
-          sortedCompletions[i-1].month,
-          sortedCompletions[i-1].day,
+          sortedCompletions[i - 1].year,
+          sortedCompletions[i - 1].month,
+          sortedCompletions[i - 1].day,
         );
         final previous = DateTime(
           sortedCompletions[i].year,
@@ -179,9 +197,9 @@ class HabitStatsService {
     tempStreak = 1;
     for (int i = 1; i < sortedCompletions.length; i++) {
       final current = DateTime(
-        sortedCompletions[i-1].year,
-        sortedCompletions[i-1].month,
-        sortedCompletions[i-1].day,
+        sortedCompletions[i - 1].year,
+        sortedCompletions[i - 1].month,
+        sortedCompletions[i - 1].day,
       );
       final previous = DateTime(
         sortedCompletions[i].year,
@@ -205,14 +223,125 @@ class HabitStatsService {
     );
   }
 
+  /// Calculate streak information specifically for hourly habits
+  StreakInfo _calculateHourlyStreakInfo(Habit habit) {
+    if (habit.completions.isEmpty || habit.hourlyTimes.isEmpty) {
+      return StreakInfo(current: 0, longest: 0, lastCompletion: null);
+    }
+
+    // Group completions by day
+    final completionsByDay = <String, List<DateTime>>{};
+    for (final completion in habit.completions) {
+      final dayKey = '${completion.year}-${completion.month}-${completion.day}';
+      completionsByDay.putIfAbsent(dayKey, () => []).add(completion);
+    }
+
+    // Get days where habit was "completed" (achieved target percentage)
+    final completedDays = <DateTime>[];
+    final targetPercentage =
+        0.7; // Consider day completed if 70% of times are done
+
+    for (final entry in completionsByDay.entries) {
+      final dayCompletions = entry.value;
+      final completedTimes = dayCompletions
+          .map(
+            (c) =>
+                '${c.hour.toString().padLeft(2, '0')}:${c.minute.toString().padLeft(2, '0')}',
+          )
+          .where((timeString) => habit.hourlyTimes.contains(timeString))
+          .length;
+
+      final completionRate = completedTimes / habit.hourlyTimes.length;
+      if (completionRate >= targetPercentage) {
+        completedDays.add(dayCompletions.first);
+      }
+    }
+
+    if (completedDays.isEmpty) {
+      return StreakInfo(current: 0, longest: 0, lastCompletion: null);
+    }
+
+    // Sort completed days
+    completedDays.sort((a, b) => b.compareTo(a));
+
+    int currentStreak = 0;
+    int longestStreak = 0;
+    int tempStreak = 1;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final mostRecent = DateTime(
+      completedDays.first.year,
+      completedDays.first.month,
+      completedDays.first.day,
+    );
+
+    // Calculate current streak
+    final daysDiff = today.difference(mostRecent).inDays;
+    if (daysDiff <= 1) {
+      currentStreak = 1;
+
+      for (int i = 1; i < completedDays.length; i++) {
+        final current = DateTime(
+          completedDays[i - 1].year,
+          completedDays[i - 1].month,
+          completedDays[i - 1].day,
+        );
+        final previous = DateTime(
+          completedDays[i].year,
+          completedDays[i].month,
+          completedDays[i].day,
+        );
+
+        if (current.difference(previous).inDays == 1) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Calculate longest streak
+    tempStreak = 1;
+    for (int i = 1; i < completedDays.length; i++) {
+      final current = DateTime(
+        completedDays[i - 1].year,
+        completedDays[i - 1].month,
+        completedDays[i - 1].day,
+      );
+      final previous = DateTime(
+        completedDays[i].year,
+        completedDays[i].month,
+        completedDays[i].day,
+      );
+
+      if (current.difference(previous).inDays == 1) {
+        tempStreak++;
+      } else {
+        longestStreak = math.max(longestStreak, tempStreak);
+        tempStreak = 1;
+      }
+    }
+    longestStreak = math.max(longestStreak, tempStreak);
+
+    return StreakInfo(
+      current: currentStreak,
+      longest: longestStreak,
+      lastCompletion: habit.completions.isNotEmpty
+          ? habit.completions.reduce((a, b) => a.isAfter(b) ? a : b)
+          : null,
+    );
+  }
+
   /// Calculate weekly completion pattern
   List<double> _calculateWeeklyPattern(Habit habit, int weeks) {
     final pattern = List<double>.filled(7, 0.0); // Monday to Sunday
     final now = DateTime.now();
     final startDate = now.subtract(Duration(days: weeks * 7));
 
-    final recentCompletions = habit.completions.where((completion) =>
-        completion.isAfter(startDate)).toList();
+    final recentCompletions = habit.completions
+        .where((completion) => completion.isAfter(startDate))
+        .toList();
 
     final dayCount = List<int>.filled(7, 0);
     final totalDays = List<int>.filled(7, 0);
@@ -243,14 +372,17 @@ class HabitStatsService {
     final now = DateTime.now();
     final lastMonth = DateTime(now.year, now.month - 1);
 
-    final thisMonthCompletions = habit.completions.where((c) =>
-        c.year == now.year && c.month == now.month).length;
-    
-    final lastMonthCompletions = habit.completions.where((c) =>
-        c.year == lastMonth.year && c.month == lastMonth.month).length;
+    final thisMonthCompletions = habit.completions
+        .where((c) => c.year == now.year && c.month == now.month)
+        .length;
 
-    final avgCompletions = habit.completions.isEmpty ? 0.0 :
-        habit.completions.length / _getMonthsSinceCreation(habit);
+    final lastMonthCompletions = habit.completions
+        .where((c) => c.year == lastMonth.year && c.month == lastMonth.month)
+        .length;
+
+    final avgCompletions = habit.completions.isEmpty
+        ? 0.0
+        : habit.completions.length / _getMonthsSinceCreation(habit);
 
     return MonthlyStats(
       thisMonth: thisMonthCompletions,
@@ -266,28 +398,35 @@ class HabitStatsService {
 
     final now = DateTime.now();
     final last30Days = now.subtract(const Duration(days: 30));
-    
-    final recentCompletions = habit.completions.where((c) =>
-        c.isAfter(last30Days)).toList()..sort();
+
+    final recentCompletions =
+        habit.completions.where((c) => c.isAfter(last30Days)).toList()..sort();
 
     if (recentCompletions.isEmpty) return 0.0;
 
     // Calculate variance in completion intervals
     final intervals = <int>[];
     for (int i = 1; i < recentCompletions.length; i++) {
-      final interval = recentCompletions[i].difference(recentCompletions[i-1]).inDays;
+      final interval = recentCompletions[i]
+          .difference(recentCompletions[i - 1])
+          .inDays;
       intervals.add(interval);
     }
 
     if (intervals.isEmpty) return 100.0;
 
     final mean = intervals.reduce((a, b) => a + b) / intervals.length;
-    final variance = intervals.map((i) => math.pow(i - mean, 2)).reduce((a, b) => a + b) / intervals.length;
+    final variance =
+        intervals.map((i) => math.pow(i - mean, 2)).reduce((a, b) => a + b) /
+        intervals.length;
     final standardDeviation = math.sqrt(variance);
 
     // Lower standard deviation = higher consistency
     final maxDeviation = 7.0; // Days
-    final consistencyScore = ((maxDeviation - math.min(standardDeviation, maxDeviation)) / maxDeviation) * 100;
+    final consistencyScore =
+        ((maxDeviation - math.min(standardDeviation, maxDeviation)) /
+            maxDeviation) *
+        100;
 
     return consistencyScore.clamp(0.0, 100.0);
   }
@@ -297,12 +436,17 @@ class HabitStatsService {
     if (habit.completions.length < 14) return 0.0;
 
     final now = DateTime.now();
-    final last7Days = habit.completions.where((c) =>
-        c.isAfter(now.subtract(const Duration(days: 7)))).length;
-    
-    final previous7Days = habit.completions.where((c) =>
-        c.isAfter(now.subtract(const Duration(days: 14))) &&
-        c.isBefore(now.subtract(const Duration(days: 7)))).length;
+    final last7Days = habit.completions
+        .where((c) => c.isAfter(now.subtract(const Duration(days: 7))))
+        .length;
+
+    final previous7Days = habit.completions
+        .where(
+          (c) =>
+              c.isAfter(now.subtract(const Duration(days: 14))) &&
+              c.isBefore(now.subtract(const Duration(days: 7))),
+        )
+        .length;
 
     if (previous7Days == 0) return last7Days > 0 ? 1.0 : 0.0;
 
