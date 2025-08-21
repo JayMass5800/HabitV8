@@ -2805,6 +2805,32 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 ),
                 ElevatedButton.icon(
                   onPressed: () async {
+                    try {
+                      final debugResults =
+                          await HealthService.debugHealthDataIssues();
+                      if (mounted) {
+                        _showHealthDataDebugDialog(debugResults);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Debug failed: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.troubleshoot, size: 18),
+                  label: const Text('Debug Sleep & Calories'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () async {
                     setState(() {
                       _loadAllData();
                     });
@@ -3041,6 +3067,454 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
+  void _showCaloriesDebugDialog(Map<String, dynamic> debugResults) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🔥 Calories Debug Results'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Active Calories Troubleshooting',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              // Permissions check
+              _buildDebugSection(
+                '🔐 Permissions',
+                debugResults['hasPermissions'] == true
+                    ? '✅ Granted'
+                    : '❌ Missing',
+                debugResults['hasPermissions'] == true
+                    ? Colors.green
+                    : Colors.red,
+              ),
+
+              // Time range results
+              if (debugResults['todayRecords'] != null) ...[
+                const SizedBox(height: 12),
+                _buildDebugSection(
+                  '📅 Today',
+                  '${debugResults['todayRecords']} records, ${(debugResults['todayTotalCalories'] as double?)?.round() ?? 0} cal',
+                  (debugResults['todayRecords'] as int?) != null &&
+                          debugResults['todayRecords'] > 0
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+              ],
+
+              if (debugResults['yesterdayRecords'] != null) ...[
+                const SizedBox(height: 8),
+                _buildDebugSection(
+                  '📅 Yesterday',
+                  '${debugResults['yesterdayRecords']} records, ${(debugResults['yesterdayTotalCalories'] as double?)?.round() ?? 0} cal',
+                  (debugResults['yesterdayRecords'] as int?) != null &&
+                          debugResults['yesterdayRecords'] > 0
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+              ],
+
+              if (debugResults['last7daysRecords'] != null) ...[
+                const SizedBox(height: 8),
+                _buildDebugSection(
+                  '📅 Last 7 Days',
+                  '${debugResults['last7daysRecords']} records, ${(debugResults['last7daysTotalCalories'] as double?)?.round() ?? 0} cal',
+                  (debugResults['last7daysRecords'] as int?) != null &&
+                          debugResults['last7daysRecords'] > 0
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+              ],
+
+              // MinimalHealthChannel result
+              if (debugResults['minimalChannelTodayCalories'] != null) ...[
+                const SizedBox(height: 12),
+                _buildDebugSection(
+                  '🔧 Direct Channel Result',
+                  '${(debugResults['minimalChannelTodayCalories'] as double).round()} cal',
+                  debugResults['minimalChannelTodayCalories'] > 0
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+              ],
+
+              // Errors
+              if (debugResults['todayError'] != null ||
+                  debugResults['yesterdayError'] != null ||
+                  debugResults['last7daysError'] != null ||
+                  debugResults['minimalChannelError'] != null) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  '❌ Errors Found:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (debugResults['todayError'] != null)
+                  Text(
+                    'Today: ${debugResults['todayError']}',
+                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                  ),
+                if (debugResults['yesterdayError'] != null)
+                  Text(
+                    'Yesterday: ${debugResults['yesterdayError']}',
+                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                  ),
+                if (debugResults['last7daysError'] != null)
+                  Text(
+                    'Last 7 days: ${debugResults['last7daysError']}',
+                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                  ),
+                if (debugResults['minimalChannelError'] != null)
+                  Text(
+                    'Channel: ${debugResults['minimalChannelError']}',
+                    style: const TextStyle(fontSize: 12, color: Colors.red),
+                  ),
+              ],
+
+              // Troubleshooting tips
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '💡 Troubleshooting Tips:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      '• Make sure your fitness app (Google Fit, Samsung Health, etc.) is connected to Health Connect',
+                    ),
+                    const Text(
+                      '• Check that active calories/energy burned is enabled in your fitness app',
+                    ),
+                    const Text(
+                      '• Try doing some physical activity and wait 15-30 minutes for data to sync',
+                    ),
+                    const Text(
+                      '• Open Health Connect app and verify calories data is visible there',
+                    ),
+                    const Text(
+                      '• Some apps only sync calories after completing a workout session',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              // Open Health Connect settings
+              try {
+                await HealthService.openHealthConnectSettings();
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Could not open settings: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Open Health Connect'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHealthDataDebugDialog(Map<String, dynamic> debugResults) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('🩺 Health Data Debug Results'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Comprehensive Sleep & Calories Analysis',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              // Basic status
+              _buildDebugSection(
+                '🔧 Initialized',
+                debugResults['isInitialized']?.toString() ?? 'Unknown',
+                debugResults['isInitialized'] == true
+                    ? Colors.green
+                    : Colors.red,
+              ),
+
+              _buildDebugSection(
+                '🔐 Permissions',
+                debugResults['hasPermissions'] == true ? 'Granted' : 'Missing',
+                debugResults['hasPermissions'] == true
+                    ? Colors.green
+                    : Colors.red,
+              ),
+
+              const SizedBox(height: 16),
+              const Divider(),
+
+              // Sleep Debug Section
+              if (debugResults['sleepDebug'] != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '😴 Sleep Data Analysis',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                _buildDebugSection(
+                  'Sleep Records',
+                  '${debugResults['sleepDebug']['totalSleepRecords'] ?? 0}',
+                  (debugResults['sleepDebug']['totalSleepRecords'] ?? 0) > 0
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+
+                _buildDebugSection(
+                  'Calculated Sleep',
+                  '${(debugResults['sleepDebug']['calculatedSleepHours'] ?? 0).toStringAsFixed(1)} hours',
+                  (debugResults['sleepDebug']['calculatedSleepHours'] ?? 0) >
+                              0 &&
+                          (debugResults['sleepDebug']['calculatedSleepHours'] ??
+                                  0) <=
+                              16
+                      ? Colors.green
+                      : Colors.red,
+                ),
+
+                // Show sleep analysis if available
+                if (debugResults['sleepDebug']['sleepAnalysis'] != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Recent Sleep Sessions:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...((debugResults['sleepDebug']['sleepAnalysis']
+                              as List<dynamic>?) ??
+                          [])
+                      .map(
+                        (session) => Padding(
+                          padding: const EdgeInsets.only(left: 16, bottom: 4),
+                          child: Text(
+                            '• ${(session['durationHours'] as double).toStringAsFixed(1)}h (${session['startTime'].toString().substring(11, 16)} - ${session['endTime'].toString().substring(11, 16)})',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: session['isReasonableDuration'] == true
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                            ),
+                          ),
+                        ),
+                      ),
+                ],
+              ],
+
+              const SizedBox(height: 16),
+              const Divider(),
+
+              // Calories Debug Section
+              if (debugResults['caloriesDebug'] != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '🔥 Calories Data Analysis',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                _buildDebugSection(
+                  'Today Records',
+                  '${debugResults['caloriesDebug']['todayRecords'] ?? 0}',
+                  (debugResults['caloriesDebug']['todayRecords'] ?? 0) > 0
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+
+                _buildDebugSection(
+                  'Today Calories',
+                  '${(debugResults['caloriesDebug']['todayTotalCalories'] ?? 0).round()} cal',
+                  (debugResults['caloriesDebug']['todayTotalCalories'] ?? 0) > 0
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+
+                _buildDebugSection(
+                  'Direct Channel',
+                  '${(debugResults['caloriesDebug']['minimalChannelTodayCalories'] ?? 0).round()} cal',
+                  (debugResults['caloriesDebug']['minimalChannelTodayCalories'] ??
+                              0) >
+                          0
+                      ? Colors.green
+                      : Colors.orange,
+                ),
+              ],
+
+              const SizedBox(height: 16),
+              const Divider(),
+
+              // Data Type Summary
+              const SizedBox(height: 8),
+              Text(
+                '📊 Data Type Summary',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              ...[
+                'steps',
+                'active_energy_burned',
+                'sleep_in_bed',
+                'water',
+                'weight',
+                'heart_rate',
+              ].map((dataType) {
+                final recordCount = debugResults['${dataType}RecordCount'] ?? 0;
+                final hasError = debugResults['${dataType}Error'] != null;
+
+                return _buildDebugSection(
+                  dataType.replaceAll('_', ' ').toUpperCase(),
+                  hasError ? 'Error' : '$recordCount records',
+                  hasError
+                      ? Colors.red
+                      : (recordCount > 0 ? Colors.green : Colors.grey),
+                );
+              }),
+
+              // Troubleshooting tips
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '💡 Key Findings & Next Steps:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    if ((debugResults['sleepDebug']?['calculatedSleepHours'] ??
+                            0) >
+                        16) ...[
+                      const Text(
+                        '⚠️ Sleep calculation issue detected - showing unrealistic hours',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      const Text(
+                        '• Fixed: Now using longest single session instead of summing all sessions',
+                      ),
+                    ],
+                    if ((debugResults['caloriesDebug']?['todayRecords'] ?? 0) ==
+                        0) ...[
+                      const Text(
+                        '⚠️ No calories data found',
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                      const Text(
+                        '• Check if your watch app is syncing to Health Connect',
+                      ),
+                      const Text(
+                        '• Verify active energy permissions in Health Connect',
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              try {
+                await HealthService.openHealthConnectSettings();
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Could not open settings: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Open Health Connect'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebugSection(String title, String value, Color color) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(color: color, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showHealthConnectSetupGuide() {
     showDialog(
       context: context,
@@ -3123,7 +3597,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             onPressed: () async {
               Navigator.of(context).pop();
               try {
-                await HealthService.openHealthConnect();
+                await HealthConnectUtils.openHealthConnect();
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -3158,6 +3632,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               }
             },
             child: const Text('Test Again'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              // Debug calories specifically
+              try {
+                final results = await HealthService.debugCaloriesData();
+                if (mounted) {
+                  _showCaloriesDebugDialog(results);
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Calories debug failed: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Debug Calories'),
           ),
         ],
       ),

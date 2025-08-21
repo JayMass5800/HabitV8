@@ -519,9 +519,54 @@ class HealthService {
     }
 
     try {
+      AppLogger.info('Starting active calories retrieval...');
+
+      // First check permissions
+      final hasPerms = await hasPermissions();
+      AppLogger.info('Active calories request - Has permissions: $hasPerms');
+
+      if (!hasPerms) {
+        AppLogger.warning(
+          'No health permissions - cannot retrieve active calories data',
+        );
+        return 0.0;
+      }
+
+      // Get detailed data for debugging
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      AppLogger.info(
+        'Requesting active calories from ${startOfDay.toIso8601String()} to ${endOfDay.toIso8601String()}',
+      );
+
+      final data = await MinimalHealthChannel.getHealthData(
+        dataType: 'ACTIVE_ENERGY_BURNED',
+        startDate: startOfDay,
+        endDate: endOfDay,
+      );
+
+      AppLogger.info('Active calories raw data: ${data.length} records');
+
+      double totalCalories = 0.0;
+      for (int i = 0; i < data.length; i++) {
+        final record = data[i];
+        final value = record['value'] as double;
+        final timestamp = record['timestamp'] as int;
+        final recordTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+        AppLogger.info(
+          'Calories record $i: ${value.round()} cal at ${recordTime.toIso8601String()}',
+        );
+        totalCalories += value;
+      }
+
       final double calories =
           await MinimalHealthChannel.getActiveCaloriesToday();
-      AppLogger.info('Retrieved active calories data: ${calories.round()}');
+      AppLogger.info(
+        'Retrieved active calories data: ${calories.round()} (total from ${data.length} records: ${totalCalories.round()})',
+      );
       return calories;
     } catch (e) {
       AppLogger.error('Error getting active calories data', e);
@@ -1562,5 +1607,237 @@ class HealthService {
       'message': 'Using custom Health Connect integration - real data only',
       'timestamp': DateTime.now().toIso8601String(),
     };
+  }
+
+  /// Detailed calories debugging method
+  static Future<Map<String, dynamic>> debugCaloriesData() async {
+    final results = <String, dynamic>{};
+
+    try {
+      AppLogger.info('Starting detailed calories debugging...');
+
+      // Check permissions first
+      final hasPerms = await hasPermissions();
+      results['hasPermissions'] = hasPerms;
+
+      if (!hasPerms) {
+        results['error'] = 'No health permissions';
+        return results;
+      }
+
+      // Test different time ranges
+      final now = DateTime.now();
+      final timeRanges = [
+        {
+          'name': 'today',
+          'start': DateTime(now.year, now.month, now.day),
+          'end': now,
+        },
+        {
+          'name': 'yesterday',
+          'start': DateTime(now.year, now.month, now.day - 1),
+          'end': DateTime(now.year, now.month, now.day),
+        },
+        {
+          'name': 'last7days',
+          'start': now.subtract(const Duration(days: 7)),
+          'end': now,
+        },
+      ];
+
+      for (final range in timeRanges) {
+        final rangeName = range['name'] as String;
+        final startDate = range['start'] as DateTime;
+        final endDate = range['end'] as DateTime;
+
+        try {
+          final data = await MinimalHealthChannel.getHealthData(
+            dataType: 'ACTIVE_ENERGY_BURNED',
+            startDate: startDate,
+            endDate: endDate,
+          );
+
+          results['${rangeName}Records'] = data.length;
+          results['${rangeName}TotalCalories'] = data.fold<double>(
+            0.0,
+            (sum, record) => sum + (record['value'] as double),
+          );
+
+          if (data.isNotEmpty) {
+            results['${rangeName}FirstRecord'] = {
+              'value': data.first['value'],
+              'timestamp': DateTime.fromMillisecondsSinceEpoch(
+                data.first['timestamp'] as int,
+              ).toIso8601String(),
+            };
+            results['${rangeName}LastRecord'] = {
+              'value': data.last['value'],
+              'timestamp': DateTime.fromMillisecondsSinceEpoch(
+                data.last['timestamp'] as int,
+              ).toIso8601String(),
+            };
+          }
+
+          AppLogger.info(
+            'Calories $rangeName: ${data.length} records, total: ${results['${rangeName}TotalCalories']} cal',
+          );
+        } catch (e) {
+          results['${rangeName}Error'] = e.toString();
+          AppLogger.error('Error getting calories for $rangeName', e);
+        }
+      }
+
+      // Test the MinimalHealthChannel method directly
+      try {
+        final todayCalories =
+            await MinimalHealthChannel.getActiveCaloriesToday();
+        results['minimalChannelTodayCalories'] = todayCalories;
+        AppLogger.info(
+          'MinimalHealthChannel.getActiveCaloriesToday(): $todayCalories',
+        );
+      } catch (e) {
+        results['minimalChannelError'] = e.toString();
+        AppLogger.error(
+          'Error with MinimalHealthChannel.getActiveCaloriesToday()',
+          e,
+        );
+      }
+
+      results['debugCompleted'] = true;
+      results['debugTimestamp'] = DateTime.now().toIso8601String();
+    } catch (e) {
+      AppLogger.error('Error in calories debugging', e);
+      results['error'] = e.toString();
+    }
+
+    return results;
+  }
+
+  /// Debug health data issues - comprehensive troubleshooting method
+  static Future<Map<String, dynamic>> debugHealthDataIssues() async {
+    final results = <String, dynamic>{};
+
+    try {
+      AppLogger.info('Starting comprehensive health data debugging...');
+
+      // Check basic setup
+      results['isInitialized'] = _isInitialized;
+      results['hasPermissions'] = await hasPermissions();
+      results['healthConnectStatus'] = await getHealthConnectStatus();
+
+      // Debug sleep data
+      AppLogger.info('Debugging sleep data...');
+      final sleepDebug = await _debugSleepData();
+      results['sleepDebug'] = sleepDebug;
+
+      // Debug calories data
+      AppLogger.info('Debugging calories data...');
+      final caloriesDebug = await debugCaloriesData();
+      results['caloriesDebug'] = caloriesDebug;
+
+      // Test all data types
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final dataTypes = [
+        'STEPS',
+        'ACTIVE_ENERGY_BURNED',
+        'SLEEP_IN_BED',
+        'WATER',
+        'WEIGHT',
+        'HEART_RATE',
+      ];
+
+      for (final dataType in dataTypes) {
+        try {
+          final data = await MinimalHealthChannel.getHealthData(
+            dataType: dataType,
+            startDate: startOfDay,
+            endDate: endOfDay,
+          );
+          results['${dataType.toLowerCase()}RecordCount'] = data.length;
+          AppLogger.info('$dataType: ${data.length} records found');
+        } catch (e) {
+          results['${dataType.toLowerCase()}Error'] = e.toString();
+          AppLogger.error('Error getting $dataType data', e);
+        }
+      }
+
+      results['debugCompleted'] = true;
+      results['debugTimestamp'] = DateTime.now().toIso8601String();
+    } catch (e) {
+      AppLogger.error('Error in comprehensive health debugging', e);
+      results['error'] = e.toString();
+    }
+
+    return results;
+  }
+
+  /// Debug sleep data specifically
+  static Future<Map<String, dynamic>> _debugSleepData() async {
+    final results = <String, dynamic>{};
+
+    try {
+      final now = DateTime.now();
+
+      // Get raw sleep data for the last 3 days
+      final threeDaysAgo = now.subtract(const Duration(days: 3));
+      final startTime = DateTime(
+        threeDaysAgo.year,
+        threeDaysAgo.month,
+        threeDaysAgo.day,
+        18,
+      );
+
+      final rawSleepData = await MinimalHealthChannel.getHealthData(
+        dataType: 'SLEEP_IN_BED',
+        startDate: startTime,
+        endDate: now,
+      );
+
+      results['totalSleepRecords'] = rawSleepData.length;
+      results['rawSleepData'] = rawSleepData
+          .take(10)
+          .toList(); // First 10 records
+
+      // Test the sleep calculation method
+      final calculatedSleep =
+          await MinimalHealthChannel.getSleepHoursLastNight();
+      results['calculatedSleepHours'] = calculatedSleep;
+
+      // Analyze sleep records
+      if (rawSleepData.isNotEmpty) {
+        final sleepAnalysis = <Map<String, dynamic>>[];
+
+        for (int i = 0; i < rawSleepData.length && i < 5; i++) {
+          final record = rawSleepData[i];
+          final minutes = record['value'] as double;
+          final timestamp = record['timestamp'] as int;
+          final endTime = record['endTime'] as int?;
+
+          final sessionStart = DateTime.fromMillisecondsSinceEpoch(timestamp);
+          final sessionEnd = endTime != null
+              ? DateTime.fromMillisecondsSinceEpoch(endTime)
+              : sessionStart.add(Duration(minutes: minutes.round()));
+
+          sleepAnalysis.add({
+            'index': i,
+            'durationMinutes': minutes,
+            'durationHours': minutes / 60.0,
+            'startTime': sessionStart.toIso8601String(),
+            'endTime': sessionEnd.toIso8601String(),
+            'isReasonableDuration': minutes >= 60 && minutes <= 960,
+          });
+        }
+
+        results['sleepAnalysis'] = sleepAnalysis;
+      }
+    } catch (e) {
+      AppLogger.error('Error debugging sleep data', e);
+      results['error'] = e.toString();
+    }
+
+    return results;
   }
 }

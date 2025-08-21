@@ -7,6 +7,7 @@ import '../../services/logging_service.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/category_filter_widget.dart';
+import '../widgets/collapsible_hourly_habit_card.dart';
 import 'edit_habit_screen.dart';
 
 class AllHabitsScreen extends ConsumerStatefulWidget {
@@ -160,6 +161,22 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                         ? index + 1
                         : null;
 
+                    // Check if this is an hourly habit with time slots
+                    if (habit.frequency == HabitFrequency.hourly &&
+                        habit.hourlyTimes.isNotEmpty) {
+                      return CollapsibleHourlyHabitCard(
+                        habit: habit,
+                        selectedDate:
+                            DateTime.now(), // For all habits screen, use current date
+                        onToggleHourlyCompletion: (habit, timeSlot) =>
+                            _toggleHourlyHabitCompletion(habit, timeSlot),
+                        isHourlyHabitCompletedAtTime:
+                            _isHourlyHabitCompletedAtTime,
+                        getHabitStatus: _getHabitStatus,
+                        getStatusColor: _getStatusColor,
+                      );
+                    }
+
                     return _HabitCard(
                       habit: habit,
                       rank: rank,
@@ -245,6 +262,129 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       case 'Recent':
       default:
         return Icons.access_time;
+    }
+  }
+
+  void _toggleHourlyHabitCompletion(Habit habit, TimeOfDay timeSlot) {
+    final now = DateTime.now();
+    final targetDateTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      timeSlot.hour,
+      timeSlot.minute,
+    );
+
+    final isCompleted = _isHourlyHabitCompletedAtTime(habit, now, timeSlot);
+    final habitServiceAsync = ref.read(habitServiceProvider);
+
+    habitServiceAsync.when(
+      data: (habitService) async {
+        if (isCompleted) {
+          // Remove completion for this specific time slot
+          habit.completions.removeWhere((completion) {
+            return completion.year == targetDateTime.year &&
+                completion.month == targetDateTime.month &&
+                completion.day == targetDateTime.day &&
+                completion.hour == targetDateTime.hour &&
+                completion.minute == targetDateTime.minute;
+          });
+        } else {
+          // Add completion for this specific time slot
+          habit.completions.add(targetDateTime);
+        }
+
+        await habitService.updateHabit(habit);
+        // Force UI refresh by invalidating the provider
+        ref.invalidate(habitServiceProvider);
+      },
+      loading: () {},
+      error: (error, stack) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $error')));
+        }
+      },
+    );
+  }
+
+  bool _isHourlyHabitCompletedAtTime(
+    Habit habit,
+    DateTime date,
+    TimeOfDay timeSlot,
+  ) {
+    final targetDateTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      timeSlot.hour,
+      timeSlot.minute,
+    );
+
+    return habit.completions.any((completion) {
+      return completion.year == targetDateTime.year &&
+          completion.month == targetDateTime.month &&
+          completion.day == targetDateTime.day &&
+          completion.hour == targetDateTime.hour &&
+          completion.minute == targetDateTime.minute;
+    });
+  }
+
+  String _getHabitStatus(Habit habit, DateTime date) {
+    // For all habits screen, we can show a general status
+    if (habit.frequency == HabitFrequency.hourly) {
+      final timeSlots = habit.hourlyTimes
+          .map((timeStr) {
+            final timeParts = timeStr.split(':');
+            if (timeParts.length == 2) {
+              final hour = int.tryParse(timeParts[0]);
+              final minute = int.tryParse(timeParts[1]);
+              if (hour != null && minute != null) {
+                return TimeOfDay(hour: hour, minute: minute);
+              }
+            }
+            return null;
+          })
+          .where((t) => t != null)
+          .cast<TimeOfDay>()
+          .toList();
+
+      final completedCount = timeSlots
+          .where(
+            (timeSlot) => _isHourlyHabitCompletedAtTime(habit, date, timeSlot),
+          )
+          .length;
+
+      if (completedCount == timeSlots.length) {
+        return 'Completed';
+      } else if (completedCount > 0) {
+        return 'Partial';
+      } else {
+        return 'Pending';
+      }
+    }
+
+    // For non-hourly habits, check if completed today
+    final today = DateTime.now();
+    final isCompletedToday = habit.completions.any((completion) {
+      return completion.year == today.year &&
+          completion.month == today.month &&
+          completion.day == today.day;
+    });
+
+    return isCompletedToday ? 'Completed' : 'Pending';
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Completed':
+        return Colors.green;
+      case 'Partial':
+        return Colors.orange;
+      case 'Pending':
+      default:
+        return Colors.grey;
     }
   }
 }

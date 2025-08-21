@@ -6,6 +6,7 @@ import '../../domain/model/habit.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/smooth_transitions.dart';
+import '../widgets/collapsible_hourly_habit_card.dart';
 
 // Helper class to represent a habit with an optional time slot (for hourly habits)
 class HabitTimeSlot {
@@ -155,59 +156,41 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                         .where((habit) => habit.category == _selectedCategory)
                         .toList();
 
-              // Expand hourly habits into separate entries for each time slot
-              final expandedHabits = <HabitTimeSlot>[];
+              // Separate hourly habits from regular habits
+              final hourlyHabits = <Habit>[];
+              final regularHabits = <Habit>[];
 
               for (final habit in filteredHabits) {
                 if (_isHabitDueOnDate(habit, _selectedDate)) {
                   if (habit.frequency == HabitFrequency.hourly &&
                       habit.hourlyTimes.isNotEmpty) {
-                    // Create separate entries for each hourly time slot
-                    for (final timeStr in habit.hourlyTimes) {
-                      final timeParts = timeStr.split(':');
-                      if (timeParts.length == 2) {
-                        final hour = int.tryParse(timeParts[0]);
-                        final minute = int.tryParse(timeParts[1]);
-                        if (hour != null && minute != null) {
-                          expandedHabits.add(
-                            HabitTimeSlot(
-                              habit: habit,
-                              timeSlot: TimeOfDay(hour: hour, minute: minute),
-                            ),
-                          );
-                        }
-                      }
-                    }
+                    hourlyHabits.add(habit);
                   } else {
-                    // Non-hourly habits or hourly habits without specific times
-                    expandedHabits.add(HabitTimeSlot(habit: habit));
+                    regularHabits.add(habit);
                   }
                 }
               }
 
-              // Sort expanded habits chronologically by time
-              expandedHabits.sort((a, b) {
-                // If both have time slots, sort by time
-                if (a.timeSlot != null && b.timeSlot != null) {
-                  if (a.timeSlot!.hour != b.timeSlot!.hour) {
-                    return a.timeSlot!.hour.compareTo(b.timeSlot!.hour);
+              // Sort hourly habits by their earliest time slot
+              hourlyHabits.sort((a, b) {
+                final aEarliestTime = _getEarliestTimeSlot(a);
+                final bEarliestTime = _getEarliestTimeSlot(b);
+
+                if (aEarliestTime != null && bEarliestTime != null) {
+                  if (aEarliestTime.hour != bEarliestTime.hour) {
+                    return aEarliestTime.hour.compareTo(bEarliestTime.hour);
                   }
-                  return a.timeSlot!.minute.compareTo(b.timeSlot!.minute);
+                  return aEarliestTime.minute.compareTo(bEarliestTime.minute);
                 }
 
-                // If only one has time slot, prioritize it
-                if (a.timeSlot != null && b.timeSlot == null) {
-                  return -1;
-                }
-                if (a.timeSlot == null && b.timeSlot != null) {
-                  return 1;
-                }
+                return a.createdAt.compareTo(b.createdAt);
+              });
 
-                // If both have notification times, sort by time
-                if (a.habit.notificationTime != null &&
-                    b.habit.notificationTime != null) {
-                  final timeA = a.habit.notificationTime!;
-                  final timeB = b.habit.notificationTime!;
+              // Sort regular habits by notification time or creation date
+              regularHabits.sort((a, b) {
+                if (a.notificationTime != null && b.notificationTime != null) {
+                  final timeA = a.notificationTime!;
+                  final timeB = b.notificationTime!;
 
                   if (timeA.hour != timeB.hour) {
                     return timeA.hour.compareTo(timeB.hour);
@@ -215,21 +198,17 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   return timeA.minute.compareTo(timeB.minute);
                 }
 
-                // If only one has notification time, prioritize it
-                if (a.habit.notificationTime != null &&
-                    b.habit.notificationTime == null) {
+                if (a.notificationTime != null && b.notificationTime == null) {
                   return -1;
                 }
-                if (a.habit.notificationTime == null &&
-                    b.habit.notificationTime != null) {
+                if (a.notificationTime == null && b.notificationTime != null) {
                   return 1;
                 }
 
-                // If neither has notification time, sort by creation date (newest first)
-                return b.habit.createdAt.compareTo(a.habit.createdAt);
+                return b.createdAt.compareTo(a.createdAt);
               });
 
-              if (expandedHabits.isEmpty) {
+              if (hourlyHabits.isEmpty && regularHabits.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -256,14 +235,34 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: expandedHabits.length,
+                itemCount: hourlyHabits.length + regularHabits.length,
                 itemBuilder: (context, index) {
-                  final habitTimeSlot = expandedHabits[index];
-                  return SmoothTransitions.slideTransition(
-                    show: true,
-                    duration: Duration(milliseconds: 300 + (index * 50)),
-                    child: _buildHabitCard(habitTimeSlot),
-                  );
+                  if (index < hourlyHabits.length) {
+                    // Render hourly habit with collapsible card
+                    final habit = hourlyHabits[index];
+                    return SmoothTransitions.slideTransition(
+                      show: true,
+                      duration: Duration(milliseconds: 300 + (index * 50)),
+                      child: CollapsibleHourlyHabitCard(
+                        habit: habit,
+                        selectedDate: _selectedDate,
+                        onToggleHourlyCompletion: _toggleHourlyHabitCompletion,
+                        isHourlyHabitCompletedAtTime:
+                            _isHourlyHabitCompletedAtTime,
+                        getHabitStatus: _getHabitStatus,
+                        getStatusColor: _getStatusColor,
+                      ),
+                    );
+                  } else {
+                    // Render regular habit with standard card
+                    final habitIndex = index - hourlyHabits.length;
+                    final habit = regularHabits[habitIndex];
+                    return SmoothTransitions.slideTransition(
+                      show: true,
+                      duration: Duration(milliseconds: 300 + (index * 50)),
+                      child: _buildHabitCard(HabitTimeSlot(habit: habit)),
+                    );
+                  }
                 },
               );
             },
@@ -697,5 +696,28 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         }
       },
     );
+  }
+
+  TimeOfDay? _getEarliestTimeSlot(Habit habit) {
+    if (habit.hourlyTimes.isEmpty) return null;
+
+    TimeOfDay? earliest;
+    for (final timeStr in habit.hourlyTimes) {
+      final timeParts = timeStr.split(':');
+      if (timeParts.length == 2) {
+        final hour = int.tryParse(timeParts[0]);
+        final minute = int.tryParse(timeParts[1]);
+        if (hour != null && minute != null) {
+          final timeSlot = TimeOfDay(hour: hour, minute: minute);
+          if (earliest == null ||
+              timeSlot.hour < earliest.hour ||
+              (timeSlot.hour == earliest.hour &&
+                  timeSlot.minute < earliest.minute)) {
+            earliest = timeSlot;
+          }
+        }
+      }
+    }
+    return earliest;
   }
 }

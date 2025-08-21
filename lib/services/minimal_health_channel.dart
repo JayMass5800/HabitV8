@@ -224,18 +224,54 @@ class MinimalHealthChannel {
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
+      AppLogger.info(
+        'Requesting active calories data from ${startOfDay.toIso8601String()} to ${endOfDay.toIso8601String()}',
+      );
+
       final data = await getHealthData(
         dataType: 'ACTIVE_ENERGY_BURNED',
         startDate: startOfDay,
         endDate: endOfDay,
       );
 
-      double totalCalories = 0.0;
-      for (final record in data) {
-        totalCalories += record['value'] as double;
+      AppLogger.info('Received ${data.length} active calories records');
+
+      if (data.isEmpty) {
+        AppLogger.warning('No active calories data found for today');
+        AppLogger.info('Troubleshooting steps for calories data:');
+        AppLogger.info(
+          '1. Check if your smartwatch is syncing calories to Health Connect',
+        );
+        AppLogger.info(
+          '2. Verify your watch app has Health Connect integration enabled',
+        );
+        AppLogger.info(
+          '3. Check Health Connect app for active energy data visibility',
+        );
+        AppLogger.info(
+          '4. Ensure your watch is tracking workouts and activities',
+        );
+        AppLogger.info('5. Try manually syncing your smartwatch data');
+        return 0.0;
       }
 
-      AppLogger.info('Total active calories today: ${totalCalories.round()}');
+      double totalCalories = 0.0;
+      for (int i = 0; i < data.length; i++) {
+        final record = data[i];
+        final calories = record['value'] as double;
+        final timestamp = record['timestamp'] as int;
+        final recordTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+        totalCalories += calories;
+
+        AppLogger.info(
+          'Calories record $i: ${calories.toStringAsFixed(1)} cal at ${recordTime.toIso8601String()}',
+        );
+      }
+
+      AppLogger.info(
+        'Total active calories today: ${totalCalories.round()} cal from ${data.length} records',
+      );
       return totalCalories;
     } catch (e) {
       AppLogger.error('Error getting active calories today', e);
@@ -248,8 +284,8 @@ class MinimalHealthChannel {
     try {
       final now = DateTime.now();
 
-      // Expand the time range to capture sleep sessions that might start earlier or end later
-      // Look from 2 days ago at 6 PM to now (to catch any sleep session)
+      // Look for sleep data from 2 days ago at 6 PM to now
+      // This ensures we capture sleep sessions that might start late or end early
       final twoDaysAgo = now.subtract(const Duration(days: 2));
       final startTime = DateTime(
         twoDaysAgo.year,
@@ -278,17 +314,30 @@ class MinimalHealthChannel {
         return 0.0;
       }
 
-      // Find the most recent sleep session that ended within the last 24 hours
+      // Define the target sleep period: from 6 PM yesterday to 2 PM today
+      // This captures typical sleep patterns while avoiding multiple days
       final yesterday = now.subtract(const Duration(days: 1));
-      final yesterdayStart = DateTime(
+      final sleepWindowStart = DateTime(
         yesterday.year,
         yesterday.month,
         yesterday.day,
+        18, // 6 PM yesterday
       );
-      final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      final sleepWindowEnd = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        14, // 2 PM today
+      );
 
-      double totalSleepMinutes = 0.0;
-      int validSessions = 0;
+      AppLogger.info(
+        'Looking for sleep sessions between ${sleepWindowStart.toIso8601String()} and ${sleepWindowEnd.toIso8601String()}',
+      );
+
+      // Find the longest sleep session within the target window
+      // This avoids summing multiple sessions which could lead to inflated totals
+      double longestSleepMinutes = 0.0;
+      Map<String, dynamic>? bestSleepSession;
 
       for (int i = 0; i < data.length; i++) {
         final record = data[i];
@@ -305,24 +354,51 @@ class MinimalHealthChannel {
           'Sleep record $i: ${minutes.toStringAsFixed(1)} minutes, start: ${sessionStart.toIso8601String()}, end: ${sessionEnd.toIso8601String()}',
         );
 
-        // Include sleep sessions that ended between yesterday start and today end
-        // This captures the most recent night's sleep
-        if (sessionEnd.isAfter(yesterdayStart) &&
-            sessionEnd.isBefore(todayEnd)) {
-          totalSleepMinutes += minutes;
-          validSessions++;
-          AppLogger.info(
-            'Including sleep session: ${minutes.toStringAsFixed(1)} minutes',
-          );
+        // Check if this sleep session overlaps with our target window
+        final sessionOverlapsWindow =
+            sessionStart.isBefore(sleepWindowEnd) &&
+            sessionEnd.isAfter(sleepWindowStart);
+
+        if (sessionOverlapsWindow) {
+          // Validate the session duration is reasonable (between 1 and 16 hours)
+          if (minutes >= 60 && minutes <= 960) {
+            // 1-16 hours
+            if (minutes > longestSleepMinutes) {
+              longestSleepMinutes = minutes;
+              bestSleepSession = record;
+              AppLogger.info(
+                'New best sleep session: ${minutes.toStringAsFixed(1)} minutes',
+              );
+            }
+          } else {
+            AppLogger.warning(
+              'Excluding unrealistic sleep session: ${minutes.toStringAsFixed(1)} minutes',
+            );
+          }
         } else {
-          AppLogger.info('Excluding sleep session (outside target range)');
+          AppLogger.info('Sleep session outside target window');
         }
       }
 
-      final sleepHours = totalSleepMinutes / 60.0;
-      AppLogger.info(
-        'Sleep hours last night: ${sleepHours.toStringAsFixed(1)} (from ${totalSleepMinutes.toStringAsFixed(1)} minutes, $validSessions sessions)',
-      );
+      final sleepHours = longestSleepMinutes / 60.0;
+
+      if (bestSleepSession != null) {
+        final sessionStart = DateTime.fromMillisecondsSinceEpoch(
+          bestSleepSession['timestamp'] as int,
+        );
+        final sessionEnd = bestSleepSession['endTime'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(
+                bestSleepSession['endTime'] as int,
+              )
+            : sessionStart.add(Duration(minutes: longestSleepMinutes.round()));
+
+        AppLogger.info(
+          'Best sleep session: ${sleepHours.toStringAsFixed(1)} hours from ${sessionStart.toIso8601String()} to ${sessionEnd.toIso8601String()}',
+        );
+      } else {
+        AppLogger.info('No valid sleep session found for last night');
+      }
+
       return sleepHours;
     } catch (e) {
       AppLogger.error('Error getting sleep hours', e);
@@ -534,7 +610,7 @@ class MinimalHealthChannel {
 
             final dayRange = startTime.day == now.day ? 'today' : 'recent days';
             AppLogger.info(
-              'Resting heart rate ($dayRange): ${restingHeartRate.round()} bpm (from ${restingCount} lowest readings out of ${validHeartRates.length} valid)',
+              'Resting heart rate ($dayRange): ${restingHeartRate.round()} bpm (from $restingCount lowest readings out of ${validHeartRates.length} valid)',
             );
             return restingHeartRate;
           }
