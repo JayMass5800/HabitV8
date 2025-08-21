@@ -6,7 +6,6 @@ import '../../domain/model/habit.dart';
 import '../../services/trend_analysis_service.dart';
 import '../../services/achievements_service.dart';
 import '../../services/health_service.dart';
-
 import '../../services/health_habit_integration_service.dart';
 import '../../services/habit_stats_service.dart';
 import '../../services/logging_service.dart';
@@ -2956,18 +2955,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   results['stepsRecords'] > 0) ...[
                 Text(
                   '✅ Steps data is working correctly (${results['stepsRecords']} records)',
-                  style: const TextStyle(
-                    color: Colors.green,
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.green.shade300
+                        : Colors.green.shade700,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
               ],
               if (results['heartrateRecords'] == 0) ...[
-                const Text(
+                Text(
                   '❌ Heart Rate: No data found',
                   style: TextStyle(
-                    color: Colors.red,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.red.shade300
+                        : Colors.red.shade700,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -2978,10 +2981,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 const SizedBox(height: 8),
               ],
               if (results['sleepinbedRecords'] == 0) ...[
-                const Text(
+                Text(
                   '❌ Sleep: No data found',
                   style: TextStyle(
-                    color: Colors.red,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.red.shade300
+                        : Colors.red.shade700,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -2992,10 +2997,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 const SizedBox(height: 8),
               ],
               if (results['activeenergyburnedRecords'] == 0) ...[
-                const Text(
+                Text(
                   '❌ Calories: No data found',
                   style: TextStyle(
-                    color: Colors.red,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.red.shade300
+                        : Colors.red.shade700,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -3322,7 +3329,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Recent Sleep Sessions:',
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -3337,12 +3346,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                             style: TextStyle(
                               fontSize: 12,
                               color: session['isReasonableDuration'] == true
-                                  ? (Theme.of(context).brightness == Brightness.dark 
-                                      ? Colors.green.shade300 
-                                      : Colors.green.shade700)
-                                  : (Theme.of(context).brightness == Brightness.dark 
-                                      ? Colors.red.shade300 
-                                      : Colors.red.shade700),
+                                  ? (Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.green.shade300
+                                        : Colors.green.shade700)
+                                  : (Theme.of(context).brightness ==
+                                            Brightness.dark
+                                        ? Colors.red.shade300
+                                        : Colors.red.shade700),
                             ),
                           ),
                         ),
@@ -3501,7 +3512,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   Widget _buildDebugSection(String title, String value, Color color) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     // Adjust colors for dark theme readability
     Color adjustedColor = color;
     if (isDark) {
@@ -3515,7 +3526,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         adjustedColor = Colors.blue.shade300;
       }
     }
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3607,7 +3618,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 '• These require manual entry in most health apps\n'
                 '• Check Google Fit or Samsung Health for manual entry options\n'
                 '• Some smart scales can sync weight data automatically',
-                style: TextStyle(fontSize: 11),
+                style: const TextStyle(fontSize: 11),
               ),
             ],
           ),
@@ -3634,6 +3645,107 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             },
             child: const Text('Open Health Connect'),
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSetupStep(String number, String title, String description) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticItem(String title, dynamic value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    String displayValue;
+    Color valueColor;
+
+    if (value is bool) {
+      displayValue = value ? '✅ Yes' : '❌ No';
+      valueColor = value
+          ? (isDark ? Colors.green.shade300 : Colors.green.shade700)
+          : (isDark ? Colors.red.shade300 : Colors.red.shade700);
+    } else if (value is int) {
+      displayValue = value.toString();
+      valueColor = value > 0
+          ? (isDark ? Colors.green.shade300 : Colors.green.shade700)
+          : (isDark ? Colors.orange.shade300 : Colors.orange.shade700);
+    } else {
+      displayValue = value?.toString() ?? 'Unknown';
+      valueColor = theme.colorScheme.onSurface.withValues(alpha: 0.7);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              displayValue,
+              style: TextStyle(color: valueColor, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
