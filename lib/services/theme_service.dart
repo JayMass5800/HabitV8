@@ -38,14 +38,22 @@ class ThemeService {
 
   static Future<Color> getPrimaryColor() async {
     final prefs = await SharedPreferences.getInstance();
-    final colorValue = prefs.getInt(_primaryColorKey) ?? 0xFF2196F3; // Colors.blue equivalent
+    final colorValue =
+        prefs.getInt(_primaryColorKey) ?? 0xFF2196F3; // Colors.blue equivalent
     return Color(colorValue);
   }
 
   static Future<void> setPrimaryColor(Color color) async {
     final prefs = await SharedPreferences.getInstance();
-    // Convert color to ARGB32 format (modern replacement for .value)
-    await prefs.setInt(_primaryColorKey, color.toARGB32());
+    // Convert color to ARGB32 format (fallback to .value if toARGB32 not available)
+    int colorValue;
+    try {
+      colorValue = color.toARGB32();
+    } catch (e) {
+      // Fallback to deprecated .value property if toARGB32 is not available
+      colorValue = color.value;
+    }
+    await prefs.setInt(_primaryColorKey, colorValue);
   }
 }
 
@@ -92,7 +100,9 @@ class ThemeState {
     ),
     cardTheme: const CardThemeData(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -129,7 +139,9 @@ class ThemeState {
     ),
     cardTheme: const CardThemeData(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(

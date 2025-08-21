@@ -3322,7 +3322,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     'Recent Sleep Sessions:',
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -3337,8 +3337,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                             style: TextStyle(
                               fontSize: 12,
                               color: session['isReasonableDuration'] == true
-                                  ? Colors.green[700]
-                                  : Colors.red[700],
+                                  ? (Theme.of(context).brightness == Brightness.dark 
+                                      ? Colors.green.shade300 
+                                      : Colors.green.shade700)
+                                  : (Theme.of(context).brightness == Brightness.dark 
+                                      ? Colors.red.shade300 
+                                      : Colors.red.shade700),
                             ),
                           ),
                         ),
@@ -3495,6 +3499,23 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildDebugSection(String title, String value, Color color) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Adjust colors for dark theme readability
+    Color adjustedColor = color;
+    if (isDark) {
+      if (color == Colors.green) {
+        adjustedColor = Colors.green.shade300;
+      } else if (color == Colors.red) {
+        adjustedColor = Colors.red.shade300;
+      } else if (color == Colors.orange) {
+        adjustedColor = Colors.orange.shade300;
+      } else if (color == Colors.blue) {
+        adjustedColor = Colors.blue.shade300;
+      }
+    }
+    
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3502,13 +3523,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           width: 120,
           child: Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(color: color, fontWeight: FontWeight.w500),
+            style: TextStyle(color: adjustedColor, fontWeight: FontWeight.w500),
           ),
         ),
       ],
@@ -3612,129 +3636,4 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
-              // Re-run the test to see if any data has appeared
-              try {
-                final results =
-                    await HealthService.testHealthConnectConnection();
-                if (mounted) {
-                  _showHealthDiagnosticsDialog(results);
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Test failed: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Test Again'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              // Debug calories specifically
-              try {
-                final results = await HealthService.debugCaloriesData();
-                if (mounted) {
-                  _showCaloriesDebugDialog(results);
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Calories debug failed: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Debug Calories'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDiagnosticItem(String label, dynamic value) {
-    Color color = Colors.grey;
-    String displayValue = value.toString();
-
-    if (value is bool) {
-      color = value ? Colors.green : Colors.red;
-      displayValue = value ? '✅ Yes' : '❌ No';
-    } else if (value is int) {
-      color = value > 0 ? Colors.green : Colors.red;
-      displayValue = value > 0 ? '✅ $value records' : '❌ No records';
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              displayValue,
-              style: TextStyle(color: color, fontSize: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSetupStep(String number, String title, String description) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                number,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(description, style: const TextStyle(fontSize: 12)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+              Navigator.of(context).pop
