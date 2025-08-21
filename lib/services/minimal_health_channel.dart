@@ -247,14 +247,17 @@ class MinimalHealthChannel {
   static Future<double> getSleepHoursLastNight() async {
     try {
       final now = DateTime.now();
-      final yesterday = now.subtract(const Duration(days: 1));
+
+      // Expand the time range to capture sleep sessions that might start earlier or end later
+      // Look from 2 days ago at 6 PM to now (to catch any sleep session)
+      final twoDaysAgo = now.subtract(const Duration(days: 2));
       final startTime = DateTime(
-        yesterday.year,
-        yesterday.month,
-        yesterday.day,
+        twoDaysAgo.year,
+        twoDaysAgo.month,
+        twoDaysAgo.day,
         18,
-      ); // 6 PM yesterday
-      final endTime = DateTime(now.year, now.month, now.day, 12); // 12 PM today
+      ); // 6 PM two days ago
+      final endTime = now; // Current time
 
       AppLogger.info(
         'MinimalHealthChannel: Requesting sleep data from ${startTime.toIso8601String()} to ${endTime.toIso8601String()}',
@@ -270,20 +273,55 @@ class MinimalHealthChannel {
         'MinimalHealthChannel: Received ${data.length} sleep records',
       );
 
+      if (data.isEmpty) {
+        AppLogger.warning('No sleep records found in expanded time range');
+        return 0.0;
+      }
+
+      // Find the most recent sleep session that ended within the last 24 hours
+      final yesterday = now.subtract(const Duration(days: 1));
+      final yesterdayStart = DateTime(
+        yesterday.year,
+        yesterday.month,
+        yesterday.day,
+      );
+      final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
       double totalSleepMinutes = 0.0;
+      int validSessions = 0;
+
       for (int i = 0; i < data.length; i++) {
         final record = data[i];
         final minutes = record['value'] as double;
-        totalSleepMinutes += minutes;
+        final timestamp = record['timestamp'] as int;
+        final endTime = record['endTime'] as int?;
+
+        final sessionStart = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        final sessionEnd = endTime != null
+            ? DateTime.fromMillisecondsSinceEpoch(endTime)
+            : sessionStart.add(Duration(minutes: minutes.round()));
 
         AppLogger.info(
-          'Sleep record $i: ${minutes.toStringAsFixed(1)} minutes, timestamp: ${record['timestamp']}, unit: ${record['unit']}',
+          'Sleep record $i: ${minutes.toStringAsFixed(1)} minutes, start: ${sessionStart.toIso8601String()}, end: ${sessionEnd.toIso8601String()}',
         );
+
+        // Include sleep sessions that ended between yesterday start and today end
+        // This captures the most recent night's sleep
+        if (sessionEnd.isAfter(yesterdayStart) &&
+            sessionEnd.isBefore(todayEnd)) {
+          totalSleepMinutes += minutes;
+          validSessions++;
+          AppLogger.info(
+            'Including sleep session: ${minutes.toStringAsFixed(1)} minutes',
+          );
+        } else {
+          AppLogger.info('Excluding sleep session (outside target range)');
+        }
       }
 
       final sleepHours = totalSleepMinutes / 60.0;
       AppLogger.info(
-        'Sleep hours last night: ${sleepHours.toStringAsFixed(1)} (from ${totalSleepMinutes.toStringAsFixed(1)} minutes)',
+        'Sleep hours last night: ${sleepHours.toStringAsFixed(1)} (from ${totalSleepMinutes.toStringAsFixed(1)} minutes, $validSessions sessions)',
       );
       return sleepHours;
     } catch (e) {
@@ -380,47 +418,74 @@ class MinimalHealthChannel {
   static Future<double?> getLatestHeartRate() async {
     try {
       final now = DateTime.now();
-      final startTime = now.subtract(
-        const Duration(hours: 24),
-      ); // Last 24 hours
 
-      AppLogger.info(
-        'MinimalHealthChannel: Requesting heart rate data from ${startTime.toIso8601String()} to ${now.toIso8601String()}',
-      );
+      // Try different time ranges to find heart rate data
+      final timeRanges = [
+        const Duration(hours: 2), // Last 2 hours
+        const Duration(hours: 6), // Last 6 hours
+        const Duration(hours: 24), // Last 24 hours
+        const Duration(days: 3), // Last 3 days
+      ];
 
-      final data = await getHealthData(
-        dataType: 'HEART_RATE',
-        startDate: startTime,
-        endDate: now,
-      );
+      for (final duration in timeRanges) {
+        final startTime = now.subtract(duration);
 
-      AppLogger.info(
-        'MinimalHealthChannel: Received ${data.length} heart rate records',
-      );
-
-      if (data.isEmpty) {
-        AppLogger.info('No heart rate data found in the last 24 hours');
-        return null;
-      }
-
-      // Log first few records for debugging
-      for (int i = 0; i < data.length && i < 3; i++) {
-        final record = data[i];
         AppLogger.info(
-          'Heart rate record $i: ${record['value']} bpm, timestamp: ${record['timestamp']}, unit: ${record['unit']}',
+          'MinimalHealthChannel: Requesting heart rate data from ${startTime.toIso8601String()} to ${now.toIso8601String()}',
         );
+
+        final data = await getHealthData(
+          dataType: 'HEART_RATE',
+          startDate: startTime,
+          endDate: now,
+        );
+
+        AppLogger.info(
+          'MinimalHealthChannel: Received ${data.length} heart rate records in ${duration.inHours}h range',
+        );
+
+        if (data.isNotEmpty) {
+          // Filter out invalid readings (0 or extremely high/low values)
+          final validData = data.where((record) {
+            final value = record['value'] as double;
+            return value > 30 && value < 220; // Reasonable heart rate range
+          }).toList();
+
+          if (validData.isNotEmpty) {
+            // Log first few records for debugging
+            for (int i = 0; i < validData.length && i < 3; i++) {
+              final record = validData[i];
+              final timestamp = DateTime.fromMillisecondsSinceEpoch(
+                record['timestamp'] as int,
+              );
+              AppLogger.info(
+                'Heart rate record $i: ${record['value']} bpm at ${timestamp.toIso8601String()}',
+              );
+            }
+
+            // Sort by timestamp and get the latest
+            validData.sort(
+              (a, b) =>
+                  (b['timestamp'] as int).compareTo(a['timestamp'] as int),
+            );
+            final latestHeartRate = validData.first['value'] as double;
+
+            AppLogger.info(
+              'Latest heart rate: ${latestHeartRate.round()} bpm (from ${validData.length} valid records out of ${data.length} total)',
+            );
+            return latestHeartRate;
+          } else {
+            AppLogger.warning(
+              'Found ${data.length} heart rate records but none were valid (all outside 30-220 bpm range)',
+            );
+          }
+        }
       }
 
-      // Sort by timestamp and get the latest
-      data.sort(
-        (a, b) => (b['timestamp'] as int).compareTo(a['timestamp'] as int),
+      AppLogger.warning(
+        'No heart rate data found in any time range up to 3 days',
       );
-      final latestHeartRate = data.first['value'] as double;
-
-      AppLogger.info(
-        'Latest heart rate: ${latestHeartRate.round()} bpm (from ${data.length} total records)',
-      );
-      return latestHeartRate;
+      return null;
     } catch (e) {
       AppLogger.error('Error getting latest heart rate', e);
       return null;
@@ -433,37 +498,53 @@ class MinimalHealthChannel {
   static Future<double?> getRestingHeartRateToday() async {
     try {
       final now = DateTime.now();
-      final startOfDay = DateTime(now.year, now.month, now.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
 
-      final data = await getHealthData(
-        dataType: 'HEART_RATE',
-        startDate: startOfDay,
-        endDate: endOfDay,
-      );
+      // Try today first, then expand to recent days if no data
+      final timeRanges = [
+        (DateTime(now.year, now.month, now.day), now), // Today
+        (DateTime(now.year, now.month, now.day - 1), now), // Yesterday + today
+        (now.subtract(const Duration(days: 3)), now), // Last 3 days
+      ];
 
-      if (data.isEmpty) {
-        AppLogger.info('No heart rate data found for today');
-        return null;
+      for (final (startTime, endTime) in timeRanges) {
+        final data = await getHealthData(
+          dataType: 'HEART_RATE',
+          startDate: startTime,
+          endDate: endTime,
+        );
+
+        if (data.isNotEmpty) {
+          // Filter out invalid readings and extreme values
+          final validHeartRates = data
+              .map((record) => record['value'] as double)
+              .where((rate) => rate > 30 && rate < 220)
+              .toList();
+
+          if (validHeartRates.isNotEmpty) {
+            validHeartRates.sort();
+
+            // Calculate resting heart rate (lowest 15% of readings for better accuracy)
+            final restingCount = (validHeartRates.length * 0.15).ceil().clamp(
+              1,
+              validHeartRates.length,
+            );
+            final restingRates = validHeartRates.take(restingCount);
+            final restingHeartRate =
+                restingRates.reduce((a, b) => a + b) / restingRates.length;
+
+            final dayRange = startTime.day == now.day ? 'today' : 'recent days';
+            AppLogger.info(
+              'Resting heart rate ($dayRange): ${restingHeartRate.round()} bpm (from ${restingCount} lowest readings out of ${validHeartRates.length} valid)',
+            );
+            return restingHeartRate;
+          }
+        }
       }
 
-      // Calculate resting heart rate (lowest 10% of readings)
-      final heartRates = data
-          .map((record) => record['value'] as double)
-          .toList();
-      heartRates.sort();
-
-      final restingCount = (heartRates.length * 0.1).ceil();
-      if (restingCount == 0) return heartRates.first;
-
-      final restingRates = heartRates.take(restingCount);
-      final restingHeartRate =
-          restingRates.reduce((a, b) => a + b) / restingRates.length;
-
       AppLogger.info(
-        'Resting heart rate today: ${restingHeartRate.round()} bpm',
+        'No valid heart rate data found for resting heart rate calculation',
       );
-      return restingHeartRate;
+      return null;
     } catch (e) {
       AppLogger.error('Error getting resting heart rate', e);
       return null;

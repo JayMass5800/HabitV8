@@ -293,6 +293,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       const SizedBox(height: 24),
                     ],
 
+                    // Health Debug Section - Always visible
+                    _buildHealthDebugSection(),
+                    const SizedBox(height: 24),
+
                     // Moved: Conditional Health Hub (Your Health & Habit Connection)
                     _buildConditionalHealthHub(habits),
                   ],
@@ -2193,36 +2197,111 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ),
             textAlign: TextAlign.center,
           ),
-          if (_healthSummary == null) ...[
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () async {
-                try {
-                  final result = await HealthService.requestPermissions();
-                  if (result.granted && mounted) {
-                    setState(() {
-                      _loadAllData();
-                    });
+          const SizedBox(height: 16),
+          // Always show health debugging buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_healthSummary == null) ...[
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final result = await HealthService.requestPermissions();
+                      if (result.granted && mounted) {
+                        setState(() {
+                          _loadAllData();
+                        });
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to connect: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.health_and_safety, size: 18),
+                  label: const Text('Connect Health Data'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              ElevatedButton.icon(
+                onPressed: () async {
+                  try {
+                    final results =
+                        await HealthService.testHealthConnectConnection();
+                    if (mounted) {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Health Connect Test Results'),
+                          content: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: results.entries.map((entry) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 2,
+                                  ),
+                                  child: Text(
+                                    '${entry.key}: ${entry.value}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Test failed: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to connect: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              icon: const Icon(Icons.health_and_safety, size: 18),
-              label: const Text('Connect Health Data'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
+                },
+                icon: const Icon(Icons.bug_report, size: 18),
+                label: const Text('Test Connection'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.secondary,
+                  foregroundColor: theme.colorScheme.onSecondary,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  setState(() {
+                    _loadAllData();
+                  });
+                },
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Refresh Data'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.tertiary,
+                  foregroundColor: theme.colorScheme.onTertiary,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -2635,4 +2714,531 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   // Debug section for troubleshooting health data issues
+  Widget _buildHealthDebugSection() {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.bug_report,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Health Data Debug',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Use these tools to diagnose health data connection issues:',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final results =
+                          await HealthService.testHealthConnectConnection();
+                      if (mounted) {
+                        _showHealthDiagnosticsDialog(results);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Test failed: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.search, size: 18),
+                  label: const Text('Test Connection'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.secondary,
+                    foregroundColor: theme.colorScheme.onSecondary,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      final diagnostics =
+                          await HealthService.runHealthConnectDiagnostics();
+                      if (mounted) {
+                        _showDetailedDiagnosticsDialog(diagnostics);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Diagnostics failed: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.analytics, size: 18),
+                  label: const Text('Full Diagnostics'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    setState(() {
+                      _loadAllData();
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Refreshing health data...'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.refresh, size: 18),
+                  label: const Text('Refresh Data'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.tertiary,
+                    foregroundColor: theme.colorScheme.onTertiary,
+                  ),
+                ),
+                if (_healthSummary == null)
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      try {
+                        final result = await HealthService.requestPermissions();
+                        if (result.granted && mounted) {
+                          setState(() {
+                            _loadAllData();
+                          });
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to connect: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.health_and_safety, size: 18),
+                    label: const Text('Connect Health'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
+                    ),
+                  ),
+              ],
+            ),
+            if (_healthSummary != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Current Health Data Status:',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Heart Rate: ${_healthSummary!['heartRate'] ?? 'No data'}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    Text(
+                      'Sleep: ${_healthSummary!['sleepHours'] ?? 'No data'} hours',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    Text(
+                      'Steps: ${_healthSummary!['steps'] ?? 'No data'}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showHealthDiagnosticsDialog(Map<String, dynamic> results) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Health Connect Test Results'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDiagnosticItem(
+                'Health Connect Available',
+                results['healthConnectAvailable'],
+              ),
+              _buildDiagnosticItem(
+                'Has Permissions',
+                results['hasPermissions'],
+              ),
+              _buildDiagnosticItem('Steps Records', results['stepsRecords']),
+              _buildDiagnosticItem(
+                'Heart Rate Records',
+                results['heartrateRecords'],
+              ),
+              _buildDiagnosticItem(
+                'Sleep Records',
+                results['sleepinbedRecords'],
+              ),
+              _buildDiagnosticItem(
+                'Calories Records',
+                results['activeenergyburnedRecords'],
+              ),
+              _buildDiagnosticItem('Water Records', results['waterRecords']),
+              _buildDiagnosticItem('Weight Records', results['weightRecords']),
+              const SizedBox(height: 16),
+              if (results['stepsRecords'] != null &&
+                  results['stepsRecords'] > 0) ...[
+                Text(
+                  '✅ Steps data is working correctly (${results['stepsRecords']} records)',
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (results['heartrateRecords'] == 0) ...[
+                const Text(
+                  '❌ Heart Rate: No data found',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Text(
+                  'Troubleshooting:\n• Check if your smartwatch is syncing to Health Connect\n• Verify heart rate tracking is enabled on your device\n• Some devices may take time to sync data',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (results['sleepinbedRecords'] == 0) ...[
+                const Text(
+                  '❌ Sleep: No data found',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Text(
+                  'Troubleshooting:\n• Enable sleep tracking on your smartwatch/phone\n• Check if sleep data is visible in Health Connect app\n• Sleep data may take 24-48 hours to appear',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (results['activeenergyburnedRecords'] == 0) ...[
+                const Text(
+                  '❌ Calories: No data found',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Text(
+                  'Troubleshooting:\n• Enable activity tracking on your device\n• Check if your fitness app is connected to Health Connect\n• Some apps may not sync calorie data automatically',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showHealthConnectSetupGuide();
+            },
+            child: const Text('Setup Guide'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDetailedDiagnosticsDialog(Map<String, dynamic> diagnostics) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Detailed Health Diagnostics'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Comprehensive Health Connect Analysis',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ...diagnostics.entries.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text(
+                    '${entry.key}: ${entry.value}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHealthConnectSetupGuide() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Health Connect Setup Guide'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'To get all health data working:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              _buildSetupStep(
+                '1',
+                'Install Health Connect',
+                'Make sure Health Connect is installed from Google Play Store',
+              ),
+              _buildSetupStep(
+                '2',
+                'Connect Your Apps',
+                'Open Health Connect and connect your fitness apps (Google Fit, Samsung Health, Fitbit, etc.)',
+              ),
+              _buildSetupStep(
+                '3',
+                'Enable Data Types',
+                'In Health Connect, make sure these data types are enabled:\n• Steps\n• Heart rate\n• Sleep\n• Active calories\n• Water intake',
+              ),
+              _buildSetupStep(
+                '4',
+                'Grant Permissions',
+                'Return to this app and tap "Connect Health" to grant permissions',
+              ),
+              _buildSetupStep(
+                '5',
+                'Wait for Sync',
+                'Some data may take 24-48 hours to appear, especially sleep data',
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Common Issues & Solutions:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '🔍 Steps Working But Other Data Missing:\n'
+                '• Your device is connected to Health Connect\n'
+                '• But specific data types need individual setup\n\n'
+                '❤️ Heart Rate Data:\n'
+                '• Enable "Continuous heart rate" on your smartwatch\n'
+                '• Check if your watch app (Galaxy Watch, Fitbit, etc.) is connected to Health Connect\n'
+                '• Some watches only sync heart rate during workouts\n\n'
+                '😴 Sleep Data:\n'
+                '• Enable sleep tracking on your smartwatch/phone\n'
+                '• Sleep data often takes 24-48 hours to appear\n'
+                '• Check if sleep data is visible in the Health Connect app\n'
+                '• Some devices only track sleep when worn overnight\n\n'
+                '🔥 Calories Data:\n'
+                '• Enable activity/workout tracking on your device\n'
+                '• Check if Google Fit or Samsung Health is connected\n'
+                '• Some fitness apps don\'t automatically sync calorie data\n'
+                '• Try manually starting a workout to generate calorie data\n\n'
+                '💧 Water & Weight Data:\n'
+                '• These require manual entry in most health apps\n'
+                '• Check Google Fit or Samsung Health for manual entry options\n'
+                '• Some smart scales can sync weight data automatically',
+                style: TextStyle(fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              try {
+                await HealthService.openHealthConnect();
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Could not open Health Connect: $e'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Open Health Connect'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              // Re-run the test to see if any data has appeared
+              try {
+                final results =
+                    await HealthService.testHealthConnectConnection();
+                if (mounted) {
+                  _showHealthDiagnosticsDialog(results);
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Test failed: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Test Again'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticItem(String label, dynamic value) {
+    Color color = Colors.grey;
+    String displayValue = value.toString();
+
+    if (value is bool) {
+      color = value ? Colors.green : Colors.red;
+      displayValue = value ? '✅ Yes' : '❌ No';
+    } else if (value is int) {
+      color = value > 0 ? Colors.green : Colors.red;
+      displayValue = value > 0 ? '✅ $value records' : '❌ No records';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              displayValue,
+              style: TextStyle(color: color, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSetupStep(String number, String title, String description) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(description, style: const TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

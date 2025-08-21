@@ -532,31 +532,26 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 map["unit"] = "minutes"
                 map["endTime"] = endTime
                 
-                // Try to get sleep stage information if available
-                try {
-                    val stagesMethod = record.javaClass.getMethod("getStages")
-                    val stages = stagesMethod.invoke(record) as List<*>
-                    map["stageCount"] = stages.size
-                    
-                    Log.d("MinimalHealthPlugin", "Sleep record: ${durationMinutes.toInt()} minutes from ${Instant.ofEpochMilli(startTime)} to ${Instant.ofEpochMilli(endTime)}, stages: ${stages.size}")
-                } catch (e: Exception) {
-                    Log.d("MinimalHealthPlugin", "Sleep record: ${durationMinutes.toInt()} minutes from ${Instant.ofEpochMilli(startTime)} to ${Instant.ofEpochMilli(endTime)} (no stage info)")
+                // Get sleep stage information using direct property access
+                val stages = record.stages
+                map["stageCount"] = stages.size
+                
+                Log.d("MinimalHealthPlugin", "Sleep record: ${durationMinutes.toInt()} minutes from ${Instant.ofEpochMilli(startTime)} to ${Instant.ofEpochMilli(endTime)}, stages: ${stages.size}")
+                
+                // Add title if available
+                record.title?.let { title ->
+                    map["title"] = title
+                    Log.d("MinimalHealthPlugin", "Sleep record title: $title")
                 }
                 
-                // Log additional details for debugging
-                try {
-                    val titleMethod = record.javaClass.getMethod("getTitle")
-                    val title = titleMethod.invoke(record) as String?
-                    if (title != null) {
-                        map["title"] = title
-                        Log.d("MinimalHealthPlugin", "Sleep record title: $title")
-                    }
-                } catch (e: Exception) {
-                    // Title method not available, ignore
+                // Add notes if available
+                record.notes?.let { notes ->
+                    map["notes"] = notes
+                    Log.d("MinimalHealthPlugin", "Sleep record notes: $notes")
                 }
             }
             is HydrationRecord -> {
-                // HydrationRecord is an InstantRecord, so it should have a 'time' property
+                // HydrationRecord is an InstantRecord, use reflection for time
                 try {
                     val timeMethod = record.javaClass.getMethod("getTime")
                     val time = timeMethod.invoke(record) as Instant
@@ -569,7 +564,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 map["unit"] = "liters"
             }
             is WeightRecord -> {
-                // WeightRecord is an InstantRecord, so it should have a 'time' property
+                // WeightRecord is an InstantRecord, use reflection for time
                 try {
                     val timeMethod = record.javaClass.getMethod("getTime")
                     val time = timeMethod.invoke(record) as Instant
@@ -582,7 +577,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 map["unit"] = "kg"
             }
             is HeartRateRecord -> {
-                // HeartRateRecord is an InstantRecord, so it should have a 'time' property
+                // HeartRateRecord is an InstantRecord, use reflection for time
                 try {
                     val timeMethod = record.javaClass.getMethod("getTime")
                     val time = timeMethod.invoke(record) as Instant
@@ -591,24 +586,23 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     Log.w("MinimalHealthPlugin", "Error getting time from HeartRateRecord", e)
                     map["timestamp"] = System.currentTimeMillis()
                 }
-                // HeartRateRecord has samples, we'll take the first one or average
-                try {
-                    val samplesMethod = record.javaClass.getMethod("getSamples")
-                    val samples = samplesMethod.invoke(record) as List<*>
-                    if (samples.isNotEmpty()) {
-                        val firstSample = samples.first()
-                        val beatsPerMinuteMethod = firstSample!!.javaClass.getMethod("getBeatsPerMinute")
-                        val bpm = beatsPerMinuteMethod.invoke(firstSample) as Long
-                        map["value"] = bpm.toDouble()
-                        
-                        Log.d("MinimalHealthPlugin", "Heart rate record: ${bpm} bpm at ${Instant.ofEpochMilli(map["timestamp"] as Long)}, samples: ${samples.size}")
-                    } else {
-                        map["value"] = 0.0
-                        Log.w("MinimalHealthPlugin", "Heart rate record has no samples")
+                
+                // HeartRateRecord has samples - use direct property access instead of reflection
+                if (record.samples.isNotEmpty()) {
+                    // Take the first sample's BPM value
+                    val firstSample = record.samples.first()
+                    map["value"] = firstSample.beatsPerMinute.toDouble()
+                    
+                    try {
+                        val timeMethod = record.javaClass.getMethod("getTime")
+                        val time = timeMethod.invoke(record) as Instant
+                        Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm at ${time}, samples: ${record.samples.size}")
+                    } catch (e: Exception) {
+                        Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm, samples: ${record.samples.size}")
                     }
-                } catch (e: Exception) {
-                    Log.w("MinimalHealthPlugin", "Error getting heart rate samples", e)
+                } else {
                     map["value"] = 0.0
+                    Log.w("MinimalHealthPlugin", "Heart rate record has no samples")
                 }
                 map["unit"] = "bpm"
             }

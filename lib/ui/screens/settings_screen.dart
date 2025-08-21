@@ -344,6 +344,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 onChanged: (value) => _toggleHealthDataSync(value),
                 secondary: const Icon(Icons.favorite),
               ),
+              // Show Health Integration Dashboard immediately when health data is enabled
+              if (_healthDataSync) ...[
+                const Divider(),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ListTile(
+                          title: const Text('Health Integration Dashboard'),
+                          subtitle: const Text(
+                            'Access all health integration settings',
+                          ),
+                          leading: const Icon(Icons.dashboard),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push('/health-integration'),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Text(
+                            'Includes: Sync interval, background sync, auto-completion, and detailed health data settings',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
             advancedSettings: [
               if (_calendarSync) ...[
@@ -368,46 +399,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ),
                 ),
               ],
-              // Debug: Health data sync status
+              // Additional health settings in advanced section
               if (_healthDataSync) ...[
                 SmoothTransitions.fadeTransition(
                   show: _healthDataSync,
                   child: Column(
                     children: [
-                      const Divider(),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ListTile(
-                                title: const Text(
-                                  'Health Integration Dashboard',
-                                ),
-                                subtitle: const Text(
-                                  'Access all health integration settings',
-                                ),
-                                leading: const Icon(Icons.dashboard),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () =>
-                                    context.push('/health-integration'),
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                                child: Text(
-                                  'Includes: Sync interval, background sync, auto-completion, and detailed health data settings',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                          ),
-                        ),
-                      ),
                       SwitchListTile(
                         title: const Text('Automatic Habit Completion'),
                         subtitle: const Text(

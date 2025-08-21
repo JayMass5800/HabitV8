@@ -557,21 +557,16 @@ class HealthService {
       if (sleepHours == 0.0) {
         AppLogger.warning('Sleep data returned 0 hours - investigating...');
 
-        // Try to get raw sleep data for debugging
+        // Try to get raw sleep data for debugging with expanded time range
         final now = DateTime.now();
-        final yesterday = now.subtract(const Duration(days: 1));
+        final threeDaysAgo = now.subtract(const Duration(days: 3));
         final startTime = DateTime(
-          yesterday.year,
-          yesterday.month,
-          yesterday.day,
+          threeDaysAgo.year,
+          threeDaysAgo.month,
+          threeDaysAgo.day,
           18,
-        ); // 6 PM yesterday
-        final endTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          12,
-        ); // 12 PM today
+        ); // 6 PM three days ago
+        final endTime = now; // Current time
 
         AppLogger.info(
           'Checking sleep data from ${startTime.toIso8601String()} to ${endTime.toIso8601String()}',
@@ -587,27 +582,40 @@ class HealthService {
           AppLogger.info(
             'Raw sleep data records found: ${rawSleepData.length}',
           );
-          for (int i = 0; i < rawSleepData.length && i < 5; i++) {
+          for (int i = 0; i < rawSleepData.length && i < 10; i++) {
             final record = rawSleepData[i];
-            AppLogger.info('Sleep record $i: ${record.toString()}');
+            final timestamp = DateTime.fromMillisecondsSinceEpoch(
+              record['timestamp'] as int,
+            );
+            final endTime = record['endTime'] != null
+                ? DateTime.fromMillisecondsSinceEpoch(record['endTime'] as int)
+                : null;
+            AppLogger.info(
+              'Sleep record $i: ${record['value']} minutes from ${timestamp.toIso8601String()} to ${endTime?.toIso8601String() ?? 'unknown'}',
+            );
           }
 
           if (rawSleepData.isEmpty) {
             AppLogger.warning(
-              'No sleep records found in Health Connect for the specified time range',
+              'No sleep records found in Health Connect for the last 3 days',
             );
-            AppLogger.info('This could mean:');
+            AppLogger.info('Troubleshooting steps:');
             AppLogger.info(
-              '1. Your smartwatch data is not syncing to Health Connect',
-            );
-            AppLogger.info(
-              '2. Sleep data is stored under a different time range',
+              '1. Check if your smartwatch is syncing to Health Connect',
             );
             AppLogger.info(
-              '3. Sleep data permissions are not properly granted',
+              '2. Verify sleep tracking is enabled on your smartwatch',
             );
             AppLogger.info(
-              '4. Your smartwatch app is not compatible with Health Connect',
+              '3. Check Health Connect app for sleep data visibility',
+            );
+            AppLogger.info(
+              '4. Ensure your smartwatch app has Health Connect integration',
+            );
+            AppLogger.info('5. Try manually syncing your smartwatch data');
+          } else {
+            AppLogger.info(
+              'Found sleep records but they may be outside the expected time range for "last night"',
             );
           }
         } catch (debugError) {
@@ -784,6 +792,35 @@ class HealthService {
             AppLogger.info(
               'Heart rate data in last 7 days: ${widerRangeData.length} records',
             );
+
+            if (widerRangeData.isNotEmpty) {
+              AppLogger.info('Sample heart rate records from last 7 days:');
+              for (int i = 0; i < widerRangeData.length && i < 5; i++) {
+                final record = widerRangeData[i];
+                final timestamp = DateTime.fromMillisecondsSinceEpoch(
+                  record['timestamp'] as int,
+                );
+                AppLogger.info(
+                  'HR record $i: ${record['value']} bpm at ${timestamp.toIso8601String()}',
+                );
+              }
+            } else {
+              AppLogger.warning('No heart rate data found even in 7-day range');
+              AppLogger.info('Troubleshooting steps:');
+              AppLogger.info(
+                '1. Check if your smartwatch is measuring heart rate',
+              );
+              AppLogger.info(
+                '2. Verify heart rate data is syncing to Health Connect',
+              );
+              AppLogger.info(
+                '3. Check Health Connect app for heart rate data visibility',
+              );
+              AppLogger.info(
+                '4. Ensure continuous heart rate monitoring is enabled',
+              );
+              AppLogger.info('5. Try manually syncing your smartwatch data');
+            }
           }
         } catch (debugError) {
           AppLogger.error(
@@ -1007,6 +1044,81 @@ class HealthService {
       AppLogger.error('Error checking health data availability', e);
       return false;
     }
+  }
+
+  /// Test Health Connect connection and data availability
+  static Future<Map<String, dynamic>> testHealthConnectConnection() async {
+    final results = <String, dynamic>{};
+
+    try {
+      AppLogger.info('Testing Health Connect connection...');
+
+      // Test 1: Check if Health Connect is available
+      final isAvailable = await MinimalHealthChannel.isHealthConnectAvailable();
+      results['healthConnectAvailable'] = isAvailable;
+      AppLogger.info('Health Connect available: $isAvailable');
+
+      if (!isAvailable) {
+        results['error'] = 'Health Connect is not available on this device';
+        return results;
+      }
+
+      // Test 2: Check permissions
+      final hasPerms = await hasPermissions();
+      results['hasPermissions'] = hasPerms;
+      AppLogger.info('Has permissions: $hasPerms');
+
+      if (!hasPerms) {
+        results['error'] = 'Health permissions not granted';
+        return results;
+      }
+
+      // Test 3: Try to fetch recent data for each type
+      final now = DateTime.now();
+      final threeDaysAgo = now.subtract(const Duration(days: 3));
+
+      final dataTypes = [
+        'STEPS',
+        'HEART_RATE',
+        'SLEEP_IN_BED',
+        'ACTIVE_ENERGY_BURNED',
+        'WATER',
+        'WEIGHT',
+      ];
+
+      for (final dataType in dataTypes) {
+        final keyName = dataType.toLowerCase().replaceAll('_', '');
+        try {
+          final data = await MinimalHealthChannel.getHealthData(
+            dataType: dataType,
+            startDate: threeDaysAgo,
+            endDate: now,
+          );
+          results['${keyName}Records'] = data.length;
+          AppLogger.info('$dataType: ${data.length} records found');
+
+          if (data.isNotEmpty) {
+            final latestRecord = data.last;
+            final timestamp = DateTime.fromMillisecondsSinceEpoch(
+              latestRecord['timestamp'] as int,
+            );
+            results['${keyName}LatestTimestamp'] = timestamp.toIso8601String();
+            results['${keyName}LatestValue'] = latestRecord['value'];
+          }
+        } catch (e) {
+          AppLogger.warning('Error testing $dataType: $e');
+          results['${keyName}Error'] = e.toString();
+        }
+      }
+
+      results['testCompleted'] = true;
+      results['testTimestamp'] = DateTime.now().toIso8601String();
+    } catch (e) {
+      AppLogger.error('Error testing Health Connect connection', e);
+      results['error'] = e.toString();
+    }
+
+    return results;
   }
 
   /// Open Health Connect settings (Android only)
