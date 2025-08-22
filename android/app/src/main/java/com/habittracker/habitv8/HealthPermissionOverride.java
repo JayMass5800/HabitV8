@@ -16,15 +16,17 @@ import java.util.ArrayList;
  */
 public class HealthPermissionOverride {
     
-    // ONLY these 7 health permissions are allowed
+    // ONLY these health permissions are allowed
     private static final List<String> ALLOWED_HEALTH_PERMISSIONS = Arrays.asList(
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_ACTIVE_CALORIES_BURNED", 
+        "android.permission.health.READ_TOTAL_CALORIES_BURNED",
         "android.permission.health.READ_SLEEP",
         "android.permission.health.READ_HYDRATION",
         "android.permission.health.READ_MINDFULNESS",
         "android.permission.health.READ_WEIGHT",
-        "android.permission.health.READ_HEART_RATE"
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
     );
     
     // All other health permissions are FORBIDDEN and will be filtered out
@@ -41,7 +43,6 @@ public class HealthPermissionOverride {
         "android.permission.health.READ_FLOORS_CLIMBED",
         "android.permission.health.READ_POWER",
         "android.permission.health.READ_SPEED",
-        "android.permission.health.READ_TOTAL_CALORIES_BURNED",
         "android.permission.health.READ_VO2_MAX",
         "android.permission.health.READ_WHEELCHAIR_PUSHES",
         "android.permission.health.READ_BASAL_METABOLIC_RATE",

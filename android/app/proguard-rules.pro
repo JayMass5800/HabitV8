@@ -88,14 +88,20 @@
 -keep class androidx.health.connect.client.request.** { *; }
 -keep class androidx.health.connect.client.response.** { *; }
 
-# Keep heart rate specific classes
+# Keep heart rate and calories specific classes
 -keep class androidx.health.connect.client.records.HeartRateRecord { *; }
 -keep class androidx.health.connect.client.records.HeartRateRecord$* { *; }
+-keep class androidx.health.connect.client.records.TotalCaloriesBurnedRecord { *; }
+-keep class androidx.health.connect.client.records.TotalCaloriesBurnedRecord$* { *; }
+-keep class androidx.health.connect.client.records.ActiveCaloriesBurnedRecord { *; }
+-keep class androidx.health.connect.client.records.ActiveCaloriesBurnedRecord$* { *; }
 -keep class androidx.health.connect.client.permission.HealthPermission { *; }
 
-# Explicitly keep heart rate permission
+# Explicitly keep heart rate and calories permissions
 -keepclassmembers class androidx.health.connect.client.permission.HealthPermission {
     public static final *** READ_HEART_RATE;
+    public static final *** READ_TOTAL_CALORIES_BURNED;
+    public static final *** READ_ACTIVE_CALORIES_BURNED;
 }
 
 # Keep background health data access permissions

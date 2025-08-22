@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="health_permissions">
-        <!-- ONLY the 7 essential health permissions that are actually used in the app -->
+        <!-- ONLY the essential health permissions that are actually used in the app -->
         <!-- This array MUST match exactly what's declared in AndroidManifest.xml -->
         
         <!-- Core fitness and activity permissions -->
         <item>android.permission.health.READ_STEPS</item>
         <item>android.permission.health.READ_ACTIVE_CALORIES_BURNED</item>
+        <item>android.permission.health.READ_TOTAL_CALORIES_BURNED</item>
         
         <!-- Sleep permissions -->
         <item>android.permission.health.READ_SLEEP</item>

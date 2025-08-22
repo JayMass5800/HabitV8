@@ -37,9 +37,10 @@
     <bool name="health_plugin_cervical_position_enabled">false</bool>
     <bool name="health_plugin_skin_temperature_enabled">false</bool>
     
-    <!-- Enable only the 7 data types we actually use -->
+    <!-- Enable the data types we actually use -->
     <bool name="health_plugin_steps_enabled">true</bool>
     <bool name="health_plugin_active_energy_burned_enabled">true</bool>
+    <bool name="health_plugin_total_calories_burned_enabled">true</bool>
     <bool name="health_plugin_sleep_enabled">true</bool>
     <bool name="health_plugin_water_enabled">true</bool>
     <bool name="health_plugin_mindfulness_enabled">true</bool>

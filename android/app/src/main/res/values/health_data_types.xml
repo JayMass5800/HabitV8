@@ -6,6 +6,7 @@
         <!-- Core fitness and activity data types -->
         <item>STEPS</item>
         <item>ACTIVE_ENERGY_BURNED</item>
+        <item>TOTAL_CALORIES_BURNED</item>
         
         <!-- Sleep data types -->
         <item>SLEEP_IN_BED</item>
@@ -38,7 +39,6 @@
         <item>FLOORS_CLIMBED</item>
         <item>POWER</item>
         <item>SPEED</item>
-        <item>TOTAL_CALORIES_BURNED</item>
         <item>VO2_MAX</item>
         <item>WHEELCHAIR_PUSHES</item>
         <item>BASAL_METABOLIC_RATE</item>

@@ -51,6 +51,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     private val ALLOWED_DATA_TYPES = mutableMapOf<String, KClass<out Record>>(
         "STEPS" to StepsRecord::class,
         "ACTIVE_ENERGY_BURNED" to ActiveCaloriesBurnedRecord::class,
+        "TOTAL_CALORIES_BURNED" to TotalCaloriesBurnedRecord::class,
         "SLEEP_IN_BED" to SleepSessionRecord::class,
         "WATER" to HydrationRecord::class,
         "WEIGHT" to WeightRecord::class,
@@ -75,6 +76,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     private val HEALTH_PERMISSIONS = mutableSetOf(
         HealthPermission.getReadPermission(StepsRecord::class),
         HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
+        HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
         HealthPermission.getReadPermission(SleepSessionRecord::class),
         HealthPermission.getReadPermission(HydrationRecord::class),
         HealthPermission.getReadPermission(WeightRecord::class),

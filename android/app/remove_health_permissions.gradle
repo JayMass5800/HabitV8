@@ -37,7 +37,7 @@ android.applicationVariants.all { variant ->
                             'android.permission.health.READ_FLOORS_CLIMBED',
                             'android.permission.health.READ_POWER',
                             'android.permission.health.READ_SPEED',
-                            'android.permission.health.READ_TOTAL_CALORIES_BURNED',
+                            // 'android.permission.health.READ_TOTAL_CALORIES_BURNED', // Keep this permission
                             'android.permission.health.READ_VO2_MAX',
                             'android.permission.health.READ_WHEELCHAIR_PUSHES',
                             'android.permission.health.READ_BASAL_METABOLIC_RATE',

@@ -7,15 +7,17 @@
     <string-array name="allowed_health_permissions">
         <item>android.permission.health.READ_STEPS</item>
         <item>android.permission.health.READ_ACTIVE_CALORIES_BURNED</item>
+        <item>android.permission.health.READ_TOTAL_CALORIES_BURNED</item>
         <item>android.permission.health.READ_SLEEP</item>
         <item>android.permission.health.READ_HYDRATION</item>
         <item>android.permission.health.READ_MINDFULNESS</item>
         <item>android.permission.health.READ_WEIGHT</item>
         <item>android.permission.health.READ_HEART_RATE</item>
+        <item>android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND</item>
     </string-array>
     
     <!-- Explicitly mark these as the ONLY health permissions this app uses -->
     <bool name="health_permissions_restricted">true</bool>
-    <integer name="max_health_permissions">7</integer>
+    <integer name="max_health_permissions">9</integer>
     <string name="health_permissions_mode">strict</string>
 </resources>
