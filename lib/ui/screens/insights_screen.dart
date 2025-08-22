@@ -3060,7 +3060,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     ),
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),
@@ -3074,6 +3074,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
+  // Debug method - can be called manually for debugging calories data
+  // ignore: unused_element
   void _showCaloriesDebugDialog(Map<String, dynamic> debugResults) {
     showDialog(
       context: context,
@@ -3233,13 +3235,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              navigator.pop();
               // Open Health Connect settings
               try {
                 await HealthService.openHealthConnectSettings();
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(content: Text('Could not open settings: $e')),
                   );
                 }
@@ -3491,12 +3495,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              navigator.pop();
               try {
                 await HealthService.openHealthConnectSettings();
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(content: Text('Could not open settings: $e')),
                   );
                 }
@@ -3607,18 +3613,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 '😴 Sleep Data:\n'
                 '• Enable sleep tracking on your smartwatch/phone\n'
                 '• Sleep data often takes 24-48 hours to appear\n'
-                '• Check if sleep data is visible in the Health Connect app\n'
-                '• Some devices only track sleep when worn overnight\n\n'
-                '🔥 Calories Data:\n'
-                '• Enable activity/workout tracking on your device\n'
-                '• Check if Google Fit or Samsung Health is connected\n'
-                '• Some fitness apps don\'t automatically sync calorie data\n'
-                '• Try manually starting a workout to generate calorie data\n\n'
-                '💧 Water & Weight Data:\n'
-                '• These require manual entry in most health apps\n'
-                '• Check Google Fit or Samsung Health for manual entry options\n'
-                '• Some smart scales can sync weight data automatically',
-                style: const TextStyle(fontSize: 11),
+                '• Check if sleep data is visible in the Health Connect app first',
               ),
             ],
           ),
@@ -3628,30 +3623,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Close'),
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              try {
-                await HealthConnectUtils.openHealthConnect();
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Could not open Health Connect: $e'),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Open Health Connect'),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildSetupStep(String number, String title, String description) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -3661,14 +3638,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             width: 24,
             height: 24,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
+              color: Theme.of(context).primaryColor,
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 number,
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimary,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -3682,17 +3659,13 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               children: [
                 Text(
                   title,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
+                Text(description, style: const TextStyle(fontSize: 12)),
               ],
             ),
           ),
@@ -3701,47 +3674,35 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-  Widget _buildDiagnosticItem(String title, dynamic value) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    String displayValue;
-    Color valueColor;
-
-    if (value is bool) {
-      displayValue = value ? '✅ Yes' : '❌ No';
-      valueColor = value
-          ? (isDark ? Colors.green.shade300 : Colors.green.shade700)
-          : (isDark ? Colors.red.shade300 : Colors.red.shade700);
-    } else if (value is int) {
-      displayValue = value.toString();
-      valueColor = value > 0
-          ? (isDark ? Colors.green.shade300 : Colors.green.shade700)
-          : (isDark ? Colors.orange.shade300 : Colors.orange.shade700);
-    } else {
-      displayValue = value?.toString() ?? 'Unknown';
-      valueColor = theme.colorScheme.onSurface.withValues(alpha: 0.7);
-    }
-
+  Widget _buildDiagnosticItem(
+    String label,
+    String value, {
+    bool isError = false,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 140,
+            width: 120,
             child: Text(
-              title,
+              '$label:',
               style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isError ? Colors.red : null,
               ),
             ),
           ),
           Expanded(
             child: Text(
-              displayValue,
-              style: TextStyle(color: valueColor, fontWeight: FontWeight.w500),
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontFamily: 'monospace',
+                color: isError ? Colors.red : null,
+              ),
             ),
           ),
         ],

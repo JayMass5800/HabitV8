@@ -51,6 +51,7 @@ class ThemeService {
       colorValue = color.toARGB32();
     } catch (e) {
       // Fallback to deprecated .value property if toARGB32 is not available
+      // ignore: deprecated_member_use
       colorValue = color.value;
     }
     await prefs.setInt(_primaryColorKey, colorValue);
