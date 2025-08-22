@@ -124,12 +124,11 @@ class HealthService {
     const allowedTypes = [
       'STEPS', // Steps tracking
       'ACTIVE_ENERGY_BURNED', // Calories burned (active)
-      'TOTAL_ENERGY_BURNED', // Total calories burned
+      'TOTAL_CALORIES_BURNED', // Total calories burned
       'SLEEP_IN_BED', // Sleep duration
       'WATER', // Water intake/hydration
       'MINDFULNESS', // Meditation/mindfulness (when available)
       'WEIGHT', // Body weight
-      'MEDICATION', // Medication adherence tracking
       'HEART_RATE', // Heart rate for habit correlation analysis
     ];
 
@@ -1193,7 +1192,7 @@ class HealthService {
         'HEART_RATE',
         'SLEEP_IN_BED',
         'ACTIVE_ENERGY_BURNED',
-        'TOTAL_ENERGY_BURNED',
+        'TOTAL_CALORIES_BURNED',
         'WATER',
         'WEIGHT',
       ];
@@ -1354,7 +1353,7 @@ class HealthService {
         'SLEEP_IN_BED',
         'HEART_RATE',
         'ACTIVE_ENERGY_BURNED',
-        'TOTAL_ENERGY_BURNED',
+        'TOTAL_CALORIES_BURNED',
       ];
       final now = DateTime.now();
       final yesterday = now.subtract(const Duration(days: 1));
@@ -1864,7 +1863,7 @@ class HealthService {
       final dataTypes = [
         'STEPS',
         'ACTIVE_ENERGY_BURNED',
-        'TOTAL_ENERGY_BURNED',
+        'TOTAL_CALORIES_BURNED',
         'SLEEP_IN_BED',
         'WATER',
         'WEIGHT',

@@ -17,6 +17,7 @@ class MinimalHealthChannel {
   static const List<String> _supportedDataTypes = [
     'STEPS',
     'ACTIVE_ENERGY_BURNED',
+    'TOTAL_CALORIES_BURNED',
     'SLEEP_IN_BED',
     'WATER',
     'WEIGHT',

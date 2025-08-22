@@ -3,6 +3,7 @@
   "allowed_permissions": [
     "android.permission.health.READ_STEPS",
     "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+    "android.permission.health.READ_TOTAL_CALORIES_BURNED",
     "android.permission.health.READ_SLEEP",
     "android.permission.health.READ_HYDRATION",
     "android.permission.health.READ_MINDFULNESS",
@@ -11,6 +12,7 @@
   "allowed_data_types": [
     "STEPS",
     "ACTIVE_ENERGY_BURNED",
+    "TOTAL_ENERGY_BURNED",
     "SLEEP_IN_BED",
     "WATER",
     "MINDFULNESS",
@@ -30,7 +32,6 @@
     "android.permission.health.READ_FLOORS_CLIMBED",
     "android.permission.health.READ_POWER",
     "android.permission.health.READ_SPEED",
-    "android.permission.health.READ_TOTAL_CALORIES_BURNED",
     "android.permission.health.READ_VO2_MAX",
     "android.permission.health.READ_WHEELCHAIR_PUSHES",
     "android.permission.health.READ_BASAL_METABOLIC_RATE",

@@ -17,8 +17,17 @@ android.applicationVariants.all { variant ->
                         // List of permissions to remove (these trigger Google Play Console issues)
                         def permissionsToRemove = [
                             // KEEP these permissions - needed for our app
+                            // These permissions are explicitly declared in AndroidManifest.xml and health_permissions.xml
+                            // DO NOT add these to the removal list
                             // 'android.permission.health.READ_HEART_RATE', 
                             // 'android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND',
+                            // 'android.permission.health.READ_STEPS',
+                            // 'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
+                            // 'android.permission.health.READ_TOTAL_CALORIES_BURNED',
+                            // 'android.permission.health.READ_SLEEP',
+                            // 'android.permission.health.READ_HYDRATION',
+                            // 'android.permission.health.READ_MINDFULNESS',
+                            // 'android.permission.health.READ_WEIGHT',
                             // 'android.permission.ACTIVITY_RECOGNITION',
                             // 'com.google.android.gms.permission.ACTIVITY_RECOGNITION',
                             // 'android.permission.FOREGROUND_SERVICE',
@@ -37,7 +46,6 @@ android.applicationVariants.all { variant ->
                             'android.permission.health.READ_FLOORS_CLIMBED',
                             'android.permission.health.READ_POWER',
                             'android.permission.health.READ_SPEED',
-                            // 'android.permission.health.READ_TOTAL_CALORIES_BURNED', // Keep this permission
                             'android.permission.health.READ_VO2_MAX',
                             'android.permission.health.READ_WHEELCHAIR_PUSHES',
                             'android.permission.health.READ_BASAL_METABOLIC_RATE',
