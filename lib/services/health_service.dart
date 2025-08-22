@@ -255,6 +255,25 @@ class HealthService {
       );
       AppLogger.info('Data types: ${_healthDataTypes.join(', ')}');
 
+      // Log each data type individually for debugging
+      _healthDataTypes.forEach((type) {
+        AppLogger.info('  - Health data type: $type');
+      });
+
+      // Verify critical permissions are included
+      final criticalTypes = [
+        'HEART_RATE',
+        'ACTIVE_ENERGY_BURNED',
+        'TOTAL_CALORIES_BURNED',
+      ];
+      criticalTypes.forEach((type) {
+        if (_healthDataTypes.contains(type)) {
+          AppLogger.info('✅ Critical permission included: $type');
+        } else {
+          AppLogger.error('❌ Critical permission MISSING: $type');
+        }
+      });
+
       // First check if Health Connect is available and installed
       final bool healthConnectAvailable =
           await MinimalHealthChannel.isHealthConnectAvailable();
@@ -332,6 +351,46 @@ class HealthService {
       AppLogger.error('Error checking health permissions', e);
       return false;
     }
+  }
+
+  /// Test method to verify all critical permissions are working
+  static Future<Map<String, bool>> testCriticalPermissions() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    final results = <String, bool>{};
+    final criticalTypes = [
+      'HEART_RATE',
+      'ACTIVE_ENERGY_BURNED',
+      'TOTAL_CALORIES_BURNED',
+    ];
+
+    for (final type in criticalTypes) {
+      try {
+        AppLogger.info('Testing permission for: $type');
+
+        // Try to fetch a small amount of data to test the permission
+        final endTime = DateTime.now();
+        final startTime = endTime.subtract(const Duration(hours: 1));
+
+        final data = await MinimalHealthChannel.getHealthData(
+          dataType: type,
+          startDate: startTime,
+          endDate: endTime,
+        );
+
+        results[type] = data.isNotEmpty;
+        AppLogger.info(
+          'Permission test for $type: ${results[type] == true ? 'SUCCESS' : 'FAILED'}',
+        );
+      } catch (e) {
+        results[type] = false;
+        AppLogger.error('Permission test for $type failed: $e');
+      }
+    }
+
+    return results;
   }
 
   /// Get detailed Health Connect status

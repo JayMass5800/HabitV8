@@ -40,13 +40,35 @@ android.applicationVariants.all { variant ->
                                 println "Adding missing permission: ${permission}"
                                 
                                 // Find the position to insert the permission (after the last uses-permission)
-                                def lastPermissionIndex = updatedManifest.lastIndexOf("</uses-permission>")
+                                // Look for both self-closing and regular closing tags
+                                def lastPermissionIndex = Math.max(
+                                    updatedManifest.lastIndexOf("</uses-permission>"),
+                                    updatedManifest.lastIndexOf("<uses-permission android:name=\"android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND\" />")
+                                )
+                                
                                 if (lastPermissionIndex > 0) {
-                                    def insertPosition = lastPermissionIndex + "</uses-permission>".length()
+                                    def insertPosition
+                                    if (updatedManifest.substring(lastPermissionIndex).startsWith("</uses-permission>")) {
+                                        insertPosition = lastPermissionIndex + "</uses-permission>".length()
+                                    } else {
+                                        // Find the end of the self-closing tag
+                                        insertPosition = updatedManifest.indexOf("/>", lastPermissionIndex) + 2
+                                    }
+                                    
                                     def permissionTag = "\n    <uses-permission android:name=\"${permission}\" />"
                                     
                                     updatedManifest = new StringBuilder(updatedManifest).insert(insertPosition, permissionTag).toString()
                                     manifestUpdated = true
+                                } else {
+                                    // If no uses-permission found, insert after uses-sdk
+                                    def usesSdkIndex = updatedManifest.indexOf("</uses-sdk>")
+                                    if (usesSdkIndex > 0) {
+                                        def insertPosition = usesSdkIndex + "</uses-sdk>".length()
+                                        def permissionTag = "\n\n    <uses-permission android:name=\"${permission}\" />"
+                                        
+                                        updatedManifest = new StringBuilder(updatedManifest).insert(insertPosition, permissionTag).toString()
+                                        manifestUpdated = true
+                                    }
                                 }
                             }
                         }
