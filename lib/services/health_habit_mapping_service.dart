@@ -975,10 +975,58 @@ class HealthHabitMappingService {
         }
       }
 
+      // Phase 3: Enhanced fuzzy matching for user-created habits
+      if (matches.isEmpty) {
+        AppLogger.info(
+          'No direct matches found, trying fuzzy matching for habit: ${habit.name}',
+        );
+
+        // Try fuzzy matching with common variations and synonyms
+        final fuzzyMatches = <String, double>{};
+
+        for (final entry in healthMappings.entries) {
+          final healthType = entry.key;
+          final mapping = entry.value;
+
+          // Skip MINDFULNESS if not supported
+          if (healthType == 'MINDFULNESS' && !await _isMindfulnessSupported()) {
+            continue;
+          }
+
+          double fuzzyScore = 0.0;
+
+          // Check for partial word matches and common synonyms
+          for (final keyword in mapping.keywords) {
+            // Partial matching (e.g., "run" matches "running")
+            if (searchText.contains(
+              keyword.substring(0, (keyword.length * 0.7).round()),
+            )) {
+              fuzzyScore += 0.3;
+            }
+
+            // Check for common synonyms and variations
+            fuzzyScore += _checkSynonyms(searchText, keyword, healthType);
+          }
+
+          if (fuzzyScore > 0) {
+            fuzzyMatches[healthType] = fuzzyScore;
+            AppLogger.info('Fuzzy match for $healthType: score $fuzzyScore');
+          }
+        }
+
+        // Use fuzzy matches if found
+        if (fuzzyMatches.isNotEmpty) {
+          matches.addAll(fuzzyMatches);
+        }
+      }
+
       // Final fallback for unmapped habits
       if (matches.isEmpty) {
         AppLogger.info(
           'No health mappings found for habit: ${habit.name} (category: $category)',
+        );
+        AppLogger.info(
+          'Consider adding keywords like: steps, walk, run, sleep, water, calories, exercise, meditation',
         );
         return null;
       }
@@ -991,9 +1039,14 @@ class HealthHabitMappingService {
         'Best match for habit "${habit.name}": ${bestMatch.key} (score: ${bestMatch.value})',
       );
 
-      if (bestMatch.value < 0.05) {
+      // Lower threshold for user-created habits to be more inclusive
+      final minThreshold = matches.values.any((score) => score >= 0.3)
+          ? 0.05
+          : 0.02;
+
+      if (bestMatch.value < minThreshold) {
         AppLogger.info(
-          'Relevance score too low (${bestMatch.value}) for habit: ${habit.name}',
+          'Relevance score too low (${bestMatch.value}, min: $minThreshold) for habit: ${habit.name}',
         );
         return null; // Too weak correlation
       }
@@ -1456,6 +1509,107 @@ class HealthHabitMappingService {
 
     final index = (percentile / 100.0 * (sortedValues.length - 1)).round();
     return sortedValues[index.clamp(0, sortedValues.length - 1)];
+  }
+
+  /// Check for synonyms and common variations
+  static double _checkSynonyms(
+    String searchText,
+    String keyword,
+    String healthType,
+  ) {
+    double score = 0.0;
+
+    // Define synonym groups for different health types
+    final synonyms = <String, List<String>>{
+      'STEPS': [
+        'walk',
+        'walking',
+        'stroll',
+        'hike',
+        'hiking',
+        'pace',
+        'pacing',
+        'move',
+        'movement',
+      ],
+      'ACTIVE_ENERGY_BURNED': [
+        'workout',
+        'exercise',
+        'fitness',
+        'training',
+        'cardio',
+        'burn',
+        'activity',
+      ],
+      'TOTAL_CALORIES_BURNED': [
+        'calories',
+        'energy',
+        'burn',
+        'metabolism',
+        'diet',
+        'nutrition',
+      ],
+      'SLEEP_IN_BED': ['rest', 'nap', 'bedtime', 'slumber', 'snooze', 'doze'],
+      'WATER': ['drink', 'hydrate', 'hydration', 'fluid', 'liquid', 'h2o'],
+      'WEIGHT': [
+        'weigh',
+        'scale',
+        'mass',
+        'body weight',
+        'weight loss',
+        'weight gain',
+      ],
+      'MINDFULNESS': [
+        'meditate',
+        'meditation',
+        'mindful',
+        'zen',
+        'calm',
+        'relax',
+        'breathe',
+        'breathing',
+      ],
+      'HEART_RATE': ['heart', 'pulse', 'bpm', 'cardio', 'cardiovascular'],
+    };
+
+    if (synonyms.containsKey(healthType)) {
+      for (final synonym in synonyms[healthType]!) {
+        if (searchText.contains(synonym)) {
+          score += 0.4; // Good synonym match
+          break; // Only count one synonym match per type
+        }
+      }
+    }
+
+    // Check for common activity patterns
+    if (healthType == 'STEPS') {
+      if (searchText.contains('10000') ||
+          searchText.contains('10k') ||
+          searchText.contains('daily walk') ||
+          searchText.contains('morning walk')) {
+        score += 0.5;
+      }
+    }
+
+    if (healthType == 'WATER') {
+      if (searchText.contains('8 glasses') ||
+          searchText.contains('2 liters') ||
+          searchText.contains('daily water') ||
+          searchText.contains('drink water')) {
+        score += 0.5;
+      }
+    }
+
+    if (healthType == 'SLEEP_IN_BED') {
+      if (searchText.contains('8 hours') ||
+          searchText.contains('early bed') ||
+          searchText.contains('good sleep') ||
+          searchText.contains('sleep schedule')) {
+        score += 0.5;
+      }
+    }
+
+    return score;
   }
 
   /// Get comprehensive mapping statistics

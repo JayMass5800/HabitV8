@@ -377,7 +377,7 @@ class MinimalHealthChannel {
         return 0.0;
       }
 
-      // Define the target sleep period: from 6 PM yesterday to 2 PM today
+      // Define the target sleep period: from 6 PM yesterday to 4 PM today
       // This captures typical sleep patterns while avoiding multiple days
       final yesterday = now.subtract(const Duration(days: 1));
       final sleepWindowStart = DateTime(
@@ -390,7 +390,7 @@ class MinimalHealthChannel {
         now.year,
         now.month,
         now.day,
-        14, // 2 PM today
+        16, // 4 PM today (extended window)
       );
 
       AppLogger.info(
@@ -422,24 +422,30 @@ class MinimalHealthChannel {
             sessionStart.isBefore(sleepWindowEnd) &&
             sessionEnd.isAfter(sleepWindowStart);
 
+        AppLogger.info(
+          'Session overlap check: start=${sessionStart.toIso8601String()}, end=${sessionEnd.toIso8601String()}, overlaps=$sessionOverlapsWindow',
+        );
+
         if (sessionOverlapsWindow) {
-          // Validate the session duration is reasonable (between 1 and 16 hours)
-          if (minutes >= 60 && minutes <= 960) {
-            // 1-16 hours
+          // Validate the session duration is reasonable (between 30 minutes and 16 hours)
+          if (minutes >= 30 && minutes <= 960) {
+            // 30 minutes to 16 hours (more inclusive)
             if (minutes > longestSleepMinutes) {
               longestSleepMinutes = minutes;
               bestSleepSession = record;
               AppLogger.info(
-                'New best sleep session: ${minutes.toStringAsFixed(1)} minutes',
+                'New best sleep session: ${minutes.toStringAsFixed(1)} minutes (${(minutes / 60).toStringAsFixed(1)} hours)',
               );
             }
           } else {
             AppLogger.warning(
-              'Excluding unrealistic sleep session: ${minutes.toStringAsFixed(1)} minutes',
+              'Excluding unrealistic sleep session: ${minutes.toStringAsFixed(1)} minutes (${(minutes / 60).toStringAsFixed(1)} hours)',
             );
           }
         } else {
-          AppLogger.info('Sleep session outside target window');
+          AppLogger.info(
+            'Sleep session outside target window: ${sessionStart.toIso8601String()} to ${sessionEnd.toIso8601String()}',
+          );
         }
       }
 
