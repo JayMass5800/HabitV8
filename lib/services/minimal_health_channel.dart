@@ -607,12 +607,46 @@ class MinimalHealthChannel {
               (a, b) =>
                   (b['timestamp'] as int).compareTo(a['timestamp'] as int),
             );
-            final latestHeartRate = validData.first['value'] as double;
 
-            AppLogger.info(
-              'Latest heart rate: ${latestHeartRate.round()} bpm (from ${validData.length} valid records out of ${data.length} total)',
-            );
-            return latestHeartRate;
+            // Get average of the most recent readings to avoid showing the exact same value
+            final recentReadings = validData.take(5).toList();
+            double totalHeartRate = 0.0;
+            int validReadings = 0;
+
+            for (final record in recentReadings) {
+              final value = record['value'] as double;
+              final timestamp = DateTime.fromMillisecondsSinceEpoch(
+                record['timestamp'] as int,
+              );
+
+              // Only include readings from the last 30 minutes for averaging
+              if (now.difference(timestamp).inMinutes <= 30) {
+                totalHeartRate += value;
+                validReadings++;
+                AppLogger.info(
+                  'Recent heart rate: ${value.round()} bpm at ${timestamp.toIso8601String()}',
+                );
+              }
+            }
+
+            final double heartRate;
+            if (validReadings > 0) {
+              heartRate = totalHeartRate / validReadings;
+              AppLogger.info(
+                'Average heart rate from ${validReadings} recent readings: ${heartRate.round()} bpm',
+              );
+            } else {
+              // Fall back to latest single reading
+              heartRate = validData.first['value'] as double;
+              final timestamp = DateTime.fromMillisecondsSinceEpoch(
+                validData.first['timestamp'] as int,
+              );
+              AppLogger.info(
+                'Latest heart rate: ${heartRate.round()} bpm at ${timestamp.toIso8601String()}',
+              );
+            }
+
+            return heartRate;
           } else {
             AppLogger.warning(
               'Found ${data.length} heart rate records but none were valid (all outside 30-220 bpm range)',

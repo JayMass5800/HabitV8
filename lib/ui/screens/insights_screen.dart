@@ -926,7 +926,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             Expanded(
               child: _buildHealthMetricTile(
                 'Calories',
-                '${(health['activeCalories'] as double).round()}',
+                _formatCaloriesValue(health),
                 Icons.local_fire_department,
                 Colors.orange,
               ),
@@ -1021,6 +1021,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         return Icons.trending_flat;
       default:
         return Icons.help;
+    }
+  }
+
+  String _formatCaloriesValue(Map<String, dynamic> health) {
+    try {
+      // Try total calories first (more comprehensive)
+      final totalCalories = health['totalCalories'] as double?;
+      if (totalCalories != null && totalCalories > 0) {
+        return '${totalCalories.round()}';
+      }
+      
+      // Fall back to active calories
+      final activeCalories = health['activeCalories'] as double?;
+      if (activeCalories != null && activeCalories > 0) {
+        return '${activeCalories.round()}';
+      }
+      
+      // No calories data available
+      return '0';
+    } catch (e) {
+      AppLogger.error('Error formatting calories value', e);
+      return '0';
     }
   }
 
@@ -3609,104 +3631,4 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 '❤️ Heart Rate Data:\n'
                 '• Enable "Continuous heart rate" on your smartwatch\n'
                 '• Check if your watch app (Galaxy Watch, Fitbit, etc.) is connected to Health Connect\n'
-                '• Some watches only sync heart rate during workouts\n\n'
-                '😴 Sleep Data:\n'
-                '• Enable sleep tracking on your smartwatch/phone\n'
-                '• Sleep data often takes 24-48 hours to appear\n'
-                '• Check if sleep data is visible in the Health Connect app first',
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSetupStep(String number, String title, String description) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                number,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(description, style: const TextStyle(fontSize: 12)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDiagnosticItem(
-    String label,
-    String value, {
-    bool isError = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: isError ? Colors.red : null,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 12,
-                fontFamily: 'monospace',
-                color: isError ? Colors.red : null,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+   
