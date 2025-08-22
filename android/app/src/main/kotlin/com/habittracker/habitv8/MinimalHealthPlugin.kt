@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Parcelable
 import androidx.core.content.ContextCompat
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
@@ -73,26 +74,40 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     }
 
     // Health Connect permissions for our allowed data types
-    private val HEALTH_PERMISSIONS: Set<HealthPermission> by lazy {
-        setOf(
-            HealthPermission.getReadPermission(StepsRecord::class),
-            HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
-            HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
-            HealthPermission.getReadPermission(SleepSessionRecord::class),
-            HealthPermission.getReadPermission(HydrationRecord::class),
-            HealthPermission.getReadPermission(WeightRecord::class),
-            HealthPermission.getReadPermission(HeartRateRecord::class)
-        ).also { permissions ->
-            Log.i("MinimalHealthPlugin", "Total permissions configured: ${permissions.size}")
-            permissions.forEach { permission ->
-                Log.i("MinimalHealthPlugin", "  - Permission: $permission")
-            }
+    private fun getHealthPermissions(): Set<String> {
+        val permissions = mutableSetOf<String>()
+        
+        // Add each permission individually to help with debugging
+        try {
+            permissions.add(HealthPermission.getReadPermission(StepsRecord::class))
+            permissions.add(HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class))
+            permissions.add(HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class))
+            permissions.add(HealthPermission.getReadPermission(SleepSessionRecord::class))
+            permissions.add(HealthPermission.getReadPermission(HydrationRecord::class))
+            permissions.add(HealthPermission.getReadPermission(WeightRecord::class))
+            permissions.add(HealthPermission.getReadPermission(HeartRateRecord::class))
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error creating health permissions", e)
         }
+        
+        Log.i("MinimalHealthPlugin", "Total permissions configured: ${permissions.size}")
+        permissions.forEach { permission ->
+            Log.i("MinimalHealthPlugin", "  - Permission: $permission")
+        }
+        return permissions.toSet()
     }
     
     // Permission strings for comparison with granted permissions
-    private val HEALTH_PERMISSION_STRINGS: Set<String> by lazy {
-        HEALTH_PERMISSIONS.map { getPermissionString(it) }.toSet()
+    private fun getHealthPermissionStrings(): Set<String> {
+        return setOf(
+            "android.permission.health.READ_STEPS",
+            "android.permission.health.READ_ACTIVE_CALORIES_BURNED", 
+            "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+            "android.permission.health.READ_SLEEP",
+            "android.permission.health.READ_HYDRATION",
+            "android.permission.health.READ_WEIGHT",
+            "android.permission.health.READ_HEART_RATE"
+        )
     }
     
     // Helper function to get heart rate permission for comparison
@@ -221,7 +236,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     val grantedPermissions = healthConnectClient!!.permissionController.getGrantedPermissions()
                     
                     // Check if all required permissions are granted
-                    val allGranted = HEALTH_PERMISSION_STRINGS.all { permissionString -> grantedPermissions.contains(permissionString) }
+                    val allGranted = getHealthPermissionStrings().all { permissionString -> grantedPermissions.contains(permissionString) }
                     
                     val status = if (allGranted) {
                         "PERMISSIONS_GRANTED"
@@ -230,12 +245,12 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     }
                     
                     Log.i("MinimalHealthPlugin", "Health Connect status: $status")
-                    Log.i("MinimalHealthPlugin", "Granted permissions: ${grantedPermissions.size}/${HEALTH_PERMISSION_STRINGS.size}")
+                    Log.i("MinimalHealthPlugin", "Granted permissions: ${grantedPermissions.size}/${getHealthPermissionStrings().size}")
                     
                     result.success(mapOf(
                         "status" to status,
                         "grantedPermissions" to grantedPermissions.size,
-                        "totalPermissions" to HEALTH_PERMISSION_STRINGS.size,
+                        "totalPermissions" to getHealthPermissionStrings().size,
                         "message" to when (status) {
                             "PERMISSIONS_GRANTED" -> "All health permissions are granted"
                             "INSTALLED" -> "Health Connect is installed but permissions need to be enabled"
@@ -368,8 +383,9 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 }
                 
                 // Log all required permissions
-                Log.i("MinimalHealthPlugin", "Required permissions (${HEALTH_PERMISSION_STRINGS.size}):")
-                HEALTH_PERMISSION_STRINGS.forEach { permissionString ->
+                val healthPermissionStrings = getHealthPermissionStrings()
+                Log.i("MinimalHealthPlugin", "Required permissions (${healthPermissionStrings.size}):")
+                healthPermissionStrings.forEach { permissionString ->
                     val isGranted = grantedPermissions.contains(permissionString)
                     Log.i("MinimalHealthPlugin", "  - $permissionString: ${if (isGranted) "GRANTED" else "MISSING"}")
                 }
@@ -384,7 +400,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 Log.i("MinimalHealthPlugin", "Background permission: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
                 
                 // Check if all required permissions are granted
-                val allGranted = HEALTH_PERMISSION_STRINGS.all { permissionString -> grantedPermissions.contains(permissionString) }
+                val allGranted = healthPermissionStrings.all { permissionString -> grantedPermissions.contains(permissionString) }
                 
                 Log.i("MinimalHealthPlugin", "All permissions granted: $allGranted")
                 result.success(allGranted)
@@ -411,12 +427,12 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         try {
             // Log all permissions being requested for debugging
             Log.i("MinimalHealthPlugin", "Requesting permissions:")
-            HEALTH_PERMISSIONS.forEach { permission ->
+            getHealthPermissions().forEach { permission ->
                 Log.i("MinimalHealthPlugin", "  - $permission")
             }
             
             // Create a proper set of HealthPermission objects
-            val allPermissions = HEALTH_PERMISSIONS.toMutableSet()
+            val allPermissions = getHealthPermissions().toMutableSet()
             
             // Add background health data access permission using proper HealthPermission API
             try {
@@ -444,25 +460,19 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             
             // Launch Health Connect settings to request permissions
             try {
-                val intent = Intent("androidx.health.ACTION_REQUEST_PERMISSIONS").apply {
-                    putParcelableArrayListExtra("androidx.health.PERMISSIONS", ArrayList(allPermissions))
+                // Try to open Health Connect settings directly since the permission request intent might not work
+                val settingsIntent = Intent().apply {
+                    action = "android.settings.HEALTH_CONNECT_SETTINGS"
                 }
+                activityBinding?.activity?.startActivity(settingsIntent)
+                Log.i("MinimalHealthPlugin", "Opened Health Connect settings for ${allPermissions.size} permissions")
                 
-                activityBinding?.activity?.startActivityForResult(intent, HEALTH_CONNECT_REQUEST_CODE)
-                Log.i("MinimalHealthPlugin", "Permission request started for ${allPermissions.size} permissions")
+                // Since we can't directly handle the result, return false to indicate manual setup needed
+                result.success(false)
+                pendingResult = null
             } catch (e: Exception) {
-                Log.e("MinimalHealthPlugin", "Error starting permission request", e)
-                // Fallback: try to open Health Connect settings
-                try {
-                    val settingsIntent = Intent().apply {
-                        action = "android.settings.HEALTH_CONNECT_SETTINGS"
-                    }
-                    activityBinding?.activity?.startActivity(settingsIntent)
-                    result.success(false)
-                } catch (e2: Exception) {
-                    Log.e("MinimalHealthPlugin", "Error opening Health Connect settings", e2)
-                    result.error("PERMISSION_ERROR", "Could not request permissions: ${e.message}", null)
-                }
+                Log.e("MinimalHealthPlugin", "Error opening Health Connect settings", e)
+                result.error("PERMISSION_ERROR", "Could not open Health Connect settings: ${e.message}", null)
                 pendingResult = null
             }
         } catch (e: Exception) {
@@ -764,7 +774,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                         }
                         
                         // Check for heart rate permission specifically
-                        val heartRatePermissionString = getPermissionString(HEART_RATE_PERMISSION)
+                        val heartRatePermissionString = "android.permission.health.READ_HEART_RATE"
                         val hasHeartRatePermission = grantedPermissions.contains(heartRatePermissionString)
                         Log.i("MinimalHealthPlugin", "Heart rate permission after request: ${if (hasHeartRatePermission) "GRANTED" else "MISSING"}")
                         
@@ -773,11 +783,12 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                         Log.i("MinimalHealthPlugin", "Background permission after request: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
                         
                         // Check if all required permissions are granted
-                        val allGranted = HEALTH_PERMISSION_STRINGS.all { permissionString -> grantedPermissions.contains(permissionString) }
+                        val healthPermissionStrings = getHealthPermissionStrings()
+                        val allGranted = healthPermissionStrings.all { permissionString -> grantedPermissions.contains(permissionString) }
                         
                         // Log missing permissions if any
                         if (!allGranted) {
-                            val missingPermissions = HEALTH_PERMISSION_STRINGS.filter { permissionString -> !grantedPermissions.contains(permissionString) }
+                            val missingPermissions = healthPermissionStrings.filter { permissionString -> !grantedPermissions.contains(permissionString) }
                             Log.w("MinimalHealthPlugin", "Missing permissions after request (${missingPermissions.size}):")
                             missingPermissions.forEach { permissionString ->
                                 Log.w("MinimalHealthPlugin", "  - $permissionString")
