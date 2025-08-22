@@ -639,7 +639,7 @@ class MinimalHealthChannel {
             if (validReadings > 0) {
               heartRate = totalHeartRate / validReadings;
               AppLogger.info(
-                'Average heart rate from ${validReadings} recent readings: ${heartRate.round()} bpm',
+                'Average heart rate from $validReadings recent readings: ${heartRate.round()} bpm',
               );
             } else {
               // Fall back to latest single reading
