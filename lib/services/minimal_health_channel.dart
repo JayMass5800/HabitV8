@@ -279,6 +279,68 @@ class MinimalHealthChannel {
     }
   }
 
+  /// Get total calories burned today
+  static Future<double> getTotalCaloriesToday() async {
+    try {
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      AppLogger.info(
+        'Requesting total calories data from ${startOfDay.toIso8601String()} to ${endOfDay.toIso8601String()}',
+      );
+
+      final data = await getHealthData(
+        dataType: 'TOTAL_CALORIES_BURNED',
+        startDate: startOfDay,
+        endDate: endOfDay,
+      );
+
+      AppLogger.info('Received ${data.length} total calories records');
+
+      if (data.isEmpty) {
+        AppLogger.warning('No total calories data found for today');
+        AppLogger.info('Troubleshooting steps for total calories data:');
+        AppLogger.info(
+          '1. Check if your smartwatch is syncing total calories to Health Connect',
+        );
+        AppLogger.info(
+          '2. Verify your watch app has Health Connect integration enabled',
+        );
+        AppLogger.info(
+          '3. Check Health Connect app for total energy data visibility',
+        );
+        AppLogger.info(
+          '4. Ensure your watch is tracking workouts and activities',
+        );
+        AppLogger.info('5. Try manually syncing your smartwatch data');
+        return 0.0;
+      }
+
+      double totalCalories = 0.0;
+      for (int i = 0; i < data.length; i++) {
+        final record = data[i];
+        final calories = record['value'] as double;
+        final timestamp = record['timestamp'] as int;
+        final recordTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+        totalCalories += calories;
+
+        AppLogger.info(
+          'Total calories record $i: ${calories.toStringAsFixed(1)} cal at ${recordTime.toIso8601String()}',
+        );
+      }
+
+      AppLogger.info(
+        'Total calories burned today: ${totalCalories.round()} cal from ${data.length} records',
+      );
+      return totalCalories;
+    } catch (e) {
+      AppLogger.error('Error getting total calories today', e);
+      return 0.0;
+    }
+  }
+
   /// Get sleep hours for last night
   static Future<double> getSleepHoursLastNight() async {
     try {

@@ -511,6 +511,19 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                         }
                     }
                     
+                    // Special logging for total calories
+                    if (dataType == "TOTAL_CALORIES_BURNED") {
+                        val totalCalories = healthData.sumOf { (it["value"] as Double) }
+                        Log.i("MinimalHealthPlugin", "Total calories burned in range: ${totalCalories.toInt()} cal")
+                        
+                        if (healthData.isEmpty()) {
+                            Log.w("MinimalHealthPlugin", "No total calories records found! Check if:")
+                            Log.w("MinimalHealthPlugin", "1. Health Connect has total calories permission")
+                            Log.w("MinimalHealthPlugin", "2. A fitness app is connected and syncing total calories data")
+                            Log.w("MinimalHealthPlugin", "3. The device has recorded any physical activity")
+                        }
+                    }
+                    
                     result.success(healthData)
                 } catch (e: Exception) {
                     Log.e("MinimalHealthPlugin", "Error reading health data", e)
@@ -538,6 +551,12 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 map["value"] = record.energy.inCalories
                 map["unit"] = "calories"
                 Log.d("MinimalHealthPlugin", "Active calories record: ${record.energy.inCalories} cal at ${Instant.ofEpochMilli(record.startTime.toEpochMilli())}")
+            }
+            is TotalCaloriesBurnedRecord -> {
+                map["timestamp"] = record.startTime.toEpochMilli()
+                map["value"] = record.energy.inCalories
+                map["unit"] = "calories"
+                Log.d("MinimalHealthPlugin", "Total calories record: ${record.energy.inCalories} cal at ${Instant.ofEpochMilli(record.startTime.toEpochMilli())}")
             }
             is SleepSessionRecord -> {
                 val startTime = record.startTime.toEpochMilli()

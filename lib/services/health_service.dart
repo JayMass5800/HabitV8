@@ -124,6 +124,7 @@ class HealthService {
     const allowedTypes = [
       'STEPS', // Steps tracking
       'ACTIVE_ENERGY_BURNED', // Calories burned (active)
+      'TOTAL_ENERGY_BURNED', // Total calories burned
       'SLEEP_IN_BED', // Sleep duration
       'WATER', // Water intake/hydration
       'MINDFULNESS', // Meditation/mindfulness (when available)
@@ -574,6 +575,69 @@ class HealthService {
     }
   }
 
+  /// Get total calories burned today
+  static Future<double> getTotalCaloriesToday() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      AppLogger.info('Starting total calories retrieval...');
+
+      // First check permissions
+      final hasPerms = await hasPermissions();
+      AppLogger.info('Total calories request - Has permissions: $hasPerms');
+
+      if (!hasPerms) {
+        AppLogger.warning(
+          'No health permissions - cannot retrieve total calories data',
+        );
+        return 0.0;
+      }
+
+      // Get detailed data for debugging
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      AppLogger.info(
+        'Requesting total calories from ${startOfDay.toIso8601String()} to ${endOfDay.toIso8601String()}',
+      );
+
+      final data = await MinimalHealthChannel.getHealthData(
+        dataType: 'TOTAL_CALORIES_BURNED',
+        startDate: startOfDay,
+        endDate: endOfDay,
+      );
+
+      AppLogger.info('Total calories raw data: ${data.length} records');
+
+      double totalCalories = 0.0;
+      for (int i = 0; i < data.length; i++) {
+        final record = data[i];
+        final value = record['value'] as double;
+        final timestamp = record['timestamp'] as int;
+        final recordTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+        AppLogger.info(
+          'Total calories record $i: ${value.round()} cal at ${recordTime.toIso8601String()}',
+        );
+        totalCalories += value;
+      }
+
+      // Use the MinimalHealthChannel method for consistency
+      final double calories =
+          await MinimalHealthChannel.getTotalCaloriesToday();
+      AppLogger.info(
+        'Retrieved total calories data: ${calories.round()} (total from ${data.length} records: ${totalCalories.round()})',
+      );
+      return calories;
+    } catch (e) {
+      AppLogger.error('Error getting total calories data', e);
+      return 0.0;
+    }
+  }
+
   /// Get sleep hours for last night
   static Future<double> getSleepHoursLastNight() async {
     if (!_isInitialized) {
@@ -955,6 +1019,7 @@ class HealthService {
       final results = await Future.wait([
         getStepsToday(),
         getActiveCaloriesToday(),
+        getTotalCaloriesToday(),
         getSleepHoursLastNight(),
         getWaterIntakeToday(),
         getMindfulnessMinutesToday(),
@@ -967,13 +1032,14 @@ class HealthService {
       final summary = {
         'steps': results[0] as int,
         'activeCalories': results[1] as double,
-        'sleepHours': results[2] as double,
-        'waterIntake': results[3] as double,
-        'mindfulnessMinutes': results[4] as double,
-        'weight': results[5] as double?,
-        'medicationAdherence': results[6] as double,
-        'heartRate': results[7] as double?,
-        'restingHeartRate': results[8] as double?,
+        'totalCalories': results[2] as double,
+        'sleepHours': results[3] as double,
+        'waterIntake': results[4] as double,
+        'mindfulnessMinutes': results[5] as double,
+        'weight': results[6] as double?,
+        'medicationAdherence': results[7] as double,
+        'heartRate': results[8] as double?,
+        'restingHeartRate': results[9] as double?,
         'timestamp': DateTime.now().toIso8601String(),
         'dataSource': 'health_connect',
         'isInitialized': _isInitialized,
@@ -1127,6 +1193,7 @@ class HealthService {
         'HEART_RATE',
         'SLEEP_IN_BED',
         'ACTIVE_ENERGY_BURNED',
+        'TOTAL_ENERGY_BURNED',
         'WATER',
         'WEIGHT',
       ];
@@ -1287,6 +1354,7 @@ class HealthService {
         'SLEEP_IN_BED',
         'HEART_RATE',
         'ACTIVE_ENERGY_BURNED',
+        'TOTAL_ENERGY_BURNED',
       ];
       final now = DateTime.now();
       final yesterday = now.subtract(const Duration(days: 1));
@@ -1650,6 +1718,7 @@ class HealthService {
         final startDate = range['start'] as DateTime;
         final endDate = range['end'] as DateTime;
 
+        // Get active calories
         try {
           final data = await MinimalHealthChannel.getHealthData(
             dataType: 'ACTIVE_ENERGY_BURNED',
@@ -1657,20 +1726,20 @@ class HealthService {
             endDate: endDate,
           );
 
-          results['${rangeName}Records'] = data.length;
-          results['${rangeName}TotalCalories'] = data.fold<double>(
+          results['${rangeName}ActiveRecords'] = data.length;
+          results['${rangeName}ActiveCalories'] = data.fold<double>(
             0.0,
             (sum, record) => sum + (record['value'] as double),
           );
 
           if (data.isNotEmpty) {
-            results['${rangeName}FirstRecord'] = {
+            results['${rangeName}ActiveFirstRecord'] = {
               'value': data.first['value'],
               'timestamp': DateTime.fromMillisecondsSinceEpoch(
                 data.first['timestamp'] as int,
               ).toIso8601String(),
             };
-            results['${rangeName}LastRecord'] = {
+            results['${rangeName}ActiveLastRecord'] = {
               'value': data.last['value'],
               'timestamp': DateTime.fromMillisecondsSinceEpoch(
                 data.last['timestamp'] as int,
@@ -1679,26 +1748,78 @@ class HealthService {
           }
 
           AppLogger.info(
-            'Calories $rangeName: ${data.length} records, total: ${results['${rangeName}TotalCalories']} cal',
+            'Active calories $rangeName: ${data.length} records, total: ${results['${rangeName}ActiveCalories']} cal',
           );
         } catch (e) {
-          results['${rangeName}Error'] = e.toString();
-          AppLogger.error('Error getting calories for $rangeName', e);
+          results['${rangeName}ActiveError'] = e.toString();
+          AppLogger.error('Error getting active calories for $rangeName', e);
+        }
+
+        // Get total calories
+        try {
+          final data = await MinimalHealthChannel.getHealthData(
+            dataType: 'TOTAL_CALORIES_BURNED',
+            startDate: startDate,
+            endDate: endDate,
+          );
+
+          results['${rangeName}TotalRecords'] = data.length;
+          results['${rangeName}TotalCalories'] = data.fold<double>(
+            0.0,
+            (sum, record) => sum + (record['value'] as double),
+          );
+
+          if (data.isNotEmpty) {
+            results['${rangeName}TotalFirstRecord'] = {
+              'value': data.first['value'],
+              'timestamp': DateTime.fromMillisecondsSinceEpoch(
+                data.first['timestamp'] as int,
+              ).toIso8601String(),
+            };
+            results['${rangeName}TotalLastRecord'] = {
+              'value': data.last['value'],
+              'timestamp': DateTime.fromMillisecondsSinceEpoch(
+                data.last['timestamp'] as int,
+              ).toIso8601String(),
+            };
+          }
+
+          AppLogger.info(
+            'Total calories $rangeName: ${data.length} records, total: ${results['${rangeName}TotalCalories']} cal',
+          );
+        } catch (e) {
+          results['${rangeName}TotalError'] = e.toString();
+          AppLogger.error('Error getting total calories for $rangeName', e);
         }
       }
 
-      // Test the MinimalHealthChannel method directly
+      // Test the MinimalHealthChannel methods directly
       try {
-        final todayCalories =
+        final activeCalories =
             await MinimalHealthChannel.getActiveCaloriesToday();
-        results['minimalChannelTodayCalories'] = todayCalories;
+        results['minimalChannelActiveCalories'] = activeCalories;
         AppLogger.info(
-          'MinimalHealthChannel.getActiveCaloriesToday(): $todayCalories',
+          'MinimalHealthChannel.getActiveCaloriesToday(): $activeCalories',
         );
       } catch (e) {
-        results['minimalChannelError'] = e.toString();
+        results['minimalChannelActiveError'] = e.toString();
         AppLogger.error(
           'Error with MinimalHealthChannel.getActiveCaloriesToday()',
+          e,
+        );
+      }
+
+      try {
+        final totalCalories =
+            await MinimalHealthChannel.getTotalCaloriesToday();
+        results['minimalChannelTotalCalories'] = totalCalories;
+        AppLogger.info(
+          'MinimalHealthChannel.getTotalCaloriesToday(): $totalCalories',
+        );
+      } catch (e) {
+        results['minimalChannelTotalError'] = e.toString();
+        AppLogger.error(
+          'Error with MinimalHealthChannel.getTotalCaloriesToday()',
           e,
         );
       }
@@ -1743,6 +1864,7 @@ class HealthService {
       final dataTypes = [
         'STEPS',
         'ACTIVE_ENERGY_BURNED',
+        'TOTAL_ENERGY_BURNED',
         'SLEEP_IN_BED',
         'WATER',
         'WEIGHT',
