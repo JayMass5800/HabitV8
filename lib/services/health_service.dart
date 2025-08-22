@@ -256,9 +256,9 @@ class HealthService {
       AppLogger.info('Data types: ${_healthDataTypes.join(', ')}');
 
       // Log each data type individually for debugging
-      _healthDataTypes.forEach((type) {
+      for (var type in _healthDataTypes) {
         AppLogger.info('  - Health data type: $type');
-      });
+      }
 
       // Verify critical permissions are included
       final criticalTypes = [
@@ -266,13 +266,13 @@ class HealthService {
         'ACTIVE_ENERGY_BURNED',
         'TOTAL_CALORIES_BURNED',
       ];
-      criticalTypes.forEach((type) {
+      for (var type in criticalTypes) {
         if (_healthDataTypes.contains(type)) {
           AppLogger.info('✅ Critical permission included: $type');
         } else {
           AppLogger.error('❌ Critical permission MISSING: $type');
         }
-      });
+      }
 
       // First check if Health Connect is available and installed
       final bool healthConnectAvailable =

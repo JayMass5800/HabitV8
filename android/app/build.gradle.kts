@@ -140,8 +140,8 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     
-    // Health Connect dependencies - try newer alpha with mindfulness support
-    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
+    // Health Connect dependencies - latest version with all features
+    implementation("androidx.health.connect:connect-client:1.2.0-alpha01")
     
     // Coroutines for async operations
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
@@ -154,7 +154,7 @@ apply(from = "add_health_permissions.gradle")
 // Add Health Connect dependencies with explicit versions
 dependencies {
     // Health Connect for heart rate and background monitoring
-    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
+    implementation("androidx.health.connect:connect-client:1.2.0-alpha01")
     
     // Activity recognition
     implementation("com.google.android.gms:play-services-location:21.2.0")
