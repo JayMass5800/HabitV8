@@ -3631,4 +3631,119 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 '❤️ Heart Rate Data:\n'
                 '• Enable "Continuous heart rate" on your smartwatch\n'
                 '• Check if your watch app (Galaxy Watch, Fitbit, etc.) is connected to Health Connect\n'
-   
+                   '• Make sure heart rate permissions are granted\n\n'
+                '😴 Sleep Data:\n'
+                '• Sleep data often takes 24-48 hours to sync\n'
+                '• Make sure your sleep tracking app is connected to Health Connect\n\n'
+                '💧 Water & Calories:\n'
+                '• These require manual logging in most fitness apps\n'
+                '• Check if your fitness app supports automatic tracking',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticItem(String label, dynamic value) {
+    String displayValue;
+    Color color;
+    IconData icon;
+
+    if (value == null) {
+      displayValue = 'No data';
+      color = Colors.grey;
+      icon = Icons.help_outline;
+    } else if (value is bool) {
+      displayValue = value ? 'Yes' : 'No';
+      color = value ? Colors.green : Colors.red;
+      icon = value ? Icons.check_circle : Icons.cancel;
+    } else if (value is int) {
+      displayValue = value.toString();
+      color = value > 0 ? Colors.green : Colors.orange;
+      icon = value > 0 ? Icons.check_circle : Icons.warning;
+    } else {
+      displayValue = value.toString();
+      color = Colors.blue;
+      icon = Icons.info;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+          Text(
+            displayValue,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSetupStep(String number, String title, String description) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
