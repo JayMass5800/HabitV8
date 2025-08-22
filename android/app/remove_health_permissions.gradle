@@ -18,7 +18,7 @@ android.applicationVariants.all { variant ->
                         def permissionsToRemove = [
                             // KEEP these permissions - needed for our app
                             // These permissions are explicitly declared in AndroidManifest.xml and health_permissions.xml
-                            // DO NOT add these to the removal list
+                            // DO NOT add these to the removal list:
                             // 'android.permission.health.READ_HEART_RATE', 
                             // 'android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND',
                             // 'android.permission.health.READ_STEPS',

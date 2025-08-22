@@ -20,7 +20,6 @@ import '../widgets/calendar_selection_dialog.dart';
 import '../widgets/health_education_dialog.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/progressive_disclosure.dart';
-import '../widgets/radio_group.dart' as custom_widgets;
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -495,26 +494,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            custom_widgets.RadioGroup<ThemeMode>(
-              value: themeState.themeMode,
+            RadioListTile<ThemeMode>(
+              title: const Text('Light'),
+              value: ThemeMode.light,
+              groupValue: themeState.themeMode,
               onChanged: (value) {
-                ref.read(themeProvider.notifier).setThemeMode(value);
-                Navigator.of(context).pop();
+                if (value != null) {
+                  ref.read(themeProvider.notifier).setThemeMode(value);
+                  Navigator.of(context).pop();
+                }
               },
-              children: [
-                RadioListTile<ThemeMode>(
-                  title: const Text('Light'),
-                  value: ThemeMode.light,
-                ),
-                RadioListTile<ThemeMode>(
-                  title: const Text('Dark'),
-                  value: ThemeMode.dark,
-                ),
-                RadioListTile<ThemeMode>(
-                  title: const Text('System'),
-                  value: ThemeMode.system,
-                ),
-              ],
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('Dark'),
+              value: ThemeMode.dark,
+              groupValue: themeState.themeMode,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeProvider.notifier).setThemeMode(value);
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('System'),
+              value: ThemeMode.system,
+              groupValue: themeState.themeMode,
+              onChanged: (value) {
+                if (value != null) {
+                  ref.read(themeProvider.notifier).setThemeMode(value);
+                  Navigator.of(context).pop();
+                }
+              },
             ),
           ],
         ),

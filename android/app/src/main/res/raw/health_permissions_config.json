@@ -4,22 +4,24 @@
     "android.permission.health.READ_STEPS",
     "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
     "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+    "android.permission.health.READ_HEART_RATE",
     "android.permission.health.READ_SLEEP",
     "android.permission.health.READ_HYDRATION",
     "android.permission.health.READ_MINDFULNESS",
-    "android.permission.health.READ_WEIGHT"
+    "android.permission.health.READ_WEIGHT",
+    "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
   ],
   "allowed_data_types": [
     "STEPS",
     "ACTIVE_ENERGY_BURNED",
-    "TOTAL_ENERGY_BURNED",
+    "TOTAL_CALORIES_BURNED",
+    "HEART_RATE",
     "SLEEP_IN_BED",
     "WATER",
     "MINDFULNESS",
     "WEIGHT"
   ],
   "excluded_permissions": [
-    "android.permission.health.READ_HEART_RATE",
     "android.permission.health.READ_BLOOD_PRESSURE",
     "android.permission.health.READ_BLOOD_GLUCOSE",
     "android.permission.health.READ_BODY_TEMPERATURE",

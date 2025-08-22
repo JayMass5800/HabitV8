@@ -6,7 +6,8 @@
     <!-- It will be merged with the main manifest during build -->
     
     <!-- Remove all unwanted health permissions that Google's static analysis detects -->
-    <uses-permission android:name="android.permission.health.READ_HEART_RATE" tools:node="remove" />
+    <!-- KEEP HEART RATE - WE NEED THIS -->
+    <!-- <uses-permission android:name="android.permission.health.READ_HEART_RATE" tools:node="remove" /> -->
     <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_BLOOD_GLUCOSE" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_BODY_TEMPERATURE" tools:node="remove" />
@@ -19,7 +20,8 @@
     <uses-permission android:name="android.permission.health.READ_FLOORS_CLIMBED" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_POWER" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_SPEED" tools:node="remove" />
-    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" tools:node="remove" />
+    <!-- KEEP TOTAL CALORIES - WE NEED THIS -->
+    <!-- <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" tools:node="remove" /> -->
     <uses-permission android:name="android.permission.health.READ_VO2_MAX" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_WHEELCHAIR_PUSHES" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_BASAL_METABOLIC_RATE" tools:node="remove" />
@@ -40,16 +42,19 @@
     <uses-permission android:name="android.permission.health.READ_CERVICAL_POSITION" tools:node="remove" />
     <uses-permission android:name="android.permission.health.READ_SKIN_TEMPERATURE" tools:node="remove" />
     
-    <!-- Remove any activity-related permissions that might be detected -->
-    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" tools:node="remove" />
-    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" tools:node="remove" />
+    <!-- DO NOT remove the calories permissions we need -->
+    <!-- <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" tools:node="remove" /> -->
+    <!-- <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" tools:node="remove" /> -->
     
     <!-- Explicitly declare only the permissions we want -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_HYDRATION" />
     <uses-permission android:name="android.permission.health.READ_MINDFULNESS" />
     <uses-permission android:name="android.permission.health.READ_WEIGHT" />
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
     
 </manifest>
