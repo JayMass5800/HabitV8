@@ -335,6 +335,43 @@ class HealthService {
     return result.granted;
   }
 
+  /// Request exact alarm permission for precise notifications
+  /// Required for Android 12+ (API 31+) to schedule exact alarms
+  static Future<bool> requestExactAlarmPermission() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      AppLogger.info('Requesting exact alarm permission...');
+      final bool result =
+          await MinimalHealthChannel.requestExactAlarmPermission();
+      AppLogger.info('Exact alarm permission request result: $result');
+      return result;
+    } catch (e) {
+      AppLogger.error('Failed to request exact alarm permission', e);
+      return false;
+    }
+  }
+
+  /// Check if exact alarm permission is granted
+  /// Required for Android 12+ (API 31+) to schedule exact alarms
+  static Future<bool> hasExactAlarmPermission() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      AppLogger.info('Checking exact alarm permission...');
+      final bool result = await MinimalHealthChannel.hasExactAlarmPermission();
+      AppLogger.info('Exact alarm permission status: $result');
+      return result;
+    } catch (e) {
+      AppLogger.error('Failed to check exact alarm permission', e);
+      return false;
+    }
+  }
+
   /// Check if health permissions are granted
   /// Returns true if at least the minimum required permissions are available
   static Future<bool> hasPermissions() async {

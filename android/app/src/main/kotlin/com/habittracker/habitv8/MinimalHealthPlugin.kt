@@ -1,11 +1,13 @@
 package com.habittracker.habitv8
 
+import android.app.AlarmManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Parcelable
+import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
@@ -185,6 +187,12 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             }
             "isBackgroundMonitoringActive" -> {
                 isBackgroundMonitoringActive(result)
+            }
+            "requestExactAlarmPermission" -> {
+                requestExactAlarmPermission(result)
+            }
+            "hasExactAlarmPermission" -> {
+                hasExactAlarmPermission(result)
             }
             else -> {
                 result.notImplemented()
@@ -806,5 +814,76 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             return true
         }
         return false
+    }
+
+    /**
+     * Request exact alarm permission for scheduling precise notifications
+     * Required for Android 12+ (API 31+) to schedule exact alarms
+     */
+    private fun requestExactAlarmPermission(result: Result) {
+        try {
+            Log.i("MinimalHealthPlugin", "Requesting exact alarm permission...")
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                
+                // Check if we already have the permission
+                if (alarmManager.canScheduleExactAlarms()) {
+                    Log.i("MinimalHealthPlugin", "Exact alarm permission already granted")
+                    result.success(true)
+                    return
+                }
+                
+                // Request the permission by opening the system settings
+                try {
+                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(intent)
+                    
+                    Log.i("MinimalHealthPlugin", "Opened exact alarm permission settings")
+                    
+                    // Note: We can't directly get the result of this permission request
+                    // The app will need to check the permission status when it resumes
+                    result.success(true)
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Failed to open exact alarm permission settings", e)
+                    result.error("PERMISSION_ERROR", "Failed to request exact alarm permission: ${e.message}", null)
+                }
+            } else {
+                // For Android < 12, exact alarms don't require special permission
+                Log.i("MinimalHealthPlugin", "Exact alarm permission not required for Android < 12")
+                result.success(true)
+            }
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error requesting exact alarm permission", e)
+            result.error("PERMISSION_ERROR", "Failed to request exact alarm permission: ${e.message}", null)
+        }
+    }
+
+    /**
+     * Check if exact alarm permission is granted
+     * Required for Android 12+ (API 31+) to schedule exact alarms
+     */
+    private fun hasExactAlarmPermission(result: Result) {
+        try {
+            Log.i("MinimalHealthPlugin", "Checking exact alarm permission...")
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                val hasPermission = alarmManager.canScheduleExactAlarms()
+                
+                Log.i("MinimalHealthPlugin", "Exact alarm permission status: $hasPermission")
+                result.success(hasPermission)
+            } else {
+                // For Android < 12, exact alarms don't require special permission
+                Log.i("MinimalHealthPlugin", "Exact alarm permission not required for Android < 12")
+                result.success(true)
+            }
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error checking exact alarm permission", e)
+            result.error("PERMISSION_ERROR", "Failed to check exact alarm permission: ${e.message}", null)
+        }
     }
 }

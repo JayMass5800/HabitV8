@@ -13,7 +13,7 @@ class PermissionService {
   /// This prevents app crashes by avoiding heavy permission requests during initialization
   static Future<bool> requestEssentialPermissions() async {
     try {
-      // Only request notification permission during startup
+      // Request notification permission during startup
       // This is the most critical permission for basic app functionality
       final notificationStatus = await Permission.notification.request();
 
@@ -21,8 +21,33 @@ class PermissionService {
         'Essential permission (notification) status: $notificationStatus',
       );
 
-      return notificationStatus == PermissionStatus.granted ||
+      // Request exact alarm permission for Android 12+ devices
+      // This is required for precise notification scheduling
+      bool exactAlarmGranted = true;
+      try {
+        AppLogger.info('Requesting exact alarm permission during startup...');
+        exactAlarmGranted = await HealthService.requestExactAlarmPermission();
+        AppLogger.info('Exact alarm permission status: $exactAlarmGranted');
+      } catch (e) {
+        AppLogger.error(
+          'Error requesting exact alarm permission during startup',
+          e,
+        );
+        // Don't fail startup if exact alarm permission fails
+        exactAlarmGranted = false;
+      }
+
+      final notificationGranted =
+          notificationStatus == PermissionStatus.granted ||
           notificationStatus == PermissionStatus.limited;
+
+      AppLogger.info(
+        'Essential permissions summary - Notifications: $notificationGranted, Exact Alarms: $exactAlarmGranted',
+      );
+
+      // Return true if at least notifications are granted
+      // Exact alarms are important but not critical for basic functionality
+      return notificationGranted;
     } catch (e) {
       AppLogger.error('Error requesting essential permissions', e);
       return false;
@@ -174,6 +199,20 @@ class PermissionService {
       return status == PermissionStatus.granted;
     } catch (e) {
       AppLogger.error('Error requesting activity recognition permission', e);
+      return false;
+    }
+  }
+
+  /// Check if exact alarm permission is granted
+  /// This is required for precise notification scheduling on Android 12+
+  static Future<bool> hasExactAlarmPermission() async {
+    try {
+      AppLogger.info('Checking exact alarm permission status...');
+      final bool hasPermission = await HealthService.hasExactAlarmPermission();
+      AppLogger.info('Exact alarm permission check result: $hasPermission');
+      return hasPermission;
+    } catch (e) {
+      AppLogger.error('Error checking exact alarm permission', e);
       return false;
     }
   }

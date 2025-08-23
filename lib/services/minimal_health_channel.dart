@@ -152,6 +152,46 @@ class MinimalHealthChannel {
     }
   }
 
+  /// Request exact alarm permission for precise notifications
+  /// Required for Android 12+ (API 31+) to schedule exact alarms
+  static Future<bool> requestExactAlarmPermission() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      AppLogger.info('Requesting exact alarm permission...');
+      final bool granted = await _channel.invokeMethod(
+        'requestExactAlarmPermission',
+      );
+      AppLogger.info('Exact alarm permission request result: $granted');
+      return granted;
+    } catch (e) {
+      AppLogger.error('Error requesting exact alarm permission', e);
+      return false;
+    }
+  }
+
+  /// Check if exact alarm permission is granted
+  /// Required for Android 12+ (API 31+) to schedule exact alarms
+  static Future<bool> hasExactAlarmPermission() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      AppLogger.info('Checking exact alarm permission...');
+      final bool hasPermission = await _channel.invokeMethod(
+        'hasExactAlarmPermission',
+      );
+      AppLogger.info('Exact alarm permission status: $hasPermission');
+      return hasPermission;
+    } catch (e) {
+      AppLogger.error('Error checking exact alarm permission', e);
+      return false;
+    }
+  }
+
   /// Get health data for a specific type and date range
   static Future<List<Map<String, dynamic>>> getHealthData({
     required String dataType,
