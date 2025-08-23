@@ -222,30 +222,34 @@ class NotificationService {
       final bool hasExactAlarmPermission =
           await PermissionService.hasExactAlarmPermission();
       if (hasExactAlarmPermission) {
-        AppLogger.info('Exact alarm permission already granted');
+        AppLogger.info('Exact alarm permission already available');
         return true;
       }
 
       AppLogger.info(
-        'Requesting exact alarm permission for precise scheduling...',
+        'Checking exact alarm permission availability for precise scheduling...',
       );
 
-      // Request the exact alarm permission with context
+      // For Android 13+ with USE_EXACT_ALARM: Should be automatically granted
+      // For Android 12 with SCHEDULE_EXACT_ALARM: May require user action
+      // We'll attempt to request it, but don't block the UI if it fails
       final bool exactAlarmGranted =
           await PermissionService.requestExactAlarmPermissionWithContext();
 
       if (exactAlarmGranted) {
         AppLogger.info(
-          'Exact alarm permission granted - notifications will be precise',
+          'Exact alarm permission available - notifications will be precise',
         );
       } else {
-        AppLogger.warning(
-          'Exact alarm permission denied - notifications may not be delivered at exact times',
+        AppLogger.info(
+          'Exact alarm permission not available - notifications will use standard scheduling (this is normal for Android 12 if user denies permission)',
         );
         // Continue anyway - notifications will still work but may not be precise
       }
 
-      return true; // Return true even if exact alarm is denied, basic notifications still work
+      // Always return true - don't block the UI based on exact alarm permission
+      // Basic notifications will work regardless of exact alarm permission status
+      return true;
     } catch (e) {
       AppLogger.error('Error ensuring notification permissions', e);
       return false; // Block notification scheduling if there's an error

@@ -21,11 +21,11 @@ class PermissionService {
         'Skipping notification permission during startup to prevent Android 13+ issues',
       );
 
-      // DO NOT request exact alarm permission during startup
-      // This causes Android 14+ to grey out the permission
-      // Exact alarm permission will be requested only when actually needed
+      // For Android 13+ with USE_EXACT_ALARM: Permission is automatically granted
+      // For Android 12: SCHEDULE_EXACT_ALARM still requires manual request (skip during startup)
+      // For Android < 12: No exact alarm permission needed
       AppLogger.info(
-        'Skipping exact alarm permission during startup to prevent Android 14+ issues',
+        'Exact alarm permission handling: USE_EXACT_ALARM (Android 13+) is auto-granted, SCHEDULE_EXACT_ALARM (Android 12) requested contextually',
       );
 
       AppLogger.info(
@@ -259,11 +259,20 @@ class PermissionService {
   }
 
   /// Request exact alarm permission when actually needed
+  /// For Android 13+ with USE_EXACT_ALARM: Should be automatically granted
+  /// For Android 12 with SCHEDULE_EXACT_ALARM: Requires manual user action
   /// This should only be called when the user is trying to schedule notifications
-  /// NOT during app startup to avoid Android 14+ greyed-out permission issues
   static Future<bool> requestExactAlarmPermission() async {
     try {
       AppLogger.info('Requesting exact alarm permission when needed...');
+
+      // First check if we already have the permission
+      final bool hasPermission = await hasExactAlarmPermission();
+      if (hasPermission) {
+        AppLogger.info('Exact alarm permission already available');
+        return true;
+      }
+
       final bool granted = await HealthService.requestExactAlarmPermission();
       AppLogger.info('Exact alarm permission request result: $granted');
       return granted;
@@ -275,6 +284,8 @@ class PermissionService {
 
   /// Request exact alarm permission with user-friendly context
   /// This method provides better UX by explaining why the permission is needed
+  /// For Android 13+ with USE_EXACT_ALARM: Should be automatically available
+  /// For Android 12 with SCHEDULE_EXACT_ALARM: May require user action
   static Future<bool> requestExactAlarmPermissionWithContext() async {
     try {
       // First check if we already have the permission
@@ -293,7 +304,7 @@ class PermissionService {
         AppLogger.info('Exact alarm permission granted successfully');
       } else {
         AppLogger.warning(
-          'Exact alarm permission denied - notifications may not be precise',
+          'Exact alarm permission not available - notifications may not be precise (this is expected on Android 12 if user denies permission)',
         );
       }
 
