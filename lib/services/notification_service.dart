@@ -220,7 +220,15 @@ class NotificationService {
 
       // Check if we already have exact alarm permission
       final bool hasExactAlarmPermission =
-          await PermissionService.hasExactAlarmPermission();
+          await PermissionService.hasExactAlarmPermission().timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              AppLogger.warning(
+                'Exact alarm permission check timed out in notification service - assuming false',
+              );
+              return false;
+            },
+          );
       if (hasExactAlarmPermission) {
         AppLogger.info('Exact alarm permission already available');
         return true;
@@ -234,7 +242,15 @@ class NotificationService {
       // For Android 12 with SCHEDULE_EXACT_ALARM: May require user action
       // We'll attempt to request it, but don't block the UI if it fails
       final bool exactAlarmGranted =
-          await PermissionService.requestExactAlarmPermissionWithContext();
+          await PermissionService.requestExactAlarmPermissionWithContext().timeout(
+            const Duration(seconds: 20),
+            onTimeout: () {
+              AppLogger.warning(
+                'Exact alarm permission request timed out in notification service - continuing without exact alarms',
+              );
+              return false;
+            },
+          );
 
       if (exactAlarmGranted) {
         AppLogger.info(
@@ -943,12 +959,20 @@ class NotificationService {
     // Check and request all notification permissions if needed
     // Only do this if notifications or alarms are actually enabled
     if (habit.notificationsEnabled || habit.alarmEnabled) {
-      final bool permissionsGranted = await _ensureNotificationPermissions();
-      if (!permissionsGranted) {
-        AppLogger.warning(
-          'Cannot schedule notifications for habit: ${habit.name} - permissions not granted',
+      try {
+        final bool permissionsGranted = await _ensureNotificationPermissions();
+        if (!permissionsGranted) {
+          AppLogger.warning(
+            'Cannot schedule notifications for habit: ${habit.name} - permissions not granted',
+          );
+          throw Exception('Notification permissions not granted');
+        }
+      } catch (e) {
+        AppLogger.error(
+          'Error checking notification permissions for habit: ${habit.name}',
+          e,
         );
-        return; // Don't schedule if permissions are denied
+        throw Exception('Failed to verify notification permissions: $e');
       }
     }
 

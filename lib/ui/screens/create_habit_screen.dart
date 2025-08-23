@@ -1500,9 +1500,30 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         }
       }
 
-      // Schedule notifications if enabled
+      // Schedule notifications if enabled (non-blocking)
       if (_notificationsEnabled) {
-        await NotificationService.scheduleHabitNotifications(habit);
+        try {
+          await NotificationService.scheduleHabitNotifications(habit);
+          AppLogger.info(
+            'Notifications scheduled successfully for habit: ${habit.name}',
+          );
+        } catch (e) {
+          AppLogger.warning(
+            'Failed to schedule notifications for habit: ${habit.name} - $e',
+          );
+          // Don't block habit creation if notification scheduling fails
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Habit created but notifications could not be scheduled: ${e.toString()}',
+                ),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        }
       }
 
       // Log the habit creation

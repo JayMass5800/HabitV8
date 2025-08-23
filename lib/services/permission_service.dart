@@ -249,7 +249,19 @@ class PermissionService {
   static Future<bool> hasExactAlarmPermission() async {
     try {
       AppLogger.info('Checking exact alarm permission status...');
-      final bool hasPermission = await HealthService.hasExactAlarmPermission();
+
+      // Add timeout to prevent UI hanging
+      final bool hasPermission = await HealthService.hasExactAlarmPermission()
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              AppLogger.warning(
+                'Exact alarm permission check timed out - assuming false',
+              );
+              return false;
+            },
+          );
+
       AppLogger.info('Exact alarm permission check result: $hasPermission');
       return hasPermission;
     } catch (e) {
@@ -273,7 +285,18 @@ class PermissionService {
         return true;
       }
 
-      final bool granted = await HealthService.requestExactAlarmPermission();
+      // Add timeout to prevent UI hanging
+      final bool granted = await HealthService.requestExactAlarmPermission()
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              AppLogger.warning(
+                'Exact alarm permission request timed out - assuming false',
+              );
+              return false;
+            },
+          );
+
       AppLogger.info('Exact alarm permission request result: $granted');
       return granted;
     } catch (e) {
@@ -297,8 +320,16 @@ class PermissionService {
 
       AppLogger.info('Requesting exact alarm permission with user context...');
 
-      // Request the permission
-      final bool granted = await requestExactAlarmPermission();
+      // Request the permission with timeout
+      final bool granted = await requestExactAlarmPermission().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          AppLogger.warning(
+            'Exact alarm permission request with context timed out - assuming false',
+          );
+          return false;
+        },
+      );
 
       if (granted) {
         AppLogger.info('Exact alarm permission granted successfully');
