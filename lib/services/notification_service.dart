@@ -140,7 +140,6 @@ class NotificationService {
             'Habit Alarms',
             description: 'High-priority alarm notifications for habits',
             importance: Importance.max,
-            priority: Priority.max,
             playSound: true,
             enableVibration: true,
             enableLights: true,
@@ -2139,5 +2138,24 @@ class NotificationService {
     }
 
     AppLogger.info('🔍 === END DEBUG ===');
+  }
+
+  /// Helper method to get the next occurrence of a specific weekday at a specific time
+  static DateTime _getNextWeekdayDateTime(int weekday, int hour, int minute) {
+    final now = DateTime.now();
+    DateTime nextDate = DateTime(now.year, now.month, now.day, hour, minute);
+
+    // Calculate days until the target weekday
+    // weekday: 1 = Monday, 2 = Tuesday, ..., 7 = Sunday
+    // DateTime.weekday: 1 = Monday, 2 = Tuesday, ..., 7 = Sunday
+    int daysUntilTarget = (weekday - now.weekday) % 7;
+
+    // If it's the same weekday but the time has passed, schedule for next week
+    if (daysUntilTarget == 0 && nextDate.isBefore(now)) {
+      daysUntilTarget = 7;
+    }
+
+    nextDate = nextDate.add(Duration(days: daysUntilTarget));
+    return nextDate;
   }
 }
