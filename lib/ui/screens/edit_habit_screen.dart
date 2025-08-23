@@ -1024,141 +1024,16 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
   /// Schedule notifications for the updated habit based on its frequency
   Future<void> _scheduleHabitNotifications(Habit habit) async {
-    if (!habit.notificationsEnabled) {
+    // Skip if both notifications and alarms are disabled
+    if (!habit.notificationsEnabled && !habit.alarmEnabled) {
       return;
     }
 
-    // For hourly habits, use the notification service directly
-    if (habit.frequency == HabitFrequency.hourly) {
-      try {
-        await NotificationService.scheduleHabitNotifications(habit);
-      } catch (e) {
-        // Error scheduling hourly notifications
-      }
-      return;
-    }
-
-    // For other frequencies, require notification time
-    if (habit.notificationTime == null) {
-      return;
-    }
-
-    final notificationTime = habit.notificationTime!;
-    final hour = notificationTime.hour;
-    final minute = notificationTime.minute;
-
+    // Use the comprehensive notification service that handles both notifications and alarms
     try {
-      switch (habit.frequency) {
-        case HabitFrequency.daily:
-          final now = DateTime.now();
-          DateTime nextNotification = DateTime(
-            now.year,
-            now.month,
-            now.day,
-            hour,
-            minute,
-          );
-
-          // If the time has passed today, schedule for tomorrow
-          if (nextNotification.isBefore(now)) {
-            nextNotification = nextNotification.add(const Duration(days: 1));
-          }
-
-          await NotificationService.scheduleHabitNotification(
-            id: habit.hashCode,
-            habitId: habit.id,
-            title: '🎯 ${habit.name}',
-            body: 'Time to complete your daily habit! Keep your streak going.',
-            scheduledTime: nextNotification,
-          );
-          break;
-
-        case HabitFrequency.weekly:
-          for (int weekday in habit.weeklySchedule) {
-            final now = DateTime.now();
-            DateTime nextNotification = DateTime(
-              now.year,
-              now.month,
-              now.day,
-              hour,
-              minute,
-            );
-
-            while (nextNotification.weekday != weekday) {
-              nextNotification = nextNotification.add(const Duration(days: 1));
-            }
-
-            if (nextNotification.isBefore(now)) {
-              nextNotification = nextNotification.add(const Duration(days: 7));
-            }
-
-            await NotificationService.scheduleHabitNotification(
-              id: habit.hashCode + weekday,
-              habitId: habit.id,
-              title: '🎯 ${habit.name}',
-              body: 'Time to complete your habit! Don\'t break your streak.',
-              scheduledTime: nextNotification,
-            );
-          }
-          break;
-
-        case HabitFrequency.monthly:
-          for (int monthDay in habit.monthlySchedule) {
-            final now = DateTime.now();
-            DateTime nextNotification = DateTime(
-              now.year,
-              now.month,
-              monthDay,
-              hour,
-              minute,
-            );
-
-            if (nextNotification.isBefore(now)) {
-              nextNotification = DateTime(
-                now.year,
-                now.month + 1,
-                monthDay,
-                hour,
-                minute,
-              );
-            }
-
-            await NotificationService.scheduleHabitNotification(
-              id: habit.hashCode + monthDay + 1000,
-              habitId: habit.id,
-              title: '🎯 ${habit.name}',
-              body: 'Monthly habit reminder - keep up the great work!',
-              scheduledTime: nextNotification,
-            );
-          }
-          break;
-
-        case HabitFrequency.yearly:
-          // For yearly habits, schedule next occurrence
-          final now = DateTime.now();
-          DateTime nextNotification = DateTime(
-            now.year + 1,
-            now.month,
-            now.day,
-            hour,
-            minute,
-          );
-
-          await NotificationService.scheduleHabitNotification(
-            id: habit.hashCode,
-            habitId: habit.id,
-            title: '🎯 ${habit.name}',
-            body: 'Annual habit reminder - time for your yearly goal!',
-            scheduledTime: nextNotification,
-          );
-          break;
-
-        case HabitFrequency.hourly:
-          // This case is handled above
-          break;
-      }
+      await NotificationService.scheduleHabitNotifications(habit);
     } catch (e) {
-      // Error scheduling notifications
+      // Error scheduling notifications/alarms
     }
   }
 }
