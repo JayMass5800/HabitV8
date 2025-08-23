@@ -1376,7 +1376,6 @@ class NotificationService {
     int minute,
   ) async {
     AppLogger.debug('Scheduling weekly alarms for ${habit.name}');
-    final now = DateTime.now();
 
     if (habit.selectedWeekdays != null && habit.selectedWeekdays.isNotEmpty) {
       for (int weekday in habit.selectedWeekdays) {

@@ -1,5 +1,5 @@
-import 'package:flutter_ringtone_manager/flutter_ringtone_manager.dart';
 import 'dart:io';
+import 'package:flutter_ringtone_manager/flutter_ringtone_manager.dart';
 import 'logging_service.dart';
 
 /// Service for managing system alarm sounds and alarm-related functionality
@@ -89,11 +89,16 @@ class AlarmService {
     try {
       AppLogger.info('Playing alarm preview: ${alarmSound.name}');
 
-      // For now, just log the preview play action
-      // In a real implementation, you would play the actual sound
-      AppLogger.info(
-        'Would play alarm sound: ${alarmSound.name} (${alarmSound.uri})',
-      );
+      if (Platform.isAndroid || Platform.isIOS) {
+        // Use flutter_ringtone_manager to play system alarm sound
+        final FlutterRingtoneManager ringtoneManager = FlutterRingtoneManager();
+        await ringtoneManager.playAlarm();
+      } else {
+        // For other platforms, just log
+        AppLogger.info(
+          'Would play alarm sound: ${alarmSound.name} (${alarmSound.uri})',
+        );
+      }
     } catch (e) {
       AppLogger.error('Error playing alarm preview', e);
     }
@@ -103,9 +108,14 @@ class AlarmService {
   static Future<void> stopAlarmPreview() async {
     try {
       AppLogger.info('Stopping alarm preview');
-      // For now, just log the stop action
-      // In a real implementation, you would stop the actual sound
-      AppLogger.info('Would stop alarm sound preview');
+      if (Platform.isAndroid || Platform.isIOS) {
+        // Use flutter_ringtone_manager to stop alarm sound
+        final FlutterRingtoneManager ringtoneManager = FlutterRingtoneManager();
+        await ringtoneManager.stop();
+      } else {
+        // For other platforms, just log
+        AppLogger.info('Would stop alarm sound preview');
+      }
     } catch (e) {
       AppLogger.error('Error stopping alarm preview', e);
     }
