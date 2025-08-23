@@ -51,6 +51,9 @@ void main() async {
   // Initialize notification service
   try {
     await NotificationService.initialize();
+
+    // Schedule notifications for all existing habits (non-blocking)
+    _scheduleExistingHabitNotifications();
   } catch (e) {
     AppLogger.error('Error initializing notification service', e);
     // Continue with app startup even if notifications fail
@@ -95,6 +98,20 @@ void _initializeCalendarRenewal() async {
   } catch (e) {
     AppLogger.error('Error initializing calendar renewal service', e);
     // Don't block app startup if calendar renewal fails
+  }
+}
+
+/// Schedule notifications for all existing habits (non-blocking)
+void _scheduleExistingHabitNotifications() async {
+  try {
+    // Small delay to let the app finish core initialization
+    await Future.delayed(const Duration(seconds: 2));
+
+    AppLogger.info('Scheduling notifications for existing habits...');
+    await NotificationService.scheduleAllHabitNotifications();
+  } catch (e) {
+    AppLogger.error('Error scheduling existing habit notifications', e);
+    // Don't block app startup if notification scheduling fails
   }
 }
 

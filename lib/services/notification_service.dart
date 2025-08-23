@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'logging_service.dart';
 import 'permission_service.dart';
+import '../data/database.dart';
 
 @pragma('vm:entry-point')
 class NotificationService {
@@ -2396,5 +2397,47 @@ class NotificationService {
 
     nextDate = nextDate.add(Duration(days: daysUntilTarget));
     return nextDate;
+  }
+
+  /// Schedule notifications/alarms for all existing habits
+  /// This should be called during app initialization to ensure existing habits have their notifications scheduled
+  static Future<void> scheduleAllHabitNotifications() async {
+    try {
+      AppLogger.info('🔄 Scheduling notifications for all existing habits...');
+
+      // Get all habits from the database
+      final habits = await DatabaseService.getAllHabits();
+
+      int scheduledCount = 0;
+      int skippedCount = 0;
+
+      for (final habit in habits) {
+        try {
+          // Only schedule if notifications or alarms are enabled
+          if (habit.notificationsEnabled || habit.alarmEnabled) {
+            await scheduleHabitNotifications(habit);
+            scheduledCount++;
+            AppLogger.debug(
+              '✅ Scheduled notifications for habit: ${habit.name}',
+            );
+          } else {
+            skippedCount++;
+            AppLogger.debug(
+              '⏭️ Skipped habit (no notifications/alarms): ${habit.name}',
+            );
+          }
+        } catch (e) {
+          AppLogger.warning(
+            '⚠️ Failed to schedule notifications for habit: ${habit.name} - $e',
+          );
+        }
+      }
+
+      AppLogger.info(
+        '✅ Completed scheduling notifications for all habits: $scheduledCount scheduled, $skippedCount skipped',
+      );
+    } catch (e) {
+      AppLogger.error('❌ Failed to schedule notifications for all habits', e);
+    }
   }
 }
