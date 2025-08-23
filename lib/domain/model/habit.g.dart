@@ -39,13 +39,16 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..selectedWeekdays = (fields[19] as List).cast<int>()
       ..selectedMonthDays = (fields[20] as List).cast<int>()
       ..hourlyTimes = (fields[21] as List).cast<String>()
-      ..selectedYearlyDates = (fields[22] as List).cast<String>();
+      ..selectedYearlyDates = (fields[22] as List).cast<String>()
+      ..alarmEnabled = fields[23] as bool
+      ..alarmSoundName = fields[24] as String?
+      ..snoozeDelayMinutes = fields[25] as int;
   }
 
   @override
   void write(BinaryWriter writer, Habit obj) {
     writer
-      ..writeByte(23)
+      ..writeByte(26)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -91,7 +94,13 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..writeByte(21)
       ..write(obj.hourlyTimes)
       ..writeByte(22)
-      ..write(obj.selectedYearlyDates);
+      ..write(obj.selectedYearlyDates)
+      ..writeByte(23)
+      ..write(obj.alarmEnabled)
+      ..writeByte(24)
+      ..write(obj.alarmSoundName)
+      ..writeByte(25)
+      ..write(obj.snoozeDelayMinutes);
   }
 
   @override

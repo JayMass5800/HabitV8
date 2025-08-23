@@ -63,6 +63,11 @@ class NotificationActionService {
           await _handleSnoozeAction(habitId);
           AppLogger.info('Snooze action completed for habit: $habitId');
           break;
+        case 'snooze_alarm':
+          AppLogger.info('Processing alarm snooze action for habit: $habitId');
+          await _handleAlarmSnoozeAction(habitId);
+          AppLogger.info('Alarm snooze action completed for habit: $habitId');
+          break;
         default:
           AppLogger.warning('Unknown notification action: $action');
       }
@@ -236,6 +241,72 @@ class NotificationActionService {
       AppLogger.info('✅ Snooze action processed for habit: $habitId');
     } catch (e, stackTrace) {
       AppLogger.error('Error in _handleSnoozeAction for habit $habitId', e);
+      AppLogger.error('Stack trace: $stackTrace');
+    }
+  }
+
+  /// Handle the alarm snooze action with custom delay
+  static Future<void> _handleAlarmSnoozeAction(String habitId) async {
+    try {
+      AppLogger.info('Starting alarm snooze action for habit: $habitId');
+
+      // Parse habitId to extract actual habit ID and time slot (for hourly habits)
+      String actualHabitId = habitId;
+      String? timeSlot;
+
+      if (habitId.contains('|')) {
+        final parts = habitId.split('|');
+        actualHabitId = parts[0];
+        timeSlot = parts.length > 1 ? parts[1] : null;
+        AppLogger.info(
+          'Parsed hourly habit - ID: $actualHabitId, Time slot: $timeSlot',
+        );
+      }
+
+      // Get the habit service from the provider to get habit details
+      final habitServiceAsync = _container!.read(habitServiceProvider);
+
+      habitServiceAsync.when(
+        data: (habitService) async {
+          try {
+            // Get the habit for alarm details
+            final habit = await habitService.getHabitById(actualHabitId);
+            if (habit != null) {
+              AppLogger.info('Found habit for alarm snooze: ${habit.name}');
+              AppLogger.info(
+                'Snooze delay: ${habit.snoozeDelayMinutes} minutes',
+              );
+              AppLogger.info('Alarm sound: ${habit.alarmSoundName}');
+
+              // The actual alarm snooze scheduling is handled in the notification service
+              // This callback is just for any additional business logic if needed
+            } else {
+              AppLogger.warning(
+                'Habit not found for alarm snooze: $actualHabitId',
+              );
+            }
+          } catch (e, stackTrace) {
+            AppLogger.error('Error getting habit details for alarm snooze', e);
+            AppLogger.error('Stack trace: $stackTrace');
+          }
+        },
+        loading: () {
+          AppLogger.info('Habit service loading for alarm snooze...');
+        },
+        error: (error, stack) {
+          AppLogger.error(
+            'Error accessing habit service for alarm snooze',
+            error,
+          );
+        },
+      );
+
+      AppLogger.info('✅ Alarm snooze action processed for habit: $habitId');
+    } catch (e, stackTrace) {
+      AppLogger.error(
+        'Error in _handleAlarmSnoozeAction for habit $habitId',
+        e,
+      );
       AppLogger.error('Stack trace: $stackTrace');
     }
   }

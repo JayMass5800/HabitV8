@@ -133,10 +133,25 @@ class NotificationService {
             enableVibration: true,
           );
 
+      // Create alarm notification channel with highest priority
+      const AndroidNotificationChannel alarmChannel =
+          AndroidNotificationChannel(
+            'habit_alarm_channel',
+            'Habit Alarms',
+            description: 'High-priority alarm notifications for habits',
+            importance: Importance.max,
+            priority: Priority.max,
+            playSound: true,
+            enableVibration: true,
+            enableLights: true,
+            showBadge: true,
+          );
+
       await androidImplementation.createNotificationChannel(habitChannel);
       await androidImplementation.createNotificationChannel(
         scheduledHabitChannel,
       );
+      await androidImplementation.createNotificationChannel(alarmChannel);
 
       AppLogger.info('Notification channels created successfully');
       AppLogger.info(
@@ -853,11 +868,21 @@ class NotificationService {
       'Starting notification scheduling for habit: ${habit.name}',
     );
     AppLogger.debug('Notifications enabled: ${habit.notificationsEnabled}');
+    AppLogger.debug('Alarm enabled: ${habit.alarmEnabled}');
     AppLogger.debug('Notification time: ${habit.notificationTime}');
 
     if (!_isInitialized) {
       AppLogger.debug('Initializing notification service');
       await initialize();
+    }
+
+    // If alarms are enabled, use alarms instead of notifications (mutually exclusive)
+    if (habit.alarmEnabled) {
+      AppLogger.debug(
+        'Alarms enabled - scheduling alarms instead of notifications',
+      );
+      await scheduleHabitAlarms(habit);
+      return;
     }
 
     // Skip if notifications are disabled
@@ -944,6 +969,95 @@ class NotificationService {
         'Failed to schedule notifications for habit: ${habit.name}',
         e,
       );
+      rethrow; // Re-throw so the UI can show the error
+    }
+  }
+
+  /// Schedule alarm notifications for a habit (mutually exclusive with regular notifications)
+  static Future<void> scheduleHabitAlarms(dynamic habit) async {
+    AppLogger.debug('Starting alarm scheduling for habit: ${habit.name}');
+    AppLogger.debug('Alarm enabled: ${habit.alarmEnabled}');
+    AppLogger.debug('Alarm sound: ${habit.alarmSoundName}');
+    AppLogger.debug('Snooze delay: ${habit.snoozeDelayMinutes} minutes');
+
+    if (!_isInitialized) {
+      AppLogger.debug('Initializing notification service');
+      await initialize();
+    }
+
+    // Skip if alarms are disabled
+    if (!habit.alarmEnabled) {
+      AppLogger.debug('Skipping alarms - disabled');
+      AppLogger.info('Alarms disabled for habit: ${habit.name}');
+      return;
+    }
+
+    // For non-hourly habits, require notification time (alarms use same time as notifications)
+    final frequency = habit.frequency.toString().split('.').last;
+    if (frequency != 'hourly' && habit.notificationTime == null) {
+      AppLogger.debug('Skipping alarms - no time set for non-hourly habit');
+      AppLogger.info('No alarm time set for habit: ${habit.name}');
+      return;
+    }
+
+    final notificationTime = habit.notificationTime;
+    int hour = 9; // Default hour for hourly habits
+    int minute = 0; // Default minute for hourly habits
+
+    if (notificationTime != null) {
+      hour = notificationTime.hour;
+      minute = notificationTime.minute;
+      AppLogger.debug('Scheduling alarm for $hour:$minute');
+    } else {
+      AppLogger.debug('Using default time for hourly habit alarm');
+    }
+
+    try {
+      // Cancel any existing notifications/alarms for this habit first
+      await cancelHabitNotifications(generateSafeId(habit.id));
+      AppLogger.debug(
+        'Cancelled existing notifications/alarms for habit ID: ${habit.id}',
+      );
+
+      final frequency = habit.frequency.toString().split('.').last;
+      AppLogger.debug('Habit frequency: $frequency');
+
+      switch (frequency) {
+        case 'daily':
+          AppLogger.debug('Scheduling daily alarms');
+          await _scheduleDailyHabitAlarms(habit, hour, minute);
+          break;
+
+        case 'weekly':
+          AppLogger.debug('Scheduling weekly alarms');
+          await _scheduleWeeklyHabitAlarms(habit, hour, minute);
+          break;
+
+        case 'monthly':
+          AppLogger.debug('Scheduling monthly alarms');
+          await _scheduleMonthlyHabitAlarms(habit, hour, minute);
+          break;
+
+        case 'yearly':
+          AppLogger.debug('Scheduling yearly alarms');
+          await _scheduleYearlyHabitAlarms(habit, hour, minute);
+          break;
+
+        case 'hourly':
+          AppLogger.debug('Scheduling hourly alarms');
+          await _scheduleHourlyHabitAlarms(habit);
+          break;
+
+        default:
+          AppLogger.debug('Unknown frequency: $frequency');
+          AppLogger.warning('Unknown habit frequency: ${habit.frequency}');
+      }
+
+      AppLogger.debug('Successfully scheduled alarms for habit: ${habit.name}');
+      AppLogger.info('Successfully scheduled alarms for habit: ${habit.name}');
+    } catch (e) {
+      AppLogger.debug('Error scheduling alarms: $e');
+      AppLogger.error('Failed to schedule alarms for habit: ${habit.name}', e);
       rethrow; // Re-throw so the UI can show the error
     }
   }
@@ -1221,6 +1335,243 @@ class NotificationService {
     }
   }
 
+  // ============ ALARM SCHEDULING METHODS ============
+
+  /// Schedule daily habit alarms
+  static Future<void> _scheduleDailyHabitAlarms(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    AppLogger.debug('Scheduling daily alarms for ${habit.name}');
+    final now = DateTime.now();
+    DateTime nextAlarm = DateTime(now.year, now.month, now.day, hour, minute);
+
+    // If the time has passed today, schedule for tomorrow
+    if (nextAlarm.isBefore(now)) {
+      nextAlarm = nextAlarm.add(const Duration(days: 1));
+    }
+
+    try {
+      await scheduleHabitAlarm(
+        id: generateSafeId(habit.id),
+        habitId: habit.id.toString(),
+        title: '🚨 ${habit.name}',
+        body: 'Alarm: Time to complete your daily habit!',
+        scheduledTime: nextAlarm,
+        alarmSoundName: habit.alarmSoundName,
+        snoozeDelayMinutes: habit.snoozeDelayMinutes,
+      );
+
+      AppLogger.debug('Scheduled daily alarm for ${habit.name} at $nextAlarm');
+    } catch (e) {
+      AppLogger.error('Error scheduling daily alarm for ${habit.name}', e);
+      rethrow;
+    }
+  }
+
+  /// Schedule weekly habit alarms
+  static Future<void> _scheduleWeeklyHabitAlarms(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    AppLogger.debug('Scheduling weekly alarms for ${habit.name}');
+    final now = DateTime.now();
+
+    if (habit.selectedWeekdays != null && habit.selectedWeekdays.isNotEmpty) {
+      for (int weekday in habit.selectedWeekdays) {
+        DateTime nextAlarm = _getNextWeekdayDateTime(weekday, hour, minute);
+
+        try {
+          await scheduleHabitAlarm(
+            id: generateSafeId('${habit.id}_weekly_$weekday'),
+            habitId: habit.id.toString(),
+            title: '🚨 ${habit.name}',
+            body: 'Alarm: Time for your weekly habit!',
+            scheduledTime: nextAlarm,
+            alarmSoundName: habit.alarmSoundName,
+            snoozeDelayMinutes: habit.snoozeDelayMinutes,
+          );
+
+          AppLogger.debug(
+            'Scheduled weekly alarm for ${habit.name} on weekday $weekday at $nextAlarm',
+          );
+        } catch (e) {
+          AppLogger.error(
+            'Error scheduling weekly alarm for ${habit.name} on weekday $weekday',
+            e,
+          );
+        }
+      }
+    }
+  }
+
+  /// Schedule monthly habit alarms
+  static Future<void> _scheduleMonthlyHabitAlarms(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    AppLogger.debug('Scheduling monthly alarms for ${habit.name}');
+    final now = DateTime.now();
+
+    if (habit.selectedMonthDays != null && habit.selectedMonthDays.isNotEmpty) {
+      for (int day in habit.selectedMonthDays) {
+        DateTime nextAlarm = DateTime(now.year, now.month, day, hour, minute);
+
+        // If the day has passed this month, schedule for next month
+        if (nextAlarm.isBefore(now)) {
+          nextAlarm = DateTime(now.year, now.month + 1, day, hour, minute);
+        }
+
+        try {
+          await scheduleHabitAlarm(
+            id: generateSafeId('${habit.id}_monthly_$day'),
+            habitId: habit.id.toString(),
+            title: '🚨 ${habit.name}',
+            body: 'Alarm: Time for your monthly habit!',
+            scheduledTime: nextAlarm,
+            alarmSoundName: habit.alarmSoundName,
+            snoozeDelayMinutes: habit.snoozeDelayMinutes,
+          );
+
+          AppLogger.debug(
+            'Scheduled monthly alarm for ${habit.name} on day $day at $nextAlarm',
+          );
+        } catch (e) {
+          AppLogger.error(
+            'Error scheduling monthly alarm for ${habit.name} on day $day',
+            e,
+          );
+        }
+      }
+    }
+  }
+
+  /// Schedule yearly habit alarms
+  static Future<void> _scheduleYearlyHabitAlarms(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    AppLogger.debug('Scheduling yearly alarms for ${habit.name}');
+    final now = DateTime.now();
+
+    if (habit.selectedYearlyDates != null &&
+        habit.selectedYearlyDates.isNotEmpty) {
+      for (String dateString in habit.selectedYearlyDates) {
+        try {
+          final dateParts = dateString.split('-');
+          final month = int.parse(dateParts[1]);
+          final day = int.parse(dateParts[2]);
+
+          DateTime nextAlarm = DateTime(now.year, month, day, hour, minute);
+
+          // If the date has passed this year, schedule for next year
+          if (nextAlarm.isBefore(now)) {
+            nextAlarm = DateTime(now.year + 1, month, day, hour, minute);
+          }
+
+          await scheduleHabitAlarm(
+            id: generateSafeId('${habit.id}_yearly_${month}_$day'),
+            habitId: habit.id.toString(),
+            title: '🚨 ${habit.name}',
+            body:
+                'Alarm: Time for your yearly habit! This is your special day.',
+            scheduledTime: nextAlarm,
+            alarmSoundName: habit.alarmSoundName,
+            snoozeDelayMinutes: habit.snoozeDelayMinutes,
+          );
+
+          AppLogger.debug(
+            'Scheduled yearly alarm for ${habit.name} on $dateString at $nextAlarm',
+          );
+        } catch (e) {
+          AppLogger.error('Error parsing yearly date: $dateString', e);
+        }
+      }
+    }
+  }
+
+  /// Schedule hourly habit alarms
+  static Future<void> _scheduleHourlyHabitAlarms(dynamic habit) async {
+    final now = DateTime.now();
+
+    // For hourly habits, use the specific times set by the user
+    if (habit.hourlyTimes != null && habit.hourlyTimes.isNotEmpty) {
+      AppLogger.debug(
+        'Scheduling hourly alarms for specific times: ${habit.hourlyTimes}',
+      );
+
+      for (String timeString in habit.hourlyTimes) {
+        try {
+          // Parse the time string (format: "HH:mm")
+          final timeParts = timeString.split(':');
+          final hour = int.tryParse(timeParts[0]) ?? 9;
+          final minute = timeParts.length > 1
+              ? (int.tryParse(timeParts[1]) ?? 0)
+              : 0;
+
+          DateTime nextAlarm = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            hour,
+            minute,
+          );
+
+          // If the time has passed today, schedule for tomorrow
+          if (nextAlarm.isBefore(now)) {
+            nextAlarm = nextAlarm.add(const Duration(days: 1));
+          }
+
+          await scheduleHabitAlarm(
+            id: generateSafeId('${habit.id}_hourly_${hour}_$minute'),
+            habitId: '${habit.id}|$hour:${minute.toString().padLeft(2, '0')}',
+            title: '🚨 ${habit.name}',
+            body: 'Alarm: Time for your habit! Scheduled for $timeString',
+            scheduledTime: nextAlarm,
+            alarmSoundName: habit.alarmSoundName,
+            snoozeDelayMinutes: habit.snoozeDelayMinutes,
+          );
+
+          AppLogger.debug(
+            'Scheduled hourly alarm for $timeString at $nextAlarm',
+          );
+        } catch (e) {
+          AppLogger.error(
+            'Error parsing hourly time "$timeString" for habit ${habit.name}',
+            e,
+          );
+        }
+      }
+    } else {
+      // Fallback: For hourly habits without specific times, schedule every hour during active hours (8 AM - 10 PM)
+      AppLogger.debug(
+        'No specific hourly times set, using default hourly alarm schedule (8 AM - 10 PM)',
+      );
+      for (int hour = 8; hour <= 22; hour++) {
+        DateTime nextAlarm = DateTime(now.year, now.month, now.day, hour, 0);
+
+        // If the time has passed today, schedule for tomorrow
+        if (nextAlarm.isBefore(now)) {
+          nextAlarm = nextAlarm.add(const Duration(days: 1));
+        }
+
+        await scheduleHabitAlarm(
+          id: generateSafeId('${habit.id}_hourly_$hour'),
+          habitId: '${habit.id}|$hour:00',
+          title: '🚨 ${habit.name}',
+          body: 'Hourly alarm: Time for your habit!',
+          scheduledTime: nextAlarm,
+          alarmSoundName: habit.alarmSoundName,
+          snoozeDelayMinutes: habit.snoozeDelayMinutes,
+        );
+      }
+    }
+  }
+
   /// Generate a safe 32-bit integer ID from a string
   static int generateSafeId(String habitId) {
     // Generate a much smaller base hash to leave room for multiplications and additions
@@ -1396,6 +1747,107 @@ class NotificationService {
     );
   }
 
+  /// Schedule an alarm notification with custom sound and snooze delay
+  static Future<void> scheduleHabitAlarm({
+    required int id,
+    required String habitId,
+    required String title,
+    required String body,
+    required DateTime scheduledTime,
+    String? alarmSoundName,
+    int snoozeDelayMinutes = 10,
+  }) async {
+    if (!_isInitialized) await initialize();
+
+    // Create custom snooze text based on delay
+    String snoozeText = '⏰ Snooze ';
+    if (snoozeDelayMinutes < 60) {
+      snoozeText += '${snoozeDelayMinutes}min';
+    } else {
+      final hours = snoozeDelayMinutes ~/ 60;
+      final minutes = snoozeDelayMinutes % 60;
+      if (minutes == 0) {
+        snoozeText += '${hours}h';
+      } else {
+        snoozeText += '${hours}h ${minutes}min';
+      }
+    }
+
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'habit_alarm_channel',
+          'Habit Alarms',
+          channelDescription: 'High-priority alarm notifications for habits',
+          importance: Importance.max,
+          priority: Priority.max,
+          fullScreenIntent: true,
+          category: AndroidNotificationCategory.alarm,
+          visibility: NotificationVisibility.public,
+          sound: alarmSoundName != null && alarmSoundName != 'default'
+              ? RawResourceAndroidNotificationSound(alarmSoundName)
+              : null,
+          playSound: true,
+          enableVibration: true,
+          enableLights: true,
+          actions: [
+            const AndroidNotificationAction(
+              'complete',
+              '✅ Complete',
+              showsUserInterface: true,
+              cancelNotification: true,
+              allowGeneratedReplies: false,
+            ),
+            AndroidNotificationAction(
+              'snooze_alarm',
+              snoozeText,
+              showsUserInterface: true,
+              cancelNotification: true,
+              allowGeneratedReplies: false,
+            ),
+          ],
+        );
+
+    final DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
+          categoryIdentifier: 'habit_category',
+          sound: alarmSoundName != null && alarmSoundName != 'default'
+              ? alarmSoundName
+              : 'default',
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          interruptionLevel: InterruptionLevel.critical,
+        );
+
+    final NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
+    );
+
+    final tz.TZDateTime tzScheduledTime = tz.TZDateTime.from(
+      scheduledTime,
+      tz.local,
+    );
+
+    final payload = jsonEncode({
+      'habitId': habitId,
+      'type': 'habit_alarm',
+      'snoozeDelayMinutes': snoozeDelayMinutes,
+    });
+
+    await _notificationsPlugin.zonedSchedule(
+      id,
+      title,
+      body,
+      tzScheduledTime,
+      platformChannelSpecifics,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: payload,
+    );
+  }
+
   /// Snooze a notification for 30 minutes
   static Future<void> snoozeNotification({
     required int id,
@@ -1423,6 +1875,44 @@ class NotificationService {
 
     AppLogger.info(
       '✅ Notification snoozed for 30 minutes - new notification scheduled',
+    );
+  }
+
+  /// Snooze an alarm notification with custom delay
+  static Future<void> snoozeAlarm({
+    required int id,
+    required String habitId,
+    required String title,
+    required String body,
+    String? alarmSoundName,
+    int snoozeDelayMinutes = 10,
+  }) async {
+    AppLogger.info(
+      '🔄 Snoozing alarm ID: $id for habit: $habitId for $snoozeDelayMinutes minutes',
+    );
+
+    // Cancel the current alarm
+    await _notificationsPlugin.cancel(id);
+    AppLogger.info('❌ Current alarm cancelled');
+
+    // Schedule a new one for the specified delay
+    final snoozeTime = DateTime.now().add(
+      Duration(minutes: snoozeDelayMinutes),
+    );
+    AppLogger.info('⏰ Scheduling new alarm for: $snoozeTime');
+
+    await scheduleHabitAlarm(
+      id: id,
+      habitId: habitId,
+      title: title,
+      body: body,
+      scheduledTime: snoozeTime,
+      alarmSoundName: alarmSoundName,
+      snoozeDelayMinutes: snoozeDelayMinutes,
+    );
+
+    AppLogger.info(
+      '✅ Alarm snoozed for $snoozeDelayMinutes minutes - new alarm scheduled',
     );
   }
 

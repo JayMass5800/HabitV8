@@ -11,10 +11,11 @@ import '../../services/health_habit_mapping_service.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/comprehensive_habit_suggestions_service.dart';
 import '../../services/logging_service.dart';
+import '../../services/alarm_service.dart';
 
 class CreateHabitScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? prefilledData;
-  
+
   const CreateHabitScreen({super.key, this.prefilledData});
 
   @override
@@ -31,12 +32,19 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   Color _selectedColor = Colors.blue;
   bool _notificationsEnabled = true;
   TimeOfDay? _notificationTime;
+
+  // Alarm-related fields
+  bool _alarmEnabled = false;
+  String? _selectedAlarmSoundName;
+  int _snoozeDelayMinutes = 10;
   final List<int> _selectedWeekdays = [];
   final List<int> _selectedMonthDays = [];
-  final List<TimeOfDay> _hourlyTimes = []; // New: Multiple times for hourly habits
-  final Set<DateTime> _selectedYearlyDates = {}; // New: Selected dates for yearly habits
+  final List<TimeOfDay> _hourlyTimes =
+      []; // New: Multiple times for hourly habits
+  final Set<DateTime> _selectedYearlyDates =
+      {}; // New: Selected dates for yearly habits
   DateTime _focusedMonth = DateTime.now(); // New: For calendar navigation
-  
+
   // Health integration fields
   bool _enableHealthIntegration = false;
   String? _selectedHealthDataType;
@@ -69,7 +77,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     super.initState();
     _initializeFromPrefilledData();
     _loadHabitSuggestions();
-    
+
     // Add listeners to text controllers for category suggestions
     _nameController.addListener(_onHabitTextChanged);
     _descriptionController.addListener(_onHabitTextChanged);
@@ -78,7 +86,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   void _initializeFromPrefilledData() {
     if (widget.prefilledData != null) {
       final data = widget.prefilledData!;
-      
+
       // Set basic information
       if (data['name'] != null) {
         _nameController.text = data['name'];
@@ -89,7 +97,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       if (data['category'] != null && _categories.contains(data['category'])) {
         _selectedCategory = data['category'];
       }
-      
+
       // Set difficulty-based frequency (smart defaults)
       if (data['difficulty'] != null) {
         switch (data['difficulty'].toString().toLowerCase()) {
@@ -104,14 +112,14 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             break;
         }
       }
-      
+
       // Set notification time based on suggested time
       if (data['suggestedTime'] != null) {
         _notificationsEnabled = true;
         final timeString = data['suggestedTime'].toString();
         _notificationTime = _parseTimeString(timeString);
       }
-      
+
       // Set color based on category
       _selectedColor = _getCategoryColor(data['category'] ?? 'Health');
     }
@@ -129,22 +137,25 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       } else if (timeString.toLowerCase().contains('night')) {
         return const TimeOfDay(hour: 21, minute: 0);
       }
-      
+
       // Try to parse specific time formats
-      final timeRegex = RegExp(r'(\d{1,2}):(\d{2})(?:\s*(AM|PM))?', caseSensitive: false);
+      final timeRegex = RegExp(
+        r'(\d{1,2}):(\d{2})(?:\s*(AM|PM))?',
+        caseSensitive: false,
+      );
       final match = timeRegex.firstMatch(timeString);
-      
+
       if (match != null) {
         int hour = int.parse(match.group(1)!);
         final minute = int.parse(match.group(2)!);
         final amPm = match.group(3)?.toUpperCase();
-        
+
         if (amPm == 'PM' && hour != 12) {
           hour += 12;
         } else if (amPm == 'AM' && hour == 12) {
           hour = 0;
         }
-        
+
         return TimeOfDay(hour: hour, minute: minute);
       }
     } catch (e) {
@@ -187,13 +198,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.prefilledData != null ? 'Create Recommended Habit' : 'Create Habit'),
-        actions: [
-          TextButton(
-            onPressed: _saveHabit,
-            child: const Text('Save'),
-          ),
-        ],
+        title: Text(
+          widget.prefilledData != null
+              ? 'Create Recommended Habit'
+              : 'Create Habit',
+        ),
+        actions: [TextButton(onPressed: _saveHabit, child: const Text('Save'))],
       ),
       body: Form(
         key: _formKey,
@@ -219,16 +229,22 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                           children: [
                             Text(
                               'Recommended Habit',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
                             Text(
                               'This habit has been pre-filled based on our recommendations. Feel free to customize it!',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
+                                  ),
                             ),
                           ],
                         ),
@@ -267,9 +283,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           children: [
             Text(
               'Basic Information',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -306,7 +322,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
   Widget _buildCategorySection() {
     final suggestions = _getCategorySuggestions();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -317,10 +333,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             border: OutlineInputBorder(),
           ),
           items: _categories.map((category) {
-            return DropdownMenuItem(
-              value: category,
-              child: Text(category),
-            );
+            return DropdownMenuItem(value: category, child: Text(category));
           }).toList(),
           onChanged: (value) {
             setState(() {
@@ -350,10 +363,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                     _selectedCategory = suggestion;
                   });
                 },
-                backgroundColor: isSelected 
-                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
+                backgroundColor: isSelected
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.2)
                     : null,
-                side: isSelected 
+                side: isSelected
                     ? BorderSide(color: Theme.of(context).colorScheme.primary)
                     : null,
               );
@@ -365,7 +380,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   }
 
   Widget _buildFrequencySection() {
-    AppLogger.debug('Building frequency section, current frequency: $_selectedFrequency');
+    AppLogger.debug(
+      'Building frequency section, current frequency: $_selectedFrequency',
+    );
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -374,16 +391,18 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           children: [
             Text(
               'Frequency',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: HabitFrequency.values.map((frequency) {
-                AppLogger.debug('Creating choice chip for frequency: $frequency');
+                AppLogger.debug(
+                  'Creating choice chip for frequency: $frequency',
+                );
                 return ChoiceChip(
                   label: Text(_getFrequencyDisplayName(frequency)),
                   selected: _selectedFrequency == frequency,
@@ -407,18 +426,18 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               const SizedBox(height: 16),
               Text(
                 'Select times throughout the day:',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               _buildHourlyTimeSelector(),
               const SizedBox(height: 16),
               Text(
                 'Select days of the week:',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               _buildWeekdaySelector(),
@@ -427,9 +446,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               const SizedBox(height: 16),
               Text(
                 'Select days of the week:',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               _buildWeekdaySelector(),
@@ -439,9 +458,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               const SizedBox(height: 16),
               Text(
                 'Select days of the month:',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               _buildMonthDaySelector(),
@@ -451,9 +470,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               const SizedBox(height: 16),
               Text(
                 'Select dates throughout the year:',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               _buildYearlyCalendarSelector(),
@@ -533,7 +552,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   Widget _buildMonthDaySelector() {
     final now = tz.TZDateTime.now(tz.local);
     final focusedDay = DateTime(now.year, now.month, 1);
-    
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
@@ -545,9 +564,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             padding: const EdgeInsets.all(8),
             child: Text(
               'Select days of the month for your habit',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
           TableCalendar<int>(
@@ -600,7 +619,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                     color: isSelected ? _selectedColor : null,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isSelected ? Colors.transparent : Colors.grey.shade300,
+                      color: isSelected
+                          ? Colors.transparent
+                          : Colors.grey.shade300,
                     ),
                   ),
                   child: Center(
@@ -637,7 +658,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   // Enhanced yearly calendar selector using table_calendar with timezone support
   Widget _buildYearlyCalendarSelector() {
     final now = tz.TZDateTime.now(tz.local);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -652,9 +673,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 padding: const EdgeInsets.all(8),
                 child: Text(
                   'Select specific dates throughout the year',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
               TableCalendar<DateTime>(
@@ -690,15 +711,20 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                   ),
                 ),
                 selectedDayPredicate: (day) {
-                  return _selectedYearlyDates.any((selectedDate) => 
-                    selectedDate.year == day.year &&
-                    selectedDate.month == day.month &&
-                    selectedDate.day == day.day
+                  return _selectedYearlyDates.any(
+                    (selectedDate) =>
+                        selectedDate.year == day.year &&
+                        selectedDate.month == day.month &&
+                        selectedDate.day == day.day,
                   );
                 },
                 onDaySelected: (selectedDay, focusedDay) {
                   setState(() {
-                    final normalizedDate = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
+                    final normalizedDate = DateTime(
+                      selectedDay.year,
+                      selectedDay.month,
+                      selectedDay.day,
+                    );
                     if (_selectedYearlyDates.contains(normalizedDate)) {
                       _selectedYearlyDates.remove(normalizedDate);
                     } else {
@@ -713,24 +739,27 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 },
                 calendarBuilders: CalendarBuilders(
                   defaultBuilder: (context, day, focusedDay) {
-                    final isSelected = _selectedYearlyDates.any((selectedDate) => 
-                      selectedDate.year == day.year &&
-                      selectedDate.month == day.month &&
-                      selectedDate.day == day.day
+                    final isSelected = _selectedYearlyDates.any(
+                      (selectedDate) =>
+                          selectedDate.year == day.year &&
+                          selectedDate.month == day.month &&
+                          selectedDate.day == day.day,
                     );
                     final isToday = _isSameDay(day, now);
-                    
+
                     return Container(
                       margin: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? _selectedColor
                             : isToday
-                                ? _selectedColor.withValues(alpha: 0.3)
-                                : null,
+                            ? _selectedColor.withValues(alpha: 0.3)
+                            : null,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected || isToday ? Colors.transparent : Colors.grey.shade300,
+                          color: isSelected || isToday
+                              ? Colors.transparent
+                              : Colors.grey.shade300,
                         ),
                       ),
                       child: Center(
@@ -741,8 +770,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                             color: isSelected
                                 ? Colors.white
                                 : isToday
-                                    ? _selectedColor
-                                    : Colors.black,
+                                ? _selectedColor
+                                : Colors.black,
                           ),
                         ),
                       ),
@@ -757,9 +786,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           const SizedBox(height: 12),
           Text(
             'Selected dates (${_selectedYearlyDates.length}):',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -790,20 +819,28 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     );
   }
 
-
-
   String _getMonthName(int month) {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return monthNames[month - 1];
   }
 
   bool _isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
-           date1.month == date2.month &&
-           date1.day == date2.day;
+        date1.month == date2.month &&
+        date1.day == date2.day;
   }
 
   // Helper method for adding hourly times
@@ -822,7 +859,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               dialHandColor: Theme.of(context).colorScheme.primary,
               dialTextColor: Theme.of(context).colorScheme.onSurface,
               entryModeIconColor: Theme.of(context).colorScheme.onSurface,
-              helpTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              helpTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
           child: child!,
@@ -833,8 +872,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     if (picked != null) {
       setState(() {
         // Check if time is not already added
-        bool timeExists = _hourlyTimes.any((time) =>
-          time.hour == picked.hour && time.minute == picked.minute);
+        bool timeExists = _hourlyTimes.any(
+          (time) => time.hour == picked.hour && time.minute == picked.minute,
+        );
 
         if (!timeExists) {
           _hourlyTimes.add(picked);
@@ -889,16 +929,16 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           children: [
             Text(
               'Customization',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Text(
               'Choose a color:',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -943,16 +983,18 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           children: [
             Text(
               'Notifications',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
               title: const Text('Enable Notifications'),
-              subtitle: Text(_selectedFrequency == HabitFrequency.hourly 
-                  ? 'Get reminded at your selected times throughout the day'
-                  : 'Get reminded to complete your habit'),
+              subtitle: Text(
+                _selectedFrequency == HabitFrequency.hourly
+                    ? 'Get reminded at your selected times throughout the day'
+                    : 'Get reminded to complete your habit',
+              ),
               value: _notificationsEnabled,
               onChanged: (value) {
                 setState(() {
@@ -964,7 +1006,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               },
             ),
             // Only show time picker for non-hourly habits
-            if (_notificationsEnabled && _selectedFrequency != HabitFrequency.hourly) ...[
+            if (_notificationsEnabled &&
+                _selectedFrequency != HabitFrequency.hourly) ...[
               const SizedBox(height: 8),
               ListTile(
                 title: const Text('Notification Time'),
@@ -978,14 +1021,17 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               ),
             ],
             // Show info for hourly habits
-            if (_notificationsEnabled && _selectedFrequency == HabitFrequency.hourly) ...[
+            if (_notificationsEnabled &&
+                _selectedFrequency == HabitFrequency.hourly) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _selectedColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: _selectedColor.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: _selectedColor.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -994,8 +1040,86 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                     Expanded(
                       child: Text(
                         'Hourly habits will send notifications every hour during your active hours (8 AM - 10 PM)',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: _selectedColor),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // Alarm Settings Section
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 16),
+            Text(
+              'Alarm Settings',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: _selectedColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('Enable Alarms'),
+              subtitle: Text(
+                _alarmEnabled
+                    ? 'Use system alarms instead of notifications (more persistent)'
+                    : 'Alarms are more persistent than notifications and will wake the device',
+              ),
+              value: _alarmEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _alarmEnabled = value;
+                  if (value) {
+                    // When enabling alarms, disable notifications (mutually exclusive)
+                    _notificationsEnabled = false;
+                  }
+                });
+              },
+            ),
+            if (_alarmEnabled) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                title: const Text('Alarm Sound'),
+                subtitle: Text(
+                  _selectedAlarmSoundName ?? 'Default system alarm',
+                ),
+                trailing: const Icon(Icons.music_note),
+                onTap: _selectAlarmSound,
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                title: const Text('Snooze Delay'),
+                subtitle: Text('$_snoozeDelayMinutes minutes'),
+                trailing: const Icon(Icons.snooze),
+                onTap: _selectSnoozeDelay,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Alarms require exact alarm permissions on Android 12+. The app will request this permission when needed.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: _selectedColor,
+                          color: Colors.orange.shade700,
                         ),
                       ),
                     ),
@@ -1038,7 +1162,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               dialHandColor: Theme.of(context).colorScheme.primary,
               dialTextColor: Theme.of(context).colorScheme.onSurface,
               entryModeIconColor: Theme.of(context).colorScheme.onSurface,
-              helpTextStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              helpTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
           child: child!,
@@ -1052,9 +1178,105 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     }
   }
 
+  Future<void> _selectAlarmSound() async {
+    final availableSounds = await AlarmService.getAvailableAlarmSounds();
 
+    if (!mounted) return;
 
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Alarm Sound'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableSounds.length,
+            itemBuilder: (context, index) {
+              final soundName = availableSounds[index];
+              final isSelected = soundName == _selectedAlarmSoundName;
 
+              return ListTile(
+                title: Text(soundName),
+                leading: Radio<String>(
+                  value: soundName,
+                  groupValue: _selectedAlarmSoundName,
+                  onChanged: (value) {
+                    Navigator.of(context).pop(value);
+                  },
+                ),
+                selected: isSelected,
+                onTap: () {
+                  Navigator.of(context).pop(soundName);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _selectedAlarmSoundName = selected;
+      });
+    }
+  }
+
+  Future<void> _selectSnoozeDelay() async {
+    final delays = [5, 10, 15, 20, 30, 45, 60];
+
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Snooze Delay'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: delays.length,
+            itemBuilder: (context, index) {
+              final delay = delays[index];
+              final isSelected = delay == _snoozeDelayMinutes;
+
+              return ListTile(
+                title: Text('$delay minutes'),
+                leading: Radio<int>(
+                  value: delay,
+                  groupValue: _snoozeDelayMinutes,
+                  onChanged: (value) {
+                    Navigator.of(context).pop(value);
+                  },
+                ),
+                selected: isSelected,
+                onTap: () {
+                  Navigator.of(context).pop(delay);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _snoozeDelayMinutes = selected;
+      });
+    }
+  }
 
   Future<void> _saveHabit() async {
     if (!_formKey.currentState!.validate()) {
@@ -1063,7 +1285,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
     try {
       // Validate frequency-specific requirements
-      if (_selectedFrequency == HabitFrequency.weekly && _selectedWeekdays.isEmpty) {
+      if (_selectedFrequency == HabitFrequency.weekly &&
+          _selectedWeekdays.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select at least one day of the week'),
@@ -1073,7 +1296,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return;
       }
 
-      if (_selectedFrequency == HabitFrequency.monthly && _selectedMonthDays.isEmpty) {
+      if (_selectedFrequency == HabitFrequency.monthly &&
+          _selectedMonthDays.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select at least one day of the month'),
@@ -1083,7 +1307,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return;
       }
 
-      if (_selectedFrequency == HabitFrequency.yearly && _selectedYearlyDates.isEmpty) {
+      if (_selectedFrequency == HabitFrequency.yearly &&
+          _selectedYearlyDates.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select at least one date for the year'),
@@ -1096,17 +1321,22 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       if (_selectedFrequency == HabitFrequency.hourly && _hourlyTimes.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please select at least one time for hourly reminders'),
+            content: Text(
+              'Please select at least one time for hourly reminders',
+            ),
             backgroundColor: Colors.red,
           ),
         );
         return;
       }
 
-      if (_selectedFrequency == HabitFrequency.hourly && _selectedWeekdays.isEmpty) {
+      if (_selectedFrequency == HabitFrequency.hourly &&
+          _selectedWeekdays.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please select at least one day of the week for hourly habits'),
+            content: Text(
+              'Please select at least one day of the week for hourly habits',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -1114,7 +1344,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       }
 
       // Validate notification time for non-hourly habits
-      if (_notificationsEnabled && _selectedFrequency != HabitFrequency.hourly && _notificationTime == null) {
+      if (_notificationsEnabled &&
+          _selectedFrequency != HabitFrequency.hourly &&
+          _notificationTime == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select a notification time'),
@@ -1126,7 +1358,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
       final databaseAsync = ref.read(databaseProvider);
       final database = databaseAsync.value;
-      
+
       if (database == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -1149,21 +1381,22 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           _notificationTime!.minute,
         );
       }
-      
+
       // Create habit - use health-integrated creation if health integration is enabled
       final Habit habit;
       if (_enableHealthIntegration && _selectedHealthDataType != null) {
         // Create health-integrated habit with custom threshold and level
-        final baseHabit = await HealthEnhancedHabitCreationService.createHealthIntegratedHabit(
-          name: _nameController.text.trim(),
-          description: _descriptionController.text.trim(),
-          frequency: _selectedFrequency,
-          category: _selectedCategory,
-          healthDataType: _selectedHealthDataType,
-          customThreshold: _customThreshold,
-          thresholdLevel: _thresholdLevel,
-        );
-        
+        final baseHabit =
+            await HealthEnhancedHabitCreationService.createHealthIntegratedHabit(
+              name: _nameController.text.trim(),
+              description: _descriptionController.text.trim(),
+              frequency: _selectedFrequency,
+              category: _selectedCategory,
+              healthDataType: _selectedHealthDataType,
+              customThreshold: _customThreshold,
+              thresholdLevel: _thresholdLevel,
+            );
+
         // Update with UI-specific properties
         baseHabit.colorValue = _selectedColor.toARGB32();
         baseHabit.targetCount = 1;
@@ -1171,9 +1404,24 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         baseHabit.notificationTime = notificationDateTime;
         baseHabit.selectedWeekdays = _selectedWeekdays;
         baseHabit.selectedMonthDays = _selectedMonthDays;
-        baseHabit.hourlyTimes = _hourlyTimes.map((time) => '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}').toList();
-        baseHabit.selectedYearlyDates = _selectedYearlyDates.map((date) => '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}').toList();
-        
+        baseHabit.hourlyTimes = _hourlyTimes
+            .map(
+              (time) =>
+                  '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+            )
+            .toList();
+        baseHabit.selectedYearlyDates = _selectedYearlyDates
+            .map(
+              (date) =>
+                  '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+            )
+            .toList();
+
+        // Add alarm settings
+        baseHabit.alarmEnabled = _alarmEnabled;
+        baseHabit.alarmSoundName = _selectedAlarmSoundName;
+        baseHabit.snoozeDelayMinutes = _snoozeDelayMinutes;
+
         habit = baseHabit;
       } else {
         // Create regular habit
@@ -1188,15 +1436,28 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           notificationTime: notificationDateTime,
           selectedWeekdays: _selectedWeekdays,
           selectedMonthDays: _selectedMonthDays,
-          hourlyTimes: _hourlyTimes.map((time) => '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}').toList(),
-          selectedYearlyDates: _selectedYearlyDates.map((date) => '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}').toList(),
+          hourlyTimes: _hourlyTimes
+              .map(
+                (time) =>
+                    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+              )
+              .toList(),
+          selectedYearlyDates: _selectedYearlyDates
+              .map(
+                (date) =>
+                    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+              )
+              .toList(),
+          alarmEnabled: _alarmEnabled,
+          alarmSoundName: _selectedAlarmSoundName,
+          snoozeDelayMinutes: _snoozeDelayMinutes,
         );
       }
 
       // Get HabitService instead of direct database access
       final habitServiceAsync = ref.read(habitServiceProvider);
       final habitService = habitServiceAsync.value;
-      
+
       if (habitService == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1213,16 +1474,25 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
       // Log health integration status and analyze for additional mappings
       if (_enableHealthIntegration && _selectedHealthDataType != null) {
-        AppLogger.info('Health-integrated habit created: ${habit.name} -> $_selectedHealthDataType (threshold: $_customThreshold, level: $_thresholdLevel)');
+        AppLogger.info(
+          'Health-integrated habit created: ${habit.name} -> $_selectedHealthDataType (threshold: $_customThreshold, level: $_thresholdLevel)',
+        );
       } else {
         // Analyze habit for automatic health mapping
         try {
-          final healthMapping = await HealthHabitMappingService.analyzeHabitForHealthMapping(habit);
+          final healthMapping =
+              await HealthHabitMappingService.analyzeHabitForHealthMapping(
+                habit,
+              );
           if (healthMapping != null) {
-            AppLogger.info('Automatic health mapping found for habit: ${habit.name} -> ${healthMapping.healthDataType}');
+            AppLogger.info(
+              'Automatic health mapping found for habit: ${habit.name} -> ${healthMapping.healthDataType}',
+            );
           }
         } catch (e) {
-          AppLogger.warning('Error analyzing habit for health mapping: ${habit.name} - $e');
+          AppLogger.warning(
+            'Error analyzing habit for health mapping: ${habit.name} - $e',
+          );
         }
       }
 
@@ -1252,7 +1522,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       if (mounted) {
         AppLogger.error('Failed to create habit', e);
       }
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1271,7 +1541,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     });
 
     try {
-      final suggestions = await ComprehensiveHabitSuggestionsService.generateSuggestions();
+      final suggestions =
+          await ComprehensiveHabitSuggestionsService.generateSuggestions();
       if (mounted) {
         setState(() {
           _habitSuggestions = suggestions;
@@ -1292,12 +1563,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   List<String> _getCategorySuggestions() {
     final habitName = _nameController.text;
     final habitDescription = _descriptionController.text;
-    
+
     if (habitName.isEmpty) return [];
-    
+
     return CategorySuggestionService.getCategorySuggestions(
-      habitName, 
-      habitDescription.isEmpty ? null : habitDescription
+      habitName,
+      habitDescription.isEmpty ? null : habitDescription,
     );
   }
 
@@ -1347,9 +1618,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             const SizedBox(height: 8),
             Text(
               'Get inspired with personalized habit suggestions based on popular categories and your health data.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
             ),
             if (_showSuggestions) ...[
               const SizedBox(height: 16),
@@ -1380,8 +1651,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     return Column(
       children: groupedSuggestions.entries.map((entry) {
         final type = entry.key;
-        final suggestions = entry.value.take(3).toList(); // Show max 3 per category
-        
+        final suggestions = entry.value
+            .take(3)
+            .toList(); // Show max 3 per category
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1405,61 +1678,66 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 ],
               ),
             ),
-            ...suggestions.map((suggestion) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Card(
-                elevation: 1,
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: suggestion.isHealthBased 
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : Theme.of(context).colorScheme.primaryContainer,
-                    child: Icon(
-                      _getIconData(suggestion.icon),
-                      color: suggestion.isHealthBased 
-                          ? Colors.green
-                          : Theme.of(context).colorScheme.primary,
-                      size: 20,
+            ...suggestions.map(
+              (suggestion) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Card(
+                  elevation: 1,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: suggestion.isHealthBased
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Theme.of(context).colorScheme.primaryContainer,
+                      child: Icon(
+                        _getIconData(suggestion.icon),
+                        color: suggestion.isHealthBased
+                            ? Colors.green
+                            : Theme.of(context).colorScheme.primary,
+                        size: 20,
+                      ),
                     ),
-                  ),
-                  title: Text(
-                    suggestion.name,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  subtitle: Text(
-                    suggestion.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (suggestion.isHealthBased)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Health',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.green.shade700,
-                              fontWeight: FontWeight.w500,
+                    title: Text(
+                      suggestion.name,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Text(
+                      suggestion.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (suggestion.isHealthBased)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Health',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () => _applySuggestion(suggestion),
+                          child: const Text('Apply'),
                         ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () => _applySuggestion(suggestion),
-                        child: const Text('Apply'),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            )),
+            ),
             const SizedBox(height: 8),
           ],
         );
@@ -1562,7 +1840,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       _descriptionController.text = suggestion.description;
       _selectedCategory = suggestion.category;
       _selectedFrequency = suggestion.frequency;
-      
+
       // Enable health integration if it's a health-based suggestion
       if (suggestion.isHealthBased) {
         _enableHealthIntegration = true;

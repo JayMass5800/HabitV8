@@ -5,6 +5,7 @@ import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/health_habit_mapping_service.dart';
 import '../../services/category_suggestion_service.dart';
+import '../../services/alarm_service.dart';
 
 class EditHabitScreen extends ConsumerStatefulWidget {
   final Habit habit;
@@ -25,6 +26,12 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   late Color _selectedColor;
   late bool _notificationsEnabled;
   TimeOfDay? _notificationTime;
+
+  // Alarm-related fields
+  late bool _alarmEnabled;
+  String? _selectedAlarmSoundName;
+  late int _snoozeDelayMinutes;
+
   late final List<int> _selectedWeekdays;
   late final List<int> _selectedMonthDays;
   late int _targetCount;
@@ -68,6 +75,11 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     _notificationTime = widget.habit.notificationTime != null
         ? TimeOfDay.fromDateTime(widget.habit.notificationTime!)
         : null;
+
+    // Initialize alarm settings
+    _alarmEnabled = widget.habit.alarmEnabled;
+    _selectedAlarmSoundName = widget.habit.alarmSoundName;
+    _snoozeDelayMinutes = widget.habit.snoozeDelayMinutes;
     // Load from new fields first, fall back to old fields for backward compatibility
     _selectedWeekdays = widget.habit.selectedWeekdays.isNotEmpty
         ? List<int>.from(widget.habit.selectedWeekdays)
@@ -626,6 +638,85 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                 ),
               ),
             ],
+
+            // Alarm Settings Section
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 16),
+            Text(
+              'Alarm Settings',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: _selectedColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('Enable Alarms'),
+              subtitle: Text(
+                _alarmEnabled
+                    ? 'Use system alarms instead of notifications (more persistent)'
+                    : 'Alarms are more persistent than notifications and will wake the device',
+              ),
+              value: _alarmEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _alarmEnabled = value;
+                  if (value) {
+                    // When enabling alarms, disable notifications (mutually exclusive)
+                    _notificationsEnabled = false;
+                  }
+                });
+              },
+              activeThumbColor: _selectedColor,
+            ),
+            if (_alarmEnabled) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                title: const Text('Alarm Sound'),
+                subtitle: Text(
+                  _selectedAlarmSoundName ?? 'Default system alarm',
+                ),
+                trailing: const Icon(Icons.music_note),
+                onTap: _selectAlarmSound,
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                title: const Text('Snooze Delay'),
+                subtitle: Text('$_snoozeDelayMinutes minutes'),
+                trailing: const Icon(Icons.snooze),
+                onTap: _selectSnoozeDelay,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Alarms require exact alarm permissions on Android 12+. The app will request this permission when needed.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -644,6 +735,106 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         return 'Monthly';
       case HabitFrequency.yearly:
         return 'Yearly';
+    }
+  }
+
+  Future<void> _selectAlarmSound() async {
+    final availableSounds = await AlarmService.getAvailableAlarmSounds();
+
+    if (!mounted) return;
+
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Alarm Sound'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableSounds.length,
+            itemBuilder: (context, index) {
+              final soundName = availableSounds[index];
+              final isSelected = soundName == _selectedAlarmSoundName;
+
+              return ListTile(
+                title: Text(soundName),
+                leading: Radio<String>(
+                  value: soundName,
+                  groupValue: _selectedAlarmSoundName,
+                  onChanged: (value) {
+                    Navigator.of(context).pop(value);
+                  },
+                ),
+                selected: isSelected,
+                onTap: () {
+                  Navigator.of(context).pop(soundName);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _selectedAlarmSoundName = selected;
+      });
+    }
+  }
+
+  Future<void> _selectSnoozeDelay() async {
+    final delays = [5, 10, 15, 20, 30, 45, 60];
+
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Snooze Delay'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: delays.length,
+            itemBuilder: (context, index) {
+              final delay = delays[index];
+              final isSelected = delay == _snoozeDelayMinutes;
+
+              return ListTile(
+                title: Text('$delay minutes'),
+                leading: Radio<int>(
+                  value: delay,
+                  groupValue: _snoozeDelayMinutes,
+                  onChanged: (value) {
+                    Navigator.of(context).pop(value);
+                  },
+                ),
+                selected: isSelected,
+                onTap: () {
+                  Navigator.of(context).pop(delay);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (selected != null) {
+      setState(() {
+        _snoozeDelayMinutes = selected;
+      });
     }
   }
 
@@ -737,6 +928,11 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                 '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
           )
           .toList();
+
+      // Save alarm settings
+      widget.habit.alarmEnabled = _alarmEnabled;
+      widget.habit.alarmSoundName = _selectedAlarmSoundName;
+      widget.habit.snoozeDelayMinutes = _snoozeDelayMinutes;
 
       // Save to database
       await widget.habit.save();

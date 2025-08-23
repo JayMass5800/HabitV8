@@ -56,6 +56,7 @@ dependencies:
   url_launcher: ^6.2.5 # For opening Health Connect settings
   table_calendar: ^3.0.9 # Calendar integration for habit events
   device_calendar: ^4.3.3 # Device calendar integration
+  flutter_ringtone_manager: ^1.0.0 # For system alarm sounds
   
 
 flutter_icons:

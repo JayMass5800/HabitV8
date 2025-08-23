@@ -75,6 +75,16 @@ class Habit extends HiveObject {
   @HiveField(22)
   List<String> selectedYearlyDates = []; // Store as string format "yyyy-MM-dd"
 
+  // Alarm-specific fields
+  @HiveField(23)
+  bool alarmEnabled = false;
+
+  @HiveField(24)
+  String? alarmSoundName; // System alarm sound name
+
+  @HiveField(25)
+  int snoozeDelayMinutes = 10; // Default 10 minutes snooze
+
   Habit() {
     id = DateTime.now().millisecondsSinceEpoch.toString();
   }
@@ -96,6 +106,9 @@ class Habit extends HiveObject {
     this.selectedMonthDays = const [],
     this.hourlyTimes = const [],
     this.selectedYearlyDates = const [],
+    this.alarmEnabled = false,
+    this.alarmSoundName,
+    this.snoozeDelayMinutes = 10,
   }) {
     id = DateTime.now().millisecondsSinceEpoch.toString();
     createdAt = DateTime.now();
@@ -400,6 +413,9 @@ class Habit extends HiveObject {
       'selectedMonthDays': selectedMonthDays,
       'hourlyTimes': hourlyTimes,
       'selectedYearlyDates': selectedYearlyDates,
+      'alarmEnabled': alarmEnabled,
+      'alarmSoundName': alarmSoundName,
+      'snoozeDelayMinutes': snoozeDelayMinutes,
     };
   }
 }
