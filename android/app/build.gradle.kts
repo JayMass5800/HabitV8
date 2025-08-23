@@ -147,9 +147,29 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }
 
-// Apply custom health permissions scripts
+// Apply custom health permissions scripts in correct order
+// First remove unwanted permissions, then add required ones
 apply(from = "remove_health_permissions.gradle")
 apply(from = "add_health_permissions.gradle")
+
+// Add task to verify SCHEDULE_EXACT_ALARMS permission is present
+tasks.register("verifyExactAlarmsPermission") {
+    doLast {
+        val releaseManifest = file("${buildDir}/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml")
+        if (releaseManifest.exists()) {
+            val manifestContent = releaseManifest.readText()
+            if (manifestContent.contains("android.permission.SCHEDULE_EXACT_ALARMS")) {
+                println("✓ SCHEDULE_EXACT_ALARMS permission found in release manifest")
+            } else {
+                println("✗ SCHEDULE_EXACT_ALARMS permission MISSING from release manifest")
+                println("Manifest content preview:")
+                println(manifestContent.substring(0, minOf(1000, manifestContent.length)))
+            }
+        } else {
+            println("Release manifest not found at expected location")
+        }
+    }
+}
 
 // Add Health Connect dependencies with explicit versions
 dependencies {

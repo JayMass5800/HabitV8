@@ -70,10 +70,13 @@ android.applicationVariants.all { variant ->
                         // Remove unwanted permissions from manifest
                         def cleanedManifest = manifestText
                         permissionsToRemove.each { permission ->
-                            cleanedManifest = cleanedManifest.replaceAll(
-                                /<uses-permission\s+android:name="${permission}"\s*\/?>/, 
-                                ''
-                            )
+                            // Safety check: never remove SCHEDULE_EXACT_ALARMS permission
+                            if (permission != 'android.permission.SCHEDULE_EXACT_ALARMS') {
+                                cleanedManifest = cleanedManifest.replaceAll(
+                                    /<uses-permission\s+android:name="${permission}"\s*\/?>/, 
+                                    ''
+                                )
+                            }
                         }
                         
                         // Write cleaned manifest back

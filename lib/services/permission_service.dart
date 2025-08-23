@@ -11,46 +11,33 @@ class PermissionService {
 
   /// Request only essential permissions during app startup
   /// This prevents app crashes by avoiding heavy permission requests during initialization
+  /// On Android 13+ (API 33+), notification permissions should be requested contextually
   static Future<bool> requestEssentialPermissions() async {
     try {
-      // Request notification permission during startup
-      // This is the most critical permission for basic app functionality
-      final notificationStatus = await Permission.notification.request();
-
+      // DO NOT request notification permission during startup on Android 13+
+      // This causes the permission to become greyed out in system settings
+      // Notification permission will be requested only when user enables notifications
       AppLogger.info(
-        'Essential permission (notification) status: $notificationStatus',
+        'Skipping notification permission during startup to prevent Android 13+ issues',
       );
 
-      // Request exact alarm permission for Android 12+ devices
-      // This is required for precise notification scheduling
-      bool exactAlarmGranted = true;
-      try {
-        AppLogger.info('Requesting exact alarm permission during startup...');
-        exactAlarmGranted = await HealthService.requestExactAlarmPermission();
-        AppLogger.info('Exact alarm permission status: $exactAlarmGranted');
-      } catch (e) {
-        AppLogger.error(
-          'Error requesting exact alarm permission during startup',
-          e,
-        );
-        // Don't fail startup if exact alarm permission fails
-        exactAlarmGranted = false;
-      }
-
-      final notificationGranted =
-          notificationStatus == PermissionStatus.granted ||
-          notificationStatus == PermissionStatus.limited;
-
+      // DO NOT request exact alarm permission during startup
+      // This causes Android 14+ to grey out the permission
+      // Exact alarm permission will be requested only when actually needed
       AppLogger.info(
-        'Essential permissions summary - Notifications: $notificationGranted, Exact Alarms: $exactAlarmGranted',
+        'Skipping exact alarm permission during startup to prevent Android 14+ issues',
       );
 
-      // Return true if at least notifications are granted
-      // Exact alarms are important but not critical for basic functionality
-      return notificationGranted;
+      AppLogger.info(
+        'Essential permissions summary - All permissions will be requested contextually',
+      );
+
+      // Return true to allow app to start normally
+      // Permissions will be requested when actually needed
+      return true;
     } catch (e) {
-      AppLogger.error('Error requesting essential permissions', e);
-      return false;
+      AppLogger.error('Error in essential permissions check', e);
+      return true; // Don't block app startup
     }
   }
 
@@ -156,6 +143,60 @@ class PermissionService {
     return await Permission.notification.isGranted;
   }
 
+  /// Request notification permission when actually needed
+  /// This should only be called when the user tries to enable notifications
+  /// NOT during app startup to avoid Android 13+ greyed-out permission issues
+  static Future<bool> requestNotificationPermission() async {
+    try {
+      AppLogger.info('Requesting notification permission when needed...');
+      final notificationStatus = await Permission.notification.request();
+
+      final granted =
+          notificationStatus == PermissionStatus.granted ||
+          notificationStatus == PermissionStatus.limited;
+
+      AppLogger.info('Notification permission request result: $granted');
+      return granted;
+    } catch (e) {
+      AppLogger.error('Error requesting notification permission', e);
+      return false;
+    }
+  }
+
+  /// Request notification permission with user-friendly context
+  /// This method provides better UX by explaining why the permission is needed
+  static Future<bool> requestNotificationPermissionWithContext() async {
+    try {
+      // First check if we already have the permission
+      final bool hasPermission = await Permission.notification.isGranted;
+      if (hasPermission) {
+        AppLogger.info('Notification permission already granted');
+        return true;
+      }
+
+      AppLogger.info('Requesting notification permission with user context...');
+
+      // Request the permission
+      final bool granted = await requestNotificationPermission();
+
+      if (granted) {
+        AppLogger.info('Notification permission granted successfully');
+      } else {
+        AppLogger.warning(
+          'Notification permission denied - notifications will not work',
+        );
+      }
+
+      return granted;
+    } catch (e) {
+      AppLogger.error(
+        'Error requesting notification permission with context',
+        e,
+      );
+      return false;
+    }
+  }
+
   /// Check calendar permission status
   Future<bool> isCalendarPermissionGranted() async {
     return await Permission.calendarFullAccess.isGranted;
@@ -213,6 +254,55 @@ class PermissionService {
       return hasPermission;
     } catch (e) {
       AppLogger.error('Error checking exact alarm permission', e);
+      return false;
+    }
+  }
+
+  /// Request exact alarm permission when actually needed
+  /// This should only be called when the user is trying to schedule notifications
+  /// NOT during app startup to avoid Android 14+ greyed-out permission issues
+  static Future<bool> requestExactAlarmPermission() async {
+    try {
+      AppLogger.info('Requesting exact alarm permission when needed...');
+      final bool granted = await HealthService.requestExactAlarmPermission();
+      AppLogger.info('Exact alarm permission request result: $granted');
+      return granted;
+    } catch (e) {
+      AppLogger.error('Error requesting exact alarm permission', e);
+      return false;
+    }
+  }
+
+  /// Request exact alarm permission with user-friendly context
+  /// This method provides better UX by explaining why the permission is needed
+  static Future<bool> requestExactAlarmPermissionWithContext() async {
+    try {
+      // First check if we already have the permission
+      final bool hasPermission = await hasExactAlarmPermission();
+      if (hasPermission) {
+        AppLogger.info('Exact alarm permission already granted');
+        return true;
+      }
+
+      AppLogger.info('Requesting exact alarm permission with user context...');
+
+      // Request the permission
+      final bool granted = await requestExactAlarmPermission();
+
+      if (granted) {
+        AppLogger.info('Exact alarm permission granted successfully');
+      } else {
+        AppLogger.warning(
+          'Exact alarm permission denied - notifications may not be precise',
+        );
+      }
+
+      return granted;
+    } catch (e) {
+      AppLogger.error(
+        'Error requesting exact alarm permission with context',
+        e,
+      );
       return false;
     }
   }

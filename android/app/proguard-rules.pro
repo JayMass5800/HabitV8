@@ -141,3 +141,26 @@
 
 # Keep calendar plugin classes
 -keep class com.builttoroam.devicecalendar.** { *; }
+
+# Keep alarm and notification permission classes
+-keep class android.app.AlarmManager { *; }
+-keep class android.app.AlarmManager$* { *; }
+-keep class android.content.Context { 
+    public *** getSystemService(java.lang.String);
+}
+
+# Keep exact alarm permission references
+-keepclassmembers class * {
+    public static final *** *SCHEDULE_EXACT_ALARM*;
+}
+
+# Keep notification permission references
+-keepclassmembers class * {
+    public static final *** *POST_NOTIFICATIONS*;
+}
+
+# Keep alarm-related classes that might be used for scheduling
+-keep class android.app.PendingIntent { *; }
+-keep class android.content.Intent { *; }
+-keep class android.os.Build$VERSION { *; }
+-keep class android.os.Build$VERSION_CODES { *; }

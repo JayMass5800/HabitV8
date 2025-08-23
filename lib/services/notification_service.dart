@@ -1,9 +1,11 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'logging_service.dart';
+import 'permission_service.dart';
 
 @pragma('vm:entry-point')
 class NotificationService {
@@ -162,7 +164,8 @@ class NotificationService {
     }
   }
 
-  /// Request Android notification permissions with enhanced exact alarm handling
+  /// Initialize Android notification settings without requesting permissions
+  /// Permissions will be requested contextually when actually needed
   static Future<void> _requestAndroidPermissions() async {
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
         _notificationsPlugin
@@ -171,41 +174,81 @@ class NotificationService {
             >();
 
     if (androidImplementation != null) {
-      // Request notification permission
-      await androidImplementation.requestNotificationsPermission();
+      // DO NOT request notification permission during initialization on Android 13+
+      // This causes the permission to become greyed out in system settings
+      // Notification permission will be requested only when user enables notifications
 
-      // Check if we're on Android 12+ and handle exact alarms accordingly
-      final bool isAndroid12Plus = await _isAndroid12Plus();
+      // Note: We also don't request exact alarm permission during initialization
+      // This will be requested only when the user specifically enables alarms/reminders
+      // to avoid the greyed-out permission issue on Android 14+
+      AppLogger.info(
+        'Notification service initialized. All permissions will be requested contextually when needed.',
+      );
+    }
+  }
 
-      if (isAndroid12Plus) {
-        AppLogger.info(
-          'Android 12+ detected - requesting exact alarm permissions',
-        );
+  /// Ensure all required permissions are granted before scheduling notifications
+  /// This method requests permissions only when actually needed
+  static Future<bool> _ensureNotificationPermissions() async {
+    try {
+      // First, ensure basic notification permission is granted
+      AppLogger.info('Checking notification permission...');
+      final bool hasNotificationPermission =
+          await Permission.notification.isGranted;
 
-        // Request exact alarms permission (Android 12+)
-        try {
-          final bool? exactAlarmPermission = await androidImplementation
-              .requestExactAlarmsPermission();
-          AppLogger.info(
-            'Exact alarm permission granted: $exactAlarmPermission',
+      if (!hasNotificationPermission) {
+        AppLogger.info('Requesting notification permission for scheduling...');
+        final bool notificationGranted =
+            await PermissionService.requestNotificationPermissionWithContext();
+
+        if (!notificationGranted) {
+          AppLogger.warning(
+            'Notification permission denied - cannot schedule notifications',
           );
-
-          if (exactAlarmPermission != true) {
-            AppLogger.warning(
-              'WARNING: Exact alarm permission not granted. Scheduled notifications may not work on Android 12+',
-            );
-            AppLogger.warning(
-              'User may need to manually enable "Alarms & reminders" in app settings',
-            );
-          }
-        } catch (e) {
-          AppLogger.error('Error requesting exact alarm permission', e);
+          return false;
         }
       } else {
-        AppLogger.info(
-          'Android 11 or below detected - exact alarm permissions not required',
-        );
+        AppLogger.info('Notification permission already granted');
       }
+
+      // Then, check if we need exact alarm permission (Android 12+)
+      final bool isAndroid12Plus = await NotificationService.isAndroid12Plus();
+      if (!isAndroid12Plus) {
+        AppLogger.info('Exact alarm permission not required for Android < 12');
+        return true;
+      }
+
+      // Check if we already have exact alarm permission
+      final bool hasExactAlarmPermission =
+          await PermissionService.hasExactAlarmPermission();
+      if (hasExactAlarmPermission) {
+        AppLogger.info('Exact alarm permission already granted');
+        return true;
+      }
+
+      AppLogger.info(
+        'Requesting exact alarm permission for precise scheduling...',
+      );
+
+      // Request the exact alarm permission with context
+      final bool exactAlarmGranted =
+          await PermissionService.requestExactAlarmPermissionWithContext();
+
+      if (exactAlarmGranted) {
+        AppLogger.info(
+          'Exact alarm permission granted - notifications will be precise',
+        );
+      } else {
+        AppLogger.warning(
+          'Exact alarm permission denied - notifications may not be delivered at exact times',
+        );
+        // Continue anyway - notifications will still work but may not be precise
+      }
+
+      return true; // Return true even if exact alarm is denied, basic notifications still work
+    } catch (e) {
+      AppLogger.error('Error ensuring notification permissions', e);
+      return false; // Block notification scheduling if there's an error
     }
   }
 
@@ -608,6 +651,15 @@ class NotificationService {
   }) async {
     if (!_isInitialized) await initialize();
 
+    // Check and request all notification permissions if needed
+    final bool permissionsGranted = await _ensureNotificationPermissions();
+    if (!permissionsGranted) {
+      AppLogger.warning(
+        'Cannot schedule notification - permissions not granted',
+      );
+      return; // Don't schedule if permissions are denied
+    }
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
           'habit_scheduled_channel',
@@ -735,6 +787,15 @@ class NotificationService {
     String? payload,
   }) async {
     if (!_isInitialized) await initialize();
+
+    // Check and request all notification permissions if needed
+    final bool permissionsGranted = await _ensureNotificationPermissions();
+    if (!permissionsGranted) {
+      AppLogger.warning(
+        'Cannot schedule notification - permissions not granted',
+      );
+      return; // Don't schedule if permissions are denied
+    }
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -875,6 +936,18 @@ class NotificationService {
       await initialize();
     }
 
+    // Check and request all notification permissions if needed
+    // Only do this if notifications or alarms are actually enabled
+    if (habit.notificationsEnabled || habit.alarmEnabled) {
+      final bool permissionsGranted = await _ensureNotificationPermissions();
+      if (!permissionsGranted) {
+        AppLogger.warning(
+          'Cannot schedule notifications for habit: ${habit.name} - permissions not granted',
+        );
+        return; // Don't schedule if permissions are denied
+      }
+    }
+
     // If alarms are enabled, use alarms instead of notifications (mutually exclusive)
     if (habit.alarmEnabled) {
       AppLogger.debug(
@@ -991,26 +1064,8 @@ class NotificationService {
       return;
     }
 
-    // Check if exact alarm permission is granted (required for alarms)
-    final canScheduleExact = await canScheduleExactAlarms();
-    if (!canScheduleExact) {
-      AppLogger.warning(
-        'Exact alarm permission not granted, attempting to request...',
-      );
-      final granted = await requestExactAlarmPermission();
-      if (!granted) {
-        AppLogger.error(
-          'Cannot schedule alarms: Exact alarm permission denied',
-        );
-        AppLogger.info(
-          'Please enable exact alarm permission in Android settings for ${habit.name}',
-        );
-        return;
-      }
-      AppLogger.info(
-        'Exact alarm permission granted, proceeding with alarm scheduling',
-      );
-    }
+    // Note: Exact alarm permission is now handled by individual scheduling methods
+    // to avoid requesting permission during startup which causes Android 14+ issues
 
     // For non-hourly habits, require notification time (alarms use same time as notifications)
     final frequency = habit.frequency.toString().split('.').last;
@@ -1704,6 +1759,15 @@ class NotificationService {
   }) async {
     if (!_isInitialized) await initialize();
 
+    // Check and request all notification permissions if needed
+    final bool permissionsGranted = await _ensureNotificationPermissions();
+    if (!permissionsGranted) {
+      AppLogger.warning(
+        'Cannot schedule notification - permissions not granted',
+      );
+      return; // Don't schedule if permissions are denied
+    }
+
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
           'habit_scheduled_channel',
@@ -1777,6 +1841,15 @@ class NotificationService {
     int snoozeDelayMinutes = 10,
   }) async {
     if (!_isInitialized) await initialize();
+
+    // Check and request all notification permissions if needed
+    final bool permissionsGranted = await _ensureNotificationPermissions();
+    if (!permissionsGranted) {
+      AppLogger.warning(
+        'Cannot schedule notification - permissions not granted',
+      );
+      return; // Don't schedule if permissions are denied
+    }
 
     // Create custom snooze text based on delay
     String snoozeText = '⏰ Snooze ';
@@ -2118,6 +2191,91 @@ class NotificationService {
         AppLogger.error('Error opening exact alarm settings', e);
       }
     }
+  }
+
+  /// Request exact alarm permission with user guidance
+  /// This should be called when the user specifically wants to enable exact timing
+  static Future<bool> requestExactAlarmPermissionWithGuidance() async {
+    if (!Platform.isAndroid) return true;
+
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+
+    if (androidImplementation != null) {
+      try {
+        // Check if device is Android 12+
+        final bool isAndroid12Plus = await _isAndroid12Plus();
+
+        if (isAndroid12Plus) {
+          AppLogger.info(
+            'User requested exact alarm permission - opening settings',
+          );
+
+          // Request exact alarm permission (this will open Android settings)
+          final bool? granted = await androidImplementation
+              .requestExactAlarmsPermission();
+
+          AppLogger.info('Exact alarm permission request result: $granted');
+          return granted ?? false;
+        } else {
+          // Android 11 and below don't need exact alarm permission
+          AppLogger.info(
+            'Android 11 or below - exact alarms automatically available',
+          );
+          return true;
+        }
+      } catch (e) {
+        AppLogger.error(
+          'Error requesting exact alarm permission with guidance',
+          e,
+        );
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /// Get detailed information about exact alarm permission status
+  static Future<Map<String, dynamic>> getExactAlarmPermissionInfo() async {
+    final info = <String, dynamic>{};
+
+    if (!Platform.isAndroid) {
+      info['platform'] = 'non-android';
+      info['canScheduleExact'] = true;
+      info['message'] = 'Exact alarms are supported on this platform';
+      return info;
+    }
+
+    try {
+      final isAndroid12Plus = await _isAndroid12Plus();
+      final canSchedule = await canScheduleExactAlarms();
+
+      info['platform'] = 'android';
+      info['isAndroid12Plus'] = isAndroid12Plus;
+      info['canScheduleExact'] = canSchedule;
+
+      if (!isAndroid12Plus) {
+        info['message'] =
+            'Exact alarms are automatically available on Android 11 and below';
+      } else if (canSchedule) {
+        info['message'] = 'Exact alarms are enabled and working properly';
+      } else {
+        info['message'] =
+            'Exact alarms are restricted. The app will use inexact alarms (may be delayed by up to 15 minutes)';
+        info['userAction'] =
+            'To enable exact timing, go to Android Settings > Apps > HabitV8 > Alarms & reminders and toggle it on';
+        info['note'] =
+            'On Android 14+, this permission is restricted by default to preserve battery life';
+      }
+    } catch (e) {
+      info['error'] = e.toString();
+      info['message'] = 'Unable to determine exact alarm permission status';
+    }
+
+    return info;
   }
 
   /// Test method to show a notification with action buttons for debugging

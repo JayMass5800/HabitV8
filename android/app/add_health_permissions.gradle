@@ -28,7 +28,8 @@ android.applicationVariants.all { variant ->
                             'android.permission.ACTIVITY_RECOGNITION',
                             'com.google.android.gms.permission.ACTIVITY_RECOGNITION',
                             'android.permission.FOREGROUND_SERVICE',
-                            'android.permission.FOREGROUND_SERVICE_HEALTH'
+                            'android.permission.FOREGROUND_SERVICE_HEALTH',
+                            'android.permission.SCHEDULE_EXACT_ALARMS'
                         ]
                         
                         def manifestUpdated = false

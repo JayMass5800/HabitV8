@@ -32,6 +32,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen>
     with WidgetsBindingObserver {
   bool _notificationsEnabled = false;
+  bool _exactAlarmsEnabled = false;
   bool _calendarSync = false;
   bool _healthDataSync = false;
   bool _autoCompletionEnabled = false;
@@ -76,10 +77,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    // When app resumes, refresh health permissions in case they were changed externally
+    // When app resumes, refresh permissions in case they were changed externally
     if (state == AppLifecycleState.resumed) {
-      AppLogger.info('App resumed, refreshing health permissions');
+      AppLogger.info('App resumed, refreshing permissions');
       _refreshHealthPermissions();
+      _refreshExactAlarmPermission();
     }
   }
 
@@ -90,6 +92,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
       final notificationStatus = await permissionService
           .isNotificationPermissionGranted();
+
+      // Check exact alarm permission status
+      final exactAlarmStatus =
+          await NotificationService.canScheduleExactAlarms();
 
       // Load calendar sync status using the calendar service
       final calendarSyncEnabled = await CalendarService.isCalendarSyncEnabled();
@@ -113,6 +119,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
       setState(() {
         _notificationsEnabled = notificationStatus;
+        _exactAlarmsEnabled = exactAlarmStatus;
         _calendarSync = calendarSyncEnabled;
         _healthDataSync = healthStatus;
         _autoCompletionEnabled = autoCompletionEnabled;
@@ -246,6 +253,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
+  /// Refresh exact alarm permission status
+  /// This is called when the app resumes to check if permission was granted externally
+  Future<void> _refreshExactAlarmPermission() async {
+    try {
+      AppLogger.info('Refreshing exact alarm permission status');
+
+      final exactAlarmStatus =
+          await NotificationService.canScheduleExactAlarms();
+
+      // Update the UI state if permission changed
+      if (mounted && exactAlarmStatus != _exactAlarmsEnabled) {
+        setState(() {
+          _exactAlarmsEnabled = exactAlarmStatus;
+        });
+
+        if (mounted) {
+          if (exactAlarmStatus) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Exact timing enabled! Notifications will be precise. ⏰',
+                ),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+
+        AppLogger.info(
+          'Exact alarm permission status updated: $exactAlarmStatus',
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error refreshing exact alarm permission', e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeState = ref.watch(themeProvider);
@@ -323,6 +368,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 onChanged: (value) => _toggleNotifications(value),
                 secondary: const Icon(Icons.notifications),
               ),
+              if (Platform.isAndroid) ...[
+                const Divider(),
+                ListTile(
+                  title: const Text('Exact Timing'),
+                  subtitle: Text(
+                    _exactAlarmsEnabled
+                        ? 'Precise notifications enabled'
+                        : 'Tap to enable exact timing (Android 12+)',
+                  ),
+                  leading: Icon(
+                    _exactAlarmsEnabled ? Icons.alarm_on : Icons.alarm_off,
+                    color: _exactAlarmsEnabled ? Colors.green : Colors.orange,
+                  ),
+                  trailing: _exactAlarmsEnabled
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : const Icon(Icons.settings, color: Colors.orange),
+                  onTap: _exactAlarmsEnabled
+                      ? null
+                      : () => _requestExactAlarmPermission(),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 24),
@@ -585,6 +651,67 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     } else {
       setState(() => _notificationsEnabled = false);
       _showSnackBar('Notifications disabled');
+    }
+  }
+
+  /// Request exact alarm permission with user guidance
+  Future<void> _requestExactAlarmPermission() async {
+    try {
+      // Show explanation dialog first
+      final shouldProceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Enable Exact Timing'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Exact timing allows notifications to arrive precisely on time.',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              SizedBox(height: 12),
+              Text('• Default: Notifications may be delayed up to 15 minutes'),
+              Text('• With exact timing: Notifications arrive exactly on time'),
+              SizedBox(height: 12),
+              Text(
+                'This will open Android settings where you can enable "Alarms & reminders" for HabitV8.',
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldProceed == true) {
+        // Request the permission (this will open Android settings)
+        final granted =
+            await NotificationService.requestExactAlarmPermissionWithGuidance();
+
+        if (granted) {
+          setState(() => _exactAlarmsEnabled = true);
+          _showSnackBar(
+            'Exact timing enabled! Notifications will be precise. ⏰',
+          );
+        } else {
+          _showSnackBar(
+            'Exact timing not enabled. Notifications may be delayed.',
+          );
+        }
+      }
+    } catch (e) {
+      AppLogger.error('Error requesting exact alarm permission', e);
+      _showSnackBar('Error enabling exact timing. Please try again.');
     }
   }
 
