@@ -584,12 +584,12 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               },
               activeThumbColor: _selectedColor,
             ),
-            // Only show time picker for non-hourly habits
-            if (_notificationsEnabled &&
+            // Show time picker for non-hourly habits when notifications OR alarms are enabled
+            if ((_notificationsEnabled || _alarmEnabled) &&
                 _selectedFrequency != HabitFrequency.hourly) ...[
               const SizedBox(height: 16),
               ListTile(
-                title: const Text('Notification Time'),
+                title: Text(_alarmEnabled ? 'Alarm Time' : 'Notification Time'),
                 subtitle: Text(
                   _notificationTime != null
                       ? _notificationTime!.format(context)
@@ -610,7 +610,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               ),
             ],
             // Show info for hourly habits
-            if (_notificationsEnabled &&
+            if ((_notificationsEnabled || _alarmEnabled) &&
                 _selectedFrequency == HabitFrequency.hourly) ...[
               const SizedBox(height: 16),
               Container(

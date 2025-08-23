@@ -991,6 +991,27 @@ class NotificationService {
       return;
     }
 
+    // Check if exact alarm permission is granted (required for alarms)
+    final canScheduleExact = await canScheduleExactAlarms();
+    if (!canScheduleExact) {
+      AppLogger.warning(
+        'Exact alarm permission not granted, attempting to request...',
+      );
+      final granted = await requestExactAlarmPermission();
+      if (!granted) {
+        AppLogger.error(
+          'Cannot schedule alarms: Exact alarm permission denied',
+        );
+        AppLogger.info(
+          'Please enable exact alarm permission in Android settings for ${habit.name}',
+        );
+        return;
+      }
+      AppLogger.info(
+        'Exact alarm permission granted, proceeding with alarm scheduling',
+      );
+    }
+
     // For non-hourly habits, require notification time (alarms use same time as notifications)
     final frequency = habit.frequency.toString().split('.').last;
     if (frequency != 'hourly' && habit.notificationTime == null) {
@@ -2040,6 +2061,39 @@ class NotificationService {
         }
       } catch (e) {
         AppLogger.error('Error checking exact alarm permission', e);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /// Request exact alarm permission (Android 12+)
+  static Future<bool> requestExactAlarmPermission() async {
+    if (!Platform.isAndroid) return true;
+
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        _notificationsPlugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+
+    if (androidImplementation != null) {
+      try {
+        // Check if device is Android 12+
+        final bool isAndroid12Plus = await _isAndroid12Plus();
+
+        if (isAndroid12Plus) {
+          // Request exact alarm permission
+          final bool? granted = await androidImplementation
+              .requestExactAlarmsPermission();
+          AppLogger.info('Exact alarm permission granted: $granted');
+          return granted ?? false;
+        } else {
+          // Android 11 and below don't need exact alarm permission
+          return true;
+        }
+      } catch (e) {
+        AppLogger.error('Error requesting exact alarm permission', e);
         return false;
       }
     }

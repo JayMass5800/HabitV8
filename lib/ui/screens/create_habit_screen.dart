@@ -1005,12 +1005,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 });
               },
             ),
-            // Only show time picker for non-hourly habits
-            if (_notificationsEnabled &&
+            // Show time picker for non-hourly habits when notifications OR alarms are enabled
+            if ((_notificationsEnabled || _alarmEnabled) &&
                 _selectedFrequency != HabitFrequency.hourly) ...[
               const SizedBox(height: 8),
               ListTile(
-                title: const Text('Notification Time'),
+                title: Text(_alarmEnabled ? 'Alarm Time' : 'Notification Time'),
                 subtitle: Text(
                   _notificationTime != null
                       ? _notificationTime!.format(context)
@@ -1021,7 +1021,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               ),
             ],
             // Show info for hourly habits
-            if (_notificationsEnabled &&
+            if ((_notificationsEnabled || _alarmEnabled) &&
                 _selectedFrequency == HabitFrequency.hourly) ...[
               const SizedBox(height: 16),
               Container(
@@ -1343,13 +1343,17 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return;
       }
 
-      // Validate notification time for non-hourly habits
-      if (_notificationsEnabled &&
+      // Validate time for non-hourly habits when notifications or alarms are enabled
+      if ((_notificationsEnabled || _alarmEnabled) &&
           _selectedFrequency != HabitFrequency.hourly &&
           _notificationTime == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a notification time'),
+          SnackBar(
+            content: Text(
+              _alarmEnabled
+                  ? 'Please select an alarm time'
+                  : 'Please select a notification time',
+            ),
             backgroundColor: Colors.red,
           ),
         );
