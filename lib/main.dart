@@ -60,6 +60,14 @@ void main() async {
     // Continue with app startup even if notifications fail
   }
 
+  // Initialize alarm service
+  try {
+    await AlarmService.initialize();
+  } catch (e) {
+    AppLogger.error('Error initializing alarm service', e);
+    // Continue with app startup even if alarm service fails
+  }
+
   // Request only essential permissions during startup (non-blocking)
   // Health permissions will be requested when user accesses health features
   _requestEssentialPermissions();

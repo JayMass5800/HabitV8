@@ -6,8 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:convert';
 import 'logging_service.dart';
-import 'notification_action_service.dart';
-import '../domain/model/habit.dart';
 
 @pragma('vm:entry-point')
 class AlarmService {
@@ -191,35 +189,14 @@ class AlarmService {
 
   /// Get available system alarm sounds
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
-    if (!Platform.isAndroid) {
-      return [
-        {'name': 'Default', 'uri': 'default'},
-      ];
-    }
-
-    try {
-      final alarmSounds = await FlutterRingtoneManager.getRingtoneList(
-        RingtoneType.alarm,
-      );
-
-      final soundList = <Map<String, String>>[];
-      soundList.add({'name': 'Default System Alarm', 'uri': 'default'});
-
-      for (var sound in alarmSounds) {
-        soundList.add({
-          'name': sound['title'] ?? 'Unknown',
-          'uri': sound['uri'] ?? 'default',
-        });
-      }
-
-      AppLogger.info('🔊 Found ${soundList.length} alarm sounds');
-      return soundList;
-    } catch (e) {
-      AppLogger.error('Failed to get alarm sounds', e);
-      return [
-        {'name': 'Default System Alarm', 'uri': 'default'},
-      ];
-    }
+    // For now, return a simple list of default sounds
+    // FlutterRingtoneManager doesn't provide a way to list available sounds
+    return [
+      {'name': 'Default System Alarm', 'uri': 'default'},
+      {'name': 'System Alarm', 'uri': 'alarm'},
+      {'name': 'System Ringtone', 'uri': 'ringtone'},
+      {'name': 'System Notification', 'uri': 'notification'},
+    ];
   }
 
   /// Play alarm sound preview
@@ -227,15 +204,21 @@ class AlarmService {
     if (!Platform.isAndroid) return;
 
     try {
-      if (soundUri == 'default') {
-        await FlutterRingtoneManager.playAlarm();
-      } else {
-        await FlutterRingtoneManager.play(
-          android: AndroidSounds.alarm,
-          ios: IosSounds.glass,
-          looping: false,
-          volume: 0.8,
-        );
+      final ringtoneManager = FlutterRingtoneManager();
+
+      switch (soundUri) {
+        case 'default':
+        case 'alarm':
+          await ringtoneManager.playAlarm();
+          break;
+        case 'ringtone':
+          await ringtoneManager.playRingtone();
+          break;
+        case 'notification':
+          await ringtoneManager.playNotification();
+          break;
+        default:
+          await ringtoneManager.playAlarm();
       }
     } catch (e) {
       AppLogger.error('Failed to play alarm sound preview', e);
@@ -247,7 +230,8 @@ class AlarmService {
     if (!Platform.isAndroid) return;
 
     try {
-      await FlutterRingtoneManager.stop();
+      final ringtoneManager = FlutterRingtoneManager();
+      await ringtoneManager.stop();
     } catch (e) {
       AppLogger.error('Failed to stop alarm sound preview', e);
     }
@@ -411,7 +395,7 @@ class AlarmService {
             ],
           );
 
-      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      final NotificationDetails platformChannelSpecifics = NotificationDetails(
         android: androidPlatformChannelSpecifics,
       );
 
