@@ -743,40 +743,119 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
     if (!mounted) return;
 
+    String? currentlyPlaying;
+
     final selected = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Alarm Sound'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: availableSounds.length,
-            itemBuilder: (context, index) {
-              final sound = availableSounds[index];
-              final soundName = sound['name']!;
-              final isSelected = soundName == _selectedAlarmSoundName;
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Select Alarm Sound'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 400,
+            child: Column(
+              children: [
+                const Text(
+                  'Tap the play button to preview sounds',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: availableSounds.length,
+                    itemBuilder: (context, index) {
+                      final sound = availableSounds[index];
+                      final soundName = sound['name']!;
+                      final soundUri = sound['uri']!;
+                      final soundType = sound['type']!;
+                      final isSelected = soundName == _selectedAlarmSoundName;
+                      final isPlaying = currentlyPlaying == soundUri;
 
-              return RadioListTile<String>(
-                title: Text(soundName),
-                value: soundName,
-                groupValue: _selectedAlarmSoundName,
-                selected: isSelected,
-                onChanged: (value) {
-                  Navigator.of(context).pop(value);
-                },
-              );
-            },
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 2),
+                        child: ListTile(
+                          leading: IconButton(
+                            icon: Icon(
+                              isPlaying ? Icons.stop : Icons.play_arrow,
+                              color: isPlaying ? Colors.red : Colors.blue,
+                            ),
+                            onPressed: () async {
+                              if (isPlaying) {
+                                await AlarmService.stopAlarmSoundPreview();
+                                setDialogState(() {
+                                  currentlyPlaying = null;
+                                });
+                              } else {
+                                await AlarmService.stopAlarmSoundPreview();
+                                await AlarmService.playAlarmSoundPreview(
+                                  soundUri,
+                                );
+                                setDialogState(() {
+                                  currentlyPlaying = soundUri;
+                                });
+
+                                // Auto-stop after 3 seconds
+                                Future.delayed(
+                                  const Duration(seconds: 3),
+                                  () async {
+                                    await AlarmService.stopAlarmSoundPreview();
+                                    if (mounted) {
+                                      setDialogState(() {
+                                        currentlyPlaying = null;
+                                      });
+                                    }
+                                  },
+                                );
+                              }
+                            },
+                          ),
+                          title: Text(soundName),
+                          subtitle: Text(
+                            soundType == 'system'
+                                ? 'System Sound'
+                                : 'Custom Sound',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: soundType == 'system'
+                                  ? Colors.orange
+                                  : Colors.green,
+                            ),
+                          ),
+                          trailing: Radio<String>(
+                            value: soundName,
+                            groupValue: _selectedAlarmSoundName,
+                            onChanged: (value) {
+                              Navigator.of(context).pop(value);
+                            },
+                          ),
+                          selected: isSelected,
+                          onTap: () {
+                            Navigator.of(context).pop(soundName);
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await AlarmService.stopAlarmSoundPreview();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
       ),
     );
+
+    // Stop any playing sound when dialog closes
+    await AlarmService.stopAlarmSoundPreview();
 
     if (selected != null) {
       setState(() {
