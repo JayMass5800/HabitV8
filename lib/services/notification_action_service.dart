@@ -283,7 +283,7 @@ class NotificationActionService {
               await AlarmService.scheduleSnoozeAlarm(
                 habitId: actualHabitId,
                 habitName: habit.name,
-                snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+                snoozeDelayMinutes: habit.snoozeDelayMinutes,
                 alarmSoundName: habit.alarmSoundName,
               );
 

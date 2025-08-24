@@ -1193,21 +1193,17 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             shrinkWrap: true,
             itemCount: availableSounds.length,
             itemBuilder: (context, index) {
-              final soundName = availableSounds[index];
+              final sound = availableSounds[index];
+              final soundName = sound['name']!;
               final isSelected = soundName == _selectedAlarmSoundName;
 
-              return ListTile(
+              return RadioListTile<String>(
                 title: Text(soundName),
-                leading: Radio<String>(
-                  value: soundName,
-                  groupValue: _selectedAlarmSoundName,
-                  onChanged: (value) {
-                    Navigator.of(context).pop(value);
-                  },
-                ),
+                value: soundName,
+                groupValue: _selectedAlarmSoundName,
                 selected: isSelected,
-                onTap: () {
-                  Navigator.of(context).pop(soundName);
+                onChanged: (value) {
+                  Navigator.of(context).pop(value);
                 },
               );
             },
@@ -1245,18 +1241,13 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               final delay = delays[index];
               final isSelected = delay == _snoozeDelayMinutes;
 
-              return ListTile(
+              return RadioListTile<int>(
                 title: Text('$delay minutes'),
-                leading: Radio<int>(
-                  value: delay,
-                  groupValue: _snoozeDelayMinutes,
-                  onChanged: (value) {
-                    Navigator.of(context).pop(value);
-                  },
-                ),
+                value: delay,
+                groupValue: _snoozeDelayMinutes,
                 selected: isSelected,
-                onTap: () {
-                  Navigator.of(context).pop(delay);
+                onChanged: (value) {
+                  Navigator.of(context).pop(value);
                 },
               );
             },
