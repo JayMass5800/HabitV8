@@ -1,16 +1,17 @@
 // Custom Gradle script to ensure critical health permissions are included in the AAB
 // This addresses the need for heart rate, background health data, and activity recognition
 
-android.applicationVariants.all { variant ->
-    if (variant.buildType.name == 'release') {
-        variant.outputs.all { output ->
+// Use afterEvaluate to ensure Android plugin is configured
+afterEvaluate {
+    android.applicationVariants.configureEach { variant ->
+        if (variant.buildType.name == 'release') {
             // Task to add required permissions after build
-            def addPermissionsTask = tasks.create("add${variant.name.capitalize()}HealthPermissions") {
+            def addPermissionsTask = tasks.register("add${variant.name.capitalize()}HealthPermissions") {
                 doLast {
                     println "Adding critical health permissions for ${variant.name}"
                     
                     // Find the merged manifest
-                    def mergedManifest = file("${buildDir}/intermediates/merged_manifests/${variant.name}/AndroidManifest.xml")
+                    def mergedManifest = file("${layout.buildDirectory.get()}/intermediates/merged_manifests/${variant.name}/AndroidManifest.xml")
                     if (mergedManifest.exists()) {
                         def manifestText = mergedManifest.text
                         
@@ -85,17 +86,17 @@ android.applicationVariants.all { variant ->
                 }
             }
             
-            // Make sure our task runs after manifest processing but before packaging
-            tasks.whenTaskAdded { task ->
-                if (task.name.contains("process${variant.name.capitalize()}Manifest")) {
-                    addPermissionsTask.dependsOn task
-                }
-                if (task.name.contains("package${variant.name.capitalize()}")) {
-                    task.dependsOn addPermissionsTask
-                }
-                if (task.name.contains("bundle${variant.name.capitalize()}")) {
-                    task.dependsOn addPermissionsTask
-                }
+            // Configure task dependencies
+            tasks.named("process${variant.name.capitalize()}Manifest").configure {
+                finalizedBy(addPermissionsTask)
+            }
+            
+            tasks.matching { it.name.contains("package${variant.name.capitalize()}") }.configureEach {
+                dependsOn(addPermissionsTask)
+            }
+            
+            tasks.matching { it.name.contains("bundle${variant.name.capitalize()}") }.configureEach {
+                dependsOn(addPermissionsTask)
             }
         }
     }

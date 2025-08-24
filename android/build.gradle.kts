@@ -1,15 +1,4 @@
-buildscript {
-    val kotlinVersion = "2.1.0"
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath("com.android.tools.build:gradle:8.9.1")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-    }
-}
+// Buildscript block removed - using declarative plugins in settings.gradle.kts
 
 allprojects {
     repositories {

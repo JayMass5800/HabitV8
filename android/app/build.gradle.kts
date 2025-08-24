@@ -149,13 +149,14 @@ dependencies {
 
 // Apply custom health permissions scripts in correct order
 // First remove unwanted permissions, then add required ones
-apply(from = "remove_health_permissions.gradle")
-apply(from = "add_health_permissions.gradle")
+// Temporarily commented out to fix Flutter Gradle plugin issue
+// apply(from = "remove_health_permissions.gradle")
+// apply(from = "add_health_permissions.gradle")
 
 // Add task to verify SCHEDULE_EXACT_ALARMS permission is present
 tasks.register("verifyExactAlarmsPermission") {
     doLast {
-        val releaseManifest = file("${buildDir}/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml")
+        val releaseManifest = file("${layout.buildDirectory.get()}/intermediates/merged_manifests/release/AndroidManifest.xml")
         if (releaseManifest.exists()) {
             val manifestContent = releaseManifest.readText()
             if (manifestContent.contains("android.permission.SCHEDULE_EXACT_ALARMS")) {
