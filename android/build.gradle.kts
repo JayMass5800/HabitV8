@@ -6,10 +6,10 @@ allprojects {
         mavenCentral()
     }
 
-    // Force Java 11 for all modules
+    // Force Java 17 for all modules
     tasks.withType<JavaCompile> {
-        sourceCompatibility = JavaVersion.VERSION_11.toString()
-        targetCompatibility = JavaVersion.VERSION_11.toString()
+        sourceCompatibility = JavaVersion.VERSION_17.toString()
+        targetCompatibility = JavaVersion.VERSION_17.toString()
     }
 
     // Suppress Kotlin delicate API warnings
