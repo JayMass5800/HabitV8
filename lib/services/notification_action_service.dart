@@ -3,6 +3,7 @@ import '../data/database.dart';
 import '../domain/model/habit.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
+import 'alarm_service.dart';
 
 /// Service to handle notification actions and connect them to habit management
 class NotificationActionService {
@@ -278,8 +279,15 @@ class NotificationActionService {
               );
               AppLogger.info('Alarm sound: ${habit.alarmSoundName}');
 
-              // The actual alarm snooze scheduling is handled in the notification service
-              // This callback is just for any additional business logic if needed
+              // Schedule snooze alarm using AlarmService
+              await AlarmService.scheduleSnoozeAlarm(
+                habitId: actualHabitId,
+                habitName: habit.name,
+                snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+                alarmSoundName: habit.alarmSoundName,
+              );
+
+              AppLogger.info('✅ Snooze alarm scheduled for ${habit.name}');
             } else {
               AppLogger.warning(
                 'Habit not found for alarm snooze: $actualHabitId',

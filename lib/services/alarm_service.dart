@@ -1,191 +1,498 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter_ringtone_manager/flutter_ringtone_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:convert';
 import 'logging_service.dart';
+import 'notification_action_service.dart';
+import '../domain/model/habit.dart';
 
-/// Service for managing system alarm sounds and alarm-related functionality
+@pragma('vm:entry-point')
 class AlarmService {
-  static final AlarmService _instance = AlarmService._internal();
-  factory AlarmService() => _instance;
-  AlarmService._internal();
+  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  static bool _isInitialized = false;
+  static const String _alarmDataKey = 'alarm_data_';
+
+  /// Initialize the alarm service
+  static Future<void> initialize() async {
+    if (_isInitialized) return;
+
+    if (Platform.isAndroid) {
+      await AndroidAlarmManager.initialize();
+      AppLogger.info('🚨 AlarmService initialized successfully');
+      _isInitialized = true;
+    } else {
+      AppLogger.info(
+        '🚨 AlarmService: Not Android platform, skipping initialization',
+      );
+    }
+  }
+
+  /// Schedule an exact alarm for a habit
+  static Future<void> scheduleExactAlarm({
+    required int alarmId,
+    required String habitId,
+    required String habitName,
+    required DateTime scheduledTime,
+    required String frequency,
+    String? alarmSoundName,
+    int snoozeDelayMinutes = 10,
+    Map<String, dynamic>? additionalData,
+  }) async {
+    if (!Platform.isAndroid) {
+      AppLogger.warning('Exact alarms only supported on Android');
+      return;
+    }
+
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    // Store alarm data for the callback
+    final alarmData = {
+      'habitId': habitId,
+      'habitName': habitName,
+      'alarmSoundName': alarmSoundName ?? 'default',
+      'snoozeDelayMinutes': snoozeDelayMinutes,
+      'frequency': frequency,
+      'scheduledTime': scheduledTime.toIso8601String(),
+      'additionalData': additionalData ?? {},
+    };
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('$_alarmDataKey$alarmId', jsonEncode(alarmData));
+
+    AppLogger.info('🚨 Scheduling exact alarm:');
+    AppLogger.info('  - Alarm ID: $alarmId');
+    AppLogger.info('  - Habit: $habitName');
+    AppLogger.info('  - Scheduled time: $scheduledTime');
+    AppLogger.info('  - Sound: $alarmSoundName');
+
+    try {
+      await AndroidAlarmManager.oneShotAt(
+        scheduledTime,
+        alarmId,
+        _alarmCallback,
+        exact: true,
+        wakeup: true,
+        allowWhileIdle: true,
+      );
+
+      AppLogger.info('✅ Exact alarm scheduled successfully');
+    } catch (e) {
+      AppLogger.error('❌ Failed to schedule exact alarm', e);
+      rethrow;
+    }
+  }
+
+  /// Schedule recurring exact alarms for a habit
+  static Future<void> scheduleRecurringExactAlarm({
+    required int baseAlarmId,
+    required String habitId,
+    required String habitName,
+    required DateTime firstScheduledTime,
+    required Duration interval,
+    required String frequency,
+    String? alarmSoundName,
+    int snoozeDelayMinutes = 10,
+    int maxRecurrences = 30, // Schedule for next 30 occurrences
+  }) async {
+    if (!Platform.isAndroid) {
+      AppLogger.warning('Exact alarms only supported on Android');
+      return;
+    }
+
+    AppLogger.info('🚨 Scheduling recurring exact alarms for $habitName');
+    AppLogger.info('  - Base ID: $baseAlarmId');
+    AppLogger.info('  - First time: $firstScheduledTime');
+    AppLogger.info('  - Interval: $interval');
+    AppLogger.info('  - Max recurrences: $maxRecurrences');
+
+    DateTime currentTime = firstScheduledTime;
+
+    for (int i = 0; i < maxRecurrences; i++) {
+      final alarmId = baseAlarmId + i;
+
+      await scheduleExactAlarm(
+        alarmId: alarmId,
+        habitId: habitId,
+        habitName: habitName,
+        scheduledTime: currentTime,
+        frequency: frequency,
+        alarmSoundName: alarmSoundName,
+        snoozeDelayMinutes: snoozeDelayMinutes,
+        additionalData: {'recurrence': i, 'baseId': baseAlarmId},
+      );
+
+      currentTime = currentTime.add(interval);
+    }
+
+    AppLogger.info('✅ Scheduled $maxRecurrences recurring alarms');
+  }
+
+  /// Cancel an alarm
+  static Future<void> cancelAlarm(int alarmId) async {
+    if (!Platform.isAndroid) return;
+
+    try {
+      await AndroidAlarmManager.cancel(alarmId);
+
+      // Clean up stored alarm data
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('$_alarmDataKey$alarmId');
+
+      AppLogger.info('🚨 Cancelled alarm ID: $alarmId');
+    } catch (e) {
+      AppLogger.error('❌ Failed to cancel alarm $alarmId', e);
+    }
+  }
+
+  /// Cancel all alarms for a habit
+  static Future<void> cancelHabitAlarms(
+    String habitId, {
+    int maxAlarms = 100,
+  }) async {
+    if (!Platform.isAndroid) return;
+
+    AppLogger.info('🚨 Cancelling all alarms for habit: $habitId');
+
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+
+    int cancelledCount = 0;
+
+    for (String key in keys) {
+      if (key.startsWith(_alarmDataKey)) {
+        try {
+          final alarmDataJson = prefs.getString(key);
+          if (alarmDataJson != null) {
+            final alarmData = jsonDecode(alarmDataJson);
+            if (alarmData['habitId'] == habitId) {
+              final alarmId = int.tryParse(key.substring(_alarmDataKey.length));
+              if (alarmId != null) {
+                await AndroidAlarmManager.cancel(alarmId);
+                await prefs.remove(key);
+                cancelledCount++;
+              }
+            }
+          }
+        } catch (e) {
+          AppLogger.error('Error processing alarm data for key $key', e);
+        }
+      }
+    }
+
+    AppLogger.info('✅ Cancelled $cancelledCount alarms for habit: $habitId');
+  }
 
   /// Get available system alarm sounds
-  static Future<List<AlarmSound>> getSystemAlarmSounds() async {
-    try {
-      AppLogger.info('Fetching system alarm sounds');
-
-      if (Platform.isAndroid) {
-        // For now, return predefined Android alarm sounds
-        // In a real implementation, you would use the actual ringtone manager
-        final List<AlarmSound> androidAlarms = [
-          AlarmSound(name: 'Default Alarm', uri: 'default', id: 'default'),
-          AlarmSound(name: 'Classic Alarm', uri: 'classic', id: 'classic'),
-          AlarmSound(name: 'Digital Alarm', uri: 'digital', id: 'digital'),
-          AlarmSound(name: 'Gentle Wake', uri: 'gentle', id: 'gentle'),
-          AlarmSound(name: 'Morning Bell', uri: 'morning', id: 'morning'),
-          AlarmSound(name: 'Sunrise', uri: 'sunrise', id: 'sunrise'),
-        ];
-
-        AppLogger.info('Found ${androidAlarms.length} alarm sounds on Android');
-        return androidAlarms;
-      } else if (Platform.isIOS) {
-        // iOS has predefined system sounds
-        final List<AlarmSound> iosAlarms = [
-          AlarmSound(name: 'Radar', uri: 'Radar', id: 'radar'),
-          AlarmSound(name: 'Apex', uri: 'Apex', id: 'apex'),
-          AlarmSound(name: 'Beacon', uri: 'Beacon', id: 'beacon'),
-          AlarmSound(name: 'Bulletin', uri: 'Bulletin', id: 'bulletin'),
-          AlarmSound(
-            name: 'By The Seaside',
-            uri: 'By The Seaside',
-            id: 'by_the_seaside',
-          ),
-          AlarmSound(name: 'Chimes', uri: 'Chimes', id: 'chimes'),
-          AlarmSound(name: 'Circuit', uri: 'Circuit', id: 'circuit'),
-          AlarmSound(
-            name: 'Constellation',
-            uri: 'Constellation',
-            id: 'constellation',
-          ),
-          AlarmSound(name: 'Cosmic', uri: 'Cosmic', id: 'cosmic'),
-          AlarmSound(name: 'Crystals', uri: 'Crystals', id: 'crystals'),
-          AlarmSound(name: 'Hillside', uri: 'Hillside', id: 'hillside'),
-          AlarmSound(name: 'Illuminate', uri: 'Illuminate', id: 'illuminate'),
-          AlarmSound(name: 'Night Owl', uri: 'Night Owl', id: 'night_owl'),
-          AlarmSound(name: 'Opening', uri: 'Opening', id: 'opening'),
-          AlarmSound(name: 'Playtime', uri: 'Playtime', id: 'playtime'),
-          AlarmSound(name: 'Presto', uri: 'Presto', id: 'presto'),
-          AlarmSound(name: 'Ripples', uri: 'Ripples', id: 'ripples'),
-          AlarmSound(name: 'Sencha', uri: 'Sencha', id: 'sencha'),
-          AlarmSound(name: 'Signal', uri: 'Signal', id: 'signal'),
-          AlarmSound(name: 'Silk', uri: 'Silk', id: 'silk'),
-          AlarmSound(name: 'Slow Rise', uri: 'Slow Rise', id: 'slow_rise'),
-          AlarmSound(name: 'Stargaze', uri: 'Stargaze', id: 'stargaze'),
-          AlarmSound(name: 'Summit', uri: 'Summit', id: 'summit'),
-          AlarmSound(name: 'Twinkle', uri: 'Twinkle', id: 'twinkle'),
-          AlarmSound(name: 'Uplift', uri: 'Uplift', id: 'uplift'),
-          AlarmSound(name: 'Waves', uri: 'Waves', id: 'waves'),
-        ];
-
-        AppLogger.info('Using ${iosAlarms.length} predefined iOS alarm sounds');
-        return iosAlarms;
-      } else {
-        // Fallback for other platforms
-        AppLogger.warning(
-          'Platform not supported for alarm sounds, using default',
-        );
-        return [
-          AlarmSound(name: 'Default Alarm', uri: 'default', id: 'default'),
-        ];
-      }
-    } catch (e) {
-      AppLogger.error('Error fetching system alarm sounds', e);
-      // Return a default alarm sound if there's an error
-      return [AlarmSound(name: 'Default Alarm', uri: 'default', id: 'default')];
-    }
-  }
-
-  /// Play a preview of the selected alarm sound
-  static Future<void> playAlarmPreview(AlarmSound alarmSound) async {
-    try {
-      AppLogger.info('Playing alarm preview: ${alarmSound.name}');
-
-      if (Platform.isAndroid || Platform.isIOS) {
-        // Use flutter_ringtone_manager to play system alarm sound
-        final FlutterRingtoneManager ringtoneManager = FlutterRingtoneManager();
-        await ringtoneManager.playAlarm();
-      } else {
-        // For other platforms, just log
-        AppLogger.info(
-          'Would play alarm sound: ${alarmSound.name} (${alarmSound.uri})',
-        );
-      }
-    } catch (e) {
-      AppLogger.error('Error playing alarm preview', e);
-    }
-  }
-
-  /// Stop any currently playing alarm preview
-  static Future<void> stopAlarmPreview() async {
-    try {
-      AppLogger.info('Stopping alarm preview');
-      if (Platform.isAndroid || Platform.isIOS) {
-        // Use flutter_ringtone_manager to stop alarm sound
-        final FlutterRingtoneManager ringtoneManager = FlutterRingtoneManager();
-        await ringtoneManager.stop();
-      } else {
-        // For other platforms, just log
-        AppLogger.info('Would stop alarm sound preview');
-      }
-    } catch (e) {
-      AppLogger.error('Error stopping alarm preview', e);
-    }
-  }
-
-  /// Get the default alarm sound for the platform
-  static AlarmSound getDefaultAlarmSound() {
-    if (Platform.isAndroid) {
-      return AlarmSound(name: 'Default Alarm', uri: 'default', id: 'default');
-    } else if (Platform.isIOS) {
-      return AlarmSound(name: 'Radar', uri: 'Radar', id: 'radar');
-    } else {
-      return AlarmSound(name: 'Default Alarm', uri: 'default', id: 'default');
-    }
-  }
-
-  /// Get available alarm sound names (simplified version for UI)
-  static Future<List<String>> getAvailableAlarmSounds() async {
-    try {
-      final alarmSounds = await getSystemAlarmSounds();
-      return alarmSounds.map((sound) => sound.name).toList();
-    } catch (e) {
-      AppLogger.error('Error getting available alarm sounds', e);
+  static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
+    if (!Platform.isAndroid) {
       return [
-        'Default Alarm',
-        'Classic Alarm',
-        'Gentle Wake',
-        'Morning Bell',
-        'Sunrise',
+        {'name': 'Default', 'uri': 'default'},
+      ];
+    }
+
+    try {
+      final alarmSounds = await FlutterRingtoneManager.getRingtoneList(
+        RingtoneType.alarm,
+      );
+
+      final soundList = <Map<String, String>>[];
+      soundList.add({'name': 'Default System Alarm', 'uri': 'default'});
+
+      for (var sound in alarmSounds) {
+        soundList.add({
+          'name': sound['title'] ?? 'Unknown',
+          'uri': sound['uri'] ?? 'default',
+        });
+      }
+
+      AppLogger.info('🔊 Found ${soundList.length} alarm sounds');
+      return soundList;
+    } catch (e) {
+      AppLogger.error('Failed to get alarm sounds', e);
+      return [
+        {'name': 'Default System Alarm', 'uri': 'default'},
       ];
     }
   }
 
-  /// Get snooze delay options in minutes
-  static List<int> getSnoozeDelayOptions() {
-    return [5, 10, 15, 30, 45, 60];
-  }
+  /// Play alarm sound preview
+  static Future<void> playAlarmSoundPreview(String soundUri) async {
+    if (!Platform.isAndroid) return;
 
-  /// Get display text for snooze delay
-  static String getSnoozeDelayText(int minutes) {
-    if (minutes < 60) {
-      return '$minutes minutes';
-    } else {
-      final hours = minutes ~/ 60;
-      final remainingMinutes = minutes % 60;
-      if (remainingMinutes == 0) {
-        return '$hours hour${hours > 1 ? 's' : ''}';
+    try {
+      if (soundUri == 'default') {
+        await FlutterRingtoneManager.playAlarm();
       } else {
-        return '$hours hour${hours > 1 ? 's' : ''} $remainingMinutes minutes';
+        await FlutterRingtoneManager.play(
+          android: AndroidSounds.alarm,
+          ios: IosSounds.glass,
+          looping: false,
+          volume: 0.8,
+        );
       }
+    } catch (e) {
+      AppLogger.error('Failed to play alarm sound preview', e);
     }
   }
-}
 
-/// Model class for alarm sounds
-class AlarmSound {
-  final String name;
-  final String uri;
-  final String id;
+  /// Stop alarm sound preview
+  static Future<void> stopAlarmSoundPreview() async {
+    if (!Platform.isAndroid) return;
 
-  AlarmSound({required this.name, required this.uri, required this.id});
+    try {
+      await FlutterRingtoneManager.stop();
+    } catch (e) {
+      AppLogger.error('Failed to stop alarm sound preview', e);
+    }
+  }
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is AlarmSound && runtimeType == other.runtimeType && id == other.id;
+  /// Schedule snooze alarm
+  static Future<void> scheduleSnoozeAlarm({
+    required String habitId,
+    required String habitName,
+    required int snoozeDelayMinutes,
+    String? alarmSoundName,
+  }) async {
+    final snoozeTime = DateTime.now().add(
+      Duration(minutes: snoozeDelayMinutes),
+    );
+    final snoozeAlarmId = _generateSnoozeAlarmId(habitId);
 
-  @override
-  int get hashCode => id.hashCode;
+    await scheduleExactAlarm(
+      alarmId: snoozeAlarmId,
+      habitId: habitId,
+      habitName: habitName,
+      scheduledTime: snoozeTime,
+      frequency: 'snooze',
+      alarmSoundName: alarmSoundName,
+      snoozeDelayMinutes: snoozeDelayMinutes,
+      additionalData: {'isSnooze': true},
+    );
 
-  @override
-  String toString() => 'AlarmSound(name: $name, id: $id)';
+    AppLogger.info(
+      '⏰ Scheduled snooze alarm for $habitName in $snoozeDelayMinutes minutes',
+    );
+  }
+
+  /// Generate unique alarm ID for habit
+  static int generateHabitAlarmId(String habitId, {String? suffix}) {
+    int hash = 0;
+    final fullId = suffix != null ? '${habitId}_$suffix' : habitId;
+
+    for (int i = 0; i < fullId.length; i++) {
+      hash = ((hash << 5) - hash + fullId.codeUnitAt(i)) & 0x7FFFFFFF;
+    }
+
+    // Ensure positive ID in safe range (1-2147483647)
+    return (hash % 2147483646) + 1;
+  }
+
+  /// Generate snooze alarm ID
+  static int _generateSnoozeAlarmId(String habitId) {
+    return generateHabitAlarmId(habitId, suffix: 'snooze');
+  }
+
+  /// The alarm callback function - this runs when the alarm fires
+  @pragma('vm:entry-point')
+  static Future<void> _alarmCallback(int alarmId) async {
+    AppLogger.info('🚨 ALARM FIRED! ID: $alarmId');
+
+    try {
+      // Get alarm data
+      final prefs = await SharedPreferences.getInstance();
+      final alarmDataJson = prefs.getString('$_alarmDataKey$alarmId');
+
+      if (alarmDataJson == null) {
+        AppLogger.error('No alarm data found for ID: $alarmId');
+        return;
+      }
+
+      final alarmData = jsonDecode(alarmDataJson);
+      final habitId = alarmData['habitId'] as String;
+      final habitName = alarmData['habitName'] as String;
+      final alarmSoundName = alarmData['alarmSoundName'] as String?;
+      final snoozeDelayMinutes = alarmData['snoozeDelayMinutes'] as int? ?? 10;
+      final frequency = alarmData['frequency'] as String;
+      final additionalData =
+          alarmData['additionalData'] as Map<String, dynamic>? ?? {};
+
+      AppLogger.info('🚨 Alarm for habit: $habitName');
+
+      // Show full-screen alarm notification
+      await _showAlarmNotification(
+        alarmId: alarmId,
+        habitId: habitId,
+        habitName: habitName,
+        alarmSoundName: alarmSoundName,
+        snoozeDelayMinutes: snoozeDelayMinutes,
+      );
+
+      // If this is a recurring alarm, schedule the next occurrence
+      if (additionalData['recurrence'] != null && frequency != 'snooze') {
+        await _scheduleNextRecurrence(alarmData, alarmId);
+      }
+
+      // Clean up this alarm's data if it's not recurring
+      if (frequency == 'snooze' || additionalData['recurrence'] == null) {
+        await prefs.remove('$_alarmDataKey$alarmId');
+      }
+    } catch (e) {
+      AppLogger.error('Error in alarm callback', e);
+    }
+  }
+
+  /// Show full-screen alarm notification
+  static Future<void> _showAlarmNotification({
+    required int alarmId,
+    required String habitId,
+    required String habitName,
+    String? alarmSoundName,
+    required int snoozeDelayMinutes,
+  }) async {
+    try {
+      // Initialize notifications if needed
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+
+      const InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
+
+      await _notificationsPlugin.initialize(initializationSettings);
+
+      // Create snooze text
+      String snoozeText = '⏰ Snooze ';
+      if (snoozeDelayMinutes < 60) {
+        snoozeText += '${snoozeDelayMinutes}min';
+      } else {
+        final hours = snoozeDelayMinutes ~/ 60;
+        final minutes = snoozeDelayMinutes % 60;
+        if (minutes == 0) {
+          snoozeText += '${hours}h';
+        } else {
+          snoozeText += '${hours}h ${minutes}min';
+        }
+      }
+
+      final AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+            'habit_alarm_channel',
+            'Habit Alarms',
+            channelDescription: 'High-priority alarm notifications for habits',
+            importance: Importance.max,
+            priority: Priority.max,
+            fullScreenIntent: true,
+            category: AndroidNotificationCategory.alarm,
+            visibility: NotificationVisibility.public,
+            playSound: true,
+            enableVibration: true,
+            enableLights: true,
+            ongoing: true, // Make it persistent until user interacts
+            autoCancel: false,
+            actions: [
+              const AndroidNotificationAction(
+                'complete',
+                '✅ Complete',
+                showsUserInterface: true,
+                cancelNotification: true,
+              ),
+              AndroidNotificationAction(
+                'snooze_alarm',
+                snoozeText,
+                showsUserInterface: true,
+                cancelNotification: true,
+              ),
+            ],
+          );
+
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+      );
+
+      final payload = jsonEncode({
+        'habitId': habitId,
+        'alarmId': alarmId,
+        'snoozeDelayMinutes': snoozeDelayMinutes,
+        'alarmSoundName': alarmSoundName,
+      });
+
+      await _notificationsPlugin.show(
+        alarmId,
+        '🚨 HABIT ALARM: $habitName',
+        'Time to complete your habit! Tap to mark as complete or snooze.',
+        platformChannelSpecifics,
+        payload: payload,
+      );
+
+      AppLogger.info('🚨 Alarm notification shown for: $habitName');
+    } catch (e) {
+      AppLogger.error('Failed to show alarm notification', e);
+    }
+  }
+
+  /// Schedule next recurrence for recurring alarms
+  static Future<void> _scheduleNextRecurrence(
+    Map<String, dynamic> alarmData,
+    int currentAlarmId,
+  ) async {
+    try {
+      final frequency = alarmData['frequency'] as String;
+      final additionalData =
+          alarmData['additionalData'] as Map<String, dynamic>;
+      final baseId = additionalData['baseId'] as int;
+      final currentRecurrence = additionalData['recurrence'] as int;
+
+      // Calculate next occurrence based on frequency
+      Duration interval;
+      switch (frequency) {
+        case 'hourly':
+          interval = const Duration(hours: 1);
+          break;
+        case 'daily':
+          interval = const Duration(days: 1);
+          break;
+        case 'weekly':
+          interval = const Duration(days: 7);
+          break;
+        case 'monthly':
+          interval = const Duration(days: 30); // Approximate
+          break;
+        case 'yearly':
+          interval = const Duration(days: 365); // Approximate
+          break;
+        default:
+          return; // Unknown frequency
+      }
+
+      final nextScheduledTime = DateTime.now().add(interval);
+      final nextAlarmId =
+          baseId + currentRecurrence + 30; // Offset for next batch
+
+      await scheduleExactAlarm(
+        alarmId: nextAlarmId,
+        habitId: alarmData['habitId'],
+        habitName: alarmData['habitName'],
+        scheduledTime: nextScheduledTime,
+        frequency: frequency,
+        alarmSoundName: alarmData['alarmSoundName'],
+        snoozeDelayMinutes: alarmData['snoozeDelayMinutes'],
+        additionalData: {
+          'recurrence': currentRecurrence + 30,
+          'baseId': baseId,
+        },
+      );
+
+      AppLogger.info(
+        '📅 Scheduled next recurrence for ${alarmData['habitName']} at $nextScheduledTime',
+      );
+    } catch (e) {
+      AppLogger.error('Failed to schedule next recurrence', e);
+    }
+  }
 }

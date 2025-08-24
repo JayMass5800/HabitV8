@@ -7,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/notification_service.dart';
 import 'services/notification_action_service.dart';
+import 'services/alarm_service.dart';
 import 'services/permission_service.dart';
 import 'services/theme_service.dart';
 import 'services/logging_service.dart';

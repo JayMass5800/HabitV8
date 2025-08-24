@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'logging_service.dart';
 import 'permission_service.dart';
 import '../data/database.dart';
+import 'alarm_service.dart';
 
 @pragma('vm:entry-point')
 class NotificationService {
@@ -1081,10 +1082,8 @@ class NotificationService {
     AppLogger.debug('Alarm sound: ${habit.alarmSoundName}');
     AppLogger.debug('Snooze delay: ${habit.snoozeDelayMinutes} minutes');
 
-    if (!_isInitialized) {
-      AppLogger.debug('Initializing notification service');
-      await initialize();
-    }
+    // Initialize AlarmService
+    await AlarmService.initialize();
 
     // Skip if alarms are disabled
     if (!habit.alarmEnabled) {
@@ -1092,9 +1091,6 @@ class NotificationService {
       AppLogger.info('Alarms disabled for habit: ${habit.name}');
       return;
     }
-
-    // Note: Exact alarm permission is now handled by individual scheduling methods
-    // to avoid requesting permission during startup which causes Android 14+ issues
 
     // For non-hourly habits, require notification time (alarms use same time as notifications)
     final frequency = habit.frequency.toString().split('.').last;
@@ -1117,11 +1113,9 @@ class NotificationService {
     }
 
     try {
-      // Cancel any existing notifications/alarms for this habit first
-      await cancelHabitNotifications(generateSafeId(habit.id));
-      AppLogger.debug(
-        'Cancelled existing notifications/alarms for habit ID: ${habit.id}',
-      );
+      // Cancel any existing alarms for this habit first
+      await AlarmService.cancelHabitAlarms(habit.id);
+      AppLogger.debug('Cancelled existing alarms for habit ID: ${habit.id}');
 
       final frequency = habit.frequency.toString().split('.').last;
       AppLogger.debug('Habit frequency: $frequency');
@@ -1129,27 +1123,27 @@ class NotificationService {
       switch (frequency) {
         case 'daily':
           AppLogger.debug('Scheduling daily alarms');
-          await _scheduleDailyHabitAlarms(habit, hour, minute);
+          await _scheduleDailyHabitAlarmsNew(habit, hour, minute);
           break;
 
         case 'weekly':
           AppLogger.debug('Scheduling weekly alarms');
-          await _scheduleWeeklyHabitAlarms(habit, hour, minute);
+          await _scheduleWeeklyHabitAlarmsNew(habit, hour, minute);
           break;
 
         case 'monthly':
           AppLogger.debug('Scheduling monthly alarms');
-          await _scheduleMonthlyHabitAlarms(habit, hour, minute);
+          await _scheduleMonthlyHabitAlarmsNew(habit, hour, minute);
           break;
 
         case 'yearly':
           AppLogger.debug('Scheduling yearly alarms');
-          await _scheduleYearlyHabitAlarms(habit, hour, minute);
+          await _scheduleYearlyHabitAlarmsNew(habit, hour, minute);
           break;
 
         case 'hourly':
           AppLogger.debug('Scheduling hourly alarms');
-          await _scheduleHourlyHabitAlarms(habit);
+          await _scheduleHourlyHabitAlarmsNew(habit);
           break;
 
         default:
@@ -2457,5 +2451,319 @@ class NotificationService {
     } catch (e) {
       AppLogger.error('❌ Failed to schedule notifications for all habits', e);
     }
+  }
+
+  // ========== NEW ALARM SCHEDULING METHODS USING ANDROID ALARM MANAGER PLUS ==========
+
+  /// Schedule daily habit alarms using AlarmService
+  static Future<void> _scheduleDailyHabitAlarmsNew(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    final now = DateTime.now();
+    DateTime nextAlarm = DateTime(now.year, now.month, now.day, hour, minute);
+
+    // If the time has passed today, schedule for tomorrow
+    if (nextAlarm.isBefore(now)) {
+      nextAlarm = nextAlarm.add(const Duration(days: 1));
+    }
+
+    final alarmId = AlarmService.generateHabitAlarmId(
+      habit.id,
+      suffix: 'daily',
+    );
+
+    await AlarmService.scheduleRecurringExactAlarm(
+      baseAlarmId: alarmId,
+      habitId: habit.id,
+      habitName: habit.name,
+      firstScheduledTime: nextAlarm,
+      interval: const Duration(days: 1),
+      frequency: 'daily',
+      alarmSoundName: habit.alarmSoundName,
+      snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+    );
+
+    AppLogger.info('✅ Scheduled daily alarms for ${habit.name}');
+  }
+
+  /// Schedule weekly habit alarms using AlarmService
+  static Future<void> _scheduleWeeklyHabitAlarmsNew(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    final selectedWeekdays = habit.selectedWeekdays ?? <int>[];
+    if (selectedWeekdays.isEmpty) {
+      AppLogger.warning('No weekdays selected for weekly habit: ${habit.name}');
+      return;
+    }
+
+    final now = DateTime.now();
+
+    for (int i = 0; i < selectedWeekdays.length; i++) {
+      final weekday = selectedWeekdays[i];
+      DateTime nextAlarm = DateTime(now.year, now.month, now.day, hour, minute);
+
+      // Find the next occurrence of this weekday
+      while (nextAlarm.weekday != weekday) {
+        nextAlarm = nextAlarm.add(const Duration(days: 1));
+      }
+
+      // If the time has passed today, schedule for next week
+      if (nextAlarm.isBefore(now)) {
+        nextAlarm = nextAlarm.add(const Duration(days: 7));
+      }
+
+      final alarmId = AlarmService.generateHabitAlarmId(
+        habit.id,
+        suffix: 'weekly_$weekday',
+      );
+
+      await AlarmService.scheduleRecurringExactAlarm(
+        baseAlarmId: alarmId,
+        habitId: habit.id,
+        habitName: habit.name,
+        firstScheduledTime: nextAlarm,
+        interval: const Duration(days: 7),
+        frequency: 'weekly',
+        alarmSoundName: habit.alarmSoundName,
+        snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+      );
+    }
+
+    AppLogger.info(
+      '✅ Scheduled weekly alarms for ${habit.name} on ${selectedWeekdays.length} days',
+    );
+  }
+
+  /// Schedule monthly habit alarms using AlarmService
+  static Future<void> _scheduleMonthlyHabitAlarmsNew(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    final selectedMonthDays = habit.selectedMonthDays ?? <int>[];
+    if (selectedMonthDays.isEmpty) {
+      AppLogger.warning(
+        'No month days selected for monthly habit: ${habit.name}',
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+
+    for (int i = 0; i < selectedMonthDays.length; i++) {
+      final monthDay = selectedMonthDays[i];
+      DateTime nextAlarm;
+
+      try {
+        nextAlarm = DateTime(now.year, now.month, monthDay, hour, minute);
+
+        // If the date has passed this month, schedule for next month
+        if (nextAlarm.isBefore(now)) {
+          nextAlarm = DateTime(now.year, now.month + 1, monthDay, hour, minute);
+        }
+      } catch (e) {
+        // Handle invalid dates (e.g., February 30th)
+        AppLogger.warning(
+          'Invalid date for monthly habit ${habit.name}: day $monthDay',
+        );
+        continue;
+      }
+
+      final alarmId = AlarmService.generateHabitAlarmId(
+        habit.id,
+        suffix: 'monthly_$monthDay',
+      );
+
+      await AlarmService.scheduleRecurringExactAlarm(
+        baseAlarmId: alarmId,
+        habitId: habit.id,
+        habitName: habit.name,
+        firstScheduledTime: nextAlarm,
+        interval: const Duration(days: 30), // Approximate monthly interval
+        frequency: 'monthly',
+        alarmSoundName: habit.alarmSoundName,
+        snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+      );
+    }
+
+    AppLogger.info(
+      '✅ Scheduled monthly alarms for ${habit.name} on ${selectedMonthDays.length} days',
+    );
+  }
+
+  /// Schedule yearly habit alarms using AlarmService
+  static Future<void> _scheduleYearlyHabitAlarmsNew(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    final selectedYearlyDates = habit.selectedYearlyDates ?? <String>[];
+    if (selectedYearlyDates.isEmpty) {
+      AppLogger.warning(
+        'No yearly dates selected for yearly habit: ${habit.name}',
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+
+    for (int i = 0; i < selectedYearlyDates.length; i++) {
+      final dateString = selectedYearlyDates[i];
+
+      try {
+        // Parse date string (format: "yyyy-MM-dd")
+        final dateParts = dateString.split('-');
+        if (dateParts.length != 3) continue;
+
+        final month = int.parse(dateParts[1]);
+        final day = int.parse(dateParts[2]);
+
+        DateTime nextAlarm = DateTime(now.year, month, day, hour, minute);
+
+        // If the date has passed this year, schedule for next year
+        if (nextAlarm.isBefore(now)) {
+          nextAlarm = DateTime(now.year + 1, month, day, hour, minute);
+        }
+
+        final alarmId = AlarmService.generateHabitAlarmId(
+          habit.id,
+          suffix: 'yearly_${month}_$day',
+        );
+
+        await AlarmService.scheduleRecurringExactAlarm(
+          baseAlarmId: alarmId,
+          habitId: habit.id,
+          habitName: habit.name,
+          firstScheduledTime: nextAlarm,
+          interval: const Duration(days: 365), // Approximate yearly interval
+          frequency: 'yearly',
+          alarmSoundName: habit.alarmSoundName,
+          snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+        );
+      } catch (e) {
+        AppLogger.warning(
+          'Invalid yearly date for habit ${habit.name}: $dateString',
+        );
+        continue;
+      }
+    }
+
+    AppLogger.info(
+      '✅ Scheduled yearly alarms for ${habit.name} on ${selectedYearlyDates.length} dates',
+    );
+  }
+
+  /// Schedule hourly habit alarms using AlarmService
+  static Future<void> _scheduleHourlyHabitAlarmsNew(dynamic habit) async {
+    final now = DateTime.now();
+
+    // For hourly habits, use the specific times set by the user
+    if (habit.hourlyTimes != null && habit.hourlyTimes.isNotEmpty) {
+      AppLogger.debug(
+        'Scheduling hourly alarms for specific times: ${habit.hourlyTimes}',
+      );
+
+      for (int i = 0; i < habit.hourlyTimes.length; i++) {
+        final timeString = habit.hourlyTimes[i];
+
+        try {
+          // Parse the time string (format: "HH:mm")
+          final timeParts = timeString.split(':');
+          final hour = int.tryParse(timeParts[0]) ?? 9;
+          final minute = timeParts.length > 1
+              ? (int.tryParse(timeParts[1]) ?? 0)
+              : 0;
+
+          DateTime nextAlarm = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            hour,
+            minute,
+          );
+
+          // If the time has passed today, schedule for tomorrow
+          if (nextAlarm.isBefore(now)) {
+            nextAlarm = nextAlarm.add(const Duration(days: 1));
+          }
+
+          final alarmId = AlarmService.generateHabitAlarmId(
+            habit.id,
+            suffix: 'hourly_${hour}_$minute',
+          );
+
+          await AlarmService.scheduleRecurringExactAlarm(
+            baseAlarmId: alarmId,
+            habitId: habit.id,
+            habitName: habit.name,
+            firstScheduledTime: nextAlarm,
+            interval: const Duration(days: 1), // Daily recurrence for each time
+            frequency: 'hourly',
+            alarmSoundName: habit.alarmSoundName,
+            snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+          );
+
+          AppLogger.debug(
+            'Scheduled hourly alarm for $timeString at $nextAlarm',
+          );
+        } catch (e) {
+          AppLogger.error(
+            'Error parsing hourly time "$timeString" for habit ${habit.name}',
+            e,
+          );
+        }
+      }
+    } else {
+      // Fallback: For hourly habits without specific times, schedule every hour during active hours (8 AM - 10 PM)
+      AppLogger.debug(
+        'No specific hourly times set, using default hourly alarm schedule (8 AM - 10 PM)',
+      );
+
+      for (int hour = 8; hour <= 22; hour++) {
+        DateTime nextAlarm = DateTime(now.year, now.month, now.day, hour, 0);
+
+        // If the time has passed today, schedule for tomorrow
+        if (nextAlarm.isBefore(now)) {
+          nextAlarm = nextAlarm.add(const Duration(days: 1));
+        }
+
+        final alarmId = AlarmService.generateHabitAlarmId(
+          habit.id,
+          suffix: 'hourly_default_$hour',
+        );
+
+        await AlarmService.scheduleRecurringExactAlarm(
+          baseAlarmId: alarmId,
+          habitId: habit.id,
+          habitName: habit.name,
+          firstScheduledTime: nextAlarm,
+          interval: const Duration(days: 1), // Daily recurrence for each hour
+          frequency: 'hourly',
+          alarmSoundName: habit.alarmSoundName,
+          snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+        );
+      }
+    }
+
+    AppLogger.info('✅ Scheduled hourly alarms for ${habit.name}');
+  }
+
+  /// Get available alarm sounds (delegated to AlarmService)
+  static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
+    return await AlarmService.getAvailableAlarmSounds();
+  }
+
+  /// Play alarm sound preview (delegated to AlarmService)
+  static Future<void> playAlarmSoundPreview(String soundUri) async {
+    await AlarmService.playAlarmSoundPreview(soundUri);
+  }
+
+  /// Stop alarm sound preview (delegated to AlarmService)
+  static Future<void> stopAlarmSoundPreview() async {
+    await AlarmService.stopAlarmSoundPreview();
   }
 }
