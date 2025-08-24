@@ -78,3 +78,6 @@ android/app/upload-keystore.jks
 # Play Store files
 android/fastlane/
 android/metadata/
+
+# FVM Version Cache
+.fvm/
