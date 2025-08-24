@@ -8,6 +8,7 @@ import 'logging_service.dart';
 import 'permission_service.dart';
 import '../data/database.dart';
 import 'hybrid_alarm_service.dart';
+import 'true_alarm_service.dart';
 
 @pragma('vm:entry-point')
 class NotificationService {
@@ -38,34 +39,34 @@ class NotificationService {
     // iOS initialization settings with notification categories
     final DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
-          notificationCategories: [
-            DarwinNotificationCategory(
-              'habit_category',
-              actions: [
-                DarwinNotificationAction.plain(
-                  'complete',
-                  'Complete',
-                  options: {DarwinNotificationActionOption.foreground},
-                ),
-                DarwinNotificationAction.plain(
-                  'snooze',
-                  'Snooze 30min',
-                  options: {DarwinNotificationActionOption.foreground},
-                ),
-              ],
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+      notificationCategories: [
+        DarwinNotificationCategory(
+          'habit_category',
+          actions: [
+            DarwinNotificationAction.plain(
+              'complete',
+              'Complete',
+              options: {DarwinNotificationActionOption.foreground},
+            ),
+            DarwinNotificationAction.plain(
+              'snooze',
+              'Snooze 30min',
+              options: {DarwinNotificationActionOption.foreground},
             ),
           ],
-        );
+        ),
+      ],
+    );
 
     // Combined initialization settings
     final InitializationSettings initializationSettings =
         InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsIOS,
-        );
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
 
     // Initialize the plugin
     await _notificationsPlugin.initialize(
@@ -109,46 +110,44 @@ class NotificationService {
   /// Create Android notification channels
   static Future<void> _createNotificationChannels() async {
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidImplementation != null) {
       // Create habit notification channel
       const AndroidNotificationChannel habitChannel =
           AndroidNotificationChannel(
-            'habit_channel',
-            'Habit Notifications',
-            description: 'Notifications for habit reminders',
-            importance: Importance.max,
-            playSound: true,
-            enableVibration: true,
-          );
+        'habit_channel',
+        'Habit Notifications',
+        description: 'Notifications for habit reminders',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      );
 
       // Create scheduled habit notification channel
       const AndroidNotificationChannel scheduledHabitChannel =
           AndroidNotificationChannel(
-            'habit_scheduled_channel',
-            'Scheduled Habit Notifications',
-            description: 'Scheduled notifications for habit reminders',
-            importance: Importance.max,
-            playSound: true,
-            enableVibration: true,
-          );
+        'habit_scheduled_channel',
+        'Scheduled Habit Notifications',
+        description: 'Scheduled notifications for habit reminders',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+      );
 
       // Create alarm notification channel with highest priority
       const AndroidNotificationChannel alarmChannel =
           AndroidNotificationChannel(
-            'habit_alarm_channel',
-            'Habit Alarms',
-            description: 'High-priority alarm notifications for habits',
-            importance: Importance.max,
-            playSound: true,
-            enableVibration: true,
-            enableLights: true,
-            showBadge: true,
-          );
+        'habit_alarm_channel',
+        'Habit Alarms',
+        description: 'High-priority alarm notifications for habits',
+        importance: Importance.max,
+        playSound: true,
+        enableVibration: true,
+        enableLights: true,
+        showBadge: true,
+      );
 
       await androidImplementation.createNotificationChannel(habitChannel);
       await androidImplementation.createNotificationChannel(
@@ -170,10 +169,8 @@ class NotificationService {
   /// Permissions will be requested contextually when actually needed
   static Future<void> _requestAndroidPermissions() async {
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidImplementation != null) {
       // DO NOT request notification permission during initialization on Android 13+
@@ -223,14 +220,14 @@ class NotificationService {
       // Check if we already have exact alarm permission
       final bool hasExactAlarmPermission =
           await PermissionService.hasExactAlarmPermission().timeout(
-            const Duration(seconds: 5),
-            onTimeout: () {
-              AppLogger.warning(
-                'Exact alarm permission check timed out in notification service - assuming false',
-              );
-              return false;
-            },
+        const Duration(seconds: 5),
+        onTimeout: () {
+          AppLogger.warning(
+            'Exact alarm permission check timed out in notification service - assuming false',
           );
+          return false;
+        },
+      );
       if (hasExactAlarmPermission) {
         AppLogger.info('Exact alarm permission already available');
         return true;
@@ -244,15 +241,16 @@ class NotificationService {
       // For Android 12 with SCHEDULE_EXACT_ALARM: May require user action
       // We'll attempt to request it, but don't block the UI if it fails
       final bool exactAlarmGranted =
-          await PermissionService.requestExactAlarmPermissionWithContext().timeout(
-            const Duration(seconds: 20),
-            onTimeout: () {
-              AppLogger.warning(
-                'Exact alarm permission request timed out in notification service - continuing without exact alarms',
-              );
-              return false;
-            },
+          await PermissionService.requestExactAlarmPermissionWithContext()
+              .timeout(
+        const Duration(seconds: 20),
+        onTimeout: () {
+          AppLogger.warning(
+            'Exact alarm permission request timed out in notification service - continuing without exact alarms',
           );
+          return false;
+        },
+      );
 
       if (exactAlarmGranted) {
         AppLogger.info(
@@ -638,13 +636,13 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          'habit_channel',
-          'Habit Notifications',
-          channelDescription: 'Notifications for habit reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-          showWhen: false,
-        );
+      'habit_channel',
+      'Habit Notifications',
+      channelDescription: 'Notifications for habit reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails();
@@ -684,12 +682,12 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          'habit_scheduled_channel',
-          'Scheduled Habit Notifications',
-          channelDescription: 'Scheduled notifications for habit reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-        );
+      'habit_scheduled_channel',
+      'Scheduled Habit Notifications',
+      channelDescription: 'Scheduled notifications for habit reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails();
@@ -762,9 +760,8 @@ class NotificationService {
     );
 
     // Additional validation
-    final secondsUntilNotification = tzScheduledTime
-        .difference(tz.TZDateTime.now(tz.local))
-        .inSeconds;
+    final secondsUntilNotification =
+        tzScheduledTime.difference(tz.TZDateTime.now(tz.local)).inSeconds;
     AppLogger.debug('Seconds until TZ notification: $secondsUntilNotification');
 
     if (secondsUntilNotification < 0) {
@@ -821,13 +818,12 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          'habit_daily_channel',
-          'Daily Habit Notifications',
-          channelDescription:
-              'Daily recurring notifications for habit reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-        );
+      'habit_daily_channel',
+      'Daily Habit Notifications',
+      channelDescription: 'Daily recurring notifications for habit reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails();
@@ -1082,8 +1078,8 @@ class NotificationService {
     AppLogger.debug('Alarm sound: ${habit.alarmSoundName}');
     AppLogger.debug('Snooze delay: ${habit.snoozeDelayMinutes} minutes');
 
-    // Initialize AlarmService
-    await AlarmService.initialize();
+    // Initialize TrueAlarmService
+    await TrueAlarmService.initialize();
 
     // Skip if alarms are disabled
     if (!habit.alarmEnabled) {
@@ -1114,7 +1110,7 @@ class NotificationService {
 
     try {
       // Cancel any existing alarms for this habit first
-      await AlarmService.cancelHabitAlarms(habit.id);
+      await TrueAlarmService.cancelHabitAlarms(habit.id);
       AppLogger.debug('Cancelled existing alarms for habit ID: ${habit.id}');
 
       final frequency = habit.frequency.toString().split('.').last;
@@ -1362,9 +1358,8 @@ class NotificationService {
           // Parse the time string (format: "HH:mm")
           final timeParts = timeString.split(':');
           final hour = int.tryParse(timeParts[0]) ?? 9;
-          final minute = timeParts.length > 1
-              ? (int.tryParse(timeParts[1]) ?? 0)
-              : 0;
+          final minute =
+              timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
 
           DateTime nextNotification = DateTime(
             now.year,
@@ -1578,9 +1573,8 @@ class NotificationService {
           // Parse the time string (format: "HH:mm")
           final timeParts = timeString.split(':');
           final hour = int.tryParse(timeParts[0]) ?? 9;
-          final minute = timeParts.length > 1
-              ? (int.tryParse(timeParts[1]) ?? 0)
-              : 0;
+          final minute =
+              timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
 
           DateTime nextAlarm = DateTime(
             now.year,
@@ -1646,8 +1640,7 @@ class NotificationService {
     // Generate a much smaller base hash to leave room for multiplications and additions
     int hash = 0;
     for (int i = 0; i < habitId.length; i++) {
-      hash =
-          ((hash << 3) - hash + habitId.codeUnitAt(i)) &
+      hash = ((hash << 3) - hash + habitId.codeUnitAt(i)) &
           0xFFFFFF; // Use 24 bits max
     }
     // Ensure we have a reasonable range for the base ID (1-16777215)
@@ -1656,7 +1649,7 @@ class NotificationService {
 
   /// Get pending notifications
   static Future<List<PendingNotificationRequest>>
-  getPendingNotifications() async {
+      getPendingNotifications() async {
     return await _notificationsPlugin.pendingNotificationRequests();
   }
 
@@ -1664,10 +1657,8 @@ class NotificationService {
   static Future<bool> areNotificationsEnabled() async {
     if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          _notificationsPlugin
-              .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin
-              >();
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
       if (androidImplementation != null) {
         return await androidImplementation.areNotificationsEnabled() ?? false;
@@ -1699,31 +1690,31 @@ class NotificationService {
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          'habit_channel',
-          'Habit Notifications',
-          channelDescription: 'Notifications for habit reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-          showWhen: false,
-          enableVibration: true,
-          playSound: true,
-          actions: [
-            const AndroidNotificationAction(
-              'complete',
-              '✅ Complete',
-              showsUserInterface: false,
-              cancelNotification: true,
-              allowGeneratedReplies: false,
-            ),
-            const AndroidNotificationAction(
-              'snooze',
-              '⏰ Snooze 30min',
-              showsUserInterface: false,
-              cancelNotification: true,
-              allowGeneratedReplies: false,
-            ),
-          ],
-        );
+      'habit_channel',
+      'Habit Notifications',
+      channelDescription: 'Notifications for habit reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+      enableVibration: true,
+      playSound: true,
+      actions: [
+        const AndroidNotificationAction(
+          'complete',
+          '✅ Complete',
+          showsUserInterface: false,
+          cancelNotification: true,
+          allowGeneratedReplies: false,
+        ),
+        const AndroidNotificationAction(
+          'snooze',
+          '⏰ Snooze 30min',
+          showsUserInterface: false,
+          cancelNotification: true,
+          allowGeneratedReplies: false,
+        ),
+      ],
+    );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails(categoryIdentifier: 'habit_category');
@@ -1765,28 +1756,28 @@ class NotificationService {
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          'habit_scheduled_channel',
-          'Scheduled Habit Notifications',
-          channelDescription: 'Scheduled notifications for habit reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-          actions: [
-            const AndroidNotificationAction(
-              'complete',
-              '✅ Complete',
-              showsUserInterface: true,
-              cancelNotification: true,
-              allowGeneratedReplies: false,
-            ),
-            const AndroidNotificationAction(
-              'snooze',
-              '⏰ Snooze 30min',
-              showsUserInterface: true,
-              cancelNotification: true,
-              allowGeneratedReplies: false,
-            ),
-          ],
-        );
+      'habit_scheduled_channel',
+      'Scheduled Habit Notifications',
+      channelDescription: 'Scheduled notifications for habit reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+      actions: [
+        const AndroidNotificationAction(
+          'complete',
+          '✅ Complete',
+          showsUserInterface: true,
+          cancelNotification: true,
+          allowGeneratedReplies: false,
+        ),
+        const AndroidNotificationAction(
+          'snooze',
+          '⏰ Snooze 30min',
+          showsUserInterface: true,
+          cancelNotification: true,
+          allowGeneratedReplies: false,
+        ),
+      ],
+    );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails(categoryIdentifier: 'habit_category');
@@ -1870,8 +1861,8 @@ class NotificationService {
       }
     }
 
-    final AndroidNotificationDetails
-    androidPlatformChannelSpecifics = AndroidNotificationDetails(
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
       'habit_alarm_channel',
       'Habit Alarms',
       channelDescription: 'High-priority alarm notifications for habits',
@@ -1906,15 +1897,15 @@ class NotificationService {
 
     final DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails(
-          categoryIdentifier: 'habit_category',
-          sound: alarmSoundName != null && alarmSoundName != 'default'
-              ? alarmSoundName
-              : 'default',
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-          interruptionLevel: InterruptionLevel.critical,
-        );
+      categoryIdentifier: 'habit_category',
+      sound: alarmSoundName != null && alarmSoundName != 'default'
+          ? alarmSoundName
+          : 'default',
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      interruptionLevel: InterruptionLevel.critical,
+    );
 
     final NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
@@ -2019,14 +2010,12 @@ class NotificationService {
 
     if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          _notificationsPlugin
-              .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin
-              >();
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
       if (androidImplementation != null) {
-        debugInfo['notificationsEnabled'] = await androidImplementation
-            .areNotificationsEnabled();
+        debugInfo['notificationsEnabled'] =
+            await androidImplementation.areNotificationsEnabled();
 
         // Check exact alarm permission status
         final bool canScheduleExact = await canScheduleExactAlarms();
@@ -2117,10 +2106,8 @@ class NotificationService {
     if (!Platform.isAndroid) return true;
 
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidImplementation != null) {
       try {
@@ -2129,8 +2116,8 @@ class NotificationService {
 
         if (isAndroid12Plus) {
           // On Android 12+, check if exact alarms are permitted
-          final bool? canSchedule = await androidImplementation
-              .canScheduleExactNotifications();
+          final bool? canSchedule =
+              await androidImplementation.canScheduleExactNotifications();
           AppLogger.info('Can schedule exact alarms: $canSchedule');
           return canSchedule ?? false;
         } else {
@@ -2150,10 +2137,8 @@ class NotificationService {
     if (!Platform.isAndroid) return true;
 
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidImplementation != null) {
       try {
@@ -2162,8 +2147,8 @@ class NotificationService {
 
         if (isAndroid12Plus) {
           // Request exact alarm permission
-          final bool? granted = await androidImplementation
-              .requestExactAlarmsPermission();
+          final bool? granted =
+              await androidImplementation.requestExactAlarmsPermission();
           AppLogger.info('Exact alarm permission granted: $granted');
           return granted ?? false;
         } else {
@@ -2183,10 +2168,8 @@ class NotificationService {
     if (!Platform.isAndroid) return;
 
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidImplementation != null) {
       try {
@@ -2204,10 +2187,8 @@ class NotificationService {
     if (!Platform.isAndroid) return true;
 
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
 
     if (androidImplementation != null) {
       try {
@@ -2220,8 +2201,8 @@ class NotificationService {
           );
 
           // Request exact alarm permission (this will open Android settings)
-          final bool? granted = await androidImplementation
-              .requestExactAlarmsPermission();
+          final bool? granted =
+              await androidImplementation.requestExactAlarmsPermission();
 
           AppLogger.info('Exact alarm permission request result: $granted');
           return granted ?? false;
@@ -2338,14 +2319,12 @@ class NotificationService {
 
     if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          _notificationsPlugin
-              .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin
-              >();
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
       if (androidImplementation != null) {
-        final bool? notificationsEnabled = await androidImplementation
-            .areNotificationsEnabled();
+        final bool? notificationsEnabled =
+            await androidImplementation.areNotificationsEnabled();
         AppLogger.info('🔔 Notifications enabled: $notificationsEnabled');
 
         final bool canScheduleExact = await canScheduleExactAlarms();
@@ -2441,7 +2420,7 @@ class NotificationService {
       nextAlarm = nextAlarm.add(const Duration(days: 1));
     }
 
-    final alarmId = AlarmService.generateHabitAlarmId(
+    final alarmId = TrueAlarmService.generateHabitAlarmId(
       habit.id,
       suffix: 'daily',
     );
@@ -2488,7 +2467,7 @@ class NotificationService {
         nextAlarm = nextAlarm.add(const Duration(days: 7));
       }
 
-      final alarmId = AlarmService.generateHabitAlarmId(
+      final alarmId = TrueAlarmService.generateHabitAlarmId(
         habit.id,
         suffix: 'weekly_$weekday',
       );
@@ -2545,7 +2524,7 @@ class NotificationService {
         continue;
       }
 
-      final alarmId = AlarmService.generateHabitAlarmId(
+      final alarmId = TrueAlarmService.generateHabitAlarmId(
         habit.id,
         suffix: 'monthly_$monthDay',
       );
@@ -2601,7 +2580,7 @@ class NotificationService {
           nextAlarm = DateTime(now.year + 1, month, day, hour, minute);
         }
 
-        final alarmId = AlarmService.generateHabitAlarmId(
+        final alarmId = TrueAlarmService.generateHabitAlarmId(
           habit.id,
           suffix: 'yearly_${month}_$day',
         );
@@ -2646,9 +2625,8 @@ class NotificationService {
           // Parse the time string (format: "HH:mm")
           final timeParts = timeString.split(':');
           final hour = int.tryParse(timeParts[0]) ?? 9;
-          final minute = timeParts.length > 1
-              ? (int.tryParse(timeParts[1]) ?? 0)
-              : 0;
+          final minute =
+              timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
 
           DateTime nextAlarm = DateTime(
             now.year,
@@ -2663,7 +2641,7 @@ class NotificationService {
             nextAlarm = nextAlarm.add(const Duration(days: 1));
           }
 
-          final alarmId = AlarmService.generateHabitAlarmId(
+          final alarmId = TrueAlarmService.generateHabitAlarmId(
             habit.id,
             suffix: 'hourly_${hour}_$minute',
           );
@@ -2703,7 +2681,7 @@ class NotificationService {
           nextAlarm = nextAlarm.add(const Duration(days: 1));
         }
 
-        final alarmId = AlarmService.generateHabitAlarmId(
+        final alarmId = TrueAlarmService.generateHabitAlarmId(
           habit.id,
           suffix: 'hourly_default_$hour',
         );
@@ -2726,16 +2704,16 @@ class NotificationService {
 
   /// Get available alarm sounds (delegated to AlarmService)
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
-    return await AlarmService.getAvailableAlarmSounds();
+    return await TrueAlarmService.getAvailableAlarmSounds();
   }
 
   /// Play alarm sound preview (delegated to AlarmService)
   static Future<void> playAlarmSoundPreview(String soundUri) async {
-    await AlarmService.playAlarmSoundPreview(soundUri);
+    await TrueAlarmService.playAlarmSoundPreview(soundUri);
   }
 
   /// Stop alarm sound preview (delegated to AlarmService)
   static Future<void> stopAlarmSoundPreview() async {
-    await AlarmService.stopAlarmSoundPreview();
+    await TrueAlarmService.stopAlarmSoundPreview();
   }
 }
