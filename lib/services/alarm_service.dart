@@ -197,7 +197,7 @@ class AlarmService {
       {'name': 'System Ringtone', 'uri': 'ringtone', 'type': 'system'},
       {'name': 'System Notification', 'uri': 'notification', 'type': 'system'},
 
-      // Custom sounds
+      // Custom sounds (only include sounds that actually exist)
       {
         'name': 'Gentle Chime',
         'uri': 'assets/sounds/gentle_chime.mp3',
@@ -218,26 +218,12 @@ class AlarmService {
         'uri': 'assets/sounds/digital_beep.mp3',
         'type': 'custom',
       },
-      {
-        'name': 'Zen Gong',
-        'uri': 'assets/sounds/zen_gong.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Upbeat Melody',
-        'uri': 'assets/sounds/upbeat_melody.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Soft Piano',
-        'uri': 'assets/sounds/soft_piano.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Ocean Waves',
-        'uri': 'assets/sounds/ocean_waves.mp3',
-        'type': 'custom',
-      },
+      // Note: The following sounds are referenced in README.md but files don't exist:
+      // - zen_gong.mp3
+      // - upbeat_melody.mp3
+      // - soft_piano.mp3
+      // - ocean_waves.mp3
+      // Uncomment and add the files if you want to include them
     ];
   }
 

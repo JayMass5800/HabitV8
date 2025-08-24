@@ -2,16 +2,20 @@
 
 This directory contains custom alarm sounds for the HabitV8 app.
 
-## Sound Files
+## Available Sound Files
 
-- `gentle_chime.mp3` - A soft, pleasant chime sound
-- `morning_bell.mp3` - A clear morning bell sound  
-- `nature_birds.mp3` - Gentle bird sounds for a natural wake-up
-- `digital_beep.mp3` - Classic digital alarm beep
-- `zen_gong.mp3` - Peaceful gong sound
-- `upbeat_melody.mp3` - Energetic melody to motivate
-- `soft_piano.mp3` - Gentle piano notes
-- `ocean_waves.mp3` - Calming ocean sounds
+- `gentle_chime.mp3` - A soft, pleasant chime sound ✅
+- `morning_bell.mp3` - A clear morning bell sound ✅
+- `nature_birds.mp3` - Gentle bird sounds for a natural wake-up ✅
+- `digital_beep.mp3` - Classic digital alarm beep ✅
+
+## Missing Sound Files (Placeholders)
+
+The following sounds are referenced in the code but files don't exist yet:
+- `zen_gong.mp3` - Peaceful gong sound ❌
+- `upbeat_melody.mp3` - Energetic melody to motivate ❌
+- `soft_piano.mp3` - Gentle piano notes ❌
+- `ocean_waves.mp3` - Calming ocean sounds ❌
 
 ## Usage
 
