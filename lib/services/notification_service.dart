@@ -1871,6 +1871,16 @@ class NotificationService {
   }) async {
     if (!_isInitialized) await initialize();
 
+    AppLogger.info('🚨 Scheduling alarm notification:');
+    AppLogger.info('  - ID: $id');
+    AppLogger.info('  - Habit ID: $habitId');
+    AppLogger.info('  - Title: $title');
+    AppLogger.info('  - Scheduled time: $scheduledTime');
+    AppLogger.info(
+      '  - Alarm sound: $alarmSoundName (using default system sound)',
+    );
+    AppLogger.info('  - Snooze delay: ${snoozeDelayMinutes}min');
+
     // Check and request all notification permissions if needed
     final bool permissionsGranted = await _ensureNotificationPermissions();
     if (!permissionsGranted) {
@@ -1894,39 +1904,39 @@ class NotificationService {
       }
     }
 
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-          'habit_alarm_channel',
-          'Habit Alarms',
-          channelDescription: 'High-priority alarm notifications for habits',
-          importance: Importance.max,
-          priority: Priority.max,
-          fullScreenIntent: true,
-          category: AndroidNotificationCategory.alarm,
-          visibility: NotificationVisibility.public,
-          sound: alarmSoundName != null && alarmSoundName != 'default'
-              ? RawResourceAndroidNotificationSound(alarmSoundName)
-              : null,
-          playSound: true,
-          enableVibration: true,
-          enableLights: true,
-          actions: [
-            const AndroidNotificationAction(
-              'complete',
-              '✅ Complete',
-              showsUserInterface: true,
-              cancelNotification: true,
-              allowGeneratedReplies: false,
-            ),
-            AndroidNotificationAction(
-              'snooze_alarm',
-              snoozeText,
-              showsUserInterface: true,
-              cancelNotification: true,
-              allowGeneratedReplies: false,
-            ),
-          ],
-        );
+    final AndroidNotificationDetails
+    androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'habit_alarm_channel',
+      'Habit Alarms',
+      channelDescription: 'High-priority alarm notifications for habits',
+      importance: Importance.max,
+      priority: Priority.max,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
+      // Use default system alarm sound - custom sounds require raw resources
+      // For now, all alarms use the default system sound
+      sound: null, // Let system use default alarm sound
+      playSound: true,
+      enableVibration: true,
+      enableLights: true,
+      actions: [
+        const AndroidNotificationAction(
+          'complete',
+          '✅ Complete',
+          showsUserInterface: true,
+          cancelNotification: true,
+          allowGeneratedReplies: false,
+        ),
+        AndroidNotificationAction(
+          'snooze_alarm',
+          snoozeText,
+          showsUserInterface: true,
+          cancelNotification: true,
+          allowGeneratedReplies: false,
+        ),
+      ],
+    );
 
     final DarwinNotificationDetails iOSPlatformChannelSpecifics =
         DarwinNotificationDetails(
@@ -2405,8 +2415,16 @@ class NotificationService {
     try {
       AppLogger.info('🔄 Scheduling notifications for all existing habits...');
 
+      // First, cancel all existing notifications to prevent duplicates
+      AppLogger.info(
+        '🧹 Cancelling all existing notifications to prevent duplicates...',
+      );
+      await cancelAllNotifications();
+
       // Get all habits from the database
-      final habits = await DatabaseService.getAllHabits();
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+      final habits = await habitService.getAllHabits();
 
       int scheduledCount = 0;
       int skippedCount = 0;

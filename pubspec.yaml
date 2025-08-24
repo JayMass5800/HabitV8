@@ -57,6 +57,8 @@ dependencies:
   table_calendar: ^3.0.9 # Calendar integration for habit events
   device_calendar: ^4.3.3 # Device calendar integration
   flutter_ringtone_manager: ^1.0.0 # For system alarm sounds
+
+  android_alarm_manager_plus: ^3.0.4 # For scheduling exact alarms on Android
   
 
 flutter_icons:
