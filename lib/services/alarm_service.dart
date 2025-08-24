@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter_ringtone_manager/flutter_ringtone_manager.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'dart:convert';
 import 'logging_service.dart';
 
@@ -11,6 +12,7 @@ import 'logging_service.dart';
 class AlarmService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  static final AudioPlayer _audioPlayer = AudioPlayer();
 
   static bool _isInitialized = false;
   static const String _alarmDataKey = 'alarm_data_';
@@ -19,14 +21,21 @@ class AlarmService {
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
-    if (Platform.isAndroid) {
-      await AndroidAlarmManager.initialize();
+    try {
+      // Initialize notifications plugin
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+
+      const InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
+
+      await _notificationsPlugin.initialize(initializationSettings);
+
       AppLogger.info('🚨 AlarmService initialized successfully');
       _isInitialized = true;
-    } else {
-      AppLogger.info(
-        '🚨 AlarmService: Not Android platform, skipping initialization',
-      );
+    } catch (e) {
+      AppLogger.error('Failed to initialize AlarmService', e);
+      rethrow;
     }
   }
 
@@ -41,11 +50,6 @@ class AlarmService {
     int snoozeDelayMinutes = 10,
     Map<String, dynamic>? additionalData,
   }) async {
-    if (!Platform.isAndroid) {
-      AppLogger.warning('Exact alarms only supported on Android');
-      return;
-    }
-
     if (!_isInitialized) {
       await initialize();
     }
@@ -71,13 +75,13 @@ class AlarmService {
     AppLogger.info('  - Sound: $alarmSoundName');
 
     try {
-      await AndroidAlarmManager.oneShotAt(
-        scheduledTime,
-        alarmId,
-        _alarmCallback,
-        exact: true,
-        wakeup: true,
-        allowWhileIdle: true,
+      // Use flutter_local_notifications for scheduling
+      await _scheduleNotificationAlarm(
+        alarmId: alarmId,
+        habitName: habitName,
+        scheduledTime: scheduledTime,
+        alarmSoundName: alarmSoundName,
+        snoozeDelayMinutes: snoozeDelayMinutes,
       );
 
       AppLogger.info('✅ Exact alarm scheduled successfully');
@@ -134,10 +138,9 @@ class AlarmService {
 
   /// Cancel an alarm
   static Future<void> cancelAlarm(int alarmId) async {
-    if (!Platform.isAndroid) return;
-
     try {
-      await AndroidAlarmManager.cancel(alarmId);
+      // Cancel the scheduled notification
+      await _notificationsPlugin.cancel(alarmId);
 
       // Clean up stored alarm data
       final prefs = await SharedPreferences.getInstance();
@@ -154,8 +157,6 @@ class AlarmService {
     String habitId, {
     int maxAlarms = 100,
   }) async {
-    if (!Platform.isAndroid) return;
-
     AppLogger.info('🚨 Cancelling all alarms for habit: $habitId');
 
     final prefs = await SharedPreferences.getInstance();
@@ -172,7 +173,7 @@ class AlarmService {
             if (alarmData['habitId'] == habitId) {
               final alarmId = int.tryParse(key.substring(_alarmDataKey.length));
               if (alarmId != null) {
-                await AndroidAlarmManager.cancel(alarmId);
+                await _notificationsPlugin.cancel(alarmId);
                 await prefs.remove(key);
                 cancelledCount++;
               }
@@ -189,52 +190,179 @@ class AlarmService {
 
   /// Get available system alarm sounds
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
-    // For now, return a simple list of default sounds
-    // FlutterRingtoneManager doesn't provide a way to list available sounds
     return [
-      {'name': 'Default System Alarm', 'uri': 'default'},
-      {'name': 'System Alarm', 'uri': 'alarm'},
-      {'name': 'System Ringtone', 'uri': 'ringtone'},
-      {'name': 'System Notification', 'uri': 'notification'},
+      // System sounds
+      {'name': 'Default System Alarm', 'uri': 'default', 'type': 'system'},
+      {'name': 'System Alarm', 'uri': 'alarm', 'type': 'system'},
+      {'name': 'System Ringtone', 'uri': 'ringtone', 'type': 'system'},
+      {'name': 'System Notification', 'uri': 'notification', 'type': 'system'},
+
+      // Custom sounds
+      {
+        'name': 'Gentle Chime',
+        'uri': 'assets/sounds/gentle_chime.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Morning Bell',
+        'uri': 'assets/sounds/morning_bell.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Nature Birds',
+        'uri': 'assets/sounds/nature_birds.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Digital Beep',
+        'uri': 'assets/sounds/digital_beep.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Zen Gong',
+        'uri': 'assets/sounds/zen_gong.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Upbeat Melody',
+        'uri': 'assets/sounds/upbeat_melody.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Soft Piano',
+        'uri': 'assets/sounds/soft_piano.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Ocean Waves',
+        'uri': 'assets/sounds/ocean_waves.mp3',
+        'type': 'custom',
+      },
     ];
   }
 
   /// Play alarm sound preview
   static Future<void> playAlarmSoundPreview(String soundUri) async {
-    if (!Platform.isAndroid) return;
-
     try {
-      final ringtoneManager = FlutterRingtoneManager();
+      // Stop any currently playing sound
+      await stopAlarmSoundPreview();
 
-      switch (soundUri) {
-        case 'default':
-        case 'alarm':
-          await ringtoneManager.playAlarm();
-          break;
-        case 'ringtone':
-          await ringtoneManager.playRingtone();
-          break;
-        case 'notification':
-          await ringtoneManager.playNotification();
-          break;
-        default:
-          await ringtoneManager.playAlarm();
+      if (soundUri.startsWith('assets/')) {
+        // Play custom sound using audioplayers
+        await _audioPlayer.play(
+          AssetSource(soundUri.replaceFirst('assets/', '')),
+        );
+        AppLogger.info('Playing custom sound preview: $soundUri');
+      } else {
+        // Play system sound using flutter_ringtone_manager
+        if (Platform.isAndroid) {
+          final ringtoneManager = FlutterRingtoneManager();
+
+          switch (soundUri) {
+            case 'default':
+            case 'alarm':
+              await ringtoneManager.playAlarm();
+              break;
+            case 'ringtone':
+              await ringtoneManager.playRingtone();
+              break;
+            case 'notification':
+              await ringtoneManager.playNotification();
+              break;
+            default:
+              await ringtoneManager.playAlarm();
+          }
+          AppLogger.info('Playing system sound preview: $soundUri');
+        }
       }
     } catch (e) {
-      AppLogger.error('Failed to play alarm sound preview', e);
+      AppLogger.error('Failed to play alarm sound preview: $soundUri', e);
     }
   }
 
   /// Stop alarm sound preview
   static Future<void> stopAlarmSoundPreview() async {
-    if (!Platform.isAndroid) return;
-
     try {
-      final ringtoneManager = FlutterRingtoneManager();
-      await ringtoneManager.stop();
+      // Stop audioplayers
+      await _audioPlayer.stop();
+
+      // Stop system ringtone manager
+      if (Platform.isAndroid) {
+        final ringtoneManager = FlutterRingtoneManager();
+        await ringtoneManager.stop();
+      }
     } catch (e) {
       AppLogger.error('Failed to stop alarm sound preview', e);
     }
+  }
+
+  /// Schedule notification-based alarm
+  static Future<void> _scheduleNotificationAlarm({
+    required int alarmId,
+    required String habitName,
+    required DateTime scheduledTime,
+    String? alarmSoundName,
+    required int snoozeDelayMinutes,
+  }) async {
+    // Create snooze text
+    String snoozeText = '⏰ Snooze ';
+    if (snoozeDelayMinutes < 60) {
+      snoozeText += '${snoozeDelayMinutes}min';
+    } else {
+      final hours = snoozeDelayMinutes ~/ 60;
+      final minutes = snoozeDelayMinutes % 60;
+      if (minutes == 0) {
+        snoozeText += '${hours}h';
+      } else {
+        snoozeText += '${hours}h ${minutes}min';
+      }
+    }
+
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'habit_alarm_channel',
+          'Habit Alarms',
+          channelDescription: 'High-priority alarm notifications for habits',
+          importance: Importance.max,
+          priority: Priority.max,
+          fullScreenIntent: true,
+          category: AndroidNotificationCategory.alarm,
+          visibility: NotificationVisibility.public,
+          playSound: true,
+          enableVibration: true,
+          enableLights: true,
+          ongoing: true,
+          autoCancel: false,
+          actions: [
+            const AndroidNotificationAction(
+              'complete',
+              '✅ Complete',
+              showsUserInterface: true,
+              cancelNotification: true,
+            ),
+            AndroidNotificationAction(
+              'snooze_alarm',
+              snoozeText,
+              showsUserInterface: true,
+              cancelNotification: true,
+            ),
+          ],
+        );
+
+    final NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
+
+    await _notificationsPlugin.zonedSchedule(
+      alarmId,
+      '🚨 HABIT ALARM: $habitName',
+      'Time to complete your habit! Tap to mark as complete or snooze.',
+      tz.TZDateTime.from(scheduledTime, tz.local),
+      platformChannelSpecifics,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
   }
 
   /// Schedule snooze alarm

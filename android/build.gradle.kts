@@ -1,4 +1,4 @@
-// Buildscript block removed - using declarative plugins in settings.gradle.kts
+// Using declarative plugins in settings.gradle.kts
 
 allprojects {
     repositories {

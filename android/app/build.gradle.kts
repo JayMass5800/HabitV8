@@ -11,7 +11,7 @@ if (keystorePropertiesFile.exists()) {
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Apply Flutter plugin last to avoid evaluation issues
     id("dev.flutter.flutter-gradle-plugin")
 }
 

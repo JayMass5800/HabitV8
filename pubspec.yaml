@@ -57,8 +57,9 @@ dependencies:
   table_calendar: ^3.0.9 # Calendar integration for habit events
   device_calendar: ^4.3.3 # Device calendar integration
   flutter_ringtone_manager: ^1.0.0 # For system alarm sounds
+  audioplayers: ^6.1.0 # For playing custom alarm sounds
 
-  android_alarm_manager_plus: ^4.0.8 # For scheduling exact alarms on Android
+  # android_alarm_manager_plus: ^4.0.8 # For scheduling exact alarms on Android - causes Gradle build issues
   
 
 flutter_icons:
@@ -87,9 +88,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/sounds/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
