@@ -58,6 +58,7 @@ dependencies:
   device_calendar: ^4.3.3 # Device calendar integration
   flutter_ringtone_manager: ^1.0.0 # For system alarm sounds
   audioplayers: ^6.1.0 # For playing custom alarm sounds
+  alarm: ^4.0.0 # For true system alarms that override DND
 
   # android_alarm_manager_plus: ^4.0.8 # For scheduling exact alarms on Android - causes Gradle build issues
   

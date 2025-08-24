@@ -11,7 +11,7 @@ import '../../services/health_habit_mapping_service.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/comprehensive_habit_suggestions_service.dart';
 import '../../services/logging_service.dart';
-import '../../services/alarm_service.dart';
+import '../../services/hybrid_alarm_service.dart';
 
 class CreateHabitScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? prefilledData;
@@ -1179,7 +1179,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   }
 
   Future<void> _selectAlarmSound() async {
-    final availableSounds = await AlarmService.getAvailableAlarmSounds();
+    final availableSounds = await HybridAlarmService.getAvailableAlarmSounds();
 
     if (!mounted) return;
 
@@ -1222,13 +1222,13 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                             ),
                             onPressed: () async {
                               if (isPlaying) {
-                                await AlarmService.stopAlarmSoundPreview();
+                                await HybridAlarmService.stopAlarmSoundPreview();
                                 setDialogState(() {
                                   currentlyPlaying = null;
                                 });
                               } else {
-                                await AlarmService.stopAlarmSoundPreview();
-                                await AlarmService.playAlarmSoundPreview(
+                                await HybridAlarmService.stopAlarmSoundPreview();
+                                await HybridAlarmService.playAlarmSoundPreview(
                                   soundUri,
                                 );
                                 setDialogState(() {
@@ -1239,7 +1239,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                 Future.delayed(
                                   const Duration(seconds: 3),
                                   () async {
-                                    await AlarmService.stopAlarmSoundPreview();
+                                    await HybridAlarmService.stopAlarmSoundPreview();
                                     if (mounted) {
                                       setDialogState(() {
                                         currentlyPlaying = null;
@@ -1288,7 +1288,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                await AlarmService.stopAlarmSoundPreview();
+                await HybridAlarmService.stopAlarmSoundPreview();
                 if (context.mounted) {
                   Navigator.of(context).pop();
                 }
@@ -1301,7 +1301,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     );
 
     // Stop any playing sound when dialog closes
-    await AlarmService.stopAlarmSoundPreview();
+    await HybridAlarmService.stopAlarmSoundPreview();
 
     if (selected != null) {
       setState(() {

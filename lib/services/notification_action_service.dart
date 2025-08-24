@@ -3,7 +3,7 @@ import '../data/database.dart';
 import '../domain/model/habit.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
-import 'alarm_service.dart';
+import 'hybrid_alarm_service.dart';
 
 /// Service to handle notification actions and connect them to habit management
 class NotificationActionService {
@@ -279,8 +279,8 @@ class NotificationActionService {
               );
               AppLogger.info('Alarm sound: ${habit.alarmSoundName}');
 
-              // Schedule snooze alarm using AlarmService
-              await AlarmService.scheduleSnoozeAlarm(
+              // Schedule snooze alarm using HybridAlarmService
+              await HybridAlarmService.scheduleSnoozeAlarm(
                 habitId: actualHabitId,
                 habitName: habit.name,
                 snoozeDelayMinutes: habit.snoozeDelayMinutes,

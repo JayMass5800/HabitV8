@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'logging_service.dart';
 import 'permission_service.dart';
 import '../data/database.dart';
-import 'alarm_service.dart';
+import 'hybrid_alarm_service.dart';
 
 @pragma('vm:entry-point')
 class NotificationService {
@@ -2446,7 +2446,7 @@ class NotificationService {
       suffix: 'daily',
     );
 
-    await AlarmService.scheduleRecurringExactAlarm(
+    await HybridAlarmService.scheduleRecurringExactAlarm(
       baseAlarmId: alarmId,
       habitId: habit.id,
       habitName: habit.name,
@@ -2493,7 +2493,7 @@ class NotificationService {
         suffix: 'weekly_$weekday',
       );
 
-      await AlarmService.scheduleRecurringExactAlarm(
+      await HybridAlarmService.scheduleRecurringExactAlarm(
         baseAlarmId: alarmId,
         habitId: habit.id,
         habitName: habit.name,
@@ -2550,7 +2550,7 @@ class NotificationService {
         suffix: 'monthly_$monthDay',
       );
 
-      await AlarmService.scheduleRecurringExactAlarm(
+      await HybridAlarmService.scheduleRecurringExactAlarm(
         baseAlarmId: alarmId,
         habitId: habit.id,
         habitName: habit.name,
@@ -2606,7 +2606,7 @@ class NotificationService {
           suffix: 'yearly_${month}_$day',
         );
 
-        await AlarmService.scheduleRecurringExactAlarm(
+        await HybridAlarmService.scheduleRecurringExactAlarm(
           baseAlarmId: alarmId,
           habitId: habit.id,
           habitName: habit.name,
@@ -2668,7 +2668,7 @@ class NotificationService {
             suffix: 'hourly_${hour}_$minute',
           );
 
-          await AlarmService.scheduleRecurringExactAlarm(
+          await HybridAlarmService.scheduleRecurringExactAlarm(
             baseAlarmId: alarmId,
             habitId: habit.id,
             habitName: habit.name,
@@ -2708,7 +2708,7 @@ class NotificationService {
           suffix: 'hourly_default_$hour',
         );
 
-        await AlarmService.scheduleRecurringExactAlarm(
+        await HybridAlarmService.scheduleRecurringExactAlarm(
           baseAlarmId: alarmId,
           habitId: habit.id,
           habitName: habit.name,

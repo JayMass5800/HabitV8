@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'services/notification_service.dart';
 import 'services/notification_action_service.dart';
 import 'services/alarm_service.dart';
+import 'services/true_alarm_service.dart';
+import 'services/hybrid_alarm_service.dart';
 import 'services/permission_service.dart';
 import 'services/theme_service.dart';
 import 'services/logging_service.dart';
@@ -60,11 +62,11 @@ void main() async {
     // Continue with app startup even if notifications fail
   }
 
-  // Initialize alarm service
+  // Initialize hybrid alarm service (handles both notification and system alarms)
   try {
-    await AlarmService.initialize();
+    await HybridAlarmService.initialize();
   } catch (e) {
-    AppLogger.error('Error initializing alarm service', e);
+    AppLogger.error('Error initializing hybrid alarm service', e);
     // Continue with app startup even if alarm service fails
   }
 

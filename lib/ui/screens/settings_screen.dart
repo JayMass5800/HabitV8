@@ -15,6 +15,7 @@ import '../../services/calendar_renewal_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/onboarding_service.dart';
 import '../../services/automatic_habit_completion_service.dart';
+import '../../services/hybrid_alarm_service.dart';
 import '../../data/database.dart';
 import '../widgets/calendar_selection_dialog.dart';
 import '../widgets/health_education_dialog.dart';
@@ -36,6 +37,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   bool _calendarSync = false;
   bool _healthDataSync = false;
   bool _autoCompletionEnabled = false;
+  bool _useSystemAlarms = false;
   bool _isLoading = true;
   String _defaultScreen = 'Timeline'; // Default startup screen
 
@@ -104,6 +106,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       // Load auto-completion settings
       final autoCompletionEnabled =
           await AutomaticHabitCompletionService.isServiceEnabled();
+
+      // Load alarm type preference
+      final useSystemAlarms = HybridAlarmService.useSystemAlarms;
       final healthSyncPreference = await _loadHealthSyncPreference();
       bool healthStatus = false;
 
@@ -123,6 +128,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         _calendarSync = calendarSyncEnabled;
         _healthDataSync = healthStatus;
         _autoCompletionEnabled = autoCompletionEnabled;
+        _useSystemAlarms = useSystemAlarms;
         _isLoading = false;
       });
     } catch (e) {
@@ -387,6 +393,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   onTap: _exactAlarmsEnabled
                       ? null
                       : () => _requestExactAlarmPermission(),
+                ),
+                const Divider(),
+                ListTile(
+                  title: const Text('Alarm Type'),
+                  subtitle: Text(HybridAlarmService.getAlarmTypeDescription()),
+                  leading: Icon(
+                    _useSystemAlarms ? Icons.alarm : Icons.notifications_active,
+                    color: _useSystemAlarms ? Colors.red : Colors.blue,
+                  ),
+                  trailing: Switch(
+                    value: _useSystemAlarms,
+                    onChanged: (value) => _toggleAlarmType(value),
+                  ),
+                  onTap: () => _showAlarmTypeInfo(),
                 ),
               ],
             ],
@@ -965,6 +985,127 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ),
       );
     }
+  }
+
+  /// Toggle alarm type between notification-based and system alarms
+  Future<void> _toggleAlarmType(bool useSystemAlarms) async {
+    try {
+      await HybridAlarmService.setUseSystemAlarms(useSystemAlarms);
+
+      setState(() {
+        _useSystemAlarms = useSystemAlarms;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              useSystemAlarms
+                  ? 'Switched to System Alarms - Override Do Not Disturb'
+                  : 'Switched to Notification Alarms - Quick actions available',
+            ),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error toggling alarm type', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error changing alarm type. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show alarm type information dialog
+  void _showAlarmTypeInfo() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Alarm Types'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Choose how you want to receive habit alarms:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 16),
+
+              // System Alarms section
+              Row(
+                children: [
+                  Icon(Icons.alarm, color: Colors.red),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'System Alarms',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...HybridAlarmService.getAlarmTypeBenefits()
+                  .where(
+                    (benefit) => _useSystemAlarms || benefit.startsWith('✅'),
+                  )
+                  .map(
+                    (benefit) => Padding(
+                      padding: const EdgeInsets.only(left: 16, bottom: 4),
+                      child: Text(benefit),
+                    ),
+                  ),
+
+              const SizedBox(height: 16),
+
+              // Notification Alarms section
+              Row(
+                children: [
+                  Icon(Icons.notifications_active, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Notification Alarms',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...HybridAlarmService.getAlarmTypeBenefits()
+                  .where(
+                    (benefit) => !_useSystemAlarms || benefit.startsWith('✅'),
+                  )
+                  .map(
+                    (benefit) => Padding(
+                      padding: const EdgeInsets.only(left: 16, bottom: 4),
+                      child: Text(benefit),
+                    ),
+                  ),
+
+              const SizedBox(height: 16),
+              const Text(
+                'You can change this setting anytime. Existing alarms will use the new type when they next trigger.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _exportData() async {
