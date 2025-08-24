@@ -1437,6 +1437,7 @@ class NotificationService {
   // Old alarm scheduling methods removed - now using AlarmService for exact alarms
 
   /// Schedule weekly habit alarms
+  // ignore: unused_element
   static Future<void> _scheduleWeeklyHabitAlarms(
     dynamic habit,
     int hour,
@@ -1473,6 +1474,7 @@ class NotificationService {
   }
 
   /// Schedule monthly habit alarms
+  // ignore: unused_element
   static Future<void> _scheduleMonthlyHabitAlarms(
     dynamic habit,
     int hour,
@@ -1515,6 +1517,7 @@ class NotificationService {
   }
 
   /// Schedule yearly habit alarms
+  // ignore: unused_element
   static Future<void> _scheduleYearlyHabitAlarms(
     dynamic habit,
     int hour,
@@ -1560,6 +1563,7 @@ class NotificationService {
   }
 
   /// Schedule hourly habit alarms
+  // ignore: unused_element
   static Future<void> _scheduleHourlyHabitAlarms(dynamic habit) async {
     final now = DateTime.now();
 

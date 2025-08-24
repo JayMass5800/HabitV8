@@ -824,14 +824,18 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                           ),
                           trailing: Radio<String>(
                             value: soundName,
+                            // ignore: deprecated_member_use
                             groupValue: _selectedAlarmSoundName,
+                            // ignore: deprecated_member_use
                             onChanged: (value) {
                               Navigator.of(context).pop(value);
                             },
                           ),
                           selected: isSelected,
                           onTap: () {
-                            Navigator.of(context).pop(soundName);
+                            if (mounted) {
+                              Navigator.of(context).pop(soundName);
+                            }
                           },
                         ),
                       );
@@ -845,7 +849,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
             TextButton(
               onPressed: () async {
                 await AlarmService.stopAlarmSoundPreview();
-                Navigator.of(context).pop();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
               },
               child: const Text('Cancel'),
             ),
@@ -883,8 +889,10 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               return RadioListTile<int>(
                 title: Text('$delay minutes'),
                 value: delay,
+                // ignore: deprecated_member_use
                 groupValue: _snoozeDelayMinutes,
                 selected: isSelected,
+                // ignore: deprecated_member_use
                 onChanged: (value) {
                   Navigator.of(context).pop(value);
                 },
