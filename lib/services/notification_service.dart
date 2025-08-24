@@ -1433,40 +1433,8 @@ class NotificationService {
     }
   }
 
-  // ============ ALARM SCHEDULING METHODS ============
-
-  /// Schedule daily habit alarms
-  static Future<void> _scheduleDailyHabitAlarms(
-    dynamic habit,
-    int hour,
-    int minute,
-  ) async {
-    AppLogger.debug('Scheduling daily alarms for ${habit.name}');
-    final now = DateTime.now();
-    DateTime nextAlarm = DateTime(now.year, now.month, now.day, hour, minute);
-
-    // If the time has passed today, schedule for tomorrow
-    if (nextAlarm.isBefore(now)) {
-      nextAlarm = nextAlarm.add(const Duration(days: 1));
-    }
-
-    try {
-      await scheduleHabitAlarm(
-        id: generateSafeId(habit.id),
-        habitId: habit.id.toString(),
-        title: '🚨 ${habit.name}',
-        body: 'Alarm: Time to complete your daily habit!',
-        scheduledTime: nextAlarm,
-        alarmSoundName: habit.alarmSoundName,
-        snoozeDelayMinutes: habit.snoozeDelayMinutes,
-      );
-
-      AppLogger.debug('Scheduled daily alarm for ${habit.name} at $nextAlarm');
-    } catch (e) {
-      AppLogger.error('Error scheduling daily alarm for ${habit.name}', e);
-      rethrow;
-    }
-  }
+  // ============ ALARM SCHEDULING METHODS (DEPRECATED - USING AlarmService) ============
+  // Old alarm scheduling methods removed - now using AlarmService for exact alarms
 
   /// Schedule weekly habit alarms
   static Future<void> _scheduleWeeklyHabitAlarms(
