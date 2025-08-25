@@ -185,9 +185,9 @@ class HybridAlarmService {
   }
 
   /// Check if an alarm is currently ringing (only for system alarms)
-  static bool isRinging(int alarmId) {
+  static Future<bool> isRinging(int alarmId) async {
     if (_useSystemAlarms) {
-      return TrueAlarmService.isRinging(alarmId);
+      return await TrueAlarmService.isRinging(alarmId);
     }
     return false; // Notification alarms don't have a "ringing" state
   }

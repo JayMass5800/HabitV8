@@ -36,7 +36,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   late final List<int> _selectedMonthDays;
   late int _targetCount;
   late int
-  _originalHashCode; // Store original hash code for notification management
+      _originalHashCode; // Store original hash code for notification management
   final List<TimeOfDay> _hourlyTimes = []; // For hourly habits
 
   // Comprehensive categories from the category suggestion service
@@ -128,7 +128,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
-          initialValue: _selectedCategory,
+          value: _selectedCategory,
           decoration: const InputDecoration(
             labelText: 'Category',
             border: OutlineInputBorder(),
@@ -147,9 +147,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           Text(
             'Suggested categories:',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
           const SizedBox(height: 4),
           Wrap(
@@ -512,9 +512,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           Text(
             '${_hourlyTimes.length} times selected',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: _selectedColor,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: _selectedColor,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ],
@@ -582,7 +582,14 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                   _notificationsEnabled = value;
                 });
               },
-              activeThumbColor: _selectedColor,
+              thumbColor: WidgetStateProperty.resolveWith<Color?>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return _selectedColor;
+                  }
+                  return null;
+                },
+              ),
             ),
             // Show time picker for non-hourly habits when notifications OR alarms are enabled
             if ((_notificationsEnabled || _alarmEnabled) &&
@@ -646,9 +653,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
             Text(
               'Alarm Settings',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: _selectedColor,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: _selectedColor,
+                  ),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
@@ -668,7 +675,14 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                   }
                 });
               },
-              activeThumbColor: _selectedColor,
+              thumbColor: WidgetStateProperty.resolveWith<Color?>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return _selectedColor;
+                  }
+                  return null;
+                },
+              ),
             ),
             if (_alarmEnabled) ...[
               const SizedBox(height: 8),
@@ -709,8 +723,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                       child: Text(
                         'Alarms require exact alarm permissions on Android 12+. The app will request this permission when needed.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.orange.shade700,
-                        ),
+                              color: Colors.orange.shade700,
+                            ),
                       ),
                     ),
                   ],
@@ -782,12 +796,14 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                             ),
                             onPressed: () async {
                               if (isPlaying) {
-                                await HybridAlarmService.stopAlarmSoundPreview();
+                                await HybridAlarmService
+                                    .stopAlarmSoundPreview();
                                 setDialogState(() {
                                   currentlyPlaying = null;
                                 });
                               } else {
-                                await HybridAlarmService.stopAlarmSoundPreview();
+                                await HybridAlarmService
+                                    .stopAlarmSoundPreview();
                                 await HybridAlarmService.playAlarmSoundPreview(
                                   soundUri,
                                 );
@@ -799,7 +815,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                                 Future.delayed(
                                   const Duration(seconds: 3),
                                   () async {
-                                    await HybridAlarmService.stopAlarmSoundPreview();
+                                    await HybridAlarmService
+                                        .stopAlarmSoundPreview();
                                     if (mounted) {
                                       setDialogState(() {
                                         currentlyPlaying = null;
@@ -1019,8 +1036,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       try {
         final healthMapping =
             await HealthHabitMappingService.analyzeHabitForHealthMapping(
-              widget.habit,
-            );
+          widget.habit,
+        );
         if (healthMapping != null) {
           // Log successful health mapping analysis
           // Health mapping found for habit: ${widget.habit.name} -> ${healthMapping.healthDataType}

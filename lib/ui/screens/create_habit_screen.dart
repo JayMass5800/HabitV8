@@ -229,7 +229,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                           children: [
                             Text(
                               'Recommended Habit',
-                              style: Theme.of(context).textTheme.titleSmall
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
                                   ?.copyWith(
                                     color: Theme.of(
                                       context,
@@ -239,7 +241,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                             ),
                             Text(
                               'This habit has been pre-filled based on our recommendations. Feel free to customize it!',
-                              style: Theme.of(context).textTheme.bodySmall
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
                                   ?.copyWith(
                                     color: Theme.of(
                                       context,
@@ -327,7 +331,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
-          initialValue: _selectedCategory,
+          value: _selectedCategory,
           decoration: const InputDecoration(
             labelText: 'Category',
             border: OutlineInputBorder(),
@@ -346,9 +350,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           Text(
             'Suggested categories:',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
           const SizedBox(height: 4),
           Wrap(
@@ -539,9 +543,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           Text(
             '${_hourlyTimes.length} times selected',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.green.shade700,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: Colors.green.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ],
@@ -644,9 +648,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               child: Text(
                 'Selected days: ${_selectedMonthDays.map((d) => d.toString()).join(', ')}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.green.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ),
           ],
@@ -753,8 +757,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                         color: isSelected
                             ? _selectedColor
                             : isToday
-                            ? _selectedColor.withValues(alpha: 0.3)
-                            : null,
+                                ? _selectedColor.withValues(alpha: 0.3)
+                                : null,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isSelected || isToday
@@ -770,8 +774,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                             color: isSelected
                                 ? Colors.white
                                 : isToday
-                                ? _selectedColor
-                                : Colors.black,
+                                    ? _selectedColor
+                                    : Colors.black,
                           ),
                         ),
                       ),
@@ -1057,9 +1061,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             Text(
               'Alarm Settings',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: _selectedColor,
-              ),
+                    fontWeight: FontWeight.bold,
+                    color: _selectedColor,
+                  ),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
@@ -1119,8 +1123,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                       child: Text(
                         'Alarms require exact alarm permissions on Android 12+. The app will request this permission when needed.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.orange.shade700,
-                        ),
+                              color: Colors.orange.shade700,
+                            ),
                       ),
                     ),
                   ],
@@ -1222,12 +1226,14 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                             ),
                             onPressed: () async {
                               if (isPlaying) {
-                                await HybridAlarmService.stopAlarmSoundPreview();
+                                await HybridAlarmService
+                                    .stopAlarmSoundPreview();
                                 setDialogState(() {
                                   currentlyPlaying = null;
                                 });
                               } else {
-                                await HybridAlarmService.stopAlarmSoundPreview();
+                                await HybridAlarmService
+                                    .stopAlarmSoundPreview();
                                 await HybridAlarmService.playAlarmSoundPreview(
                                   soundUri,
                                 );
@@ -1239,7 +1245,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                 Future.delayed(
                                   const Duration(seconds: 3),
                                   () async {
-                                    await HybridAlarmService.stopAlarmSoundPreview();
+                                    await HybridAlarmService
+                                        .stopAlarmSoundPreview();
                                     if (mounted) {
                                       setDialogState(() {
                                         currentlyPlaying = null;
@@ -1468,16 +1475,16 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       final Habit habit;
       if (_enableHealthIntegration && _selectedHealthDataType != null) {
         // Create health-integrated habit with custom threshold and level
-        final baseHabit =
-            await HealthEnhancedHabitCreationService.createHealthIntegratedHabit(
-              name: _nameController.text.trim(),
-              description: _descriptionController.text.trim(),
-              frequency: _selectedFrequency,
-              category: _selectedCategory,
-              healthDataType: _selectedHealthDataType,
-              customThreshold: _customThreshold,
-              thresholdLevel: _thresholdLevel,
-            );
+        final baseHabit = await HealthEnhancedHabitCreationService
+            .createHealthIntegratedHabit(
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          frequency: _selectedFrequency,
+          category: _selectedCategory,
+          healthDataType: _selectedHealthDataType,
+          customThreshold: _customThreshold,
+          thresholdLevel: _thresholdLevel,
+        );
 
         // Update with UI-specific properties
         baseHabit.colorValue = _selectedColor.toARGB32();
@@ -1564,8 +1571,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         try {
           final healthMapping =
               await HealthHabitMappingService.analyzeHabitForHealthMapping(
-                habit,
-              );
+            habit,
+          );
           if (healthMapping != null) {
             AppLogger.info(
               'Automatic health mapping found for habit: ${habit.name} -> ${healthMapping.healthDataType}',
@@ -1700,8 +1707,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 Text(
                   'Habit Suggestions',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const Spacer(),
                 TextButton.icon(
@@ -1754,9 +1761,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     return Column(
       children: groupedSuggestions.entries.map((entry) {
         final type = entry.key;
-        final suggestions = entry.value
-            .take(3)
-            .toList(); // Show max 3 per category
+        final suggestions =
+            entry.value.take(3).toList(); // Show max 3 per category
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1774,9 +1780,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                   Text(
                     type,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                   ),
                 ],
               ),

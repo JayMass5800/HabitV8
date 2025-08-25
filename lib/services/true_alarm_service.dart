@@ -307,13 +307,13 @@ class TrueAlarmService {
   }
 
   /// Check if an alarm is currently ringing
-  static bool isRinging(int alarmId) {
-    return Alarm.isRinging(alarmId);
+  static Future<bool> isRinging(int alarmId) async {
+    return await Alarm.isRinging(alarmId);
   }
 
   /// Get all currently set alarms
-  static List<AlarmSettings> getAlarms() {
-    return Alarm.getAlarms();
+  static Future<List<AlarmSettings>> getAlarms() async {
+    return await Alarm.getAlarms();
   }
 
   /// Stop a currently ringing alarm

@@ -21,7 +21,6 @@ import '../widgets/calendar_selection_dialog.dart';
 import '../widgets/health_education_dialog.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/progressive_disclosure.dart';
-import '../widgets/radio_group.dart' as custom_widgets;
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -92,8 +91,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     try {
       final permissionService = PermissionService();
 
-      final notificationStatus = await permissionService
-          .isNotificationPermissionGranted();
+      final notificationStatus =
+          await permissionService.isNotificationPermissionGranted();
 
       // Check exact alarm permission status
       final exactAlarmStatus =
@@ -581,32 +580,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            custom_widgets.RadioGroup<ThemeMode>(
-              value: themeState.themeMode,
+            RadioListTile<ThemeMode>(
+              title: const Text('Light'),
+              value: ThemeMode.light,
+              groupValue: themeState.themeMode,
               onChanged: (value) {
-                ref.read(themeProvider.notifier).setThemeMode(value);
+                ref.read(themeProvider.notifier).setThemeMode(value!);
                 Navigator.of(context).pop();
               },
-              children: [
-                Builder(
-                  builder: (context) => RadioListTile<ThemeMode>(
-                    title: const Text('Light'),
-                    value: ThemeMode.light,
-                  ).withRadioGroup(context),
-                ),
-                Builder(
-                  builder: (context) => RadioListTile<ThemeMode>(
-                    title: const Text('Dark'),
-                    value: ThemeMode.dark,
-                  ).withRadioGroup(context),
-                ),
-                Builder(
-                  builder: (context) => RadioListTile<ThemeMode>(
-                    title: const Text('System'),
-                    value: ThemeMode.system,
-                  ).withRadioGroup(context),
-                ),
-              ],
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('Dark'),
+              value: ThemeMode.dark,
+              groupValue: themeState.themeMode,
+              onChanged: (value) {
+                ref.read(themeProvider.notifier).setThemeMode(value!);
+                Navigator.of(context).pop();
+              },
+            ),
+            RadioListTile<ThemeMode>(
+              title: const Text('System'),
+              value: ThemeMode.system,
+              groupValue: themeState.themeMode,
+              onChanged: (value) {
+                ref.read(themeProvider.notifier).setThemeMode(value!);
+                Navigator.of(context).pop();
+              },
             ),
           ],
         ),
@@ -1374,9 +1373,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                             ? 'Health permissions granted!'
                             : 'Health permissions denied',
                       ),
-                      backgroundColor: result.granted
-                          ? Colors.green
-                          : Colors.red,
+                      backgroundColor:
+                          result.granted ? Colors.green : Colors.red,
                     ),
                   );
                 }
@@ -1724,9 +1722,9 @@ class _SettingsSection extends StatelessWidget {
           child: Text(
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
         ),
         Card(child: Column(children: children)),
