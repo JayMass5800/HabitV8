@@ -147,7 +147,18 @@ void _initializeHealthHabitIntegration() async {
     await Future.delayed(const Duration(seconds: 3));
 
     AppLogger.info('Starting health-habit integration initialization...');
-    final result = await HealthHabitInitializationService.initialize();
+
+    // Add timeout to prevent hanging during initialization
+    final result = await HealthHabitInitializationService.initialize().timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        AppLogger.warning('Health-habit integration initialization timed out');
+        return HealthHabitInitializationResult(
+          success: false,
+          message: 'Initialization timed out',
+        );
+      },
+    );
 
     if (result.success) {
       AppLogger.info('Health-habit integration initialized successfully');
@@ -157,21 +168,29 @@ void _initializeHealthHabitIntegration() async {
         );
       }
 
-      // Initialize automatic habit completion service
+      // Initialize automatic habit completion service with timeout
       AppLogger.info('Initializing automatic habit completion service...');
       final completionServiceInitialized =
-          await AutomaticHabitCompletionService.initialize();
+          await AutomaticHabitCompletionService.initialize().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          AppLogger.warning(
+              'Automatic habit completion service initialization timed out');
+          return false;
+        },
+      );
+
       if (completionServiceInitialized) {
         AppLogger.info(
           'Automatic habit completion service initialized successfully',
         );
       } else {
-        AppLogger.error(
-          'Failed to initialize automatic habit completion service',
+        AppLogger.warning(
+          'Automatic habit completion service initialization failed or timed out',
         );
       }
     } else {
-      AppLogger.error(
+      AppLogger.warning(
         'Health-habit integration initialization failed: ${result.message}',
       );
     }

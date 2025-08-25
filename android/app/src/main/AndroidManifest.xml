@@ -13,7 +13,8 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
     
     <!-- Android Alarm Manager Plus permissions -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- SYSTEM_ALERT_WINDOW removed - causes app crashes on Android 16 when denied -->
+    <!-- <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <!-- Calendar permissions -->
