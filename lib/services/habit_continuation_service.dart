@@ -266,7 +266,7 @@ class HabitContinuationService {
         // Only schedule future notifications
         if (notificationTime.isAfter(now)) {
           final id = NotificationService.generateSafeId(
-              '${habit.id}_hourly_${date.day}_${hour}_${minute}');
+              '${habit.id}_hourly_${date.day}_$hour_$minute');
 
           await NotificationService.scheduleNotification(
             id: id,
@@ -459,7 +459,7 @@ class HabitContinuationService {
             // Only schedule future notifications
             if (scheduledTime.isAfter(now)) {
               final id = NotificationService.generateSafeId(
-                  '${habit.id}_yearly_${targetYear}_${month}_${day}');
+                  '${habit.id}_yearly_${targetYear}_$month_$day');
 
               await NotificationService.scheduleNotification(
                 id: id,
