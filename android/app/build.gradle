@@ -61,7 +61,8 @@ android {
         manifestPlaceholders = [
             healthPermissionsOnly: "true",
             healthPermissionsRestricted: "true",
-            healthDataTypesMinimal: "true"
+            healthDataTypesMinimal: "true",
+            applicationName: "android.app.Application"
         ]
     }
 
@@ -100,7 +101,10 @@ android {
             signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             
-            manifestPlaceholders = [stripUnusedHealthPermissions: "true"]
+            manifestPlaceholders = [
+                stripUnusedHealthPermissions: "true",
+                applicationName: "android.app.Application"
+            ]
         }
     }
 }
