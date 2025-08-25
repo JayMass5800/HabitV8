@@ -153,10 +153,9 @@ void _initializeHealthHabitIntegration() async {
       const Duration(seconds: 30),
       onTimeout: () {
         AppLogger.warning('Health-habit integration initialization timed out');
-        return HealthHabitInitializationResult(
-          success: false,
-          message: 'Initialization timed out',
-        );
+        return HealthHabitInitializationResult()
+          ..success = false
+          ..message = 'Initialization timed out';
       },
     );
 

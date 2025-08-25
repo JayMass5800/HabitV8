@@ -266,7 +266,7 @@ class HabitContinuationService {
         // Only schedule future notifications
         if (notificationTime.isAfter(now)) {
           final id = NotificationService.generateSafeId(
-              '${habit.id}_hourly_${date.day}_$hour_$minute');
+              '${habit.id}_hourly_${date.day}_${hour}_$minute');
 
           await NotificationService.scheduleNotification(
             id: id,
@@ -459,7 +459,7 @@ class HabitContinuationService {
             // Only schedule future notifications
             if (scheduledTime.isAfter(now)) {
               final id = NotificationService.generateSafeId(
-                  '${habit.id}_yearly_${targetYear}_$month_$day');
+                  '${habit.id}_yearly_${targetYear}_${month}_$day');
 
               await NotificationService.scheduleNotification(
                 id: id,
@@ -511,7 +511,7 @@ class HabitContinuationService {
         if (alarmTime.isAfter(now)) {
           final alarmId = HybridAlarmService.generateHabitAlarmId(
             habit.id,
-            suffix: 'hourly_${date.day}_${hour}_${minute}',
+            suffix: 'hourly_${date.day}_${hour}_$minute',
           );
 
           await HybridAlarmService.scheduleExactAlarm(
@@ -706,7 +706,7 @@ class HabitContinuationService {
             if (alarmTime.isAfter(now)) {
               final alarmId = HybridAlarmService.generateHabitAlarmId(
                 habit.id,
-                suffix: 'yearly_${targetYear}_${month}_${day}',
+                suffix: 'yearly_${targetYear}_${month}_$day',
               );
 
               await HybridAlarmService.scheduleExactAlarm(
