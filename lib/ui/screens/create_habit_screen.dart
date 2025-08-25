@@ -36,7 +36,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   // Alarm-related fields
   bool _alarmEnabled = false;
   String? _selectedAlarmSoundName;
-  int _snoozeDelayMinutes = 10;
   final List<int> _selectedWeekdays = [];
   final List<int> _selectedMonthDays = [];
   final List<TimeOfDay> _hourlyTimes =
@@ -289,7 +288,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               'Basic Information',
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _selectedColor,
+                  ),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -397,7 +399,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               'Frequency',
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _selectedColor,
+                  ),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -935,7 +940,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               'Customization',
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _selectedColor,
+                  ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -989,7 +997,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               'Notifications',
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _selectedColor,
+                  ),
             ),
             const SizedBox(height: 16),
             SwitchListTile(
@@ -1093,13 +1104,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 ),
                 trailing: const Icon(Icons.music_note),
                 onTap: _selectAlarmSound,
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                title: const Text('Snooze Delay'),
-                subtitle: Text('$_snoozeDelayMinutes minutes'),
-                trailing: const Icon(Icons.snooze),
-                onTap: _selectSnoozeDelay,
               ),
               const SizedBox(height: 16),
               Container(
@@ -1317,52 +1321,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     }
   }
 
-  Future<void> _selectSnoozeDelay() async {
-    final delays = [5, 10, 15, 20, 30, 45, 60];
-
-    final selected = await showDialog<int>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Snooze Delay'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: delays.length,
-            itemBuilder: (context, index) {
-              final delay = delays[index];
-              final isSelected = delay == _snoozeDelayMinutes;
-
-              return RadioListTile<int>(
-                title: Text('$delay minutes'),
-                value: delay,
-                // ignore: deprecated_member_use
-                groupValue: _snoozeDelayMinutes,
-                selected: isSelected,
-                // ignore: deprecated_member_use
-                onChanged: (value) {
-                  Navigator.of(context).pop(value);
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-
-    if (selected != null) {
-      setState(() {
-        _snoozeDelayMinutes = selected;
-      });
-    }
-  }
-
   Future<void> _saveHabit() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -1509,7 +1467,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         // Add alarm settings
         baseHabit.alarmEnabled = _alarmEnabled;
         baseHabit.alarmSoundName = _selectedAlarmSoundName;
-        baseHabit.snoozeDelayMinutes = _snoozeDelayMinutes;
 
         habit = baseHabit;
       } else {
@@ -1539,7 +1496,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               .toList(),
           alarmEnabled: _alarmEnabled,
           alarmSoundName: _selectedAlarmSoundName,
-          snoozeDelayMinutes: _snoozeDelayMinutes,
         );
       }
 

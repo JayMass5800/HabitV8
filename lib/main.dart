@@ -13,6 +13,7 @@ import 'services/theme_service.dart';
 import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/calendar_renewal_service.dart';
+import 'services/habit_continuation_service.dart';
 import 'services/health_habit_initialization_service.dart';
 import 'services/automatic_habit_completion_service.dart';
 import 'ui/screens/timeline_screen.dart';
@@ -79,6 +80,9 @@ void main() async {
   // Initialize calendar renewal service (non-blocking)
   _initializeCalendarRenewal();
 
+  // Initialize habit continuation service (non-blocking)
+  _initializeHabitContinuation();
+
   // Initialize health-habit integration (non-blocking)
   _initializeHealthHabitIntegration();
 
@@ -107,6 +111,18 @@ void _initializeCalendarRenewal() async {
   } catch (e) {
     AppLogger.error('Error initializing calendar renewal service', e);
     // Don't block app startup if calendar renewal fails
+  }
+}
+
+/// Initialize habit continuation service (non-blocking)
+void _initializeHabitContinuation() async {
+  try {
+    // Small delay to let the app finish initializing
+    await Future.delayed(const Duration(seconds: 4));
+    await HabitContinuationService.initialize();
+  } catch (e) {
+    AppLogger.error('Error initializing habit continuation service', e);
+    // Don't block app startup if habit continuation fails
   }
 }
 

@@ -44,7 +44,7 @@ class HybridAlarmService {
     );
   }
 
-  /// Schedule an exact alarm using the selected method
+  /// Schedule an exact alarm using system alarms (for habit alarms)
   static Future<void> scheduleExactAlarm({
     required int alarmId,
     required String habitId,
@@ -54,8 +54,9 @@ class HybridAlarmService {
     String? alarmSoundName,
     int snoozeDelayMinutes = 10,
     Map<String, dynamic>? additionalData,
+    bool useSystemAlarms = true, // Default to system alarms for habit alarms
   }) async {
-    if (_useSystemAlarms) {
+    if (useSystemAlarms) {
       await TrueAlarmService.scheduleExactAlarm(
         alarmId: alarmId,
         habitId: habitId,
@@ -80,7 +81,7 @@ class HybridAlarmService {
     }
   }
 
-  /// Schedule recurring exact alarms using the selected method
+  /// Schedule recurring exact alarms using system alarms (for habit alarms)
   static Future<void> scheduleRecurringExactAlarm({
     required int baseAlarmId,
     required String habitId,
@@ -91,8 +92,9 @@ class HybridAlarmService {
     String? alarmSoundName,
     int snoozeDelayMinutes = 10,
     int maxRecurrences = 30,
+    bool useSystemAlarms = true, // Default to system alarms for habit alarms
   }) async {
-    if (_useSystemAlarms) {
+    if (useSystemAlarms) {
       await TrueAlarmService.scheduleRecurringExactAlarm(
         baseAlarmId: baseAlarmId,
         habitId: habitId,
@@ -140,14 +142,15 @@ class HybridAlarmService {
     ]);
   }
 
-  /// Schedule snooze alarm using the selected method
+  /// Schedule snooze alarm using system alarms (for habit alarms)
   static Future<void> scheduleSnoozeAlarm({
     required String habitId,
     required String habitName,
     required int snoozeDelayMinutes,
     String? alarmSoundName,
+    bool useSystemAlarms = true, // Default to system alarms for habit alarms
   }) async {
-    if (_useSystemAlarms) {
+    if (useSystemAlarms) {
       await TrueAlarmService.scheduleSnoozeAlarm(
         habitId: habitId,
         habitName: habitName,
@@ -164,19 +167,19 @@ class HybridAlarmService {
     }
   }
 
-  /// Get available alarm sounds (same for both services)
+  /// Get available alarm sounds (use TrueAlarmService for better sound handling)
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
-    return await AlarmService.getAvailableAlarmSounds();
+    return await TrueAlarmService.getAvailableAlarmSounds();
   }
 
-  /// Play alarm sound preview (same for both services)
+  /// Play alarm sound preview (use TrueAlarmService for better sound handling)
   static Future<void> playAlarmSoundPreview(String soundUri) async {
-    await AlarmService.playAlarmSoundPreview(soundUri);
+    await TrueAlarmService.playAlarmSoundPreview(soundUri);
   }
 
-  /// Stop alarm sound preview (same for both services)
+  /// Stop alarm sound preview (use TrueAlarmService for better sound handling)
   static Future<void> stopAlarmSoundPreview() async {
-    await AlarmService.stopAlarmSoundPreview();
+    await TrueAlarmService.stopAlarmSoundPreview();
   }
 
   /// Generate unique alarm ID for habit (same for both services)

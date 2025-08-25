@@ -77,6 +77,17 @@ class HabitService {
     await _habitBox.add(habit);
     // No need to invalidate cache for new habits
 
+    // Schedule notifications/alarms for the new habit
+    try {
+      if (habit.notificationsEnabled || habit.alarmEnabled) {
+        await NotificationService.scheduleHabitNotifications(habit);
+        AppLogger.info(
+            'Scheduled notifications/alarms for new habit "${habit.name}"');
+      }
+    } catch (e) {
+      AppLogger.error('Failed to schedule notifications for new habit', e);
+    }
+
     // Sync to calendar if enabled
     try {
       await CalendarService.syncHabitChanges(habit);
@@ -89,6 +100,24 @@ class HabitService {
   Future<void> updateHabit(Habit habit) async {
     await habit.save();
     // Cache is automatically invalidated by habit.save()
+
+    // Reschedule notifications/alarms for the updated habit
+    try {
+      if (habit.notificationsEnabled || habit.alarmEnabled) {
+        await NotificationService.scheduleHabitNotifications(habit);
+        AppLogger.info(
+            'Rescheduled notifications/alarms for updated habit "${habit.name}"');
+      } else {
+        // Cancel notifications if they were disabled
+        final habitIdHash = NotificationService.generateSafeId(habit.id);
+        await NotificationService.cancelHabitNotifications(habitIdHash);
+        AppLogger.info(
+            'Cancelled notifications for habit "${habit.name}" (disabled)');
+      }
+    } catch (e) {
+      AppLogger.error(
+          'Failed to reschedule notifications for updated habit', e);
+    }
 
     // Sync to calendar if enabled
     try {
@@ -147,9 +176,9 @@ class HabitService {
     DateTime completionDate,
   ) async {
     final habit = _habitBox.values.cast<Habit?>().firstWhere(
-      (h) => h?.id == habitId,
-      orElse: () => null,
-    );
+          (h) => h?.id == habitId,
+          orElse: () => null,
+        );
 
     if (habit == null) {
       AppLogger.warning('Habit not found for completion: $habitId');
@@ -367,9 +396,9 @@ class HabitService {
   /// Check if habit is completed for the current time period
   bool isHabitCompletedForCurrentPeriod(String habitId, DateTime checkTime) {
     final habit = _habitBox.values.cast<Habit?>().firstWhere(
-      (h) => h?.id == habitId,
-      orElse: () => null,
-    );
+          (h) => h?.id == habitId,
+          orElse: () => null,
+        );
 
     if (habit == null) {
       AppLogger.warning('Habit not found for completion check: $habitId');

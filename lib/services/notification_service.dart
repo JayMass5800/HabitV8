@@ -8,7 +8,6 @@ import 'logging_service.dart';
 import 'permission_service.dart';
 import '../data/database.dart';
 import 'hybrid_alarm_service.dart';
-import 'true_alarm_service.dart';
 
 @pragma('vm:entry-point')
 class NotificationService {
@@ -1076,10 +1075,10 @@ class NotificationService {
     AppLogger.debug('Starting alarm scheduling for habit: ${habit.name}');
     AppLogger.debug('Alarm enabled: ${habit.alarmEnabled}');
     AppLogger.debug('Alarm sound: ${habit.alarmSoundName}');
-    AppLogger.debug('Snooze delay: ${habit.snoozeDelayMinutes} minutes');
+    AppLogger.debug('Snooze delay: 10 minutes (fixed default)');
 
-    // Initialize TrueAlarmService
-    await TrueAlarmService.initialize();
+    // Initialize HybridAlarmService to use system alarms for this habit
+    await HybridAlarmService.initialize();
 
     // Skip if alarms are disabled
     if (!habit.alarmEnabled) {
@@ -1110,7 +1109,7 @@ class NotificationService {
 
     try {
       // Cancel any existing alarms for this habit first
-      await TrueAlarmService.cancelHabitAlarms(habit.id);
+      await HybridAlarmService.cancelHabitAlarms(habit.id);
       AppLogger.debug('Cancelled existing alarms for habit ID: ${habit.id}');
 
       final frequency = habit.frequency.toString().split('.').last;
@@ -1452,7 +1451,8 @@ class NotificationService {
             body: 'Alarm: Time for your weekly habit!',
             scheduledTime: nextAlarm,
             alarmSoundName: habit.alarmSoundName,
-            snoozeDelayMinutes: habit.snoozeDelayMinutes,
+            snoozeDelayMinutes:
+                10, // Fixed default - no snooze for alarm habits
           );
 
           AppLogger.debug(
@@ -1495,7 +1495,8 @@ class NotificationService {
             body: 'Alarm: Time for your monthly habit!',
             scheduledTime: nextAlarm,
             alarmSoundName: habit.alarmSoundName,
-            snoozeDelayMinutes: habit.snoozeDelayMinutes,
+            snoozeDelayMinutes:
+                10, // Fixed default - no snooze for alarm habits
           );
 
           AppLogger.debug(
@@ -1544,7 +1545,8 @@ class NotificationService {
                 'Alarm: Time for your yearly habit! This is your special day.',
             scheduledTime: nextAlarm,
             alarmSoundName: habit.alarmSoundName,
-            snoozeDelayMinutes: habit.snoozeDelayMinutes,
+            snoozeDelayMinutes:
+                10, // Fixed default - no snooze for alarm habits
           );
 
           AppLogger.debug(
@@ -1596,7 +1598,8 @@ class NotificationService {
             body: 'Alarm: Time for your habit! Scheduled for $timeString',
             scheduledTime: nextAlarm,
             alarmSoundName: habit.alarmSoundName,
-            snoozeDelayMinutes: habit.snoozeDelayMinutes,
+            snoozeDelayMinutes:
+                10, // Fixed default - no snooze for alarm habits
           );
 
           AppLogger.debug(
@@ -1629,7 +1632,7 @@ class NotificationService {
           body: 'Hourly alarm: Time for your habit!',
           scheduledTime: nextAlarm,
           alarmSoundName: habit.alarmSoundName,
-          snoozeDelayMinutes: habit.snoozeDelayMinutes,
+          snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
         );
       }
     }
@@ -2420,7 +2423,7 @@ class NotificationService {
       nextAlarm = nextAlarm.add(const Duration(days: 1));
     }
 
-    final alarmId = TrueAlarmService.generateHabitAlarmId(
+    final alarmId = HybridAlarmService.generateHabitAlarmId(
       habit.id,
       suffix: 'daily',
     );
@@ -2433,7 +2436,7 @@ class NotificationService {
       interval: const Duration(days: 1),
       frequency: 'daily',
       alarmSoundName: habit.alarmSoundName,
-      snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+      snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
     );
 
     AppLogger.info('✅ Scheduled daily alarms for ${habit.name}');
@@ -2467,7 +2470,7 @@ class NotificationService {
         nextAlarm = nextAlarm.add(const Duration(days: 7));
       }
 
-      final alarmId = TrueAlarmService.generateHabitAlarmId(
+      final alarmId = HybridAlarmService.generateHabitAlarmId(
         habit.id,
         suffix: 'weekly_$weekday',
       );
@@ -2480,7 +2483,7 @@ class NotificationService {
         interval: const Duration(days: 7),
         frequency: 'weekly',
         alarmSoundName: habit.alarmSoundName,
-        snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+        snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
       );
     }
 
@@ -2524,7 +2527,7 @@ class NotificationService {
         continue;
       }
 
-      final alarmId = TrueAlarmService.generateHabitAlarmId(
+      final alarmId = HybridAlarmService.generateHabitAlarmId(
         habit.id,
         suffix: 'monthly_$monthDay',
       );
@@ -2537,7 +2540,7 @@ class NotificationService {
         interval: const Duration(days: 30), // Approximate monthly interval
         frequency: 'monthly',
         alarmSoundName: habit.alarmSoundName,
-        snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+        snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
       );
     }
 
@@ -2580,7 +2583,7 @@ class NotificationService {
           nextAlarm = DateTime(now.year + 1, month, day, hour, minute);
         }
 
-        final alarmId = TrueAlarmService.generateHabitAlarmId(
+        final alarmId = HybridAlarmService.generateHabitAlarmId(
           habit.id,
           suffix: 'yearly_${month}_$day',
         );
@@ -2593,7 +2596,7 @@ class NotificationService {
           interval: const Duration(days: 365), // Approximate yearly interval
           frequency: 'yearly',
           alarmSoundName: habit.alarmSoundName,
-          snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+          snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
         );
       } catch (e) {
         AppLogger.warning(
@@ -2641,7 +2644,7 @@ class NotificationService {
             nextAlarm = nextAlarm.add(const Duration(days: 1));
           }
 
-          final alarmId = TrueAlarmService.generateHabitAlarmId(
+          final alarmId = HybridAlarmService.generateHabitAlarmId(
             habit.id,
             suffix: 'hourly_${hour}_$minute',
           );
@@ -2654,7 +2657,8 @@ class NotificationService {
             interval: const Duration(days: 1), // Daily recurrence for each time
             frequency: 'hourly',
             alarmSoundName: habit.alarmSoundName,
-            snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+            snoozeDelayMinutes:
+                10, // Fixed default - no snooze for alarm habits
           );
 
           AppLogger.debug(
@@ -2681,7 +2685,7 @@ class NotificationService {
           nextAlarm = nextAlarm.add(const Duration(days: 1));
         }
 
-        final alarmId = TrueAlarmService.generateHabitAlarmId(
+        final alarmId = HybridAlarmService.generateHabitAlarmId(
           habit.id,
           suffix: 'hourly_default_$hour',
         );
@@ -2694,7 +2698,7 @@ class NotificationService {
           interval: const Duration(days: 1), // Daily recurrence for each hour
           frequency: 'hourly',
           alarmSoundName: habit.alarmSoundName,
-          snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+          snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
         );
       }
     }
@@ -2702,18 +2706,18 @@ class NotificationService {
     AppLogger.info('✅ Scheduled hourly alarms for ${habit.name}');
   }
 
-  /// Get available alarm sounds (delegated to AlarmService)
+  /// Get available alarm sounds (delegated to HybridAlarmService)
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
-    return await TrueAlarmService.getAvailableAlarmSounds();
+    return await HybridAlarmService.getAvailableAlarmSounds();
   }
 
-  /// Play alarm sound preview (delegated to AlarmService)
+  /// Play alarm sound preview (delegated to HybridAlarmService)
   static Future<void> playAlarmSoundPreview(String soundUri) async {
-    await TrueAlarmService.playAlarmSoundPreview(soundUri);
+    await HybridAlarmService.playAlarmSoundPreview(soundUri);
   }
 
-  /// Stop alarm sound preview (delegated to AlarmService)
+  /// Stop alarm sound preview (delegated to HybridAlarmService)
   static Future<void> stopAlarmSoundPreview() async {
-    await TrueAlarmService.stopAlarmSoundPreview();
+    await HybridAlarmService.stopAlarmSoundPreview();
   }
 }

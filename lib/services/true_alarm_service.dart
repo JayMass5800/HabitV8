@@ -76,7 +76,7 @@ class TrueAlarmService {
         assetAudioPath: soundPath,
         loopAudio: true,
         vibrate: true,
-        volume: 0.8,
+        volume: 1.0,
         fadeDuration: 3.0,
         notificationSettings: NotificationSettings(
           title: '🚨 HABIT ALARM: $habitName',
@@ -90,6 +90,9 @@ class TrueAlarmService {
       await Alarm.set(alarmSettings: alarmSettings);
 
       AppLogger.info('✅ True system alarm scheduled successfully');
+      AppLogger.info('  - Alarm ID: $alarmId');
+      AppLogger.info('  - Scheduled for: $scheduledTime');
+      AppLogger.info('  - Sound path: $soundPath');
     } catch (e) {
       AppLogger.error('❌ Failed to schedule true system alarm', e);
       rethrow;
@@ -106,18 +109,22 @@ class TrueAlarmService {
     required String frequency,
     String? alarmSoundName,
     int snoozeDelayMinutes = 10,
-    int maxRecurrences = 30, // Schedule for next 30 occurrences
+    int maxRecurrences =
+        7, // Schedule for next 7 occurrences to avoid conflicts
   }) async {
     AppLogger.info('🚨 Scheduling recurring true system alarms for $habitName');
     AppLogger.info('  - Base ID: $baseAlarmId');
     AppLogger.info('  - First time: $firstScheduledTime');
     AppLogger.info('  - Interval: $interval');
     AppLogger.info('  - Max recurrences: $maxRecurrences');
+    AppLogger.info('  - Current time: ${DateTime.now()}');
 
     DateTime currentTime = firstScheduledTime;
 
     for (int i = 0; i < maxRecurrences; i++) {
       final alarmId = baseAlarmId + i;
+
+      AppLogger.info('  - Scheduling alarm $i: ID=$alarmId, Time=$currentTime');
 
       await scheduleExactAlarm(
         alarmId: alarmId,
@@ -134,6 +141,9 @@ class TrueAlarmService {
     }
 
     AppLogger.info('✅ Scheduled $maxRecurrences recurring true system alarms');
+
+    // Debug: Log all currently scheduled alarms
+    await debugLogAllAlarms();
   }
 
   /// Cancel a true system alarm
@@ -259,30 +269,38 @@ class TrueAlarmService {
 
       if (soundUri.startsWith('assets/')) {
         // Play custom sound using audioplayers
-        await _audioPlayer.play(
-          AssetSource(soundUri.replaceFirst('assets/', '')),
-        );
-        AppLogger.info('Playing custom sound preview: $soundUri');
+        final assetPath = soundUri.replaceFirst('assets/', '');
+        AppLogger.info(
+            'Attempting to play custom sound: $soundUri -> $assetPath');
+
+        await _audioPlayer.play(AssetSource(assetPath));
+        AppLogger.info('✅ Playing custom sound preview: $soundUri');
       } else {
         // Play system sound using flutter_ringtone_manager
         if (Platform.isAndroid) {
+          AppLogger.info('Attempting to play system sound: $soundUri');
           final ringtoneManager = FlutterRingtoneManager();
 
           switch (soundUri) {
             case 'default':
             case 'alarm':
               await ringtoneManager.playAlarm();
+              AppLogger.info('✅ Playing system alarm sound');
               break;
             case 'ringtone':
               await ringtoneManager.playRingtone();
+              AppLogger.info('✅ Playing system ringtone sound');
               break;
             case 'notification':
               await ringtoneManager.playNotification();
+              AppLogger.info('✅ Playing system notification sound');
               break;
             default:
               await ringtoneManager.playAlarm();
+              AppLogger.info('✅ Playing default system alarm sound');
           }
-          AppLogger.info('Playing system sound preview: $soundUri');
+        } else {
+          AppLogger.warning('System sounds only supported on Android');
         }
       }
     } catch (e) {
@@ -314,6 +332,20 @@ class TrueAlarmService {
   /// Get all currently set alarms
   static Future<List<AlarmSettings>> getAlarms() async {
     return await Alarm.getAlarms();
+  }
+
+  /// Debug method to log all currently scheduled alarms
+  static Future<void> debugLogAllAlarms() async {
+    try {
+      final alarms = await Alarm.getAlarms();
+      AppLogger.info('🔍 Currently scheduled alarms: ${alarms.length}');
+
+      for (final alarm in alarms) {
+        AppLogger.info('  - ID: ${alarm.id}, Time: ${alarm.dateTime}');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Failed to get alarms for debugging', e);
+    }
   }
 
   /// Stop a currently ringing alarm

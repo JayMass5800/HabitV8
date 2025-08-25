@@ -12,10 +12,11 @@ import '../../services/theme_service.dart';
 import '../../services/health_service.dart';
 import '../../services/calendar_service.dart';
 import '../../services/calendar_renewal_service.dart';
+import '../../services/habit_continuation_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/onboarding_service.dart';
 import '../../services/automatic_habit_completion_service.dart';
-import '../../services/hybrid_alarm_service.dart';
+
 import '../../data/database.dart';
 import '../widgets/calendar_selection_dialog.dart';
 import '../widgets/health_education_dialog.dart';
@@ -36,7 +37,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   bool _calendarSync = false;
   bool _healthDataSync = false;
   bool _autoCompletionEnabled = false;
-  bool _useSystemAlarms = false;
+
   bool _isLoading = true;
   String _defaultScreen = 'Timeline'; // Default startup screen
 
@@ -106,8 +107,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       final autoCompletionEnabled =
           await AutomaticHabitCompletionService.isServiceEnabled();
 
-      // Load alarm type preference
-      final useSystemAlarms = HybridAlarmService.useSystemAlarms;
       final healthSyncPreference = await _loadHealthSyncPreference();
       bool healthStatus = false;
 
@@ -127,7 +126,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         _calendarSync = calendarSyncEnabled;
         _healthDataSync = healthStatus;
         _autoCompletionEnabled = autoCompletionEnabled;
-        _useSystemAlarms = useSystemAlarms;
         _isLoading = false;
       });
     } catch (e) {
@@ -393,21 +391,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       ? null
                       : () => _requestExactAlarmPermission(),
                 ),
-                const Divider(),
-                ListTile(
-                  title: const Text('Alarm Type'),
-                  subtitle: Text(HybridAlarmService.getAlarmTypeDescription()),
-                  leading: Icon(
-                    _useSystemAlarms ? Icons.alarm : Icons.notifications_active,
-                    color: _useSystemAlarms ? Colors.red : Colors.blue,
-                  ),
-                  trailing: Switch(
-                    value: _useSystemAlarms,
-                    onChanged: (value) => _toggleAlarmType(value),
-                  ),
-                  onTap: () => _showAlarmTypeInfo(),
-                ),
               ],
+            ],
+          ),
+          const SizedBox(height: 24),
+          _SettingsSection(
+            title: 'Habit Continuation',
+            children: [
+              _SettingsTile(
+                title: 'Continuation Status',
+                subtitle: 'View habit continuation service status',
+                leading: const Icon(Icons.refresh),
+                onTap: () => _showContinuationStatus(),
+              ),
+              _SettingsTile(
+                title: 'Force Renewal',
+                subtitle: 'Manually renew all habit notifications and alarms',
+                leading: const Icon(Icons.sync),
+                onTap: () => _forceHabitRenewal(),
+              ),
+              _SettingsTile(
+                title: 'Renewal Settings',
+                subtitle: 'Configure automatic renewal intervals',
+                leading: const Icon(Icons.schedule),
+                onTap: () => _showRenewalSettings(),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -986,127 +994,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
-  /// Toggle alarm type between notification-based and system alarms
-  Future<void> _toggleAlarmType(bool useSystemAlarms) async {
-    try {
-      await HybridAlarmService.setUseSystemAlarms(useSystemAlarms);
-
-      setState(() {
-        _useSystemAlarms = useSystemAlarms;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              useSystemAlarms
-                  ? 'Switched to System Alarms - Override Do Not Disturb'
-                  : 'Switched to Notification Alarms - Quick actions available',
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      AppLogger.error('Error toggling alarm type', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error changing alarm type. Please try again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  /// Show alarm type information dialog
-  void _showAlarmTypeInfo() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Alarm Types'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Choose how you want to receive habit alarms:',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 16),
-
-              // System Alarms section
-              Row(
-                children: [
-                  Icon(Icons.alarm, color: Colors.red),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'System Alarms',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ...HybridAlarmService.getAlarmTypeBenefits()
-                  .where(
-                    (benefit) => _useSystemAlarms || benefit.startsWith('✅'),
-                  )
-                  .map(
-                    (benefit) => Padding(
-                      padding: const EdgeInsets.only(left: 16, bottom: 4),
-                      child: Text(benefit),
-                    ),
-                  ),
-
-              const SizedBox(height: 16),
-
-              // Notification Alarms section
-              Row(
-                children: [
-                  Icon(Icons.notifications_active, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Notification Alarms',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ...HybridAlarmService.getAlarmTypeBenefits()
-                  .where(
-                    (benefit) => !_useSystemAlarms || benefit.startsWith('✅'),
-                  )
-                  .map(
-                    (benefit) => Padding(
-                      padding: const EdgeInsets.only(left: 16, bottom: 4),
-                      child: Text(benefit),
-                    ),
-                  ),
-
-              const SizedBox(height: 16),
-              const Text(
-                'You can change this setting anytime. Existing alarms will use the new type when they next trigger.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _exportData() async {
     try {
       setState(() {
@@ -1545,12 +1432,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStatusRow(
+                  _buildBooleanStatusRow(
                     'Service Active',
                     status['isActive'] ?? false,
                   ),
                   const SizedBox(height: 8),
-                  _buildStatusRow(
+                  _buildBooleanStatusRow(
                     'Needs Renewal',
                     status['needsRenewal'] ?? true,
                   ),
@@ -1625,7 +1512,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
-  Widget _buildStatusRow(String label, bool status) {
+  Widget _buildBooleanStatusRow(String label, bool status) {
     return Row(
       children: [
         Icon(
@@ -1703,6 +1590,261 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // ========== HABIT CONTINUATION METHODS ==========
+
+  /// Show habit continuation service status
+  void _showContinuationStatus() async {
+    try {
+      final status = await HabitContinuationService.getRenewalStatus();
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Habit Continuation Status'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildStatusRow(
+                    'Service Active',
+                    status['isActive'] ? 'Yes' : 'No',
+                    status['isActive'] ? Colors.green : Colors.red),
+                const SizedBox(height: 8),
+                if (status['lastRenewal'] != null) ...[
+                  _buildStatusRow('Last Renewal',
+                      _formatDateTime(status['lastRenewal']), Colors.blue),
+                  const SizedBox(height: 8),
+                ] else ...[
+                  _buildStatusRow('Last Renewal', 'Never', Colors.orange),
+                  const SizedBox(height: 8),
+                ],
+                if (status['hoursSinceRenewal'] != null) ...[
+                  _buildStatusRow('Hours Since Renewal',
+                      '${status['hoursSinceRenewal']}', Colors.grey),
+                  const SizedBox(height: 8),
+                ],
+                if (status['nextRenewal'] != null) ...[
+                  _buildStatusRow('Next Renewal',
+                      _formatDateTime(status['nextRenewal']), Colors.purple),
+                  const SizedBox(height: 8),
+                ],
+                _buildStatusRow(
+                    'Renewal Interval',
+                    '${status['renewalIntervalHours'] ?? 12} hours',
+                    Colors.indigo),
+                const SizedBox(height: 8),
+                _buildStatusRow(
+                    'Needs Renewal',
+                    status['needsRenewal'] ? 'Yes' : 'No',
+                    status['needsRenewal'] ? Colors.orange : Colors.green),
+                if (status['error'] != null) ...[
+                  const SizedBox(height: 8),
+                  _buildStatusRow('Error', status['error'], Colors.red),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+            if (status['needsRenewal'] == true)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _forceHabitRenewal();
+                },
+                child: const Text('Renew Now'),
+              ),
+          ],
+        ),
+      );
+    } catch (e) {
+      AppLogger.error('Error getting continuation status', e);
+      if (mounted) {
+        _showSnackBar('Error getting status: $e');
+      }
+    }
+  }
+
+  /// Build status row widget
+  Widget _buildStatusRow(String label, String value, Color color) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            '$label:',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(color: color),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Force habit renewal
+  void _forceHabitRenewal() async {
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 16),
+                Text('Renewing habit notifications and alarms...'),
+              ],
+            ),
+            duration: Duration(seconds: 15),
+          ),
+        );
+      }
+
+      await HabitContinuationService.forceRenewal();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Habit renewal completed successfully! 🔄'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error performing habit renewal', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Habit renewal failed: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Show renewal settings dialog
+  void _showRenewalSettings() async {
+    try {
+      final status = await HabitContinuationService.getRenewalStatus();
+      final currentInterval = status['renewalIntervalHours'] ?? 12;
+
+      if (!mounted) return;
+
+      int selectedInterval = currentInterval;
+
+      showDialog(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: const Text('Renewal Settings'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'How often should the app automatically renew habit notifications and alarms?',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Renewal Interval:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<int>(
+                  value: selectedInterval,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 1, child: Text('Every hour')),
+                    DropdownMenuItem(value: 2, child: Text('Every 2 hours')),
+                    DropdownMenuItem(value: 4, child: Text('Every 4 hours')),
+                    DropdownMenuItem(value: 6, child: Text('Every 6 hours')),
+                    DropdownMenuItem(
+                        value: 12, child: Text('Every 12 hours (recommended)')),
+                    DropdownMenuItem(value: 24, child: Text('Every 24 hours')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        selectedInterval = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Note: More frequent renewals ensure better reliability but may use more battery. 12 hours is recommended for most users.',
+                    style: TextStyle(fontSize: 12, color: Colors.blue),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await HabitContinuationService.setRenewalInterval(
+                        selectedInterval);
+                    if (mounted) {
+                      Navigator.of(context).pop();
+                      _showSnackBar(
+                          'Renewal interval updated to $selectedInterval hours');
+                    }
+                  } catch (e) {
+                    AppLogger.error('Error setting renewal interval', e);
+                    if (mounted) {
+                      _showSnackBar('Error updating interval: $e');
+                    }
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      AppLogger.error('Error showing renewal settings', e);
+      if (mounted) {
+        _showSnackBar('Error loading settings: $e');
+      }
+    }
   }
 }
 
