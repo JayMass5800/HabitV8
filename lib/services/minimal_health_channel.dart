@@ -22,8 +22,8 @@ class MinimalHealthChannel {
     'WATER',
     'WEIGHT',
     'HEART_RATE', // Heart rate for habit correlation analysis
+    'MINDFULNESS', // Mindfulness sessions for mental health tracking
     'BACKGROUND_HEALTH_DATA', // Background health data access
-    // Note: MINDFULNESS is added dynamically by the native plugin if available
   ];
 
   /// Initialize the minimal health channel
@@ -287,9 +287,8 @@ class MinimalHealthChannel {
     }
 
     try {
-      // Validate data type (allow MINDFULNESS even if not in static list)
-      if (!_supportedDataTypes.contains(dataType) &&
-          dataType != 'MINDFULNESS') {
+      // Validate data type
+      if (!_supportedDataTypes.contains(dataType)) {
         AppLogger.error('Unsupported data type: $dataType');
         return [];
       }

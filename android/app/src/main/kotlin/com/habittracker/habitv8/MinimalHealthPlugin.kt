@@ -64,15 +64,20 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         try {
             val mindfulnessClass = Class.forName("androidx.health.connect.client.records.MindfulnessSessionRecord").kotlin as KClass<out Record>
             this["MINDFULNESS"] = mindfulnessClass
-            Log.i("MinimalHealthPlugin", "MindfulnessSessionRecord is available")
+            Log.i("MinimalHealthPlugin", "MindfulnessSessionRecord is available and added to ALLOWED_DATA_TYPES")
         } catch (e: ClassNotFoundException) {
-            Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord not available in this Health Connect version")
+            Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord not available in this Health Connect version: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error loading MindfulnessSessionRecord: ${e.message}", e)
         }
         
         // Add a special type for background health data access
         // This doesn't correspond to an actual record type but is used for permission handling
         this["BACKGROUND_HEALTH_DATA"] = StepsRecord::class // Using StepsRecord as a placeholder
         Log.i("MinimalHealthPlugin", "Added BACKGROUND_HEALTH_DATA type")
+        
+        // Log final allowed data types for debugging
+        Log.i("MinimalHealthPlugin", "Final ALLOWED_DATA_TYPES: ${this.keys.joinToString(", ")}")
     }
 
     // Health Connect permissions for our allowed data types
@@ -88,6 +93,17 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             permissions.add(HealthPermission.getReadPermission(HydrationRecord::class))
             permissions.add(HealthPermission.getReadPermission(WeightRecord::class))
             permissions.add(HealthPermission.getReadPermission(HeartRateRecord::class))
+            
+            // Try to add MindfulnessSessionRecord permission if available
+            try {
+                val mindfulnessClass = Class.forName("androidx.health.connect.client.records.MindfulnessSessionRecord").kotlin as KClass<out Record>
+                permissions.add(HealthPermission.getReadPermission(mindfulnessClass))
+                Log.i("MinimalHealthPlugin", "Added MindfulnessSessionRecord permission")
+            } catch (e: ClassNotFoundException) {
+                Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord permission not available: ${e.message}")
+            } catch (e: Exception) {
+                Log.e("MinimalHealthPlugin", "Error adding MindfulnessSessionRecord permission: ${e.message}", e)
+            }
         } catch (e: Exception) {
             Log.e("MinimalHealthPlugin", "Error creating health permissions", e)
         }
@@ -101,7 +117,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     
     // Permission strings for comparison with granted permissions
     private fun getHealthPermissionStrings(): Set<String> {
-        return setOf(
+        val permissions = mutableSetOf(
             "android.permission.health.READ_STEPS",
             "android.permission.health.READ_ACTIVE_CALORIES_BURNED", 
             "android.permission.health.READ_TOTAL_CALORIES_BURNED",
@@ -110,6 +126,13 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             "android.permission.health.READ_WEIGHT",
             "android.permission.health.READ_HEART_RATE"
         )
+        
+        // Add MINDFULNESS permission if available
+        if (ALLOWED_DATA_TYPES.containsKey("MINDFULNESS")) {
+            permissions.add("android.permission.health.READ_MINDFULNESS")
+        }
+        
+        return permissions
     }
     
     // Helper function to get heart rate permission for comparison
@@ -357,19 +380,35 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             val supportedTypes = call.argument<List<String>>("supportedTypes") ?: emptyList()
             
             // Log current allowed data types for debugging
-            Log.i("MinimalHealthPlugin", "Current allowed data types: ${ALLOWED_DATA_TYPES.keys}")
+            Log.i("MinimalHealthPlugin", "Initialize called with types: ${supportedTypes.joinToString(", ")}")
+            Log.i("MinimalHealthPlugin", "Current allowed data types: ${ALLOWED_DATA_TYPES.keys.joinToString(", ")}")
             
             // Validate that only allowed data types are being requested
+            val validTypes = mutableListOf<String>()
             for (dataType in supportedTypes) {
                 if (!ALLOWED_DATA_TYPES.containsKey(dataType)) {
+                    // Special handling for MINDFULNESS - it might not be available on this device/version
+                    if (dataType == "MINDFULNESS") {
+                        Log.w("MinimalHealthPlugin", "MINDFULNESS was requested but not available on this device/version")
+                        Log.w("MinimalHealthPlugin", "This is normal if the Health Connect version doesn't support MindfulnessSessionRecord")
+                        // Skip MINDFULNESS but continue with other types
+                        continue
+                    }
+                    
                     Log.e("MinimalHealthPlugin", "FORBIDDEN DATA TYPE DETECTED: $dataType")
                     Log.e("MinimalHealthPlugin", "Available types: ${ALLOWED_DATA_TYPES.keys.joinToString(", ")}")
+                    Log.e("MinimalHealthPlugin", "Requested types: ${supportedTypes.joinToString(", ")}")
+                    
                     result.error("FORBIDDEN_DATA_TYPE", "Data type $dataType is not allowed", null)
                     return
+                } else {
+                    validTypes.add(dataType)
                 }
             }
             
-            Log.i("MinimalHealthPlugin", "Initialized with ${supportedTypes.size} data types: ${supportedTypes.joinToString(", ")}")
+            Log.i("MinimalHealthPlugin", "Valid types after filtering: ${validTypes.joinToString(", ")}")
+            
+            Log.i("MinimalHealthPlugin", "Initialized successfully with ${supportedTypes.size} data types: ${supportedTypes.joinToString(", ")}")
             result.success(healthConnectClient != null)
         } catch (e: Exception) {
             Log.e("MinimalHealthPlugin", "Error during initialization", e)
@@ -539,6 +578,13 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             
             // Validate data type
             if (!ALLOWED_DATA_TYPES.containsKey(dataType)) {
+                // Special handling for MINDFULNESS - return empty data if not supported
+                if (dataType == "MINDFULNESS") {
+                    Log.w("MinimalHealthPlugin", "MINDFULNESS data requested but not supported on this device/version")
+                    result.success(emptyList<Map<String, Any>>())
+                    return
+                }
+                
                 Log.e("MinimalHealthPlugin", "FORBIDDEN DATA TYPE: $dataType")
                 result.error("FORBIDDEN_DATA_TYPE", "Data type $dataType is not allowed", null)
                 return
@@ -743,12 +789,37 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                         map["value"] = (endTime.toEpochMilli() - startTime.toEpochMilli()) / (1000.0 * 60.0) // minutes
                         map["unit"] = "minutes"
                         map["endTime"] = endTime.toEpochMilli()
+                        
+                        // Try to get title if available
+                        try {
+                            val titleMethod = record.javaClass.getMethod("getTitle")
+                            val title = titleMethod.invoke(record) as String?
+                            title?.let { map["title"] = it }
+                        } catch (e: Exception) {
+                            // Title method not available, ignore
+                        }
+                        
+                        // Try to get notes if available
+                        try {
+                            val notesMethod = record.javaClass.getMethod("getNotes")
+                            val notes = notesMethod.invoke(record) as String?
+                            notes?.let { map["notes"] = it }
+                        } catch (e: Exception) {
+                            // Notes method not available, ignore
+                        }
+                        
+                        Log.d("MinimalHealthPlugin", "Mindfulness record: ${map["value"]} minutes from ${Instant.ofEpochMilli(startTime.toEpochMilli())} to ${Instant.ofEpochMilli(endTime.toEpochMilli())}")
                     } catch (e: Exception) {
                         Log.w("MinimalHealthPlugin", "Error processing MindfulnessSessionRecord", e)
                         map["timestamp"] = System.currentTimeMillis()
                         map["value"] = 0.0
                         map["unit"] = "minutes"
                     }
+                } else {
+                    Log.w("MinimalHealthPlugin", "Unknown record type: ${record.javaClass.simpleName}")
+                    map["timestamp"] = System.currentTimeMillis()
+                    map["value"] = 0.0
+                    map["unit"] = "unknown"
                 }
             }
         }
