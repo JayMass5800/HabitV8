@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import '../domain/model/habit.dart';
 import 'health_service.dart';
 import 'logging_service.dart';
+import 'minimal_health_channel.dart';
 
 /// Health-Habit Mapping Service
 ///
@@ -1040,9 +1041,8 @@ class HealthHabitMappingService {
       );
 
       // Lower threshold for user-created habits to be more inclusive
-      final minThreshold = matches.values.any((score) => score >= 0.3)
-          ? 0.05
-          : 0.02;
+      final minThreshold =
+          matches.values.any((score) => score >= 0.3) ? 0.05 : 0.02;
 
       if (bestMatch.value < minThreshold) {
         AppLogger.info(
@@ -1112,8 +1112,7 @@ class HealthHabitMappingService {
           thresholdLevel = 'very_active';
         }
 
-        threshold =
-            mapping.thresholds[thresholdLevel] ??
+        threshold = mapping.thresholds[thresholdLevel] ??
             mapping.thresholds['moderate']!;
       }
 
@@ -1351,8 +1350,7 @@ class HealthHabitMappingService {
         }
 
       case 'WATER':
-        final liters =
-            (value / 1000 * 10).round() /
+        final liters = (value / 1000 * 10).round() /
             10; // Convert to liters, round to 1 decimal
         if (liters >= 3.0) {
           return 'Excellent hydration! You drank ${liters}L of water 💧';
@@ -1639,7 +1637,7 @@ class HealthHabitMappingService {
       if (mappings.isNotEmpty) {
         final avgRelevance =
             mappings.map((m) => m.relevanceScore).reduce((a, b) => a + b) /
-            mappings.length;
+                mappings.length;
         stats['averageRelevanceScore'] = (avgRelevance * 100).round();
       }
 
@@ -1765,13 +1763,11 @@ class HealthHabitMappingService {
 
     // Sort by relevance (categories with higher scoring mappings first)
     suggestions.sort((a, b) {
-      final aMaxScore =
-          categoryMappings[a]
+      final aMaxScore = categoryMappings[a]
               ?.map((m) => m.relevanceScore)
               .reduce((a, b) => a > b ? a : b) ??
           0.0;
-      final bMaxScore =
-          categoryMappings[b]
+      final bMaxScore = categoryMappings[b]
               ?.map((m) => m.relevanceScore)
               .reduce((a, b) => a > b ? a : b) ??
           0.0;
@@ -1797,18 +1793,11 @@ class HealthHabitMappingService {
   /// Check if mindfulness data type is supported by the current health service
   static Future<bool> _isMindfulnessSupported() async {
     try {
-      // Check if the health service supports mindfulness
-      // Since we're using real data only, check if health service has permissions
-      final hasPermissions = await HealthService.hasPermissions();
-
-      // Only return true if we have real health permissions and platform supports it
-      if (hasPermissions) {
-        // Check if platform supports mindfulness (typically iOS and Android)
-        return Platform.isAndroid || Platform.isIOS;
-      }
-
-      // Default to false for safety (mindfulness often has platform restrictions)
-      return false;
+      // Use the MinimalHealthChannel to check if MINDFULNESS is actually supported
+      final isSupported =
+          await MinimalHealthChannel.isDataTypeSupported('MINDFULNESS');
+      AppLogger.info('MINDFULNESS support check result: $isSupported');
+      return isSupported;
     } catch (e) {
       AppLogger.error('Error checking mindfulness support', e);
       return false; // Default to not supported on error
@@ -2062,14 +2051,14 @@ class HabitHealthMapping {
   });
 
   Map<String, dynamic> toJson() => {
-    'habitId': habitId,
-    'healthDataType': healthDataType,
-    'threshold': threshold,
-    'thresholdLevel': thresholdLevel,
-    'relevanceScore': relevanceScore,
-    'unit': unit,
-    'description': description,
-  };
+        'habitId': habitId,
+        'healthDataType': healthDataType,
+        'threshold': threshold,
+        'thresholdLevel': thresholdLevel,
+        'relevanceScore': relevanceScore,
+        'unit': unit,
+        'description': description,
+      };
 }
 
 /// Category to health data type mapping
@@ -2104,11 +2093,11 @@ class HabitCompletionResult {
   });
 
   Map<String, dynamic> toJson() => {
-    'shouldComplete': shouldComplete,
-    'reason': reason,
-    'healthValue': healthValue,
-    'threshold': threshold,
-    'healthDataType': healthDataType,
-    'confidence': confidence,
-  };
+        'shouldComplete': shouldComplete,
+        'reason': reason,
+        'healthValue': healthValue,
+        'threshold': threshold,
+        'healthDataType': healthDataType,
+        'confidence': confidence,
+      };
 }

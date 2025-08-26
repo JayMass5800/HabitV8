@@ -21,9 +21,9 @@ class MinimalHealthChannel {
     'SLEEP_IN_BED',
     'WATER',
     'WEIGHT',
-    'MINDFULNESS', // Available if supported by Health Connect version
     'HEART_RATE', // Heart rate for habit correlation analysis
     'BACKGROUND_HEALTH_DATA', // Background health data access
+    // Note: MINDFULNESS is added dynamically by the native plugin if available
   ];
 
   /// Initialize the minimal health channel
@@ -239,6 +239,43 @@ class MinimalHealthChannel {
     }
   }
 
+  /// Check if a specific data type is supported by the native plugin
+  static Future<bool> isDataTypeSupported(String dataType) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      // For MINDFULNESS, try to initialize with it to see if it's supported
+      if (dataType == 'MINDFULNESS') {
+        final bool result = await _channel.invokeMethod('initialize', {
+          'supportedTypes': ['MINDFULNESS'],
+        }).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => false,
+        );
+
+        AppLogger.info('MINDFULNESS data type support check result: $result');
+        return result;
+      }
+
+      // For other data types, check if they're in our supported list
+      return _supportedDataTypes.contains(dataType);
+    } on PlatformException catch (e) {
+      if (e.code == 'FORBIDDEN_DATA_TYPE') {
+        AppLogger.info(
+            'Data type $dataType is not supported by the native plugin');
+        return false;
+      }
+      AppLogger.error(
+          'Error checking data type support for $dataType: ${e.message}');
+      return false;
+    } catch (e) {
+      AppLogger.error('Error checking data type support for $dataType', e);
+      return false;
+    }
+  }
+
   /// Get health data for a specific type and date range
   static Future<List<Map<String, dynamic>>> getHealthData({
     required String dataType,
@@ -250,8 +287,9 @@ class MinimalHealthChannel {
     }
 
     try {
-      // Validate data type
-      if (!_supportedDataTypes.contains(dataType)) {
+      // Validate data type (allow MINDFULNESS even if not in static list)
+      if (!_supportedDataTypes.contains(dataType) &&
+          dataType != 'MINDFULNESS') {
         AppLogger.error('Unsupported data type: $dataType');
         return [];
       }

@@ -356,16 +356,20 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         try {
             val supportedTypes = call.argument<List<String>>("supportedTypes") ?: emptyList()
             
+            // Log current allowed data types for debugging
+            Log.i("MinimalHealthPlugin", "Current allowed data types: ${ALLOWED_DATA_TYPES.keys}")
+            
             // Validate that only allowed data types are being requested
             for (dataType in supportedTypes) {
                 if (!ALLOWED_DATA_TYPES.containsKey(dataType)) {
                     Log.e("MinimalHealthPlugin", "FORBIDDEN DATA TYPE DETECTED: $dataType")
+                    Log.e("MinimalHealthPlugin", "Available types: ${ALLOWED_DATA_TYPES.keys.joinToString(", ")}")
                     result.error("FORBIDDEN_DATA_TYPE", "Data type $dataType is not allowed", null)
                     return
                 }
             }
             
-            Log.i("MinimalHealthPlugin", "Initialized with ${supportedTypes.size} data types")
+            Log.i("MinimalHealthPlugin", "Initialized with ${supportedTypes.size} data types: ${supportedTypes.joinToString(", ")}")
             result.success(healthConnectClient != null)
         } catch (e: Exception) {
             Log.e("MinimalHealthPlugin", "Error during initialization", e)
@@ -555,40 +559,54 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                         timeRangeFilter = timeRangeFilter
                     )
                     
-                    val response = healthConnectClient!!.readRecords(request)
-                    val healthData = response.records.map { record ->
-                        convertRecordToMap(record, dataType)
-                    }
-                    
-                    Log.i("MinimalHealthPlugin", "Retrieved ${healthData.size} records for $dataType from ${Instant.ofEpochMilli(startDate)} to ${Instant.ofEpochMilli(endDate)}")
-                    
-                    // Special logging for calories
-                    if (dataType == "ACTIVE_ENERGY_BURNED") {
-                        val totalCalories = healthData.sumOf { (it["value"] as Double) }
-                        Log.i("MinimalHealthPlugin", "Total active calories in range: ${totalCalories.toInt()} cal")
+                    try {
+                        val response = healthConnectClient!!.readRecords(request)
+                        val healthData = response.records.map { record ->
+                            convertRecordToMap(record, dataType)
+                        }
                         
-                        if (healthData.isEmpty()) {
-                            Log.w("MinimalHealthPlugin", "No active calories records found! Check if:")
-                            Log.w("MinimalHealthPlugin", "1. Health Connect has active calories permission")
-                            Log.w("MinimalHealthPlugin", "2. A fitness app is connected and syncing calories data")
-                            Log.w("MinimalHealthPlugin", "3. The device has recorded any physical activity")
+                        Log.i("MinimalHealthPlugin", "Retrieved ${healthData.size} records for $dataType from ${Instant.ofEpochMilli(startDate)} to ${Instant.ofEpochMilli(endDate)}")
+                        
+                        // Special logging for calories
+                        if (dataType == "ACTIVE_ENERGY_BURNED") {
+                            val totalCalories = healthData.sumOf { (it["value"] as Double) }
+                            Log.i("MinimalHealthPlugin", "Total active calories in range: ${totalCalories.toInt()} cal")
+                            
+                            if (healthData.isEmpty()) {
+                                Log.w("MinimalHealthPlugin", "No active calories records found! Check if:")
+                                Log.w("MinimalHealthPlugin", "1. Health Connect has active calories permission")
+                                Log.w("MinimalHealthPlugin", "2. A fitness app is connected and syncing calories data")
+                                Log.w("MinimalHealthPlugin", "3. The device has recorded any physical activity")
+                            }
+                        }
+                        
+                        // Special logging for total calories
+                        if (dataType == "TOTAL_CALORIES_BURNED") {
+                            val totalCalories = healthData.sumOf { (it["value"] as Double) }
+                            Log.i("MinimalHealthPlugin", "Total calories burned in range: ${totalCalories.toInt()} cal")
+                            
+                            if (healthData.isEmpty()) {
+                                Log.w("MinimalHealthPlugin", "No total calories records found! Check if:")
+                                Log.w("MinimalHealthPlugin", "1. Health Connect has total calories permission")
+                                Log.w("MinimalHealthPlugin", "2. A fitness app is connected and syncing total calories data")
+                                Log.w("MinimalHealthPlugin", "3. The device has recorded any physical activity")
+                            }
+                        }
+                        
+                        result.success(healthData)
+                    } catch (e: NoSuchMethodError) {
+                        Log.e("MinimalHealthPlugin", "Health Connect version compatibility issue for $dataType: ${e.message}", e)
+                        Log.w("MinimalHealthPlugin", "This may be due to Health Connect version mismatch. Returning empty data.")
+                        result.success(emptyList<Map<String, Any>>())
+                    } catch (e: Exception) {
+                        // Check if it's a specific Health Connect compatibility error
+                        if (e.message?.contains("ZoneOffset") == true || e.message?.contains("getStartZoneOffset") == true) {
+                            Log.w("MinimalHealthPlugin", "Health Connect compatibility issue detected for $dataType. This may be due to version mismatch.")
+                            result.success(emptyList<Map<String, Any>>())
+                        } else {
+                            throw e // Re-throw other exceptions to be handled by outer catch
                         }
                     }
-                    
-                    // Special logging for total calories
-                    if (dataType == "TOTAL_CALORIES_BURNED") {
-                        val totalCalories = healthData.sumOf { (it["value"] as Double) }
-                        Log.i("MinimalHealthPlugin", "Total calories burned in range: ${totalCalories.toInt()} cal")
-                        
-                        if (healthData.isEmpty()) {
-                            Log.w("MinimalHealthPlugin", "No total calories records found! Check if:")
-                            Log.w("MinimalHealthPlugin", "1. Health Connect has total calories permission")
-                            Log.w("MinimalHealthPlugin", "2. A fitness app is connected and syncing total calories data")
-                            Log.w("MinimalHealthPlugin", "3. The device has recorded any physical activity")
-                        }
-                    }
-                    
-                    result.success(healthData)
                 } catch (e: Exception) {
                     Log.e("MinimalHealthPlugin", "Error reading health data", e)
                     result.error("DATA_ERROR", e.message, null)
