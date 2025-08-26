@@ -550,19 +550,6 @@ class NotificationService {
     }
   }
 
-  /// Store action for later processing if callback is not available
-  static void _storeActionForLaterProcessing(String habitId, String action) {
-    AppLogger.warning(
-      'Storing action for later processing: $action for habit: $habitId',
-    );
-    _pendingActions.add({
-      'habitId': habitId,
-      'action': action,
-      'timestamp': DateTime.now().toIso8601String(),
-    });
-    AppLogger.info('Pending actions queue size: ${_pendingActions.length}');
-  }
-
   /// Set the notification action callback and process any pending actions
   static void setNotificationActionCallback(
     Function(String habitId, String action) callback,
