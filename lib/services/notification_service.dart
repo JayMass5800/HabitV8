@@ -641,6 +641,8 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,
+      playSound: true,
+      enableVibration: true,
     );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -686,6 +688,8 @@ class NotificationService {
       channelDescription: 'Scheduled notifications for habit reminders',
       importance: Importance.max,
       priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
     );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -822,6 +826,8 @@ class NotificationService {
       channelDescription: 'Daily recurring notifications for habit reminders',
       importance: Importance.max,
       priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
     );
 
     const DarwinNotificationDetails iOSPlatformChannelSpecifics =
@@ -1764,6 +1770,8 @@ class NotificationService {
       channelDescription: 'Scheduled notifications for habit reminders',
       importance: Importance.max,
       priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
       actions: [
         const AndroidNotificationAction(
           'complete',
@@ -1874,9 +1882,7 @@ class NotificationService {
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
-      // Use default system alarm sound - custom sounds require raw resources
-      // For now, all alarms use the default system sound
-      sound: null, // Let system use default alarm sound
+      // Use default system notification sound (no explicit sound parameter)
       playSound: true,
       enableVibration: true,
       enableLights: true,

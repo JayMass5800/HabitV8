@@ -651,34 +651,52 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 }
             }
             is HydrationRecord -> {
-                // HydrationRecord is an InstantRecord, use direct property access
-                try {
-                    map["timestamp"] = record.time.toEpochMilli()
-                } catch (e: Exception) {
-                    Log.w("MinimalHealthPlugin", "Error getting time from HydrationRecord", e)
-                    map["timestamp"] = System.currentTimeMillis()
-                }
+                // HydrationRecord has startTime and endTime, not a single time property
+                map["timestamp"] = record.startTime.toEpochMilli()
                 map["value"] = record.volume.inLiters
                 map["unit"] = "liters"
+                map["endTime"] = record.endTime.toEpochMilli()
             }
             is WeightRecord -> {
-                // WeightRecord is an InstantRecord, use direct property access
+                // WeightRecord is an InstantRecord - try different approaches to get time
                 try {
-                    map["timestamp"] = record.time.toEpochMilli()
+                    // Try direct property access first
+                    val timeField = record.javaClass.getDeclaredField("time")
+                    timeField.isAccessible = true
+                    val time = timeField.get(record) as Instant
+                    map["timestamp"] = time.toEpochMilli()
                 } catch (e: Exception) {
-                    Log.w("MinimalHealthPlugin", "Error getting time from WeightRecord", e)
-                    map["timestamp"] = System.currentTimeMillis()
+                    try {
+                        // Fallback: try getTime() method
+                        val timeMethod = record.javaClass.getMethod("getTime")
+                        val time = timeMethod.invoke(record) as Instant
+                        map["timestamp"] = time.toEpochMilli()
+                    } catch (e2: Exception) {
+                        Log.w("MinimalHealthPlugin", "Error getting time from WeightRecord, using current time", e2)
+                        map["timestamp"] = System.currentTimeMillis()
+                    }
                 }
                 map["value"] = record.weight.inKilograms
                 map["unit"] = "kg"
             }
             is HeartRateRecord -> {
-                // HeartRateRecord is an InstantRecord, use direct property access
+                // HeartRateRecord is an InstantRecord - try different approaches to get time
                 try {
-                    map["timestamp"] = record.time.toEpochMilli()
+                    // Try direct property access first
+                    val timeField = record.javaClass.getDeclaredField("time")
+                    timeField.isAccessible = true
+                    val time = timeField.get(record) as Instant
+                    map["timestamp"] = time.toEpochMilli()
                 } catch (e: Exception) {
-                    Log.w("MinimalHealthPlugin", "Error getting time from HeartRateRecord", e)
-                    map["timestamp"] = System.currentTimeMillis()
+                    try {
+                        // Fallback: try getTime() method
+                        val timeMethod = record.javaClass.getMethod("getTime")
+                        val time = timeMethod.invoke(record) as Instant
+                        map["timestamp"] = time.toEpochMilli()
+                    } catch (e2: Exception) {
+                        Log.w("MinimalHealthPlugin", "Error getting time from HeartRateRecord, using current time", e2)
+                        map["timestamp"] = System.currentTimeMillis()
+                    }
                 }
                 
                 // HeartRateRecord has samples - use direct property access
@@ -687,7 +705,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     val firstSample = record.samples.first()
                     map["value"] = firstSample.beatsPerMinute.toDouble()
                     
-                    Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm at ${record.time}, samples: ${record.samples.size}")
+                    Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm, samples: ${record.samples.size}")
                 } else {
                     map["value"] = 0.0
                     Log.w("MinimalHealthPlugin", "Heart rate record has no samples")
