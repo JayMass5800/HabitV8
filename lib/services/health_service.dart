@@ -1110,19 +1110,85 @@ class HealthService {
         'Fetching comprehensive health summary from Health Connect...',
       );
 
-      // Fetch all health data concurrently for better performance
-      final results = await Future.wait([
-        getStepsToday(),
-        getActiveCaloriesToday(),
-        getTotalCaloriesToday(),
-        getSleepHoursLastNight(),
-        getWaterIntakeToday(),
-        getMindfulnessMinutesToday(),
-        getLatestWeight(),
-        getMedicationAdherenceToday(),
-        getLatestHeartRate(),
-        getRestingHeartRateToday(),
-      ]);
+      // Fetch health data with timeouts and error handling to prevent crashes
+      // Make calls sequential to reduce load on native plugin
+      final results = <dynamic>[];
+
+      final healthDataCalls = [
+        () => getStepsToday(),
+        () => getActiveCaloriesToday(),
+        () => getTotalCaloriesToday(),
+        () => getSleepHoursLastNight(),
+        () => getWaterIntakeToday(),
+        () => getMindfulnessMinutesToday(),
+        () => getLatestWeight(),
+        () => getMedicationAdherenceToday(),
+        () => getLatestHeartRate(),
+        () => getRestingHeartRateToday(),
+      ];
+
+      for (int i = 0; i < healthDataCalls.length; i++) {
+        try {
+          final result = await healthDataCalls[i]().timeout(
+            const Duration(seconds: 8),
+            onTimeout: () {
+              AppLogger.warning(
+                  'Health data call $i timed out, using default value');
+              // Return appropriate default values based on call index
+              switch (i) {
+                case 0:
+                  return 0; // steps
+                case 1:
+                case 2:
+                case 4:
+                case 5:
+                case 7:
+                  return 0.0; // calories, water, mindfulness, medication
+                case 3:
+                  return 0.0; // sleep
+                case 6:
+                case 8:
+                case 9:
+                  return null; // weight, heart rates
+                default:
+                  return null;
+              }
+            },
+          );
+          results.add(result);
+
+          // Small delay between calls to prevent overwhelming the native plugin
+          if (i < healthDataCalls.length - 1) {
+            await Future.delayed(const Duration(milliseconds: 100));
+          }
+        } catch (e) {
+          AppLogger.warning(
+              'Health data call $i failed: $e, using default value');
+          // Add default values for failed calls
+          switch (i) {
+            case 0:
+              results.add(0);
+              break; // steps
+            case 1:
+            case 2:
+            case 4:
+            case 5:
+            case 7:
+              results.add(0.0);
+              break; // calories, water, mindfulness, medication
+            case 3:
+              results.add(0.0);
+              break; // sleep
+            case 6:
+            case 8:
+            case 9:
+              results.add(null);
+              break; // weight, heart rates
+            default:
+              results.add(null);
+          }
+        }
+      }
 
       final summary = {
         'steps': results[0] as int,
@@ -1142,9 +1208,8 @@ class HealthService {
 
       // Add derived metrics
       final steps = summary['steps'] as int;
-      summary['caloriesPerStep'] = steps > 0
-          ? (summary['activeCalories'] as double) / steps
-          : 0.0;
+      summary['caloriesPerStep'] =
+          steps > 0 ? (summary['activeCalories'] as double) / steps : 0.0;
 
       summary['hydrationStatus'] = _getHydrationStatus(
         summary['waterIntake'] as double,
@@ -1462,9 +1527,8 @@ class HealthService {
             endDate: now,
           );
           diagnostics['${dataType.toLowerCase()}_records'] = data.length;
-          diagnostics['${dataType.toLowerCase()}_sample'] = data
-              .take(2)
-              .toList();
+          diagnostics['${dataType.toLowerCase()}_sample'] =
+              data.take(2).toList();
         } catch (e) {
           diagnostics['${dataType.toLowerCase()}_error'] = e.toString();
         }
@@ -2014,9 +2078,8 @@ class HealthService {
       );
 
       results['totalSleepRecords'] = rawSleepData.length;
-      results['rawSleepData'] = rawSleepData
-          .take(10)
-          .toList(); // First 10 records
+      results['rawSleepData'] =
+          rawSleepData.take(10).toList(); // First 10 records
 
       // Test the sleep calculation method
       final calculatedSleep =
