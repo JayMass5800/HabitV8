@@ -449,6 +449,21 @@ class NotificationService {
     AppLogger.debug('✅ _onNotificationTapped completed');
   }
 
+  /// Store notification action for later processing when app is opened
+  static void _storeActionForLaterProcessing(String habitId, String action) {
+    try {
+      // For now, just log it - in a full implementation, you'd store this in SharedPreferences
+      // or a local database to process when the app is opened
+      AppLogger.info(
+          'Storing action for later processing: $action for habit $habitId');
+
+      // TODO: Implement persistent storage for background actions
+      // This would allow processing actions even when the app is completely closed
+    } catch (e) {
+      AppLogger.error('Error storing action for later processing', e);
+    }
+  }
+
   /// Handle notification actions (Complete/Snooze)
   @pragma('vm:entry-point')
   static void _handleNotificationAction(String habitId, String action) async {
