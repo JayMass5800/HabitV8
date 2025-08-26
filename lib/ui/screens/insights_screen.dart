@@ -3643,4 +3643,118 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 'Wait for Sync',
                 'Some data may take 24-48 hours to appear, especially sleep data',
               ),
-  
+              ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticItem(String label, dynamic value) {
+    final theme = Theme.of(context);
+    String displayValue;
+    Color? valueColor;
+
+    if (value == null) {
+      displayValue = 'Not available';
+      valueColor = theme.colorScheme.onSurface.withOpacity(0.6);
+    } else if (value is bool) {
+      displayValue = value ? 'Yes' : 'No';
+      valueColor = value ? Colors.green : Colors.red;
+    } else if (value is int) {
+      displayValue = value.toString();
+      valueColor = value > 0 ? Colors.green : Colors.orange;
+    } else {
+      displayValue = value.toString();
+      valueColor = theme.colorScheme.onSurface;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              displayValue,
+              style: TextStyle(
+                color: valueColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSetupStep(String number, String title, String description) {
+    final theme = Theme.of(context);
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                number,
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

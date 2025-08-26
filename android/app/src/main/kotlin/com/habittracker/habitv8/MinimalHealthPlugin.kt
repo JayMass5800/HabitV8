@@ -651,11 +651,9 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 }
             }
             is HydrationRecord -> {
-                // HydrationRecord is an InstantRecord, use reflection for time
+                // HydrationRecord is an InstantRecord, use direct property access
                 try {
-                    val timeMethod = record.javaClass.getMethod("getTime")
-                    val time = timeMethod.invoke(record) as Instant
-                    map["timestamp"] = time.toEpochMilli()
+                    map["timestamp"] = record.time.toEpochMilli()
                 } catch (e: Exception) {
                     Log.w("MinimalHealthPlugin", "Error getting time from HydrationRecord", e)
                     map["timestamp"] = System.currentTimeMillis()
@@ -664,11 +662,9 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 map["unit"] = "liters"
             }
             is WeightRecord -> {
-                // WeightRecord is an InstantRecord, use reflection for time
+                // WeightRecord is an InstantRecord, use direct property access
                 try {
-                    val timeMethod = record.javaClass.getMethod("getTime")
-                    val time = timeMethod.invoke(record) as Instant
-                    map["timestamp"] = time.toEpochMilli()
+                    map["timestamp"] = record.time.toEpochMilli()
                 } catch (e: Exception) {
                     Log.w("MinimalHealthPlugin", "Error getting time from WeightRecord", e)
                     map["timestamp"] = System.currentTimeMillis()
@@ -677,29 +673,21 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 map["unit"] = "kg"
             }
             is HeartRateRecord -> {
-                // HeartRateRecord is an InstantRecord, use reflection for time
+                // HeartRateRecord is an InstantRecord, use direct property access
                 try {
-                    val timeMethod = record.javaClass.getMethod("getTime")
-                    val time = timeMethod.invoke(record) as Instant
-                    map["timestamp"] = time.toEpochMilli()
+                    map["timestamp"] = record.time.toEpochMilli()
                 } catch (e: Exception) {
                     Log.w("MinimalHealthPlugin", "Error getting time from HeartRateRecord", e)
                     map["timestamp"] = System.currentTimeMillis()
                 }
                 
-                // HeartRateRecord has samples - use direct property access instead of reflection
+                // HeartRateRecord has samples - use direct property access
                 if (record.samples.isNotEmpty()) {
                     // Take the first sample's BPM value
                     val firstSample = record.samples.first()
                     map["value"] = firstSample.beatsPerMinute.toDouble()
                     
-                    try {
-                        val timeMethod = record.javaClass.getMethod("getTime")
-                        val time = timeMethod.invoke(record) as Instant
-                        Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm at ${time}, samples: ${record.samples.size}")
-                    } catch (e: Exception) {
-                        Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm, samples: ${record.samples.size}")
-                    }
+                    Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm at ${record.time}, samples: ${record.samples.size}")
                 } else {
                     map["value"] = 0.0
                     Log.w("MinimalHealthPlugin", "Heart rate record has no samples")

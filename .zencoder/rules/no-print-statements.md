@@ -38,3 +38,6 @@ print('Temporary debug - remove before commit');
 - Scripts that are not part of the main application (like build scripts)
 
 **This rule is enforced by Flutter analyze and will show as an ERROR.**
+
+
+	"message": "'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss.\nTry replacing the use of the deprecated member with the replacement.
