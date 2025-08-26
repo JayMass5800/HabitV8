@@ -47,13 +47,13 @@ class NotificationService {
           actions: [
             DarwinNotificationAction.plain(
               'complete',
-              'Complete',
-              options: {DarwinNotificationActionOption.foreground},
+              'COMPLETE',
+              options: {},
             ),
             DarwinNotificationAction.plain(
               'snooze',
-              'Snooze 30min',
-              options: {DarwinNotificationActionOption.foreground},
+              'SNOOZE 30MIN',
+              options: {},
             ),
           ],
         ),
@@ -78,7 +78,7 @@ class NotificationService {
     // Request permissions for Android 13+
     if (Platform.isAndroid) {
       await _requestAndroidPermissions();
-      await _createNotificationChannels();
+      await recreateNotificationChannels();
     }
 
     _isInitialized = true;
@@ -121,6 +121,8 @@ class NotificationService {
         description: 'Notifications for habit reminders',
         importance: Importance.max,
         playSound: true,
+        sound: UriAndroidNotificationSound(
+            'content://settings/system/notification_sound'),
         enableVibration: true,
       );
 
@@ -132,6 +134,8 @@ class NotificationService {
         description: 'Scheduled notifications for habit reminders',
         importance: Importance.max,
         playSound: true,
+        sound: UriAndroidNotificationSound(
+            'content://settings/system/notification_sound'),
         enableVibration: true,
       );
 
@@ -143,6 +147,8 @@ class NotificationService {
         description: 'High-priority alarm notifications for habits',
         importance: Importance.max,
         playSound: true,
+        sound: UriAndroidNotificationSound(
+            'content://settings/system/alarm_alert'),
         enableVibration: true,
         enableLights: true,
         showBadge: true,
@@ -161,6 +167,38 @@ class NotificationService {
       AppLogger.info(
         'Scheduled habit channel: ${scheduledHabitChannel.id} - ${scheduledHabitChannel.name}',
       );
+      AppLogger.info(
+        'Alarm channel: ${alarmChannel.id} - ${alarmChannel.name}',
+      );
+    }
+  }
+
+  /// Recreate notification channels with updated sound configuration
+  /// This is necessary when sound settings change, especially on Android 16+
+  static Future<void> recreateNotificationChannels() async {
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidImplementation != null) {
+      AppLogger.info(
+          'Recreating notification channels with updated sound configuration...');
+
+      // Delete existing channels first
+      try {
+        await androidImplementation.deleteNotificationChannel('habit_channel');
+        await androidImplementation
+            .deleteNotificationChannel('habit_scheduled_channel');
+        await androidImplementation
+            .deleteNotificationChannel('habit_alarm_channel');
+        AppLogger.info('Existing notification channels deleted');
+      } catch (e) {
+        AppLogger.warning('Some channels may not have existed: $e');
+      }
+
+      // Recreate channels with new configuration
+      await _createNotificationChannels();
+      AppLogger.info('Notification channels recreated successfully');
     }
   }
 
@@ -641,6 +679,8 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,
+      sound: UriAndroidNotificationSound(
+          'content://settings/system/notification_sound'),
       playSound: true,
       enableVibration: true,
     );
@@ -688,6 +728,8 @@ class NotificationService {
       channelDescription: 'Scheduled notifications for habit reminders',
       importance: Importance.max,
       priority: Priority.high,
+      sound: UriAndroidNotificationSound(
+          'content://settings/system/notification_sound'),
       playSound: true,
       enableVibration: true,
     );
@@ -821,11 +863,13 @@ class NotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'habit_daily_channel',
-      'Daily Habit Notifications',
-      channelDescription: 'Daily recurring notifications for habit reminders',
+      'habit_scheduled_channel', // Use existing channel instead of undefined habit_daily_channel
+      'Scheduled Habit Notifications',
+      channelDescription: 'Scheduled notifications for habit reminders',
       importance: Importance.max,
       priority: Priority.high,
+      sound: UriAndroidNotificationSound(
+          'content://settings/system/notification_sound'),
       playSound: true,
       enableVibration: true,
     );
@@ -1705,19 +1749,21 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,
+      sound: UriAndroidNotificationSound(
+          'content://settings/system/notification_sound'),
       enableVibration: true,
       playSound: true,
       actions: [
         const AndroidNotificationAction(
           'complete',
-          '✅ Complete',
+          '✅ COMPLETE',
           showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
-          '⏰ Snooze 30min',
+          '⏰ SNOOZE 30MIN',
           showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
@@ -1770,20 +1816,22 @@ class NotificationService {
       channelDescription: 'Scheduled notifications for habit reminders',
       importance: Importance.max,
       priority: Priority.high,
+      sound: UriAndroidNotificationSound(
+          'content://settings/system/notification_sound'),
       playSound: true,
       enableVibration: true,
       actions: [
         const AndroidNotificationAction(
           'complete',
-          '✅ Complete',
-          showsUserInterface: true,
+          '✅ COMPLETE',
+          showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
-          '⏰ Snooze 30min',
-          showsUserInterface: true,
+          '⏰ SNOOZE 30MIN',
+          showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
@@ -1882,15 +1930,17 @@ class NotificationService {
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
-      // Use default system notification sound (no explicit sound parameter)
+      // Use system alarm sound for maximum compatibility with Android 16
+      sound:
+          UriAndroidNotificationSound('content://settings/system/alarm_alert'),
       playSound: true,
       enableVibration: true,
       enableLights: true,
       actions: [
         const AndroidNotificationAction(
           'complete',
-          '✅ Complete',
-          showsUserInterface: true,
+          '✅ COMPLETE',
+          showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),

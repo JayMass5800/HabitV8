@@ -22,6 +22,13 @@ class TrueAlarmService {
       // Initialize the alarm package
       await Alarm.init();
 
+      // Listen for alarm ring events to handle app opening
+      Alarm.ringStream.stream.listen((alarmSettings) {
+        AppLogger.info('🚨 Alarm ringing: ${alarmSettings.id}');
+        // The alarm package automatically handles opening the app when the alarm rings
+        // or when the notification is tapped
+      });
+
       AppLogger.info('🚨 TrueAlarmService initialized successfully');
       _isInitialized = true;
     } catch (e) {
@@ -260,6 +267,26 @@ class TrueAlarmService {
         'uri': 'assets/sounds/digital_beep.mp3',
         'type': 'custom',
       },
+      {
+        'name': 'Zen Gong',
+        'uri': 'assets/sounds/zen_gong.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Upbeat Melody',
+        'uri': 'assets/sounds/upbeat_melody.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Soft Piano',
+        'uri': 'assets/sounds/soft_piano.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Ocean Waves',
+        'uri': 'assets/sounds/ocean_waves.mp3',
+        'type': 'custom',
+      },
     ];
   }
 
@@ -380,26 +407,79 @@ class TrueAlarmService {
 
   /// Get the appropriate sound path for the alarm package
   static Future<String> _getAlarmSoundPath(String? alarmSoundName) async {
-    if (alarmSoundName == null || alarmSoundName == 'default') {
-      // Use a default alarm sound from assets
-      return 'assets/sounds/digital_beep.mp3';
+    if (alarmSoundName == null || alarmSoundName == 'Default System Alarm') {
+      // Use our best system alarm sound asset
+      return await _getSystemAlarmSound();
     }
 
-    if (alarmSoundName.startsWith('assets/')) {
-      // Custom sound from assets
-      return alarmSoundName;
-    }
-
-    // For system sounds, we'll use a default asset sound since the alarm package
-    // requires asset paths, not system sound URIs
+    // Handle sound names from the sound picker
     switch (alarmSoundName) {
-      case 'alarm':
-      case 'ringtone':
-        return 'assets/sounds/morning_bell.mp3';
-      case 'notification':
+      // System sound names (from the sound picker) - use high-quality asset equivalents
+      case 'System Alarm':
+        return await _getSystemAlarmSound();
+      case 'System Ringtone':
+        return await _getSystemRingtoneSound();
+      case 'System Notification':
+        return await _getSystemNotificationSound();
+
+      // Custom sound names (from the sound picker)
+      case 'Gentle Chime':
         return 'assets/sounds/gentle_chime.mp3';
-      default:
+      case 'Morning Bell':
+        return 'assets/sounds/morning_bell.mp3';
+      case 'Nature Birds':
+        return 'assets/sounds/nature_birds.mp3';
+      case 'Digital Beep':
         return 'assets/sounds/digital_beep.mp3';
+      case 'Zen Gong':
+        return 'assets/sounds/zen_gong.mp3';
+      case 'Upbeat Melody':
+        return 'assets/sounds/upbeat_melody.mp3';
+      case 'Soft Piano':
+        return 'assets/sounds/soft_piano.mp3';
+      case 'Ocean Waves':
+        return 'assets/sounds/ocean_waves.mp3';
+
+      // Legacy URI-based handling (for backward compatibility)
+      case 'default':
+        return await _getSystemAlarmSound();
+      case 'alarm':
+        return await _getSystemAlarmSound();
+      case 'ringtone':
+        return await _getSystemRingtoneSound();
+      case 'notification':
+        return await _getSystemNotificationSound();
+
+      default:
+        // If it's already an asset path, use it directly
+        if (alarmSoundName.startsWith('assets/')) {
+          return alarmSoundName;
+        }
+        // Fallback to default sound
+        AppLogger.warning(
+            'Unknown alarm sound: $alarmSoundName, using default');
+        return await _getSystemAlarmSound();
     }
+  }
+
+  /// Get best alarm sound for system alarm type
+  /// Since the alarm package requires asset paths, we use our best alarm sound assets
+  static Future<String> _getSystemAlarmSound() async {
+    AppLogger.info('Using high-quality alarm sound asset for system alarm');
+    return 'assets/sounds/digital_beep.mp3'; // Sharp, attention-getting alarm sound
+  }
+
+  /// Get best ringtone sound for system ringtone type
+  static Future<String> _getSystemRingtoneSound() async {
+    AppLogger.info(
+        'Using high-quality ringtone sound asset for system ringtone');
+    return 'assets/sounds/morning_bell.mp3'; // Pleasant but attention-getting
+  }
+
+  /// Get best notification sound for system notification type
+  static Future<String> _getSystemNotificationSound() async {
+    AppLogger.info(
+        'Using gentle notification sound asset for system notification');
+    return 'assets/sounds/gentle_chime.mp3'; // Gentle but noticeable
   }
 }

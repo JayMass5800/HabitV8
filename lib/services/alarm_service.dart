@@ -306,34 +306,34 @@ class AlarmService {
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-          'habit_alarm_channel',
-          'Habit Alarms',
-          channelDescription: 'High-priority alarm notifications for habits',
-          importance: Importance.max,
-          priority: Priority.max,
-          fullScreenIntent: true,
-          category: AndroidNotificationCategory.alarm,
-          visibility: NotificationVisibility.public,
-          playSound: true,
-          enableVibration: true,
-          enableLights: true,
-          ongoing: true,
-          autoCancel: false,
-          actions: [
-            const AndroidNotificationAction(
-              'complete',
-              '✅ Complete',
-              showsUserInterface: true,
-              cancelNotification: true,
-            ),
-            AndroidNotificationAction(
-              'snooze_alarm',
-              snoozeText,
-              showsUserInterface: true,
-              cancelNotification: true,
-            ),
-          ],
-        );
+      'habit_alarm_channel',
+      'Habit Alarms',
+      channelDescription: 'High-priority alarm notifications for habits',
+      importance: Importance.max,
+      priority: Priority.max,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
+      playSound: true,
+      enableVibration: true,
+      enableLights: true,
+      ongoing: true,
+      autoCancel: false,
+      actions: [
+        const AndroidNotificationAction(
+          'complete',
+          '✅ COMPLETE',
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+        AndroidNotificationAction(
+          'snooze_alarm',
+          snoozeText,
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+      ],
+    );
 
     final NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
@@ -480,34 +480,34 @@ class AlarmService {
 
       final AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
-            'habit_alarm_channel',
-            'Habit Alarms',
-            channelDescription: 'High-priority alarm notifications for habits',
-            importance: Importance.max,
-            priority: Priority.max,
-            fullScreenIntent: true,
-            category: AndroidNotificationCategory.alarm,
-            visibility: NotificationVisibility.public,
-            playSound: true,
-            enableVibration: true,
-            enableLights: true,
-            ongoing: true, // Make it persistent until user interacts
-            autoCancel: false,
-            actions: [
-              const AndroidNotificationAction(
-                'complete',
-                '✅ Complete',
-                showsUserInterface: true,
-                cancelNotification: true,
-              ),
-              AndroidNotificationAction(
-                'snooze_alarm',
-                snoozeText,
-                showsUserInterface: true,
-                cancelNotification: true,
-              ),
-            ],
-          );
+        'habit_alarm_channel',
+        'Habit Alarms',
+        channelDescription: 'High-priority alarm notifications for habits',
+        importance: Importance.max,
+        priority: Priority.max,
+        fullScreenIntent: true,
+        category: AndroidNotificationCategory.alarm,
+        visibility: NotificationVisibility.public,
+        playSound: true,
+        enableVibration: true,
+        enableLights: true,
+        ongoing: true, // Make it persistent until user interacts
+        autoCancel: false,
+        actions: [
+          const AndroidNotificationAction(
+            'complete',
+            '✅ COMPLETE',
+            showsUserInterface: false,
+            cancelNotification: true,
+          ),
+          AndroidNotificationAction(
+            'snooze_alarm',
+            snoozeText,
+            showsUserInterface: true,
+            cancelNotification: true,
+          ),
+        ],
+      );
 
       final NotificationDetails platformChannelSpecifics = NotificationDetails(
         android: androidPlatformChannelSpecifics,
