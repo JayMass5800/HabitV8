@@ -1486,6 +1486,103 @@ class HealthService {
     }
   }
 
+  /// Test health data retrieval with detailed logging
+  static Future<Map<String, dynamic>> testHealthDataRetrieval() async {
+    final testResults = <String, dynamic>{};
+
+    try {
+      AppLogger.info('=== TESTING HEALTH DATA RETRIEVAL ===');
+
+      // Test initialization
+      testResults['isInitialized'] = _isInitialized;
+      AppLogger.info('Health service initialized: $_isInitialized');
+
+      if (!_isInitialized) {
+        AppLogger.info('Attempting to initialize health service...');
+        await initialize();
+        testResults['initializationAttempted'] = true;
+        testResults['isInitializedAfterAttempt'] = _isInitialized;
+      }
+
+      // Test permissions
+      final hasPerms = await hasPermissions();
+      testResults['hasPermissions'] = hasPerms;
+      AppLogger.info('Has permissions: $hasPerms');
+
+      if (!hasPerms) {
+        AppLogger.warning('No permissions - requesting...');
+        final permResult = await requestPermissions();
+        testResults['permissionRequestResult'] = permResult;
+        AppLogger.info('Permission request result: $permResult');
+      }
+
+      // Test Health Connect availability
+      final isAvailable = await isHealthConnectAvailable();
+      testResults['isHealthConnectAvailable'] = isAvailable;
+      AppLogger.info('Health Connect available: $isAvailable');
+
+      // Test individual data types
+      AppLogger.info('Testing individual data retrieval...');
+
+      // Test steps
+      try {
+        final steps = await getStepsToday();
+        testResults['stepsToday'] = steps;
+        AppLogger.info('Steps today: $steps');
+      } catch (e) {
+        testResults['stepsError'] = e.toString();
+        AppLogger.error('Error getting steps', e);
+      }
+
+      // Test active calories
+      try {
+        final calories = await getActiveCaloriesToday();
+        testResults['activeCaloriesToday'] = calories;
+        AppLogger.info('Active calories today: $calories');
+      } catch (e) {
+        testResults['activeCaloriesError'] = e.toString();
+        AppLogger.error('Error getting active calories', e);
+      }
+
+      // Test sleep
+      try {
+        final sleep = await getSleepHoursLastNight();
+        testResults['sleepHoursLastNight'] = sleep;
+        AppLogger.info('Sleep hours last night: $sleep');
+      } catch (e) {
+        testResults['sleepError'] = e.toString();
+        AppLogger.error('Error getting sleep', e);
+      }
+
+      // Test raw health data from minimal channel
+      try {
+        final now = DateTime.now();
+        final startOfDay = DateTime(now.year, now.month, now.day);
+        final endOfDay = startOfDay.add(const Duration(days: 1));
+
+        final rawStepsData = await MinimalHealthChannel.getHealthData(
+          dataType: 'STEPS',
+          startDate: startOfDay,
+          endDate: endOfDay,
+        );
+        testResults['rawStepsDataCount'] = rawStepsData.length;
+        testResults['rawStepsData'] =
+            rawStepsData.take(3).toList(); // First 3 records
+        AppLogger.info('Raw steps data records: ${rawStepsData.length}');
+      } catch (e) {
+        testResults['rawDataError'] = e.toString();
+        AppLogger.error('Error getting raw health data', e);
+      }
+
+      AppLogger.info('=== HEALTH DATA TEST COMPLETE ===');
+      return testResults;
+    } catch (e) {
+      AppLogger.error('Error in health data test', e);
+      testResults['testError'] = e.toString();
+      return testResults;
+    }
+  }
+
   /// Comprehensive Health Connect diagnostic tool
   static Future<Map<String, dynamic>> runHealthConnectDiagnostics() async {
     final diagnostics = <String, dynamic>{};
