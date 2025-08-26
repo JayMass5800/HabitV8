@@ -48,7 +48,7 @@ class NotificationService {
             DarwinNotificationAction.plain(
               'complete',
               'COMPLETE',
-              options: {},
+              options: {DarwinNotificationActionOption.foreground},
             ),
             DarwinNotificationAction.plain(
               'snooze',
@@ -327,7 +327,8 @@ class NotificationService {
     // Log the raw response object for debugging
     AppLogger.info('Raw background response: $notificationResponse');
 
-    // Handle the notification response directly in background
+    // For background processing, we need to store the action for later processing
+    // when the app is opened, since we don't have full app context here
     final String? payload = notificationResponse.payload;
     if (payload != null) {
       try {
@@ -337,8 +338,13 @@ class NotificationService {
 
         if (habitId != null && action != null && action.isNotEmpty) {
           AppLogger.info(
-            'Processing background action: $action for habit: $habitId',
+            'Storing background action for later processing: $action for habit: $habitId',
           );
+
+          // Store the action for processing when app is opened
+          _storeActionForLaterProcessing(habitId, action);
+
+          // Also try to process immediately in case the app context is available
           _handleNotificationAction(habitId, action);
         }
       } catch (e) {
@@ -1757,7 +1763,7 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           '✅ COMPLETE',
-          showsUserInterface: false,
+          showsUserInterface: true,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
@@ -1824,7 +1830,7 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           '✅ COMPLETE',
-          showsUserInterface: false,
+          showsUserInterface: true,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
@@ -1940,7 +1946,7 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           '✅ COMPLETE',
-          showsUserInterface: false,
+          showsUserInterface: true,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),

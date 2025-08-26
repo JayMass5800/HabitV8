@@ -323,7 +323,7 @@ class AlarmService {
         const AndroidNotificationAction(
           'complete',
           '✅ COMPLETE',
-          showsUserInterface: false,
+          showsUserInterface: true,
           cancelNotification: true,
         ),
         AndroidNotificationAction(
@@ -497,7 +497,7 @@ class AlarmService {
           const AndroidNotificationAction(
             'complete',
             '✅ COMPLETE',
-            showsUserInterface: false,
+            showsUserInterface: true,
             cancelNotification: true,
           ),
           AndroidNotificationAction(
