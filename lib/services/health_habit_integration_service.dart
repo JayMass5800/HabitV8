@@ -120,9 +120,18 @@ class HealthHabitIntegrationService {
         await prefs.setBool(_autoCompletionEnabledKey, true);
       }
 
-      // Verify heart rate access specifically
+      // Verify heart rate access specifically (with delay to prevent immediate crashes)
       try {
-        final heartRate = await HealthService.getLatestHeartRate();
+        // Add delay to prevent immediate method channel calls after permission grant
+        await Future.delayed(const Duration(seconds: 2));
+
+        final heartRate = await HealthService.getLatestHeartRate().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            AppLogger.warning('Heart rate verification timed out');
+            return null;
+          },
+        );
         if (heartRate != null) {
           AppLogger.info(
             'Heart rate access verified: ${heartRate.round()} bpm',
@@ -306,9 +315,9 @@ class HealthHabitIntegrationService {
       // Use the advanced mapping service to check for completion
       final completionCheck =
           await HealthHabitMappingService.checkHabitCompletion(
-            habit: habit,
-            date: DateTime.now(),
-          );
+        habit: habit,
+        date: DateTime.now(),
+      );
 
       if (completionCheck.shouldComplete) {
         // Auto-complete the habit

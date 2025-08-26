@@ -23,6 +23,8 @@ class AutomaticHabitCompletionService {
   static Timer? _completionTimer;
   static bool _isRunning = false;
   static StreamController<AutoCompletionEvent>? _eventController;
+  static int _recentErrorCount = 0;
+  static DateTime? _lastErrorTime;
 
   /// Stream of auto-completion events
   static Stream<AutoCompletionEvent>? get eventStream =>
@@ -77,8 +79,8 @@ class AutomaticHabitCompletionService {
     try {
       AppLogger.info('Starting automatic habit completion service...');
 
-      // Get check interval
-      final intervalMinutes = await getCheckIntervalMinutes();
+      // Get check interval (adaptive based on recent errors)
+      final intervalMinutes = await _getAdaptiveCheckInterval();
 
       // Start periodic completion checks
       _completionTimer = Timer.periodic(
@@ -87,6 +89,9 @@ class AutomaticHabitCompletionService {
       );
 
       _isRunning = true;
+
+      // Delay initial check to prevent immediate crashes after health permissions are granted
+      await Future.delayed(const Duration(seconds: 10));
 
       // Perform initial check
       await _performCompletionCheck();
@@ -190,6 +195,35 @@ class AutomaticHabitCompletionService {
     } catch (e) {
       AppLogger.error('Error setting check interval', e);
     }
+  }
+
+  /// Get adaptive check interval that increases with recent errors
+  static Future<int> _getAdaptiveCheckInterval() async {
+    final baseInterval = await getCheckIntervalMinutes();
+
+    // If no recent errors, use base interval
+    if (_recentErrorCount == 0 || _lastErrorTime == null) {
+      return baseInterval;
+    }
+
+    // If last error was more than 1 hour ago, reset error count
+    final now = DateTime.now();
+    if (now.difference(_lastErrorTime!).inHours >= 1) {
+      _recentErrorCount = 0;
+      _lastErrorTime = null;
+      return baseInterval;
+    }
+
+    // Increase interval based on error count (but cap at 2x base interval)
+    final multiplier = (1 + (_recentErrorCount * 0.5)).clamp(1.0, 2.0);
+    final adaptiveInterval = (baseInterval * multiplier).round();
+
+    if (adaptiveInterval > baseInterval) {
+      AppLogger.info(
+          'Using adaptive interval: ${adaptiveInterval}min (base: ${baseInterval}min, errors: $_recentErrorCount)');
+    }
+
+    return adaptiveInterval;
   }
 
   /// Perform a manual completion check
@@ -345,16 +379,31 @@ class AutomaticHabitCompletionService {
       // Process each habit for potential completion
       for (final habit in habits) {
         try {
+          AppLogger.info('Processing habit for auto-completion: ${habit.name}');
+
           // Skip if already completed today
           if (habit.isCompletedToday) {
+            AppLogger.info(
+                'Habit ${habit.name} already completed today, skipping');
             continue;
           }
 
           // Check if habit can be auto-completed based on health data
+          // Add timeout and error handling to prevent crashes
           final completionCheck =
               await HealthHabitMappingService.checkHabitCompletion(
             habit: habit,
             date: now,
+          ).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              AppLogger.warning(
+                  'Habit completion check timed out for ${habit.name}');
+              return HabitCompletionResult(
+                shouldComplete: false,
+                reason: 'Health data check timed out',
+              );
+            },
           );
 
           if (completionCheck.shouldComplete) {
@@ -418,10 +467,21 @@ class AutomaticHabitCompletionService {
 
       AppLogger.info(
           'Completion check finished: ${result.completedHabits}/${result.checkedHabits} habits auto-completed');
+
+      // Reset error count on successful completion
+      _recentErrorCount = 0;
+      _lastErrorTime = null;
     } catch (e) {
       AppLogger.error('Error during completion check', e);
       result.success = false;
       result.error = e.toString();
+
+      // Track errors for adaptive interval
+      _recentErrorCount++;
+      _lastErrorTime = DateTime.now();
+
+      AppLogger.warning(
+          'Recent completion check errors: $_recentErrorCount (will increase check interval temporarily)');
 
       // Emit error event
       _eventController?.add(AutoCompletionEvent(

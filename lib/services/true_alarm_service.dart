@@ -76,8 +76,10 @@ class TrueAlarmService {
         assetAudioPath: soundPath,
         loopAudio: true,
         vibrate: true,
-        volume: 1.0,
-        fadeDuration: 3.0,
+        volumeSettings: VolumeSettings.fade(
+          volume: 1.0,
+          fadeDuration: const Duration(seconds: 3),
+        ),
         notificationSettings: NotificationSettings(
           title: '🚨 HABIT ALARM: $habitName',
           body: 'Time to complete your habit! Tap to open the app.',

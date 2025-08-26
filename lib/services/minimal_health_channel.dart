@@ -44,10 +44,16 @@ class MinimalHealthChannel {
         return false;
       }
 
-      // Initialize the native plugin
+      // Initialize the native plugin with timeout and better error handling
       final bool result = await _channel.invokeMethod('initialize', {
         'supportedTypes': _supportedDataTypes,
-      });
+      }).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          AppLogger.warning('MinimalHealthChannel initialization timed out');
+          return false;
+        },
+      );
 
       _isInitialized = result;
 
@@ -60,6 +66,12 @@ class MinimalHealthChannel {
       }
 
       return _isInitialized;
+    } on PlatformException catch (e) {
+      AppLogger.error(
+          'Platform error initializing MinimalHealthChannel: ${e.code} - ${e.message}',
+          e);
+      _isInitialized = false;
+      return false;
     } catch (e) {
       AppLogger.error('Failed to initialize MinimalHealthChannel', e);
       _isInitialized = false;
@@ -74,11 +86,24 @@ class MinimalHealthChannel {
         return false;
       }
 
-      final bool available = await _channel.invokeMethod(
+      final bool available = await _channel
+          .invokeMethod(
         'isHealthConnectAvailable',
+      )
+          .timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          AppLogger.warning('Health Connect availability check timed out');
+          return false;
+        },
       );
       AppLogger.info('Health Connect availability: $available');
       return available;
+    } on PlatformException catch (e) {
+      AppLogger.error(
+          'Platform error checking Health Connect availability: ${e.code} - ${e.message}',
+          e);
+      return false;
     } catch (e) {
       AppLogger.error('Error checking Health Connect availability', e);
       return false;
@@ -122,9 +147,20 @@ class MinimalHealthChannel {
     try {
       final bool hasPerms = await _channel.invokeMethod('hasPermissions', {
         'supportedTypes': _supportedDataTypes,
-      });
+      }).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          AppLogger.warning('Health permissions check timed out');
+          return false;
+        },
+      );
       AppLogger.info('Health permissions status: $hasPerms');
       return hasPerms;
+    } on PlatformException catch (e) {
+      AppLogger.error(
+          'Platform error checking health permissions: ${e.code} - ${e.message}',
+          e);
+      return false;
     } catch (e) {
       AppLogger.error('Error checking health permissions', e);
       return false;
@@ -143,9 +179,20 @@ class MinimalHealthChannel {
       );
       final bool granted = await _channel.invokeMethod('requestPermissions', {
         'supportedTypes': _supportedDataTypes,
-      });
+      }).timeout(
+        const Duration(seconds: 30), // Longer timeout for permission requests
+        onTimeout: () {
+          AppLogger.warning('Health permissions request timed out');
+          return false;
+        },
+      );
       AppLogger.info('Health permissions request result: $granted');
       return granted;
+    } on PlatformException catch (e) {
+      AppLogger.error(
+          'Platform error requesting health permissions: ${e.code} - ${e.message}',
+          e);
+      return false;
     } catch (e) {
       AppLogger.error('Error requesting health permissions', e);
       return false;
@@ -213,19 +260,30 @@ class MinimalHealthChannel {
         'Fetching health data for $dataType from ${startDate.toIso8601String()} to ${endDate.toIso8601String()}',
       );
 
-      final List<dynamic> result = await _channel
-          .invokeMethod('getHealthData', {
-            'dataType': dataType,
-            'startDate': startDate.millisecondsSinceEpoch,
-            'endDate': endDate.millisecondsSinceEpoch,
-          });
+      // Add timeout and better error handling to prevent app crashes
+      final List<dynamic> result =
+          await _channel.invokeMethod('getHealthData', {
+        'dataType': dataType,
+        'startDate': startDate.millisecondsSinceEpoch,
+        'endDate': endDate.millisecondsSinceEpoch,
+      }).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          AppLogger.warning('Health data request timed out for $dataType');
+          return <dynamic>[];
+        },
+      );
 
-      final List<Map<String, dynamic>> healthData = result
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
+      final List<Map<String, dynamic>> healthData =
+          result.map((item) => Map<String, dynamic>.from(item)).toList();
 
       AppLogger.info('Retrieved ${healthData.length} records for $dataType');
       return healthData;
+    } on PlatformException catch (e) {
+      AppLogger.error(
+          'Platform error getting health data for $dataType: ${e.code} - ${e.message}',
+          e);
+      return [];
     } catch (e) {
       AppLogger.error('Error getting health data for $dataType', e);
       return [];
@@ -458,8 +516,7 @@ class MinimalHealthChannel {
         );
 
         // Check if this sleep session overlaps with our target window
-        final sessionOverlapsWindow =
-            sessionStart.isBefore(sleepWindowEnd) &&
+        final sessionOverlapsWindow = sessionStart.isBefore(sleepWindowEnd) &&
             sessionEnd.isAfter(sleepWindowStart);
 
         AppLogger.info(
@@ -744,9 +801,9 @@ class MinimalHealthChannel {
 
             // Calculate resting heart rate (lowest 15% of readings for better accuracy)
             final restingCount = (validHeartRates.length * 0.15).ceil().clamp(
-              1,
-              validHeartRates.length,
-            );
+                  1,
+                  validHeartRates.length,
+                );
             final restingRates = validHeartRates.take(restingCount);
             final restingHeartRate =
                 restingRates.reduce((a, b) => a + b) / restingRates.length;
