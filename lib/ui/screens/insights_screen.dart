@@ -174,14 +174,25 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               AppLogger.info(
                 'Health permissions not granted, skipping health data load',
               );
-              _healthSummary = null;
+              // Create permissions state instead of null
+              _healthSummary = {
+                'error': 'Health permissions not granted',
+                'hasPermissions': false,
+                'canRetry': true,
+                'needsPermissions': true,
+              };
               _integrationStatus = null;
             }
           } catch (e) {
             // Handle health service error quietly
             AppLogger.error('Failed to load health summary', e);
-            // Set empty health summary to show placeholder
-            _healthSummary = null;
+            // Create error state health summary instead of null
+            _healthSummary = {
+              'error': 'Failed to load health data',
+              'errorDetails': e.toString(),
+              'hasPermissions': false,
+              'canRetry': true,
+            };
             _integrationStatus = null;
           }
         },
@@ -2201,6 +2212,38 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // Determine the state based on health summary
+    String title;
+    String description;
+    IconData icon;
+    Color? iconColor;
+    bool showPermissionButton = false;
+    bool showRetryButton = false;
+
+    if (_healthSummary == null) {
+      title = 'Health Data Loading';
+      description = 'Loading your health and habit insights...';
+      icon = Icons.analytics;
+      iconColor = theme.colorScheme.primary;
+    } else if (_healthSummary!.containsKey('needsPermissions')) {
+      title = 'Health Permissions Required';
+      description = 'Grant health permissions to see personalized insights about how your habits impact your health metrics.';
+      icon = Icons.health_and_safety;
+      iconColor = theme.colorScheme.secondary;
+      showPermissionButton = true;
+    } else if (_healthSummary!.containsKey('error')) {
+      title = 'Health Data Unavailable';
+      description = _healthSummary!['error'] as String? ?? 'Unable to load health data at this time.';
+      icon = Icons.error_outline;
+      iconColor = theme.colorScheme.error;
+      showRetryButton = _healthSummary!['canRetry'] == true;
+    } else {
+      title = 'Health Analytics Loading';
+      description = 'Your health and habit correlations will appear here once data is processed.';
+      icon = Icons.analytics;
+      iconColor = theme.colorScheme.primary;
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -2217,17 +2260,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       child: Column(
         children: [
           Icon(
-            Icons.analytics,
+            icon,
             size: 48,
-            color: isDark
+            color: iconColor ?? (isDark
                 ? theme.colorScheme.onSurface.withValues(alpha: 0.6)
-                : Colors.grey.shade400,
+                : Colors.grey.shade400),
           ),
           const SizedBox(height: 16),
           Text(
-            _healthSummary == null
-                ? 'Health Data Not Available'
-                : 'Health Analytics Loading',
+            title,
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
               fontWeight: FontWeight.w600,
@@ -3618,143 +3659,4 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              _buildSetupStep(
-                '1',
-                'Install Health Connect',
-                'Make sure Health Connect is installed from Google Play Store',
-              ),
-              _buildSetupStep(
-                '2',
-                'Connect Your Apps',
-                'Open Health Connect and connect your fitness apps (Google Fit, Samsung Health, Fitbit, etc.)',
-              ),
-              _buildSetupStep(
-                '3',
-                'Enable Data Types',
-                'In Health Connect, make sure these data types are enabled:\n• Steps\n• Heart rate\n• Sleep\n• Active calories\n• Water intake',
-              ),
-              _buildSetupStep(
-                '4',
-                'Grant Permissions',
-                'Return to this app and tap "Connect Health" to grant permissions',
-              ),
-              _buildSetupStep(
-                '5',
-                'Wait for Sync',
-                'Some data may take 24-48 hours to appear, especially sleep data',
-              ),
-              ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDiagnosticItem(String label, dynamic value) {
-    final theme = Theme.of(context);
-    String displayValue;
-    Color? valueColor;
-
-    if (value == null) {
-      displayValue = 'Not available';
-      valueColor = theme.colorScheme.onSurface.withOpacity(0.6);
-    } else if (value is bool) {
-      displayValue = value ? 'Yes' : 'No';
-      valueColor = value ? Colors.green : Colors.red;
-    } else if (value is int) {
-      displayValue = value.toString();
-      valueColor = value > 0 ? Colors.green : Colors.orange;
-    } else {
-      displayValue = value.toString();
-      valueColor = theme.colorScheme.onSurface;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              displayValue,
-              style: TextStyle(
-                color: valueColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSetupStep(String number, String title, String description) {
-    final theme = Theme.of(context);
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                number,
-                style: TextStyle(
-                  color: theme.colorScheme.onPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+              _buildSe

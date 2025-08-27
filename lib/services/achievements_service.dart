@@ -223,13 +223,13 @@ class AchievementsService {
 
         case AchievementType.categorySpecific:
           final categoryCompletions = _getCategoryCompletions(
-            habits, completions, achievement.categoryFilter!);
+              habits, completions, achievement.categoryFilter!);
           earned = categoryCompletions >= achievement.requirement;
           break;
 
         case AchievementType.timeSpecific:
-          final timeCompletions = _getTimeSpecificCompletions(
-            completions, achievement.timeFilter!);
+          final timeCompletions =
+              _getTimeSpecificCompletions(completions, achievement.timeFilter!);
           earned = timeCompletions >= achievement.requirement;
           break;
 
@@ -291,7 +291,8 @@ class AchievementsService {
 
       final newLevel = _calculateLevel(newXP);
 
-      AppLogger.info('Awarded $xp XP${reason != null ? ' for $reason' : ''}. Total: $newXP');
+      AppLogger.info(
+          'Awarded $xp XP${reason != null ? ' for $reason' : ''}. Total: $newXP');
 
       // Check for level up
       if (newLevel > oldLevel) {
@@ -313,7 +314,9 @@ class AchievementsService {
       final achievementIds = prefs.getStringList(_achievementsKey) ?? [];
 
       final allAchievements = getAllAchievements();
-      return allAchievements.where((a) => achievementIds.contains(a.id)).toList();
+      return allAchievements
+          .where((a) => achievementIds.contains(a.id))
+          .toList();
     } catch (e) {
       AppLogger.error('Error getting unlocked achievements', e);
       return [];
@@ -335,7 +338,8 @@ class AchievementsService {
           currentProgress = _getMaxStreak(habits).toDouble();
           break;
         case AchievementType.perfectDays:
-          currentProgress = _getPerfectDaysStreak(habits, completions).toDouble();
+          currentProgress =
+              _getPerfectDaysStreak(habits, completions).toDouble();
           break;
         case AchievementType.habitCount:
           currentProgress = habits.length.toDouble();
@@ -345,18 +349,21 @@ class AchievementsService {
           break;
         case AchievementType.categorySpecific:
           currentProgress = _getCategoryCompletions(
-            habits, completions, achievement.categoryFilter!).toDouble();
+                  habits, completions, achievement.categoryFilter!)
+              .toDouble();
           break;
         case AchievementType.timeSpecific:
-          currentProgress = _getTimeSpecificCompletions(
-            completions, achievement.timeFilter!).toDouble();
+          currentProgress =
+              _getTimeSpecificCompletions(completions, achievement.timeFilter!)
+                  .toDouble();
           break;
         case AchievementType.comeback:
           currentProgress = _hasComeback(habits, completions) ? 1.0 : 0.0;
           break;
       }
 
-      progress[achievement.id] = (currentProgress / achievement.requirement).clamp(0.0, 1.0);
+      progress[achievement.id] =
+          (currentProgress / achievement.requirement).clamp(0.0, 1.0);
     }
 
     return progress;
@@ -447,8 +454,9 @@ class AchievementsService {
     if (habits.isEmpty) return 0;
 
     final avgCompletionRate = habits.fold<double>(0.0, (sum, habit) {
-      return sum + (habit['completionRate'] ?? 0.0);
-    }) / habits.length;
+          return sum + (habit['completionRate'] ?? 0.0);
+        }) /
+        habits.length;
 
     return (avgCompletionRate * 30).round(); // Approximate perfect days
   }
@@ -489,9 +497,60 @@ class AchievementsService {
     List<Map<String, dynamic>> habits,
     List<Map<String, dynamic>> completions,
   ) {
-    // This would need more complex logic to detect comebacks
-    // For now, return false as a placeholder
-    return habits.any((habit) => (habit['currentStreak'] ?? 0) > 0);
+    // A comeback is when a user restarts a habit after missing it for 7+ days
+    final now = DateTime.now();
+
+    for (final habit in habits) {
+      final habitId = habit['id'];
+      if (habitId == null) continue;
+
+      // Get all completions for this habit, sorted by date
+      final habitCompletions = completions
+          .where((completion) => completion['habitId'] == habitId)
+          .map((completion) => completion['completedAt'] as DateTime?)
+          .where((date) => date != null)
+          .cast<DateTime>()
+          .toList()
+        ..sort();
+
+      if (habitCompletions.length < 2)
+        continue; // Need at least 2 completions to detect a gap
+
+      // Look for gaps of 7+ days between completions
+      for (int i = 1; i < habitCompletions.length; i++) {
+        final previousCompletion = habitCompletions[i - 1];
+        final currentCompletion = habitCompletions[i];
+
+        final daysBetween =
+            currentCompletion.difference(previousCompletion).inDays;
+
+        // If there's a gap of 7+ days and the current completion is recent (within last 30 days)
+        if (daysBetween >= 7 &&
+            now.difference(currentCompletion).inDays <= 30) {
+          return true; // Found a comeback!
+        }
+      }
+
+      // Also check if there's a recent completion after a long gap from the last completion
+      if (habitCompletions.isNotEmpty) {
+        final lastCompletion = habitCompletions.last;
+        final daysSinceLastCompletion = now.difference(lastCompletion).inDays;
+
+        // If the last completion was recent (within 7 days) but there was a long gap before it
+        if (daysSinceLastCompletion <= 7 && habitCompletions.length >= 2) {
+          final secondLastCompletion =
+              habitCompletions[habitCompletions.length - 2];
+          final gapBeforeLastCompletion =
+              lastCompletion.difference(secondLastCompletion).inDays;
+
+          if (gapBeforeLastCompletion >= 7) {
+            return true; // Recent comeback detected!
+          }
+        }
+      }
+    }
+
+    return false;
   }
 
   static double _calculateOverallCompletionRate(
@@ -501,8 +560,9 @@ class AchievementsService {
     if (habits.isEmpty) return 0.0;
 
     return habits.fold<double>(0.0, (sum, habit) {
-      return sum + (habit['completionRate'] ?? 0.0);
-    }) / habits.length;
+          return sum + (habit['completionRate'] ?? 0.0);
+        }) /
+        habits.length;
   }
 
   static String _calculateRank(int level, int achievementsCount) {

@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'logging_service.dart';
@@ -450,17 +451,112 @@ class NotificationService {
   }
 
   /// Store notification action for later processing when app is opened
-  static void _storeActionForLaterProcessing(String habitId, String action) {
+  static void _storeActionForLaterProcessing(
+      String habitId, String action) async {
     try {
-      // For now, just log it - in a full implementation, you'd store this in SharedPreferences
-      // or a local database to process when the app is opened
       AppLogger.info(
           'Storing action for later processing: $action for habit $habitId');
 
-      // TODO: Implement persistent storage for background actions
-      // This would allow processing actions even when the app is completely closed
+      // Implement persistent storage for background actions using SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get existing pending actions
+      final existingActions =
+          prefs.getStringList('pending_notification_actions') ?? [];
+
+      // Create action entry with timestamp
+      final actionEntry = {
+        'habitId': habitId,
+        'action': action,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      };
+
+      // Add new action to the list
+      existingActions.add(jsonEncode(actionEntry));
+
+      // Store updated list
+      await prefs.setStringList(
+          'pending_notification_actions', existingActions);
+
+      AppLogger.info(
+          'Successfully stored pending action: $action for habit $habitId');
     } catch (e) {
       AppLogger.error('Error storing action for later processing', e);
+    }
+  }
+
+  /// Process all pending notification actions stored during background execution
+  static Future<void> processPendingActions() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pendingActions =
+          prefs.getStringList('pending_notification_actions') ?? [];
+
+      if (pendingActions.isEmpty) {
+        AppLogger.debug('No pending notification actions to process');
+        return;
+      }
+
+      AppLogger.info(
+          'Processing ${pendingActions.length} pending notification actions');
+
+      for (final actionString in pendingActions) {
+        try {
+          final actionData = jsonDecode(actionString) as Map<String, dynamic>;
+          final habitId = actionData['habitId'] as String;
+          final action = actionData['action'] as String;
+          final timestamp = actionData['timestamp'] as int;
+
+          // Check if action is not too old (e.g., within last 24 hours)
+          final actionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+          final now = DateTime.now();
+          final timeDifference = now.difference(actionTime);
+
+          if (timeDifference.inHours > 24) {
+            AppLogger.warning(
+                'Skipping old pending action: $action for habit $habitId (${timeDifference.inHours} hours old)');
+            continue;
+          }
+
+          // Process the action
+          await _processStoredAction(habitId, action, actionTime);
+        } catch (e) {
+          AppLogger.error('Error processing individual pending action', e);
+        }
+      }
+
+      // Clear processed actions
+      await prefs.remove('pending_notification_actions');
+      AppLogger.info('Cleared all processed pending actions');
+    } catch (e) {
+      AppLogger.error('Error processing pending notification actions', e);
+    }
+  }
+
+  /// Process a stored notification action
+  static Future<void> _processStoredAction(
+      String habitId, String action, DateTime actionTime) async {
+    try {
+      AppLogger.info(
+          'Processing stored action: $action for habit $habitId at $actionTime');
+
+      final normalizedAction = action.toLowerCase().replaceAll('_action', '');
+
+      switch (normalizedAction) {
+        case 'complete':
+          // Mark habit as complete using the stored action time
+          await _completeHabitFromNotification(habitId, actionTime);
+          break;
+        case 'snooze':
+          // Reschedule notification for later
+          await _snoozeHabitNotification(habitId);
+          break;
+        default:
+          AppLogger.warning('Unknown stored action: $action');
+      }
+    } catch (e) {
+      AppLogger.error(
+          'Error processing stored action: $action for habit $habitId', e);
     }
   }
 
@@ -553,7 +649,7 @@ class NotificationService {
   /// Set the notification action callback and process any pending actions
   static void setNotificationActionCallback(
     Function(String habitId, String action) callback,
-  ) {
+  ) async {
     onNotificationAction = callback;
     _callbackSetCount++;
     _lastCallbackSetTime = DateTime.now();
@@ -561,10 +657,10 @@ class NotificationService {
       '🔗 Notification action callback set (count: $_callbackSetCount, time: $_lastCallbackSetTime)',
     );
 
-    // Process any pending actions
+    // Process any pending actions from memory queue
     if (_pendingActions.isNotEmpty) {
       AppLogger.info(
-        '📦 Processing ${_pendingActions.length} pending notification actions',
+        '📦 Processing ${_pendingActions.length} pending notification actions from memory',
       );
 
       final actionsToProcess = List<Map<String, String>>.from(_pendingActions);
@@ -596,6 +692,9 @@ class NotificationService {
     } else {
       AppLogger.info('📭 No pending actions to process');
     }
+
+    // Also process any persistent actions from SharedPreferences
+    await processPendingActions();
   }
 
   /// Get the number of pending actions (for debugging)

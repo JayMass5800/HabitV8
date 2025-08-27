@@ -1,5 +1,6 @@
-// A placeholder for the Hive database implementation.
-// This will be responsible for all the database operations.
+// Complete Hive database implementation for HabitV8.
+// This handles all database operations for habits including CRUD operations,
+// caching, notifications integration, and calendar synchronization.
 
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
