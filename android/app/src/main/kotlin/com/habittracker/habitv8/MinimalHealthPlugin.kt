@@ -159,27 +159,57 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
         
-        // Initialize Health Connect client - removed SDK version check to ensure it works on all Android versions
-        try {
-            healthConnectClient = HealthConnectClient.getOrCreate(context)
-            Log.i("MinimalHealthPlugin", "Health Connect client initialized successfully")
-            
-            // Log the Health Connect client details
-            val packageInfo = context.packageManager.getPackageInfo("com.google.android.apps.healthdata", 0)
-            Log.i("MinimalHealthPlugin", "Health Connect package info: ${packageInfo.versionName}")
-        } catch (e: Exception) {
-            Log.w("MinimalHealthPlugin", "Health Connect not available or not installed", e)
-            
-            // Try to check if Health Connect is installed
-            try {
-                context.packageManager.getPackageInfo("com.google.android.apps.healthdata", 0)
-                Log.i("MinimalHealthPlugin", "Health Connect is installed but client initialization failed")
-            } catch (e: Exception) {
-                Log.w("MinimalHealthPlugin", "Health Connect is not installed", e)
-            }
-        }
+        // Initialize Health Connect client with enhanced error handling and retry logic
+        initializeHealthConnectClient()
         
         Log.i("MinimalHealthPlugin", "Plugin attached - supporting ${ALLOWED_DATA_TYPES.size} health data types")
+    }
+    
+    private fun initializeHealthConnectClient() {
+        try {
+            Log.i("MinimalHealthPlugin", "Initializing Health Connect client...")
+            
+            // Check if Health Connect is installed first
+            try {
+                val packageInfo = context.packageManager.getPackageInfo("com.google.android.apps.healthdata", 0)
+                Log.i("MinimalHealthPlugin", "Health Connect package found: version ${packageInfo.versionName}, versionCode ${packageInfo.versionCode}")
+            } catch (e: Exception) {
+                Log.e("MinimalHealthPlugin", "Health Connect package not found - Health Connect is not installed", e)
+                return
+            }
+            
+            // Try to create the Health Connect client
+            healthConnectClient = HealthConnectClient.getOrCreate(context)
+            Log.i("MinimalHealthPlugin", "Health Connect client created successfully")
+            
+            // Test the client by trying to get granted permissions
+            coroutineScope.launch {
+                try {
+                    val grantedPermissions = healthConnectClient!!.permissionController.getGrantedPermissions()
+                    Log.i("MinimalHealthPlugin", "Health Connect client test successful - ${grantedPermissions.size} permissions currently granted")
+                } catch (e: Exception) {
+                    Log.w("MinimalHealthPlugin", "Health Connect client test failed - client may not be fully functional", e)
+                    
+                    // Try to reinitialize the client
+                    try {
+                        Log.i("MinimalHealthPlugin", "Attempting to reinitialize Health Connect client...")
+                        healthConnectClient = HealthConnectClient.getOrCreate(context)
+                        Log.i("MinimalHealthPlugin", "Health Connect client reinitialized successfully")
+                    } catch (reinitError: Exception) {
+                        Log.e("MinimalHealthPlugin", "Failed to reinitialize Health Connect client", reinitError)
+                        healthConnectClient = null
+                    }
+                }
+            }
+            
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Failed to initialize Health Connect client", e)
+            healthConnectClient = null
+            
+            // Log detailed error information
+            Log.e("MinimalHealthPlugin", "Error details: ${e.javaClass.simpleName}: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
@@ -535,15 +565,25 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
 
     private fun getHealthData(call: MethodCall, result: Result) {
         if (healthConnectClient == null) {
-            Log.w("MinimalHealthPlugin", "Health Connect not available")
-            result.error("HEALTH_CONNECT_UNAVAILABLE", "Health Connect is not available", null)
-            return
+            Log.w("MinimalHealthPlugin", "Health Connect client is null - attempting to reinitialize...")
+            initializeHealthConnectClient()
+            
+            if (healthConnectClient == null) {
+                Log.e("MinimalHealthPlugin", "Health Connect client still null after reinitialization")
+                result.error("HEALTH_CONNECT_UNAVAILABLE", "Health Connect is not available", null)
+                return
+            }
         }
 
         try {
             val dataType = call.argument<String>("dataType") ?: ""
             val startDate = call.argument<Long>("startDate") ?: 0L
             val endDate = call.argument<Long>("endDate") ?: 0L
+            
+            Log.i("MinimalHealthPlugin", "getHealthData called with:")
+            Log.i("MinimalHealthPlugin", "  - dataType: $dataType")
+            Log.i("MinimalHealthPlugin", "  - startDate: $startDate (${Instant.ofEpochMilli(startDate)})")
+            Log.i("MinimalHealthPlugin", "  - endDate: $endDate (${Instant.ofEpochMilli(endDate)})")
             
             // Special handling for BACKGROUND_HEALTH_DATA
             if (dataType == "BACKGROUND_HEALTH_DATA") {
@@ -606,36 +646,69 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     )
                     
                     try {
+                        Log.i("MinimalHealthPlugin", "Executing Health Connect readRecords request for $dataType...")
                         val response = healthConnectClient!!.readRecords(request)
+                        Log.i("MinimalHealthPlugin", "Health Connect readRecords completed, processing ${response.records.size} records...")
+                        
                         val healthData = response.records.map { record ->
-                            convertRecordToMap(record, dataType)
-                        }
-                        
-                        Log.i("MinimalHealthPlugin", "Retrieved ${healthData.size} records for $dataType from ${Instant.ofEpochMilli(startDate)} to ${Instant.ofEpochMilli(endDate)}")
-                        
-                        // Special logging for calories
-                        if (dataType == "ACTIVE_ENERGY_BURNED") {
-                            val totalCalories = healthData.sumOf { (it["value"] as Double) }
-                            Log.i("MinimalHealthPlugin", "Total active calories in range: ${totalCalories.toInt()} cal")
-                            
-                            if (healthData.isEmpty()) {
-                                Log.w("MinimalHealthPlugin", "No active calories records found! Check if:")
-                                Log.w("MinimalHealthPlugin", "1. Health Connect has active calories permission")
-                                Log.w("MinimalHealthPlugin", "2. A fitness app is connected and syncing calories data")
-                                Log.w("MinimalHealthPlugin", "3. The device has recorded any physical activity")
+                            try {
+                                convertRecordToMap(record, dataType)
+                            } catch (e: Exception) {
+                                Log.e("MinimalHealthPlugin", "Error converting record to map for $dataType", e)
+                                // Return a basic map with error info
+                                mapOf(
+                                    "type" to dataType,
+                                    "timestamp" to System.currentTimeMillis(),
+                                    "value" to 0.0,
+                                    "unit" to "error",
+                                    "error" to e.message
+                                )
                             }
                         }
                         
-                        // Special logging for total calories
-                        if (dataType == "TOTAL_CALORIES_BURNED") {
-                            val totalCalories = healthData.sumOf { (it["value"] as Double) }
-                            Log.i("MinimalHealthPlugin", "Total calories burned in range: ${totalCalories.toInt()} cal")
-                            
-                            if (healthData.isEmpty()) {
-                                Log.w("MinimalHealthPlugin", "No total calories records found! Check if:")
-                                Log.w("MinimalHealthPlugin", "1. Health Connect has total calories permission")
-                                Log.w("MinimalHealthPlugin", "2. A fitness app is connected and syncing total calories data")
-                                Log.w("MinimalHealthPlugin", "3. The device has recorded any physical activity")
+                        Log.i("MinimalHealthPlugin", "Successfully processed ${healthData.size} records for $dataType from ${Instant.ofEpochMilli(startDate)} to ${Instant.ofEpochMilli(endDate)}")
+                        
+                        // Enhanced logging for different data types
+                        when (dataType) {
+                            "STEPS" -> {
+                                val totalSteps = healthData.sumOf { (it["value"] as? Double) ?: 0.0 }.toInt()
+                                Log.i("MinimalHealthPlugin", "Total steps in range: $totalSteps")
+                                if (healthData.isEmpty()) {
+                                    Log.w("MinimalHealthPlugin", "No steps data found - check if Zepp app is syncing step data to Health Connect")
+                                }
+                            }
+                            "ACTIVE_ENERGY_BURNED" -> {
+                                val totalCalories = healthData.sumOf { (it["value"] as? Double) ?: 0.0 }
+                                Log.i("MinimalHealthPlugin", "Total active calories in range: ${totalCalories.toInt()} cal")
+                                if (healthData.isEmpty()) {
+                                    Log.w("MinimalHealthPlugin", "No active calories records found! Troubleshooting:")
+                                    Log.w("MinimalHealthPlugin", "1. Check if Zepp app is syncing calories to Health Connect")
+                                    Log.w("MinimalHealthPlugin", "2. Verify Health Connect has active calories permission")
+                                    Log.w("MinimalHealthPlugin", "3. Ensure your watch is recording physical activities")
+                                }
+                            }
+                            "TOTAL_CALORIES_BURNED" -> {
+                                val totalCalories = healthData.sumOf { (it["value"] as? Double) ?: 0.0 }
+                                Log.i("MinimalHealthPlugin", "Total calories burned in range: ${totalCalories.toInt()} cal")
+                                if (healthData.isEmpty()) {
+                                    Log.w("MinimalHealthPlugin", "No total calories records found! Check Google Fit integration")
+                                }
+                            }
+                            "HEART_RATE" -> {
+                                if (healthData.isNotEmpty()) {
+                                    val avgHeartRate = healthData.mapNotNull { it["value"] as? Double }.average()
+                                    Log.i("MinimalHealthPlugin", "Average heart rate in range: ${avgHeartRate.toInt()} bpm")
+                                } else {
+                                    Log.w("MinimalHealthPlugin", "No heart rate data found - check if Zepp app is syncing heart rate to Health Connect")
+                                }
+                            }
+                            "SLEEP_IN_BED" -> {
+                                if (healthData.isNotEmpty()) {
+                                    val totalSleepMinutes = healthData.sumOf { (it["value"] as? Double) ?: 0.0 }
+                                    Log.i("MinimalHealthPlugin", "Total sleep time in range: ${(totalSleepMinutes / 60).toInt()} hours")
+                                } else {
+                                    Log.w("MinimalHealthPlugin", "No sleep data found - check if Zepp app is syncing sleep data to Health Connect")
+                                }
                             }
                         }
                         

@@ -1110,6 +1110,10 @@ class HealthService {
         'Fetching comprehensive health summary from Health Connect...',
       );
 
+      // First, check if we have any data sources connected
+      final dataSources = await _checkHealthDataSources();
+      AppLogger.info('Health data sources check: $dataSources');
+
       // Fetch health data with timeouts and error handling to prevent crashes
       // Make calls sequential to reduce load on native plugin
       final results = <dynamic>[];
@@ -1204,7 +1208,23 @@ class HealthService {
         'timestamp': DateTime.now().toIso8601String(),
         'dataSource': 'health_connect',
         'isInitialized': _isInitialized,
+        'dataSources': dataSources,
       };
+
+      // Check if we got any meaningful data
+      final hasAnyData = (summary['steps'] as int) > 0 ||
+          (summary['activeCalories'] as double) > 0 ||
+          (summary['totalCalories'] as double) > 0 ||
+          (summary['sleepHours'] as double) > 0 ||
+          (summary['waterIntake'] as double) > 0 ||
+          (summary['heartRate'] as double?) != null;
+
+      if (!hasAnyData) {
+        AppLogger.warning(
+            'No health data found - this might indicate missing data sources');
+        summary['noDataReason'] = _getNoDataReason(dataSources);
+        summary['troubleshootingSteps'] = _getTroubleshootingSteps();
+      }
 
       // Add derived metrics
       final steps = summary['steps'] as int;
@@ -1220,7 +1240,7 @@ class HealthService {
       summary['activityLevel'] = _getActivityLevel(summary['steps'] as int);
 
       AppLogger.info(
-        'Health summary retrieved successfully: ${summary['steps']} steps, ${(summary['activeCalories'] as double).round()} cal',
+        'Health summary retrieved: ${summary['steps']} steps, ${(summary['activeCalories'] as double).round()} cal, hasData: $hasAnyData',
       );
       return summary;
     } catch (e) {
@@ -1241,8 +1261,367 @@ class HealthService {
         'hydrationStatus': 'error',
         'sleepQuality': 'error',
         'activityLevel': 'error',
+        'troubleshootingSteps': _getTroubleshootingSteps(),
       };
     }
+  }
+
+  /// Check what health data sources are available and connected
+  static Future<Map<String, dynamic>> _checkHealthDataSources() async {
+    try {
+      final now = DateTime.now();
+      final sevenDaysAgo = now.subtract(const Duration(days: 7));
+
+      final sources = <String, dynamic>{
+        'hasStepsData': false,
+        'hasCaloriesData': false,
+        'hasSleepData': false,
+        'hasHeartRateData': false,
+        'hasWaterData': false,
+        'totalDataPoints': 0,
+        'dataSourcesConnected': <String>[],
+        'lastDataTimestamp': null,
+      };
+
+      // Check each data type for recent data
+      final dataTypes = [
+        'STEPS',
+        'ACTIVE_ENERGY_BURNED',
+        'SLEEP_IN_BED',
+        'HEART_RATE',
+        'WATER'
+      ];
+
+      for (final dataType in dataTypes) {
+        try {
+          final data = await MinimalHealthChannel.getHealthData(
+            dataType: dataType,
+            startDate: sevenDaysAgo,
+            endDate: now,
+          );
+
+          if (data.isNotEmpty) {
+            sources['totalDataPoints'] =
+                (sources['totalDataPoints'] as int) + data.length;
+
+            // Find the most recent data timestamp
+            final latestRecord = data.reduce((a, b) =>
+                (a['timestamp'] as int) > (b['timestamp'] as int) ? a : b);
+            final latestTimestamp = DateTime.fromMillisecondsSinceEpoch(
+                latestRecord['timestamp'] as int);
+
+            if (sources['lastDataTimestamp'] == null ||
+                latestTimestamp.isAfter(DateTime.parse(
+                    sources['lastDataTimestamp'] as String? ?? '1970-01-01'))) {
+              sources['lastDataTimestamp'] = latestTimestamp.toIso8601String();
+            }
+
+            switch (dataType) {
+              case 'STEPS':
+                sources['hasStepsData'] = true;
+                sources['dataSourcesConnected'].add('Steps tracking');
+                break;
+              case 'ACTIVE_ENERGY_BURNED':
+                sources['hasCaloriesData'] = true;
+                sources['dataSourcesConnected'].add('Calories tracking');
+                break;
+              case 'SLEEP_IN_BED':
+                sources['hasSleepData'] = true;
+                sources['dataSourcesConnected'].add('Sleep tracking');
+                break;
+              case 'HEART_RATE':
+                sources['hasHeartRateData'] = true;
+                sources['dataSourcesConnected'].add('Heart rate monitoring');
+                break;
+              case 'WATER':
+                sources['hasWaterData'] = true;
+                sources['dataSourcesConnected'].add('Hydration tracking');
+                break;
+            }
+          }
+        } catch (e) {
+          AppLogger.warning('Error checking data source for $dataType: $e');
+        }
+      }
+
+      AppLogger.info('Data sources found: ${sources['dataSourcesConnected']}');
+      AppLogger.info(
+          'Total data points in last 7 days: ${sources['totalDataPoints']}');
+
+      return sources;
+    } catch (e) {
+      AppLogger.error('Error checking health data sources', e);
+      return {
+        'hasStepsData': false,
+        'hasCaloriesData': false,
+        'hasSleepData': false,
+        'hasHeartRateData': false,
+        'hasWaterData': false,
+        'totalDataPoints': 0,
+        'dataSourcesConnected': <String>[],
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// Get reason why no health data was found
+  static String _getNoDataReason(Map<String, dynamic> dataSources) {
+    final totalDataPoints = dataSources['totalDataPoints'] as int? ?? 0;
+    final connectedSources =
+        dataSources['dataSourcesConnected'] as List<String>? ?? [];
+
+    if (totalDataPoints == 0 && connectedSources.isEmpty) {
+      return 'No health apps are connected to Health Connect or no data has been recorded yet.';
+    } else if (totalDataPoints > 0 && connectedSources.isNotEmpty) {
+      return 'Health data exists but may not be from today. Check if your fitness apps are syncing recent data.';
+    } else {
+      return 'Health Connect permissions are granted but no data sources are actively providing health data.';
+    }
+  }
+
+  /// Get troubleshooting steps for health data issues
+  static List<String> _getTroubleshootingSteps() {
+    return [
+      '1. Install and set up a fitness app (Google Fit, Samsung Health, Fitbit, etc.)',
+      '2. Open Health Connect app and verify data sources are connected',
+      '3. Check that your fitness app has Health Connect integration enabled',
+      '4. Ensure your fitness app is actively tracking data (walk around, log activities)',
+      '5. Try manually syncing your fitness app data',
+      '6. Restart both your fitness app and Health Connect',
+      '7. Check that Health Connect permissions are granted for all data types',
+      '8. Verify your device has recent activity data to sync',
+    ];
+  }
+
+  /// Debug health data issues specifically for Zepp and Google Fit
+  static Future<Map<String, dynamic>> debugHealthDataIssues() async {
+    final debug = <String, dynamic>{};
+
+    try {
+      AppLogger.info('Starting comprehensive health data debugging...');
+
+      // Test multiple time ranges to find where data exists
+      final now = DateTime.now();
+      final timeRanges = {
+        'last_hour': {
+          'start': now.subtract(const Duration(hours: 1)),
+          'end': now,
+        },
+        'today': {
+          'start': DateTime(now.year, now.month, now.day),
+          'end': now,
+        },
+        'yesterday': {
+          'start': DateTime(now.year, now.month, now.day - 1),
+          'end': DateTime(now.year, now.month, now.day),
+        },
+        'last_3_days': {
+          'start': now.subtract(const Duration(days: 3)),
+          'end': now,
+        },
+        'last_week': {
+          'start': now.subtract(const Duration(days: 7)),
+          'end': now,
+        },
+        'last_month': {
+          'start': now.subtract(const Duration(days: 30)),
+          'end': now,
+        },
+      };
+
+      // Test each data type across all time ranges
+      final dataTypes = [
+        'STEPS',
+        'ACTIVE_ENERGY_BURNED',
+        'TOTAL_CALORIES_BURNED',
+        'HEART_RATE',
+        'SLEEP_IN_BED',
+        'WATER'
+      ];
+
+      for (final dataType in dataTypes) {
+        debug[dataType] = <String, dynamic>{};
+
+        for (final rangeName in timeRanges.keys) {
+          final range = timeRanges[rangeName]!;
+
+          try {
+            AppLogger.info(
+                'Testing $dataType for $rangeName: ${range['start']} to ${range['end']}');
+
+            final data = await MinimalHealthChannel.getHealthData(
+              dataType: dataType,
+              startDate: range['start']!,
+              endDate: range['end']!,
+            );
+
+            debug[dataType][rangeName] = {
+              'recordCount': data.length,
+              'timeRange':
+                  '${range['start']!.toIso8601String()} to ${range['end']!.toIso8601String()}',
+            };
+
+            if (data.isNotEmpty) {
+              // Get first and last records
+              final firstRecord = data.first;
+              final lastRecord = data.last;
+
+              debug[dataType][rangeName]['firstRecord'] = {
+                'value': firstRecord['value'],
+                'timestamp': firstRecord['timestamp'],
+                'readable': DateTime.fromMillisecondsSinceEpoch(
+                        firstRecord['timestamp'] as int)
+                    .toIso8601String(),
+              };
+
+              debug[dataType][rangeName]['lastRecord'] = {
+                'value': lastRecord['value'],
+                'timestamp': lastRecord['timestamp'],
+                'readable': DateTime.fromMillisecondsSinceEpoch(
+                        lastRecord['timestamp'] as int)
+                    .toIso8601String(),
+              };
+
+              // Calculate total value for this range
+              if (dataType == 'STEPS') {
+                final totalSteps = data.fold<int>(0,
+                    (sum, record) => sum + (record['value'] as double).round());
+                debug[dataType][rangeName]['totalValue'] = totalSteps;
+              } else if (dataType.contains('CALORIES')) {
+                final totalCalories = data.fold<double>(
+                    0.0, (sum, record) => sum + (record['value'] as double));
+                debug[dataType][rangeName]['totalValue'] = totalCalories;
+              }
+            }
+
+            AppLogger.info('$dataType $rangeName: ${data.length} records');
+          } catch (e) {
+            debug[dataType][rangeName] = {
+              'error': e.toString(),
+              'timeRange':
+                  '${range['start']!.toIso8601String()} to ${range['end']!.toIso8601String()}',
+            };
+            AppLogger.error('Error testing $dataType for $rangeName: $e');
+          }
+        }
+      }
+
+      // Add summary analysis
+      debug['analysis'] = _analyzeDebugResults(debug);
+
+      // Add specific recommendations for Zepp and Google Fit
+      debug['zeppGoogleFitRecommendations'] = [
+        'For Zepp App:',
+        '• Open Zepp app → Profile → Health Data Sharing → Health Connect',
+        '• Ensure all data types are enabled for sharing',
+        '• Try manual sync: Pull down to refresh in Zepp app',
+        '• Check if Zepp app has background app refresh enabled',
+        '',
+        'For Google Fit:',
+        '• Open Google Fit → Profile → Settings → Connected apps → Health Connect',
+        '• Verify all permissions are granted',
+        '• Check Google Fit is actively tracking (not just connected)',
+        '• Try recording a manual activity in Google Fit',
+        '',
+        'General Health Connect:',
+        '• Open Health Connect app → Data and access → Connected apps',
+        '• Verify both Zepp and Google Fit are listed and have permissions',
+        '• Check data sources: Health Connect → Browse data → [Data type]',
+        '• Try disconnecting and reconnecting apps if no recent data',
+      ];
+
+      debug['timestamp'] = DateTime.now().toIso8601String();
+      debug['success'] = true;
+    } catch (e) {
+      debug['error'] = e.toString();
+      debug['success'] = false;
+      AppLogger.error('Health data debugging failed', e);
+    }
+
+    return debug;
+  }
+
+  /// Analyze debug results to provide insights
+  static Map<String, dynamic> _analyzeDebugResults(
+      Map<String, dynamic> debugData) {
+    final analysis = <String, dynamic>{};
+
+    try {
+      // Check which data types have any data at all
+      final dataTypesWithData = <String>[];
+      final dataTypesWithoutData = <String>[];
+
+      for (final dataType in [
+        'STEPS',
+        'ACTIVE_ENERGY_BURNED',
+        'TOTAL_CALORIES_BURNED',
+        'HEART_RATE',
+        'SLEEP_IN_BED',
+        'WATER'
+      ]) {
+        final typeData = debugData[dataType] as Map<String, dynamic>?;
+        if (typeData != null) {
+          bool hasAnyData = false;
+          for (final rangeName in typeData.keys) {
+            final rangeData = typeData[rangeName] as Map<String, dynamic>?;
+            if (rangeData != null &&
+                (rangeData['recordCount'] as int? ?? 0) > 0) {
+              hasAnyData = true;
+              break;
+            }
+          }
+
+          if (hasAnyData) {
+            dataTypesWithData.add(dataType);
+          } else {
+            dataTypesWithoutData.add(dataType);
+          }
+        }
+      }
+
+      analysis['dataTypesWithData'] = dataTypesWithData;
+      analysis['dataTypesWithoutData'] = dataTypesWithoutData;
+
+      // Check for recent data (last 3 days)
+      final recentDataTypes = <String>[];
+      for (final dataType in dataTypesWithData) {
+        final typeData = debugData[dataType] as Map<String, dynamic>;
+        final last3DaysData = typeData['last_3_days'] as Map<String, dynamic>?;
+        if (last3DaysData != null &&
+            (last3DaysData['recordCount'] as int? ?? 0) > 0) {
+          recentDataTypes.add(dataType);
+        }
+      }
+
+      analysis['recentDataTypes'] = recentDataTypes;
+
+      // Provide specific diagnosis
+      if (dataTypesWithData.isEmpty) {
+        analysis['diagnosis'] = 'NO_DATA_FOUND';
+        analysis['issue'] =
+            'No health data found in any time range. This suggests Health Connect integration is not working.';
+        analysis['priority'] = 'HIGH';
+      } else if (recentDataTypes.isEmpty) {
+        analysis['diagnosis'] = 'OLD_DATA_ONLY';
+        analysis['issue'] =
+            'Health data exists but no recent data (last 3 days). Apps may have stopped syncing.';
+        analysis['priority'] = 'MEDIUM';
+      } else if (recentDataTypes.length < dataTypesWithData.length) {
+        analysis['diagnosis'] = 'PARTIAL_SYNC_ISSUE';
+        analysis['issue'] =
+            'Some data types have recent data, others don\'t. Selective sync issue.';
+        analysis['priority'] = 'MEDIUM';
+      } else {
+        analysis['diagnosis'] = 'DATA_AVAILABLE';
+        analysis['issue'] =
+            'Health data is available and recent. The issue might be in the app\'s data processing.';
+        analysis['priority'] = 'LOW';
+      }
+    } catch (e) {
+      analysis['error'] = e.toString();
+    }
+
+    return analysis;
   }
 
   /// Get hydration status based on water intake
@@ -2091,7 +2470,8 @@ class HealthService {
   }
 
   /// Debug health data issues - comprehensive troubleshooting method
-  static Future<Map<String, dynamic>> debugHealthDataIssues() async {
+  static Future<Map<String, dynamic>>
+      debugHealthDataIssuesComprehensive() async {
     final results = <String, dynamic>{};
 
     try {
