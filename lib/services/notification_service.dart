@@ -2883,4 +2883,34 @@ class NotificationService {
   static Future<void> stopAlarmSoundPreview() async {
     await HybridAlarmService.stopAlarmSoundPreview();
   }
+
+  /// Complete habit from notification action
+  static Future<void> _completeHabitFromNotification(
+      String habitId, DateTime actionTime) async {
+    try {
+      AppLogger.info(
+          'Completing habit $habitId from notification at $actionTime');
+
+      // Call the callback if set
+      if (onNotificationAction != null) {
+        onNotificationAction!(habitId, 'complete');
+        AppLogger.info('Complete action callback executed for habit: $habitId');
+      } else {
+        AppLogger.warning('No notification action callback set for complete');
+        _storeActionForLaterProcessing(habitId, 'complete');
+      }
+    } catch (e) {
+      AppLogger.error('Error completing habit from notification: $habitId', e);
+    }
+  }
+
+  /// Snooze habit notification
+  static Future<void> _snoozeHabitNotification(String habitId) async {
+    try {
+      AppLogger.info('Snoozing notification for habit: $habitId');
+      await _handleSnoozeAction(habitId);
+    } catch (e) {
+      AppLogger.error('Error snoozing habit notification: $habitId', e);
+    }
+  }
 }

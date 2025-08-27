@@ -513,8 +513,9 @@ class AchievementsService {
           .toList()
         ..sort();
 
-      if (habitCompletions.length < 2)
+      if (habitCompletions.length < 2) {
         continue; // Need at least 2 completions to detect a gap
+      }
 
       // Look for gaps of 7+ days between completions
       for (int i = 1; i < habitCompletions.length; i++) {
