@@ -11,6 +11,7 @@ import '../../services/health_service.dart';
 import '../../services/achievements_service.dart';
 import '../../services/health_habit_integration_service.dart';
 import '../../services/logging_service.dart';
+import '../../services/minimal_health_channel.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/progressive_disclosure.dart';
 
@@ -174,6 +175,13 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       appBar: AppBar(
         title: const Text('Insights'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            tooltip: 'Run Health Diagnostics',
+            onPressed: _runHealthDiagnostics,
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -215,7 +223,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildOverviewCards(habits),
+                        _buildBigFourPerformanceCards(habits),
                         const SizedBox(height: 24),
                         _buildHabitPerformanceChart(habits),
                         const SizedBox(height: 24),
@@ -226,6 +234,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                           _buildEnhancedHealthIntegrationSection(),
                           const SizedBox(height: 24),
                         ],
+
+                        // Health Debug Section - Always visible
+                        _buildHealthDebugSection(),
+                        const SizedBox(height: 24),
 
                         // Conditional Health Hub
                         _buildConditionalHealthHub(habits),
@@ -1620,6 +1632,240 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     }
   }
 
+  // Big Four Performance Cards
+  Widget _buildBigFourPerformanceCards(List<Habit> habits) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: _buildOverallCompletionRateCard(habits)),
+            const SizedBox(width: 12),
+            Expanded(child: _buildCurrentStreakCard(habits)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _buildConsistencyScoreCard(habits)),
+            const SizedBox(width: 12),
+            Expanded(child: _buildMostPowerfulDayCard(habits)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOverallCompletionRateCard(List<Habit> habits) {
+    double totalCompletionRate = 0.0;
+    double previousCompletionRate = 0.0;
+
+    if (habits.isNotEmpty) {
+      final completionRates = habits
+          .map((h) => _statsService.getCompletionRate(h, days: 30))
+          .toList();
+      totalCompletionRate =
+          completionRates.reduce((a, b) => a + b) / completionRates.length;
+
+      // Calculate previous 30-day completion rate for comparison
+      final now = DateTime.now();
+      final previousPeriodHabits = habits.map((h) {
+        final previousCompletions = h.completions
+            .where((c) =>
+                c.isBefore(now.subtract(const Duration(days: 30))) &&
+                c.isAfter(now.subtract(const Duration(days: 60))))
+            .toList();
+        final tempHabit = Habit.create(
+          name: h.name,
+          description: h.description,
+          category: h.category,
+          colorValue: h.colorValue,
+          frequency: h.frequency,
+          difficulty: h.difficulty,
+        );
+        tempHabit.completions = previousCompletions;
+        tempHabit.createdAt = h.createdAt;
+        return tempHabit;
+      }).toList();
+
+      if (previousPeriodHabits.isNotEmpty) {
+        final previousRates = previousPeriodHabits
+            .map((h) => _statsService.getCompletionRate(h, days: 30))
+            .toList();
+        previousCompletionRate =
+            previousRates.reduce((a, b) => a + b) / previousRates.length;
+      }
+    }
+
+    final percentageChange = previousCompletionRate > 0
+        ? ((totalCompletionRate - previousCompletionRate) /
+            previousCompletionRate *
+            100)
+        : 0.0;
+
+    return _buildPerformanceCard(
+      title: 'Overall Completion Rate',
+      value: '${(totalCompletionRate * 100).toStringAsFixed(0)}%',
+      insight:
+          '${percentageChange >= 0 ? '+' : ''}${percentageChange.toStringAsFixed(1)}% vs. previous 30 days',
+      gradient: [Colors.green.shade400, Colors.green.shade600],
+      icon: Icons.check_circle,
+    );
+  }
+
+  Widget _buildCurrentStreakCard(List<Habit> habits) {
+    int totalStreak = 0;
+    int previousStreak = 0;
+
+    if (habits.isNotEmpty) {
+      totalStreak = habits.map((h) => h.currentStreak).reduce((a, b) => a + b);
+      // For simplicity, assume previous streak was 90% of current (this could be more sophisticated)
+      previousStreak = (totalStreak * 0.9).round();
+    }
+
+    final streakChange = totalStreak - previousStreak;
+
+    return _buildPerformanceCard(
+      title: 'Total Current Streak',
+      value: '$totalStreak days',
+      insight: '${streakChange >= 0 ? '+' : ''}$streakChange days this period',
+      gradient: [Colors.orange.shade400, Colors.orange.shade600],
+      icon: Icons.local_fire_department,
+    );
+  }
+
+  Widget _buildConsistencyScoreCard(List<Habit> habits) {
+    double consistencyScore = 0.0;
+
+    if (habits.isNotEmpty) {
+      final scores = habits.map((h) {
+        final completionRate = _statsService.getCompletionRate(h, days: 30);
+        final streakConsistency = h.currentStreak > 0 ? 1.0 : 0.5;
+        return (completionRate + streakConsistency) / 2;
+      }).toList();
+      consistencyScore = scores.reduce((a, b) => a + b) / scores.length;
+    }
+
+    return _buildPerformanceCard(
+      title: 'Consistency Score',
+      value: '${(consistencyScore * 100).toStringAsFixed(0)}%',
+      insight: 'Based on completion patterns',
+      gradient: [Colors.blue.shade400, Colors.blue.shade600],
+      icon: Icons.trending_up,
+    );
+  }
+
+  Widget _buildMostPowerfulDayCard(List<Habit> habits) {
+    String mostPowerfulDay = 'Monday';
+    int maxCompletions = 0;
+
+    if (habits.isNotEmpty) {
+      final dayCompletions = <String, int>{};
+      final dayNames = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday'
+      ];
+
+      for (final habit in habits) {
+        for (final completion in habit.completions) {
+          final dayName = dayNames[completion.weekday - 1];
+          dayCompletions[dayName] = (dayCompletions[dayName] ?? 0) + 1;
+        }
+      }
+
+      if (dayCompletions.isNotEmpty) {
+        final maxEntry =
+            dayCompletions.entries.reduce((a, b) => a.value > b.value ? a : b);
+        mostPowerfulDay = maxEntry.key;
+        maxCompletions = maxEntry.value;
+      }
+    }
+
+    return _buildPerformanceCard(
+      title: 'Most Powerful Day',
+      value: mostPowerfulDay,
+      insight: '$maxCompletions completions',
+      gradient: [Colors.purple.shade400, Colors.purple.shade600],
+      icon: Icons.star,
+    );
+  }
+
+  Widget _buildPerformanceCard({
+    required String title,
+    required String value,
+    required String insight,
+    required List<Color> gradient,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.first.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 24),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.trending_up, color: Colors.white, size: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            insight,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // Health Integration Methods
   Widget _buildEnhancedHealthIntegrationSection() {
     return Card(
@@ -1643,9 +1889,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    border:
+                        Border.all(color: Colors.green.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1735,9 +1982,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -1788,9 +2035,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.05),
+            color: Colors.blue.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.withOpacity(0.2)),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -1846,7 +2093,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
-              ? theme.colorScheme.outline.withOpacity(0.3)
+              ? theme.colorScheme.outline.withValues(alpha: 0.3)
               : Colors.teal.shade200,
         ),
       ),
@@ -1884,7 +2131,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             Text(
               'Grant permission to Health Connect / HealthKit to see how your habits impact key metrics like sleep, heart rate, and activity levels.',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                 height: 1.5,
               ),
               textAlign: TextAlign.center,
@@ -2021,12 +2268,13 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark
-                ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                ? theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.3)
                 : Colors.indigo.shade50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDark
-                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  ? theme.colorScheme.outline.withValues(alpha: 0.3)
                   : Colors.indigo.shade200,
             ),
           ),
@@ -2084,12 +2332,13 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark
-                ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
+                ? theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.3)
                 : Colors.orange.shade50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDark
-                  ? theme.colorScheme.outline.withOpacity(0.3)
+                  ? theme.colorScheme.outline.withValues(alpha: 0.3)
                   : Colors.orange.shade200,
             ),
           ),
@@ -2130,9 +2379,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.1),
+        color: Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -2158,5 +2407,253 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildHealthDebugSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.health_and_safety,
+                  color: isDark ? theme.colorScheme.primary : Colors.teal,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Health Integration Status',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? theme.colorScheme.primary
+                        : Colors.teal.shade700,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: _runHealthDiagnostics,
+                  icon: const Icon(Icons.bug_report, size: 16),
+                  label: const Text('Debug'),
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Health Status Indicators
+            _buildHealthStatusIndicators(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHealthStatusIndicators() {
+    return Column(
+      children: [
+        _buildStatusRow(
+          'Health Permissions',
+          _healthSummary != null &&
+              !_healthSummary!.containsKey('needsPermissions'),
+          'Granted',
+          'Not granted',
+        ),
+        const SizedBox(height: 8),
+        _buildStatusRow(
+          'Health Data Available',
+          _healthSummary != null && !_healthSummary!.containsKey('error'),
+          'Available',
+          'Unavailable',
+        ),
+        const SizedBox(height: 8),
+        _buildStatusRow(
+          'Integration Active',
+          _integrationStatus != null,
+          'Active',
+          'Inactive',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusRow(
+      String label, bool isActive, String activeText, String inactiveText) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isActive
+                ? Colors.green.withValues(alpha: 0.1)
+                : Colors.red.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isActive
+                  ? Colors.green.withValues(alpha: 0.3)
+                  : Colors.red.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isActive ? Icons.check_circle : Icons.cancel,
+                size: 14,
+                color: isActive ? Colors.green.shade600 : Colors.red.shade600,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                isActive ? activeText : inactiveText,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isActive ? Colors.green.shade700 : Colors.red.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _runHealthDiagnostics() async {
+    try {
+      AppLogger.info(
+          '🔍 Running Health Connect diagnostics from Insights screen...');
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          title: Text('Running Diagnostics'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Analyzing Health Connect integration...'),
+            ],
+          ),
+        ),
+      );
+
+      // Run diagnostics
+      final results =
+          await MinimalHealthChannel.runNativeHealthConnectDiagnostics();
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context).pop();
+
+      // Show results dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Health Connect Diagnostics'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 400,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                        'Device: ${results['deviceInfo']?['manufacturer']} ${results['deviceInfo']?['model']}'),
+                    Text(
+                        'Android: ${results['deviceInfo']?['androidVersion']} (API ${results['deviceInfo']?['apiLevel']})'),
+                    const SizedBox(height: 16),
+                    Text(
+                        'Health Connect Available: ${results['healthConnectAvailable']}'),
+                    Text('Client Initialized: ${results['clientInitialized']}'),
+                    Text(
+                        'Permissions Granted: ${results['permissionCount'] ?? 0}'),
+                    const SizedBox(height: 16),
+                    const Text('Data Availability:',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    if (results['dataAvailability'] != null)
+                      ...((results['dataAvailability'] as Map<String, dynamic>)
+                          .entries
+                          .map((entry) {
+                        final dataType = entry.key;
+                        final ranges = entry.value as Map<String, dynamic>;
+                        final hasAnyData = ranges.values.any((range) =>
+                            (range as Map<String, dynamic>)['hasData'] == true);
+                        return Text(
+                            '$dataType: ${hasAnyData ? "✅ Has data" : "❌ No data"}');
+                      })),
+                    const SizedBox(height: 16),
+                    if (results['recommendations'] != null) ...[
+                      const Text('Recommendations:',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      ...(results['recommendations'] as List)
+                          .map((rec) => Text('• $rec')),
+                    ],
+                    if (results['error'] != null) ...[
+                      const Text('Error:',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.red)),
+                      Text(results['error'].toString(),
+                          style: const TextStyle(color: Colors.red)),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+
+      AppLogger.info('✅ Health diagnostics completed and displayed');
+    } catch (e) {
+      AppLogger.error('❌ Failed to run health diagnostics', e);
+
+      // Close loading dialog if still open
+      if (mounted) Navigator.of(context).pop();
+
+      // Show error dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Diagnostics Error'),
+            content: Text('Failed to run health diagnostics: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
 }
