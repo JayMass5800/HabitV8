@@ -3360,9 +3360,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             children: [
               Text(
                 'Comprehensive Sleep & Calories Analysis',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: 16),
 
@@ -3374,21 +3374,20 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     ? Colors.green
                     : Colors.red,
               ),
-
               _buildDebugSection(
-                '🔐 Permissions',
-                debugResults['hasPermissions'] == true ? 'Granted' : 'Missing',
-                debugResults['hasPermissions'] == true
+                '📱 Platform Supported',
+                debugResults['isPlatformSupported']?.toString() ?? 'Unknown',
+                debugResults['isPlatformSupported'] == true
                     ? Colors.green
                     : Colors.red,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               const Divider(),
+              const SizedBox(height: 12),
 
-              // Sleep Debug Section
+              // Sleep data debug
               if (debugResults['sleepDebug'] != null) ...[
-                const SizedBox(height: 8),
                 Text(
                   '😴 Sleep Data Analysis',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -3397,182 +3396,84 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       ),
                 ),
                 const SizedBox(height: 8),
-
                 _buildDebugSection(
-                  'Sleep Records',
-                  '${debugResults['sleepDebug']['totalSleepRecords'] ?? 0}',
-                  (debugResults['sleepDebug']['totalSleepRecords'] ?? 0) > 0
+                  'Today Records',
+                  '${debugResults['sleepDebug']['todayRecords'] ?? 0} records',
+                  (debugResults['sleepDebug']['todayRecords'] ?? 0) > 0
                       ? Colors.green
                       : Colors.orange,
                 ),
-
                 _buildDebugSection(
-                  'Calculated Sleep',
-                  '${(debugResults['sleepDebug']['calculatedSleepHours'] ?? 0).toStringAsFixed(1)} hours',
-                  (debugResults['sleepDebug']['calculatedSleepHours'] ?? 0) >
-                              0 &&
-                          (debugResults['sleepDebug']['calculatedSleepHours'] ??
-                                  0) <=
-                              16
+                  'Total Sleep Duration',
+                  '${((debugResults['sleepDebug']['totalMinutes'] ?? 0) / 60).toStringAsFixed(1)} hours',
+                  (debugResults['sleepDebug']['totalMinutes'] ?? 0) > 0
                       ? Colors.green
-                      : Colors.red,
+                      : Colors.orange,
                 ),
-
-                // Show sleep analysis if available
-                if (debugResults['sleepDebug']['sleepAnalysis'] != null) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Recent Sleep Sessions:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
+                if (debugResults['sleepDebug']['lastRecord'] != null)
+                  _buildDebugSection(
+                    'Last Record Time',
+                    debugResults['sleepDebug']['lastRecord'].toString(),
+                    Colors.blue,
                   ),
-                  const SizedBox(height: 4),
-                  ...((debugResults['sleepDebug']['sleepAnalysis']
-                              as List<dynamic>?) ??
-                          [])
-                      .map(
-                    (session) => Padding(
-                      padding: const EdgeInsets.only(left: 16, bottom: 4),
-                      child: Text(
-                        '• ${(session['durationHours'] as double).toStringAsFixed(1)}h (${session['startTime'].toString().substring(11, 16)} - ${session['endTime'].toString().substring(11, 16)})',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: session['isReasonableDuration'] == true
-                              ? (Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.green.shade300
-                                  : Colors.green.shade700)
-                              : (Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.red.shade300
-                                  : Colors.red.shade700),
-                        ),
-                      ),
-                    ),
+                if ((debugResults['sleepDebug']['todayRecords'] ?? 0) == 0) ...[
+                  const Text(
+                    '⚠️ No sleep data found',
+                    style: TextStyle(color: Colors.orange),
                   ),
+                  const Text(
+                      '• Check if your device tracks sleep automatically'),
+                  const Text('• Verify sleep permissions in Health Connect'),
+                  const Text('• Some devices require manual sleep tracking'),
                 ],
               ],
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               const Divider(),
+              const SizedBox(height: 12),
 
-              // Calories Debug Section
+              // Calories data debug
               if (debugResults['caloriesDebug'] != null) ...[
-                const SizedBox(height: 8),
                 Text(
                   '🔥 Calories Data Analysis',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange,
+                        color: Colors.red,
                       ),
                 ),
                 const SizedBox(height: 8),
                 _buildDebugSection(
                   'Today Records',
-                  '${debugResults['caloriesDebug']['todayRecords'] ?? 0}',
+                  '${debugResults['caloriesDebug']['todayRecords'] ?? 0} records',
                   (debugResults['caloriesDebug']['todayRecords'] ?? 0) > 0
                       ? Colors.green
                       : Colors.orange,
                 ),
                 _buildDebugSection(
-                  'Today Calories',
-                  '${(debugResults['caloriesDebug']['todayTotalCalories'] ?? 0).round()} cal',
-                  (debugResults['caloriesDebug']['todayTotalCalories'] ?? 0) > 0
+                  'Total Calories',
+                  '${debugResults['caloriesDebug']['totalCalories'] ?? 0} kcal',
+                  (debugResults['caloriesDebug']['totalCalories'] ?? 0) > 0
                       ? Colors.green
                       : Colors.orange,
                 ),
-                _buildDebugSection(
-                  'Direct Channel',
-                  '${(debugResults['caloriesDebug']['minimalChannelTodayCalories'] ?? 0).round()} cal',
-                  (debugResults['caloriesDebug']
-                                  ['minimalChannelTodayCalories'] ??
-                              0) >
-                          0
-                      ? Colors.green
-                      : Colors.orange,
-                ),
+                if (debugResults['caloriesDebug']['lastRecord'] != null)
+                  _buildDebugSection(
+                    'Last Record Time',
+                    debugResults['caloriesDebug']['lastRecord'].toString(),
+                    Colors.blue,
+                  ),
+                if ((debugResults['caloriesDebug']['todayRecords'] ?? 0) ==
+                    0) ...[
+                  const Text(
+                    '⚠️ No calories data found',
+                    style: TextStyle(color: Colors.orange),
+                  ),
+                  const Text(
+                      '• Check if your watch app is syncing to Health Connect'),
+                  const Text(
+                      '• Verify active energy permissions in Health Connect'),
+                ],
               ],
-
-              const SizedBox(height: 16),
-              const Divider(),
-
-              // Data Type Summary
-              const SizedBox(height: 8),
-              Text(
-                '📊 Data Type Summary',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.purple,
-                    ),
-              ),
-              const SizedBox(height: 8),
-
-              ...[
-                'steps',
-                'active_energy_burned',
-                'sleep_in_bed',
-                'water',
-                'weight',
-                'heart_rate',
-              ].map((dataType) {
-                final recordCount = debugResults['${dataType}RecordCount'] ?? 0;
-                final hasError = debugResults['${dataType}Error'] != null;
-
-                return _buildDebugSection(
-                  dataType.replaceAll('_', ' ').toUpperCase(),
-                  hasError ? 'Error' : '$recordCount records',
-                  hasError
-                      ? Colors.red
-                      : (recordCount > 0 ? Colors.green : Colors.grey),
-                );
-              }),
-
-              // Troubleshooting tips
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '💡 Key Findings & Next Steps:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    if ((debugResults['sleepDebug']?['calculatedSleepHours'] ??
-                            0) >
-                        16) ...[
-                      const Text(
-                        '⚠️ Sleep calculation issue detected - showing unrealistic hours',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                      const Text(
-                        '• Fixed: Now using longest single session instead of summing all sessions',
-                      ),
-                    ],
-                    if ((debugResults['caloriesDebug']?['todayRecords'] ?? 0) ==
-                        0) ...[
-                      const Text(
-                        '⚠️ No calories data found',
-                        style: TextStyle(color: Colors.orange),
-                      ),
-                      const Text(
-                        '• Check if your watch app is syncing to Health Connect',
-                      ),
-                      const Text(
-                        '• Verify active energy permissions in Health Connect',
-                      ),
-                    ],
-                  ],
-                ),
-              ),
             ],
           ),
         ),
@@ -3596,4 +3497,169 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 }
               }
             },
-            child: const Text('Open Health Co
+            child: const Text('Open Health Connect'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHealthConnectSetupGuide() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Health Connect Setup Guide'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Follow these steps to set up Health Connect:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text('1. Install Health Connect'),
+              const Text(
+                '   • Download from Google Play Store\n   • Open the app and complete setup',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+              const Text('2. Connect Your Apps'),
+              const Text(
+                '   • Add fitness apps (Google Fit, Samsung Health, etc.)\n   • Grant necessary permissions',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+              const Text('3. Enable Data Types'),
+              const Text(
+                '   • Steps, Heart Rate, Sleep, Active Energy\n   • Water intake, Weight (if available)',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+              const Text('4. Grant App Permissions'),
+              const Text(
+                '   • Return to this app\n   • Allow access to Health Connect data',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              navigator.pop();
+              try {
+                await HealthService.openHealthConnectSettings();
+              } catch (e) {
+                if (mounted) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                        content: Text('Could not open Health Connect: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Open Health Connect'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiagnosticItem(String title, dynamic value) {
+    final theme = Theme.of(context);
+
+    String displayValue;
+    Color valueColor;
+
+    if (value == null) {
+      displayValue = 'null';
+      valueColor = Colors.grey;
+    } else if (value is bool) {
+      displayValue = value ? 'Yes' : 'No';
+      valueColor = value ? Colors.green : Colors.red;
+    } else if (value is int) {
+      displayValue = value.toString();
+      valueColor = value > 0 ? Colors.green : Colors.orange;
+    } else {
+      displayValue = value.toString();
+      valueColor = theme.colorScheme.onSurface;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Text(
+            displayValue,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: valueColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebugSection(String title, String value, Color color) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: color,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
