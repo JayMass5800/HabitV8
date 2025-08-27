@@ -27,6 +27,7 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -225,6 +226,9 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             }
             "getHealthData" -> {
                 getHealthData(call, result)
+            }
+            "diagnoseHealthConnect" -> {
+                diagnoseHealthConnect(result)
             }
             "isHealthConnectAvailable" -> {
                 checkHealthConnectAvailability(result)
@@ -646,68 +650,170 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     )
                     
                     try {
-                        Log.i("MinimalHealthPlugin", "Executing Health Connect readRecords request for $dataType...")
-                        val response = healthConnectClient!!.readRecords(request)
-                        Log.i("MinimalHealthPlugin", "Health Connect readRecords completed, processing ${response.records.size} records...")
+                        // CRITICAL FIX: Validate date range before making the request
+                        val currentTime = System.currentTimeMillis()
+                        if (startDate > currentTime) {
+                            Log.e("MinimalHealthPlugin", "❌ CRITICAL ERROR: Start date is in the FUTURE!")
+                            Log.e("MinimalHealthPlugin", "  Start date: $startDate (${Instant.ofEpochMilli(startDate)})")
+                            Log.e("MinimalHealthPlugin", "  Current time: $currentTime (${Instant.ofEpochMilli(currentTime)})")
+                            Log.e("MinimalHealthPlugin", "  This indicates a timezone conversion bug in the calling code!")
+                            result.error("INVALID_DATE_RANGE", "Start date is in the future - check timezone conversion", null)
+                            return@launch
+                        }
                         
-                        val healthData = response.records.map { record ->
+                        if (endDate > currentTime) {
+                            Log.w("MinimalHealthPlugin", "⚠️  End date is in the future, this may indicate a timezone issue")
+                            Log.w("MinimalHealthPlugin", "  End date: $endDate (${Instant.ofEpochMilli(endDate)})")
+                            Log.w("MinimalHealthPlugin", "  Current time: $currentTime (${Instant.ofEpochMilli(currentTime)})")
+                        }
+                        
+                        Log.i("MinimalHealthPlugin", "Executing Health Connect readRecords request for $dataType...")
+                        Log.i("MinimalHealthPlugin", "  Time range: ${Instant.ofEpochMilli(startDate)} to ${Instant.ofEpochMilli(endDate)}")
+                        Log.i("MinimalHealthPlugin", "  Duration: ${(endDate - startDate) / (1000 * 60 * 60)} hours")
+                        Log.i("MinimalHealthPlugin", "  Record type: ${recordClass.simpleName}")
+                        
+                        // Add timeout handling for Health Connect API calls
+                        val startTime = System.currentTimeMillis()
+                        Log.i("MinimalHealthPlugin", "⏱️  Starting Health Connect API call at ${Instant.ofEpochMilli(startTime)}")
+                        
+                        val response = try {
+                            // Add timeout to prevent hanging API calls
+                            withTimeout(15000) { // 15 second timeout
+                                healthConnectClient!!.readRecords(request)
+                            }
+                        } catch (timeoutException: kotlinx.coroutines.TimeoutCancellationException) {
+                            val endTime = System.currentTimeMillis()
+                            val duration = endTime - startTime
+                            
+                            Log.e("MinimalHealthPlugin", "⏰ Health Connect API call TIMED OUT after ${duration}ms")
+                            Log.e("MinimalHealthPlugin", "  This indicates Health Connect is unresponsive")
+                            Log.e("MinimalHealthPlugin", "  Possible causes:")
+                            Log.e("MinimalHealthPlugin", "  1. Health Connect service is overloaded or crashed")
+                            Log.e("MinimalHealthPlugin", "  2. Device storage is full")
+                            Log.e("MinimalHealthPlugin", "  3. Health Connect database is corrupted")
+                            Log.e("MinimalHealthPlugin", "  4. Too many concurrent health data requests")
+                            
+                            // Return empty response instead of crashing
+                            throw Exception("Health Connect API timeout after ${duration}ms - service may be unresponsive")
+                        } catch (apiException: Exception) {
+                            val endTime = System.currentTimeMillis()
+                            val duration = endTime - startTime
+                            
+                            Log.e("MinimalHealthPlugin", "❌ Health Connect API call FAILED after ${duration}ms")
+                            Log.e("MinimalHealthPlugin", "  Exception type: ${apiException.javaClass.simpleName}")
+                            Log.e("MinimalHealthPlugin", "  Exception message: ${apiException.message}")
+                            Log.e("MinimalHealthPlugin", "  This suggests a Health Connect API issue or permission problem")
+                            
+                            // Re-throw to be caught by outer try-catch
+                            throw apiException
+                        }
+                        
+                        val endTime = System.currentTimeMillis()
+                        val duration = endTime - startTime
+                        
+                        Log.i("MinimalHealthPlugin", "✅ Health Connect readRecords completed successfully!")
+                        Log.i("MinimalHealthPlugin", "  API call duration: ${duration}ms")
+                        Log.i("MinimalHealthPlugin", "  Raw records count: ${response.records.size}")
+                        
+                        if (duration > 5000) {
+                            Log.w("MinimalHealthPlugin", "⚠️  API call took ${duration}ms - this is unusually slow")
+                            Log.w("MinimalHealthPlugin", "  This may indicate Health Connect performance issues")
+                        }
+                        
+                        if (response.records.isEmpty()) {
+                            Log.w("MinimalHealthPlugin", "⚠️  NO RECORDS returned from Health Connect for $dataType")
+                            Log.w("MinimalHealthPlugin", "  This could indicate:")
+                            Log.w("MinimalHealthPlugin", "  1. No data exists in the specified time range")
+                            Log.w("MinimalHealthPlugin", "  2. Data source app is not syncing to Health Connect")
+                            Log.w("MinimalHealthPlugin", "  3. Permissions are not properly granted")
+                            Log.w("MinimalHealthPlugin", "  4. Health Connect version compatibility issues")
+                        }
+                        
+                        val healthData = response.records.mapIndexedNotNull { index, record ->
                             try {
-                                convertRecordToMap(record, dataType)
+                                val convertedRecord = convertRecordToMap(record, dataType)
+                                Log.d("MinimalHealthPlugin", "Record $index: ${convertedRecord["value"]} ${convertedRecord["unit"]} at ${Instant.ofEpochMilli(convertedRecord["timestamp"] as Long)}")
+                                convertedRecord
                             } catch (e: Exception) {
-                                Log.e("MinimalHealthPlugin", "Error converting record to map for $dataType", e)
-                                // Return a basic map with error info
-                                mapOf(
-                                    "type" to dataType,
-                                    "timestamp" to System.currentTimeMillis(),
-                                    "value" to 0.0,
-                                    "unit" to "error",
-                                    "error" to e.message
-                                )
+                                Log.e("MinimalHealthPlugin", "❌ Error converting record $index to map for $dataType", e)
+                                Log.e("MinimalHealthPlugin", "  Record type: ${record.javaClass.simpleName}")
+                                Log.e("MinimalHealthPlugin", "  Error details: ${e.message}")
+                                // Skip this record instead of returning error data
+                                null
                             }
                         }
                         
-                        Log.i("MinimalHealthPlugin", "Successfully processed ${healthData.size} records for $dataType from ${Instant.ofEpochMilli(startDate)} to ${Instant.ofEpochMilli(endDate)}")
+                        Log.i("MinimalHealthPlugin", "✅ Successfully processed ${healthData.size} valid records for $dataType")
                         
                         // Enhanced logging for different data types
                         when (dataType) {
                             "STEPS" -> {
                                 val totalSteps = healthData.sumOf { (it["value"] as? Double) ?: 0.0 }.toInt()
-                                Log.i("MinimalHealthPlugin", "Total steps in range: $totalSteps")
+                                Log.i("MinimalHealthPlugin", "📊 Total steps in range: $totalSteps")
                                 if (healthData.isEmpty()) {
-                                    Log.w("MinimalHealthPlugin", "No steps data found - check if Zepp app is syncing step data to Health Connect")
+                                    Log.w("MinimalHealthPlugin", "❌ No steps data found!")
+                                    Log.w("MinimalHealthPlugin", "  Troubleshooting steps:")
+                                    Log.w("MinimalHealthPlugin", "  1. Check if your fitness app (Zepp, Google Fit, etc.) is syncing to Health Connect")
+                                    Log.w("MinimalHealthPlugin", "  2. Verify Health Connect has steps permission granted")
+                                    Log.w("MinimalHealthPlugin", "  3. Check if there was actual activity in the time range")
+                                    Log.w("MinimalHealthPlugin", "  4. Try manually syncing your fitness app")
                                 }
                             }
                             "ACTIVE_ENERGY_BURNED" -> {
                                 val totalCalories = healthData.sumOf { (it["value"] as? Double) ?: 0.0 }
-                                Log.i("MinimalHealthPlugin", "Total active calories in range: ${totalCalories.toInt()} cal")
+                                Log.i("MinimalHealthPlugin", "🔥 Total active calories in range: ${totalCalories.toInt()} cal")
                                 if (healthData.isEmpty()) {
-                                    Log.w("MinimalHealthPlugin", "No active calories records found! Troubleshooting:")
-                                    Log.w("MinimalHealthPlugin", "1. Check if Zepp app is syncing calories to Health Connect")
-                                    Log.w("MinimalHealthPlugin", "2. Verify Health Connect has active calories permission")
-                                    Log.w("MinimalHealthPlugin", "3. Ensure your watch is recording physical activities")
+                                    Log.w("MinimalHealthPlugin", "❌ No active calories records found!")
+                                    Log.w("MinimalHealthPlugin", "  This is the most common issue. Troubleshooting:")
+                                    Log.w("MinimalHealthPlugin", "  1. Check if your smartwatch app (Zepp, Wear OS, etc.) is syncing calories to Health Connect")
+                                    Log.w("MinimalHealthPlugin", "  2. Verify Health Connect has active calories permission")
+                                    Log.w("MinimalHealthPlugin", "  3. Ensure your watch recorded workouts/activities in the time range")
+                                    Log.w("MinimalHealthPlugin", "  4. Check Health Connect app -> Data and access -> Active calories burned")
+                                    Log.w("MinimalHealthPlugin", "  5. Try manually syncing your smartwatch app")
                                 }
                             }
                             "TOTAL_CALORIES_BURNED" -> {
                                 val totalCalories = healthData.sumOf { (it["value"] as? Double) ?: 0.0 }
-                                Log.i("MinimalHealthPlugin", "Total calories burned in range: ${totalCalories.toInt()} cal")
+                                Log.i("MinimalHealthPlugin", "🔥 Total calories burned in range: ${totalCalories.toInt()} cal")
                                 if (healthData.isEmpty()) {
-                                    Log.w("MinimalHealthPlugin", "No total calories records found! Check Google Fit integration")
+                                    Log.w("MinimalHealthPlugin", "❌ No total calories records found!")
+                                    Log.w("MinimalHealthPlugin", "  Check Google Fit or other calorie tracking apps integration")
                                 }
                             }
                             "HEART_RATE" -> {
                                 if (healthData.isNotEmpty()) {
                                     val avgHeartRate = healthData.mapNotNull { it["value"] as? Double }.average()
-                                    Log.i("MinimalHealthPlugin", "Average heart rate in range: ${avgHeartRate.toInt()} bpm")
+                                    val minHR = healthData.mapNotNull { it["value"] as? Double }.minOrNull() ?: 0.0
+                                    val maxHR = healthData.mapNotNull { it["value"] as? Double }.maxOrNull() ?: 0.0
+                                    Log.i("MinimalHealthPlugin", "❤️  Heart rate stats - Avg: ${avgHeartRate.toInt()} bpm, Min: ${minHR.toInt()}, Max: ${maxHR.toInt()}")
                                 } else {
-                                    Log.w("MinimalHealthPlugin", "No heart rate data found - check if Zepp app is syncing heart rate to Health Connect")
+                                    Log.w("MinimalHealthPlugin", "❌ No heart rate data found!")
+                                    Log.w("MinimalHealthPlugin", "  Check if your smartwatch is syncing heart rate to Health Connect")
                                 }
                             }
                             "SLEEP_IN_BED" -> {
                                 if (healthData.isNotEmpty()) {
                                     val totalSleepMinutes = healthData.sumOf { (it["value"] as? Double) ?: 0.0 }
-                                    Log.i("MinimalHealthPlugin", "Total sleep time in range: ${(totalSleepMinutes / 60).toInt()} hours")
+                                    Log.i("MinimalHealthPlugin", "😴 Total sleep time in range: ${(totalSleepMinutes / 60).toInt()} hours ${(totalSleepMinutes % 60).toInt()} minutes")
                                 } else {
-                                    Log.w("MinimalHealthPlugin", "No sleep data found - check if Zepp app is syncing sleep data to Health Connect")
+                                    Log.w("MinimalHealthPlugin", "❌ No sleep data found!")
+                                    Log.w("MinimalHealthPlugin", "  Check if your sleep tracking app is syncing to Health Connect")
+                                }
+                            }
+                            "WATER" -> {
+                                if (healthData.isNotEmpty()) {
+                                    val totalWater = healthData.sumOf { (it["value"] as? Double) ?: 0.0 }
+                                    Log.i("MinimalHealthPlugin", "💧 Total water intake in range: ${totalWater.toInt()} ml")
+                                } else {
+                                    Log.w("MinimalHealthPlugin", "❌ No water intake data found!")
+                                }
+                            }
+                            "WEIGHT" -> {
+                                if (healthData.isNotEmpty()) {
+                                    val latestWeight = healthData.lastOrNull()?.get("value") as? Double ?: 0.0
+                                    Log.i("MinimalHealthPlugin", "⚖️  Latest weight in range: ${latestWeight} kg")
+                                } else {
+                                    Log.w("MinimalHealthPlugin", "❌ No weight data found!")
                                 }
                             }
                         }
@@ -1085,6 +1191,157 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         } catch (e: Exception) {
             Log.e("MinimalHealthPlugin", "Error checking exact alarm permission", e)
             result.error("PERMISSION_ERROR", "Failed to check exact alarm permission: ${e.message}", null)
+        }
+    }
+    
+    /**
+     * Comprehensive Health Connect diagnostic method
+     * This method performs extensive checks to identify health data issues
+     */
+    private fun diagnoseHealthConnect(result: Result) {
+        Log.i("MinimalHealthPlugin", "🔍 Starting comprehensive Health Connect diagnosis...")
+        
+        coroutineScope.launch {
+            try {
+                val diagnostics = mutableMapOf<String, Any>()
+                diagnostics["timestamp"] = System.currentTimeMillis()
+                diagnostics["deviceInfo"] = mapOf(
+                    "androidVersion" to Build.VERSION.RELEASE,
+                    "apiLevel" to Build.VERSION.SDK_INT,
+                    "manufacturer" to Build.MANUFACTURER,
+                    "model" to Build.MODEL
+                )
+                
+                // Test 1: Health Connect availability
+                Log.i("MinimalHealthPlugin", "📱 Testing Health Connect availability...")
+                val isAvailable = HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE
+                diagnostics["healthConnectAvailable"] = isAvailable
+                
+                if (!isAvailable) {
+                    Log.e("MinimalHealthPlugin", "❌ Health Connect is not available on this device")
+                    diagnostics["error"] = "Health Connect not available"
+                    result.success(diagnostics)
+                    return@launch
+                }
+                
+                // Test 2: Client initialization
+                Log.i("MinimalHealthPlugin", "🔧 Testing Health Connect client initialization...")
+                if (healthConnectClient == null) {
+                    initializeHealthConnectClient()
+                }
+                diagnostics["clientInitialized"] = healthConnectClient != null
+                
+                if (healthConnectClient == null) {
+                    Log.e("MinimalHealthPlugin", "❌ Failed to initialize Health Connect client")
+                    diagnostics["error"] = "Client initialization failed"
+                    result.success(diagnostics)
+                    return@launch
+                }
+                
+                // Test 3: Permissions check
+                Log.i("MinimalHealthPlugin", "🔐 Testing permissions...")
+                val grantedPermissions = healthConnectClient!!.permissionController.getGrantedPermissions()
+                diagnostics["grantedPermissions"] = grantedPermissions.toList()
+                diagnostics["permissionCount"] = grantedPermissions.size
+                
+                Log.i("MinimalHealthPlugin", "📋 Granted permissions (${grantedPermissions.size}):")
+                grantedPermissions.forEach { permission ->
+                    Log.i("MinimalHealthPlugin", "  ✅ $permission")
+                }
+                
+                // Test 4: Data availability test for each type
+                Log.i("MinimalHealthPlugin", "📊 Testing data availability for each type...")
+                val dataAvailability = mutableMapOf<String, Map<String, Any>>()
+                
+                val now = System.currentTimeMillis()
+                val testRanges = listOf(
+                    "last24Hours" to (now - 24 * 60 * 60 * 1000L to now),
+                    "last3Days" to (now - 3 * 24 * 60 * 60 * 1000L to now),
+                    "lastWeek" to (now - 7 * 24 * 60 * 60 * 1000L to now)
+                )
+                
+                for (dataType in ALLOWED_DATA_TYPES.keys) {
+                    if (dataType == "BACKGROUND_HEALTH_DATA") continue // Skip special type
+                    
+                    Log.i("MinimalHealthPlugin", "🔍 Testing $dataType...")
+                    val typeResults = mutableMapOf<String, Any>()
+                    
+                    for ((rangeName, timeRange) in testRanges) {
+                        try {
+                            val recordClass = ALLOWED_DATA_TYPES[dataType]!!
+                            val timeRangeFilter = TimeRangeFilter.between(
+                                Instant.ofEpochMilli(timeRange.first),
+                                Instant.ofEpochMilli(timeRange.second)
+                            )
+                            
+                            @Suppress("UNCHECKED_CAST")
+                            val request = ReadRecordsRequest(
+                                recordType = recordClass as KClass<Record>,
+                                timeRangeFilter = timeRangeFilter
+                            )
+                            
+                            val startTime = System.currentTimeMillis()
+                            val response = healthConnectClient!!.readRecords(request)
+                            val duration = System.currentTimeMillis() - startTime
+                            
+                            typeResults[rangeName] = mapOf(
+                                "recordCount" to response.records.size,
+                                "hasData" to response.records.isNotEmpty(),
+                                "queryDuration" to duration
+                            )
+                            
+                            Log.i("MinimalHealthPlugin", "  $rangeName: ${response.records.size} records (${duration}ms)")
+                            
+                        } catch (e: Exception) {
+                            Log.e("MinimalHealthPlugin", "❌ Error testing $dataType for $rangeName: ${e.message}")
+                            typeResults[rangeName] = mapOf(
+                                "error" to e.message,
+                                "hasData" to false
+                            )
+                        }
+                    }
+                    
+                    dataAvailability[dataType] = typeResults
+                }
+                
+                diagnostics["dataAvailability"] = dataAvailability
+                
+                // Test 5: Generate recommendations
+                Log.i("MinimalHealthPlugin", "💡 Generating recommendations...")
+                val recommendations = mutableListOf<String>()
+                
+                var hasAnyData = false
+                for ((dataType, ranges) in dataAvailability) {
+                    for ((_, rangeData) in ranges as Map<String, Map<String, Any>>) {
+                        if (rangeData["hasData"] == true) {
+                            hasAnyData = true
+                            break
+                        }
+                    }
+                    if (hasAnyData) break
+                }
+                
+                if (!hasAnyData) {
+                    recommendations.addAll(listOf(
+                        "❌ No health data found in any time range",
+                        "1. Check if your fitness apps are syncing to Health Connect",
+                        "2. Open Health Connect app and verify data sources",
+                        "3. Try manually syncing your fitness/health apps",
+                        "4. Ensure your devices recorded data in the tested time ranges"
+                    ))
+                } else {
+                    recommendations.add("✅ Some health data is available")
+                }
+                
+                diagnostics["recommendations"] = recommendations
+                
+                Log.i("MinimalHealthPlugin", "🏁 Health Connect diagnosis completed")
+                result.success(diagnostics)
+                
+            } catch (e: Exception) {
+                Log.e("MinimalHealthPlugin", "❌ Error during Health Connect diagnosis", e)
+                result.error("DIAGNOSIS_ERROR", "Diagnosis failed: ${e.message}", null)
+            }
         }
     }
 }

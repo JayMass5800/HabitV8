@@ -1696,6 +1696,192 @@ class HealthService {
     }
   }
 
+  /// Comprehensive health data diagnostic tool
+  /// This method performs extensive checks to diagnose health data issues
+  static Future<Map<String, dynamic>> diagnoseHealthDataIssues() async {
+    final results = <String, dynamic>{
+      'timestamp': DateTime.now().toIso8601String(),
+      'permissions': {},
+      'dataAvailability': {},
+      'timeRangeTests': {},
+      'recommendations': <String>[],
+    };
+
+    try {
+      AppLogger.info('🔍 Starting comprehensive health data diagnosis...');
+
+      // Test 1: Check permissions
+      AppLogger.info('📋 Testing permissions...');
+      final hasPermissions = await HealthService.hasPermissions();
+      results['permissions']['hasPermissions'] = hasPermissions;
+
+      if (!hasPermissions) {
+        results['recommendations'].add(
+            '❌ Health permissions not granted. Go to Settings > Apps > HabitV8 > Permissions > Health Connect and grant all required permissions.');
+        AppLogger.error(
+            '❌ No health permissions - this is likely the main issue');
+        return results;
+      }
+
+      AppLogger.info('✅ Health permissions are granted');
+
+      // Test 2: Check data availability for different time ranges
+      final now = DateTime.now();
+      final testRanges = [
+        {
+          'name': 'Last 2 hours',
+          'start': now.subtract(const Duration(hours: 2)),
+          'end': now
+        },
+        {
+          'name': 'Last 24 hours',
+          'start': now.subtract(const Duration(hours: 24)),
+          'end': now
+        },
+        {
+          'name': 'Last 3 days',
+          'start': now.subtract(const Duration(days: 3)),
+          'end': now
+        },
+        {
+          'name': 'Last week',
+          'start': now.subtract(const Duration(days: 7)),
+          'end': now
+        },
+      ];
+
+      final testDataTypes = [
+        'STEPS',
+        'ACTIVE_ENERGY_BURNED',
+        'TOTAL_CALORIES_BURNED',
+        'HEART_RATE',
+        'SLEEP_IN_BED'
+      ];
+
+      for (final range in testRanges) {
+        final rangeName = range['name'] as String;
+        final startTime = range['start'] as DateTime;
+        final endTime = range['end'] as DateTime;
+
+        AppLogger.info('📊 Testing data availability for: $rangeName');
+        results['timeRangeTests'][rangeName] = {};
+
+        for (final dataType in testDataTypes) {
+          try {
+            final data = await MinimalHealthChannel.getHealthData(
+              dataType: dataType,
+              startDate: startTime,
+              endDate: endTime,
+            );
+
+            results['timeRangeTests'][rangeName][dataType] = {
+              'recordCount': data.length,
+              'hasData': data.isNotEmpty,
+            };
+
+            if (data.isNotEmpty) {
+              AppLogger.info(
+                  '✅ $dataType: ${data.length} records found in $rangeName');
+
+              // Log sample data
+              final firstRecord = data.first;
+              final lastRecord = data.last;
+              AppLogger.info(
+                  '  First: ${DateTime.fromMillisecondsSinceEpoch(firstRecord['timestamp'] as int).toIso8601String()}');
+              AppLogger.info(
+                  '  Last: ${DateTime.fromMillisecondsSinceEpoch(lastRecord['timestamp'] as int).toIso8601String()}');
+            } else {
+              AppLogger.warning('⚠️  $dataType: No data found in $rangeName');
+            }
+          } catch (e) {
+            AppLogger.error('❌ Error testing $dataType for $rangeName: $e');
+            results['timeRangeTests'][rangeName][dataType] = {
+              'error': e.toString(),
+              'hasData': false,
+            };
+          }
+        }
+      }
+
+      // Test 3: Generate recommendations based on findings
+      AppLogger.info('💡 Generating recommendations...');
+
+      bool hasAnyData = false;
+      for (final range in results['timeRangeTests'].values) {
+        for (final dataType in (range as Map).values) {
+          if ((dataType as Map)['hasData'] == true) {
+            hasAnyData = true;
+            break;
+          }
+        }
+        if (hasAnyData) break;
+      }
+
+      if (!hasAnyData) {
+        results['recommendations'].addAll([
+          '❌ No health data found in any time range. This suggests:',
+          '1. Your fitness apps (Zepp, Google Fit, Samsung Health, etc.) are not syncing to Health Connect',
+          '2. Health Connect is not properly configured',
+          '3. Your devices are not recording health data',
+          '4. Data sources are not connected to Health Connect',
+          '',
+          '🔧 Troubleshooting steps:',
+          '1. Open Health Connect app and check "Data and access" section',
+          '2. Verify your fitness apps are listed and have permissions',
+          '3. Try manually syncing your fitness apps',
+          '4. Check if your smartwatch/fitness tracker is properly connected',
+          '5. Ensure your fitness apps have recorded data in the tested time ranges',
+        ]);
+      } else {
+        results['recommendations'].add(
+            '✅ Health data is available - the issue may be with specific data types or time ranges');
+      }
+
+      AppLogger.info('🏁 Health data diagnosis completed');
+      return results;
+    } catch (e) {
+      AppLogger.error('❌ Error during health data diagnosis', e);
+      results['error'] = e.toString();
+      results['recommendations'].add('❌ Diagnosis failed with error: $e');
+      return results;
+    }
+  }
+
+  /// Quick health data test - call this method to run diagnostics
+  static Future<void> runHealthDataDiagnostics() async {
+    AppLogger.info('🚀 Running health data diagnostics...');
+    final results = await diagnoseHealthDataIssues();
+
+    AppLogger.info('📋 DIAGNOSIS RESULTS:');
+    AppLogger.info('Timestamp: ${results['timestamp']}');
+    AppLogger.info(
+        'Has Permissions: ${results['permissions']['hasPermissions']}');
+
+    AppLogger.info('📊 DATA AVAILABILITY BY TIME RANGE:');
+    for (final entry in (results['timeRangeTests'] as Map).entries) {
+      final rangeName = entry.key;
+      final rangeData = entry.value as Map;
+      AppLogger.info('  $rangeName:');
+
+      for (final dataEntry in rangeData.entries) {
+        final dataType = dataEntry.key;
+        final data = dataEntry.value as Map;
+        final hasData = data['hasData'] ?? false;
+        final recordCount = data['recordCount'] ?? 0;
+        final status = hasData ? '✅' : '❌';
+        AppLogger.info('    $status $dataType: $recordCount records');
+      }
+    }
+
+    AppLogger.info('💡 RECOMMENDATIONS:');
+    for (final recommendation in (results['recommendations'] as List)) {
+      AppLogger.info('  $recommendation');
+    }
+
+    AppLogger.info(
+        '🏁 Diagnostics completed. Check the logs above for detailed results.');
+  }
+
   /// Test Health Connect connection and data availability
   static Future<Map<String, dynamic>> testHealthConnectConnection() async {
     final results = <String, dynamic>{};

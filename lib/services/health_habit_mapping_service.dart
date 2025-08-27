@@ -1159,10 +1159,32 @@ class HealthHabitMappingService {
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
+      // CRITICAL FIX: Ensure we don't query future dates
+      final now = DateTime.now();
+      final actualEndTime = endOfDay.isAfter(now) ? now : endOfDay;
+
+      AppLogger.info(
+        'Checking habit completion for "${habit.name}" on ${date.toIso8601String().split('T')[0]}',
+      );
+      AppLogger.info('  Start of day: ${startOfDay.toIso8601String()}');
+      AppLogger.info('  End of day: ${endOfDay.toIso8601String()}');
+      AppLogger.info(
+          '  Actual end time (capped to now): ${actualEndTime.toIso8601String()}');
+      AppLogger.info('  Current time: ${now.toIso8601String()}');
+
+      if (startOfDay.isAfter(now)) {
+        AppLogger.warning(
+            'Cannot check habit completion for future date: ${startOfDay.toIso8601String()}');
+        return HabitCompletionResult(
+          shouldComplete: false,
+          reason: 'Cannot check completion for future dates',
+        );
+      }
+
       final healthData = await HealthService.getHealthDataFromTypes(
         types: [mapping.healthDataType],
         startTime: startOfDay,
-        endTime: endOfDay,
+        endTime: actualEndTime,
       );
 
       if (healthData.isEmpty) {

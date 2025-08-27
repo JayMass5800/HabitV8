@@ -293,9 +293,47 @@ class MinimalHealthChannel {
         return [];
       }
 
+      // CRITICAL FIX: Validate date range to prevent future date queries
+      final now = DateTime.now();
+      if (startDate.isAfter(now)) {
+        AppLogger.error(
+          'INVALID DATE RANGE: Start date is in the future! '
+          'startDate: ${startDate.toIso8601String()} (${startDate.millisecondsSinceEpoch}), '
+          'now: ${now.toIso8601String()} (${now.millisecondsSinceEpoch})',
+        );
+        return [];
+      }
+
+      if (endDate.isAfter(now)) {
+        AppLogger.warning(
+          'End date is in the future, adjusting to current time. '
+          'Original endDate: ${endDate.toIso8601String()}, '
+          'adjusted to: ${now.toIso8601String()}',
+        );
+        endDate = now;
+      }
+
+      if (startDate.isAfter(endDate)) {
+        AppLogger.error(
+          'INVALID DATE RANGE: Start date is after end date! '
+          'startDate: ${startDate.toIso8601String()}, '
+          'endDate: ${endDate.toIso8601String()}',
+        );
+        return [];
+      }
+
+      // Enhanced logging with timezone information
       AppLogger.info(
-        'Fetching health data for $dataType from ${startDate.toIso8601String()} to ${endDate.toIso8601String()}',
+        'Fetching health data for $dataType:',
       );
+      AppLogger.info(
+          '  Start: ${startDate.toIso8601String()} (${startDate.millisecondsSinceEpoch})');
+      AppLogger.info(
+          '  End: ${endDate.toIso8601String()} (${endDate.millisecondsSinceEpoch})');
+      AppLogger.info(
+          '  Duration: ${endDate.difference(startDate).inHours} hours');
+      AppLogger.info(
+          '  Current time: ${now.toIso8601String()} (${now.millisecondsSinceEpoch})');
 
       // Add timeout and better error handling to prevent app crashes
       final List<dynamic> result =
@@ -304,9 +342,10 @@ class MinimalHealthChannel {
         'startDate': startDate.millisecondsSinceEpoch,
         'endDate': endDate.millisecondsSinceEpoch,
       }).timeout(
-        const Duration(seconds: 10),
+        const Duration(seconds: 15), // Increased timeout
         onTimeout: () {
-          AppLogger.warning('Health data request timed out for $dataType');
+          AppLogger.error(
+              'Health data request TIMED OUT for $dataType after 15 seconds');
           return <dynamic>[];
         },
       );
@@ -314,15 +353,39 @@ class MinimalHealthChannel {
       final List<Map<String, dynamic>> healthData =
           result.map((item) => Map<String, dynamic>.from(item)).toList();
 
-      AppLogger.info('Retrieved ${healthData.length} records for $dataType');
+      AppLogger.info('✅ Retrieved ${healthData.length} records for $dataType');
+
+      // Enhanced result logging
+      if (healthData.isEmpty) {
+        AppLogger.warning(
+            '⚠️  NO DATA FOUND for $dataType in the specified time range');
+        AppLogger.info('Troubleshooting suggestions:');
+        AppLogger.info(
+            '1. Check if your device/app is syncing data to Health Connect');
+        AppLogger.info('2. Verify the time range contains actual activity');
+        AppLogger.info('3. Check Health Connect app for data visibility');
+        AppLogger.info('4. Ensure permissions are properly granted');
+      } else {
+        // Log sample data for debugging
+        final firstRecord = healthData.first;
+        final lastRecord = healthData.last;
+        AppLogger.info(
+            'First record: ${firstRecord['timestamp']} (${DateTime.fromMillisecondsSinceEpoch(firstRecord['timestamp'] as int).toIso8601String()})');
+        AppLogger.info(
+            'Last record: ${lastRecord['timestamp']} (${DateTime.fromMillisecondsSinceEpoch(lastRecord['timestamp'] as int).toIso8601String()})');
+      }
+
       return healthData;
     } on PlatformException catch (e) {
       AppLogger.error(
-          'Platform error getting health data for $dataType: ${e.code} - ${e.message}',
+          '❌ Platform error getting health data for $dataType: ${e.code} - ${e.message}',
           e);
+      AppLogger.error('Platform exception details: ${e.details}');
       return [];
-    } catch (e) {
-      AppLogger.error('Error getting health data for $dataType', e);
+    } catch (e, stackTrace) {
+      AppLogger.error(
+          '❌ Unexpected error getting health data for $dataType', e);
+      AppLogger.error('Stack trace: $stackTrace');
       return [];
     }
   }
@@ -983,5 +1046,21 @@ class MinimalHealthChannel {
   static void reset() {
     _isInitialized = false;
     AppLogger.info('MinimalHealthChannel reset');
+  }
+
+  /// Run comprehensive Health Connect diagnostics from native plugin
+  static Future<Map<String, dynamic>>
+      runNativeHealthConnectDiagnostics() async {
+    try {
+      AppLogger.info('🔍 Running native Health Connect diagnostics...');
+      final result = await _channel.invokeMethod('diagnoseHealthConnect');
+      return Map<String, dynamic>.from(result);
+    } catch (e) {
+      AppLogger.error('❌ Failed to run native Health Connect diagnostics', e);
+      return {
+        'error': e.toString(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+    }
   }
 }
