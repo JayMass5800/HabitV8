@@ -14,12 +14,13 @@ class MinimalHealthChannel {
   static bool _isInitialized = false;
 
   /// Supported health data types (matching the native plugin)
+  /// Updated for Health Connect API compatibility (2024/2025)
   static const List<String> _supportedDataTypes = [
     'STEPS',
     'ACTIVE_ENERGY_BURNED',
     'TOTAL_CALORIES_BURNED',
-    'SLEEP_IN_BED',
-    'WATER',
+    'SLEEP_IN_BED', // Maps to SleepSessionRecord in Health Connect
+    'WATER', // Maps to HydrationRecord in Health Connect
     'WEIGHT',
     'HEART_RATE', // Heart rate for habit correlation analysis
     'MINDFULNESS', // Mindfulness sessions for mental health tracking
@@ -1053,7 +1054,8 @@ class MinimalHealthChannel {
       runNativeHealthConnectDiagnostics() async {
     try {
       AppLogger.info('🔍 Running native Health Connect diagnostics...');
-      final result = await _channel.invokeMethod('diagnoseHealthConnect');
+      final result =
+          await _channel.invokeMethod('runNativeHealthConnectDiagnostics');
       return Map<String, dynamic>.from(result);
     } catch (e) {
       AppLogger.error('❌ Failed to run native Health Connect diagnostics', e);

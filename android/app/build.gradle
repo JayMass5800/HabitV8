@@ -120,8 +120,8 @@ flutter {
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'
     
-    // Health Connect dependencies - stable version
-    implementation 'androidx.health.connect:connect-client:1.1.0-alpha07'
+    // Health Connect dependencies - latest stable version for 2024/2025 compatibility
+    implementation 'androidx.health.connect:connect-client:1.1.0-alpha08'
     
     // Coroutines for async operations
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'

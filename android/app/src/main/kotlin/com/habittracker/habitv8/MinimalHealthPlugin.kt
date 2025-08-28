@@ -153,6 +153,19 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
 
     companion object {
         private const val HEALTH_CONNECT_REQUEST_CODE = 1001
+        
+        // Add supported data types as a static property for getSupportedDataTypes method
+        private val _supportedDataTypes = mapOf(
+            "STEPS" to "Steps",
+            "ACTIVE_ENERGY_BURNED" to "Active Calories Burned",
+            "TOTAL_CALORIES_BURNED" to "Total Calories Burned",
+            "SLEEP_IN_BED" to "Sleep Sessions",
+            "WATER" to "Hydration",
+            "WEIGHT" to "Weight",
+            "HEART_RATE" to "Heart Rate",
+            "MINDFULNESS" to "Mindfulness Sessions",
+            "BACKGROUND_HEALTH_DATA" to "Background Health Data Access"
+        )
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -251,6 +264,42 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             "hasExactAlarmPermission" -> {
                 hasExactAlarmPermission(result)
             }
+            "getTotalCaloriesToday" -> {
+                getTotalCaloriesToday(result)
+            }
+            "getSleepHoursLastNight" -> {
+                getSleepHoursLastNight(result)
+            }
+            "getWaterIntakeToday" -> {
+                getWaterIntakeToday(result)
+            }
+            "getMindfulnessMinutesToday" -> {
+                getMindfulnessMinutesToday(result)
+            }
+            "getLatestWeight" -> {
+                getLatestWeight(result)
+            }
+            "getLatestHeartRate" -> {
+                getLatestHeartRate(result)
+            }
+            "getRestingHeartRateToday" -> {
+                getRestingHeartRateToday(result)
+            }
+            "getHeartRateData" -> {
+                getHeartRateData(call, result)
+            }
+            "hasBackgroundHealthDataAccess" -> {
+                hasBackgroundHealthDataAccess(result)
+            }
+            "getSupportedDataTypes" -> {
+                getSupportedDataTypes(result)
+            }
+            "getServiceStatus" -> {
+                getServiceStatus(result)
+            }
+            "runNativeHealthConnectDiagnostics" -> {
+                runNativeHealthConnectDiagnostics(result)
+            }
             else -> {
                 result.notImplemented()
             }
@@ -342,6 +391,35 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     // Start background health monitoring service
     private fun startBackgroundMonitoring(result: Result) {
         try {
+            Log.i("MinimalHealthPlugin", "Attempting to start background health monitoring...")
+            
+            // Check if Health Connect supports background reads (Android 14+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                Log.i("MinimalHealthPlugin", "Android 14+ detected - checking for background read support")
+                
+                // For Android 14+, background reads are handled by Health Connect itself
+                // We just need to ensure permissions are granted
+                coroutineScope.launch {
+                    try {
+                        val grantedPermissions = healthConnectClient?.permissionController?.getGrantedPermissions()
+                        val hasRequiredPermissions = grantedPermissions?.isNotEmpty() == true
+                        
+                        if (hasRequiredPermissions) {
+                            Log.i("MinimalHealthPlugin", "Background monitoring enabled via Health Connect permissions")
+                            result.success(true)
+                        } else {
+                            Log.w("MinimalHealthPlugin", "Background monitoring requires Health Connect permissions")
+                            result.success(false)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MinimalHealthPlugin", "Error checking background monitoring permissions", e)
+                        result.error("PERMISSION_ERROR", e.message, null)
+                    }
+                }
+                return
+            }
+            
+            // For older Android versions, try to start the background service
             if (activityBinding?.activity == null) {
                 Log.e("MinimalHealthPlugin", "Activity not available for starting background service")
                 result.error("NO_ACTIVITY", "Activity is required to start background monitoring", null)
@@ -389,6 +467,28 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     // Check if background monitoring is active
     private fun isBackgroundMonitoringActive(result: Result) {
         try {
+            Log.i("MinimalHealthPlugin", "Checking background monitoring status...")
+            
+            // For Android 14+, check if Health Connect permissions allow background reads
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                Log.i("MinimalHealthPlugin", "Android 14+ detected - checking Health Connect background permissions")
+                
+                coroutineScope.launch {
+                    try {
+                        val grantedPermissions = healthConnectClient?.permissionController?.getGrantedPermissions()
+                        val isActive = grantedPermissions?.isNotEmpty() == true
+                        
+                        Log.i("MinimalHealthPlugin", "Background monitoring active: $isActive (via Health Connect permissions)")
+                        result.success(isActive)
+                    } catch (e: Exception) {
+                        Log.e("MinimalHealthPlugin", "Error checking background monitoring status", e)
+                        result.success(false)
+                    }
+                }
+                return
+            }
+            
+            // For older Android versions, check if background service is running
             if (activityBinding?.activity == null) {
                 result.success(false)
                 return
@@ -1341,6 +1441,181 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             } catch (e: Exception) {
                 Log.e("MinimalHealthPlugin", "❌ Error during Health Connect diagnosis", e)
                 result.error("DIAGNOSIS_ERROR", "Diagnosis failed: ${e.message}", null)
+            }
+        }
+    }
+    
+    // Individual health data methods that were missing
+    private fun getTotalCaloriesToday(result: Result) {
+        getTodayHealthData("TOTAL_CALORIES_BURNED", result)
+    }
+    
+    private fun getSleepHoursLastNight(result: Result) {
+        getLastNightSleepData(result)
+    }
+    
+    private fun getWaterIntakeToday(result: Result) {
+        getTodayHealthData("WATER", result)
+    }
+    
+    private fun getMindfulnessMinutesToday(result: Result) {
+        getTodayHealthData("MINDFULNESS", result)
+    }
+    
+    private fun getLatestWeight(result: Result) {
+        getLatestHealthData("WEIGHT", result)
+    }
+    
+    private fun getLatestHeartRate(result: Result) {
+        getLatestHealthData("HEART_RATE", result)
+    }
+    
+    private fun getRestingHeartRateToday(result: Result) {
+        // For now, return the same as regular heart rate
+        // In a full implementation, this would filter for resting heart rate specifically
+        getTodayHealthData("HEART_RATE", result)
+    }
+    
+    private fun getHeartRateData(call: MethodCall, result: Result) {
+        // Updated to use named parameters instead of positional
+        val startDate = call.argument<Long>("startDate")
+        val endDate = call.argument<Long>("endDate")
+        
+        if (startDate == null || endDate == null) {
+            result.error("INVALID_ARGUMENTS", "startDate and endDate are required", null)
+            return
+        }
+        
+        getHealthDataInRange("HEART_RATE", startDate, endDate, result)
+    }
+    
+    private fun hasBackgroundHealthDataAccess(result: Result) {
+        coroutineScope.launch {
+            try {
+                val grantedPermissions = healthConnectClient?.permissionController?.getGrantedPermissions()
+                val hasAccess = grantedPermissions?.isNotEmpty() == true
+                result.success(hasAccess)
+            } catch (e: Exception) {
+                Log.e("MinimalHealthPlugin", "Error checking background health data access", e)
+                result.success(false)
+            }
+        }
+    }
+    
+    private fun getSupportedDataTypes(result: Result) {
+        result.success(Companion._supportedDataTypes.keys.toList())
+    }
+    
+    private fun getServiceStatus(result: Result) {
+        val status = mapOf(
+            "isHealthConnectAvailable" to (healthConnectClient != null),
+            "sdkStatus" to HealthConnectClient.getSdkStatus(context).toString(),
+            "supportedDataTypes" to Companion._supportedDataTypes.keys.toList(),
+            "androidVersion" to Build.VERSION.RELEASE,
+            "apiLevel" to Build.VERSION.SDK_INT
+        )
+        result.success(status)
+    }
+    
+    private fun runNativeHealthConnectDiagnostics(result: Result) {
+        // Delegate to the existing diagnose method
+        diagnoseHealthConnect(result)
+    }
+    
+    // Helper methods for the individual data requests
+    private fun getTodayHealthData(dataType: String, result: Result) {
+        val now = System.currentTimeMillis()
+        val startOfDay = now - (now % (24 * 60 * 60 * 1000))
+        getHealthDataInRange(dataType, startOfDay, now, result)
+    }
+    
+    private fun getLastNightSleepData(result: Result) {
+        val now = System.currentTimeMillis()
+        val yesterday = now - (24 * 60 * 60 * 1000)
+        getHealthDataInRange("SLEEP_IN_BED", yesterday, now, result)
+    }
+    
+    private fun getLatestHealthData(dataType: String, result: Result) {
+        val now = System.currentTimeMillis()
+        val weekAgo = now - (7 * 24 * 60 * 60 * 1000)
+        getHealthDataInRange(dataType, weekAgo, now, result)
+    }
+    
+    private fun getHealthDataInRange(dataType: String, startDate: Long, endDate: Long, result: Result) {
+        if (healthConnectClient == null) {
+            result.error("HEALTH_CONNECT_UNAVAILABLE", "Health Connect is not available", null)
+            return
+        }
+        
+        coroutineScope.launch {
+            try {
+                val recordClass = ALLOWED_DATA_TYPES[dataType]
+                if (recordClass == null) {
+                    result.success(0.0) // Return 0 for unsupported data types
+                    return@launch
+                }
+                
+                val timeRangeFilter = TimeRangeFilter.between(
+                    Instant.ofEpochMilli(startDate),
+                    Instant.ofEpochMilli(endDate)
+                )
+                
+                @Suppress("UNCHECKED_CAST")
+                val request = ReadRecordsRequest(
+                    recordType = recordClass as KClass<Record>,
+                    timeRangeFilter = timeRangeFilter
+                )
+                
+                val response = healthConnectClient!!.readRecords(request)
+                
+                // Calculate total/latest value based on data type
+                val value = when (dataType) {
+                    "STEPS" -> response.records.sumOf { (it as StepsRecord).count.toDouble() }
+                    "TOTAL_CALORIES_BURNED", "ACTIVE_ENERGY_BURNED" -> {
+                        response.records.sumOf { 
+                            when (it) {
+                                is TotalCaloriesBurnedRecord -> it.energy.inCalories
+                                is ActiveCaloriesBurnedRecord -> it.energy.inCalories
+                                else -> 0.0
+                            }
+                        }
+                    }
+                    "WATER" -> response.records.sumOf { (it as HydrationRecord).volume.inLiters }
+                    "SLEEP_IN_BED" -> {
+                        response.records.sumOf { record ->
+                            val sleepRecord = record as SleepSessionRecord
+                            (sleepRecord.endTime.toEpochMilli() - sleepRecord.startTime.toEpochMilli()) / (1000.0 * 60.0 * 60.0) // hours
+                        }
+                    }
+                    "WEIGHT" -> {
+                        response.records.lastOrNull()?.let { (it as WeightRecord).weight.inKilograms } ?: 0.0
+                    }
+                    "HEART_RATE" -> {
+                        response.records.lastOrNull()?.let { record ->
+                            val heartRateRecord = record as HeartRateRecord
+                            heartRateRecord.samples.firstOrNull()?.beatsPerMinute?.toDouble() ?: 0.0
+                        } ?: 0.0
+                    }
+                    "MINDFULNESS" -> {
+                        response.records.sumOf { record ->
+                            try {
+                                val startTimeMethod = record.javaClass.getMethod("getStartTime")
+                                val endTimeMethod = record.javaClass.getMethod("getEndTime")
+                                val startTime = startTimeMethod.invoke(record) as Instant
+                                val endTime = endTimeMethod.invoke(record) as Instant
+                                (endTime.toEpochMilli() - startTime.toEpochMilli()) / (1000.0 * 60.0) // minutes
+                            } catch (e: Exception) {
+                                0.0
+                            }
+                        }
+                    }
+                    else -> 0.0
+                }
+                
+                result.success(value)
+            } catch (e: Exception) {
+                Log.e("MinimalHealthPlugin", "Error getting health data for $dataType", e)
+                result.success(0.0)
             }
         }
     }

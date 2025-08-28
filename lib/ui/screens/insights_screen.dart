@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/habit_stats_service.dart';
@@ -9,9 +10,9 @@ import '../../services/comprehensive_habit_suggestions_service.dart';
 import '../../services/health_habit_analytics_service.dart';
 import '../../services/health_service.dart';
 import '../../services/achievements_service.dart';
-import '../../services/health_habit_integration_service.dart';
+
 import '../../services/logging_service.dart';
-import '../../services/minimal_health_channel.dart';
+
 import '../widgets/loading_widget.dart';
 import '../widgets/progressive_disclosure.dart';
 
@@ -28,7 +29,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   final HabitStatsService _statsService = HabitStatsService();
   Map<String, dynamic>? _gamificationStats;
   Map<String, dynamic>? _healthSummary;
-  Map<String, dynamic>? _integrationStatus;
 
   @override
   void initState() {
@@ -113,18 +113,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               AppLogger.info(
                   'Health summary loaded: ${_healthSummary?.keys.join(', ')}');
 
-              // Load integration status
-              try {
-                _integrationStatus =
-                    await HealthHabitIntegrationService.getIntegrationStatus(
-                  habitService: habitService,
-                );
-                AppLogger.info('Integration status loaded successfully');
-              } catch (integrationError) {
-                AppLogger.error(
-                    'Failed to load integration status', integrationError);
-                _integrationStatus = null;
-              }
+              // Integration status loading removed - no longer needed
             } else {
               AppLogger.info(
                   'Health permissions not granted, skipping health data load');
@@ -134,7 +123,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 'canRetry': true,
                 'needsPermissions': true,
               };
-              _integrationStatus = null;
             }
           } catch (e) {
             AppLogger.error('Failed to load health summary', e);
@@ -144,7 +132,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               'hasPermissions': false,
               'canRetry': true,
             };
-            _integrationStatus = null;
           }
         },
         loading: () async {
@@ -175,13 +162,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       appBar: AppBar(
         title: const Text('Insights'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.bug_report),
-            tooltip: 'Run Health Diagnostics',
-            onPressed: _runHealthDiagnostics,
-          ),
-        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -223,24 +203,25 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Colorful Performance Cards (moved to top)
                         _buildBigFourPerformanceCards(habits),
                         const SizedBox(height: 24),
+
+                        // Performance Metrics
+                        _buildPerformanceMetrics(habits),
+                        const SizedBox(height: 24),
+
                         _buildHabitPerformanceChart(habits),
                         const SizedBox(height: 24),
                         _buildAIInsightsSection(habits),
                         const SizedBox(height: 24),
-                        // Enhanced Health Integration
-                        if (_integrationStatus != null) ...[
-                          _buildEnhancedHealthIntegrationSection(),
-                          const SizedBox(height: 24),
-                        ],
 
-                        // Health Debug Section - Always visible
-                        _buildHealthDebugSection(),
+                        // Health Data Integration
+                        _buildHealthDataSection(habits),
                         const SizedBox(height: 24),
 
-                        // Conditional Health Hub
-                        _buildConditionalHealthHub(habits),
+                        // Enhanced Health Hub with Line Graphs
+                        _buildEnhancedHealthHub(habits),
                       ],
                     ),
                   );
@@ -250,125 +231,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               error: (error, stack) => _buildErrorState(error.toString()),
             );
       },
-    );
-  }
-
-  Widget _buildOverviewCards(List<Habit> habits) {
-    final overallCompletion = _calculateOverallCompletion(habits);
-    final currentStreak = _calculateCurrentStreak(habits);
-    final consistencyScore = _calculateConsistencyScore(habits);
-    final mostPowerfulDay = _findMostPowerfulDay(habits);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Quick Overview',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildOverviewCard(
-                'Overall Completion',
-                '${(overallCompletion * 100).toInt()}%',
-                Icons.check_circle,
-                Colors.green,
-                overallCompletion,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildOverviewCard(
-                'Current Streak',
-                '$currentStreak days',
-                Icons.local_fire_department,
-                Colors.orange,
-                (currentStreak / 30.0).clamp(0.0, 1.0),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildOverviewCard(
-                'Consistency Score',
-                '${consistencyScore.toInt()}%',
-                Icons.timeline,
-                Colors.blue,
-                consistencyScore / 100.0,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildOverviewCard(
-                'Most Powerful Day',
-                mostPowerfulDay,
-                Icons.star,
-                Colors.purple,
-                0.8,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOverviewCard(
-      String title, String value, IconData icon, Color color, double progress) {
-    return Card(
-      elevation: 4,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            colors: [
-              color.withValues(alpha: 0.1),
-              color.withValues(alpha: 0.05)
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 24),
-                const Spacer(),
-                CircularProgressIndicator(
-                  value: progress.clamp(0.0, 1.0),
-                  backgroundColor: color.withValues(alpha: 0.2),
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                  strokeWidth: 3,
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).textTheme.bodySmall?.color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -647,6 +509,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               ),
               const SizedBox(height: 24),
 
+              // Achievement Overview
+              _buildAchievementsOverview(),
+              const SizedBox(height: 24),
+
               // Gamification Card
               if (_gamificationStats != null) ...[
                 _buildGamificationCard(),
@@ -748,6 +614,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   );
                 },
               ),
+
+              const SizedBox(height: 24),
+
+              // All Achievements List
+              _buildAchievementsList(),
             ],
           ),
         );
@@ -756,57 +627,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   // Helper methods for calculations
-  double _calculateOverallCompletion(List<Habit> habits) {
-    if (habits.isEmpty) return 0.0;
-
-    double totalCompletion = 0.0;
-    for (final habit in habits) {
-      totalCompletion += _statsService.getCompletionRate(habit, days: 30);
-    }
-    return totalCompletion / habits.length;
-  }
-
-  int _calculateCurrentStreak(List<Habit> habits) {
-    if (habits.isEmpty) return 0;
-
-    int maxStreak = 0;
-    for (final habit in habits) {
-      final streakInfo = _statsService.getStreakInfo(habit);
-      maxStreak =
-          maxStreak > streakInfo.current ? maxStreak : streakInfo.current;
-    }
-    return maxStreak;
-  }
-
-  double _calculateConsistencyScore(List<Habit> habits) {
-    if (habits.isEmpty) return 0.0;
-
-    double totalConsistency = 0.0;
-    for (final habit in habits) {
-      totalConsistency += _statsService.getConsistencyScore(habit);
-    }
-    return totalConsistency / habits.length;
-  }
-
-  String _findMostPowerfulDay(List<Habit> habits) {
-    final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final dayCompletions = List<int>.filled(7, 0);
-
-    for (final habit in habits) {
-      for (final completion in habit.completions) {
-        dayCompletions[completion.weekday - 1]++;
-      }
-    }
-
-    int maxIndex = 0;
-    for (int i = 1; i < dayCompletions.length; i++) {
-      if (dayCompletions[i] > dayCompletions[maxIndex]) {
-        maxIndex = i;
-      }
-    }
-
-    return dayNames[maxIndex];
-  }
 
   List<double> _calculateWeeklyCompletionData(List<Habit> habits) {
     final now = DateTime.now();
@@ -925,7 +745,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         subtitle: Text(suggestion.description),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // Navigate to create habit with prefilled data
+          // Navigate to create habit with prefilled data from the suggestion
+          final prefilledData = {
+            'name': suggestion.name,
+            'description': suggestion.description,
+            'category': suggestion.category,
+            'frequency': suggestion.frequency.toString(),
+            'icon': suggestion.icon,
+            'type': suggestion.type,
+            'isHealthBased': suggestion.isHealthBased,
+            'healthDataType': suggestion.healthDataType,
+            'suggestedThreshold': suggestion.suggestedThreshold,
+          };
+
+          AppLogger.info(
+              'Navigating to create habit with suggestion: ${suggestion.name}');
+          context.push('/create-habit', extra: prefilledData);
         },
       ),
     );
@@ -1866,200 +1701,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-  // Health Integration Methods
-  Widget _buildEnhancedHealthIntegrationSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.health_and_safety, color: Colors.green),
-                const SizedBox(width: 8),
-                Text(
-                  'Health Integration',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.auto_awesome,
-                          size: 14, color: Colors.green.shade700),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Active',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Health Analytics Overview
-            _buildHealthAnalyticsOverview(),
-            const SizedBox(height: 16),
-
-            // Health-Habit Correlations
-            _buildHealthHabitCorrelations(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHealthAnalyticsOverview() {
-    if (_healthSummary == null || _healthSummary!.containsKey('error')) {
-      return const SizedBox.shrink();
-    }
-
-    final health = _healthSummary!;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Today\'s Health Metrics',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildHealthMetricTile(
-                'Steps',
-                '${health['steps'] ?? 0}',
-                Icons.directions_walk,
-                Colors.blue,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildHealthMetricTile(
-                'Calories',
-                _formatCaloriesValue(health),
-                Icons.local_fire_department,
-                Colors.orange,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildHealthMetricTile(
-                'Sleep',
-                '${(health['sleepHours'] ?? 0).toStringAsFixed(1)}h',
-                Icons.bedtime,
-                Colors.purple,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHealthMetricTile(
-      String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: color,
-              fontSize: 16,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatCaloriesValue(Map<String, dynamic> health) {
-    final active = health['activeCalories'] ?? 0.0;
-    final total = health['totalCalories'] ?? 0.0;
-    if (active > 0) {
-      return '${active.toInt()}';
-    } else if (total > 0) {
-      return '${total.toInt()}';
-    }
-    return '0';
-  }
-
-  Widget _buildHealthHabitCorrelations() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Health-Habit Insights',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.blue.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.insights, color: Colors.blue.shade600, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Your habits are positively impacting your health metrics. Keep up the great work!',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.blue.shade700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConditionalHealthHub(List<Habit> habits) {
+  Widget _buildEnhancedHealthHub(List<Habit> habits) {
     return FutureBuilder<bool>(
       future: HealthService.hasPermissions(),
       builder: (context, snapshot) {
@@ -2068,7 +1710,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         if (!hasPermissions) {
           return _buildHealthPermissionCard();
         } else {
-          return _buildActiveHealthHub(habits);
+          return _buildActiveHealthHubWithGraphs(habits);
         }
       },
     );
@@ -2190,7 +1832,41 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-  Widget _buildActiveHealthHub(List<Habit> habits) {
+  Widget _buildHealthDataPlaceholder() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.health_and_safety, size: 48, color: Colors.grey[400]),
+          const SizedBox(height: 12),
+          Text(
+            'Health Data Loading...',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your health insights will appear here once data is available.',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveHealthHubWithGraphs(List<Habit> habits) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -2234,12 +1910,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ),
             const SizedBox(height: 24),
 
-            // Health Data Modules
+            // Health Data Modules with Line Graphs
             if (_healthSummary != null &&
                 !_healthSummary!.containsKey('error')) ...[
-              _buildSleepHabitModule(habits),
-              const SizedBox(height: 20),
-              _buildActivityEnergyModule(habits),
+              _buildSleepHabitModuleWithGraph(habits),
+              const SizedBox(height: 24),
+              _buildActivityEnergyModuleWithGraph(habits),
+              const SizedBox(height: 24),
+              _buildHeartRateModuleWithGraph(habits),
+              const SizedBox(height: 24),
+              _buildWaterIntakeModuleWithGraph(habits),
             ] else
               _buildHealthDataPlaceholder(),
           ],
@@ -2248,22 +1928,97 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-  Widget _buildSleepHabitModule(List<Habit> habits) {
+  // Helper method to generate sample health data over time (7 days)
+  List<Map<String, dynamic>> _generateHealthDataOverTime(String metricType) {
+    final now = DateTime.now();
+    final data = <Map<String, dynamic>>[];
+
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      double value = 0.0;
+
+      switch (metricType) {
+        case 'sleep':
+          value = 6.5 + (i * 0.3) + (i % 2 == 0 ? 0.5 : -0.2);
+          break;
+        case 'steps':
+          value = 8000 + (i * 500) + (i % 3 == 0 ? 1000 : -200);
+          break;
+        case 'heartRate':
+          value = 70 + (i * 2) + (i % 2 == 0 ? 5 : -3);
+          break;
+        case 'water':
+          value = 1.8 + (i * 0.2) + (i % 2 == 0 ? 0.3 : -0.1);
+          break;
+      }
+
+      data.add({
+        'date': date,
+        'value': value.clamp(0, double.infinity),
+      });
+    }
+
+    return data;
+  }
+
+  // Helper method to generate habit completion data over time (7 days)
+  List<Map<String, dynamic>> _generateHabitCompletionData(List<Habit> habits) {
+    final now = DateTime.now();
+    final data = <Map<String, dynamic>>[];
+
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      int completed = 0;
+      int total = 0;
+
+      for (final habit in habits) {
+        // Count habits that were due on this day
+        total++;
+
+        // Count habits that were completed on this day
+        final completedOnDay = habit.completions
+            .where((completion) =>
+                completion.isAfter(startOfDay) && completion.isBefore(endOfDay))
+            .length;
+
+        if (completedOnDay > 0) completed++;
+      }
+
+      data.add({
+        'date': date,
+        'completed': completed,
+        'total': total,
+        'percentage': total > 0 ? (completed / total * 100) : 0.0,
+      });
+    }
+
+    return data;
+  }
+
+  Widget _buildSleepHabitModuleWithGraph(List<Habit> habits) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final sleepHours = _healthSummary?['sleepHours'] ?? 0.0;
+
+    final sleepData = _generateHealthDataOverTime('sleep');
+    final habitData = _generateHabitCompletionData(habits);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Sleep & Habit Performance',
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
             color: isDark ? theme.colorScheme.primary : Colors.indigo[700],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
+
+        // Current sleep info
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -2288,7 +2043,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   children: [
                     Text(
                       'Last Night: ${sleepHours.toStringAsFixed(1)} hours',
-                      style: theme.textTheme.titleSmall?.copyWith(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -2307,27 +2062,133 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ],
           ),
         ),
+        const SizedBox(height: 16),
+
+        // Line graph
+        Container(
+          height: 200,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? theme.colorScheme.surface : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2),
+            ),
+          ),
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: 2,
+                getDrawingHorizontalLine: (value) => FlLine(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                  strokeWidth: 1,
+                ),
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (value, meta) => Text(
+                      '${value.toInt()}h',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) {
+                      if (value.toInt() < sleepData.length) {
+                        final date =
+                            sleepData[value.toInt()]['date'] as DateTime;
+                        return Text(
+                          '${date.day}/${date.month}',
+                          style: theme.textTheme.bodySmall,
+                        );
+                      }
+                      return const Text('');
+                    },
+                  ),
+                ),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                // Sleep hours line
+                LineChartBarData(
+                  spots: sleepData.asMap().entries.map((entry) {
+                    return FlSpot(entry.key.toDouble(), entry.value['value']);
+                  }).toList(),
+                  isCurved: true,
+                  color: Colors.indigo,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Colors.indigo.withValues(alpha: 0.1),
+                  ),
+                ),
+                // Habit completion percentage line (scaled to sleep range)
+                LineChartBarData(
+                  spots: habitData.asMap().entries.map((entry) {
+                    final percentage = entry.value['percentage'] as double;
+                    return FlSpot(entry.key.toDouble(),
+                        percentage / 100 * 10); // Scale to 0-10 range
+                  }).toList(),
+                  isCurved: true,
+                  color: Colors.green,
+                  barWidth: 2,
+                  dotData: const FlDotData(show: false),
+                  dashArray: [5, 5],
+                ),
+              ],
+              minY: 0,
+              maxY: 10,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem('Sleep Hours', Colors.indigo),
+            const SizedBox(width: 20),
+            _buildLegendItem('Habit Completion %', Colors.green),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildActivityEnergyModule(List<Habit> habits) {
+  Widget _buildActivityEnergyModuleWithGraph(List<Habit> habits) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final steps = _healthSummary?['steps'] ?? 0;
     final calories = _healthSummary?['activeCalories'] ?? 0.0;
+
+    final stepsData = _generateHealthDataOverTime('steps');
+    final habitData = _generateHabitCompletionData(habits);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Activity & Energy Levels',
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
             color: isDark ? theme.colorScheme.primary : Colors.orange[700],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
+
+        // Current activity info
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -2344,22 +2205,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           ),
           child: Row(
             children: [
-              Icon(Icons.directions_run, color: Colors.orange, size: 32),
+              Icon(Icons.directions_walk, color: Colors.orange, size: 32),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Today: $steps steps, ${calories.toInt()} cal',
-                      style: theme.textTheme.titleSmall?.copyWith(
+                      'Today: $steps steps • ${calories.toStringAsFixed(0)} cal',
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       steps >= 8000
-                          ? 'Active lifestyle boosts habit motivation!'
+                          ? 'Great activity level boosts habit energy!'
                           : 'More activity could energize your habits',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: steps >= 8000 ? Colors.green : Colors.orange,
@@ -2371,289 +2232,507 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ],
           ),
         ),
-      ],
-    );
-  }
+        const SizedBox(height: 16),
 
-  Widget _buildHealthDataPlaceholder() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.health_and_safety, size: 48, color: Colors.grey[400]),
-          const SizedBox(height: 12),
-          Text(
-            'Health Data Loading...',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+        // Line graph
+        Container(
+          height: 200,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? theme.colorScheme.surface : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Your health insights will appear here once data is available.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHealthDebugSection() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.health_and_safety,
-                  color: isDark ? theme.colorScheme.primary : Colors.teal,
-                  size: 20,
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: 2000,
+                getDrawingHorizontalLine: (value) => FlLine(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                  strokeWidth: 1,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Health Integration Status',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? theme.colorScheme.primary
-                        : Colors.teal.shade700,
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 50,
+                    getTitlesWidget: (value, meta) => Text(
+                      '${(value / 1000).toInt()}k',
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ),
                 ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: _runHealthDiagnostics,
-                  icon: const Icon(Icons.bug_report, size: 16),
-                  label: const Text('Debug'),
-                  style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) {
+                      if (value.toInt() < stepsData.length) {
+                        final date =
+                            stepsData[value.toInt()]['date'] as DateTime;
+                        return Text(
+                          '${date.day}/${date.month}',
+                          style: theme.textTheme.bodySmall,
+                        );
+                      }
+                      return const Text('');
+                    },
                   ),
+                ),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                // Steps line
+                LineChartBarData(
+                  spots: stepsData.asMap().entries.map((entry) {
+                    return FlSpot(entry.key.toDouble(), entry.value['value']);
+                  }).toList(),
+                  isCurved: true,
+                  color: Colors.orange,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Colors.orange.withValues(alpha: 0.1),
+                  ),
+                ),
+                // Habit completion percentage line (scaled to steps range)
+                LineChartBarData(
+                  spots: habitData.asMap().entries.map((entry) {
+                    final percentage = entry.value['percentage'] as double;
+                    return FlSpot(entry.key.toDouble(),
+                        percentage / 100 * 12000); // Scale to steps range
+                  }).toList(),
+                  isCurved: true,
+                  color: Colors.green,
+                  barWidth: 2,
+                  dotData: const FlDotData(show: false),
+                  dashArray: [5, 5],
                 ),
               ],
+              minY: 0,
+              maxY: 12000,
             ),
-            const SizedBox(height: 12),
-
-            // Health Status Indicators
-            _buildHealthStatusIndicators(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem('Steps', Colors.orange),
+            const SizedBox(width: 20),
+            _buildLegendItem('Habit Completion %', Colors.green),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHealthStatusIndicators() {
-    return Column(
-      children: [
-        _buildStatusRow(
-          'Health Permissions',
-          _healthSummary != null &&
-              !_healthSummary!.containsKey('needsPermissions'),
-          'Granted',
-          'Not granted',
-        ),
-        const SizedBox(height: 8),
-        _buildStatusRow(
-          'Health Data Available',
-          _healthSummary != null && !_healthSummary!.containsKey('error'),
-          'Available',
-          'Unavailable',
-        ),
-        const SizedBox(height: 8),
-        _buildStatusRow(
-          'Integration Active',
-          _integrationStatus != null,
-          'Active',
-          'Inactive',
         ),
       ],
     );
   }
 
-  Widget _buildStatusRow(
-      String label, bool isActive, String activeText, String inactiveText) {
-    return Row(
+  Widget _buildHeartRateModuleWithGraph(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final heartRate = _healthSummary?['heartRate'] ?? 0.0;
+
+    final heartRateData = _generateHealthDataOverTime('heartRate');
+    final habitData = _generateHabitCompletionData(habits);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 14),
+        Text(
+          'Heart Rate & Habit Stress',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: isDark ? theme.colorScheme.primary : Colors.red[700],
           ),
         ),
+        const SizedBox(height: 16),
+
+        // Current heart rate info
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isActive
-                ? Colors.green.withValues(alpha: 0.1)
-                : Colors.red.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: isDark
+                ? theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.3)
+                : Colors.red.shade50,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isActive
-                  ? Colors.green.withValues(alpha: 0.3)
-                  : Colors.red.withValues(alpha: 0.3),
+              color: isDark
+                  ? theme.colorScheme.outline.withValues(alpha: 0.3)
+                  : Colors.red.shade200,
             ),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                isActive ? Icons.check_circle : Icons.cancel,
-                size: 14,
-                color: isActive ? Colors.green.shade600 : Colors.red.shade600,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                isActive ? activeText : inactiveText,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isActive ? Colors.green.shade700 : Colors.red.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _runHealthDiagnostics() async {
-    try {
-      AppLogger.info(
-          '🔍 Running Health Connect diagnostics from Insights screen...');
-
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          title: Text('Running Diagnostics'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Analyzing Health Connect integration...'),
-            ],
-          ),
-        ),
-      );
-
-      // Run diagnostics
-      final results =
-          await MinimalHealthChannel.runNativeHealthConnectDiagnostics();
-
-      // Close loading dialog
-      if (mounted) Navigator.of(context).pop();
-
-      // Show results dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Health Connect Diagnostics'),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 400,
-              child: SingleChildScrollView(
+              Icon(Icons.favorite, color: Colors.red, size: 32),
+              const SizedBox(width: 16),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                        'Device: ${results['deviceInfo']?['manufacturer']} ${results['deviceInfo']?['model']}'),
+                      'Current: ${heartRate.toStringAsFixed(0)} BPM',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                     Text(
-                        'Android: ${results['deviceInfo']?['androidVersion']} (API ${results['deviceInfo']?['apiLevel']})'),
-                    const SizedBox(height: 16),
-                    Text(
-                        'Health Connect Available: ${results['healthConnectAvailable']}'),
-                    Text('Client Initialized: ${results['clientInitialized']}'),
-                    Text(
-                        'Permissions Granted: ${results['permissionCount'] ?? 0}'),
-                    const SizedBox(height: 16),
-                    const Text('Data Availability:',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    if (results['dataAvailability'] != null)
-                      ...((results['dataAvailability'] as Map<String, dynamic>)
-                          .entries
-                          .map((entry) {
-                        final dataType = entry.key;
-                        final ranges = entry.value as Map<String, dynamic>;
-                        final hasAnyData = ranges.values.any((range) =>
-                            (range as Map<String, dynamic>)['hasData'] == true);
-                        return Text(
-                            '$dataType: ${hasAnyData ? "✅ Has data" : "❌ No data"}');
-                      })),
-                    const SizedBox(height: 16),
-                    if (results['recommendations'] != null) ...[
-                      const Text('Recommendations:',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      ...(results['recommendations'] as List)
-                          .map((rec) => Text('• $rec')),
-                    ],
-                    if (results['error'] != null) ...[
-                      const Text('Error:',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.red)),
-                      Text(results['error'].toString(),
-                          style: const TextStyle(color: Colors.red)),
-                    ],
+                      heartRate > 0 && heartRate < 80
+                          ? 'Healthy heart rate supports habit consistency!'
+                          : 'Monitor heart rate for optimal habit performance',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: heartRate > 0 && heartRate < 80
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                    ),
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Line graph
+        Container(
+          height: 200,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? theme.colorScheme.surface : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
+          ),
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: 10,
+                getDrawingHorizontalLine: (value) => FlLine(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                  strokeWidth: 1,
+                ),
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (value, meta) => Text(
+                      '${value.toInt()}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) {
+                      if (value.toInt() < heartRateData.length) {
+                        final date =
+                            heartRateData[value.toInt()]['date'] as DateTime;
+                        return Text(
+                          '${date.day}/${date.month}',
+                          style: theme.textTheme.bodySmall,
+                        );
+                      }
+                      return const Text('');
+                    },
+                  ),
+                ),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                // Heart rate line
+                LineChartBarData(
+                  spots: heartRateData.asMap().entries.map((entry) {
+                    return FlSpot(entry.key.toDouble(), entry.value['value']);
+                  }).toList(),
+                  isCurved: true,
+                  color: Colors.red,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Colors.red.withValues(alpha: 0.1),
+                  ),
+                ),
+                // Habit completion percentage line (scaled to heart rate range)
+                LineChartBarData(
+                  spots: habitData.asMap().entries.map((entry) {
+                    final percentage = entry.value['percentage'] as double;
+                    return FlSpot(
+                        entry.key.toDouble(),
+                        60 +
+                            (percentage /
+                                100 *
+                                40)); // Scale to 60-100 BPM range
+                  }).toList(),
+                  isCurved: true,
+                  color: Colors.green,
+                  barWidth: 2,
+                  dotData: const FlDotData(show: false),
+                  dashArray: [5, 5],
+                ),
+              ],
+              minY: 50,
+              maxY: 100,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem('Heart Rate (BPM)', Colors.red),
+            const SizedBox(width: 20),
+            _buildLegendItem('Habit Completion %', Colors.green),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWaterIntakeModuleWithGraph(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final waterIntake = _healthSummary?['waterIntake'] ?? 0.0;
+
+    final waterData = _generateHealthDataOverTime('water');
+    final habitData = _generateHabitCompletionData(habits);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hydration & Habit Energy',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: isDark ? theme.colorScheme.primary : Colors.blue[700],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Current water intake info
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.3)
+                : Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark
+                  ? theme.colorScheme.outline.withValues(alpha: 0.3)
+                  : Colors.blue.shade200,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.water_drop, color: Colors.blue, size: 32),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Today: ${waterIntake.toStringAsFixed(1)} L',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      waterIntake >= 2.0
+                          ? 'Great hydration supports habit focus!'
+                          : 'Better hydration could improve habit performance',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color:
+                            waterIntake >= 2.0 ? Colors.green : Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        );
-      }
+        ),
+        const SizedBox(height: 16),
 
-      AppLogger.info('✅ Health diagnostics completed and displayed');
-    } catch (e) {
-      AppLogger.error('❌ Failed to run health diagnostics', e);
+        // Line graph
+        Container(
+          height: 200,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? theme.colorScheme.surface : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2),
+            ),
+          ),
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: 0.5,
+                getDrawingHorizontalLine: (value) => FlLine(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.1),
+                  strokeWidth: 1,
+                ),
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (value, meta) => Text(
+                      '${value.toStringAsFixed(1)}L',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) {
+                      if (value.toInt() < waterData.length) {
+                        final date =
+                            waterData[value.toInt()]['date'] as DateTime;
+                        return Text(
+                          '${date.day}/${date.month}',
+                          style: theme.textTheme.bodySmall,
+                        );
+                      }
+                      return const Text('');
+                    },
+                  ),
+                ),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                // Water intake line
+                LineChartBarData(
+                  spots: waterData.asMap().entries.map((entry) {
+                    return FlSpot(entry.key.toDouble(), entry.value['value']);
+                  }).toList(),
+                  isCurved: true,
+                  color: Colors.blue,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Colors.blue.withValues(alpha: 0.1),
+                  ),
+                ),
+                // Habit completion percentage line (scaled to water range)
+                LineChartBarData(
+                  spots: habitData.asMap().entries.map((entry) {
+                    final percentage = entry.value['percentage'] as double;
+                    return FlSpot(entry.key.toDouble(),
+                        percentage / 100 * 3); // Scale to 0-3L range
+                  }).toList(),
+                  isCurved: true,
+                  color: Colors.green,
+                  barWidth: 2,
+                  dotData: const FlDotData(show: false),
+                  dashArray: [5, 5],
+                ),
+              ],
+              minY: 0,
+              maxY: 3,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem('Water Intake (L)', Colors.blue),
+            const SizedBox(width: 20),
+            _buildLegendItem('Habit Completion %', Colors.green),
+          ],
+        ),
+        const SizedBox(height: 12),
 
-      // Close loading dialog if still open
-      if (mounted) Navigator.of(context).pop();
-
-      // Show error dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Diagnostics Error'),
-            content: Text('Failed to run health diagnostics: $e'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
+        // Informational message about hydration data
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Hydration data needs to be input manually or tracked through habit completion data',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ),
             ],
           ),
-        );
-      }
-    }
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
   }
 }
