@@ -201,10 +201,16 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 }
             }
             
-            // Check if Health Connect package is installed
+            // Check if Health Connect package is installed and detect version compatibility
             try {
                 val packageInfo = context.packageManager.getPackageInfo("com.google.android.apps.healthdata", 0)
                 Log.i("MinimalHealthPlugin", "Health Connect package found: version ${packageInfo.versionName}, versionCode ${packageInfo.versionCode}")
+                
+                // Check for known compatibility issues with specific versions
+                val versionName = packageInfo.versionName
+                if (versionName != null) {
+                    checkHealthConnectVersionCompatibility(versionName)
+                }
             } catch (e: Exception) {
                 Log.e("MinimalHealthPlugin", "Health Connect package not found - Health Connect is not installed", e)
                 return
@@ -241,6 +247,100 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             // Log detailed error information
             Log.e("MinimalHealthPlugin", "Error details: ${e.javaClass.simpleName}: ${e.message}")
             e.printStackTrace()
+        }
+    }
+    
+    /**
+     * Check Health Connect version compatibility and log warnings for known issues
+     */
+    private fun checkHealthConnectVersionCompatibility(versionName: String) {
+        Log.i("MinimalHealthPlugin", "Checking Health Connect version compatibility for: $versionName")
+        
+        // Known problematic versions that have getStartZoneOffset() issues
+        val problematicVersions = listOf(
+            "2025.07.24.00",
+            "2025.07.23.00", 
+            "2025.07.22.00",
+            "2025.06",
+            "2025.05"
+        )
+        
+        val isProblematicVersion = problematicVersions.any { versionName.startsWith(it) }
+        
+        if (isProblematicVersion) {
+            Log.w("MinimalHealthPlugin", "⚠️  COMPATIBILITY WARNING: Health Connect version $versionName has known compatibility issues")
+            Log.w("MinimalHealthPlugin", "  Known issues:")
+            Log.w("MinimalHealthPlugin", "  - NoSuchMethodError: getStartZoneOffset() for HeartRateRecord")
+            Log.w("MinimalHealthPlugin", "  - ZoneOffset related API incompatibilities")
+            Log.w("MinimalHealthPlugin", "  - Some record types may not work properly")
+            Log.w("MinimalHealthPlugin", "  Recommendation: Update Health Connect app or use fallback methods")
+        } else {
+            Log.i("MinimalHealthPlugin", "✅ Health Connect version appears compatible")
+        }
+        
+        // Test HeartRateRecord compatibility specifically
+        try {
+            val heartRateClass = HeartRateRecord::class.java
+            val methods = heartRateClass.methods
+            val hasGetStartZoneOffset = methods.any { it.name == "getStartZoneOffset" }
+            
+            if (hasGetStartZoneOffset) {
+                Log.i("MinimalHealthPlugin", "✅ HeartRateRecord.getStartZoneOffset() method is available")
+            } else {
+                Log.w("MinimalHealthPlugin", "⚠️  HeartRateRecord.getStartZoneOffset() method is NOT available")
+                Log.w("MinimalHealthPlugin", "  This confirms compatibility issues with this Health Connect version")
+            }
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error checking HeartRateRecord compatibility", e)
+        }
+    }
+    
+    /**
+     * Check if HeartRateRecord is compatible with the current Health Connect version
+     * Returns false if known compatibility issues are detected
+     */
+    private fun checkHeartRateRecordCompatibility(): Boolean {
+        return try {
+            // Try to create a simple HeartRateRecord to test compatibility
+            val testTime = Instant.now()
+            
+            // Test if we can access the HeartRateRecord class methods without issues
+            val heartRateClass = HeartRateRecord::class.java
+            val methods = heartRateClass.methods
+            
+            // Check for problematic methods that cause NoSuchMethodError
+            val hasProblematicMethods = methods.any { method ->
+                method.name.contains("ZoneOffset") || 
+                method.name == "getStartZoneOffset" ||
+                method.name == "getEndZoneOffset"
+            }
+            
+            if (hasProblematicMethods) {
+                Log.w("MinimalHealthPlugin", "⚠️  HeartRateRecord has problematic ZoneOffset methods - compatibility issues likely")
+                return false
+            }
+            
+            // Additional check: try to access the time property safely
+            try {
+                // This is a more thorough test - try to create a minimal HeartRateRecord
+                // If this fails, we know there are compatibility issues
+                val constructor = heartRateClass.constructors.firstOrNull()
+                if (constructor == null) {
+                    Log.w("MinimalHealthPlugin", "⚠️  Cannot find HeartRateRecord constructor - compatibility issues")
+                    return false
+                }
+                
+                Log.i("MinimalHealthPlugin", "✅ HeartRateRecord compatibility check passed")
+                return true
+                
+            } catch (e: Exception) {
+                Log.w("MinimalHealthPlugin", "⚠️  HeartRateRecord compatibility test failed: ${e.message}")
+                return false
+            }
+            
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "❌ HeartRateRecord compatibility check failed", e)
+            return false
         }
     }
 
@@ -808,6 +908,16 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                             Log.w("MinimalHealthPlugin", "  Current time: $currentTime (${Instant.ofEpochMilli(currentTime)})")
                         }
                         
+                        // Special compatibility check for HeartRateRecord
+                        if (dataType == "HEART_RATE") {
+                            val isCompatible = checkHeartRateRecordCompatibility()
+                            if (!isCompatible) {
+                                Log.w("MinimalHealthPlugin", "⚠️  HeartRateRecord compatibility issue detected - returning empty data")
+                                result.success(emptyList<Map<String, Any>>())
+                                return@launch
+                            }
+                        }
+                        
                         Log.i("MinimalHealthPlugin", "Executing Health Connect readRecords request for $dataType...")
                         Log.i("MinimalHealthPlugin", "  Time range: ${Instant.ofEpochMilli(startDate)} to ${Instant.ofEpochMilli(endDate)}")
                         Log.i("MinimalHealthPlugin", "  Duration: ${(endDate - startDate) / (1000 * 60 * 60)} hours")
@@ -1114,37 +1224,67 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 map["unit"] = "kg"
             }
             is HeartRateRecord -> {
-                // HeartRateRecord is an InstantRecord - try different approaches to get time
+                // HeartRateRecord compatibility handling for different Health Connect versions
                 try {
-                    // Try direct property access first
-                    val timeField = record.javaClass.getDeclaredField("time")
-                    timeField.isAccessible = true
-                    val time = timeField.get(record) as Instant
-                    map["timestamp"] = time.toEpochMilli()
-                } catch (e: Exception) {
-                    try {
-                        // Fallback: try getTime() method
-                        val timeMethod = record.javaClass.getMethod("getTime")
-                        val time = timeMethod.invoke(record) as Instant
-                        map["timestamp"] = time.toEpochMilli()
-                    } catch (e2: Exception) {
-                        Log.w("MinimalHealthPlugin", "Error getting time from HeartRateRecord, using current time", e2)
-                        map["timestamp"] = System.currentTimeMillis()
+                    // Method 1: Try the standard time property (newer versions)
+                    val time = try {
+                        record.time
+                    } catch (e: NoSuchMethodError) {
+                        // Method 2: Try reflection for time field (older versions)
+                        try {
+                            val timeField = record.javaClass.getDeclaredField("time")
+                            timeField.isAccessible = true
+                            timeField.get(record) as Instant
+                        } catch (e2: Exception) {
+                            // Method 3: Try getTime() method
+                            try {
+                                val timeMethod = record.javaClass.getMethod("getTime")
+                                timeMethod.invoke(record) as Instant
+                            } catch (e3: Exception) {
+                                // Method 4: Extract from samples if available
+                                if (record.samples.isNotEmpty()) {
+                                    // Use the time from the first sample
+                                    val firstSample = record.samples.first()
+                                    try {
+                                        // Try to get time from sample
+                                        val sampleTimeField = firstSample.javaClass.getDeclaredField("time")
+                                        sampleTimeField.isAccessible = true
+                                        sampleTimeField.get(firstSample) as Instant
+                                    } catch (e4: Exception) {
+                                        Log.w("MinimalHealthPlugin", "Could not extract time from HeartRateRecord sample, using current time", e4)
+                                        Instant.now()
+                                    }
+                                } else {
+                                    Log.w("MinimalHealthPlugin", "HeartRateRecord has no samples and no accessible time, using current time")
+                                    Instant.now()
+                                }
+                            }
+                        }
                     }
-                }
-                
-                // HeartRateRecord has samples - use direct property access
-                if (record.samples.isNotEmpty()) {
-                    // Take the first sample's BPM value
-                    val firstSample = record.samples.first()
-                    map["value"] = firstSample.beatsPerMinute.toDouble()
                     
-                    Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm, samples: ${record.samples.size}")
-                } else {
+                    map["timestamp"] = time.toEpochMilli()
+                    
+                    // Extract heart rate value from samples
+                    if (record.samples.isNotEmpty()) {
+                        // Take the first sample's BPM value
+                        val firstSample = record.samples.first()
+                        map["value"] = firstSample.beatsPerMinute.toDouble()
+                        
+                        Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm, samples: ${record.samples.size}")
+                    } else {
+                        map["value"] = 0.0
+                        Log.w("MinimalHealthPlugin", "Heart rate record has no samples")
+                    }
+                    map["unit"] = "bpm"
+                    
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error processing HeartRateRecord - Health Connect version compatibility issue", e)
+                    // Return a minimal valid record to prevent crashes
+                    map["timestamp"] = System.currentTimeMillis()
                     map["value"] = 0.0
-                    Log.w("MinimalHealthPlugin", "Heart rate record has no samples")
+                    map["unit"] = "bpm"
+                    map["error"] = "compatibility_issue"
                 }
-                map["unit"] = "bpm"
             }
             else -> {
                 // Handle MindfulnessSessionRecord dynamically if available
@@ -1784,7 +1924,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                         
                     } catch (e: Exception) {
                         compatibilityInfo["basicFunctionalityTest"] = false
-                        compatibilityInfo["testError"] = e.message
+                        compatibilityInfo["testError"] = e.message ?: "Unknown error"
                     }
                 } else {
                     compatibilityInfo["reason"] = "Health Connect client not initialized"

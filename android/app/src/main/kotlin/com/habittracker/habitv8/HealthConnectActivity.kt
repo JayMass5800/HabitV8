@@ -189,7 +189,7 @@ class HealthConnectActivity : ComponentActivity() {
                     finish()
                 } else {
                     Log.i(TAG, "Launching permission request for ${PERMISSIONS.size} permissions")
-                    requestPermissions.launch(PERMISSIONS)
+                    requestPermissions.launch(PERMISSIONS.toTypedArray())
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking permissions", e)
