@@ -743,16 +743,13 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 val hasHeartRatePermission = grantedPermissions.contains(heartRatePermissionString)
                 Log.i("MinimalHealthPlugin", "Heart rate permission: ${if (hasHeartRatePermission) "GRANTED" else "MISSING"}")
                 
-                // Check for background permission by looking for any permission string containing "BACKGROUND"
-                val hasBackgroundPermission = grantedPermissions.any { it.contains("BACKGROUND") }
-                Log.i("MinimalHealthPlugin", "Background permission: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
-                
-                                // Check if all required permissions are granted
+                // Check if all required permissions are granted
                 val allGranted = healthPermissionStrings.all { permissionString -> grantedPermissions.contains(permissionString) }
                 
                 // Check specifically for background permission
                 val backgroundPermissionString = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
-                val hasBackgroundPermission = grantedPermissions.contains(backgroundPermissionString)
+                val hasBackgroundPermission = grantedPermissions.contains(backgroundPermissionString) || 
+                                            grantedPermissions.any { it.contains("BACKGROUND") }
                 Log.i("MinimalHealthPlugin", "Background health permission: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
                 
                 // For Android 16 (SDK 36), we need to ensure background permission is granted
