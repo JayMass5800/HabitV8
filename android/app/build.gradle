@@ -47,7 +47,7 @@ android {
     defaultConfig {
         applicationId "com.habittracker.habitv8"
         minSdkVersion 26
-        targetSdkVersion 34
+        targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         
@@ -121,8 +121,8 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'
     
     // Health Connect dependencies - using more stable version for better compatibility
-    // Version 1.1.0-alpha12 has better compatibility with various Health Connect versions
-    implementation 'androidx.health.connect:connect-client:1.1.0-alpha12'
+    // Version 1.1.0-rc03 is the latest stablke release as of now
+    implementation 'androidx.health.connect:connect-client:1.1.0-rc03'
     
     // Coroutines for async operations
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'

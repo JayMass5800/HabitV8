@@ -1,7 +1,7 @@
 Get started with Health Connect
 
 bookmark_border
-This guide is compatible with Health Connect version 1.1.0-alpha12.
+This guide is compatible with Health Connect version 1.1.0-rc03.
 
 This guide shows you how you can begin using Health Connect on your app.
 
@@ -31,7 +31,7 @@ Add the Health Connect SDK dependency in your module-level build.gradle file:
 
 dependencies {
   ...
-  implementation "androidx.health.connect:connect-client:1.2.0-alpha01"
+  implementation "androidx.health.connect:connect-client:1.1.0-rc03"
   ...
 }
 Refer to the Health Connect releases for the latest version.
@@ -262,3 +262,21 @@ API reference: Take a look at the Jetpack reference for the Health Connect API.
 Declare use of data types: In the Play Console, declare access to the Health Connect data types that your app reads from and writes to.
 Optional GitHub code sample and codelab: See the GitHub code sample repository and the codelab exercise to help you get started.
 Note: If you are applying for another request in case your app requires new data types, you need to include both new and existing data types, and exclude any data types you no longer need. If you only need to remove access to certain data types, include all of your existing data types but exclude the data types you no longer need.
+
+Latest Update	Stable Release	Release Candidate	Beta Release	Alpha Release
+July 30, 2025	-	1.1.0-rc03	-	1.2.0-alpha01
+Requesting access to data types
+To help us strengthen user privacy and security, developers integrating with Health Connect must declare read and/or write access for the data types that their apps use. Developers must include valid use cases for the data types they use based on the app's purpose. For more information, visit Provide information for the Health apps declaration form and Health Connect by Android Permissions.
+
+Declaring dependencies
+To add a dependency on health, you must add the Google Maven repository to your project. Read Google's Maven repository for more information.
+
+Add the dependencies for the artifacts you need in the build.gradle file for your app or module:
+
+Groovy
+Kotlin
+
+dependencies {
+  // Use to implement health connects
+  implementation "androidx.health.connect:connect-client:1.1.0-rc03"
+}
