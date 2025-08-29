@@ -26,4 +26,10 @@ class HealthPermissionResult {
 
   /// Whether the user needs to install or set up Health Connect
   bool get requiresHealthConnectSetup => needsHealthConnect;
+  
+  /// Whether the user needs to take action (manual setup or install)
+  bool get requiresUserAction => needsManualSetup || needsHealthConnect;
+  
+  /// Whether the user needs to manually set up permissions
+  bool get requiresManualPermissionSetup => needsManualSetup;
 }
