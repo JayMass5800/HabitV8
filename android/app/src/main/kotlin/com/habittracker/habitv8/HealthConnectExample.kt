@@ -86,8 +86,13 @@ class HealthConnectExample(private val context: Context) {
     
     /**
      * Write heart rate data as per Health Connect API instructions
+     * TEMPORARILY DISABLED due to Health Connect client library API changes
      */
     suspend fun writeHeartRateData(): Boolean {
+        Log.w(TAG, "writeHeartRateData is temporarily disabled due to Health Connect API compatibility issues")
+        return false
+        
+        /*
         try {
             val startTime = Instant.now().minusSeconds(10)
             val endTime = Instant.now()
@@ -103,7 +108,7 @@ class HealthConnectExample(private val context: Context) {
                 endTime = endTime,
                 endZoneOffset = null,
                 samples = samples,
-                metadata = Metadata(dataOrigin = DataOrigin(packageName = context.packageName))
+                metadata = // TODO: Fix metadata creation for new Health Connect client library
             )
 
             val records = listOf(heartRateRecord)
@@ -115,6 +120,7 @@ class HealthConnectExample(private val context: Context) {
             Log.e(TAG, "Error writing heart rate data: ${e.message}")
             return false
         }
+        */
     }
     
     /**

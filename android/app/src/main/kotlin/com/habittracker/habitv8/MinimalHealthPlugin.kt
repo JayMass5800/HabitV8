@@ -296,17 +296,15 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     }
     
     /**
-     * Check if HeartRateRecord is compatible with the current Health Connect version
+     * Check if a data type is compatible with the current Health Connect version
      * Returns false if known compatibility issues are detected
      */
-    private fun checkHeartRateRecordCompatibility(): Boolean {
+    private fun checkDataTypeCompatibility(dataType: String, recordClass: KClass<out Record>): Boolean {
         return try {
-            // Try to create a simple HeartRateRecord to test compatibility
-            val testTime = Instant.now()
+            Log.d("MinimalHealthPlugin", "Checking compatibility for $dataType (${recordClass.simpleName})")
             
-            // Test if we can access the HeartRateRecord class methods without issues
-            val heartRateClass = HeartRateRecord::class.java
-            val methods = heartRateClass.methods
+            // Test if we can access the record class methods without issues
+            val methods = recordClass.java.methods
             
             // Check for problematic methods that cause NoSuchMethodError
             val hasProblematicMethods = methods.any { method ->
@@ -316,30 +314,59 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             }
             
             if (hasProblematicMethods) {
-                Log.w("MinimalHealthPlugin", "⚠️  HeartRateRecord has problematic ZoneOffset methods - compatibility issues likely")
+                Log.w("MinimalHealthPlugin", "⚠️  $dataType has problematic ZoneOffset methods - compatibility issues likely")
                 return false
             }
             
-            // Additional check: try to access the time property safely
-            try {
-                // This is a more thorough test - try to create a minimal HeartRateRecord
-                // If this fails, we know there are compatibility issues
-                val constructor = heartRateClass.constructors.firstOrNull()
-                if (constructor == null) {
-                    Log.w("MinimalHealthPlugin", "⚠️  Cannot find HeartRateRecord constructor - compatibility issues")
-                    return false
+            // Specific checks for different data types
+            when (dataType) {
+                "HEART_RATE" -> {
+                    // HeartRateRecord specific checks
+                    try {
+                        val constructor = recordClass.java.constructors.firstOrNull()
+                        if (constructor == null) {
+                            Log.w("MinimalHealthPlugin", "⚠️  Cannot find $dataType constructor - compatibility issues")
+                            return false
+                        }
+                        
+                        // Check if startTime property is accessible
+                        val hasStartTime = methods.any { it.name == "getStartTime" || it.name == "startTime" }
+                        if (!hasStartTime) {
+                            Log.w("MinimalHealthPlugin", "⚠️  $dataType missing startTime property - compatibility issues")
+                            return false
+                        }
+                        
+                    } catch (e: Exception) {
+                        Log.w("MinimalHealthPlugin", "⚠️  $dataType compatibility test failed: ${e.message}")
+                        return false
+                    }
                 }
-                
-                Log.i("MinimalHealthPlugin", "✅ HeartRateRecord compatibility check passed")
-                return true
-                
-            } catch (e: Exception) {
-                Log.w("MinimalHealthPlugin", "⚠️  HeartRateRecord compatibility test failed: ${e.message}")
-                return false
+                "WEIGHT" -> {
+                    // WeightRecord specific checks (InstantRecord)
+                    val hasTimeProperty = methods.any { it.name == "getTime" || it.name == "time" }
+                    if (!hasTimeProperty) {
+                        Log.w("MinimalHealthPlugin", "⚠️  $dataType missing time property - compatibility issues")
+                        return false
+                    }
+                }
+                else -> {
+                    // For other data types, check for basic time properties
+                    val hasTimeProperties = methods.any { 
+                        it.name == "getStartTime" || it.name == "startTime" ||
+                        it.name == "getTime" || it.name == "time"
+                    }
+                    if (!hasTimeProperties) {
+                        Log.w("MinimalHealthPlugin", "⚠️  $dataType missing time properties - compatibility issues")
+                        return false
+                    }
+                }
             }
+            
+            Log.d("MinimalHealthPlugin", "✅ $dataType compatibility check passed")
+            return true
             
         } catch (e: Exception) {
-            Log.e("MinimalHealthPlugin", "❌ HeartRateRecord compatibility check failed", e)
+            Log.e("MinimalHealthPlugin", "❌ $dataType compatibility check failed", e)
             return false
         }
     }
@@ -908,14 +935,12 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                             Log.w("MinimalHealthPlugin", "  Current time: $currentTime (${Instant.ofEpochMilli(currentTime)})")
                         }
                         
-                        // Special compatibility check for HeartRateRecord
-                        if (dataType == "HEART_RATE") {
-                            val isCompatible = checkHeartRateRecordCompatibility()
-                            if (!isCompatible) {
-                                Log.w("MinimalHealthPlugin", "⚠️  HeartRateRecord compatibility issue detected - returning empty data")
-                                result.success(emptyList<Map<String, Any>>())
-                                return@launch
-                            }
+                        // Special compatibility check for problematic data types
+                        val isCompatible = checkDataTypeCompatibility(dataType, recordClass)
+                        if (!isCompatible) {
+                            Log.w("MinimalHealthPlugin", "⚠️  $dataType compatibility issue detected - returning empty data")
+                            result.success(emptyList<Map<String, Any>>())
+                            return@launch
                         }
                         
                         Log.i("MinimalHealthPlugin", "Executing Health Connect readRecords request for $dataType...")
@@ -1150,103 +1175,257 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         
         when (record) {
             is StepsRecord -> {
-                map["timestamp"] = record.startTime.toEpochMilli()
-                map["value"] = record.count.toDouble()
-                map["unit"] = "steps"
+                try {
+                    val startTime = try {
+                        record.startTime
+                    } catch (e: NoSuchMethodError) {
+                        try {
+                            val startTimeField = record.javaClass.getDeclaredField("startTime")
+                            startTimeField.isAccessible = true
+                            startTimeField.get(record) as Instant
+                        } catch (e2: Exception) {
+                            Log.w("MinimalHealthPlugin", "Error getting startTime from StepsRecord, using current time", e2)
+                            Instant.now()
+                        }
+                    }
+                    
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.count.toDouble()
+                    map["unit"] = "steps"
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error processing StepsRecord - Health Connect compatibility issue", e)
+                    map["timestamp"] = System.currentTimeMillis()
+                    map["value"] = 0.0
+                    map["unit"] = "steps"
+                    map["error"] = "compatibility_issue"
+                }
             }
             is ActiveCaloriesBurnedRecord -> {
-                map["timestamp"] = record.startTime.toEpochMilli()
-                map["value"] = record.energy.inCalories
-                map["unit"] = "calories"
-                Log.d("MinimalHealthPlugin", "Active calories record: ${record.energy.inCalories} cal at ${Instant.ofEpochMilli(record.startTime.toEpochMilli())}")
+                try {
+                    val startTime = try {
+                        record.startTime
+                    } catch (e: NoSuchMethodError) {
+                        try {
+                            val startTimeField = record.javaClass.getDeclaredField("startTime")
+                            startTimeField.isAccessible = true
+                            startTimeField.get(record) as Instant
+                        } catch (e2: Exception) {
+                            Log.w("MinimalHealthPlugin", "Error getting startTime from ActiveCaloriesBurnedRecord, using current time", e2)
+                            Instant.now()
+                        }
+                    }
+                    
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.energy.inCalories
+                    map["unit"] = "calories"
+                    Log.d("MinimalHealthPlugin", "Active calories record: ${record.energy.inCalories} cal at ${Instant.ofEpochMilli(startTime.toEpochMilli())}")
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error processing ActiveCaloriesBurnedRecord - Health Connect compatibility issue", e)
+                    map["timestamp"] = System.currentTimeMillis()
+                    map["value"] = 0.0
+                    map["unit"] = "calories"
+                    map["error"] = "compatibility_issue"
+                }
             }
             is TotalCaloriesBurnedRecord -> {
-                map["timestamp"] = record.startTime.toEpochMilli()
-                map["value"] = record.energy.inCalories
-                map["unit"] = "calories"
-                Log.d("MinimalHealthPlugin", "Total calories record: ${record.energy.inCalories} cal at ${Instant.ofEpochMilli(record.startTime.toEpochMilli())}")
+                try {
+                    val startTime = try {
+                        record.startTime
+                    } catch (e: NoSuchMethodError) {
+                        try {
+                            val startTimeField = record.javaClass.getDeclaredField("startTime")
+                            startTimeField.isAccessible = true
+                            startTimeField.get(record) as Instant
+                        } catch (e2: Exception) {
+                            Log.w("MinimalHealthPlugin", "Error getting startTime from TotalCaloriesBurnedRecord, using current time", e2)
+                            Instant.now()
+                        }
+                    }
+                    
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.energy.inCalories
+                    map["unit"] = "calories"
+                    Log.d("MinimalHealthPlugin", "Total calories record: ${record.energy.inCalories} cal at ${Instant.ofEpochMilli(startTime.toEpochMilli())}")
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error processing TotalCaloriesBurnedRecord - Health Connect compatibility issue", e)
+                    map["timestamp"] = System.currentTimeMillis()
+                    map["value"] = 0.0
+                    map["unit"] = "calories"
+                    map["error"] = "compatibility_issue"
+                }
             }
             is SleepSessionRecord -> {
-                val startTime = record.startTime.toEpochMilli()
-                val endTime = record.endTime.toEpochMilli()
-                val durationMinutes = (endTime - startTime) / (1000.0 * 60.0)
-                
-                map["timestamp"] = startTime
-                map["value"] = durationMinutes
-                map["unit"] = "minutes"
-                map["endTime"] = endTime
-                
-                // Get sleep stage information using direct property access
-                val stages = record.stages
-                map["stageCount"] = stages.size
-                
-                Log.d("MinimalHealthPlugin", "Sleep record: ${durationMinutes.toInt()} minutes from ${Instant.ofEpochMilli(startTime)} to ${Instant.ofEpochMilli(endTime)}, stages: ${stages.size}")
-                
-                // Add title if available
-                record.title?.let { title ->
-                    map["title"] = title
-                    Log.d("MinimalHealthPlugin", "Sleep record title: $title")
-                }
-                
-                // Add notes if available
-                record.notes?.let { notes ->
-                    map["notes"] = notes
-                    Log.d("MinimalHealthPlugin", "Sleep record notes: $notes")
+                try {
+                    val startTime = try {
+                        record.startTime.toEpochMilli()
+                    } catch (e: NoSuchMethodError) {
+                        try {
+                            val startTimeField = record.javaClass.getDeclaredField("startTime")
+                            startTimeField.isAccessible = true
+                            (startTimeField.get(record) as Instant).toEpochMilli()
+                        } catch (e2: Exception) {
+                            Log.w("MinimalHealthPlugin", "Error getting startTime from SleepSessionRecord, using current time", e2)
+                            System.currentTimeMillis()
+                        }
+                    }
+                    
+                    val endTime = try {
+                        record.endTime.toEpochMilli()
+                    } catch (e: NoSuchMethodError) {
+                        try {
+                            val endTimeField = record.javaClass.getDeclaredField("endTime")
+                            endTimeField.isAccessible = true
+                            (endTimeField.get(record) as Instant).toEpochMilli()
+                        } catch (e2: Exception) {
+                            Log.w("MinimalHealthPlugin", "Error getting endTime from SleepSessionRecord, using current time", e2)
+                            System.currentTimeMillis()
+                        }
+                    }
+                    
+                    val durationMinutes = (endTime - startTime) / (1000.0 * 60.0)
+                    
+                    map["timestamp"] = startTime
+                    map["value"] = durationMinutes
+                    map["unit"] = "minutes"
+                    map["endTime"] = endTime
+                    
+                    // Get sleep stage information with compatibility handling
+                    try {
+                        val stages = record.stages
+                        map["stageCount"] = stages.size
+                    } catch (e: Exception) {
+                        Log.w("MinimalHealthPlugin", "Error accessing sleep stages", e)
+                        map["stageCount"] = 0
+                    }
+                    
+                    Log.d("MinimalHealthPlugin", "Sleep record: ${durationMinutes.toInt()} minutes from ${Instant.ofEpochMilli(startTime)} to ${Instant.ofEpochMilli(endTime)}")
+                    
+                    // Add title if available
+                    try {
+                        record.title?.let { title ->
+                            map["title"] = title
+                            Log.d("MinimalHealthPlugin", "Sleep record title: $title")
+                        }
+                    } catch (e: Exception) {
+                        Log.w("MinimalHealthPlugin", "Error accessing sleep title", e)
+                    }
+                    
+                    // Add notes if available
+                    try {
+                        record.notes?.let { notes ->
+                            map["notes"] = notes
+                            Log.d("MinimalHealthPlugin", "Sleep record notes: $notes")
+                        }
+                    } catch (e: Exception) {
+                        Log.w("MinimalHealthPlugin", "Error accessing sleep notes", e)
+                    }
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error processing SleepSessionRecord - Health Connect compatibility issue", e)
+                    map["timestamp"] = System.currentTimeMillis()
+                    map["value"] = 0.0
+                    map["unit"] = "minutes"
+                    map["endTime"] = System.currentTimeMillis()
+                    map["stageCount"] = 0
+                    map["error"] = "compatibility_issue"
                 }
             }
             is HydrationRecord -> {
-                // HydrationRecord has startTime and endTime, not a single time property
-                map["timestamp"] = record.startTime.toEpochMilli()
-                map["value"] = record.volume.inLiters
-                map["unit"] = "liters"
-                map["endTime"] = record.endTime.toEpochMilli()
+                try {
+                    val startTime = try {
+                        record.startTime
+                    } catch (e: NoSuchMethodError) {
+                        try {
+                            val startTimeField = record.javaClass.getDeclaredField("startTime")
+                            startTimeField.isAccessible = true
+                            startTimeField.get(record) as Instant
+                        } catch (e2: Exception) {
+                            Log.w("MinimalHealthPlugin", "Error getting startTime from HydrationRecord, using current time", e2)
+                            Instant.now()
+                        }
+                    }
+                    
+                    val endTime = try {
+                        record.endTime
+                    } catch (e: NoSuchMethodError) {
+                        try {
+                            val endTimeField = record.javaClass.getDeclaredField("endTime")
+                            endTimeField.isAccessible = true
+                            endTimeField.get(record) as Instant
+                        } catch (e2: Exception) {
+                            Log.w("MinimalHealthPlugin", "Error getting endTime from HydrationRecord, using current time", e2)
+                            Instant.now()
+                        }
+                    }
+                    
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.volume.inLiters
+                    map["unit"] = "liters"
+                    map["endTime"] = endTime.toEpochMilli()
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error processing HydrationRecord - Health Connect compatibility issue", e)
+                    map["timestamp"] = System.currentTimeMillis()
+                    map["value"] = 0.0
+                    map["unit"] = "liters"
+                    map["endTime"] = System.currentTimeMillis()
+                    map["error"] = "compatibility_issue"
+                }
             }
             is WeightRecord -> {
-                // WeightRecord is an InstantRecord - try different approaches to get time
+                // WeightRecord compatibility handling for different Health Connect versions
                 try {
-                    // Try direct property access first
-                    val timeField = record.javaClass.getDeclaredField("time")
-                    timeField.isAccessible = true
-                    val time = timeField.get(record) as Instant
-                    map["timestamp"] = time.toEpochMilli()
-                } catch (e: Exception) {
-                    try {
-                        // Fallback: try getTime() method
-                        val timeMethod = record.javaClass.getMethod("getTime")
-                        val time = timeMethod.invoke(record) as Instant
-                        map["timestamp"] = time.toEpochMilli()
-                    } catch (e2: Exception) {
-                        Log.w("MinimalHealthPlugin", "Error getting time from WeightRecord, using current time", e2)
-                        map["timestamp"] = System.currentTimeMillis()
-                    }
-                }
-                map["value"] = record.weight.inKilograms
-                map["unit"] = "kg"
-            }
-            is HeartRateRecord -> {
-                // HeartRateRecord compatibility handling for different Health Connect versions
-                try {
-                    // Method 1: Try the standard time property (newer versions)
+                    // WeightRecord is an InstantRecord - try different approaches to get time
                     val time = try {
                         record.time
                     } catch (e: NoSuchMethodError) {
-                        // Method 2: Try reflection for time field (older versions)
+                        // Fallback methods for older versions
                         try {
                             val timeField = record.javaClass.getDeclaredField("time")
                             timeField.isAccessible = true
                             timeField.get(record) as Instant
                         } catch (e2: Exception) {
-                            // Method 3: Try getTime() method
                             try {
                                 val timeMethod = record.javaClass.getMethod("getTime")
                                 timeMethod.invoke(record) as Instant
                             } catch (e3: Exception) {
-                                // Method 4: Extract from samples if available
+                                Log.w("MinimalHealthPlugin", "Error getting time from WeightRecord, using current time", e3)
+                                Instant.now()
+                            }
+                        }
+                    }
+                    
+                    map["timestamp"] = time.toEpochMilli()
+                    map["value"] = record.weight.inKilograms
+                    map["unit"] = "kg"
+                    
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error processing WeightRecord - Health Connect version compatibility issue", e)
+                    map["timestamp"] = System.currentTimeMillis()
+                    map["value"] = 0.0
+                    map["unit"] = "kg"
+                    map["error"] = "compatibility_issue"
+                }
+            }
+            is HeartRateRecord -> {
+                // HeartRateRecord compatibility handling for different Health Connect versions
+                try {
+                    // HeartRateRecord is an IntervalRecord, so it has startTime, not time
+                    val time = try {
+                        record.startTime
+                    } catch (e: NoSuchMethodError) {
+                        // Fallback methods for older versions
+                        try {
+                            val startTimeField = record.javaClass.getDeclaredField("startTime")
+                            startTimeField.isAccessible = true
+                            startTimeField.get(record) as Instant
+                        } catch (e2: Exception) {
+                            try {
+                                val getStartTimeMethod = record.javaClass.getMethod("getStartTime")
+                                getStartTimeMethod.invoke(record) as Instant
+                            } catch (e3: Exception) {
+                                // Extract from samples if available
                                 if (record.samples.isNotEmpty()) {
-                                    // Use the time from the first sample
                                     val firstSample = record.samples.first()
                                     try {
-                                        // Try to get time from sample
                                         val sampleTimeField = firstSample.javaClass.getDeclaredField("time")
                                         sampleTimeField.isAccessible = true
                                         sampleTimeField.get(firstSample) as Instant
@@ -1255,7 +1434,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                                         Instant.now()
                                     }
                                 } else {
-                                    Log.w("MinimalHealthPlugin", "HeartRateRecord has no samples and no accessible time, using current time")
+                                    Log.w("MinimalHealthPlugin", "HeartRateRecord has no samples and no accessible startTime, using current time")
                                     Instant.now()
                                 }
                             }
@@ -1264,16 +1443,19 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     
                     map["timestamp"] = time.toEpochMilli()
                     
-                    // Extract heart rate value from samples
-                    if (record.samples.isNotEmpty()) {
-                        // Take the first sample's BPM value
-                        val firstSample = record.samples.first()
-                        map["value"] = firstSample.beatsPerMinute.toDouble()
-                        
-                        Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm, samples: ${record.samples.size}")
-                    } else {
+                    // Extract heart rate value from samples with compatibility handling
+                    try {
+                        if (record.samples.isNotEmpty()) {
+                            val firstSample = record.samples.first()
+                            map["value"] = firstSample.beatsPerMinute.toDouble()
+                            Log.d("MinimalHealthPlugin", "Heart rate record: ${firstSample.beatsPerMinute} bpm, samples: ${record.samples.size}")
+                        } else {
+                            map["value"] = 0.0
+                            Log.w("MinimalHealthPlugin", "Heart rate record has no samples")
+                        }
+                    } catch (e: Exception) {
+                        Log.w("MinimalHealthPlugin", "Error accessing HeartRateRecord samples", e)
                         map["value"] = 0.0
-                        Log.w("MinimalHealthPlugin", "Heart rate record has no samples")
                     }
                     map["unit"] = "bpm"
                     
