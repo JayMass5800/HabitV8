@@ -82,7 +82,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     }
 
     // Health Connect permissions for our allowed data types
-    private fun getHealthPermissions(): Set<String> {
+        private fun getHealthPermissions(): Set<String> {
         val permissions = mutableSetOf<String>()
         
         // Add each permission individually to help with debugging
@@ -94,6 +94,10 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             permissions.add(HealthPermission.getReadPermission(HydrationRecord::class))
             permissions.add(HealthPermission.getReadPermission(WeightRecord::class))
             permissions.add(HealthPermission.getReadPermission(HeartRateRecord::class))
+            
+            // Add background health permission - CRITICAL for background monitoring
+            permissions.add("android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND")
+            Log.i("MinimalHealthPlugin", "Added background health permission")
             
             // Try to add MindfulnessSessionRecord permission if available
             try {
@@ -179,7 +183,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         Log.i("MinimalHealthPlugin", "Plugin attached - supporting ${ALLOWED_DATA_TYPES.size} health data types")
     }
     
-    private fun initializeHealthConnectClient() {
+        private fun initializeHealthConnectClient() {
         try {
             Log.i("MinimalHealthPlugin", "Initializing Health Connect client...")
             
@@ -190,14 +194,19 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             when (availabilityStatus) {
                 HealthConnectClient.SDK_UNAVAILABLE -> {
                     Log.e("MinimalHealthPlugin", "Health Connect SDK is unavailable on this device")
+                    healthConnectClient = null
                     return
                 }
                 HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> {
                     Log.w("MinimalHealthPlugin", "Health Connect provider update required")
+                    healthConnectClient = null
                     return
                 }
                 else -> {
                     Log.i("MinimalHealthPlugin", "Health Connect SDK is available")
+                    // Only create client if SDK is available
+                    healthConnectClient = HealthConnectClient.getOrCreate(context)
+                    Log.i("MinimalHealthPlugin", "Health Connect client initialized successfully")
                 }
             }
             
@@ -509,10 +518,16 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     Log.i("MinimalHealthPlugin", "Health Connect status: $status")
                     Log.i("MinimalHealthPlugin", "Granted permissions: ${grantedPermissions.size}/${getHealthPermissionStrings().size}")
                     
+                                        // Check specifically for background permission
+                    val backgroundPermissionString = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
+                    val hasBackgroundPermission = grantedPermissions.contains(backgroundPermissionString)
+                    Log.i("MinimalHealthPlugin", "Background health permission: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
+                    
                     result.success(mapOf(
                         "status" to status,
                         "grantedPermissions" to grantedPermissions.size,
                         "totalPermissions" to getHealthPermissionStrings().size,
+                        "hasBackgroundPermission" to hasBackgroundPermission,
                         "message" to when (status) {
                             "PERMISSIONS_GRANTED" -> "All health permissions are granted"
                             "INSTALLED" -> "Health Connect is installed but permissions need to be enabled"
@@ -732,11 +747,28 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 val hasBackgroundPermission = grantedPermissions.any { it.contains("BACKGROUND") }
                 Log.i("MinimalHealthPlugin", "Background permission: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
                 
-                // Check if all required permissions are granted
+                                // Check if all required permissions are granted
                 val allGranted = healthPermissionStrings.all { permissionString -> grantedPermissions.contains(permissionString) }
                 
+                // Check specifically for background permission
+                val backgroundPermissionString = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
+                val hasBackgroundPermission = grantedPermissions.contains(backgroundPermissionString)
+                Log.i("MinimalHealthPlugin", "Background health permission: ${if (hasBackgroundPermission) "GRANTED" else "MISSING"}")
+                
+                // For Android 16 (SDK 36), we need to ensure background permission is granted
+                val finalResult = if (Build.VERSION.SDK_INT >= 34) {
+                    // For Android 14+, require background permission
+                    allGranted && hasBackgroundPermission
+                } else {
+                    // For older versions, just check regular permissions
+                    allGranted
+                }
+                
                 Log.i("MinimalHealthPlugin", "All permissions granted: $allGranted")
-                result.success(allGranted)
+                Log.i("MinimalHealthPlugin", "Background permission granted: $hasBackgroundPermission")
+                Log.i("MinimalHealthPlugin", "Final permission check result: $finalResult")
+                
+                result.success(finalResult)
             } catch (e: Exception) {
                 Log.e("MinimalHealthPlugin", "Error checking permissions", e)
                 result.success(false)
@@ -2267,3 +2299,6 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         }
     }
 }
+
+
+

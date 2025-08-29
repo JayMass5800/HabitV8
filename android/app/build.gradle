@@ -122,7 +122,7 @@ dependencies {
     
     // Health Connect dependencies - using more stable version for better compatibility
     // Version 1.1.0-rc03 is the latest stablke release as of now
-    implementation 'androidx.health.connect:connect-client:1.1.0-rc03'
+    implementation 'androidx.health.connect:connect-client:1.1.0'
     
     // Coroutines for async operations
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'

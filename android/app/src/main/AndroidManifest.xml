@@ -159,17 +159,33 @@
             android:exported="false" />
 
         <!-- Health Connect Activity for permission handling -->
+                <!-- Health Connect permissions rationale activity -->
         <activity
-            android:name=".HealthConnectActivity"
+            android:name=".PermissionsRationaleActivity"
             android:exported="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            android:theme="@android:style/Theme.Material.Light">
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
+        </activity>
+
+        <!-- For Android 14+ (API 34+) Health Connect integration -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".PermissionsRationaleActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
                 <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
             </intent-filter>
+        </activity-alias>
+
+        <!-- Health Connect Activity for permission handling -->
+        <activity
+            android:name=".HealthConnectActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
         </activity>
 
         <activity
@@ -212,3 +228,4 @@
         </intent>
     </queries>
 </manifest>
+

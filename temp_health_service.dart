@@ -4,6 +4,7 @@ import 'dart:io';
 import 'logging_service.dart';
 import 'minimal_health_channel.dart';
 import 'health_permission_result.dart';
+
 enum HealthConnectStatus {
   notInstalled,
   installed,
@@ -350,12 +351,12 @@ class HealthService {
 
                       return HealthPermissionResult(
           granted: hasPerms,
-          backgroundGranted: false,
           needsHealthConnect: false,
           message: hasPerms
               ? 'Health permissions granted successfully'
               : 'Permission verification failed',
-        );      } else {
+        );
+      } else {
         AppLogger.info('Health permissions denied by user');
 
         // Check if this is because Health Connect needs setup
@@ -2842,12 +2843,6 @@ class HealthService {
     return results;
   }
 }
-
-
-
-
-
-
 
 
 

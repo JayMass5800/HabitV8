@@ -1000,7 +1000,25 @@ class MinimalHealthChannel {
     return List.from(_supportedDataTypes);
   }
 
-  /// Start background health monitoring service
+
+  /// Check if background health permissions are granted
+  static Future<bool> hasBackgroundPermissions() async {
+    try {
+      if (!Platform.isAndroid) {
+        AppLogger.warning("Background health permissions only available on Android");
+        return false;
+      }
+
+      final status = await getHealthConnectStatus();
+      final bool hasBackgroundPermission = status["hasBackgroundPermission"] ?? false;
+      
+      AppLogger.info("Background health permission status: $hasBackgroundPermission");
+      return hasBackgroundPermission;
+    } catch (e) {
+      AppLogger.error("Error checking background health permissions", e);
+      return false;
+    }
+  }  /// Start background health monitoring service
   static Future<bool> startBackgroundMonitoring() async {
     if (!_isInitialized) {
       await initialize();
@@ -1113,3 +1131,4 @@ class MinimalHealthChannel {
     }
   }
 }
+

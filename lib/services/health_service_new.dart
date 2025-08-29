@@ -350,12 +350,12 @@ class HealthService {
 
                       return HealthPermissionResult(
           granted: hasPerms,
-          backgroundGranted: false,
           needsHealthConnect: false,
           message: hasPerms
               ? 'Health permissions granted successfully'
               : 'Permission verification failed',
-        );      } else {
+        );
+      } else {
         AppLogger.info('Health permissions denied by user');
 
         // Check if this is because Health Connect needs setup
@@ -2842,11 +2842,6 @@ class HealthService {
     return results;
   }
 }
-
-
-
-
-
 
 
 
