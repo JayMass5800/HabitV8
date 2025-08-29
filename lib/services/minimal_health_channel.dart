@@ -139,6 +139,53 @@ class MinimalHealthChannel {
     }
   }
 
+  /// Check Health Connect compatibility
+  static Future<Map<String, dynamic>> checkHealthConnectCompatibility() async {
+    try {
+      if (!Platform.isAndroid) {
+        return {
+          'overallCompatibility': 'NOT_SUPPORTED',
+          'reason': 'Health Connect is only available on Android',
+        };
+      }
+
+      final Map<dynamic, dynamic> result = await _channel.invokeMethod(
+        'checkHealthConnectCompatibility',
+      );
+
+      final Map<String, dynamic> compatibility =
+          Map<String, dynamic>.from(result);
+
+      AppLogger.info('Health Connect compatibility check completed');
+      AppLogger.info(
+          'Overall compatibility: ${compatibility['overallCompatibility']}');
+      AppLogger.info(
+          'Client library version: ${compatibility['clientLibraryVersion']}');
+      AppLogger.info('Android version: ${compatibility['androidVersion']}');
+
+      if (compatibility['heartRateDataCompatible'] == false) {
+        AppLogger.warning('Heart rate data has compatibility issues');
+        AppLogger.info('Heart rate error: ${compatibility['heartRateError']}');
+      }
+
+      if (compatibility['recommendations'] != null) {
+        final List<dynamic> recommendations = compatibility['recommendations'];
+        AppLogger.info('Compatibility recommendations:');
+        for (final recommendation in recommendations) {
+          AppLogger.info('  - $recommendation');
+        }
+      }
+
+      return compatibility;
+    } catch (e) {
+      AppLogger.error('Error checking Health Connect compatibility', e);
+      return {
+        'overallCompatibility': 'ERROR',
+        'error': 'Compatibility check failed: $e',
+      };
+    }
+  }
+
   /// Check if health permissions are granted
   static Future<bool> hasPermissions() async {
     if (!_isInitialized) {

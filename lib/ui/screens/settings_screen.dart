@@ -1774,7 +1774,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
-                  initialValue: selectedInterval,
+                  value: selectedInterval,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     contentPadding:

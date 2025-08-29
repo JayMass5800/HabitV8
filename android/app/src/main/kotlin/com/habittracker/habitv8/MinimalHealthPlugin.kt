@@ -183,7 +183,25 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         try {
             Log.i("MinimalHealthPlugin", "Initializing Health Connect client...")
             
-            // Check if Health Connect is installed first
+            // Check SDK availability first as per Health Connect API instructions
+            val availabilityStatus = HealthConnectClient.getSdkStatus(context)
+            Log.i("MinimalHealthPlugin", "Health Connect SDK status: $availabilityStatus")
+            
+            when (availabilityStatus) {
+                HealthConnectClient.SDK_UNAVAILABLE -> {
+                    Log.e("MinimalHealthPlugin", "Health Connect SDK is unavailable on this device")
+                    return
+                }
+                HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> {
+                    Log.w("MinimalHealthPlugin", "Health Connect provider update required")
+                    return
+                }
+                else -> {
+                    Log.i("MinimalHealthPlugin", "Health Connect SDK is available")
+                }
+            }
+            
+            // Check if Health Connect package is installed
             try {
                 val packageInfo = context.packageManager.getPackageInfo("com.google.android.apps.healthdata", 0)
                 Log.i("MinimalHealthPlugin", "Health Connect package found: version ${packageInfo.versionName}, versionCode ${packageInfo.versionCode}")
@@ -192,7 +210,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 return
             }
             
-            // Try to create the Health Connect client
+            // Create the Health Connect client using the lazy initialization pattern
             healthConnectClient = HealthConnectClient.getOrCreate(context)
             Log.i("MinimalHealthPlugin", "Health Connect client created successfully")
             
@@ -600,10 +618,43 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
     }
 
     private fun requestPermissions(call: MethodCall, result: Result) {
+        // Check SDK availability first as per Health Connect API instructions
+        val availabilityStatus = HealthConnectClient.getSdkStatus(context)
+        Log.i("MinimalHealthPlugin", "Health Connect SDK status during permission request: $availabilityStatus")
+        
+        when (availabilityStatus) {
+            HealthConnectClient.SDK_UNAVAILABLE -> {
+                Log.e("MinimalHealthPlugin", "Health Connect SDK is unavailable")
+                result.error("SDK_UNAVAILABLE", "Health Connect SDK is not available on this device", null)
+                return
+            }
+            HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -> {
+                Log.w("MinimalHealthPlugin", "Health Connect provider update required")
+                // Redirect user to update Health Connect as per instructions
+                try {
+                    val uri = "market://details?id=com.google.android.apps.healthdata&url=healthconnect%3A%2F%2Fonboarding"
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+                    activityBinding?.activity?.startActivity(intent)
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Failed to open Health Connect update page", e)
+                }
+                result.error("UPDATE_REQUIRED", "Health Connect needs to be updated", null)
+                return
+            }
+            else -> {
+                Log.i("MinimalHealthPlugin", "Health Connect SDK is available, proceeding with permission request")
+            }
+        }
+
         if (healthConnectClient == null) {
-            Log.w("MinimalHealthPlugin", "Health Connect not available")
-            result.error("HEALTH_CONNECT_UNAVAILABLE", "Health Connect is not available", null)
-            return
+            Log.w("MinimalHealthPlugin", "Health Connect client not initialized, attempting to initialize...")
+            initializeHealthConnectClient()
+            
+            if (healthConnectClient == null) {
+                Log.e("MinimalHealthPlugin", "Health Connect client still null after initialization")
+                result.error("HEALTH_CONNECT_UNAVAILABLE", "Health Connect is not available", null)
+                return
+            }
         }
 
         if (activityBinding?.activity == null) {
@@ -613,60 +664,47 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         }
 
         try {
-            // Log all permissions being requested for debugging
-            Log.i("MinimalHealthPlugin", "Requesting permissions:")
-            getHealthPermissions().forEach { permission ->
+            // Get the permissions we need as per Health Connect API instructions
+            val permissions = getHealthPermissions()
+            
+            Log.i("MinimalHealthPlugin", "Requesting ${permissions.size} Health Connect permissions:")
+            permissions.forEach { permission ->
                 Log.i("MinimalHealthPlugin", "  - $permission")
             }
             
-            // Create a proper set of HealthPermission objects
-            val allPermissions = getHealthPermissions().toMutableSet()
-            
-            // Add background health data access permission using proper HealthPermission API
-            try {
-                // Try to get the background permission using the proper API
-                val backgroundPermissionString = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
-                
-                // Check if we can create a HealthPermission for background access
-                // Note: This might not be available in all Health Connect versions
-                Log.i("MinimalHealthPlugin", "Attempting to add background health data permission")
-                
-                // For now, we'll rely on the permissions declared in the manifest
-                // The background permission should be automatically included by Health Connect
-                // if it's declared in the AndroidManifest.xml
-                
-            } catch (e: Exception) {
-                Log.w("MinimalHealthPlugin", "Could not add background permission via API: ${e.message}")
-            }
-            
-            Log.i("MinimalHealthPlugin", "Final permission set size: ${allPermissions.size}")
-            allPermissions.forEach { permission ->
-                Log.i("MinimalHealthPlugin", "  - Final permission: $permission")
-            }
-            
-            pendingResult = result
-            
-            // Launch Health Connect settings to request permissions
-            try {
-                // Try to open Health Connect settings directly since the permission request intent might not work
-                val settingsIntent = Intent().apply {
-                    action = "android.settings.HEALTH_CONNECT_SETTINGS"
+            coroutineScope.launch {
+                try {
+                    // Check current permissions first as per instructions
+                    val grantedPermissions = healthConnectClient!!.permissionController.getGrantedPermissions()
+                    Log.i("MinimalHealthPlugin", "Currently granted permissions: ${grantedPermissions.size}")
+                    
+                    if (grantedPermissions.containsAll(permissions)) {
+                        Log.i("MinimalHealthPlugin", "All permissions already granted")
+                        result.success(true)
+                        return@launch
+                    }
+                    
+                    // Launch the HealthConnectActivity to handle permission request
+                    // This follows the proper Health Connect API pattern
+                    val intent = Intent(context, HealthConnectActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    context.startActivity(intent)
+                    
+                    Log.i("MinimalHealthPlugin", "Launched HealthConnectActivity for permission request")
+                    
+                    // Return false to indicate that permissions need to be granted manually
+                    // The app should check permissions again after the user returns
+                    result.success(false)
+                    
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error during permission request process", e)
+                    result.error("PERMISSION_ERROR", "Error requesting permissions: ${e.message}", null)
                 }
-                activityBinding?.activity?.startActivity(settingsIntent)
-                Log.i("MinimalHealthPlugin", "Opened Health Connect settings for ${allPermissions.size} permissions")
-                
-                // Since we can't directly handle the result, return false to indicate manual setup needed
-                result.success(false)
-                pendingResult = null
-            } catch (e: Exception) {
-                Log.e("MinimalHealthPlugin", "Error opening Health Connect settings", e)
-                result.error("PERMISSION_ERROR", "Could not open Health Connect settings: ${e.message}", null)
-                pendingResult = null
             }
+            
         } catch (e: Exception) {
-            Log.e("MinimalHealthPlugin", "Error requesting permissions", e)
-            result.error("PERMISSION_ERROR", e.message, null)
-            pendingResult = null
+            Log.e("MinimalHealthPlugin", "Error in requestPermissions", e)
+            result.error("PERMISSION_ERROR", "Error requesting permissions: ${e.message}", null)
         }
     }
 
