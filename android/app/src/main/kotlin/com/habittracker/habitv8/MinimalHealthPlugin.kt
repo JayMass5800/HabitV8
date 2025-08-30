@@ -2299,3 +2299,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
 
 
 
+
+
+
+

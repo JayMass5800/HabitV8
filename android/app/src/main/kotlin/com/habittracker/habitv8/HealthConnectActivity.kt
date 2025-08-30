@@ -15,6 +15,7 @@ import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.WeightRecord
+import androidx.health.connect.client.records.MindfulnessSessionRecord
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
@@ -41,6 +42,7 @@ class HealthConnectActivity : ComponentActivity() {
         HealthPermission.getReadPermission(HydrationRecord::class),
         HealthPermission.getReadPermission(WeightRecord::class),
         HealthPermission.getReadPermission(HeartRateRecord::class),
+        HealthPermission.getReadPermission(MindfulnessSessionRecord::class),
         BACKGROUND_HEALTH_PERMISSION
     )
     
@@ -126,3 +128,4 @@ class HealthConnectActivity : ComponentActivity() {
         finish()
     }
 }
+
