@@ -13,7 +13,7 @@ import '../../services/health_service.dart';
 import '../../services/calendar_service.dart';
 import '../../services/calendar_renewal_service.dart';
 import '../../services/habit_continuation_service.dart';
-import '../../services/logging_service.dart';\nimport '../../services/activity_recognition_service.dart';
+import '../../services/logging_service.dart';
 import '../../services/onboarding_service.dart';
 import '../../services/automatic_habit_completion_service.dart';
 
@@ -192,61 +192,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
       // Use the new refresh method from HealthService
       final result = await HealthService.refreshPermissions();
-      final bool hasHealthPermissions = result.granted;
-
-      // Also check activity recognition permissions
-      final bool hasActivityPermissions = await ActivityRecognitionService.hasPermissions();
-      
-      AppLogger.info('Permission refresh - Health: \, Activity: \');
+      final bool hasPermissions = result.granted;
 
       // Update the UI state if permissions changed
-      if (mounted && hasHealthPermissions != _healthDataSync) {
+      if (mounted && hasPermissions != _healthDataSync) {
         setState(() {
-          _healthDataSync = hasHealthPermissions;
+          _healthDataSync = hasPermissions;
         });
-
-        // Update the saved preference to match the actual permission state
-        await _saveHealthSyncPreference(hasHealthPermissions);
-
-        if (mounted) {
-          if (hasHealthPermissions) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  hasActivityPermissions 
-                      ? 'Health and activity permissions are now granted.' 
-                      : 'Health permissions granted, but activity permissions missing.',
-                ),
-                backgroundColor: hasActivityPermissions ? Colors.green : Colors.orange,
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Health permissions have been revoked. Some features may be limited.',
-                ),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error refreshing health permissions', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Error refreshing health permissions. Please try again.',
-            ),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  });
 
         // Update the saved preference to match the actual permission state
         await _saveHealthSyncPreference(hasPermissions);
@@ -937,146 +889,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
         // First check if permissions are already granted (in case they were granted externally)
         var permissionResult = await HealthService.refreshPermissions();
-        bool hasHealthPermissions = permissionResult.granted;
-
-        // Also initialize and check activity recognition permissions
-        await ActivityRecognitionService.initialize();
-        bool hasActivityPermissions = await ActivityRecognitionService.hasPermissions();
-
-        AppLogger.info('Initial permission check - Health: \, Activity: \');
-
-        // Request permissions if either is not granted
-        if (!hasHealthPermissions) {
-          // Request health permissions if not already granted
-          permissionResult = await HealthService.requestPermissions();
-          hasHealthPermissions = permissionResult.granted;
-
-          // If permissions were requested but not immediately granted,
-          // they might have been granted in Health Connect but need time to sync
-          if (!hasHealthPermissions) {
-            // Wait a bit longer and check again
-            await Future.delayed(const Duration(seconds: 1));
-            permissionResult = await HealthService.refreshPermissions();
-            hasHealthPermissions = permissionResult.granted;
-          }
-        }
-
-        // Request activity recognition permissions if needed
-        if (!hasActivityPermissions) {
-          hasActivityPermissions = await ActivityRecognitionService.requestPermissions();
-        }
-
-        // Consider the overall permission state as granted if health permissions are granted
-        // Activity recognition is helpful but not strictly required
-        final bool overallPermissionsGranted = hasHealthPermissions;
-
-        // Update UI state immediately
-        setState(() {
-          _healthDataSync = overallPermissionsGranted;
-        });
-
-        if (overallPermissionsGranted) {
-          // Save the health sync preference to persist across app restarts
-          await _saveHealthSyncPreference(true);
-
-          // Force a rebuild to ensure the health integration dashboard appears
-          if (mounted) {
-            setState(() {});
-          }
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  hasActivityPermissions 
-                      ? 'Health and activity permissions granted successfully! 🎉' 
-                      : 'Health permissions granted! Activity permission denied.',
-                ),
-                backgroundColor: hasActivityPermissions ? Colors.green : Colors.orange,
-              ),
-            );
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Health permissions required. Please grant permissions in Health Connect.',
-                ),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 8),
-                action: SnackBarAction(
-                  label: 'Open Settings',
-                  onPressed: () => _openHealthConnectSettings(),
-                ),
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        setState(() => _healthDataSync = false);
-        AppLogger.error('Error toggling health data sync', e);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: \'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } else {
-      // Save the disabled preference
-      await _saveHealthSyncPreference(false);
-
-      setState(() {
-        _healthDataSync = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Health data sync disabled')),
-        );
-      }
-    }
-  }
-
-        // Show loading indicator
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 16),
-                  Text('Requesting health permissions...'),
-                ],
-              ),
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-
-        // Initialize health service first
-        final initialized = await HealthService.initialize();
-        if (!initialized) {
-          setState(() => _healthDataSync = false);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Health Connect is not available on this device'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-
-        // First check if permissions are already granted (in case they were granted externally)
-        var permissionResult = await HealthService.refreshPermissions();
         bool hasPermissions = permissionResult.granted;
 
         if (!hasPermissions) {
@@ -1394,160 +1206,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   /// Manage health permissions
   Future<void> _manageHealthPermissions() async {
-    // Check current permission status
-    final healthPermissionResult = await HealthService.refreshPermissions();
-    final bool hasHealthPermissions = healthPermissionResult.granted;
-    final bool hasBackgroundPermissions = healthPermissionResult.backgroundGranted;
-    
-    final bool hasActivityPermissions = await ActivityRecognitionService.hasPermissions();
-    
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Health Data Integration'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'This app can integrate with your health data to provide better insights:',
-                ),
-                const SizedBox(height: 16),
-                const Text('• Step count tracking'),
-                const Text('• Sleep pattern analysis'),
-                const Text('• Exercise duration monitoring'),
-                const Text('• Heart rate insights'),
-                const Text('• Mindfulness session tracking'),
-                const Text('• Physical activity detection'),
-                const SizedBox(height: 16),
-                const Text('Your privacy is important - data stays on your device.'),
-                const SizedBox(height: 24),
-                const Text(
-                  'Current Permission Status:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                _buildPermissionStatus(
-                  'Health Connect', 
-                  hasHealthPermissions,
-                  'Required for health data access'
-                ),
-                _buildPermissionStatus(
-                  'Background Health Access', 
-                  hasBackgroundPermissions,
-                  'For continuous health monitoring'
-                ),
-                _buildPermissionStatus(
-                  'Activity Recognition', 
-                  hasActivityPermissions,
-                  'For detecting physical activities'
-                ),
-              ],
-            ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This app can integrate with your health data to provide better insights:',
+              ),
+              SizedBox(height: 16),
+              Text('• Step count tracking'),
+              Text('• Sleep pattern analysis'),
+              Text('• Exercise duration monitoring'),
+              Text('• Heart rate insights'),
+              SizedBox(height: 16),
+              Text('Your privacy is important - data stays on your device.'),
+            ],
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
+            TextButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                
-                // Request health permissions
-                if (!hasHealthPermissions) {
-                  final result = await HealthService.requestPermissions();
-                  if (result.granted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Health permissions granted!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                }
-                
-                // Request background permissions if health permissions are granted
-                if (hasHealthPermissions && !hasBackgroundPermissions) {
-                  final result = await HealthService.requestPermissionsWithBackground();
-                  if (result.backgroundGranted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Background health access granted!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                }
-                
-                // Request activity recognition permissions
-                if (!hasActivityPermissions) {
-                  final granted = await ActivityRecognitionService.requestPermissions();
-                  if (granted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Activity recognition permission granted!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                }
-                
-                // Refresh the settings screen
-                _refreshHealthPermissions();
+                await _openHealthConnectSettings();
               },
-              child: const Text('Update Permissions'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-  
-  /// Build a permission status indicator
-  Widget _buildPermissionStatus(String name, bool granted, String description) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Icon(
-            granted ? Icons.check_circle : Icons.error_outline,
-            color: granted ? Colors.green : Colors.orange,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  granted ? 'Granted' : 'Not granted',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: granted ? Colors.green : Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  },
               child: const Text('Open Settings'),
             ),
             TextButton(
@@ -2214,6 +1903,4 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
-
-
 
