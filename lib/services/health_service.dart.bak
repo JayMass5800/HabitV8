@@ -1,6 +1,6 @@
 // import 'package:health/health.dart';  // REMOVED - causes Google Play Console issues
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:io';\r\nimport 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 import 'logging_service.dart';
 import 'minimal_health_channel.dart';
 import 'health_permission_result.dart';
