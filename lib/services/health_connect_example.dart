@@ -5,7 +5,7 @@ import "logging_service.dart";
 /// Example widget demonstrating how to use the updated Health Connect integration
 /// with Android 16 (SDK 36) compatibility
 class HealthConnectExample extends StatefulWidget {
-  const HealthConnectExample({Key? key}) : super(key: key);
+  const HealthConnectExample({super.key});
 
   @override
   State<HealthConnectExample> createState() => _HealthConnectExampleState();
@@ -29,24 +29,26 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
     try {
       // Initialize health service
       final initialized = await HealthService.initialize();
-      
+
       // Check if Health Connect is available
       final isAvailable = await HealthService.isHealthConnectAvailable();
-      
+
       // Check if permissions are granted
       final hasPermissions = await HealthService.hasPermissions();
-      
+
       // Check if background permissions are granted
-      final hasBackgroundPermissions = await HealthService.hasBackgroundPermissions();
-      
+      final hasBackgroundPermissions =
+          await HealthService.hasBackgroundPermissions();
+
       // Update UI
       setState(() {
         _isAvailable = isAvailable;
         _hasPermissions = hasPermissions;
         _hasBackgroundPermissions = hasBackgroundPermissions;
-        _statusMessage = _buildStatusMessage(initialized, isAvailable, hasPermissions, hasBackgroundPermissions);
+        _statusMessage = _buildStatusMessage(
+            initialized, isAvailable, hasPermissions, hasBackgroundPermissions);
       });
-      
+
       // If permissions are granted, get steps data
       if (hasPermissions) {
         await _getStepsData();
@@ -65,17 +67,17 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
       setState(() {
         _statusMessage = "Requesting permissions...";
       });
-      
+
       // Request permissions with background access
       final result = await HealthService.requestPermissionsWithBackground();
-      
+
       // Update UI
       setState(() {
         _hasPermissions = result.granted;
         _hasBackgroundPermissions = result.backgroundGranted;
         _statusMessage = result.message;
       });
-      
+
       // If permissions are granted, get steps data
       if (result.granted) {
         await _getStepsData();
@@ -106,12 +108,12 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
       setState(() {
         _statusMessage = "Starting background monitoring...";
       });
-      
+
       final result = await HealthService.startBackgroundMonitoring();
-      
+
       setState(() {
-        _statusMessage = result 
-            ? "Background monitoring started successfully" 
+        _statusMessage = result
+            ? "Background monitoring started successfully"
             : "Failed to start background monitoring";
       });
     } catch (e) {
@@ -123,23 +125,24 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
   }
 
   /// Build status message based on Health Connect state
-  String _buildStatusMessage(bool initialized, bool isAvailable, bool hasPermissions, bool hasBackgroundPermissions) {
+  String _buildStatusMessage(bool initialized, bool isAvailable,
+      bool hasPermissions, bool hasBackgroundPermissions) {
     if (!initialized) {
       return "Health Connect initialization failed";
     }
-    
+
     if (!isAvailable) {
       return "Health Connect is not available on this device";
     }
-    
+
     if (!hasPermissions) {
       return "Health Connect permissions not granted";
     }
-    
+
     if (!hasBackgroundPermissions) {
       return "Health Connect permissions granted, but background access is missing";
     }
-    
+
     return "Health Connect is available and all permissions granted";
   }
 
@@ -167,8 +170,10 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
                     ),
                     const SizedBox(height: 8),
                     Text("Available: ${_isAvailable ? "Yes" : "No"}"),
-                    Text("Permissions: ${_hasPermissions ? "Granted" : "Not granted"}"),
-                    Text("Background: ${_hasBackgroundPermissions ? "Granted" : "Not granted"}"),
+                    Text(
+                        "Permissions: ${_hasPermissions ? "Granted" : "Not granted"}"),
+                    Text(
+                        "Background: ${_hasBackgroundPermissions ? "Granted" : "Not granted"}"),
                     const SizedBox(height: 8),
                     Text(
                       _statusMessage,
@@ -181,9 +186,9 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Steps data
             if (_hasPermissions)
               Card(
@@ -209,9 +214,9 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
                   ),
                 ),
               ),
-            
+
             const Spacer(),
-            
+
             // Action buttons
             if (!_hasPermissions)
               ElevatedButton(
@@ -221,7 +226,7 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
                 ),
                 child: const Text("Request Health Permissions"),
               ),
-            
+
             if (_hasPermissions && !_hasBackgroundPermissions)
               ElevatedButton(
                 onPressed: _requestPermissions,
@@ -230,7 +235,7 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
                 ),
                 child: const Text("Request Background Access"),
               ),
-            
+
             if (_hasPermissions && _hasBackgroundPermissions)
               ElevatedButton(
                 onPressed: _startBackgroundMonitoring,
@@ -245,4 +250,3 @@ class _HealthConnectExampleState extends State<HealthConnectExample> {
     );
   }
 }
-

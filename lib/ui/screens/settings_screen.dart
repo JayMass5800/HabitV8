@@ -14,7 +14,6 @@ import '../../services/calendar_service.dart';
 import '../../services/calendar_renewal_service.dart';
 import '../../services/habit_continuation_service.dart';
 import '../../services/logging_service.dart';
-import '../../services/activity_recognition_service.dart';
 import '../../services/onboarding_service.dart';
 import '../../services/automatic_habit_completion_service.dart';
 
@@ -1904,10 +1903,3 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
