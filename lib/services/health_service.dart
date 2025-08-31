@@ -1,9 +1,10 @@
 // import 'package:health/health.dart';  // REMOVED - causes Google Play Console issues
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:io';\r\nimport 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 import 'logging_service.dart';
 import 'minimal_health_channel.dart';
 import 'health_permission_result.dart';
+
 enum HealthConnectStatus {
   notInstalled,
   installed,
@@ -218,7 +219,6 @@ class HealthService {
     return await initialize();
   }
 
-
   /// Check if background health permissions are granted
   /// This is critical for continuous health monitoring
   static Future<bool> hasBackgroundPermissions() async {
@@ -229,12 +229,14 @@ class HealthService {
     try {
       // Get detailed Health Connect status
       final status = await MinimalHealthChannel.getHealthConnectStatus();
-      
+
       // Check if background permission is granted
-      final bool hasBackgroundPermission = status["hasBackgroundPermission"] ?? false;
-      
-      AppLogger.info("Background health permission status: $hasBackgroundPermission");
-      
+      final bool hasBackgroundPermission =
+          status["hasBackgroundPermission"] ?? false;
+
+      AppLogger.info(
+          "Background health permission status: $hasBackgroundPermission");
+
       return hasBackgroundPermission;
     } catch (e) {
       AppLogger.error("Error checking background health permissions", e);
@@ -244,57 +246,64 @@ class HealthService {
 
   /// Request health permissions with explicit background access
   /// This ensures the app can monitor health data in the background
-  static Future<HealthPermissionResult> requestPermissionsWithBackground() async {
+  static Future<HealthPermissionResult>
+      requestPermissionsWithBackground() async {
     if (!_isInitialized) {
       await initialize();
     }
 
     try {
-      AppLogger.info("Requesting health permissions with explicit background access");
-      
+      AppLogger.info(
+          "Requesting health permissions with explicit background access");
+
       // Ensure BACKGROUND_HEALTH_DATA is included in the request
       if (!_healthDataTypes.contains("BACKGROUND_HEALTH_DATA")) {
         _healthDataTypes.add("BACKGROUND_HEALTH_DATA");
         AppLogger.info("Added BACKGROUND_HEALTH_DATA to permission request");
       }
-      
+
       // Request permissions using standard method
       final result = await requestPermissions();
-      
+
       // Verify background permission specifically
       if (result.granted) {
         final hasBackground = await hasBackgroundPermissions();
-        
+
         if (!hasBackground) {
-          AppLogger.warning("Regular permissions granted but BACKGROUND permission missing");
-                        return HealthPermissionResult(
+          AppLogger.warning(
+              "Regular permissions granted but BACKGROUND permission missing");
+          return HealthPermissionResult(
             granted: true,
             backgroundGranted: false,
             needsHealthConnect: false,
-            message: "Health permissions granted but background access is missing",
+            message:
+                "Health permissions granted but background access is missing",
           );
         } else {
           AppLogger.info("All permissions including background access granted");
-                        return HealthPermissionResult(
+          return HealthPermissionResult(
             granted: true,
             backgroundGranted: true,
             needsHealthConnect: false,
-            message: "All health permissions including background access granted",
+            message:
+                "All health permissions including background access granted",
           );
         }
       }
-      
+
       return result;
     } catch (e) {
       AppLogger.error("Error requesting health permissions with background", e);
-                    return HealthPermissionResult(
+      return HealthPermissionResult(
         granted: false,
         backgroundGranted: false,
         needsHealthConnect: false,
         message: "Error requesting permissions: $e",
       );
     }
-  }  /// Request health data permissions with enhanced user guidance
+  }
+
+  /// Request health data permissions with enhanced user guidance
   static Future<HealthPermissionResult> requestPermissions() async {
     if (!_isInitialized) {
       await initialize();
@@ -330,7 +339,7 @@ class HealthService {
           await MinimalHealthChannel.isHealthConnectAvailable();
       if (!healthConnectAvailable) {
         AppLogger.warning('Health Connect is not available or not installed');
-              return HealthPermissionResult(
+        return HealthPermissionResult(
           granted: false,
           backgroundGranted: false,
           needsHealthConnect: true,
@@ -348,37 +357,37 @@ class HealthService {
         final bool hasPerms = await MinimalHealthChannel.hasPermissions();
         AppLogger.info('Permission verification result: $hasPerms');
 
-                      return HealthPermissionResult(
+        return HealthPermissionResult(
           granted: hasPerms,
-          backgroundGranted: false,
           needsHealthConnect: false,
           message: hasPerms
               ? 'Health permissions granted successfully'
               : 'Permission verification failed',
-        );      } else {
+        );
+      } else {
         AppLogger.info('Health permissions denied by user');
 
         // Check if this is because Health Connect needs setup
         final bool stillAvailable =
             await MinimalHealthChannel.isHealthConnectAvailable();
 
-                      return HealthPermissionResult(
+        return HealthPermissionResult(
           granted: false,
-          backgroundGranted: false,
           needsHealthConnect: !stillAvailable,
           needsManualSetup: stillAvailable,
           message: stillAvailable
               ? 'Permissions denied. You may need to enable them manually in Health Connect.'
               : 'Health Connect needs to be set up first.',
-        );      }
+        );
+      }
     } catch (e) {
       AppLogger.error('Failed to request health permissions', e);
-              return HealthPermissionResult(
-          granted: false,
-          backgroundGranted: false,
-          needsHealthConnect: false,
-          message: 'Error requesting permissions: $e',
-        );
+      return HealthPermissionResult(
+        granted: false,
+        backgroundGranted: false,
+        needsHealthConnect: false,
+        message: 'Error requesting permissions: $e',
+      );
     }
   }
 
@@ -527,7 +536,7 @@ class HealthService {
       final currentPermissions = await hasPermissions();
       if (currentPermissions) {
         AppLogger.info('Health permissions already granted');
-              return HealthPermissionResult(
+        return HealthPermissionResult(
           granted: true,
           backgroundGranted: false,
           message: 'Health permissions are already granted',
@@ -539,7 +548,7 @@ class HealthService {
 
       switch (status) {
         case HealthConnectStatus.notInstalled:
-                  return HealthPermissionResult(
+          return HealthPermissionResult(
             granted: false,
             backgroundGranted: false,
             needsHealthConnect: true,
@@ -547,22 +556,23 @@ class HealthService {
           );
 
         case HealthConnectStatus.installed:
-                        return HealthPermissionResult(
-          granted: false,
-          backgroundGranted: false,
-          needsManualSetup: true,
-          message: 'Health Connect is installed but permissions need to be enabled',
-        );
+          return HealthPermissionResult(
+            granted: false,
+            backgroundGranted: false,
+            needsManualSetup: true,
+            message:
+                'Health Connect is installed but permissions need to be enabled',
+          );
 
         case HealthConnectStatus.permissionsGranted:
-                  return HealthPermissionResult(
+          return HealthPermissionResult(
             granted: true,
             backgroundGranted: false,
             message: 'Health permissions are granted',
           );
 
         default:
-                  return HealthPermissionResult(
+          return HealthPermissionResult(
             granted: false,
             backgroundGranted: false,
             message: 'Unknown Health Connect status',
@@ -570,11 +580,11 @@ class HealthService {
       }
     } catch (e) {
       AppLogger.error('Error refreshing health permissions', e);
-              return HealthPermissionResult(
-          granted: false,
-          backgroundGranted: false,
-          message: 'Error refreshing permissions: $e',
-        );
+      return HealthPermissionResult(
+        granted: false,
+        backgroundGranted: false,
+        message: 'Error refreshing permissions: $e',
+      );
     }
   }
 
@@ -2556,6 +2566,39 @@ class HealthService {
     };
   }
 
+  /// Start background health monitoring
+  static Future<bool> startBackgroundMonitoring() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      AppLogger.info('Starting background health monitoring...');
+
+      // Check if we have permissions first
+      final hasPerms = await hasPermissions();
+      if (!hasPerms) {
+        AppLogger.warning(
+            'Cannot start background monitoring - no permissions');
+        return false;
+      }
+
+      // Start background monitoring via MinimalHealthChannel
+      final result = await MinimalHealthChannel.startBackgroundMonitoring();
+
+      if (result) {
+        AppLogger.info('Background health monitoring started successfully');
+      } else {
+        AppLogger.warning('Failed to start background health monitoring');
+      }
+
+      return result;
+    } catch (e) {
+      AppLogger.error('Error starting background health monitoring', e);
+      return false;
+    }
+  }
+
   /// Detailed calories debugging method
   static Future<Map<String, dynamic>> debugCaloriesData() async {
     final results = <String, dynamic>{};
@@ -2841,56 +2884,4 @@ class HealthService {
 
     return results;
   }
-
-  /// Start background health monitoring
-  /// 
-  /// This method initiates background monitoring of health data
-  /// Returns true if background monitoring was successfully started
-  static Future<bool> startBackgroundMonitoring() async {
-    try {
-      AppLogger.info("Starting background health monitoring");
-      
-      // Check if we have background permissions
-      final hasBackground = await hasBackgroundPermissions();
-      if (!hasBackground) {
-        AppLogger.warning("Cannot start background monitoring without background permissions");
-        return false;
-      }
-      
-      // Implementation would depend on platform-specific background monitoring
-      // For now, we'll just return true to indicate success
-      AppLogger.info("Background health monitoring started successfully");
-      return true;
-    } catch (e) {
-      AppLogger.error("Failed to start background health monitoring", e);
-      return false;
-    }
-  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
