@@ -6,6 +6,7 @@ import 'health_habit_integration_service.dart';
 import 'health_habit_analytics_service.dart';
 import 'health_habit_background_service.dart';
 import 'health_service.dart';
+import 'permission_service.dart';
 import 'logging_service.dart';
 
 /// UI Service for Health-Habit Integration
@@ -106,8 +107,8 @@ class HealthHabitUIService {
                           mappingPercentage >= 75
                               ? Colors.green
                               : mappingPercentage >= 50
-                              ? Colors.orange
-                              : Colors.red,
+                                  ? Colors.orange
+                                  : Colors.red,
                         ),
                       ),
                     ),
@@ -439,7 +440,8 @@ class HealthHabitUIService {
         final strongestMetric = data['strongestMetric'] as String?;
 
         if (correlation.abs() < 0.1) {
-          return const SizedBox.shrink(); // Don't show if correlation is too weak
+          return const SizedBox
+              .shrink(); // Don't show if correlation is too weak
         }
 
         return Card(
@@ -462,7 +464,6 @@ class HealthHabitUIService {
                   ],
                 ),
                 const SizedBox(height: 12),
-
                 if (strongestMetric != null) ...[
                   Text(
                     'Strongest correlation with: $strongestMetric',
@@ -470,7 +471,6 @@ class HealthHabitUIService {
                   ),
                   const SizedBox(height: 8),
                 ],
-
                 Row(
                   children: [
                     Expanded(
@@ -492,16 +492,15 @@ class HealthHabitUIService {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 8),
                 Text(
                   correlation > 0.3
                       ? 'Strong positive correlation with health metrics'
                       : correlation > 0.1
-                      ? 'Moderate correlation with health metrics'
-                      : correlation < -0.3
-                      ? 'Strong negative correlation - consider timing adjustments'
-                      : 'Weak correlation with health metrics',
+                          ? 'Moderate correlation with health metrics'
+                          : correlation < -0.3
+                              ? 'Strong negative correlation - consider timing adjustments'
+                              : 'Weak correlation with health metrics',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -570,8 +569,8 @@ class HealthHabitUIService {
                         color: report.overallScore >= 75
                             ? Colors.green
                             : report.overallScore >= 50
-                            ? Colors.orange
-                            : Colors.red,
+                                ? Colors.orange
+                                : Colors.red,
                       ),
                     ),
                   ],
@@ -585,8 +584,8 @@ class HealthHabitUIService {
                     report.overallScore >= 75
                         ? Colors.green
                         : report.overallScore >= 50
-                        ? Colors.orange
-                        : Colors.red,
+                            ? Colors.orange
+                            : Colors.red,
                   ),
                 ),
 
@@ -599,9 +598,7 @@ class HealthHabitUIService {
                     style: TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 8),
-                  ...report.predictiveInsights
-                      .take(3)
-                      .map(
+                  ...report.predictiveInsights.take(3).map(
                         (insight) => Padding(
                           padding: const EdgeInsets.only(bottom: 4),
                           child: Row(
@@ -734,7 +731,8 @@ class HealthHabitUIService {
                   ),
                   value: isEnabled,
                   onChanged: (value) async {
-                    await HealthHabitIntegrationService.setAutoCompletionEnabled(
+                    await HealthHabitIntegrationService
+                        .setAutoCompletionEnabled(
                       value,
                     );
                     onSettingsChanged();
@@ -756,7 +754,8 @@ class HealthHabitUIService {
                   ),
                   value: isEnabled,
                   onChanged: (value) async {
-                    await HealthHabitBackgroundService.setBackgroundServiceEnabled(
+                    await HealthHabitBackgroundService
+                        .setBackgroundServiceEnabled(
                       value,
                     );
                     onSettingsChanged();
@@ -840,9 +839,8 @@ class HealthHabitUIService {
                               ? 'Sync completed! ${result.completionCount} habits auto-completed.'
                               : 'Sync completed - no habits auto-completed.',
                         ),
-                        backgroundColor: result.hasCompletions
-                            ? Colors.green
-                            : Colors.blue,
+                        backgroundColor:
+                            result.hasCompletions ? Colors.green : Colors.blue,
                       ),
                     );
                   }
@@ -1019,23 +1017,38 @@ class HealthHabitUIService {
               Text('Enable Health Permissions'),
             ],
           ),
-          content: const Column(
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Health Connect is installed! Now let\'s enable health data access.',
                 style: TextStyle(fontWeight: FontWeight.w500),
               ),
-              SizedBox(height: 16),
-              Text('This will unlock:'),
-              SizedBox(height: 8),
-              Text('• Automatic habit completion based on your activity'),
-              Text('• Smart insights about your health and habits'),
-              Text('• Personalized recommendations'),
-              Text('• Progress correlation analysis'),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
+              const Text('This will request permissions for:'),
+              const SizedBox(height: 8),
+              const Text('• Steps, heart rate, and calories'),
+              const Text('• Sleep and water intake tracking'),
+              const Text('• Mindfulness and meditation sessions'),
+              const Text('• Weight monitoring'),
+              const SizedBox(height: 8),
               Text(
+                'Note: You\'ll also be asked for Physical Activity Recognition permission to detect when you\'re walking, running, etc.',
+                style: TextStyle(
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 12),
+              const Text('This will unlock:'),
+              const SizedBox(height: 8),
+              const Text('• Automatic habit completion based on your activity'),
+              const Text('• Smart insights about your health and habits'),
+              const Text('• Personalized recommendations'),
+              const Text('• Progress correlation analysis'),
+              const SizedBox(height: 16),
+              const Text(
                 'Your health data stays private and is processed locally on your device.',
                 style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
               ),
@@ -1054,27 +1067,52 @@ class HealthHabitUIService {
                 Navigator.of(context).pop();
 
                 try {
+                  // Request health permissions (now includes activity recognition)
                   final result = await HealthService.requestPermissions();
+
+                  AppLogger.info(
+                      'Health permissions request result: ${result.granted}');
 
                   if (context.mounted) {
                     if (result.granted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Health permissions granted! Health integration is now active.',
+                      // Check if activity recognition was also granted
+                      final permissionService = PermissionService();
+                      final activityPermissionGranted = await permissionService
+                          .isActivityRecognitionPermissionGranted();
+
+                      String message;
+                      Color backgroundColor;
+
+                      if (activityPermissionGranted) {
+                        message =
+                            '✅ All permissions granted! Health integration is fully active.\n\nNow tracking: steps, calories, heart rate, sleep, hydration, mindfulness, weight, and physical activity detection.';
+                        backgroundColor = Colors.green;
+                      } else {
+                        message =
+                            '⚠️ Health permissions granted, but physical activity detection may be limited.\n\nYou can enable it later in Settings → Permissions → Physical Activity.';
+                        backgroundColor = Colors.orange;
+                      }
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(message),
+                            backgroundColor: backgroundColor,
+                            duration: const Duration(seconds: 6),
                           ),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+                        );
+                      }
                     } else if (result.requiresManualPermissionSetup) {
                       _showManualSetupGuidanceDialog(context);
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(result.message),
-                          backgroundColor: Colors.orange,
-                        ),
-                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(result.message),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      }
                     }
                   }
                 } catch (e) {

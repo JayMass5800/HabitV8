@@ -1171,6 +1171,41 @@ class HealthService {
     return totalHeartRate / heartRateData.length;
   }
 
+  /// Test heart rate data retrieval (for debugging compatibility issues)
+  static Future<Map<String, dynamic>> testHeartRateDataRetrieval() async {
+    try {
+      AppLogger.info('Testing heart rate data retrieval...');
+
+      final now = DateTime.now();
+      final yesterday = now.subtract(const Duration(days: 1));
+
+      AppLogger.info('Requesting heart rate data from $yesterday to $now');
+
+      final heartRateData = await getHeartRateData(
+        startDate: yesterday,
+        endDate: now,
+      );
+
+      final result = {
+        'success': true,
+        'dataCount': heartRateData.length,
+        'startDate': yesterday.toIso8601String(),
+        'endDate': now.toIso8601String(),
+        'sampleData':
+            heartRateData.take(3).toList(), // First 3 samples for debugging
+      };
+
+      AppLogger.info('Heart rate test result: $result');
+      return result;
+    } catch (e) {
+      AppLogger.error('Heart rate test failed', e);
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   /// Get today's health summary with real Health Connect data
   static Future<Map<String, dynamic>> getTodayHealthSummary() async {
     try {

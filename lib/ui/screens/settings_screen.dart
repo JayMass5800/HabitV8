@@ -107,17 +107,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       final autoCompletionEnabled =
           await AutomaticHabitCompletionService.isServiceEnabled();
 
+      // Always check actual health permissions first, regardless of saved preference
+      bool healthStatus = await permissionService.isHealthPermissionGranted();
       final healthSyncPreference = await _loadHealthSyncPreference();
-      bool healthStatus = false;
 
-      if (healthSyncPreference) {
-        // If user previously enabled health sync, check if permissions are still valid
-        healthStatus = await permissionService.isHealthPermissionGranted();
-
-        // If permissions were revoked externally, update the preference
-        if (!healthStatus) {
-          await _saveHealthSyncPreference(false);
-        }
+      // If permissions are granted but preference is false, update the preference
+      if (healthStatus && !healthSyncPreference) {
+        await _saveHealthSyncPreference(true);
+        AppLogger.info(
+            'Health permissions detected, updating preference to enabled');
+      }
+      // If permissions are not granted but preference is true, update the preference
+      else if (!healthStatus && healthSyncPreference) {
+        await _saveHealthSyncPreference(false);
+        AppLogger.info(
+            'Health permissions revoked, updating preference to disabled');
       }
 
       setState(() {
@@ -190,21 +194,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     try {
       AppLogger.info('Refreshing health permissions status');
 
-      // Use the new refresh method from HealthService
+      // Use both the refresh method and direct permission check for reliability
       final result = await HealthService.refreshPermissions();
       final bool hasPermissions = result.granted;
 
+      // Double-check with permission service for consistency
+      final permissionService = PermissionService();
+      final bool permissionServiceCheck =
+          await permissionService.isHealthPermissionGranted();
+
+      // Use the more reliable result (both should agree, but prefer the direct check)
+      final bool finalPermissionStatus =
+          hasPermissions && permissionServiceCheck;
+
+      AppLogger.info(
+          'Health permissions check - HealthService: $hasPermissions, PermissionService: $permissionServiceCheck, Final: $finalPermissionStatus');
+
       // Update the UI state if permissions changed
-      if (mounted && hasPermissions != _healthDataSync) {
+      if (mounted && finalPermissionStatus != _healthDataSync) {
         setState(() {
-          _healthDataSync = hasPermissions;
+          _healthDataSync = finalPermissionStatus;
         });
 
         // Update the saved preference to match the actual permission state
-        await _saveHealthSyncPreference(hasPermissions);
+        await _saveHealthSyncPreference(finalPermissionStatus);
 
         if (mounted) {
-          if (hasPermissions) {
+          if (finalPermissionStatus) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text(
@@ -228,13 +244,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           }
         }
 
-        AppLogger.info('Health permissions status updated: $hasPermissions');
+        AppLogger.info(
+            'Health permissions status updated: $finalPermissionStatus');
       } else if (mounted) {
         // Even if state didn't change, show feedback that refresh was performed
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Health permissions refreshed. Status: ${hasPermissions ? 'Enabled' : 'Disabled'}',
+              'Health permissions refreshed. Status: ${finalPermissionStatus ? 'Enabled' : 'Disabled'}',
             ),
             duration: const Duration(seconds: 2),
           ),

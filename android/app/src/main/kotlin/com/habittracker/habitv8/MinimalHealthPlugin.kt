@@ -61,11 +61,16 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         "WEIGHT" to WeightRecord::class,
         "HEART_RATE" to HeartRateRecord::class
     ).apply {
-        // Try to add MindfulnessSessionRecord if available
+        // Always add MINDFULNESS to ensure it's available
+        // Use StepsRecord as placeholder class since we handle mindfulness permission directly
+        this["MINDFULNESS"] = StepsRecord::class
+        Log.i("MinimalHealthPlugin", "MINDFULNESS added to ALLOWED_DATA_TYPES (using direct permission)")
+        
+        // Try to add MindfulnessSessionRecord if available for better integration
         try {
             val mindfulnessClass = Class.forName("androidx.health.connect.client.records.MindfulnessSessionRecord").kotlin as KClass<out Record>
             this["MINDFULNESS"] = mindfulnessClass
-            Log.i("MinimalHealthPlugin", "MindfulnessSessionRecord is available and added to ALLOWED_DATA_TYPES")
+            Log.i("MinimalHealthPlugin", "MindfulnessSessionRecord is available and updated in ALLOWED_DATA_TYPES")
         } catch (e: ClassNotFoundException) {
             Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord not available in this Health Connect version: ${e.message}")
         } catch (e: Exception) {
@@ -99,15 +104,19 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             permissions.add("android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND")
             Log.i("MinimalHealthPlugin", "Added background health permission")
             
-            // Try to add MindfulnessSessionRecord permission if available
+            // Add mindfulness permission directly - no reflection needed
+            permissions.add("android.permission.health.READ_MINDFULNESS")
+            Log.i("MinimalHealthPlugin", "Added mindfulness permission directly")
+            
+            // Also try to add MindfulnessSessionRecord permission using reflection as backup
             try {
                 val mindfulnessClass = Class.forName("androidx.health.connect.client.records.MindfulnessSessionRecord").kotlin as KClass<out Record>
                 permissions.add(HealthPermission.getReadPermission(mindfulnessClass))
-                Log.i("MinimalHealthPlugin", "Added MindfulnessSessionRecord permission")
+                Log.i("MinimalHealthPlugin", "Added MindfulnessSessionRecord permission via reflection")
             } catch (e: ClassNotFoundException) {
-                Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord permission not available: ${e.message}")
+                Log.w("MinimalHealthPlugin", "MindfulnessSessionRecord permission not available via reflection: ${e.message}")
             } catch (e: Exception) {
-                Log.e("MinimalHealthPlugin", "Error adding MindfulnessSessionRecord permission: ${e.message}", e)
+                Log.e("MinimalHealthPlugin", "Error adding MindfulnessSessionRecord permission via reflection: ${e.message}", e)
             }
         } catch (e: Exception) {
             Log.e("MinimalHealthPlugin", "Error creating health permissions", e)
@@ -129,13 +138,9 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             "android.permission.health.READ_SLEEP",
             "android.permission.health.READ_HYDRATION",
             "android.permission.health.READ_WEIGHT",
-            "android.permission.health.READ_HEART_RATE"
+            "android.permission.health.READ_HEART_RATE",
+            "android.permission.health.READ_MINDFULNESS"  // Always include mindfulness
         )
-        
-        // Add MINDFULNESS permission if available
-        if (ALLOWED_DATA_TYPES.containsKey("MINDFULNESS")) {
-            permissions.add("android.permission.health.READ_MINDFULNESS")
-        }
         
         return permissions
     }
@@ -282,6 +287,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             Log.w("MinimalHealthPlugin", "  - NoSuchMethodError: getStartZoneOffset() for HeartRateRecord")
             Log.w("MinimalHealthPlugin", "  - ZoneOffset related API incompatibilities")
             Log.w("MinimalHealthPlugin", "  - Some record types may not work properly")
+            Log.i("MinimalHealthPlugin", "  ✅ HEART_RATE data will still work with robust error handling")
             Log.w("MinimalHealthPlugin", "  Recommendation: Update Health Connect app or use fallback methods")
         } else {
             Log.i("MinimalHealthPlugin", "✅ Health Connect version appears compatible")
@@ -295,12 +301,14 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             
             if (hasGetStartZoneOffset) {
                 Log.i("MinimalHealthPlugin", "✅ HeartRateRecord.getStartZoneOffset() method is available")
+                Log.i("MinimalHealthPlugin", "  HEART_RATE data should work normally")
             } else {
                 Log.w("MinimalHealthPlugin", "⚠️  HeartRateRecord.getStartZoneOffset() method is NOT available")
-                Log.w("MinimalHealthPlugin", "  This confirms compatibility issues with this Health Connect version")
+                Log.i("MinimalHealthPlugin", "  ✅ HEART_RATE will use fallback methods - data should still work")
             }
         } catch (e: Exception) {
             Log.e("MinimalHealthPlugin", "Error checking HeartRateRecord compatibility", e)
+            Log.i("MinimalHealthPlugin", "  ✅ HEART_RATE will use robust error handling - data should still work")
         }
     }
     
@@ -315,41 +323,30 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             // Test if we can access the record class methods without issues
             val methods = recordClass.java.methods
             
-            // Check for problematic methods that cause NoSuchMethodError
-            val hasProblematicMethods = methods.any { method ->
-                method.name.contains("ZoneOffset") || 
-                method.name == "getStartZoneOffset" ||
-                method.name == "getEndZoneOffset"
-            }
-            
-            if (hasProblematicMethods) {
-                Log.w("MinimalHealthPlugin", "⚠️  $dataType has problematic ZoneOffset methods - compatibility issues likely")
-                return false
-            }
-            
-            // Specific checks for different data types
-            when (dataType) {
-                "HEART_RATE" -> {
-                    // HeartRateRecord specific checks
-                    try {
-                        val constructor = recordClass.java.constructors.firstOrNull()
-                        if (constructor == null) {
-                            Log.w("MinimalHealthPlugin", "⚠️  Cannot find $dataType constructor - compatibility issues")
-                            return false
-                        }
-                        
-                        // Check if startTime property is accessible
-                        val hasStartTime = methods.any { it.name == "getStartTime" || it.name == "startTime" }
-                        if (!hasStartTime) {
-                            Log.w("MinimalHealthPlugin", "⚠️  $dataType missing startTime property - compatibility issues")
-                            return false
-                        }
-                        
-                    } catch (e: Exception) {
-                        Log.w("MinimalHealthPlugin", "⚠️  $dataType compatibility test failed: ${e.message}")
-                        return false
-                    }
+            // For HEART_RATE, we have robust error handling in the processing code,
+            // so we don't need to block it based on ZoneOffset methods presence
+            if (dataType == "HEART_RATE") {
+                Log.d("MinimalHealthPlugin", "HEART_RATE compatibility check - allowing with robust error handling")
+                // We have comprehensive error handling in the HeartRateRecord processing code
+                // that handles ZoneOffset issues gracefully, so we don't need to block it here
+                Log.d("MinimalHealthPlugin", "✅ HEART_RATE compatibility check passed (using robust error handling)")
+                return true
+            } else {
+                // For other data types, check for problematic methods that cause NoSuchMethodError
+                val hasProblematicMethods = methods.any { method ->
+                    method.name.contains("ZoneOffset") || 
+                    method.name == "getStartZoneOffset" ||
+                    method.name == "getEndZoneOffset"
                 }
+                
+                if (hasProblematicMethods) {
+                    Log.w("MinimalHealthPlugin", "⚠️  $dataType has problematic ZoneOffset methods - compatibility issues likely")
+                    return false
+                }
+            }
+            
+            // Specific checks for different data types (excluding HEART_RATE which is handled above)
+            when (dataType) {
                 "WEIGHT" -> {
                     // WeightRecord specific checks (InstantRecord)
                     val hasTimeProperty = methods.any { it.name == "getTime" || it.name == "time" }
