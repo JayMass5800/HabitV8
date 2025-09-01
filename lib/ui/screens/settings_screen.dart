@@ -480,6 +480,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                           ),
                         ),
                         const SizedBox(height: 8),
+                        ListTile(
+                          title: const Text('Health Connect Test'),
+                          subtitle: const Text(
+                            'Test the new Health Connect integration',
+                          ),
+                          leading: const Icon(Icons.science),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push('/health-test'),
+                        ),
                       ],
                     ),
                   ),

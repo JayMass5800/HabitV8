@@ -37,51 +37,22 @@ class HealthConnectActivity : ComponentActivity() {
         private const val BACKGROUND_HEALTH_PERMISSION = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
     }
     
-    // Define all required permissions including background permission
-    private val permissions = run {
-        val permissionSet = mutableSetOf<String>()
-        
-        try {
-            permissionSet.add(HealthPermission.getReadPermission(StepsRecord::class))
-            permissionSet.add(HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class))
-            permissionSet.add(HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class))
-            permissionSet.add(HealthPermission.getReadPermission(SleepSessionRecord::class))
-            permissionSet.add(HealthPermission.getReadPermission(HydrationRecord::class))
-            permissionSet.add(HealthPermission.getReadPermission(WeightRecord::class))
-            permissionSet.add(HealthPermission.getReadPermission(HeartRateRecord::class))
-            permissionSet.add(BACKGROUND_HEALTH_PERMISSION)
-            
-            // Try to add mindfulness permission using the proper API
-            try {
-                permissionSet.add(HealthPermission.getReadPermission(MindfulnessSessionRecord::class))
-                Log.i(TAG, "✅ Successfully added MindfulnessSessionRecord permission via HealthPermission API")
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ Failed to add MindfulnessSessionRecord permission via API: ${e.message}", e)
-                Log.i(TAG, "This might indicate the Health Connect version doesn't support mindfulness in permission dialogs")
-            }
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "Error creating permissions set: ${e.message}", e)
-        }
-        
-        Log.i(TAG, "Total permissions to request: ${permissionSet.size}")
-        permissionSet.forEach { permission ->
-            Log.i(TAG, "  - Permission: $permission")
-        }
-        
-        permissionSet.toSet()
-    }
+    // Use the permissions from MinimalHealthPlugin
+    private val permissions = getHealthPermissions()
     
     // Create the permission launcher using the new Health Connect API
     private val requestPermissionLauncher = registerForActivityResult(
         PermissionController.createRequestPermissionResultContract()
     ) { granted ->
         val allGranted = granted.containsAll(permissions)
-        val backgroundGranted = granted.contains(BACKGROUND_HEALTH_PERMISSION)
         
         Log.i(TAG, "Health Connect permission request completed")
+        Log.i(TAG, "Granted permissions: ${granted.size}")
         Log.i(TAG, "All health permissions granted: $allGranted")
-        Log.i(TAG, "Background permission granted: $backgroundGranted")
+        
+        granted.forEach { permission ->
+            Log.i(TAG, "  ✅ $permission")
+        }
         
         // After Health Connect permissions, request activity recognition
         requestActivityRecognitionPermission()
@@ -203,6 +174,49 @@ class HealthConnectActivity : ComponentActivity() {
             Log.e(TAG, "Failed to redirect to Play Store", e)
         }
         finish()
+    }
+    
+    // Get health permissions using the same logic as MinimalHealthPlugin
+    private fun getHealthPermissions(): Set<String> {
+        val permissions = mutableSetOf<String>()
+        
+        // Add each permission individually to help with debugging
+        try {
+            permissions.add(HealthPermission.getReadPermission(StepsRecord::class))
+            permissions.add(HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class))
+            permissions.add(HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class))
+            permissions.add(HealthPermission.getReadPermission(SleepSessionRecord::class))
+            permissions.add(HealthPermission.getReadPermission(HydrationRecord::class))
+            permissions.add(HealthPermission.getReadPermission(WeightRecord::class))
+            permissions.add(HealthPermission.getReadPermission(HeartRateRecord::class))
+            
+            // Add background health permission - CRITICAL for background monitoring
+            permissions.add("android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND")
+            Log.i(TAG, "Added background health permission")
+            
+            // Add mindfulness permission directly - no reflection needed
+            permissions.add("android.permission.health.READ_MINDFULNESS")
+            Log.i(TAG, "Added mindfulness permission directly")
+            
+            // Also try to add MindfulnessSessionRecord permission using reflection as backup
+            try {
+                val mindfulnessClass = Class.forName("androidx.health.connect.client.records.MindfulnessSessionRecord").kotlin as kotlin.reflect.KClass<out androidx.health.connect.client.records.Record>
+                permissions.add(HealthPermission.getReadPermission(mindfulnessClass))
+                Log.i(TAG, "Added MindfulnessSessionRecord permission via reflection")
+            } catch (e: ClassNotFoundException) {
+                Log.w(TAG, "MindfulnessSessionRecord permission not available via reflection: ${e.message}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding MindfulnessSessionRecord permission via reflection: ${e.message}", e)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creating health permissions", e)
+        }
+        
+        Log.i(TAG, "Total permissions configured: ${permissions.size}")
+        permissions.forEach { permission ->
+            Log.i(TAG, "  - Permission: $permission")
+        }
+        return permissions.toSet()
     }
 }
 

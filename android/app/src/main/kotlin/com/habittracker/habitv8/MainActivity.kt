@@ -41,8 +41,9 @@ class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         
-        // Register our minimal health plugin
+        // Register our health plugins
         flutterEngine.plugins.add(MinimalHealthPlugin())
+        flutterEngine.plugins.add(SimpleHealthPlugin())
         
         // Set up method channel for controlling the health monitoring service
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->

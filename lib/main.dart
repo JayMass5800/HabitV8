@@ -25,6 +25,7 @@ import 'ui/screens/settings_screen.dart';
 import 'ui/screens/create_habit_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/health_integration_screen.dart';
+import 'ui/screens/health_test_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -541,6 +542,10 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: '/health-integration',
           builder: (context, state) => const HealthIntegrationScreen(),
+        ),
+        GoRoute(
+          path: '/health-test',
+          builder: (context, state) => const HealthTestScreen(),
         ),
       ],
     ),

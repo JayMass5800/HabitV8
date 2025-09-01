@@ -161,7 +161,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Insights'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -507,10 +506,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 'Achievements & Rewards',
                 'Celebrate your progress and unlock new milestones! 🏆',
               ),
-              const SizedBox(height: 24),
-
-              // Achievement Overview
-              _buildAchievementsOverview(),
               const SizedBox(height: 24),
 
               // Gamification Card
@@ -1037,77 +1032,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildAchievementsOverview() {
-    return FutureBuilder<List<Achievement>>(
-      future: AchievementsService.getUnlockedAchievements(),
-      builder: (context, snapshot) {
-        final unlockedAchievements = snapshot.data ?? [];
-        final totalAchievements = AchievementsService.getAllAchievements();
-
-        return Card(
-          elevation: 4,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Achievement Progress',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildAchievementStat(
-                      'Unlocked',
-                      '${unlockedAchievements.length}',
-                      Icons.emoji_events,
-                      Colors.amber,
-                    ),
-                    _buildAchievementStat(
-                      'Total',
-                      '${totalAchievements.length}',
-                      Icons.flag,
-                      Colors.blue,
-                    ),
-                    _buildAchievementStat(
-                      'Progress',
-                      '${totalAchievements.isEmpty ? 0 : ((unlockedAchievements.length / totalAchievements.length) * 100).toInt()}%',
-                      Icons.trending_up,
-                      Colors.green,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAchievementStat(
-      String label, String value, IconData icon, Color color) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 32),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Theme.of(context).textTheme.bodySmall?.color,
-          ),
-        ),
-      ],
     );
   }
 
