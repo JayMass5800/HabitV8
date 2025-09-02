@@ -221,12 +221,14 @@ class SimpleHealthPlugin : FlutterPlugin, MethodCallHandler {
                 
                 Log.i(TAG, "Retrieved ${response.records.size} heart rate records")
                 
-                val heartRateData = response.records.map { record ->
-                    mapOf(
-                        "value" to record.samples.firstOrNull()?.beatsPerMinute ?: 0L,
-                        "unit" to "bpm",
-                        "timestamp" to record.time.toEpochMilli()
-                    )
+                val heartRateData = response.records.flatMap { record ->
+                    record.samples.map { sample ->
+                        mapOf(
+                            "value" to sample.beatsPerMinute,
+                            "unit" to "bpm",
+                            "timestamp" to sample.time.toEpochMilli()
+                        )
+                    }
                 }
                 
                 result.success(heartRateData)

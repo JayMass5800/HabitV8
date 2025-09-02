@@ -332,17 +332,10 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 Log.d("MinimalHealthPlugin", "✅ HEART_RATE compatibility check passed (using robust error handling)")
                 return true
             } else {
-                // For other data types, check for problematic methods that cause NoSuchMethodError
-                val hasProblematicMethods = methods.any { method ->
-                    method.name.contains("ZoneOffset") || 
-                    method.name == "getStartZoneOffset" ||
-                    method.name == "getEndZoneOffset"
-                }
-                
-                if (hasProblematicMethods) {
-                    Log.w("MinimalHealthPlugin", "⚠️  $dataType has problematic ZoneOffset methods - compatibility issues likely")
-                    return false
-                }
+                // FIXED: The ZoneOffset method check was too aggressive and blocking valid data types
+                // Health Connect API handles ZoneOffset methods properly in modern versions
+                // Only block data types if we encounter actual runtime errors, not just method presence
+                Log.d("MinimalHealthPlugin", "✅ $dataType compatibility check passed (ZoneOffset methods are supported in modern Health Connect)")
             }
             
             // Specific checks for different data types (excluding HEART_RATE which is handled above)

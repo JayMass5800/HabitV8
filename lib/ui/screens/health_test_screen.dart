@@ -10,7 +10,6 @@ class HealthTestScreen extends StatefulWidget {
 }
 
 class _HealthTestScreenState extends State<HealthTestScreen> {
-  final AppLogger _logger = AppLogger();
   bool _isLoading = false;
   Map<String, dynamic>? _permissionStatus;
   List<Map<String, dynamic>> _stepsData = [];
@@ -29,9 +28,9 @@ class _HealthTestScreenState extends State<HealthTestScreen> {
     try {
       final status = await SimpleHealthService.checkPermissions();
       setState(() => _permissionStatus = status);
-      _logger.info('Permission status updated: $status');
+      AppLogger.info('Permission status updated: $status');
     } catch (e) {
-      _logger.error('Failed to check permissions: $e');
+      AppLogger.error('Failed to check permissions: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -44,7 +43,7 @@ class _HealthTestScreenState extends State<HealthTestScreen> {
       final endTime = DateTime.now();
       final startTime = endTime.subtract(const Duration(hours: 24));
 
-      _logger.info('Testing health data retrieval...');
+      AppLogger.info('Testing health data retrieval...');
 
       // Get steps data
       final steps = await SimpleHealthService.getStepsData(
@@ -70,9 +69,9 @@ class _HealthTestScreenState extends State<HealthTestScreen> {
         _sleepData = sleep;
       });
 
-      _logger.info('Health data test completed');
+      AppLogger.info('Health data test completed');
     } catch (e) {
-      _logger.error('Health data test failed: $e');
+      AppLogger.error('Health data test failed: $e');
     } finally {
       setState(() => _isLoading = false);
     }

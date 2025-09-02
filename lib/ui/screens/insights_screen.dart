@@ -1852,7 +1852,193 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-  // Helper method to generate sample health data over time (7 days)
+  // Helper method to get real health data over time (7 days) from Health Connect
+  Future<List<Map<String, dynamic>>> _getRealHealthDataOverTime(
+      String metricType) async {
+    final now = DateTime.now();
+    final data = <Map<String, dynamic>>[];
+
+    try {
+      // Get health data for the past 7 days
+      for (int i = 6; i >= 0; i--) {
+        final date = now.subtract(Duration(days: i));
+        final startOfDay = DateTime(date.year, date.month, date.day);
+        final endOfDay = startOfDay.add(const Duration(days: 1));
+
+        double value = 0.0;
+
+        switch (metricType) {
+          case 'sleep':
+            // Get sleep data for this specific day
+            value = await _getSleepHoursForDate(startOfDay, endOfDay);
+            break;
+          case 'steps':
+            // Get steps data for this specific day
+            value = (await _getStepsForDate(startOfDay, endOfDay)).toDouble();
+            break;
+          case 'heartRate':
+            // Get average heart rate for this day
+            value = await _getHeartRateForDate(startOfDay, endOfDay);
+            break;
+          case 'water':
+            // Get water intake for this day
+            value = await _getWaterIntakeForDate(startOfDay, endOfDay);
+            break;
+        }
+
+        data.add({
+          'date': date,
+          'value': value.clamp(0, double.infinity),
+        });
+      }
+    } catch (e) {
+      AppLogger.error('Error getting real health data for $metricType', e);
+      // Fallback to current day's data if available
+      if (_healthSummary != null && !_healthSummary!.containsKey('error')) {
+        for (int i = 6; i >= 0; i--) {
+          final date = now.subtract(Duration(days: i));
+          double value = 0.0;
+
+          // Use current health summary data as fallback
+          switch (metricType) {
+            case 'sleep':
+              value = (_healthSummary!['sleepHours'] as double? ?? 0.0);
+              break;
+            case 'steps':
+              value = (_healthSummary!['steps'] as int? ?? 0).toDouble();
+              break;
+            case 'heartRate':
+              value = (_healthSummary!['heartRate'] as double? ?? 0.0);
+              break;
+            case 'water':
+              value = (_healthSummary!['waterIntake'] as double? ?? 0.0);
+              break;
+          }
+
+          data.add({
+            'date': date,
+            'value': value.clamp(0, double.infinity),
+          });
+        }
+      }
+    }
+
+    return data;
+  }
+
+  // Helper methods to get health data for specific dates using available HealthService methods
+  Future<double> _getSleepHoursForDate(
+      DateTime startOfDay, DateTime endOfDay) async {
+    try {
+      final data = await HealthService.getHealthDataFromTypes(
+        types: ['SLEEP_IN_BED'],
+        startTime: startOfDay,
+        endTime: endOfDay,
+      );
+
+      if (data.isEmpty) return 0.0;
+
+      // Calculate total sleep hours from sleep sessions
+      double totalHours = 0.0;
+      for (final record in data) {
+        if (record['startTime'] != null && record['endTime'] != null) {
+          final start = DateTime.parse(record['startTime']);
+          final end = DateTime.parse(record['endTime']);
+          final duration = end.difference(start);
+          totalHours += duration.inMinutes / 60.0;
+        }
+      }
+
+      return totalHours;
+    } catch (e) {
+      AppLogger.error('Error getting sleep hours for date', e);
+      return 0.0;
+    }
+  }
+
+  Future<int> _getStepsForDate(DateTime startOfDay, DateTime endOfDay) async {
+    try {
+      final data = await HealthService.getHealthDataFromTypes(
+        types: ['STEPS'],
+        startTime: startOfDay,
+        endTime: endOfDay,
+      );
+
+      if (data.isEmpty) return 0;
+
+      // Sum all step counts for the day
+      int totalSteps = 0;
+      for (final record in data) {
+        if (record['count'] != null) {
+          totalSteps += (record['count'] as num).toInt();
+        }
+      }
+
+      return totalSteps;
+    } catch (e) {
+      AppLogger.error('Error getting steps for date', e);
+      return 0;
+    }
+  }
+
+  Future<double> _getHeartRateForDate(
+      DateTime startOfDay, DateTime endOfDay) async {
+    try {
+      final data = await HealthService.getHealthDataFromTypes(
+        types: ['HEART_RATE'],
+        startTime: startOfDay,
+        endTime: endOfDay,
+      );
+
+      if (data.isEmpty) return 0.0;
+
+      // Calculate average heart rate for the day
+      double totalBpm = 0.0;
+      int count = 0;
+
+      for (final record in data) {
+        if (record['beatsPerMinute'] != null) {
+          totalBpm += (record['beatsPerMinute'] as num).toDouble();
+          count++;
+        }
+      }
+
+      return count > 0 ? totalBpm / count : 0.0;
+    } catch (e) {
+      AppLogger.error('Error getting heart rate for date', e);
+      return 0.0;
+    }
+  }
+
+  Future<double> _getWaterIntakeForDate(
+      DateTime startOfDay, DateTime endOfDay) async {
+    try {
+      final data = await HealthService.getHealthDataFromTypes(
+        types: ['WATER'],
+        startTime: startOfDay,
+        endTime: endOfDay,
+      );
+
+      if (data.isEmpty) return 0.0;
+
+      // Sum all water intake for the day (in liters)
+      double totalLiters = 0.0;
+      for (final record in data) {
+        if (record['volume'] != null) {
+          // Convert from milliliters to liters
+          totalLiters += (record['volume'] as num).toDouble() / 1000.0;
+        }
+      }
+
+      return totalLiters;
+    } catch (e) {
+      AppLogger.error('Error getting water intake for date', e);
+      return 0.0;
+    }
+  }
+
+  // Helper method to generate sample health data over time (7 days) - DEPRECATED
+  // This method is kept for fallback purposes only
   List<Map<String, dynamic>> _generateHealthDataOverTime(String metricType) {
     final now = DateTime.now();
     final data = <Map<String, dynamic>>[];
@@ -1927,9 +2113,27 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final isDark = theme.brightness == Brightness.dark;
     final sleepHours = _healthSummary?['sleepHours'] ?? 0.0;
 
-    final sleepData = _generateHealthDataOverTime('sleep');
     final habitData = _generateHabitCompletionData(habits);
 
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _getRealHealthDataOverTime('sleep'),
+      builder: (context, snapshot) {
+        final sleepData = snapshot.data ?? _generateHealthDataOverTime('sleep');
+
+        return _buildSleepModuleContent(
+            theme, isDark, sleepHours, sleepData, habitData, habits);
+      },
+    );
+  }
+
+  Widget _buildSleepModuleContent(
+    ThemeData theme,
+    bool isDark,
+    double sleepHours,
+    List<Map<String, dynamic>> sleepData,
+    List<Map<String, dynamic>> habitData,
+    List<Habit> habits,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2097,9 +2301,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final steps = _healthSummary?['steps'] ?? 0;
     final calories = _healthSummary?['activeCalories'] ?? 0.0;
 
-    final stepsData = _generateHealthDataOverTime('steps');
     final habitData = _generateHabitCompletionData(habits);
 
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _getRealHealthDataOverTime('steps'),
+      builder: (context, snapshot) {
+        final stepsData = snapshot.data ?? _generateHealthDataOverTime('steps');
+
+        return _buildActivityModuleContent(
+            theme, isDark, steps, calories, stepsData, habitData, habits);
+      },
+    );
+  }
+
+  Widget _buildActivityModuleContent(
+    ThemeData theme,
+    bool isDark,
+    int steps,
+    double calories,
+    List<Map<String, dynamic>> stepsData,
+    List<Map<String, dynamic>> habitData,
+    List<Habit> habits,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2266,9 +2489,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final isDark = theme.brightness == Brightness.dark;
     final heartRate = _healthSummary?['heartRate'] ?? 0.0;
 
-    final heartRateData = _generateHealthDataOverTime('heartRate');
     final habitData = _generateHabitCompletionData(habits);
 
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _getRealHealthDataOverTime('heartRate'),
+      builder: (context, snapshot) {
+        final heartRateData =
+            snapshot.data ?? _generateHealthDataOverTime('heartRate');
+
+        return _buildHeartRateModuleContent(
+            theme, isDark, heartRate, heartRateData, habitData, habits);
+      },
+    );
+  }
+
+  Widget _buildHeartRateModuleContent(
+    ThemeData theme,
+    bool isDark,
+    double heartRate,
+    List<Map<String, dynamic>> heartRateData,
+    List<Map<String, dynamic>> habitData,
+    List<Habit> habits,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2441,9 +2683,27 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final isDark = theme.brightness == Brightness.dark;
     final waterIntake = _healthSummary?['waterIntake'] ?? 0.0;
 
-    final waterData = _generateHealthDataOverTime('water');
     final habitData = _generateHabitCompletionData(habits);
 
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _getRealHealthDataOverTime('water'),
+      builder: (context, snapshot) {
+        final waterData = snapshot.data ?? _generateHealthDataOverTime('water');
+
+        return _buildWaterIntakeModuleContent(
+            theme, isDark, waterIntake, waterData, habitData, habits);
+      },
+    );
+  }
+
+  Widget _buildWaterIntakeModuleContent(
+    ThemeData theme,
+    bool isDark,
+    double waterIntake,
+    List<Map<String, dynamic>> waterData,
+    List<Map<String, dynamic>> habitData,
+    List<Habit> habits,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

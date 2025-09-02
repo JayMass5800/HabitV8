@@ -1,37 +1,35 @@
-import 'package:flutter/services.dart';
 import 'package:habitv8/services/logging_service.dart';
+import 'package:habitv8/services/minimal_health_channel.dart';
 
 /// Simple Health Service using the new SimpleHealthPlugin
 /// Based on latest Android Health Connect documentation patterns
 class SimpleHealthService {
-  static const MethodChannel _channel = MethodChannel('simple_health_plugin');
-  static final AppLogger _logger = AppLogger();
   static bool _isInitialized = false;
 
   /// Initialize the health service
   static Future<bool> initialize() async {
     if (_isInitialized) {
-      _logger.info('SimpleHealthService already initialized');
+      AppLogger.info('SimpleHealthService already initialized');
       return true;
     }
 
     try {
-      _logger.info('Initializing SimpleHealthService...');
+      AppLogger.info('Initializing SimpleHealthService...');
 
       // Check if Health Connect is available
       final permissions = await getHealthPermissions();
       if (permissions.isEmpty) {
-        _logger.warning(
+        AppLogger.warning(
             'No health permissions available - Health Connect may not be installed');
         return false;
       }
 
       _isInitialized = true;
-      _logger.info(
+      AppLogger.info(
           'SimpleHealthService initialized successfully with ${permissions.length} permissions');
       return true;
     } catch (e) {
-      _logger.error('Failed to initialize SimpleHealthService: $e');
+      AppLogger.error('Failed to initialize SimpleHealthService: $e');
       _isInitialized = false;
       return false;
     }
@@ -40,11 +38,11 @@ class SimpleHealthService {
   /// Get the list of health permissions required by the app
   static Future<List<String>> getHealthPermissions() async {
     try {
-      final List<dynamic> permissions =
-          await _channel.invokeMethod('getHealthPermissions');
-      return permissions.cast<String>();
+      // Use MinimalHealthChannel to get supported data types
+      final supportedTypes = MinimalHealthChannel.getSupportedDataTypes();
+      return supportedTypes;
     } catch (e) {
-      _logger.error('Failed to get health permissions: $e');
+      AppLogger.error('Failed to get health permissions: $e');
       return [];
     }
   }
@@ -52,12 +50,12 @@ class SimpleHealthService {
   /// Request health permissions
   static Future<bool> requestPermissions() async {
     try {
-      _logger.info('Requesting health permissions...');
-      final bool granted = await _channel.invokeMethod('requestPermissions');
-      _logger.info('Health permissions request result: $granted');
+      AppLogger.info('Requesting health permissions...');
+      final granted = await MinimalHealthChannel.requestPermissions();
+      AppLogger.info('Health permissions request result: $granted');
       return granted;
     } catch (e) {
-      _logger.error('Failed to request health permissions: $e');
+      AppLogger.error('Failed to request health permissions: $e');
       return false;
     }
   }
@@ -65,11 +63,10 @@ class SimpleHealthService {
   /// Check current permission status
   static Future<Map<String, dynamic>> checkPermissions() async {
     try {
-      final Map<dynamic, dynamic> result =
-          await _channel.invokeMethod('checkPermissions');
-      return Map<String, dynamic>.from(result);
+      final result = await MinimalHealthChannel.getHealthConnectStatus();
+      return result;
     } catch (e) {
-      _logger.error('Failed to check permissions: $e');
+      AppLogger.error('Failed to check permissions: $e');
       return {
         'hasAllPermissions': false,
         'grantedCount': 0,
@@ -88,46 +85,37 @@ class SimpleHealthService {
     if (!_isInitialized) {
       final initialized = await initialize();
       if (!initialized) {
-        _logger.error(
+        AppLogger.error(
             'SimpleHealthService not initialized, cannot get steps data');
         return [];
       }
     }
 
     try {
-      _logger.info(
+      AppLogger.info(
           'SimpleHealthService: Getting steps data from ${startTime.toIso8601String()} to ${endTime.toIso8601String()}');
-      _logger.info('  Start timestamp: ${startTime.millisecondsSinceEpoch}');
-      _logger.info('  End timestamp: ${endTime.millisecondsSinceEpoch}');
+      AppLogger.info('  Start timestamp: ${startTime.millisecondsSinceEpoch}');
+      AppLogger.info('  End timestamp: ${endTime.millisecondsSinceEpoch}');
 
-      final List<dynamic> result = await _channel.invokeMethod('getStepsData', {
-        'startTime': startTime.millisecondsSinceEpoch,
-        'endTime': endTime.millisecondsSinceEpoch,
-      }).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          _logger.error('Steps data request timed out after 10 seconds');
-          return <dynamic>[];
-        },
+      // Use MinimalHealthChannel instead of direct method channel call
+      final stepsData = await MinimalHealthChannel.getHealthData(
+        dataType: 'STEPS',
+        startDate: startTime,
+        endDate: endTime,
       );
 
-      final stepsData = result
-          .cast<Map<dynamic, dynamic>>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
-
-      _logger.info(
+      AppLogger.info(
           'SimpleHealthService: Retrieved ${stepsData.length} steps records');
 
       if (stepsData.isNotEmpty) {
-        _logger.info('Sample steps data: ${stepsData.first}');
+        AppLogger.info('Sample steps data: ${stepsData.first}');
       } else {
-        _logger.warning('No steps data found in the specified time range');
+        AppLogger.warning('No steps data found in the specified time range');
       }
 
       return stepsData;
     } catch (e) {
-      _logger.error('Failed to get steps data: $e');
+      AppLogger.error('Failed to get steps data: $e');
       return [];
     }
   }
@@ -138,25 +126,21 @@ class SimpleHealthService {
     required DateTime endTime,
   }) async {
     try {
-      _logger.info(
+      AppLogger.info(
           'SimpleHealthService: Getting heart rate data from $startTime to $endTime');
 
-      final List<dynamic> result =
-          await _channel.invokeMethod('getHeartRateData', {
-        'startTime': startTime.millisecondsSinceEpoch,
-        'endTime': endTime.millisecondsSinceEpoch,
-      });
+      // Use MinimalHealthChannel instead of direct method channel call
+      final heartRateData = await MinimalHealthChannel.getHealthData(
+        dataType: 'HEART_RATE',
+        startDate: startTime,
+        endDate: endTime,
+      );
 
-      final heartRateData = result
-          .cast<Map<dynamic, dynamic>>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
-
-      _logger.info(
+      AppLogger.info(
           'SimpleHealthService: Retrieved ${heartRateData.length} heart rate records');
       return heartRateData;
     } catch (e) {
-      _logger.error('Failed to get heart rate data: $e');
+      AppLogger.error('Failed to get heart rate data: $e');
       return [];
     }
   }
@@ -167,39 +151,36 @@ class SimpleHealthService {
     required DateTime endTime,
   }) async {
     try {
-      _logger.info(
+      AppLogger.info(
           'SimpleHealthService: Getting sleep data from $startTime to $endTime');
 
-      final List<dynamic> result = await _channel.invokeMethod('getSleepData', {
-        'startTime': startTime.millisecondsSinceEpoch,
-        'endTime': endTime.millisecondsSinceEpoch,
-      });
+      // Use MinimalHealthChannel instead of direct method channel call
+      final sleepData = await MinimalHealthChannel.getHealthData(
+        dataType: 'SLEEP_IN_BED',
+        startDate: startTime,
+        endDate: endTime,
+      );
 
-      final sleepData = result
-          .cast<Map<dynamic, dynamic>>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
-
-      _logger.info(
+      AppLogger.info(
           'SimpleHealthService: Retrieved ${sleepData.length} sleep records');
       return sleepData;
     } catch (e) {
-      _logger.error('Failed to get sleep data: $e');
+      AppLogger.error('Failed to get sleep data: $e');
       return [];
     }
   }
 
   /// Test the simple health service with basic data retrieval
   static Future<void> testHealthService() async {
-    _logger.info('=== Testing Simple Health Service ===');
+    AppLogger.info('=== Testing Simple Health Service ===');
 
     try {
       // Check permissions
       final permissionStatus = await checkPermissions();
-      _logger.info('Permission Status: $permissionStatus');
+      AppLogger.info('Permission Status: $permissionStatus');
 
       if (!permissionStatus['hasAllPermissions']) {
-        _logger.warning(
+        AppLogger.warning(
             'Not all permissions granted. Some data may not be available.');
       }
 
@@ -210,30 +191,30 @@ class SimpleHealthService {
       // Test steps data
       final stepsData =
           await getStepsData(startTime: startTime, endTime: endTime);
-      _logger.info('Steps test result: ${stepsData.length} records');
+      AppLogger.info('Steps test result: ${stepsData.length} records');
       if (stepsData.isNotEmpty) {
-        _logger.info('Sample steps data: ${stepsData.first}');
+        AppLogger.info('Sample steps data: ${stepsData.first}');
       }
 
       // Test heart rate data
       final heartRateData =
           await getHeartRateData(startTime: startTime, endTime: endTime);
-      _logger.info('Heart rate test result: ${heartRateData.length} records');
+      AppLogger.info('Heart rate test result: ${heartRateData.length} records');
       if (heartRateData.isNotEmpty) {
-        _logger.info('Sample heart rate data: ${heartRateData.first}');
+        AppLogger.info('Sample heart rate data: ${heartRateData.first}');
       }
 
       // Test sleep data
       final sleepData =
           await getSleepData(startTime: startTime, endTime: endTime);
-      _logger.info('Sleep test result: ${sleepData.length} records');
+      AppLogger.info('Sleep test result: ${sleepData.length} records');
       if (sleepData.isNotEmpty) {
-        _logger.info('Sample sleep data: ${sleepData.first}');
+        AppLogger.info('Sample sleep data: ${sleepData.first}');
       }
 
-      _logger.info('=== Simple Health Service Test Complete ===');
+      AppLogger.info('=== Simple Health Service Test Complete ===');
     } catch (e) {
-      _logger.error('Simple Health Service test failed: $e');
+      AppLogger.error('Simple Health Service test failed: $e');
     }
   }
 }
