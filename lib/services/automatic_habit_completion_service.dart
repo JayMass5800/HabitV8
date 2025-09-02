@@ -325,19 +325,21 @@ class AutomaticHabitCompletionService {
       await prefs.setInt(
           _lastCompletionCheckKey, DateTime.now().millisecondsSinceEpoch);
 
-      // Check health permissions with timeout to prevent hanging
-      final hasHealthPermissions = await HealthService.hasPermissions().timeout(
+      // Check if health operations should proceed (includes both user preference and permissions)
+      final shouldProceed =
+          await HealthService.shouldPerformHealthOperations().timeout(
         const Duration(seconds: 5),
         onTimeout: () {
           AppLogger.warning(
-              'Health permissions check timed out - assuming false');
+              'Health operations check timed out - assuming false');
           return false;
         },
       );
 
-      if (!hasHealthPermissions) {
-        AppLogger.info('No health permissions - skipping completion check');
-        result.skippedReason = 'No health permissions';
+      if (!shouldProceed) {
+        AppLogger.info(
+            'Health operations disabled - skipping completion check');
+        result.skippedReason = 'Health operations disabled';
         return result;
       }
 

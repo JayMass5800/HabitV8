@@ -1,5 +1,6 @@
 // import 'package:health/health.dart';  // REMOVED - causes Google Play Console issues
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'logging_service.dart';
 import 'minimal_health_channel.dart';
@@ -452,6 +453,42 @@ class HealthService {
     }
   }
 
+  /// Check if health data sync is enabled by the user in settings
+  /// This is the master switch that controls whether health data should be accessed at all
+  static Future<bool> isHealthSyncEnabled() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool('health_sync_enabled') ?? false;
+      AppLogger.info('Health sync enabled preference: $enabled');
+      return enabled;
+    } catch (e) {
+      AppLogger.error('Error checking health sync preference', e);
+      return false;
+    }
+  }
+
+  /// Check if health data operations should proceed
+  /// This combines both user preference and permissions check
+  static Future<bool> shouldPerformHealthOperations() async {
+    // First check if user has enabled health sync
+    final syncEnabled = await isHealthSyncEnabled();
+    if (!syncEnabled) {
+      AppLogger.info(
+          'Health sync disabled by user, skipping health operations');
+      return false;
+    }
+
+    // Then check if permissions are granted
+    final hasPerms = await hasPermissions();
+    if (!hasPerms) {
+      AppLogger.info(
+          'Health permissions not granted, skipping health operations');
+      return false;
+    }
+
+    return true;
+  }
+
   /// Test method to verify all critical permissions are working
   static Future<Map<String, bool>> testCriticalPermissions() async {
     if (!_isInitialized) {
@@ -662,6 +699,11 @@ class HealthService {
 
   /// Get steps data for today
   static Future<int> getStepsToday() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return 0;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
@@ -678,23 +720,17 @@ class HealthService {
 
   /// Get active calories burned today
   static Future<double> getActiveCaloriesToday() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return 0.0;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
 
     try {
       AppLogger.info('Starting active calories retrieval...');
-
-      // First check permissions
-      final hasPerms = await hasPermissions();
-      AppLogger.info('Active calories request - Has permissions: $hasPerms');
-
-      if (!hasPerms) {
-        AppLogger.warning(
-          'No health permissions - cannot retrieve active calories data',
-        );
-        return 0.0;
-      }
 
       // Get detailed data for debugging
       final now = DateTime.now();
@@ -740,23 +776,17 @@ class HealthService {
 
   /// Get total calories burned today
   static Future<double> getTotalCaloriesToday() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return 0.0;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
 
     try {
       AppLogger.info('Starting total calories retrieval...');
-
-      // First check permissions
-      final hasPerms = await hasPermissions();
-      AppLogger.info('Total calories request - Has permissions: $hasPerms');
-
-      if (!hasPerms) {
-        AppLogger.warning(
-          'No health permissions - cannot retrieve total calories data',
-        );
-        return 0.0;
-      }
 
       // Get detailed data for debugging
       final now = DateTime.now();
@@ -803,21 +833,17 @@ class HealthService {
 
   /// Get sleep hours for last night
   static Future<double> getSleepHoursLastNight() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return 0.0;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
 
     try {
       AppLogger.info('Attempting to retrieve sleep data for last night...');
-
-      // First check if we have permissions
-      final hasPerms = await hasPermissions();
-      AppLogger.info('Sleep data request - Has permissions: $hasPerms');
-
-      if (!hasPerms) {
-        AppLogger.warning('No health permissions - cannot retrieve sleep data');
-        return 0.0;
-      }
 
       final double sleepHours =
           await MinimalHealthChannel.getSleepHoursLastNight();
@@ -907,6 +933,11 @@ class HealthService {
 
   /// Get water intake for today
   static Future<double> getWaterIntakeToday() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return 0.0;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
@@ -923,6 +954,11 @@ class HealthService {
 
   /// Get mindfulness minutes for today
   static Future<double> getMindfulnessMinutesToday() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return 0.0;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
@@ -942,6 +978,11 @@ class HealthService {
 
   /// Get latest weight
   static Future<double?> getLatestWeight() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return null;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
@@ -964,6 +1005,11 @@ class HealthService {
   /// For now, this returns a default value since medication tracking
   /// is primarily handled through habit completion rather than health data
   static Future<double> getMedicationAdherenceToday() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return 1.0;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
@@ -982,23 +1028,17 @@ class HealthService {
 
   /// Get latest heart rate reading
   static Future<double?> getLatestHeartRate() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return null;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
 
     try {
       AppLogger.info('Attempting to retrieve latest heart rate data...');
-
-      // First check if we have permissions
-      final hasPerms = await hasPermissions();
-      AppLogger.info('Heart rate data request - Has permissions: $hasPerms');
-
-      if (!hasPerms) {
-        AppLogger.warning(
-          'No health permissions - cannot retrieve heart rate data',
-        );
-        return null;
-      }
 
       final double? heartRate = await MinimalHealthChannel.getLatestHeartRate();
       if (heartRate != null) {
@@ -1110,6 +1150,11 @@ class HealthService {
 
   /// Get resting heart rate for today
   static Future<double?> getRestingHeartRateToday() async {
+    // Check if health operations should proceed
+    if (!await shouldPerformHealthOperations()) {
+      return null;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
@@ -1213,6 +1258,25 @@ class HealthService {
         'Fetching comprehensive health summary from Health Connect...',
       );
 
+      // Check if health operations should proceed
+      if (!await shouldPerformHealthOperations()) {
+        AppLogger.info('Health sync disabled, returning empty summary');
+        return {
+          'steps': 0,
+          'activeCalories': 0.0,
+          'totalCalories': 0.0,
+          'sleepHours': 0.0,
+          'waterIntake': 0.0,
+          'mindfulnessMinutes': 0.0,
+          'weight': null,
+          'medicationAdherence': 1.0,
+          'heartRate': null,
+          'restingHeartRate': null,
+          'healthSyncEnabled': false,
+          'timestamp': DateTime.now().toIso8601String(),
+        };
+      }
+
       // First, check if we have any data sources connected
       final dataSources = await _checkHealthDataSources();
       AppLogger.info('Health data sources check: $dataSources');
@@ -1308,6 +1372,7 @@ class HealthService {
         'medicationAdherence': results[7] as double,
         'heartRate': results[8] as double?,
         'restingHeartRate': results[9] as double?,
+        'healthSyncEnabled': true,
         'timestamp': DateTime.now().toIso8601String(),
         'dataSource': 'health_connect',
         'isInitialized': _isInitialized,

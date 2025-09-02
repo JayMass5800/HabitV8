@@ -207,6 +207,13 @@ class HealthHabitIntegrationService {
     try {
       AppLogger.info('Starting comprehensive health-habit sync...');
 
+      // Check if health sync is enabled by user
+      final healthSyncEnabled = await HealthService.isHealthSyncEnabled();
+      if (!healthSyncEnabled && !forceSync) {
+        AppLogger.info('Health sync disabled by user, skipping sync');
+        return result;
+      }
+
       // Check if auto-completion is enabled
       final autoCompletionEnabled = await isAutoCompletionEnabled();
       if (!autoCompletionEnabled && !forceSync) {
@@ -785,6 +792,7 @@ class HealthHabitIntegrationService {
     try {
       final allHabits = await habitService.getActiveHabits();
       final healthPermissions = await HealthService.hasPermissions();
+      final healthSyncEnabled = await HealthService.isHealthSyncEnabled();
       final autoCompletionEnabled = await isAutoCompletionEnabled();
 
       int healthMappedHabits = 0;
@@ -824,6 +832,7 @@ class HealthHabitIntegrationService {
           ? (healthMappedHabits / allHabits.length * 100).round()
           : 0;
       status['healthPermissions'] = healthPermissions;
+      status['healthSyncEnabled'] = healthSyncEnabled;
       status['autoCompletionEnabled'] = autoCompletionEnabled;
       status['habitMappings'] = habitMappings;
 

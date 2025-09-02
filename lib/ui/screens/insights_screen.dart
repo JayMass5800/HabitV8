@@ -1859,7 +1859,57 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final data = <Map<String, dynamic>>[];
 
     try {
-      // Get health data for the past 7 days
+      // Calculate the full week range with timezone buffer
+      final startDate = now.subtract(const Duration(days: 6));
+      final weekStart = DateTime(startDate.year, startDate.month, startDate.day)
+          .subtract(const Duration(hours: 12));
+      final weekEnd = DateTime(now.year, now.month, now.day)
+          .add(const Duration(days: 1, hours: 12));
+
+      AppLogger.info(
+          'Fetching $metricType data for full week: ${weekStart.toIso8601String()} to ${weekEnd.toIso8601String()}');
+
+      // Fetch all data for the week in one API call
+      List<Map<String, dynamic>> weekData = [];
+
+      switch (metricType) {
+        case 'steps':
+          weekData = await HealthService.getHealthDataFromTypes(
+            types: ['STEPS'],
+            startTime: weekStart,
+            endTime: weekEnd,
+          );
+          break;
+        case 'heartRate':
+          weekData = await HealthService.getHealthDataFromTypes(
+            types: ['HEART_RATE'],
+            startTime: weekStart,
+            endTime: weekEnd,
+          );
+          break;
+        case 'water':
+          weekData = await HealthService.getHealthDataFromTypes(
+            types: ['WATER'],
+            startTime: weekStart,
+            endTime: weekEnd,
+          );
+          break;
+        case 'sleep':
+          weekData = await HealthService.getHealthDataFromTypes(
+            types: ['SLEEP_IN_BED'],
+            startTime: weekStart,
+            endTime: weekEnd,
+          );
+          break;
+      }
+
+      AppLogger.info(
+          'Retrieved ${weekData.length} $metricType records for the week');
+      if (weekData.isNotEmpty) {
+        AppLogger.info('Sample $metricType record: ${weekData.first}');
+      }
+
+      // Process data by day
       for (int i = 6; i >= 0; i--) {
         final date = now.subtract(Duration(days: i));
         final startOfDay = DateTime(date.year, date.month, date.day);
@@ -1867,24 +1917,103 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
         double value = 0.0;
 
+        // Filter data for this specific day
+        final dayData = weekData.where((record) {
+          final timestamp = record['timestamp'] != null
+              ? DateTime.fromMillisecondsSinceEpoch(record['timestamp'] as int)
+              : null;
+          return timestamp != null &&
+              timestamp.isAfter(startOfDay) &&
+              timestamp.isBefore(endOfDay);
+        }).toList();
+
         switch (metricType) {
-          case 'sleep':
-            // Get sleep data for this specific day
-            value = await _getSleepHoursForDate(startOfDay, endOfDay);
-            break;
           case 'steps':
-            // Get steps data for this specific day
-            value = (await _getStepsForDate(startOfDay, endOfDay)).toDouble();
+            // Sum all steps for the day
+            for (final record in dayData) {
+              final steps = record['count'] ?? record['value'];
+              if (steps != null) {
+                value += (steps as num).toDouble();
+              }
+            }
             break;
           case 'heartRate':
-            // Get average heart rate for this day
-            value = await _getHeartRateForDate(startOfDay, endOfDay);
+            // Calculate average heart rate for the day
+            if (dayData.isNotEmpty) {
+              double totalBpm = 0.0;
+              int count = 0;
+              for (final record in dayData) {
+                final bpm = record['beatsPerMinute'] ?? record['value'];
+                if (bpm != null) {
+                  totalBpm += (bpm as num).toDouble();
+                  count++;
+                }
+              }
+              value = count > 0 ? totalBpm / count : 0.0;
+            }
             break;
           case 'water':
-            // Get water intake for this day
-            value = await _getWaterIntakeForDate(startOfDay, endOfDay);
+            // Sum all water intake for the day (convert to liters)
+            for (final record in dayData) {
+              final volume = record['volume'] ?? record['value'];
+              if (volume != null) {
+                value +=
+                    (volume as num).toDouble() / 1000.0; // Convert ml to liters
+              }
+            }
+            break;
+          case 'sleep':
+            // Find the longest sleep session for the day
+            double longestSleep = 0.0;
+            for (final record in dayData) {
+              final duration = record['duration'] ?? record['value'];
+              if (duration != null) {
+                final hours = (duration as num).toDouble() /
+                    3600.0; // Convert seconds to hours
+                if (hours > longestSleep && hours <= 12) {
+                  // Reasonable sleep duration
+                  longestSleep = hours;
+                }
+              }
+            }
+            value = longestSleep;
             break;
         }
+
+        // If no data found for today, try HealthService methods as fallback
+        if (value == 0.0 && date.day == now.day) {
+          try {
+            switch (metricType) {
+              case 'steps':
+                final fallbackSteps = await HealthService.getStepsToday();
+                if (fallbackSteps > 0) {
+                  value = fallbackSteps.toDouble();
+                  AppLogger.info('Using fallback steps data: $value');
+                }
+                break;
+              case 'heartRate':
+                final fallbackHR = await HealthService.getLatestHeartRate();
+                if (fallbackHR != null && fallbackHR > 0) {
+                  value = fallbackHR;
+                  AppLogger.info('Using fallback heart rate data: $value');
+                }
+                break;
+              case 'sleep':
+                final fallbackSleep =
+                    await HealthService.getSleepHoursLastNight();
+                if (fallbackSleep > 0) {
+                  value = fallbackSleep;
+                  AppLogger.info('Using fallback sleep data: $value');
+                }
+                break;
+            }
+          } catch (e) {
+            AppLogger.warning('Fallback method failed for $metricType: $e');
+          }
+        }
+
+        AppLogger.info(
+            '$metricType for ${date.toIso8601String().split('T')[0]}: $value (from ${dayData.length} records)');
 
         data.add({
           'date': date,
@@ -1924,117 +2053,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     }
 
     return data;
-  }
-
-  // Helper methods to get health data for specific dates using available HealthService methods
-  Future<double> _getSleepHoursForDate(
-      DateTime startOfDay, DateTime endOfDay) async {
-    try {
-      final data = await HealthService.getHealthDataFromTypes(
-        types: ['SLEEP_IN_BED'],
-        startTime: startOfDay,
-        endTime: endOfDay,
-      );
-
-      if (data.isEmpty) return 0.0;
-
-      // Calculate total sleep hours from sleep sessions
-      double totalHours = 0.0;
-      for (final record in data) {
-        if (record['startTime'] != null && record['endTime'] != null) {
-          final start = DateTime.parse(record['startTime']);
-          final end = DateTime.parse(record['endTime']);
-          final duration = end.difference(start);
-          totalHours += duration.inMinutes / 60.0;
-        }
-      }
-
-      return totalHours;
-    } catch (e) {
-      AppLogger.error('Error getting sleep hours for date', e);
-      return 0.0;
-    }
-  }
-
-  Future<int> _getStepsForDate(DateTime startOfDay, DateTime endOfDay) async {
-    try {
-      final data = await HealthService.getHealthDataFromTypes(
-        types: ['STEPS'],
-        startTime: startOfDay,
-        endTime: endOfDay,
-      );
-
-      if (data.isEmpty) return 0;
-
-      // Sum all step counts for the day
-      int totalSteps = 0;
-      for (final record in data) {
-        if (record['count'] != null) {
-          totalSteps += (record['count'] as num).toInt();
-        }
-      }
-
-      return totalSteps;
-    } catch (e) {
-      AppLogger.error('Error getting steps for date', e);
-      return 0;
-    }
-  }
-
-  Future<double> _getHeartRateForDate(
-      DateTime startOfDay, DateTime endOfDay) async {
-    try {
-      final data = await HealthService.getHealthDataFromTypes(
-        types: ['HEART_RATE'],
-        startTime: startOfDay,
-        endTime: endOfDay,
-      );
-
-      if (data.isEmpty) return 0.0;
-
-      // Calculate average heart rate for the day
-      double totalBpm = 0.0;
-      int count = 0;
-
-      for (final record in data) {
-        if (record['beatsPerMinute'] != null) {
-          totalBpm += (record['beatsPerMinute'] as num).toDouble();
-          count++;
-        }
-      }
-
-      return count > 0 ? totalBpm / count : 0.0;
-    } catch (e) {
-      AppLogger.error('Error getting heart rate for date', e);
-      return 0.0;
-    }
-  }
-
-  Future<double> _getWaterIntakeForDate(
-      DateTime startOfDay, DateTime endOfDay) async {
-    try {
-      final data = await HealthService.getHealthDataFromTypes(
-        types: ['WATER'],
-        startTime: startOfDay,
-        endTime: endOfDay,
-      );
-
-      if (data.isEmpty) return 0.0;
-
-      // Sum all water intake for the day (in liters)
-      double totalLiters = 0.0;
-      for (final record in data) {
-        if (record['volume'] != null) {
-          // Convert from milliliters to liters
-          totalLiters += (record['volume'] as num).toDouble() / 1000.0;
-        }
-      }
-
-      return totalLiters;
-    } catch (e) {
-      AppLogger.error('Error getting water intake for date', e);
-      return 0.0;
-    }
   }
 
   // Helper method to generate sample health data over time (7 days) - DEPRECATED
@@ -2646,12 +2664,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 LineChartBarData(
                   spots: habitData.asMap().entries.map((entry) {
                     final percentage = entry.value['percentage'] as double;
+                    final minY = _calculateMinHeartRate(heartRateData);
+                    final maxY = _calculateMaxHeartRate(heartRateData);
+                    final range = maxY - minY;
                     return FlSpot(
                         entry.key.toDouble(),
-                        60 +
+                        minY +
                             (percentage /
                                 100 *
-                                40)); // Scale to 60-100 BPM range
+                                range)); // Scale to dynamic range
                   }).toList(),
                   isCurved: true,
                   color: Colors.green,
@@ -2660,8 +2681,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   dashArray: [5, 5],
                 ),
               ],
-              minY: 50,
-              maxY: 100,
+              minY: _calculateMinHeartRate(heartRateData),
+              maxY: _calculateMaxHeartRate(heartRateData),
             ),
           ),
         ),
@@ -2918,5 +2939,35 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         ),
       ],
     );
+  }
+
+  /// Calculate minimum Y value for heart rate chart with proper padding
+  double _calculateMinHeartRate(List<Map<String, dynamic>> heartRateData) {
+    if (heartRateData.isEmpty) return 40.0;
+
+    final values = heartRateData
+        .map((data) => data['value'] as double)
+        .where((value) => value > 0);
+    if (values.isEmpty) return 40.0;
+
+    final minValue = values.reduce((a, b) => a < b ? a : b);
+    // Add 20% padding below the minimum value, but never go below 40 BPM
+    final paddedMin = minValue - (minValue * 0.2);
+    return paddedMin < 40 ? 40.0 : paddedMin;
+  }
+
+  /// Calculate maximum Y value for heart rate chart with proper padding
+  double _calculateMaxHeartRate(List<Map<String, dynamic>> heartRateData) {
+    if (heartRateData.isEmpty) return 120.0;
+
+    final values = heartRateData
+        .map((data) => data['value'] as double)
+        .where((value) => value > 0);
+    if (values.isEmpty) return 120.0;
+
+    final maxValue = values.reduce((a, b) => a > b ? a : b);
+    // Add 20% padding above the maximum value, but never go below 100 BPM for the max
+    final paddedMax = maxValue + (maxValue * 0.2);
+    return paddedMax < 100 ? 100.0 : paddedMax;
   }
 }

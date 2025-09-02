@@ -750,6 +750,14 @@ class MinimalHealthChannel {
   /// Get mindfulness minutes for today
   static Future<double> getMindfulnessMinutesToday() async {
     try {
+      // First check if MINDFULNESS data type is supported
+      final isSupported = await isDataTypeSupported('MINDFULNESS');
+      if (!isSupported) {
+        AppLogger.warning(
+            'MINDFULNESS data type is not supported on this device');
+        return 0.0;
+      }
+
       final now = DateTime.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
@@ -767,6 +775,17 @@ class MinimalHealthChannel {
 
       AppLogger.info('Mindfulness minutes today: ${totalMinutes.round()}');
       return totalMinutes;
+    } on PlatformException catch (e) {
+      if (e.code == 'DATA_ERROR' &&
+          e.message?.contains('MindfulnessSessionRecord') == true) {
+        AppLogger.warning(
+            'MindfulnessSessionRecord not supported on this device - Kotlin reflection issue');
+        return 0.0;
+      }
+      AppLogger.error(
+          'Platform error getting mindfulness minutes today: ${e.code} - ${e.message}',
+          e);
+      return 0.0;
     } catch (e) {
       AppLogger.error('Error getting mindfulness minutes today', e);
       return 0.0;
@@ -1000,25 +1019,29 @@ class MinimalHealthChannel {
     return List.from(_supportedDataTypes);
   }
 
-
   /// Check if background health permissions are granted
   static Future<bool> hasBackgroundPermissions() async {
     try {
       if (!Platform.isAndroid) {
-        AppLogger.warning("Background health permissions only available on Android");
+        AppLogger.warning(
+            "Background health permissions only available on Android");
         return false;
       }
 
       final status = await getHealthConnectStatus();
-      final bool hasBackgroundPermission = status["hasBackgroundPermission"] ?? false;
-      
-      AppLogger.info("Background health permission status: $hasBackgroundPermission");
+      final bool hasBackgroundPermission =
+          status["hasBackgroundPermission"] ?? false;
+
+      AppLogger.info(
+          "Background health permission status: $hasBackgroundPermission");
       return hasBackgroundPermission;
     } catch (e) {
       AppLogger.error("Error checking background health permissions", e);
       return false;
     }
-  }  /// Start background health monitoring service
+  }
+
+  /// Start background health monitoring service
   static Future<bool> startBackgroundMonitoring() async {
     if (!_isInitialized) {
       await initialize();
@@ -1131,4 +1154,3 @@ class MinimalHealthChannel {
     }
   }
 }
-

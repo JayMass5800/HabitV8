@@ -107,21 +107,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       final autoCompletionEnabled =
           await AutomaticHabitCompletionService.isServiceEnabled();
 
-      // Always check actual health permissions first, regardless of saved preference
-      bool healthStatus = await permissionService.isHealthPermissionGranted();
+      // Check actual health permissions and user preference
+      bool hasHealthPermissions =
+          await permissionService.isHealthPermissionGranted();
       final healthSyncPreference = await _loadHealthSyncPreference();
 
-      // If permissions are granted but preference is false, update the preference
-      if (healthStatus && !healthSyncPreference) {
-        await _saveHealthSyncPreference(true);
-        AppLogger.info(
-            'Health permissions detected, updating preference to enabled');
-      }
-      // If permissions are not granted but preference is true, update the preference
-      else if (!healthStatus && healthSyncPreference) {
+      // Health sync is enabled only if both permissions are granted AND user has enabled it
+      bool healthStatus = hasHealthPermissions && healthSyncPreference;
+
+      // If permissions are revoked, automatically disable the preference
+      if (!hasHealthPermissions && healthSyncPreference) {
         await _saveHealthSyncPreference(false);
         AppLogger.info(
             'Health permissions revoked, updating preference to disabled');
+        healthStatus = false;
       }
 
       setState(() {
@@ -870,6 +869,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Future<void> _toggleHealthDataSync(bool value) async {
     if (value) {
       try {
+        // First check if permissions are already granted
+        final permissionService = PermissionService();
+        bool hasPermissions =
+            await permissionService.isHealthPermissionGranted();
+
+        if (hasPermissions) {
+          // Permissions already granted, just enable the preference
+          await _saveHealthSyncPreference(true);
+          setState(() {
+            _healthDataSync = true;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Health data sync enabled! 🎉'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+          return;
+        }
+
         // Show health education dialog first
         final bool? userConsent = await HealthEducationDialog.show(context);
         if (userConsent != true) {
@@ -913,23 +934,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           return;
         }
 
-        // First check if permissions are already granted (in case they were granted externally)
-        var permissionResult = await HealthService.refreshPermissions();
-        bool hasPermissions = permissionResult.granted;
+        // Request health permissions
+        var permissionResult = await HealthService.requestPermissions();
+        hasPermissions = permissionResult.granted;
 
+        // If permissions were requested but not immediately granted,
+        // they might have been granted in Health Connect but need time to sync
         if (!hasPermissions) {
-          // Request health permissions if not already granted
-          permissionResult = await HealthService.requestPermissions();
+          // Wait a bit longer and check again
+          await Future.delayed(const Duration(seconds: 1));
+          permissionResult = await HealthService.refreshPermissions();
           hasPermissions = permissionResult.granted;
-
-          // If permissions were requested but not immediately granted,
-          // they might have been granted in Health Connect but need time to sync
-          if (!hasPermissions) {
-            // Wait a bit longer and check again
-            await Future.delayed(const Duration(seconds: 1));
-            permissionResult = await HealthService.refreshPermissions();
-            hasPermissions = permissionResult.granted;
-          }
         }
 
         // Update UI state immediately
