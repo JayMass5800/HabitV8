@@ -14,6 +14,7 @@ import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.*
 import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -930,115 +931,61 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             coroutineScope.launch {
                 try {
                     val recordClass = ALLOWED_DATA_TYPES[dataType]!!
-                    val timeRangeFilter = TimeRangeFilter.between(
-                        Instant.ofEpochMilli(startDate),
-                        Instant.ofEpochMilli(endDate)
-                    )
                     
-                    // Create the request with proper type casting to handle generics
-                    @Suppress("UNCHECKED_CAST")
-                    val request = ReadRecordsRequest(
-                        recordType = recordClass as KClass<Record>,
-                        timeRangeFilter = timeRangeFilter
-                    )
+                    // CRITICAL FIX: Validate date range before making the request
+                    val currentTime = System.currentTimeMillis()
+                    if (startDate > currentTime) {
+                        Log.e("MinimalHealthPlugin", "❌ CRITICAL ERROR: Start date is in the FUTURE!")
+                        Log.e("MinimalHealthPlugin", "  Start date: $startDate (${Instant.ofEpochMilli(startDate)})")
+                        Log.e("MinimalHealthPlugin", "  Current time: $currentTime (${Instant.ofEpochMilli(currentTime)})")
+                        Log.e("MinimalHealthPlugin", "  This indicates a timezone conversion bug in the calling code!")
+                        result.error("INVALID_DATE_RANGE", "Start date is in the future - check timezone conversion", null)
+                        return@launch
+                    }
                     
-                    try {
-                        // CRITICAL FIX: Validate date range before making the request
-                        val currentTime = System.currentTimeMillis()
-                        if (startDate > currentTime) {
-                            Log.e("MinimalHealthPlugin", "❌ CRITICAL ERROR: Start date is in the FUTURE!")
-                            Log.e("MinimalHealthPlugin", "  Start date: $startDate (${Instant.ofEpochMilli(startDate)})")
-                            Log.e("MinimalHealthPlugin", "  Current time: $currentTime (${Instant.ofEpochMilli(currentTime)})")
-                            Log.e("MinimalHealthPlugin", "  This indicates a timezone conversion bug in the calling code!")
-                            result.error("INVALID_DATE_RANGE", "Start date is in the future - check timezone conversion", null)
-                            return@launch
-                        }
-                        
-                        if (endDate > currentTime) {
-                            Log.w("MinimalHealthPlugin", "⚠️  End date is in the future, this may indicate a timezone issue")
-                            Log.w("MinimalHealthPlugin", "  End date: $endDate (${Instant.ofEpochMilli(endDate)})")
-                            Log.w("MinimalHealthPlugin", "  Current time: $currentTime (${Instant.ofEpochMilli(currentTime)})")
-                        }
-                        
-                        // Special compatibility check for problematic data types
-                        val isCompatible = checkDataTypeCompatibility(dataType, recordClass)
-                        if (!isCompatible) {
-                            Log.w("MinimalHealthPlugin", "⚠️  $dataType compatibility issue detected - returning empty data")
-                            result.success(emptyList<Map<String, Any>>())
-                            return@launch
-                        }
-                        
-                        Log.i("MinimalHealthPlugin", "Executing Health Connect readRecords request for $dataType...")
-                        Log.i("MinimalHealthPlugin", "  Time range: ${Instant.ofEpochMilli(startDate)} to ${Instant.ofEpochMilli(endDate)}")
-                        Log.i("MinimalHealthPlugin", "  Duration: ${(endDate - startDate) / (1000 * 60 * 60)} hours")
-                        Log.i("MinimalHealthPlugin", "  Record type: ${recordClass.simpleName}")
-                        
-                        // Add timeout handling for Health Connect API calls
-                        val startTime = System.currentTimeMillis()
-                        Log.i("MinimalHealthPlugin", "⏱️  Starting Health Connect API call at ${Instant.ofEpochMilli(startTime)}")
-                        
-                        val response = try {
-                            // Add timeout to prevent hanging API calls
-                            withTimeout(15000) { // 15 second timeout
-                                healthConnectClient!!.readRecords(request)
-                            }
-                        } catch (timeoutException: kotlinx.coroutines.TimeoutCancellationException) {
-                            val endTime = System.currentTimeMillis()
-                            val duration = endTime - startTime
-                            
-                            Log.e("MinimalHealthPlugin", "⏰ Health Connect API call TIMED OUT after ${duration}ms")
-                            Log.e("MinimalHealthPlugin", "  This indicates Health Connect is unresponsive")
-                            Log.e("MinimalHealthPlugin", "  Possible causes:")
-                            Log.e("MinimalHealthPlugin", "  1. Health Connect service is overloaded or crashed")
-                            Log.e("MinimalHealthPlugin", "  2. Device storage is full")
-                            Log.e("MinimalHealthPlugin", "  3. Health Connect database is corrupted")
-                            Log.e("MinimalHealthPlugin", "  4. Too many concurrent health data requests")
-                            
-                            // Return empty response instead of crashing
-                            throw Exception("Health Connect API timeout after ${duration}ms - service may be unresponsive")
-                        } catch (apiException: NoSuchMethodError) {
-                            val endTime = System.currentTimeMillis()
-                            val duration = endTime - startTime
-                            
-                            Log.e("MinimalHealthPlugin", "❌ Health Connect version compatibility issue for $dataType after ${duration}ms")
-                            Log.e("MinimalHealthPlugin", "  NoSuchMethodError: ${apiException.message}")
-                            Log.e("MinimalHealthPlugin", "  This indicates a Health Connect client library version mismatch")
-                            Log.e("MinimalHealthPlugin", "  The device's Health Connect version doesn't support methods expected by the client library")
-                            Log.w("MinimalHealthPlugin", "  Returning empty data to prevent app crash")
-                            
-                            // Return empty response for compatibility issues
-                            return@launch result.success(emptyList<Map<String, Any>>())
-                        } catch (apiException: Exception) {
-                            val endTime = System.currentTimeMillis()
-                            val duration = endTime - startTime
-                            
-                            // Check for specific Health Connect compatibility errors
-                            val errorMessage = apiException.message ?: ""
-                            val isCompatibilityError = errorMessage.contains("getStartZoneOffset") ||
-                                                     errorMessage.contains("ZoneOffset") ||
-                                                     errorMessage.contains("HeartRateRecord") ||
-                                                     errorMessage.contains("SleepSessionRecord") ||
-                                                     errorMessage.contains("RecordConverters") ||
-                                                     apiException is NoSuchMethodError
-                            
-                            if (isCompatibilityError) {
-                                Log.e("MinimalHealthPlugin", "❌ Health Connect compatibility issue detected for $dataType after ${duration}ms")
-                                Log.e("MinimalHealthPlugin", "  Error: $errorMessage")
-                                Log.e("MinimalHealthPlugin", "  This is likely due to Health Connect version mismatch")
-                                Log.w("MinimalHealthPlugin", "  Returning empty data to prevent app crash")
-                                
-                                // Return empty response for compatibility issues
-                                return@launch result.success(emptyList<Map<String, Any>>())
-                            } else {
-                                Log.e("MinimalHealthPlugin", "❌ Health Connect API call FAILED after ${duration}ms")
-                                Log.e("MinimalHealthPlugin", "  Exception type: ${apiException.javaClass.simpleName}")
-                                Log.e("MinimalHealthPlugin", "  Exception message: ${apiException.message}")
-                                Log.e("MinimalHealthPlugin", "  This suggests a Health Connect API issue or permission problem")
-                                
-                                // Re-throw other exceptions to be handled by outer try-catch
-                                throw apiException
-                            }
-                        }
+                    if (endDate > currentTime) {
+                        Log.w("MinimalHealthPlugin", "⚠️  End date is in the future, this may indicate a timezone issue")
+                        Log.w("MinimalHealthPlugin", "  End date: $endDate (${Instant.ofEpochMilli(endDate)})")
+                        Log.w("MinimalHealthPlugin", "  Current time: $currentTime (${Instant.ofEpochMilli(currentTime)})")
+                    }
+                    
+                    // Special compatibility check for problematic data types
+                    val isCompatible = checkDataTypeCompatibility(dataType, recordClass)
+                    if (!isCompatible) {
+                        Log.w("MinimalHealthPlugin", "⚠️  $dataType compatibility issue detected - returning empty data")
+                        result.success(emptyList<Map<String, Any>>())
+                        return@launch
+                    }
+                    
+                    Log.i("MinimalHealthPlugin", "Executing Health Connect readRecords request for $dataType...")
+                    Log.i("MinimalHealthPlugin", "  Time range: ${Instant.ofEpochMilli(startDate)} to ${Instant.ofEpochMilli(endDate)}")
+                    Log.i("MinimalHealthPlugin", "  Duration: ${(endDate - startDate) / (1000 * 60 * 60)} hours")
+                    Log.i("MinimalHealthPlugin", "  Record type: ${recordClass.simpleName}")
+                    
+                    // Add timeout handling for Health Connect API calls
+                    val startTime = System.currentTimeMillis()
+                    Log.i("MinimalHealthPlugin", "⏱️  Starting Health Connect API call at ${Instant.ofEpochMilli(startTime)}")
+                    
+                    // Use the new compatibility-safe method to read records
+                    val healthData = readHealthRecordsCompatible(dataType, recordClass, startDate, endDate)
+                    
+                    val endTime = System.currentTimeMillis()
+                    val duration = endTime - startTime
+                    
+                    Log.i("MinimalHealthPlugin", "✅ Health Connect readRecords completed successfully!")
+                    Log.i("MinimalHealthPlugin", "  API call duration: ${duration}ms")
+                    Log.i("MinimalHealthPlugin", "  Processed records count: ${healthData.size}")
+                    
+                    if (duration > 5000) {
+                        Log.w("MinimalHealthPlugin", "⚠️  API call took ${duration}ms - this is unusually slow")
+                        Log.w("MinimalHealthPlugin", "  This may indicate Health Connect performance issues")
+                    }
+                    
+                    if (healthData.isEmpty()) {
+                        Log.w("MinimalHealthPlugin", "⚠️  NO RECORDS returned from Health Connect for $dataType")
+                        Log.w("MinimalHealthPlugin", "  This could indicate:")
+                        Log.w("MinimalHealthPlugin", "  1. No data exists in the specified time range")
+                        Log.w("MinimalHealthPlugin", "  2. Data source app is not syncing to Health Connect")
                         
                         val endTime = System.currentTimeMillis()
                         val duration = endTime - startTime
@@ -1194,6 +1141,250 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         } catch (e: Exception) {
             Log.e("MinimalHealthPlugin", "Error getting health data", e)
             result.error("DATA_ERROR", e.message, null)
+        }
+    }
+
+    private suspend fun readHealthRecordsCompatible(
+        dataType: String, 
+        recordClass: KClass<*>, 
+        startDate: Long, 
+        endDate: Long
+    ): List<Map<String, Any>> {
+        return try {
+            val timeRangeFilter = TimeRangeFilter.between(
+                Instant.ofEpochMilli(startDate),
+                Instant.ofEpochMilli(endDate)
+            )
+            
+            // Create the request with proper type casting to handle generics
+            @Suppress("UNCHECKED_CAST")
+            val request = ReadRecordsRequest(
+                recordType = recordClass as KClass<Record>,
+                timeRangeFilter = timeRangeFilter
+            )
+            
+            val response = try {
+                // Add timeout to prevent hanging API calls
+                withTimeout(15000) { // 15 second timeout
+                    healthConnectClient!!.readRecords(request)
+                }
+            } catch (timeoutException: kotlinx.coroutines.TimeoutCancellationException) {
+                Log.e("MinimalHealthPlugin", "⏰ Health Connect API call TIMED OUT for $dataType")
+                Log.e("MinimalHealthPlugin", "  This indicates Health Connect is unresponsive")
+                throw Exception("Health Connect API timeout - service may be unresponsive")
+            } catch (apiException: NoSuchMethodError) {
+                Log.e("MinimalHealthPlugin", "❌ Health Connect version compatibility issue for $dataType")
+                Log.e("MinimalHealthPlugin", "  NoSuchMethodError: ${apiException.message}")
+                Log.e("MinimalHealthPlugin", "  This indicates a Health Connect client library version mismatch")
+                Log.w("MinimalHealthPlugin", "  Returning empty data to prevent app crash")
+                
+                // Return empty response for compatibility issues
+                return emptyList()
+            } catch (apiException: Exception) {
+                // Check for specific Health Connect compatibility errors
+                val errorMessage = apiException.message ?: ""
+                val isCompatibilityError = errorMessage.contains("getStartZoneOffset") ||
+                                         errorMessage.contains("ZoneOffset") ||
+                                         errorMessage.contains("HeartRateRecord") ||
+                                         errorMessage.contains("SleepSessionRecord") ||
+                                         errorMessage.contains("RecordConverters") ||
+                                         apiException is NoSuchMethodError
+                
+                if (isCompatibilityError) {
+                    Log.e("MinimalHealthPlugin", "❌ Health Connect compatibility issue detected for $dataType")
+                    Log.e("MinimalHealthPlugin", "  Error: $errorMessage")
+                    Log.e("MinimalHealthPlugin", "  This is likely due to Health Connect version mismatch")
+                    Log.w("MinimalHealthPlugin", "  Returning empty data to prevent app crash")
+                    
+                    // Return empty response for compatibility issues
+                    return emptyList()
+                } else {
+                    Log.e("MinimalHealthPlugin", "❌ Health Connect API call FAILED for $dataType")
+                    Log.e("MinimalHealthPlugin", "  Exception type: ${apiException.javaClass.simpleName}")
+                    Log.e("MinimalHealthPlugin", "  Exception message: ${apiException.message}")
+                    
+                    // Re-throw other exceptions
+                    throw apiException
+                }
+            }
+            
+            Log.i("MinimalHealthPlugin", "✅ Health Connect API returned ${response.records.size} raw records for $dataType")
+            
+            // Convert records to maps with robust error handling
+            val healthData = response.records.mapIndexedNotNull { index, record ->
+                try {
+                    val convertedRecord = convertRecordToMapSafe(record, dataType)
+                    Log.d("MinimalHealthPlugin", "Record $index: ${convertedRecord["value"]} ${convertedRecord["unit"]} at ${Instant.ofEpochMilli(convertedRecord["timestamp"] as Long)}")
+                    convertedRecord
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "❌ Error converting record $index to map for $dataType", e)
+                    Log.e("MinimalHealthPlugin", "  Record type: ${record.javaClass.simpleName}")
+                    Log.e("MinimalHealthPlugin", "  Error details: ${e.message}")
+                    // Skip this record instead of returning error data
+                    null
+                }
+            }
+            
+            Log.i("MinimalHealthPlugin", "✅ Successfully processed ${healthData.size} valid records for $dataType")
+            healthData
+            
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "❌ Failed to read health records for $dataType", e)
+            emptyList()
+        }
+    }
+
+    private fun convertRecordToMapSafe(record: Record, dataType: String): Map<String, Any> {
+        val map = mutableMapOf<String, Any>()
+        map["type"] = dataType
+        
+        try {
+            when (record) {
+                is StepsRecord -> {
+                    val startTime = getRecordStartTimeSafe(record)
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.count.toDouble()
+                    map["unit"] = "steps"
+                }
+                is TotalCaloriesBurnedRecord -> {
+                    val startTime = getRecordStartTimeSafe(record)
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.energy.inCalories
+                    map["unit"] = "calories"
+                }
+                is ActiveCaloriesBurnedRecord -> {
+                    val startTime = getRecordStartTimeSafe(record)
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.energy.inCalories
+                    map["unit"] = "calories"
+                }
+                is HeartRateRecord -> {
+                    val startTime = getRecordStartTimeSafe(record)
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.samples.firstOrNull()?.beatsPerMinute?.toDouble() ?: 0.0
+                    map["unit"] = "bpm"
+                }
+                is WeightRecord -> {
+                    val startTime = getRecordStartTimeSafe(record)
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.weight.inKilograms
+                    map["unit"] = "kg"
+                }
+                is HydrationRecord -> {
+                    val startTime = getRecordStartTimeSafe(record)
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = record.volume.inLiters
+                    map["unit"] = "L"
+                }
+                is SleepSessionRecord -> {
+                    val startTime = getRecordStartTimeSafe(record)
+                    val endTime = getRecordEndTimeSafe(record)
+                    map["timestamp"] = startTime.toEpochMilli()
+                    val durationHours = (endTime.toEpochMilli() - startTime.toEpochMilli()) / (1000.0 * 60.0 * 60.0)
+                    map["value"] = durationHours
+                    map["unit"] = "hours"
+                }
+                else -> {
+                    // Generic handling for unknown record types
+                    val startTime = getRecordStartTimeSafe(record)
+                    map["timestamp"] = startTime.toEpochMilli()
+                    map["value"] = 0.0
+                    map["unit"] = "unknown"
+                    Log.w("MinimalHealthPlugin", "Unknown record type: ${record.javaClass.simpleName}")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("MinimalHealthPlugin", "Error processing record of type ${record.javaClass.simpleName}", e)
+            // Return a basic map with current timestamp to avoid complete failure
+            map["timestamp"] = System.currentTimeMillis()
+            map["value"] = 0.0
+            map["unit"] = "error"
+        }
+        
+        return map
+    }
+
+    private fun getRecordStartTimeSafe(record: Record): Instant {
+        return try {
+            // Try the standard method first
+            when (record) {
+                is StepsRecord -> record.startTime
+                is TotalCaloriesBurnedRecord -> record.startTime
+                is ActiveCaloriesBurnedRecord -> record.startTime
+                is HeartRateRecord -> record.startTime
+                is WeightRecord -> record.time
+                is HydrationRecord -> record.startTime
+                is SleepSessionRecord -> record.startTime
+                else -> {
+                    // Generic reflection-based approach for unknown types
+                    try {
+                        val startTimeMethod = record.javaClass.getMethod("getStartTime")
+                        startTimeMethod.invoke(record) as Instant
+                    } catch (e: Exception) {
+                        try {
+                            val timeMethod = record.javaClass.getMethod("getTime")
+                            timeMethod.invoke(record) as Instant
+                        } catch (e2: Exception) {
+                            Log.w("MinimalHealthPlugin", "Could not get start time from record, using current time", e2)
+                            Instant.now()
+                        }
+                    }
+                }
+            }
+        } catch (e: NoSuchMethodError) {
+            // Fallback using reflection if direct method access fails
+            try {
+                val startTimeField = record.javaClass.getDeclaredField("startTime")
+                startTimeField.isAccessible = true
+                startTimeField.get(record) as Instant
+            } catch (e2: Exception) {
+                try {
+                    val timeField = record.javaClass.getDeclaredField("time")
+                    timeField.isAccessible = true
+                    timeField.get(record) as Instant
+                } catch (e3: Exception) {
+                    Log.w("MinimalHealthPlugin", "Error getting startTime from record, using current time", e3)
+                    Instant.now()
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("MinimalHealthPlugin", "Error getting startTime from record, using current time", e)
+            Instant.now()
+        }
+    }
+
+    private fun getRecordEndTimeSafe(record: Record): Instant {
+        return try {
+            // Try the standard method first
+            when (record) {
+                is SleepSessionRecord -> record.endTime
+                is TotalCaloriesBurnedRecord -> record.endTime
+                is ActiveCaloriesBurnedRecord -> record.endTime
+                is HydrationRecord -> record.endTime
+                else -> {
+                    // Generic reflection-based approach for unknown types
+                    try {
+                        val endTimeMethod = record.javaClass.getMethod("getEndTime")
+                        endTimeMethod.invoke(record) as Instant
+                    } catch (e: Exception) {
+                        // If no end time, use start time
+                        getRecordStartTimeSafe(record)
+                    }
+                }
+            }
+        } catch (e: NoSuchMethodError) {
+            // Fallback using reflection if direct method access fails
+            try {
+                val endTimeField = record.javaClass.getDeclaredField("endTime")
+                endTimeField.isAccessible = true
+                endTimeField.get(record) as Instant
+            } catch (e2: Exception) {
+                Log.w("MinimalHealthPlugin", "Error getting endTime from record, using startTime", e2)
+                getRecordStartTimeSafe(record)
+            }
+        } catch (e: Exception) {
+            Log.w("MinimalHealthPlugin", "Error getting endTime from record, using startTime", e)
+            getRecordStartTimeSafe(record)
         }
     }
 
@@ -2191,6 +2382,33 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
         getHealthDataInRange(dataType, weekAgo, now, result)
     }
     
+    /**
+     * Check if a specific data type is compatible with the current Health Connect version
+     */
+    private fun isDataTypeCompatible(dataType: String): Boolean {
+        return try {
+            val recordClass = ALLOWED_DATA_TYPES[dataType] ?: return false
+            
+            // Try to create a simple request to test compatibility
+            when (dataType) {
+                "TOTAL_CALORIES_BURNED" -> {
+                    // This is the problematic one - test if we can access the class methods
+                    try {
+                        TotalCaloriesBurnedRecord::class.java.getDeclaredMethod("getStartZoneOffset")
+                        true
+                    } catch (e: NoSuchMethodException) {
+                        Log.w("MinimalHealthPlugin", "TotalCaloriesBurnedRecord methods not available in this Health Connect version")
+                        false
+                    }
+                }
+                else -> true // Other types seem to work fine
+            }
+        } catch (e: Exception) {
+            Log.w("MinimalHealthPlugin", "Compatibility check failed for $dataType: ${e.message}")
+            false
+        }
+    }
+
     private fun getHealthDataInRange(dataType: String, startDate: Long, endDate: Long, result: Result) {
         if (healthConnectClient == null) {
             result.error("HEALTH_CONNECT_UNAVAILABLE", "Health Connect is not available", null)
@@ -2202,6 +2420,13 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 val recordClass = ALLOWED_DATA_TYPES[dataType]
                 if (recordClass == null) {
                     result.success(0.0) // Return 0 for unsupported data types
+                    return@launch
+                }
+                
+                // Check compatibility before making API calls
+                if (!isDataTypeCompatible(dataType)) {
+                    Log.w("MinimalHealthPlugin", "Data type $dataType is not compatible with current Health Connect version")
+                    result.success(0.0)
                     return@launch
                 }
                 
@@ -2218,116 +2443,178 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                 
                 val response = try {
                     healthConnectClient!!.readRecords(request)
-                } catch (e: NoSuchMethodError) {
-                    Log.e("MinimalHealthPlugin", "Health Connect version compatibility issue for $dataType: ${e.message}", e)
-                    Log.w("MinimalHealthPlugin", "Returning 0.0 due to compatibility issue")
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "❌ Health Connect error for $dataType: ${e.message}", e)
                     result.success(0.0)
                     return@launch
-                } catch (e: Exception) {
-                    // Check for specific Health Connect compatibility errors
-                    val errorMessage = e.message ?: ""
-                    val isCompatibilityError = errorMessage.contains("ZoneOffset") ||
-                                             errorMessage.contains("getStartZoneOffset") ||
-                                             errorMessage.contains("HeartRateRecord") ||
-                                             errorMessage.contains("SleepSessionRecord") ||
-                                             errorMessage.contains("RecordConverters") ||
-                                             errorMessage.contains("toSdkHeartRateRecord") ||
-                                             errorMessage.contains("toSdkSleepSessionRecord") ||
-                                             errorMessage.contains("toSdkRecord") ||
-                                             errorMessage.contains("HealthConnectClientUpsideDownImpl") ||
-                                             e is NoSuchMethodError
-                    
-                    if (isCompatibilityError) {
-                        Log.w("MinimalHealthPlugin", "Health Connect compatibility issue detected for $dataType: $errorMessage")
-                        Log.w("MinimalHealthPlugin", "Returning 0.0 due to compatibility issue")
-                        result.success(0.0)
-                        return@launch
-                    } else {
-                        throw e // Re-throw other exceptions
-                    }
                 }
                 
-                // Calculate total/latest value based on data type
-                val value = when (dataType) {
-                    "STEPS" -> response.records.sumOf { (it as StepsRecord).count.toDouble() }
-                    "TOTAL_CALORIES_BURNED", "ACTIVE_ENERGY_BURNED" -> {
-                        response.records.sumOf { 
-                            when (it) {
-                                is TotalCaloriesBurnedRecord -> it.energy.inCalories
-                                is ActiveCaloriesBurnedRecord -> it.energy.inCalories
-                                else -> 0.0
-                            }
-                        }
-                    }
-                    "WATER" -> response.records.sumOf { (it as HydrationRecord).volume.inLiters }
-                    "SLEEP_IN_BED" -> {
-                        try {
-                            response.records.sumOf { record ->
-                                try {
-                                    val sleepRecord = record as SleepSessionRecord
-                                    (sleepRecord.endTime.toEpochMilli() - sleepRecord.startTime.toEpochMilli()) / (1000.0 * 60.0 * 60.0) // hours
-                                } catch (e: NoSuchMethodError) {
-                                    Log.w("MinimalHealthPlugin", "SleepSessionRecord compatibility issue (ZoneOffset method missing), using fallback")
-                                    // Fallback: try to get duration using reflection
-                                    try {
-                                        val startTimeField = record.javaClass.getDeclaredField("startTime")
-                                        val endTimeField = record.javaClass.getDeclaredField("endTime")
-                                        startTimeField.isAccessible = true
-                                        endTimeField.isAccessible = true
-                                        val startTime = (startTimeField.get(record) as Instant).toEpochMilli()
-                                        val endTime = (endTimeField.get(record) as Instant).toEpochMilli()
-                                        (endTime - startTime) / (1000.0 * 60.0 * 60.0) // hours
-                                    } catch (e2: Exception) {
-                                        Log.w("MinimalHealthPlugin", "Sleep record fallback failed, returning 0", e2)
-                                        0.0
+                // Process the response based on data type with version compatibility
+                val totalValue = try {
+                    when (dataType) {
+                        "STEPS" -> {
+                            // For steps, prefer aggregation to avoid double counting
+                            try {
+                                val aggregateRequest = AggregateRequest(
+                                    metrics = setOf(StepsRecord.COUNT_TOTAL),
+                                    timeRangeFilter = timeRangeFilter
+                                )
+                                val aggregateResponse = healthConnectClient!!.aggregate(aggregateRequest)
+                                aggregateResponse[StepsRecord.COUNT_TOTAL]?.toDouble() ?: 0.0
+                            } catch (e: Exception) {
+                                Log.w("MinimalHealthPlugin", "Aggregation failed for steps, using raw records: ${e.message}")
+                                response.records.sumOf { record ->
+                                    when (record) {
+                                        is StepsRecord -> record.count.toDouble()
+                                        else -> 0.0
                                     }
-                                } catch (e: Exception) {
-                                    Log.w("MinimalHealthPlugin", "Error processing sleep record, skipping", e)
-                                    0.0
                                 }
                             }
-                        } catch (e: Exception) {
-                            Log.w("MinimalHealthPlugin", "Error processing sleep records, returning 0", e)
-                            0.0
                         }
-                    }
-                    "WEIGHT" -> {
-                        response.records.lastOrNull()?.let { (it as WeightRecord).weight.inKilograms } ?: 0.0
-                    }
-                    "HEART_RATE" -> {
-                        response.records.lastOrNull()?.let { record ->
-                            val heartRateRecord = record as HeartRateRecord
-                            heartRateRecord.samples.firstOrNull()?.beatsPerMinute?.toDouble() ?: 0.0
-                        } ?: 0.0
-                    }
-                    "MINDFULNESS" -> {
-                        response.records.sumOf { record ->
+                        "ACTIVE_ENERGY_BURNED" -> {
+                            // For active calories, try aggregation first, then fallback to raw records
                             try {
-                                val startTimeMethod = record.javaClass.getMethod("getStartTime")
-                                val endTimeMethod = record.javaClass.getMethod("getEndTime")
-                                val startTime = startTimeMethod.invoke(record) as Instant
-                                val endTime = endTimeMethod.invoke(record) as Instant
-                                (endTime.toEpochMilli() - startTime.toEpochMilli()) / (1000.0 * 60.0) // minutes
+                                val aggregateRequest = AggregateRequest(
+                                    metrics = setOf(ActiveCaloriesBurnedRecord.ENERGY_TOTAL),
+                                    timeRangeFilter = timeRangeFilter
+                                )
+                                val aggregateResponse = healthConnectClient!!.aggregate(aggregateRequest)
+                                aggregateResponse[ActiveCaloriesBurnedRecord.ENERGY_TOTAL]?.inCalories ?: 0.0
                             } catch (e: Exception) {
+                                Log.w("MinimalHealthPlugin", "Aggregation failed for active calories, using raw records: ${e.message}")
+                                response.records.sumOf { record ->
+                                    when (record) {
+                                        is ActiveCaloriesBurnedRecord -> record.energy.inCalories
+                                        else -> 0.0
+                                    }
+                                }
+                            }
+                        }
+                        "TOTAL_CALORIES_BURNED" -> {
+                            // For total calories, be extra careful with version compatibility
+                            try {
+                                val aggregateRequest = AggregateRequest(
+                                    metrics = setOf(TotalCaloriesBurnedRecord.ENERGY_TOTAL),
+                                    timeRangeFilter = timeRangeFilter
+                                )
+                                val aggregateResponse = healthConnectClient!!.aggregate(aggregateRequest)
+                                aggregateResponse[TotalCaloriesBurnedRecord.ENERGY_TOTAL]?.inCalories ?: 0.0
+                            } catch (e: NoSuchMethodError) {
+                                Log.w("MinimalHealthPlugin", "Health Connect version incompatibility for total calories aggregation: ${e.message}")
+                                // Try raw records with careful field access
+                                try {
+                                    response.records.sumOf { record ->
+                                        when (record) {
+                                            is TotalCaloriesBurnedRecord -> {
+                                                try {
+                                                    record.energy.inCalories
+                                                } catch (fieldError: Exception) {
+                                                    Log.w("MinimalHealthPlugin", "Field access error for total calories: ${fieldError.message}")
+                                                    0.0
+                                                }
+                                            }
+                                            else -> 0.0
+                                        }
+                                    }
+                                } catch (recordError: Exception) {
+                                    Log.w("MinimalHealthPlugin", "Raw record processing failed for total calories: ${recordError.message}")
+                                    0.0
+                                }
+                            } catch (e: Exception) {
+                                Log.w("MinimalHealthPlugin", "General error for total calories: ${e.message}")
                                 0.0
                             }
                         }
+                        "HEART_RATE" -> {
+                            // For heart rate, calculate average from samples
+                            val allSamples = response.records.flatMap { record ->
+                                when (record) {
+                                    is HeartRateRecord -> {
+                                        try {
+                                            record.samples
+                                        } catch (e: Exception) {
+                                            Log.w("MinimalHealthPlugin", "Error accessing heart rate samples: ${e.message}")
+                                            emptyList()
+                                        }
+                                    }
+                                    else -> emptyList()
+                                }
+                            }
+                            if (allSamples.isNotEmpty()) {
+                                allSamples.map { it.beatsPerMinute.toDouble() }.average()
+                            } else {
+                                0.0
+                            }
+                        }
+                        "WEIGHT" -> {
+                            // For weight, get the most recent value
+                            response.records.mapNotNull { record ->
+                                when (record) {
+                                    is WeightRecord -> {
+                                        try {
+                                            record.weight.inKilograms
+                                        } catch (e: Exception) {
+                                            Log.w("MinimalHealthPlugin", "Error accessing weight value: ${e.message}")
+                                            null
+                                        }
+                                    }
+                                    else -> null
+                                }
+                            }.lastOrNull() ?: 0.0
+                        }
+                        "WATER" -> {
+                            // Sum all hydration records
+                            response.records.sumOf { record ->
+                                when (record) {
+                                    is HydrationRecord -> {
+                                        try {
+                                            record.volume.inLiters
+                                        } catch (e: Exception) {
+                                            Log.w("MinimalHealthPlugin", "Error accessing hydration volume: ${e.message}")
+                                            0.0
+                                        }
+                                    }
+                                    else -> 0.0
+                                }
+                            }
+                        }
+                        "SLEEP_IN_BED" -> {
+                            // Sum all sleep session durations in hours
+                            response.records.sumOf { record ->
+                                when (record) {
+                                    is SleepSessionRecord -> {
+                                        try {
+                                            val durationMillis = record.endTime.toEpochMilli() - record.startTime.toEpochMilli()
+                                            durationMillis / (1000.0 * 60.0 * 60.0) // Convert to hours
+                                        } catch (e: Exception) {
+                                            Log.w("MinimalHealthPlugin", "Error calculating sleep duration: ${e.message}")
+                                            0.0
+                                        }
+                                    }
+                                    else -> 0.0
+                                }
+                            }
+                        }
+                        else -> {
+                            Log.w("MinimalHealthPlugin", "Unsupported data type: $dataType")
+                            0.0
+                        }
                     }
-                    else -> 0.0
+                } catch (e: Exception) {
+                    Log.e("MinimalHealthPlugin", "Error processing $dataType data: ${e.message}", e)
+                    0.0
                 }
                 
-                result.success(value)
+                Log.i("MinimalHealthPlugin", "✅ Successfully retrieved $dataType data: $totalValue")
+                result.success(totalValue)
+                
+            } catch (e: NoSuchMethodError) {
+                Log.e("MinimalHealthPlugin", "Health Connect version compatibility issue for $dataType: ${e.message}", e)
+                Log.w("MinimalHealthPlugin", "This may be due to Health Connect version mismatch. Returning 0.")
+                result.success(0.0)
             } catch (e: Exception) {
-                Log.e("MinimalHealthPlugin", "Error getting health data for $dataType", e)
+                Log.e("MinimalHealthPlugin", "❌ Error reading $dataType data: ${e.message}", e)
                 result.success(0.0)
             }
         }
     }
-}
-
-
-
-
-
-
-
