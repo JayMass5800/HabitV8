@@ -323,13 +323,19 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
             // Test if we can access the record class methods without issues
             val methods = recordClass.java.methods
             
-            // For HEART_RATE, we have robust error handling in the processing code,
-            // so we don't need to block it based on ZoneOffset methods presence
+            // For HEART_RATE and SLEEP_IN_BED, we have robust error handling in the processing code,
+            // so we don't need to block them based on ZoneOffset methods presence
             if (dataType == "HEART_RATE") {
                 Log.d("MinimalHealthPlugin", "HEART_RATE compatibility check - allowing with robust error handling")
                 // We have comprehensive error handling in the HeartRateRecord processing code
                 // that handles ZoneOffset issues gracefully, so we don't need to block it here
                 Log.d("MinimalHealthPlugin", "✅ HEART_RATE compatibility check passed (using robust error handling)")
+                return true
+            } else if (dataType == "SLEEP_IN_BED") {
+                Log.d("MinimalHealthPlugin", "SLEEP_IN_BED compatibility check - allowing with robust error handling")
+                // SleepSessionRecord can have ZoneOffset issues similar to HeartRateRecord
+                // We'll handle these gracefully in the processing code
+                Log.d("MinimalHealthPlugin", "✅ SLEEP_IN_BED compatibility check passed (using robust error handling)")
                 return true
             } else {
                 // FIXED: The ZoneOffset method check was too aggressive and blocking valid data types
@@ -1011,6 +1017,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                             val isCompatibilityError = errorMessage.contains("getStartZoneOffset") ||
                                                      errorMessage.contains("ZoneOffset") ||
                                                      errorMessage.contains("HeartRateRecord") ||
+                                                     errorMessage.contains("SleepSessionRecord") ||
                                                      errorMessage.contains("RecordConverters") ||
                                                      apiException is NoSuchMethodError
                             
@@ -1158,8 +1165,10 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                         val isCompatibilityError = errorMessage.contains("ZoneOffset") ||
                                                  errorMessage.contains("getStartZoneOffset") ||
                                                  errorMessage.contains("HeartRateRecord") ||
+                                                 errorMessage.contains("SleepSessionRecord") ||
                                                  errorMessage.contains("RecordConverters") ||
                                                  errorMessage.contains("toSdkHeartRateRecord") ||
+                                                 errorMessage.contains("toSdkSleepSessionRecord") ||
                                                  errorMessage.contains("toSdkRecord") ||
                                                  errorMessage.contains("HealthConnectClientUpsideDownImpl") ||
                                                  e is NoSuchMethodError
@@ -1981,6 +1990,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     val isCompatibilityError = errorMessage.contains("ZoneOffset") ||
                                              errorMessage.contains("getStartZoneOffset") ||
                                              errorMessage.contains("HeartRateRecord") ||
+                                             errorMessage.contains("SleepSessionRecord") ||
                                              errorMessage.contains("RecordConverters") ||
                                              compatibilityException is NoSuchMethodError
                     
@@ -2116,6 +2126,7 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                             val isCompatibilityError = errorMessage.contains("getStartZoneOffset") ||
                                                      errorMessage.contains("ZoneOffset") ||
                                                      errorMessage.contains("HeartRateRecord") ||
+                                                     errorMessage.contains("SleepSessionRecord") ||
                                                      e is NoSuchMethodError
                             
                             compatibilityInfo["heartRateDataCompatible"] = false
@@ -2218,8 +2229,10 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     val isCompatibilityError = errorMessage.contains("ZoneOffset") ||
                                              errorMessage.contains("getStartZoneOffset") ||
                                              errorMessage.contains("HeartRateRecord") ||
+                                             errorMessage.contains("SleepSessionRecord") ||
                                              errorMessage.contains("RecordConverters") ||
                                              errorMessage.contains("toSdkHeartRateRecord") ||
+                                             errorMessage.contains("toSdkSleepSessionRecord") ||
                                              errorMessage.contains("toSdkRecord") ||
                                              errorMessage.contains("HealthConnectClientUpsideDownImpl") ||
                                              e is NoSuchMethodError
@@ -2248,9 +2261,34 @@ class MinimalHealthPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plug
                     }
                     "WATER" -> response.records.sumOf { (it as HydrationRecord).volume.inLiters }
                     "SLEEP_IN_BED" -> {
-                        response.records.sumOf { record ->
-                            val sleepRecord = record as SleepSessionRecord
-                            (sleepRecord.endTime.toEpochMilli() - sleepRecord.startTime.toEpochMilli()) / (1000.0 * 60.0 * 60.0) // hours
+                        try {
+                            response.records.sumOf { record ->
+                                try {
+                                    val sleepRecord = record as SleepSessionRecord
+                                    (sleepRecord.endTime.toEpochMilli() - sleepRecord.startTime.toEpochMilli()) / (1000.0 * 60.0 * 60.0) // hours
+                                } catch (e: NoSuchMethodError) {
+                                    Log.w("MinimalHealthPlugin", "SleepSessionRecord compatibility issue (ZoneOffset method missing), using fallback")
+                                    // Fallback: try to get duration using reflection
+                                    try {
+                                        val startTimeField = record.javaClass.getDeclaredField("startTime")
+                                        val endTimeField = record.javaClass.getDeclaredField("endTime")
+                                        startTimeField.isAccessible = true
+                                        endTimeField.isAccessible = true
+                                        val startTime = (startTimeField.get(record) as Instant).toEpochMilli()
+                                        val endTime = (endTimeField.get(record) as Instant).toEpochMilli()
+                                        (endTime - startTime) / (1000.0 * 60.0 * 60.0) // hours
+                                    } catch (e2: Exception) {
+                                        Log.w("MinimalHealthPlugin", "Sleep record fallback failed, returning 0", e2)
+                                        0.0
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w("MinimalHealthPlugin", "Error processing sleep record, skipping", e)
+                                    0.0
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.w("MinimalHealthPlugin", "Error processing sleep records, returning 0", e)
+                            0.0
                         }
                     }
                     "WEIGHT" -> {

@@ -2984,4 +2984,62 @@ class HealthService {
 
     return results;
   }
+
+  /// Diagnostic method to check Health Connect data availability
+  static Future<Map<String, dynamic>> diagnoseHealthConnectData() async {
+    try {
+      AppLogger.info('Starting Health Connect data diagnosis...');
+
+      // Check basic availability
+      final debugInfo = await getHealthConnectDebugInfo();
+
+      // Try to get a small sample of data for each type
+      final now = DateTime.now();
+      final yesterday = now.subtract(const Duration(days: 1));
+
+      final diagnosis = <String, dynamic>{
+        'debugInfo': debugInfo,
+        'dataAvailability': <String, dynamic>{},
+        'timestamp': now.toIso8601String(),
+      };
+
+      // Test each data type individually
+      final dataTypes = [
+        'STEPS',
+        'HEART_RATE',
+        'SLEEP_IN_BED',
+        'ACTIVE_ENERGY_BURNED'
+      ];
+
+      for (final dataType in dataTypes) {
+        try {
+          AppLogger.info('Testing data availability for: $dataType');
+          final data = await MinimalHealthChannel.getHealthData(
+            dataType: dataType,
+            startDate: yesterday,
+            endDate: now,
+          );
+
+          diagnosis['dataAvailability'][dataType] = {
+            'recordCount': data.length,
+            'hasData': data.isNotEmpty,
+            'sampleRecord': data.isNotEmpty ? data.first : null,
+          };
+
+          AppLogger.info('$dataType: ${data.length} records found');
+        } catch (e) {
+          diagnosis['dataAvailability'][dataType] = {
+            'error': e.toString(),
+            'hasData': false,
+          };
+          AppLogger.warning('Error testing $dataType: $e');
+        }
+      }
+
+      return diagnosis;
+    } catch (e) {
+      AppLogger.error('Error in Health Connect diagnosis', e);
+      return {'error': e.toString()};
+    }
+  }
 }
