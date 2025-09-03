@@ -35,9 +35,8 @@ class HealthHabitInitializationService {
       await _initializationCompleter.future;
       final result = HealthHabitInitializationResult();
       result.success = _isInitialized;
-      result.message = _isInitialized
-          ? 'Already initialized'
-          : 'Initialization failed';
+      result.message =
+          _isInitialized ? 'Already initialized' : 'Initialization failed';
       return result;
     }
 
@@ -149,28 +148,31 @@ class HealthHabitInitializationService {
     try {
       AppLogger.info('Initializing Health Service...');
 
+      // Check if health sync is enabled by user before initializing
+      final prefs = await SharedPreferences.getInstance();
+      final healthSyncEnabled = prefs.getBool('health_sync_enabled') ?? false;
+
+      if (!healthSyncEnabled) {
+        AppLogger.info(
+            'Health sync disabled by user, skipping health service initialization');
+        return true; // Return true to not block other services
+      }
+
       final initialized = await HealthService.initialize();
       if (!initialized) {
         AppLogger.warning('Health Service initialization failed');
         return false;
       }
 
-      // Try to request permissions if not already granted
+      // Only check permissions if health sync is enabled
+      AppLogger.info('Health sync enabled, checking permissions...');
       final hasPermissions = await HealthService.hasPermissions();
       if (!hasPermissions) {
         AppLogger.info(
-          'Health permissions not granted - attempting to request now',
+          'Health permissions not granted - will request when user enables health integration',
         );
-        final permissionResult = await HealthService.requestPermissions();
-        if (permissionResult.granted) {
-          AppLogger.info(
-            'Health permissions successfully granted during initialization',
-          );
-        } else {
-          AppLogger.warning(
-            'Health permissions request failed during initialization - will retry when needed',
-          );
-        }
+      } else {
+        AppLogger.info('Health permissions already granted');
       }
 
       AppLogger.info('Health Service initialized successfully');
@@ -323,10 +325,18 @@ class HealthHabitInitializationService {
     try {
       AppLogger.info('Performing health check...');
 
-      // Check health service
-      final healthServiceOk = await HealthService.hasPermissions();
-      if (!healthServiceOk) {
-        result.warnings.add('Health permissions not granted');
+      // Check health service only if health sync is enabled
+      final prefs = await SharedPreferences.getInstance();
+      final healthSyncEnabled = prefs.getBool('health_sync_enabled') ?? false;
+
+      if (healthSyncEnabled) {
+        final healthServiceOk = await HealthService.hasPermissions();
+        if (!healthServiceOk) {
+          result.warnings.add('Health permissions not granted');
+        }
+      } else {
+        AppLogger.info(
+            'Health sync disabled, skipping health permissions check');
       }
 
       // Check integration service
@@ -334,8 +344,8 @@ class HealthHabitInitializationService {
       final habitService = HabitService(habitBox);
       final integrationStatus =
           await HealthHabitIntegrationService.getIntegrationStatus(
-            habitService: habitService,
-          );
+        habitService: habitService,
+      );
 
       if (integrationStatus['error'] != null) {
         result.warnings.add(
@@ -517,9 +527,8 @@ class HealthHabitInitializationService {
           status['lastInitialization'],
         );
         status['lastInitializationDate'] = lastInit.toIso8601String();
-        status['daysSinceLastInit'] = DateTime.now()
-            .difference(lastInit)
-            .inDays;
+        status['daysSinceLastInit'] =
+            DateTime.now().difference(lastInit).inDays;
       }
 
       // Get service statuses
@@ -532,8 +541,8 @@ class HealthHabitInitializationService {
         final habitService = HabitService(habitBox);
         status['integrationStatus'] =
             await HealthHabitIntegrationService.getIntegrationStatus(
-              habitService: habitService,
-            );
+          habitService: habitService,
+        );
       }
     } catch (e) {
       AppLogger.error('Failed to get initialization status', e);
@@ -610,8 +619,8 @@ class HealthHabitInitializationService {
         final habitService = HabitService(habitBox);
         status['integration'] =
             await HealthHabitIntegrationService.getIntegrationStatus(
-              habitService: habitService,
-            );
+          habitService: habitService,
+        );
 
         // Recent sync results
         final syncStream = HealthHabitBackgroundService.syncResultStream;

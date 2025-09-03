@@ -4,23 +4,24 @@ import '../services/health_service.dart';
 import '../services/logging_service.dart';
 
 /// Comprehensive Habit Suggestions Service
-/// 
+///
 /// This service provides habit suggestions for all categories, not just health-related ones.
 /// It includes health-based suggestions when health data is activated.
 class ComprehensiveHabitSuggestionsService {
-  
   /// Generate comprehensive habit suggestions
   static Future<List<HabitSuggestion>> generateSuggestions() async {
     try {
       final suggestions = <HabitSuggestion>[];
-      
+
       // Add general habit suggestions
       suggestions.addAll(_getGeneralHabitSuggestions());
-      
+
       // Add health-based suggestions if health data is available
       try {
-        if (await HealthService.hasPermissions()) {
-          final healthSuggestions = await HealthEnhancedHabitCreationService.generateHealthBasedSuggestions();
+        final healthSyncEnabled = await HealthService.isHealthSyncEnabled();
+        if (healthSyncEnabled && await HealthService.hasPermissions()) {
+          final healthSuggestions = await HealthEnhancedHabitCreationService
+              .generateHealthBasedSuggestions();
           for (final healthSuggestion in healthSuggestions) {
             suggestions.add(HabitSuggestion(
               name: healthSuggestion.name,
@@ -39,24 +40,24 @@ class ComprehensiveHabitSuggestionsService {
       } catch (e) {
         AppLogger.warning('Could not load health suggestions: $e');
       }
-      
+
       // Sort by priority and type
       suggestions.sort((a, b) {
         // Health suggestions first if available
         if (a.isHealthBased && !b.isHealthBased) return -1;
         if (!a.isHealthBased && b.isHealthBased) return 1;
-        
+
         // Then by priority
         return b.priority.compareTo(a.priority);
       });
-      
+
       return suggestions;
     } catch (e) {
       AppLogger.error('Error generating comprehensive habit suggestions', e);
       return [];
     }
   }
-  
+
   /// Get general habit suggestions for all categories
   static List<HabitSuggestion> _getGeneralHabitSuggestions() {
     return [
@@ -88,7 +89,7 @@ class ComprehensiveHabitSuggestionsService {
         type: 'Productivity',
         priority: 0.8,
       ),
-      
+
       // Learning Habits
       HabitSuggestion(
         name: 'Read for 30 Minutes',
@@ -117,7 +118,7 @@ class ComprehensiveHabitSuggestionsService {
         type: 'Learning',
         priority: 0.7,
       ),
-      
+
       // Personal Development Habits
       HabitSuggestion(
         name: 'Daily Gratitude',
@@ -146,7 +147,7 @@ class ComprehensiveHabitSuggestionsService {
         type: 'Personal',
         priority: 0.7,
       ),
-      
+
       // Social Habits
       HabitSuggestion(
         name: 'Call Family/Friends',
@@ -175,7 +176,7 @@ class ComprehensiveHabitSuggestionsService {
         type: 'Social',
         priority: 0.6,
       ),
-      
+
       // Finance Habits
       HabitSuggestion(
         name: 'Track Daily Expenses',
@@ -204,7 +205,7 @@ class ComprehensiveHabitSuggestionsService {
         type: 'Finance',
         priority: 0.8,
       ),
-      
+
       // Lifestyle Habits
       HabitSuggestion(
         name: 'Make Bed',
@@ -233,7 +234,7 @@ class ComprehensiveHabitSuggestionsService {
         type: 'Lifestyle',
         priority: 0.7,
       ),
-      
+
       // Hobbies Habits
       HabitSuggestion(
         name: 'Creative Time',
@@ -264,7 +265,7 @@ class ComprehensiveHabitSuggestionsService {
       ),
     ];
   }
-  
+
   /// Get icon name for health data type
   static String _getHealthDataTypeIcon(String? healthDataType) {
     switch (healthDataType) {
@@ -300,7 +301,7 @@ class HabitSuggestion {
   final bool isHealthBased;
   final String? healthDataType;
   final double? suggestedThreshold;
-  
+
   HabitSuggestion({
     required this.name,
     required this.description,

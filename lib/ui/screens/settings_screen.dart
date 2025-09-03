@@ -107,21 +107,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       final autoCompletionEnabled =
           await AutomaticHabitCompletionService.isServiceEnabled();
 
-      // Check actual health permissions and user preference
-      bool hasHealthPermissions =
-          await permissionService.isHealthPermissionGranted();
+      // Load health sync preference first
       final healthSyncPreference = await _loadHealthSyncPreference();
+
+      // Only check health permissions if user has enabled health sync
+      bool hasHealthPermissions = false;
+      if (healthSyncPreference) {
+        hasHealthPermissions =
+            await permissionService.isHealthPermissionGranted();
+
+        // If permissions are revoked, automatically disable the preference
+        if (!hasHealthPermissions) {
+          await _saveHealthSyncPreference(false);
+          AppLogger.info(
+              'Health permissions revoked, updating preference to disabled');
+        }
+      }
 
       // Health sync is enabled only if both permissions are granted AND user has enabled it
       bool healthStatus = hasHealthPermissions && healthSyncPreference;
-
-      // If permissions are revoked, automatically disable the preference
-      if (!hasHealthPermissions && healthSyncPreference) {
-        await _saveHealthSyncPreference(false);
-        AppLogger.info(
-            'Health permissions revoked, updating preference to disabled');
-        healthStatus = false;
-      }
 
       setState(() {
         _notificationsEnabled = notificationStatus;

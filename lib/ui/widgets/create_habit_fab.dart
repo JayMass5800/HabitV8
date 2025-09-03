@@ -15,6 +15,7 @@ class CreateHabitFAB extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
+      heroTag: "create_habit_fab",
       onPressed: () {
         context.push('/create-habit', extra: prefilledData);
       },
@@ -38,6 +39,7 @@ class CreateHabitExtendedFAB extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton.extended(
+      heroTag: "create_habit_extended_fab",
       onPressed: () {
         context.push('/create-habit', extra: prefilledData);
       },

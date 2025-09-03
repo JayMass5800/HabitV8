@@ -384,19 +384,35 @@ class MinimalHealthChannel {
           '  Current time: ${now.toIso8601String()} (${now.millisecondsSinceEpoch})');
 
       // Add timeout and better error handling to prevent app crashes
-      final List<dynamic> result =
-          await _channel.invokeMethod('getHealthData', {
-        'dataType': dataType,
-        'startDate': startDate.millisecondsSinceEpoch,
-        'endDate': endDate.millisecondsSinceEpoch,
-      }).timeout(
-        const Duration(seconds: 15), // Increased timeout
-        onTimeout: () {
-          AppLogger.error(
-              'Health data request TIMED OUT for $dataType after 15 seconds');
-          return <dynamic>[];
-        },
-      );
+      List<dynamic> result;
+      try {
+        result = await _channel.invokeMethod('getHealthData', {
+          'dataType': dataType,
+          'startDate': startDate.millisecondsSinceEpoch,
+          'endDate': endDate.millisecondsSinceEpoch,
+        }).timeout(
+          const Duration(seconds: 15), // Increased timeout
+          onTimeout: () {
+            AppLogger.error(
+                'Health data request TIMED OUT for $dataType after 15 seconds');
+            return <dynamic>[];
+          },
+        );
+      } on PlatformException catch (e) {
+        AppLogger.error(
+            'Platform error getting health data for $dataType: ${e.message}');
+        return [];
+      } on NoSuchMethodError catch (e) {
+        AppLogger.error(
+            'Health Connect API compatibility error for $dataType: ${e.toString()}');
+        AppLogger.warning(
+            'This may be due to Health Connect API version mismatch');
+        return [];
+      } catch (e) {
+        AppLogger.error(
+            'Unexpected error getting health data for $dataType', e);
+        return [];
+      }
 
       final List<Map<String, dynamic>> healthData =
           result.map((item) => Map<String, dynamic>.from(item)).toList();

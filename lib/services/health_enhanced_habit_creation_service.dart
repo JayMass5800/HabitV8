@@ -19,9 +19,15 @@ class HealthEnhancedHabitCreationService {
     try {
       AppLogger.info('Generating health-based habit suggestions...');
 
-      // Check if health permissions are available with error handling
+      // Check if health sync is enabled first, then check permissions
       bool hasPermissions = false;
       try {
+        final healthSyncEnabled = await HealthService.isHealthSyncEnabled();
+        if (!healthSyncEnabled) {
+          AppLogger.info(
+              'Health sync disabled, returning basic health suggestions');
+          return _getBasicHealthSuggestions();
+        }
         hasPermissions = await HealthService.hasPermissions();
       } catch (e) {
         AppLogger.error('Error checking health permissions: $e');

@@ -77,52 +77,81 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
           // Load health summary if available
           try {
-            AppLogger.info('Checking health permissions...');
-            final hasPermissions = await HealthService.hasPermissions().timeout(
-              const Duration(seconds: 5),
-              onTimeout: () {
-                AppLogger.warning('Health permissions check timed out');
-                return false;
-              },
-            );
-            AppLogger.info('Health permissions status: $hasPermissions');
+            // First check if health sync is enabled by user
+            AppLogger.info('Checking if health sync is enabled...');
+            final healthSyncEnabled = await HealthService.isHealthSyncEnabled();
+            AppLogger.info('Health sync enabled: $healthSyncEnabled');
 
-            if (hasPermissions) {
-              AppLogger.info('Loading health summary...');
-              _healthSummary =
-                  await HealthService.getTodayHealthSummary().timeout(
-                const Duration(seconds: 30),
+            if (!healthSyncEnabled) {
+              AppLogger.info(
+                  'Health sync disabled by user, skipping health data load');
+              _healthSummary = {
+                'error': 'Health sync disabled',
+                'hasPermissions': false,
+                'canRetry': false,
+                'needsPermissions': false,
+                'syncDisabled': true,
+                'steps': 0,
+                'activeCalories': 0.0,
+                'totalCalories': 0.0,
+                'sleepHours': 0.0,
+                'waterIntake': 0.0,
+                'mindfulnessMinutes': 0.0,
+                'weight': null,
+                'medicationAdherence': 0.0,
+                'heartRate': null,
+                'restingHeartRate': null,
+                'timestamp': DateTime.now().toIso8601String(),
+              };
+            } else {
+              AppLogger.info('Health sync enabled, checking permissions...');
+              final hasPermissions =
+                  await HealthService.hasPermissions().timeout(
+                const Duration(seconds: 5),
                 onTimeout: () {
-                  AppLogger.warning('Health summary loading timed out');
-                  return <String, dynamic>{
-                    'error': 'Health data loading timed out',
-                    'steps': 0,
-                    'activeCalories': 0.0,
-                    'totalCalories': 0.0,
-                    'sleepHours': 0.0,
-                    'waterIntake': 0.0,
-                    'mindfulnessMinutes': 0.0,
-                    'weight': null,
-                    'medicationAdherence': 0.0,
-                    'heartRate': null,
-                    'restingHeartRate': null,
-                    'timestamp': DateTime.now().toIso8601String(),
-                  };
+                  AppLogger.warning('Health permissions check timed out');
+                  return false;
                 },
               );
-              AppLogger.info(
-                  'Health summary loaded: ${_healthSummary?.keys.join(', ')}');
+              AppLogger.info('Health permissions status: $hasPermissions');
 
-              // Integration status loading removed - no longer needed
-            } else {
-              AppLogger.info(
-                  'Health permissions not granted, skipping health data load');
-              _healthSummary = {
-                'error': 'Health permissions not granted',
-                'hasPermissions': false,
-                'canRetry': true,
-                'needsPermissions': true,
-              };
+              if (hasPermissions) {
+                AppLogger.info('Loading health summary...');
+                _healthSummary =
+                    await HealthService.getTodayHealthSummary().timeout(
+                  const Duration(seconds: 30),
+                  onTimeout: () {
+                    AppLogger.warning('Health summary loading timed out');
+                    return <String, dynamic>{
+                      'error': 'Health data loading timed out',
+                      'steps': 0,
+                      'activeCalories': 0.0,
+                      'totalCalories': 0.0,
+                      'sleepHours': 0.0,
+                      'waterIntake': 0.0,
+                      'mindfulnessMinutes': 0.0,
+                      'weight': null,
+                      'medicationAdherence': 0.0,
+                      'heartRate': null,
+                      'restingHeartRate': null,
+                      'timestamp': DateTime.now().toIso8601String(),
+                    };
+                  },
+                );
+                AppLogger.info(
+                    'Health summary loaded: ${_healthSummary?.keys.join(', ')}');
+
+                // Integration status loading removed - no longer needed
+              } else {
+                AppLogger.info(
+                    'Health permissions not granted, skipping health data load');
+                _healthSummary = {
+                  'error': 'Health permissions not granted',
+                  'hasPermissions': false,
+                  'canRetry': true,
+                  'needsPermissions': true,
+                };
+              }
             }
           } catch (e) {
             AppLogger.error('Failed to load health summary', e);
@@ -147,6 +176,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       if (mounted) {
         setState(() {});
       }
+    }
+  }
+
+  Future<bool> _checkHealthAvailability() async {
+    try {
+      final healthSyncEnabled = await HealthService.isHealthSyncEnabled();
+      if (!healthSyncEnabled) return false;
+      return await HealthService.hasPermissions();
+    } catch (e) {
+      return false;
     }
   }
 
@@ -367,7 +406,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   Widget _buildHealthDataSection(List<Habit> habits) {
     return FutureBuilder<bool>(
-      future: HealthService.hasPermissions(),
+      future: _checkHealthAvailability(),
       builder: (context, permissionSnapshot) {
         if (!permissionSnapshot.hasData || !permissionSnapshot.data!) {
           return const SizedBox.shrink();
@@ -1627,7 +1666,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   Widget _buildEnhancedHealthHub(List<Habit> habits) {
     return FutureBuilder<bool>(
-      future: HealthService.hasPermissions(),
+      future: _checkHealthAvailability(),
       builder: (context, snapshot) {
         final hasPermissions = snapshot.data ?? false;
 
