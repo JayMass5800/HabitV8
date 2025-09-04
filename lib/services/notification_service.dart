@@ -2184,12 +2184,12 @@ class NotificationService {
       playSound: true,
       actions: [
         const AndroidNotificationAction(
-          'complete_action',
+          'complete',
           'COMPLETE',
         ),
         const AndroidNotificationAction(
-          'snooze_action',
-          'SNOOZE',
+          'snooze',
+          'SNOOZE 30MIN',
         ),
       ],
     );
@@ -2254,12 +2254,12 @@ class NotificationService {
       enableVibration: true,
       actions: [
         const AndroidNotificationAction(
-          'complete_action',
+          'complete',
           'COMPLETE',
         ),
         const AndroidNotificationAction(
-          'snooze_action',
-          'SNOOZE',
+          'snooze',
+          'SNOOZE 30MIN',
         ),
       ],
     );
