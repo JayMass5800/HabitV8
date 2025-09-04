@@ -126,8 +126,14 @@ class HabitService {
 
     // Sync to calendar if enabled
     try {
-      await CalendarService.syncHabitChanges(habit);
-      AppLogger.info('Synced new habit "${habit.name}" to calendar');
+      final syncEnabled = await CalendarService.isCalendarSyncEnabled();
+      if (syncEnabled) {
+        await CalendarService.syncHabitChanges(habit);
+        AppLogger.info('Synced new habit "${habit.name}" to calendar');
+      } else {
+        AppLogger.debug(
+            'Calendar sync disabled, skipping sync for new habit "${habit.name}"');
+      }
     } catch (e) {
       AppLogger.error('Failed to sync new habit to calendar', e);
     }
@@ -157,8 +163,14 @@ class HabitService {
 
     // Sync to calendar if enabled
     try {
-      await CalendarService.syncHabitChanges(habit);
-      AppLogger.info('Synced updated habit "${habit.name}" to calendar');
+      final syncEnabled = await CalendarService.isCalendarSyncEnabled();
+      if (syncEnabled) {
+        await CalendarService.syncHabitChanges(habit);
+        AppLogger.info('Synced updated habit "${habit.name}" to calendar');
+      } else {
+        AppLogger.debug(
+            'Calendar sync disabled, skipping sync for updated habit "${habit.name}"');
+      }
     } catch (e) {
       AppLogger.error('Failed to sync updated habit to calendar', e);
     }
@@ -172,8 +184,14 @@ class HabitService {
 
       // Remove from calendar before deletion
       try {
-        await CalendarService.syncHabitChanges(habit, isDeleted: true);
-        AppLogger.info('Removed habit "${habit.name}" from calendar');
+        final syncEnabled = await CalendarService.isCalendarSyncEnabled();
+        if (syncEnabled) {
+          await CalendarService.syncHabitChanges(habit, isDeleted: true);
+          AppLogger.info('Removed habit "${habit.name}" from calendar');
+        } else {
+          AppLogger.debug(
+              'Calendar sync disabled, skipping removal for deleted habit "${habit.name}"');
+        }
       } catch (e) {
         AppLogger.error('Failed to remove habit from calendar', e);
       }
@@ -317,10 +335,16 @@ class HabitService {
 
       // Sync completion to calendar if enabled
       try {
-        await CalendarService.syncHabitChanges(habit);
-        AppLogger.debug(
-          'Synced habit completion for "${habit.name}" to calendar',
-        );
+        final syncEnabled = await CalendarService.isCalendarSyncEnabled();
+        if (syncEnabled) {
+          await CalendarService.syncHabitChanges(habit);
+          AppLogger.debug(
+            'Synced habit completion for "${habit.name}" to calendar',
+          );
+        } else {
+          AppLogger.debug(
+              'Calendar sync disabled, skipping completion sync for habit "${habit.name}"');
+        }
       } catch (e) {
         AppLogger.error('Failed to sync habit completion to calendar', e);
       }
@@ -355,10 +379,16 @@ class HabitService {
 
     // Sync removal to calendar if enabled
     try {
-      await CalendarService.syncHabitChanges(habit);
-      AppLogger.debug(
-        'Synced habit completion removal for "${habit.name}" to calendar',
-      );
+      final syncEnabled = await CalendarService.isCalendarSyncEnabled();
+      if (syncEnabled) {
+        await CalendarService.syncHabitChanges(habit);
+        AppLogger.debug(
+          'Synced habit completion removal for "${habit.name}" to calendar',
+        );
+      } else {
+        AppLogger.debug(
+            'Calendar sync disabled, skipping completion removal sync for habit "${habit.name}"');
+      }
     } catch (e) {
       AppLogger.error('Failed to sync habit completion removal to calendar', e);
     }
@@ -406,12 +436,18 @@ class HabitService {
     }
 
     // Sync all updated habits to calendar if enabled
+    final syncEnabled = await CalendarService.isCalendarSyncEnabled();
     for (final habit in habitsToUpdate) {
       try {
-        await CalendarService.syncHabitChanges(habit);
-        AppLogger.debug(
-          'Synced bulk completion for "${habit.name}" to calendar',
-        );
+        if (syncEnabled) {
+          await CalendarService.syncHabitChanges(habit);
+          AppLogger.debug(
+            'Synced bulk completion for "${habit.name}" to calendar',
+          );
+        } else {
+          AppLogger.debug(
+              'Calendar sync disabled, skipping bulk completion sync for habit "${habit.name}"');
+        }
       } catch (e) {
         AppLogger.error(
           'Failed to sync bulk completion to calendar for "${habit.name}"',

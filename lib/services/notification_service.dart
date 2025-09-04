@@ -21,6 +21,9 @@ class NotificationService {
   // Callback for handling notification actions
   static Function(String habitId, String action)? onNotificationAction;
 
+  // Direct completion function (to avoid circular imports)
+  static Future<void> Function(String habitId)? directCompletionHandler;
+
   // Debug tracking for callback state
   static int _callbackSetCount = 0;
   static DateTime? _lastCallbackSetTime;
@@ -48,12 +51,12 @@ class NotificationService {
           'habit_category',
           actions: [
             DarwinNotificationAction.plain(
-              'complete',
+              'complete_action',
               'COMPLETE',
               options: {DarwinNotificationActionOption.foreground},
             ),
             DarwinNotificationAction.plain(
-              'snooze',
+              'snooze_action',
               'SNOOZE 30MIN',
               options: {},
             ),
@@ -76,6 +79,25 @@ class NotificationService {
       onDidReceiveBackgroundNotificationResponse:
           onBackgroundNotificationResponse,
     );
+
+    // Add debug logging to verify initialization
+    AppLogger.info('🔔 Notification plugin initialized with handlers:');
+    AppLogger.info('  - Foreground handler: _onNotificationTapped');
+    AppLogger.info('  - Background handler: onBackgroundNotificationResponse');
+
+    // Test if the plugin is actually working by checking its state
+    try {
+      final androidImplementation =
+          _notificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      if (androidImplementation != null) {
+        final areEnabled =
+            await androidImplementation.areNotificationsEnabled();
+        AppLogger.info('🔔 Android notifications enabled: $areEnabled');
+      }
+    } catch (e) {
+      AppLogger.error('Error checking notification plugin state', e);
+    }
 
     // Request permissions for Android 13+
     if (Platform.isAndroid) {
@@ -317,6 +339,7 @@ class NotificationService {
   static void onBackgroundNotificationResponse(
     NotificationResponse notificationResponse,
   ) {
+    AppLogger.info('🌙🌙🌙 BACKGROUND NOTIFICATION HANDLER CALLED! 🌙🌙🌙');
     AppLogger.info('=== BACKGROUND NOTIFICATION RESPONSE ===');
     AppLogger.info('Background notification ID: ${notificationResponse.id}');
     AppLogger.info('Background action ID: ${notificationResponse.actionId}');
@@ -362,6 +385,7 @@ class NotificationService {
   ) async {
     // CRITICAL: Add debug statements that will show in Flutter console
     AppLogger.debug('🚨🚨🚨 FLUTTER NOTIFICATION HANDLER CALLED! 🚨🚨🚨');
+    AppLogger.info('🚨🚨🚨 FLUTTER NOTIFICATION HANDLER CALLED! 🚨🚨🚨');
     AppLogger.debug('🔔 Notification ID: ${notificationResponse.id}');
     AppLogger.debug('🔔 Action ID: ${notificationResponse.actionId}');
     AppLogger.debug(
@@ -479,6 +503,13 @@ class NotificationService {
       await prefs.setStringList(
           'pending_notification_actions', existingActions);
 
+      // Debug: Verify storage
+      final verifyActions =
+          prefs.getStringList('pending_notification_actions') ?? [];
+      AppLogger.debug(
+          '🔍 Verified storage: ${verifyActions.length} actions stored');
+      AppLogger.debug('🔍 All keys after storage: ${prefs.getKeys().toList()}');
+
       AppLogger.info(
           'Successfully stored pending action: $action for habit $habitId');
     } catch (e) {
@@ -490,8 +521,19 @@ class NotificationService {
   static Future<void> processPendingActions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+
+      // Debug: Check all keys in SharedPreferences
+      final allKeys = prefs.getKeys();
+      AppLogger.debug('🔍 All SharedPreferences keys: ${allKeys.toList()}');
+
       final pendingActions =
           prefs.getStringList('pending_notification_actions') ?? [];
+
+      AppLogger.debug(
+          '🔍 Found ${pendingActions.length} pending actions in SharedPreferences');
+      if (pendingActions.isNotEmpty) {
+        AppLogger.debug('🔍 Pending actions: $pendingActions');
+      }
 
       if (pendingActions.isEmpty) {
         AppLogger.debug('No pending notification actions to process');
@@ -567,6 +609,7 @@ class NotificationService {
     AppLogger.debug(
       '🚀 DEBUG: _handleNotificationAction called with habitId: $habitId, action: $action',
     );
+    AppLogger.info('🚀🚀🚀 NOTIFICATION ACTION HANDLER CALLED! 🚀🚀🚀');
     AppLogger.info('Handling notification action: $action for habit: $habitId');
 
     // Check callback status for debugging
@@ -575,6 +618,7 @@ class NotificationService {
     try {
       // Normalize action IDs to handle both iOS and Android formats
       final normalizedAction = action.toLowerCase().replaceAll('_action', '');
+      AppLogger.debug('🔄 DEBUG: Original action: $action');
       AppLogger.debug('🔄 DEBUG: Normalized action: $normalizedAction');
 
       switch (normalizedAction) {
@@ -666,6 +710,14 @@ class NotificationService {
     }
   }
 
+  /// Set the direct completion handler (to avoid circular imports)
+  static void setDirectCompletionHandler(
+    Future<void> Function(String habitId) handler,
+  ) {
+    directCompletionHandler = handler;
+    AppLogger.info('🎯 Direct completion handler set');
+  }
+
   /// Set the notification action callback and process any pending actions
   static void setNotificationActionCallback(
     Function(String habitId, String action) callback,
@@ -713,13 +765,27 @@ class NotificationService {
       AppLogger.info('📭 No pending actions to process');
     }
 
-    // Also process any persistent actions from SharedPreferences
-    await processPendingActions();
+    // Process persistent actions from SharedPreferences after a short delay
+    // This ensures the provider container is fully initialized
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      AppLogger.info('🔄 Processing persistent pending actions after delay');
+      await processPendingActions();
+    });
   }
 
   /// Get the number of pending actions (for debugging)
   static int getPendingActionsCount() {
     return _pendingActions.length;
+  }
+
+  /// Manually trigger processing of pending actions (for app initialization)
+  static Future<void> processPendingActionsManually() async {
+    AppLogger.info('🔄 Manually processing pending actions');
+    if (onNotificationAction != null) {
+      await processPendingActions();
+    } else {
+      AppLogger.warning('⚠️ Cannot process pending actions - callback not set');
+    }
   }
 
   /// Check if callback is set and re-initialize if needed
@@ -1846,12 +1912,37 @@ class NotificationService {
 
   /// Test notification - useful for debugging
   static Future<void> showTestNotification() async {
-    await showNotification(
-      id: 999,
-      title: '🎯 Test Notification',
-      body: 'This is a test notification to verify the system is working!',
-      payload: 'test_notification',
+    if (!_isInitialized) await initialize();
+
+    AppLogger.info(
+        '🧪 Creating SIMPLE test notification to verify handlers work...');
+
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'test_channel',
+      'Test Notifications',
+      channelDescription: 'Test notifications for debugging',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+      // NO ACTIONS - just basic notification
     );
+
+    const NotificationDetails details =
+        NotificationDetails(android: androidDetails);
+
+    final payload = jsonEncode({'habitId': 'test', 'type': 'test'});
+
+    await _notificationsPlugin.show(
+      999,
+      '🧪 SIMPLE TEST',
+      'Tap this notification (no buttons) to test basic handlers!',
+      details,
+      payload: payload,
+    );
+
+    AppLogger.info(
+        '🧪 SIMPLE test notification created - tap the notification body (not buttons) to see if handlers are called');
   }
 
   /// Show an actionable habit notification with Complete and Snooze buttons
@@ -1877,18 +1968,12 @@ class NotificationService {
       playSound: true,
       actions: [
         const AndroidNotificationAction(
-          'complete',
-          '✅ COMPLETE',
-          showsUserInterface: true, // Keep true for complete to open app
-          cancelNotification: false, // Let our code handle cancellation
-          allowGeneratedReplies: false,
+          'complete_action',
+          'COMPLETE',
         ),
         const AndroidNotificationAction(
-          'snooze',
-          '⏰ SNOOZE 30MIN',
-          showsUserInterface: false, // Keep false for snooze to not open app
-          cancelNotification: false, // Let our code handle cancellation
-          allowGeneratedReplies: false,
+          'snooze_action',
+          'SNOOZE',
         ),
       ],
     );
@@ -1910,6 +1995,15 @@ class NotificationService {
       platformChannelSpecifics,
       payload: payload,
     );
+
+    // Debug logging for notification creation
+    AppLogger.info('🔔 Habit notification created with:');
+    AppLogger.info('  - ID: $id');
+    AppLogger.info('  - HabitID: $habitId');
+    AppLogger.info('  - Title: $title');
+    AppLogger.info('  - Body: $body');
+    AppLogger.info('  - Payload: $payload');
+    AppLogger.info('  - Actions: complete_action, snooze_action');
   }
 
   /// Schedule a habit notification with action buttons
@@ -1944,18 +2038,12 @@ class NotificationService {
       enableVibration: true,
       actions: [
         const AndroidNotificationAction(
-          'complete',
-          '✅ COMPLETE',
-          showsUserInterface: true, // Keep true for complete to open app
-          cancelNotification: false, // Let our code handle cancellation
-          allowGeneratedReplies: false,
+          'complete_action',
+          'COMPLETE',
         ),
         const AndroidNotificationAction(
-          'snooze',
-          '⏰ SNOOZE 30MIN',
-          showsUserInterface: false, // Keep false for snooze to not open app
-          cancelNotification: false, // Let our code handle cancellation
-          allowGeneratedReplies: false,
+          'snooze_action',
+          'SNOOZE',
         ),
       ],
     );
@@ -2920,13 +3008,35 @@ class NotificationService {
       AppLogger.info(
           'Completing habit $habitId from notification at $actionTime');
 
-      // Call the callback if set
+      // Always try the callback first if available
       if (onNotificationAction != null) {
+        AppLogger.info('Using callback to complete habit: $habitId');
         onNotificationAction!(habitId, 'complete');
         AppLogger.info('Complete action callback executed for habit: $habitId');
-      } else {
-        AppLogger.warning('No notification action callback set for complete');
-        _storeActionForLaterProcessing(habitId, 'complete');
+        return; // Success - exit early
+      }
+
+      // If no callback is available, we need to complete the habit directly
+      // This happens when processing stored actions and the callback isn't set yet
+      AppLogger.info(
+          'No callback available, attempting direct completion for habit: $habitId');
+
+      try {
+        // Try to complete the habit directly using the direct completion handler
+        // This bypasses the callback dependency
+        if (directCompletionHandler != null) {
+          await directCompletionHandler!(habitId);
+          AppLogger.info('✅ Direct completion successful for habit: $habitId');
+        } else {
+          AppLogger.error('No direct completion handler available');
+          AppLogger.error(
+              'Habit completion failed - both callback and direct handler unavailable');
+        }
+      } catch (directError) {
+        AppLogger.error(
+            'Direct completion failed for habit: $habitId', directError);
+        AppLogger.error(
+            'Habit completion failed - both callback and direct completion failed');
       }
     } catch (e) {
       AppLogger.error('Error completing habit from notification: $habitId', e);

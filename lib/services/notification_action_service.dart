@@ -18,6 +18,11 @@ class NotificationActionService {
       _handleNotificationAction,
     );
 
+    // Set up the direct completion handler to avoid circular imports
+    NotificationService.setDirectCompletionHandler(
+      completeHabitDirectly,
+    );
+
     AppLogger.info('🔧 NotificationActionService initialized');
     AppLogger.info('📦 Container set: ${_container != null}');
     AppLogger.info(
@@ -363,6 +368,25 @@ class NotificationActionService {
       }
     } catch (e) {
       AppLogger.error('Error invalidating habit cache', e);
+    }
+  }
+
+  /// Complete habit directly without relying on callback (for stored actions)
+  static Future<void> completeHabitDirectly(String habitId) async {
+    if (_container == null) {
+      throw Exception(
+          'NotificationActionService not initialized - container is null');
+    }
+
+    AppLogger.info('🎯 Direct completion requested for habit: $habitId');
+
+    try {
+      // Use the same logic as _handleCompleteAction but without the callback dependency
+      await _handleCompleteAction(habitId);
+      AppLogger.info('✅ Direct completion successful for habit: $habitId');
+    } catch (e) {
+      AppLogger.error('❌ Direct completion failed for habit: $habitId', e);
+      rethrow;
     }
   }
 }
