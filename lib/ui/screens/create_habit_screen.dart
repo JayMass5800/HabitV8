@@ -32,6 +32,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   Color _selectedColor = Colors.blue;
   bool _notificationsEnabled = true;
   TimeOfDay? _notificationTime;
+  bool _isSaving = false;
 
   // Alarm-related fields
   bool _alarmEnabled = false;
@@ -202,7 +203,21 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               ? 'Create Recommended Habit'
               : 'Create Habit',
         ),
-        actions: [TextButton(onPressed: _saveHabit, child: const Text('Save'))],
+        actions: [
+          _isSaving
+              ? const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : TextButton(
+                  onPressed: _isSaving ? null : _saveHabit,
+                  child: const Text('Save'),
+                ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -1322,14 +1337,21 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   }
 
   Future<void> _saveHabit() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_isSaving || !_formKey.currentState!.validate()) {
       return;
     }
+
+    setState(() {
+      _isSaving = true;
+    });
 
     try {
       // Validate frequency-specific requirements
       if (_selectedFrequency == HabitFrequency.weekly &&
           _selectedWeekdays.isEmpty) {
+        setState(() {
+          _isSaving = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select at least one day of the week'),
@@ -1341,6 +1363,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
       if (_selectedFrequency == HabitFrequency.monthly &&
           _selectedMonthDays.isEmpty) {
+        setState(() {
+          _isSaving = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select at least one day of the month'),
@@ -1352,6 +1377,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
       if (_selectedFrequency == HabitFrequency.yearly &&
           _selectedYearlyDates.isEmpty) {
+        setState(() {
+          _isSaving = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please select at least one date for the year'),
@@ -1362,6 +1390,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       }
 
       if (_selectedFrequency == HabitFrequency.hourly && _hourlyTimes.isEmpty) {
+        setState(() {
+          _isSaving = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -1375,6 +1406,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
       if (_selectedFrequency == HabitFrequency.hourly &&
           _selectedWeekdays.isEmpty) {
+        setState(() {
+          _isSaving = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -1390,6 +1424,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       if ((_notificationsEnabled || _alarmEnabled) &&
           _selectedFrequency != HabitFrequency.hourly &&
           _notificationTime == null) {
+        setState(() {
+          _isSaving = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -1407,6 +1444,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       final database = databaseAsync.value;
 
       if (database == null) {
+        setState(() {
+          _isSaving = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Database not available'),
@@ -1504,6 +1544,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       final habitService = habitServiceAsync.value;
 
       if (habitService == null) {
+        setState(() {
+          _isSaving = false;
+        });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1596,6 +1639,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
       }
     }
   }

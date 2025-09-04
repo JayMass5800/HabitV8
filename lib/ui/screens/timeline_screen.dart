@@ -26,6 +26,8 @@ class TimelineScreen extends ConsumerStatefulWidget {
 class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   String _selectedCategory = 'All';
   DateTime _selectedDate = DateTime.now();
+  bool _isUpdatingHabit = false;
+  final Map<String, bool> _optimisticCompletions = {};
 
   @override
   Widget build(BuildContext context) {
@@ -105,23 +107,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         // Use ref.watch to automatically rebuild when habitServiceProvider changes
         final habitServiceAsync = ref.watch(habitServiceProvider);
 
-        // Add a listener to the habitServiceProvider to ensure updates
-        ref.listen<AsyncValue<HabitService>>(habitServiceProvider, (
-          previous,
-          next,
-        ) {
-          // This will trigger a rebuild when the provider changes
-          if (previous != next) {
-            setState(() {
-              // Force rebuild
-            });
-          }
-        });
-
         return habitServiceAsync.when(
           data: (habitService) => FutureBuilder<List<Habit>>(
-            // Add a key to force rebuild when habitServiceProvider changes
-            key: ValueKey(DateTime.now().millisecondsSinceEpoch),
+            // Remove the force rebuild key for better performance
             future: habitService.getAllHabits(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -150,18 +138,16 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
               }
 
               final allHabits = snapshot.data!;
-              final filteredHabits = _selectedCategory == 'All'
-                  ? allHabits
-                  : allHabits
-                        .where((habit) => habit.category == _selectedCategory)
-                        .toList();
 
-              // Separate hourly habits from regular habits
+              // Optimize filtering and sorting with single pass
               final hourlyHabits = <Habit>[];
               final regularHabits = <Habit>[];
 
-              for (final habit in filteredHabits) {
-                if (_isHabitDueOnDate(habit, _selectedDate)) {
+              for (final habit in allHabits) {
+                // Apply category filter and date filter in one pass
+                if ((_selectedCategory == 'All' ||
+                        habit.category == _selectedCategory) &&
+                    _isHabitDueOnDate(habit, _selectedDate)) {
                   if (habit.frequency == HabitFrequency.hourly &&
                       habit.hourlyTimes.isNotEmpty) {
                     hourlyHabits.add(habit);
@@ -283,18 +269,27 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     final habit = habitTimeSlot.habit;
     final timeSlot = habitTimeSlot.timeSlot;
 
-    final isCompleted = timeSlot != null
-        ? _isHourlyHabitCompletedAtTime(habit, _selectedDate, timeSlot)
-        : _isHabitCompletedOnDate(habit, _selectedDate);
+    // Check for optimistic completion first
+    final optimisticKey =
+        '${habit.id}_${_selectedDate.millisecondsSinceEpoch}${timeSlot != null ? '_${timeSlot.hour}_${timeSlot.minute}' : ''}';
+    final hasOptimisticCompletion =
+        _optimisticCompletions[optimisticKey] ?? false;
+
+    final isCompleted = hasOptimisticCompletion ||
+        (timeSlot != null
+            ? _isHourlyHabitCompletedAtTime(habit, _selectedDate, timeSlot)
+            : _isHabitCompletedOnDate(habit, _selectedDate));
     final status = _getHabitStatus(habit, _selectedDate);
     final statusColor = _getStatusColor(status);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => timeSlot != null
-            ? _toggleHourlyHabitCompletion(habit, timeSlot)
-            : _toggleHabitCompletion(habit),
+        onTap: _isUpdatingHabit
+            ? null
+            : () => timeSlot != null
+                ? _toggleHourlyHabitCompletion(habit, timeSlot)
+                : _toggleHabitCompletion(habit),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -318,19 +313,18 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                           ? '${habit.name} (${timeSlot.format(context)})'
                           : habit.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        decoration: isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            decoration:
+                                isCompleted ? TextDecoration.lineThrough : null,
+                          ),
                     ),
                     if (habit.description != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         habit.description!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                              color: Colors.grey[600],
+                            ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -351,11 +345,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                           ),
                           child: Text(
                             habit.category,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Color(habit.colorValue),
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Color(habit.colorValue),
+                                      fontWeight: FontWeight.w500,
+                                    ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -370,11 +364,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                           ),
                           child: Text(
                             status,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: statusColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: statusColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                           ),
                         ),
                         // Add time display
@@ -400,7 +394,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   _getHabitTimeDisplay(habit),
-                                  style: Theme.of(context).textTheme.bodySmall
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
                                       ?.copyWith(
                                         color: Colors.grey[600],
                                         fontWeight: FontWeight.w500,
@@ -544,11 +540,25 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   }
 
   Future<void> _toggleHabitCompletion(Habit habit) async {
-    final isCompleted = _isHabitCompletedOnDate(habit, _selectedDate);
-    final habitServiceAsync = ref.read(habitServiceProvider);
+    if (_isUpdatingHabit) return;
 
-    habitServiceAsync.when(
-      data: (habitService) async {
+    setState(() {
+      _isUpdatingHabit = true;
+    });
+
+    final optimisticKey = '${habit.id}_${_selectedDate.millisecondsSinceEpoch}';
+    final isCompleted = _isHabitCompletedOnDate(habit, _selectedDate);
+
+    // Optimistic UI update
+    setState(() {
+      _optimisticCompletions[optimisticKey] = !isCompleted;
+    });
+
+    try {
+      final habitServiceAsync = ref.read(habitServiceProvider);
+      final habitService = habitServiceAsync.value;
+
+      if (habitService != null) {
         if (isCompleted) {
           // Remove completion
           habit.completions.removeWhere((completion) {
@@ -570,18 +580,31 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         }
 
         await habitService.updateHabit(habit);
+
+        // Clear optimistic state after successful update
+        setState(() {
+          _optimisticCompletions.remove(optimisticKey);
+        });
+
         // Force UI refresh by invalidating the provider
         ref.invalidate(habitServiceProvider);
-      },
-      loading: () {},
-      error: (error, stack) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: $error')));
-        }
-      },
-    );
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setState(() {
+        _optimisticCompletions.remove(optimisticKey);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $error')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isUpdatingHabit = false;
+      });
+    }
   }
 
   Future<void> _selectDate() async {
@@ -652,6 +675,12 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     Habit habit,
     TimeOfDay timeSlot,
   ) async {
+    if (_isUpdatingHabit) return;
+
+    setState(() {
+      _isUpdatingHabit = true;
+    });
+
     final targetDateTime = DateTime(
       _selectedDate.year,
       _selectedDate.month,
@@ -660,15 +689,24 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       timeSlot.minute,
     );
 
+    final optimisticKey =
+        '${habit.id}_${_selectedDate.millisecondsSinceEpoch}_${timeSlot.hour}_${timeSlot.minute}';
     final isCompleted = _isHourlyHabitCompletedAtTime(
       habit,
       _selectedDate,
       timeSlot,
     );
-    final habitServiceAsync = ref.read(habitServiceProvider);
 
-    habitServiceAsync.when(
-      data: (habitService) async {
+    // Optimistic UI update
+    setState(() {
+      _optimisticCompletions[optimisticKey] = !isCompleted;
+    });
+
+    try {
+      final habitServiceAsync = ref.read(habitServiceProvider);
+      final habitService = habitServiceAsync.value;
+
+      if (habitService != null) {
         if (isCompleted) {
           // Remove completion for this specific time slot
           habit.completions.removeWhere((completion) {
@@ -684,18 +722,31 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         }
 
         await habitService.updateHabit(habit);
+
+        // Clear optimistic state after successful update
+        setState(() {
+          _optimisticCompletions.remove(optimisticKey);
+        });
+
         // Force UI refresh by invalidating the provider
         ref.invalidate(habitServiceProvider);
-      },
-      loading: () {},
-      error: (error, stack) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: $error')));
-        }
-      },
-    );
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setState(() {
+        _optimisticCompletions.remove(optimisticKey);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $error')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isUpdatingHabit = false;
+      });
+    }
   }
 
   TimeOfDay? _getEarliestTimeSlot(Habit habit) {

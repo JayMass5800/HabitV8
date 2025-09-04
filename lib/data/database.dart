@@ -67,16 +67,38 @@ class DatabaseService {
 class HabitService {
   final Box<Habit> _habitBox;
   final HabitStatsService _statsService = HabitStatsService();
+  List<Habit>? _cachedHabits;
+  DateTime? _cacheTimestamp;
+  static const Duration _cacheExpiry = Duration(seconds: 30);
 
   HabitService(this._habitBox);
 
   Future<List<Habit>> getAllHabits() async {
-    return _habitBox.values.toList();
+    final now = DateTime.now();
+
+    // Return cached data if it's still valid
+    if (_cachedHabits != null &&
+        _cacheTimestamp != null &&
+        now.difference(_cacheTimestamp!) < _cacheExpiry) {
+      return _cachedHabits!;
+    }
+
+    // Fetch fresh data and cache it
+    final habits = _habitBox.values.toList();
+    _cachedHabits = habits;
+    _cacheTimestamp = now;
+
+    return habits;
+  }
+
+  void _invalidateCache() {
+    _cachedHabits = null;
+    _cacheTimestamp = null;
   }
 
   Future<void> addHabit(Habit habit) async {
     await _habitBox.add(habit);
-    // No need to invalidate cache for new habits
+    _invalidateCache(); // Invalidate cache when adding new habit
 
     // Schedule notifications/alarms for the new habit
     try {
@@ -100,7 +122,7 @@ class HabitService {
 
   Future<void> updateHabit(Habit habit) async {
     await habit.save();
-    // Cache is automatically invalidated by habit.save()
+    _invalidateCache(); // Invalidate cache when updating habit
 
     // Reschedule notifications/alarms for the updated habit
     try {
@@ -145,6 +167,7 @@ class HabitService {
 
       // Invalidate cache before deletion
       _statsService.invalidateHabitCache(habit.id);
+      _invalidateCache();
 
       // Delete the habit from database
       await habit.delete();
@@ -156,6 +179,7 @@ class HabitService {
       AppLogger.error('Error deleting habit ${habit.name}', e);
       // Still attempt to delete the habit even if notification cancellation fails
       _statsService.invalidateHabitCache(habit.id);
+      _invalidateCache();
       await habit.delete();
     }
   }

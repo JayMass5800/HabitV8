@@ -37,6 +37,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   late int
       _originalHashCode; // Store original hash code for notification management
   final List<TimeOfDay> _hourlyTimes = []; // For hourly habits
+  bool _isSaving = false;
 
   // Comprehensive categories from the category suggestion service
   List<String> get _categories {
@@ -190,7 +191,21 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Habit'),
-        actions: [TextButton(onPressed: _saveHabit, child: const Text('Save'))],
+        actions: [
+          _isSaving
+              ? const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : TextButton(
+                  onPressed: _isSaving ? null : _saveHabit,
+                  child: const Text('Save'),
+                ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -891,13 +906,20 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   }
 
   Future<void> _saveHabit() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_isSaving || !_formKey.currentState!.validate()) {
       return;
     }
+
+    setState(() {
+      _isSaving = true;
+    });
 
     // Validate schedule selections
     if (_selectedFrequency == HabitFrequency.weekly &&
         _selectedWeekdays.isEmpty) {
+      setState(() {
+        _isSaving = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select at least one day for weekly habits'),
@@ -909,6 +931,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
     if (_selectedFrequency == HabitFrequency.monthly &&
         _selectedMonthDays.isEmpty) {
+      setState(() {
+        _isSaving = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select at least one day for monthly habits'),
@@ -920,6 +945,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
     if (_selectedFrequency == HabitFrequency.hourly &&
         (_selectedWeekdays.isEmpty || _hourlyTimes.isEmpty)) {
+      setState(() {
+        _isSaving = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -935,6 +963,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     if (_notificationsEnabled &&
         _selectedFrequency != HabitFrequency.hourly &&
         _notificationTime == null) {
+      setState(() {
+        _isSaving = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a notification time'),
@@ -1023,6 +1054,12 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
       }
     }
   }

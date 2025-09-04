@@ -78,6 +78,11 @@ void main() async {
   final container = ProviderContainer();
   NotificationActionService.initialize(container);
 
+  // Ensure callback is registered after a short delay to allow full initialization
+  Future.delayed(const Duration(seconds: 1), () {
+    NotificationActionService.ensureCallbackRegistered();
+  });
+
   // Initialize calendar renewal service (non-blocking)
   _initializeCalendarRenewal();
 

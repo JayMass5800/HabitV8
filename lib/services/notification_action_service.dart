@@ -36,6 +36,10 @@ class NotificationActionService {
       NotificationService.setNotificationActionCallback(
         _handleNotificationAction,
       );
+    } else if (_container != null) {
+      AppLogger.info('✅ Notification action callback is properly registered');
+    } else {
+      AppLogger.error('❌ Container is null - cannot register callback');
     }
   }
 
@@ -191,6 +195,9 @@ class NotificationActionService {
           // Force save to ensure persistence
           await habitService.updateHabit(habit);
           AppLogger.info('Habit data saved to database');
+
+          // Invalidate cache to ensure UI updates
+          _invalidateHabitCache();
         } else {
           // Log with frequency-specific message
           final frequencyText = _getFrequencyText(habit.frequency);
@@ -236,7 +243,9 @@ class NotificationActionService {
         if (habit != null) {
           AppLogger.info('Found habit for snooze: ${habit.name}');
           // The actual snooze scheduling is handled in the notification service
-          // This callback is just for any additional business logic if needed
+          // For snooze, we don't need to do anything else since we don't want to open the app
+          AppLogger.info(
+              '✅ Snooze action acknowledged for habit: ${habit.name}');
         } else {
           AppLogger.warning('Habit not found for snooze: $habitId');
         }
@@ -341,6 +350,19 @@ class NotificationActionService {
         return 'for this month';
       case HabitFrequency.yearly:
         return 'for this year';
+    }
+  }
+
+  /// Invalidate habit cache to ensure UI updates
+  static void _invalidateHabitCache() {
+    try {
+      if (_container != null) {
+        // Invalidate the habit service provider to force UI refresh
+        _container!.invalidate(habitServiceProvider);
+        AppLogger.info('✅ Habit cache invalidated to trigger UI refresh');
+      }
+    } catch (e) {
+      AppLogger.error('Error invalidating habit cache', e);
     }
   }
 }

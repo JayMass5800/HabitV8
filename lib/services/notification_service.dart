@@ -602,11 +602,20 @@ class NotificationService {
             AppLogger.info(
               '🔍 Callback state: set $_callbackSetCount times, last at $_lastCallbackSetTime',
             );
-            onNotificationAction!(habitId, 'complete');
-            AppLogger.debug('✅ DEBUG: Callback executed successfully');
-            AppLogger.info(
-              '✅ Complete action callback executed for habit: $habitId',
-            );
+            try {
+              onNotificationAction!(habitId, 'complete');
+              AppLogger.debug('✅ DEBUG: Callback executed successfully');
+              AppLogger.info(
+                '✅ Complete action callback executed for habit: $habitId',
+              );
+            } catch (callbackError) {
+              AppLogger.error(
+                'Error executing complete action callback for habit: $habitId',
+                callbackError,
+              );
+              // Store for later processing if callback fails
+              _storeActionForLaterProcessing(habitId, 'complete');
+            }
           } else {
             AppLogger.debug('❌ DEBUG: No notification action callback set!');
             AppLogger.warning(
@@ -617,10 +626,11 @@ class NotificationService {
             );
             AppLogger.warning('🔍 Current time: ${DateTime.now()}');
 
-            // The callback should be set by now. If not, there's a deeper issue.
-
             // Store the action for later processing if callback is not set
             _storeActionForLaterProcessing(habitId, 'complete');
+
+            // Try to re-register the callback in case it was lost
+            ensureCallbackIsSet();
           }
           break;
 
@@ -628,8 +638,17 @@ class NotificationService {
           AppLogger.debug('😴 Processing snooze action for habit: $habitId');
           AppLogger.info('😴 Processing snooze action for habit: $habitId');
           // Handle snooze action
-          await _handleSnoozeAction(habitId);
-          AppLogger.info('✅ Snooze action completed for habit: $habitId');
+          try {
+            await _handleSnoozeAction(habitId);
+            AppLogger.info('✅ Snooze action completed for habit: $habitId');
+          } catch (snoozeError) {
+            AppLogger.error(
+              'Error processing snooze action for habit: $habitId',
+              snoozeError,
+            );
+            // Store for later processing if snooze fails
+            _storeActionForLaterProcessing(habitId, 'snooze');
+          }
           break;
 
         default:
@@ -752,16 +771,11 @@ class NotificationService {
         // Still call the callback even if scheduling fails
       }
 
-      // Call the callback if set
-      if (onNotificationAction != null) {
-        onNotificationAction!(habitId, 'snooze');
-        AppLogger.info(
-          '📞 Snooze action callback executed for habit: $habitId',
-        );
-      } else {
-        AppLogger.warning('⚠️ No notification action callback set for snooze');
-        _storeActionForLaterProcessing(habitId, 'snooze');
-      }
+      // For snooze, we don't need to call the callback since we don't want to open the app
+      // The snooze action is complete once we've rescheduled the notification
+      AppLogger.info(
+        '✅ Snooze action completed without opening app for habit: $habitId',
+      );
 
       AppLogger.info('✅ Snooze action completed for habit: $habitId');
     } catch (e) {
@@ -1864,15 +1878,15 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           '✅ COMPLETE',
-          showsUserInterface: true,
-          cancelNotification: true,
+          showsUserInterface: true, // Keep true for complete to open app
+          cancelNotification: false, // Let our code handle cancellation
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           '⏰ SNOOZE 30MIN',
-          showsUserInterface: false,
-          cancelNotification: true,
+          showsUserInterface: false, // Keep false for snooze to not open app
+          cancelNotification: false, // Let our code handle cancellation
           allowGeneratedReplies: false,
         ),
       ],
@@ -1931,15 +1945,15 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           '✅ COMPLETE',
-          showsUserInterface: true,
-          cancelNotification: true,
+          showsUserInterface: true, // Keep true for complete to open app
+          cancelNotification: false, // Let our code handle cancellation
           allowGeneratedReplies: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           '⏰ SNOOZE 30MIN',
-          showsUserInterface: false,
-          cancelNotification: true,
+          showsUserInterface: false, // Keep false for snooze to not open app
+          cancelNotification: false, // Let our code handle cancellation
           allowGeneratedReplies: false,
         ),
       ],
