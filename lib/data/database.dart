@@ -28,7 +28,7 @@ class DatabaseService {
   static bool _adaptersRegistered = false;
 
   static Future<Box<Habit>> getInstance() async {
-    if (_habitBox != null) return _habitBox!;
+    if (_habitBox != null && _habitBox!.isOpen) return _habitBox!;
 
     await Hive.initFlutter();
 

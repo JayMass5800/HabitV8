@@ -1,120 +1,83 @@
-PS C:\HabitV8> flutter build apk
-Cleaning up health permissions for release
-Adding critical health permissions for release
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin.kt:46:7 Redeclaration:
-class MinimalHealthPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener
-class MinimalHealthPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin.kt:284:51 Unresolved reference 'createRequestPermissionResultContract'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin.kt:487:80 Unresolved reference 'ENERGY_TOTAL'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin.kt:491:33 Cannot infer type for this parameter. Please specify it explicitly.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin.kt:491:33 Not enough information to infer type argument for 'T'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin.kt:491:78 Unresolved reference 'ENERGY_TOTAL'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin.kt:491:93 Unresolved reference 'inCalories'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:46:7 Redeclaration:
-class MinimalHealthPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener
-class MinimalHealthPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:187:9 Unresolved reference 'initializeHealthConnectClient'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:227:21 Unresolved reference 'checkHealthConnectVersionCompatibility'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:383:17 Unresolved reference 'initialize'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:389:36 Argument type mismatch: actual type is 'io.flutter.plugin.common.MethodCall', but 'io.flutter.plugin.common.MethodChannel.Result' was expected.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:389:42 Too many arguments for 'fun requestPermissions(result: MethodChannel.Result): Unit'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:392:17 Unresolved reference 'getHealthData'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:395:17 Unresolved reference 'diagnoseHealthConnect'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:398:17 Unresolved reference 'checkHealthConnectAvailability'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:401:17 Unresolved reference 'getHealthConnectStatus'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:404:17 Unresolved reference 'startBackgroundMonitoring'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:407:17 Unresolved reference 'stopBackgroundMonitoring'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:410:17 Unresolved reference 'isBackgroundMonitoringActive'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:413:17 Unresolved reference 'requestExactAlarmPermission'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:416:17 Unresolved reference 'hasExactAlarmPermission'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:419:17 Unresolved reference 'getTotalCaloriesToday'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:422:17 Unresolved reference 'getSleepHoursLastNight'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:425:17 Unresolved reference 'getWaterIntakeToday'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:428:17 Unresolved reference 'getMindfulnessMinutesToday'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:431:17 Unresolved reference 'getLatestWeight'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:434:17 Unresolved reference 'getLatestHeartRate'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:437:17 Unresolved reference 'getRestingHeartRateToday'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:440:17 Unresolved reference 'getHeartRateData'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:443:17 Unresolved reference 'hasBackgroundHealthDataAccess'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:446:17 Unresolved reference 'getSupportedDataTypes'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:449:17 Unresolved reference 'getServiceStatus'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:452:17 Unresolved reference 'runNativeHealthConnectDiagnostics'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:455:17 Unresolved reference 'checkHealthConnectCompatibility'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:804:13 Unresolved reference 'initializeHealthConnectClient'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:867:13 Unresolved reference 'initializeHealthConnectClient'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:953:40 Unresolved reference 'checkDataTypeCompatibility'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:970:38 Unresolved reference 'readHealthRecordsCompatible'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:984:21 'if' must have both main and 'else' branches when used as an expression.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:995:78 Unresolved reference 'response'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1002:29 Unresolved reference 'response'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1011:42 Unresolved reference 'response'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1011:79 Cannot infer type for this parameter. Please specify it explicitly.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1011:86 Cannot infer type for this parameter. Please specify it explicitly.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1013:55 Unresolved reference 'convertRecordToMap'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1018:87 Cannot infer type for this parameter. Please specify it explicitly.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1018:87 'val <T : Any> KClass<T>.javaClass: Class<KClass<T>>' is deprecated. Use 'java' property to get Java class corresponding to this Kotlin class or cast this instance to Any if you really want to get the runtime Java class of this implementation of KClass.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1018:87 Not enough information to infer type argument for 'T'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1025:93 Unresolved reference 'size'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1030:70 Unresolved reference 'it'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1042:73 Unresolved reference 'it'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1055:73 Unresolved reference 'it'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1064:80 Unresolved reference 'it'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1065:73 Unresolved reference 'it'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1066:73 Unresolved reference 'it'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1075:81 Unresolved reference 'it'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1084:74 Unresolved reference 'it'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1101:23 Unresolved reference 'catch'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1101:30 Unresolved reference 'e'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1101:31 Syntax error: Expecting ')'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1101:31 Syntax error: Unexpected tokens (use ';' to separate expressions on the same line).
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1102:115 Unresolved reference 'e'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1102:128 Unresolved reference 'e'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1109:23 Unresolved reference 'catch'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1109:30 Unresolved reference 'e'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1109:31 Syntax error: Expecting ')'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1109:31 Syntax error: Unexpected tokens (use ';' to separate expressions on the same line).
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1109:44 Argument type mismatch: actual type is 'kotlin.Unit', but 'kotlin.Function0<ERROR CLASS: Unknown return lambda parameter type>' was expected.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1111:44 Unresolved reference 'e'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1121:50 Unresolved reference 'e'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1133:35 Type mismatch: inferred type is 'ERROR CLASS: Unresolved name: e', but 'kotlin.Throwable' was expected.   
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1133:35 Unresolved reference 'e'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1216:43 Unresolved reference 'convertRecordToMapSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1244:37 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1250:37 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1256:37 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1262:37 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1268:37 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1274:37 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1280:37 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1281:35 Unresolved reference 'getRecordEndTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1289:37 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1371:25 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1383:17 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1387:13 Unresolved reference 'getRecordStartTimeSafe'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:1962:21 Unresolved reference 'initializeHealthConnectClient'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2082:9 Unresolved reference 'getTodayHealthData'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2086:9 Unresolved reference 'getLastNightSleepData'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2090:9 Unresolved reference 'getTodayHealthData'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2094:9 Unresolved reference 'getTodayHealthData'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2108:9 Unresolved reference 'getTodayHealthData'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2122:9 Unresolved reference 'getHeartRateDataWithFallback'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2246:34 Unresolved reference '_supportedDataTypes'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2253:47 Unresolved reference '_supportedDataTypes'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2262:9 Unresolved reference 'diagnoseHealthConnect'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2478:80 Unresolved reference 'ENERGY_TOTAL'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2482:33 Cannot infer type for this parameter. Please specify it explicitly.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2482:33 Not enough information to infer type argument for 'T'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2482:78 Unresolved reference 'ENERGY_TOTAL'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2482:93 Unresolved reference 'inCalories'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_backup.kt:2620:6 Syntax error: Missing '}.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_new.kt:46:7 Redeclaration:
-class MinimalHealthPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener
-class MinimalHealthPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware, PluginRegistry.ActivityResultListener
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_new.kt:284:51 Unresolved reference 'createRequestPermissionResultContract'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_new.kt:487:80 Unresolved reference 'ENERGY_TOTAL'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_new.kt:491:33 Cannot infer type for this parameter. Please specify it explicitly.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_new.kt:491:33 Not enough information to infer type argument for 'T'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_new.kt:491:78 Unresolved reference 'ENERGY_TOTAL'.
-e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MinimalHealthPlugin_new.kt:491:93 Unresolved reference 'inCalories'.
-
-FAILURE: Build failed with an exception.
+Performing hot reload...
+D/ViewRootImpl(26276): Skipping stats log for color mode
+D/ImeBackDispatcher(26276): switch root view (mImeCallbacks.size=0)
+D/InsetsController(26276): hide(ime())
+I/ImeTracker(26276): com.habittracker.habitv8.debug:1c5b6df5: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:992:9: Error: Type 'SemanticsFlags' not found.
+  final SemanticsFlags flagsCollection;
+        ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:3024:3: Error: Type 'SemanticsFlags' not found.
+  SemanticsFlags _flags = SemanticsFlags.none;
+  ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:3027:3: Error: Type 'SemanticsFlags' not found.
+  SemanticsFlags get flagsCollection => _flags;
+  ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:5881:3: Error: Type 'SemanticsFlags' not found.
+  SemanticsFlags _flags = SemanticsFlags.none;
+  ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:6256:16: Error: Type 'SemanticsFlags' not found.
+int _toBitMask(SemanticsFlags flags) {
+               ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/widgets/media_query.dart:304:57: Error: The getter 'supportsAnnounce' isn't defined for the class 'AccessibilityFeatures'.
+ - 'AccessibilityFeatures' is from 'dart:ui'.
+Try correcting the name to the name of an existing getter, or defining a getter or field named 'supportsAnnounce'.
+          view.platformDispatcher.accessibilityFeatures.supportsAnnounce,
+                                                        ^^^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:142:19: Error: Member not found: 'complementary'.
+    SemanticsRole.complementary => _semanticsComplementary,
+                  ^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:143:19: Error: Member not found: 'contentInfo'.
+    SemanticsRole.contentInfo => _semanticsContentInfo,
+                  ^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:144:19: Error: Member not found: 'main'.
+    SemanticsRole.main => _semanticsMain,
+                  ^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:145:19: Error: Member not found: 'navigation'.
+    SemanticsRole.navigation => _semanticsNavigation,
+                  ^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:146:19: Error: Member not found: 'region'.
+    SemanticsRole.region => _semanticsRegion,
+                  ^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:363:38: Error: Member not found: 'complementary'.
+      nodeData.role == SemanticsRole.complementary ||
+                                     ^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:364:38: Error: Member not found: 'contentInfo'.
+      nodeData.role == SemanticsRole.contentInfo ||
+                                     ^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:365:38: Error: Member not found: 'main'.
+      nodeData.role == SemanticsRole.main ||
+                                     ^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:366:38: Error: Member not found: 'navigation'.
+      nodeData.role == SemanticsRole.navigation ||
+                                     ^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:367:38: Error: Member not found: 'region'.
+      nodeData.role == SemanticsRole.region;
+                                     ^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:992:9: Error: 'SemanticsFlags' isn't a type.
+  final SemanticsFlags flagsCollection;
+        ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:3024:3: Error: 'SemanticsFlags' isn't a type.
+  SemanticsFlags _flags = SemanticsFlags.none;
+  ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:3024:27: Error: Undefined name 'SemanticsFlags'.
+  SemanticsFlags _flags = SemanticsFlags.none;
+                          ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:3388:5: Error: 'SemanticsFlags' isn't a type.
+    SemanticsFlags flags = _flags;
+    ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:3654:7: Error: No named parameter with the name 'locale'.
+      locale: data.locale,
+      ^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:5881:3: Error: 'SemanticsFlags' isn't a type.
+  SemanticsFlags _flags = SemanticsFlags.none;
+  ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:5881:27: Error: Undefined name 'SemanticsFlags'.
+  SemanticsFlags _flags = SemanticsFlags.none;
+                          ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:6256:16: Error: 'SemanticsFlags' isn't a type.
+int _toBitMask(SemanticsFlags flags) {
+               ^^^^^^^^^^^^^^
+/D:/Downloads/flutter_windows/flutter/packages/flutter/lib/src/semantics/semantics.dart:121:80: Error: The type 'SemanticsRole' is not exhaustively matched by the switch cases since it doesn't match 'SemanticsRole.searchBox'.
+ - 'SemanticsRole' is from 'dart:ui'.
+Try adding a wildcard pattern or cases that match 'SemanticsRole.searchBox'.
+  static FlutterError? _checkSemanticsData(SemanticsNode node) => switch (node.role) {

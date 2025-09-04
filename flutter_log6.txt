@@ -2913,3 +2913,34 @@ I/flutter (23810): [38;5;12m│ #1   NotificationService._storeActionForLaterPr
 I/flutter (23810): [38;5;12m├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄[0m
 I/flutter (23810): [38;5;12m│ 💡 Successfully stored pending action: complete for habit 1757013315715[0m
 I/flutter (23810): [38;5;12m└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[0m
+D/ViewRootImpl(23810): Skipping stats log for color mode
+D/ImeBackDispatcher(23810): switch root view (mImeCallbacks.size=0)
+D/InsetsController(23810): hide(ime())
+I/ImeTracker(23810): com.habittracker.habitv8.debug:e7bbabc7: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/ImeTracker(23810): system_server:86aee7e7: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
+D/ImeBackDispatcher(23810): Register received callback id=173440658 priority=0
+D/WindowOnBackDispatcher(23810): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@6c2dbc5
+D/ImeBackDispatcher(23810): Unregister received callback id=173440658
+D/WindowOnBackDispatcher(23810): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@e902d3e
+I/ImeTracker(23810): system_server:5c2cb223: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
+D/WindowOnBackDispatcher(23810): setTopOnBackInvokedCallback (unwrapped): androidx.activity.OnBackPressedDispatcher$Api34Impl$createOnBackAnimationCallback$1@c0c316a
+D/WindowOnBackDispatcher(23810): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@e902d3e
+D/ImeBackDispatcher(23810): Clear (mImeCallbacks.size=0)
+D/VRI[MainActivity](23810): visibilityChanged oldVisibility=true newVisibility=false
+I/Choreographer(23810): Skipped 72 frames!  The application may be doing too much work on its main thread.
+D/ImeBackDispatcher(23810): Clear (mImeCallbacks.size=0)
+D/ImeBackDispatcher(23810): switch root view (mImeCallbacks.size=0)
+D/ImeBackDispatcher(23810): switch root view (mImeCallbacks.size=0)
+D/InsetsController(23810): hide(ime())
+I/ImeTracker(23810): com.habittracker.habitv8.debug:2dbf9fe6: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+D/WindowOnBackDispatcher(23810): setTopOnBackInvokedCallback (unwrapped): androidx.activity.OnBackPressedDispatcher$Api34Impl$createOnBackAnimationCallback$1@c0c316a
+D/WindowOnBackDispatcher(23810): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@e902d3e
+D/WindowOnBackDispatcher(23810): setTopOnBackInvokedCallback (unwrapped): null
+I/MinimalHealthPlugin(23810): Plugin detached from activity
+I/MinimalHealthPlugin(23810): Plugin detached from engine
+D/ImeBackDispatcher(23810): Clear (mImeCallbacks.size=0)
+D/ImeBackDispatcher(23810): switch root view (mImeCallbacks.size=0)
+D/ViewRootImpl(23810): Skipping stats log for color mode
+D/ImeBackDispatcher(23810): Clear (mImeCallbacks.size=0)
+D/ImeBackDispatcher(23810): switch root view (mImeCallbacks.size=0)
+Lost connection to device.

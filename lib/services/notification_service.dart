@@ -3,6 +3,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'logging_service.dart';
@@ -482,19 +483,33 @@ class NotificationService {
       AppLogger.info(
           'Storing action for later processing: $action for habit $habitId');
 
-      // Implement persistent storage for background actions using SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-
-      // Get existing pending actions
-      final existingActions =
-          prefs.getStringList('pending_notification_actions') ?? [];
-
       // Create action entry with timestamp
       final actionEntry = {
         'habitId': habitId,
         'action': action,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       };
+
+      // Use both SharedPreferences and file storage for reliability
+      await _storeActionInSharedPreferences(actionEntry);
+      await _storeActionInFile(actionEntry);
+
+      AppLogger.info(
+          'Successfully stored pending action: $action for habit $habitId');
+    } catch (e) {
+      AppLogger.error('Error storing action for later processing', e);
+    }
+  }
+
+  /// Store action in SharedPreferences
+  static Future<void> _storeActionInSharedPreferences(
+      Map<String, dynamic> actionEntry) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get existing pending actions
+      final existingActions =
+          prefs.getStringList('pending_notification_actions') ?? [];
 
       // Add new action to the list
       existingActions.add(jsonEncode(actionEntry));
@@ -507,13 +522,96 @@ class NotificationService {
       final verifyActions =
           prefs.getStringList('pending_notification_actions') ?? [];
       AppLogger.debug(
-          '🔍 Verified storage: ${verifyActions.length} actions stored');
-      AppLogger.debug('🔍 All keys after storage: ${prefs.getKeys().toList()}');
-
-      AppLogger.info(
-          'Successfully stored pending action: $action for habit $habitId');
+          '🔍 SharedPrefs: Verified storage: ${verifyActions.length} actions stored');
+      AppLogger.debug(
+          '🔍 SharedPrefs: All keys after storage: ${prefs.getKeys().toList()}');
     } catch (e) {
-      AppLogger.error('Error storing action for later processing', e);
+      AppLogger.error('Error storing action in SharedPreferences', e);
+    }
+  }
+
+  /// Store action in file as backup with file locking to prevent corruption
+  static Future<void> _storeActionInFile(
+      Map<String, dynamic> actionEntry) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/pending_notification_actions.json';
+      final lockFilePath =
+          '${directory.path}/pending_notification_actions.lock';
+      final file = File(filePath);
+      final lockFile = File(lockFilePath);
+
+      AppLogger.debug('🔍 File: Storing action at path: $filePath');
+
+      // Wait for lock to be available (simple file-based locking)
+      int attempts = 0;
+      while (await lockFile.exists() && attempts < 50) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        attempts++;
+      }
+
+      if (attempts >= 50) {
+        AppLogger.error('🔍 File: Timeout waiting for file lock');
+        return;
+      }
+
+      // Create lock file
+      await lockFile.writeAsString('locked');
+
+      try {
+        List<Map<String, dynamic>> actions = [];
+
+        // Read existing actions if file exists
+        if (await file.exists()) {
+          final content = await file.readAsString();
+          AppLogger.debug(
+              '🔍 File: Existing file content length: ${content.length}');
+          if (content.isNotEmpty) {
+            try {
+              final List<dynamic> jsonList = jsonDecode(content);
+              actions = jsonList.cast<Map<String, dynamic>>();
+              AppLogger.debug(
+                  '🔍 File: Loaded ${actions.length} existing actions');
+            } catch (e) {
+              AppLogger.error(
+                  '🔍 File: Corrupted file detected, starting fresh', e);
+              actions = [];
+            }
+          }
+        } else {
+          AppLogger.debug('🔍 File: Creating new file');
+        }
+
+        // Add new action
+        actions.add(actionEntry);
+
+        // Write to temporary file first (atomic write)
+        final tempFilePath = '$filePath.tmp';
+        final tempFile = File(tempFilePath);
+        final jsonContent = jsonEncode(actions);
+        await tempFile.writeAsString(jsonContent);
+
+        // Verify temp file was written correctly
+        final verifyContent = await tempFile.readAsString();
+        if (verifyContent.length != jsonContent.length) {
+          throw Exception('Temp file write verification failed');
+        }
+
+        // Atomic move from temp to final file
+        await tempFile.rename(filePath);
+
+        AppLogger.debug(
+            '🔍 File: Stored action in file, total: ${actions.length}');
+        AppLogger.debug(
+            '🔍 File: Written content length: ${jsonContent.length}');
+      } finally {
+        // Always remove lock file
+        if (await lockFile.exists()) {
+          await lockFile.delete();
+        }
+      }
+    } catch (e) {
+      AppLogger.error('Error storing action in file', e);
     }
   }
 
@@ -526,8 +624,15 @@ class NotificationService {
       final allKeys = prefs.getKeys();
       AppLogger.debug('🔍 All SharedPreferences keys: ${allKeys.toList()}');
 
-      final pendingActions =
-          prefs.getStringList('pending_notification_actions') ?? [];
+      // Try multiple approaches to get the data
+      final pendingActions1 =
+          prefs.getStringList('pending_notification_actions');
+      final pendingActions2 = prefs.get('pending_notification_actions');
+
+      AppLogger.debug('🔍 Method 1 (getStringList): $pendingActions1');
+      AppLogger.debug('🔍 Method 2 (get): $pendingActions2');
+
+      final pendingActions = pendingActions1 ?? [];
 
       AppLogger.debug(
           '🔍 Found ${pendingActions.length} pending actions in SharedPreferences');
@@ -536,7 +641,33 @@ class NotificationService {
       }
 
       if (pendingActions.isEmpty) {
-        AppLogger.debug('No pending notification actions to process');
+        AppLogger.debug(
+            'No pending notification actions to process in SharedPreferences');
+
+        // Try alternative storage keys in case there's a mismatch
+        final alternativeKeys = [
+          'pending_actions',
+          'notification_actions',
+          'stored_actions'
+        ];
+        for (final key in alternativeKeys) {
+          final altActions = prefs.getStringList(key);
+          if (altActions != null && altActions.isNotEmpty) {
+            AppLogger.debug(
+                '🔍 Found actions under alternative key "$key": $altActions');
+          }
+        }
+
+        // Try file storage as backup
+        final fileActions = await _loadActionsFromFile();
+        if (fileActions.isNotEmpty) {
+          AppLogger.info(
+              '🔍 Found ${fileActions.length} actions in file storage, processing them');
+          await _processActionsFromFile(fileActions);
+          return;
+        }
+
+        AppLogger.debug('No pending actions found in any storage method');
         return;
       }
 
@@ -573,6 +704,91 @@ class NotificationService {
       AppLogger.info('Cleared all processed pending actions');
     } catch (e) {
       AppLogger.error('Error processing pending notification actions', e);
+    }
+  }
+
+  /// Load actions from file storage with corruption handling
+  static Future<List<Map<String, dynamic>>> _loadActionsFromFile() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/pending_notification_actions.json';
+      final file = File(filePath);
+
+      AppLogger.debug('🔍 File: Checking for actions at path: $filePath');
+
+      if (!await file.exists()) {
+        AppLogger.debug('🔍 File: File does not exist');
+        return [];
+      }
+
+      final content = await file.readAsString();
+      AppLogger.debug('🔍 File: File content length: ${content.length}');
+
+      if (content.isEmpty) {
+        AppLogger.debug('🔍 File: File is empty');
+        return [];
+      }
+
+      try {
+        final List<dynamic> jsonList = jsonDecode(content);
+        final actions = jsonList.cast<Map<String, dynamic>>();
+        AppLogger.debug('🔍 File: Loaded ${actions.length} actions from file');
+        return actions;
+      } catch (e) {
+        AppLogger.error(
+            '🔍 File: JSON parsing failed, file corrupted. Content: $content',
+            e);
+
+        // Delete corrupted file to prevent future issues
+        try {
+          await file.delete();
+          AppLogger.info('🔍 File: Deleted corrupted file');
+        } catch (deleteError) {
+          AppLogger.error(
+              '🔍 File: Failed to delete corrupted file', deleteError);
+        }
+
+        return [];
+      }
+    } catch (e) {
+      AppLogger.error('Error loading actions from file', e);
+      return [];
+    }
+  }
+
+  /// Process actions loaded from file
+  static Future<void> _processActionsFromFile(
+      List<Map<String, dynamic>> actions) async {
+    try {
+      for (final actionData in actions) {
+        final habitId = actionData['habitId'] as String;
+        final action = actionData['action'] as String;
+        final timestamp = actionData['timestamp'] as int;
+
+        // Check if action is not too old (e.g., within last 24 hours)
+        final actionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+        final now = DateTime.now();
+        final timeDifference = now.difference(actionTime);
+
+        if (timeDifference.inHours > 24) {
+          AppLogger.warning(
+              'Skipping old pending action from file: $action for habit $habitId (${timeDifference.inHours} hours old)');
+          continue;
+        }
+
+        // Process the action
+        await _processStoredAction(habitId, action, actionTime);
+      }
+
+      // Clear the file after processing
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/pending_notification_actions.json');
+      if (await file.exists()) {
+        await file.delete();
+        AppLogger.info('Cleared processed actions from file');
+      }
+    } catch (e) {
+      AppLogger.error('Error processing actions from file', e);
     }
   }
 
