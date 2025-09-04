@@ -135,8 +135,8 @@ void _initializeHabitContinuation() async {
 /// Schedule notifications for all existing habits (non-blocking)
 void _scheduleExistingHabitNotifications() async {
   try {
-    // Small delay to let the app finish core initialization
-    await Future.delayed(const Duration(seconds: 2));
+    // Longer delay to ensure app is fully initialized and reduce startup load
+    await Future.delayed(const Duration(seconds: 5));
 
     AppLogger.info('Scheduling notifications for existing habits...');
     await NotificationService.scheduleAllHabitNotifications();

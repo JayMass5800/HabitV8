@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'logging_service.dart';
 import 'permission_service.dart';
+import 'performance_service.dart';
 import '../data/database.dart';
 import 'hybrid_alarm_service.dart';
 
@@ -2537,51 +2538,65 @@ class NotificationService {
   /// Schedule notifications/alarms for all existing habits
   /// This should be called during app initialization to ensure existing habits have their notifications scheduled
   static Future<void> scheduleAllHabitNotifications() async {
-    try {
-      AppLogger.info('🔄 Scheduling notifications for all existing habits...');
+    await PerformanceService.executeHeavyOperation(
+      'scheduleAllHabitNotifications',
+      () async {
+        AppLogger.info(
+            '🔄 Scheduling notifications for all existing habits...');
 
-      // First, cancel all existing notifications to prevent duplicates
-      AppLogger.info(
-        '🧹 Cancelling all existing notifications to prevent duplicates...',
-      );
-      await cancelAllNotifications();
+        // First, cancel all existing notifications to prevent duplicates
+        AppLogger.info(
+          '🧹 Cancelling all existing notifications to prevent duplicates...',
+        );
+        await cancelAllNotifications();
 
-      // Get all habits from the database
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
-      final habits = await habitService.getAllHabits();
+        // Get all habits from the database
+        final habitBox = await DatabaseService.getInstance();
+        final habitService = HabitService(habitBox);
+        final habits = await habitService.getAllHabits();
 
-      int scheduledCount = 0;
-      int skippedCount = 0;
+        // Create operations for batch processing
+        final operations = habits.map<Future<String> Function()>((habit) {
+          return () async {
+            try {
+              // Only schedule if notifications or alarms are enabled
+              if (habit.notificationsEnabled || habit.alarmEnabled) {
+                await scheduleHabitNotifications(habit);
+                return 'scheduled:${habit.name}';
+              } else {
+                return 'skipped:${habit.name}';
+              }
+            } catch (e) {
+              AppLogger.warning(
+                '⚠️ Failed to schedule notifications for habit: ${habit.name} - $e',
+              );
+              return 'failed:${habit.name}';
+            }
+          };
+        }).toList();
 
-      for (final habit in habits) {
-        try {
-          // Only schedule if notifications or alarms are enabled
-          if (habit.notificationsEnabled || habit.alarmEnabled) {
-            await scheduleHabitNotifications(habit);
-            scheduledCount++;
-            AppLogger.debug(
-              '✅ Scheduled notifications for habit: ${habit.name}',
-            );
-          } else {
-            skippedCount++;
-            AppLogger.debug(
-              '⏭️ Skipped habit (no notifications/alarms): ${habit.name}',
-            );
-          }
-        } catch (e) {
-          AppLogger.warning(
-            '⚠️ Failed to schedule notifications for habit: ${habit.name} - $e',
-          );
-        }
-      }
+        // Execute in batches using performance service
+        final results = await PerformanceService.executeBatch(
+          'habitNotificationScheduling',
+          operations,
+          batchSize: 3, // Smaller batch size for notification operations
+          batchDelay: const Duration(milliseconds: 50),
+        );
 
-      AppLogger.info(
-        '✅ Completed scheduling notifications for all habits: $scheduledCount scheduled, $skippedCount skipped',
-      );
-    } catch (e) {
-      AppLogger.error('❌ Failed to schedule notifications for all habits', e);
-    }
+        // Count results
+        final scheduledCount =
+            results.where((r) => r.startsWith('scheduled:')).length;
+        final skippedCount =
+            results.where((r) => r.startsWith('skipped:')).length;
+        final failedCount =
+            results.where((r) => r.startsWith('failed:')).length;
+
+        AppLogger.info(
+          '✅ Completed scheduling notifications for all habits: $scheduledCount scheduled, $skippedCount skipped, $failedCount failed',
+        );
+      },
+      timeout: const Duration(minutes: 2),
+    );
   }
 
   // ========== NEW ALARM SCHEDULING METHODS USING ANDROID ALARM MANAGER PLUS ==========

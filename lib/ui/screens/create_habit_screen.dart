@@ -424,15 +424,11 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               spacing: 8,
               runSpacing: 8,
               children: HabitFrequency.values.map((frequency) {
-                AppLogger.debug(
-                  'Creating choice chip for frequency: $frequency',
-                );
                 return ChoiceChip(
                   label: Text(_getFrequencyDisplayName(frequency)),
                   selected: _selectedFrequency == frequency,
                   onSelected: (selected) {
                     if (selected) {
-                      AppLogger.debug('Selected frequency: $frequency');
                       setState(() {
                         _selectedFrequency = frequency;
                         _selectedWeekdays.clear();

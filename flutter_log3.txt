@@ -3375,3 +3375,4 @@ D/VRI[MainActivity](21151): visibilityChanged oldVisibility=true newVisibility=f
 I/Choreographer(21151): Skipped 65 frames!  The application may be doing too much work on its main thread.
 D/ImeBackDispatcher(21151): Clear (mImeCallbacks.size=0)
 D/ImeBackDispatcher(21151): switch root view (mImeCallbacks.size=0)
+Lost connection to device.

@@ -25,14 +25,26 @@ final habitServiceProvider = FutureProvider<HabitService>((ref) async {
 
 class DatabaseService {
   static Box<Habit>? _habitBox;
+  static bool _adaptersRegistered = false;
 
   static Future<Box<Habit>> getInstance() async {
     if (_habitBox != null) return _habitBox!;
 
     await Hive.initFlutter();
-    Hive.registerAdapter(HabitAdapter());
-    Hive.registerAdapter(HabitFrequencyAdapter());
-    Hive.registerAdapter(HabitDifficultyAdapter());
+
+    // Only register adapters once to prevent duplicate registration error
+    if (!_adaptersRegistered) {
+      if (!Hive.isAdapterRegistered(0)) {
+        Hive.registerAdapter(HabitAdapter());
+      }
+      if (!Hive.isAdapterRegistered(1)) {
+        Hive.registerAdapter(HabitFrequencyAdapter());
+      }
+      if (!Hive.isAdapterRegistered(2)) {
+        Hive.registerAdapter(HabitDifficultyAdapter());
+      }
+      _adaptersRegistered = true;
+    }
 
     try {
       _habitBox = await Hive.openBox<Habit>('habits');
@@ -52,6 +64,7 @@ class DatabaseService {
   static Future<void> closeDatabase() async {
     await _habitBox?.close();
     _habitBox = null;
+    _adaptersRegistered = false; // Reset adapter registration state
   }
 
   // Method to manually reset the database if needed
