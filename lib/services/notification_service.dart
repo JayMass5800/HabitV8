@@ -834,7 +834,24 @@ class NotificationService {
     AppLogger.info('Handling notification action: $action for habit: $habitId');
 
     // Check callback status for debugging
-    ensureCallbackIsSet();
+    final callbackAvailable = ensureCallbackIsSet();
+
+    // If callback is not available, try to re-register it
+    if (!callbackAvailable) {
+      AppLogger.warning(
+          '🔄 Callback not available, attempting to re-register...');
+      // Import the notification action service dynamically to avoid circular imports
+      try {
+        // Try to re-register the callback by calling the ensure method
+        // This will be handled by the app lifecycle service when app resumes
+        AppLogger.info(
+            '📦 Storing action for later processing due to missing callback');
+        _storeActionForLaterProcessing(habitId, action);
+        return;
+      } catch (e) {
+        AppLogger.error('Failed to handle missing callback', e);
+      }
+    }
 
     try {
       // Normalize action IDs to handle both iOS and Android formats
@@ -1041,20 +1058,9 @@ class NotificationService {
       AppLogger.info('⏰ Scheduling snoozed notification for: $snoozeTime');
 
       try {
-        // Try to get habit name for better notification
+        // Use generic snooze notification content
         String title = 'Habit Reminder (Snoozed)';
         String body = 'Time to complete your habit!';
-
-        // If we have access to the callback, we can get habit details
-        if (onNotificationAction != null) {
-          try {
-            // Call the notification action service to get habit details for snooze
-            onNotificationAction!(habitId, 'snooze');
-          } catch (e) {
-            AppLogger.warning(
-                'Could not get habit details for snooze notification: $e');
-          }
-        }
 
         await scheduleHabitNotification(
           id: notificationId,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,6 +101,11 @@ void main() async {
     NotificationActionService.ensureCallbackRegistered();
     // Also manually process any pending actions after full initialization
     NotificationService.processPendingActionsManually();
+  });
+
+  // Set up a periodic callback check to ensure it doesn't get lost
+  Timer.periodic(const Duration(minutes: 1), (timer) {
+    NotificationActionService.ensureCallbackRegistered();
   });
 
   // Initialize calendar renewal service (non-blocking)

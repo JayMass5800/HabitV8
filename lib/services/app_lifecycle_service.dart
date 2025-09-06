@@ -7,6 +7,8 @@ import 'notification_queue_processor.dart';
 import 'calendar_renewal_service.dart';
 import 'habit_continuation_service.dart';
 import 'automatic_habit_completion_service.dart';
+import 'notification_action_service.dart';
+import 'notification_service.dart';
 import 'logging_service.dart';
 
 /// Service that manages app lifecycle events and ensures proper resource cleanup
@@ -72,6 +74,7 @@ class AppLifecycleService with WidgetsBindingObserver {
         break;
       case AppLifecycleState.resumed:
         AppLogger.info('▶️ App resumed');
+        _handleAppResumed();
         break;
       case AppLifecycleState.inactive:
         AppLogger.info('⏹️ App inactive');
@@ -122,6 +125,26 @@ class AppLifecycleService with WidgetsBindingObserver {
     }
 
     AppLogger.info('✅ Service cleanup completed');
+  }
+
+  /// Handle app resumed state - re-register callbacks and process pending actions
+  static void _handleAppResumed() {
+    try {
+      AppLogger.info(
+          '🔄 Handling app resume - re-registering notification callbacks...');
+
+      // Re-register notification action callback in case it was lost during background
+      NotificationActionService.ensureCallbackRegistered();
+
+      // Process any pending notification actions that were stored while app was in background
+      Future.delayed(const Duration(milliseconds: 500), () {
+        NotificationService.processPendingActionsManually();
+      });
+
+      AppLogger.info('✅ App resume handling completed');
+    } catch (e) {
+      AppLogger.error('Error handling app resume', e);
+    }
   }
 
   /// Perform background cleanup when app is paused

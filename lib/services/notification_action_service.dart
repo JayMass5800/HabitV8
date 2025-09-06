@@ -13,6 +13,9 @@ class NotificationActionService {
   static void initialize(ProviderContainer container) {
     _container = container;
 
+    AppLogger.info('🔧 Initializing NotificationActionService...');
+    AppLogger.info('📦 Container provided: ${container != null}');
+
     // Set up the notification action callback using the new method
     NotificationService.setNotificationActionCallback(
       _handleNotificationAction,
@@ -23,24 +26,30 @@ class NotificationActionService {
       completeHabitDirectly,
     );
 
-    AppLogger.info('🔧 NotificationActionService initialized');
+    AppLogger.info('✅ NotificationActionService initialized successfully');
     AppLogger.info('📦 Container set: ${_container != null}');
     AppLogger.info(
       '🔗 Callback registered: ${NotificationService.onNotificationAction != null}',
     );
     AppLogger.info(
-      '📋 Pending actions processed: ${NotificationService.getPendingActionsCount() == 0}',
+      '📋 Pending actions count: ${NotificationService.getPendingActionsCount()}',
     );
   }
 
   /// Re-register the callback if it gets lost
   static void ensureCallbackRegistered() {
+    AppLogger.info('🔍 Checking notification callback registration...');
+    AppLogger.info('📦 Container available: ${_container != null}');
+    AppLogger.info(
+        '🔗 Callback currently set: ${NotificationService.onNotificationAction != null}');
+
     if (_container != null &&
         NotificationService.onNotificationAction == null) {
       AppLogger.warning('🔄 Re-registering notification action callback');
       NotificationService.setNotificationActionCallback(
         _handleNotificationAction,
       );
+      AppLogger.info('✅ Callback re-registered successfully');
     } else if (_container != null) {
       AppLogger.info('✅ Notification action callback is properly registered');
     } else {
@@ -50,13 +59,19 @@ class NotificationActionService {
 
   /// Handle notification actions (complete/snooze)
   static void _handleNotificationAction(String habitId, String action) async {
+    AppLogger.info('🎯 _handleNotificationAction called');
+    AppLogger.info('📋 Habit ID: $habitId');
+    AppLogger.info('⚡ Action: $action');
+    AppLogger.info('📦 Container available: ${_container != null}');
+
     if (_container == null) {
-      AppLogger.error('NotificationActionService not initialized');
+      AppLogger.error(
+          '❌ NotificationActionService not initialized - container is null');
       return;
     }
 
     AppLogger.info(
-      'Processing notification action: $action for habit: $habitId',
+      '🚀 Processing notification action: $action for habit: $habitId',
     );
 
     try {
