@@ -1649,7 +1649,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// Show habit continuation service status
   void _showContinuationStatus() async {
     try {
-      final status = await HabitContinuationService.getRenewalStatus();
+      final status = await HabitContinuationManager.getRenewalStatus();
 
       if (!mounted) return;
 
@@ -1769,7 +1769,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         );
       }
 
-      await HabitContinuationService.forceRenewal();
+      await HabitContinuationManager.forceRenewal();
 
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -1799,7 +1799,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// Show renewal settings dialog
   void _showRenewalSettings() async {
     try {
-      final status = await HabitContinuationService.getRenewalStatus();
+      final status = await HabitContinuationManager.getRenewalStatus();
       final currentInterval = status['renewalIntervalHours'] ?? 12;
 
       if (!mounted) return;
@@ -1826,7 +1826,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
-                  value: selectedInterval,
+                  initialValue: selectedInterval,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     contentPadding:
@@ -1871,7 +1871,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    await HabitContinuationService.setRenewalInterval(
+                    await HabitContinuationManager.setRenewalInterval(
                         selectedInterval);
                     if (mounted) {
                       Navigator.of(context).pop();
@@ -1993,3 +1993,4 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
+

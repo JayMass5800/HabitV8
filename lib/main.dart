@@ -14,7 +14,7 @@ import 'services/theme_service.dart';
 import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/calendar_renewal_service.dart';
-import 'services/habit_continuation_service.dart';
+import 'services/habit_continuation_manager.dart';
 import 'services/health_habit_initialization_service.dart';
 import 'services/automatic_habit_completion_service.dart';
 import 'services/app_lifecycle_service.dart';
@@ -150,7 +150,7 @@ void _initializeHabitContinuation() async {
   try {
     // Small delay to let the app finish initializing
     await Future.delayed(const Duration(seconds: 4));
-    await HabitContinuationService.initialize();
+    await HabitContinuationManager.initialize();
   } catch (e) {
     AppLogger.error('Error initializing habit continuation service', e);
     // Don't block app startup if habit continuation fails
@@ -775,3 +775,5 @@ class _AppWrapperState extends State<AppWrapper> {
     return const AllHabitsScreen();
   }
 }
+
+

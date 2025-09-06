@@ -59,6 +59,7 @@ dependencies:
   flutter_ringtone_manager: ^1.0.0 # For system alarm sounds
   audioplayers: ^6.1.0 # For playing custom alarm sounds
   alarm: ^5.1.4 # For true system alarms that override DND
+  workmanager: ^0.5.2 # For reliable background tasks on Android
 
   # android_alarm_manager_plus: ^4.0.8 # For scheduling exact alarms on Android - causes Gradle build issues
   
@@ -117,3 +118,4 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
