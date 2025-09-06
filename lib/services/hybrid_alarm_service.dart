@@ -82,11 +82,17 @@ class HybridAlarmService {
         assetAudioPath: _getAlarmSoundPath(alarmSoundName),
         loopAudio: true,
         vibrate: true,
-        volumeMax: true,
-        fadeDuration: 3.0,
-        notificationTitle: '🚨 HABIT ALARM: ',
-        notificationBody: 'Time to complete your habit!',
-        enableNotificationOnKill: true,
+        notificationSettings: NotificationSettings(
+          title: '🚨 HABIT ALARM: $habitName',
+          body: 'Time to complete your habit!',
+          stopButton: 'Stop Alarm',
+        ),
+        volumeSettings: VolumeSettings(
+          volume: 1.0,
+          fadeInDuration: 3.0,
+        ),
+        warningNotificationOnKill: true,
+        androidFullScreenIntent: true,
       );
 
       await Alarm.set(alarmSettings: alarmSettings);
@@ -94,7 +100,7 @@ class HybridAlarmService {
       AppLogger.info('✅ Exact alarm scheduled successfully');
     } catch (e) {
       AppLogger.error('❌ Failed to schedule exact alarm', e);
-      
+
       // Fallback to notification if alarm fails
       await _scheduleNotificationAlarm(
         alarmId: alarmId,
@@ -109,20 +115,19 @@ class HybridAlarmService {
   /// Schedule hourly habit alarms
   static Future<void> scheduleHourlyHabitAlarms(dynamic habit) async {
     if (habit.hourlyTimes == null || habit.hourlyTimes.isEmpty) return;
-    
+
     final now = DateTime.now();
-    int scheduledCount = 0;
-    
+
     // Schedule for the next 24 hours
     for (int dayOffset = 0; dayOffset < 2; dayOffset++) {
       final targetDate = now.add(Duration(days: dayOffset));
-      
+
       for (final timeStr in habit.hourlyTimes) {
         try {
           final parts = timeStr.split(':');
           final hour = int.parse(parts[0]);
           final minute = int.parse(parts[1]);
-          
+
           DateTime alarmTime = DateTime(
             targetDate.year,
             targetDate.month,
@@ -130,13 +135,13 @@ class HybridAlarmService {
             hour,
             minute,
           );
-          
+
           if (alarmTime.isAfter(now)) {
             final alarmId = generateHabitAlarmId(
               habit.id,
               suffix: 'hourly___',
             );
-            
+
             await scheduleExactAlarm(
               alarmId: alarmId,
               habitId: habit.id,
@@ -146,30 +151,27 @@ class HybridAlarmService {
               alarmSoundName: habit.alarmSoundName,
               snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
             );
-            
-            scheduledCount++;
           }
         } catch (e) {
           AppLogger.warning('Invalid hourly time format: ');
         }
       }
     }
-    
+
     AppLogger.debug('⏰ Scheduled  hourly alarms for ');
   }
 
   /// Schedule daily habit alarms
   static Future<void> scheduleDailyHabitAlarms(dynamic habit) async {
     if (habit.notificationTime == null) return;
-    
+
     final alarmTime = habit.notificationTime;
     final now = DateTime.now();
-    int scheduledCount = 0;
-    
+
     // Schedule for the next 7 days
     for (int dayOffset = 0; dayOffset < 7; dayOffset++) {
       final targetDate = now.add(Duration(days: dayOffset));
-      
+
       DateTime scheduledTime = DateTime(
         targetDate.year,
         targetDate.month,
@@ -177,13 +179,13 @@ class HybridAlarmService {
         alarmTime.hour,
         alarmTime.minute,
       );
-      
+
       if (scheduledTime.isAfter(now)) {
         final alarmId = generateHabitAlarmId(
           habit.id,
           suffix: 'daily__',
         );
-        
+
         await scheduleExactAlarm(
           alarmId: alarmId,
           habitId: habit.id,
@@ -193,24 +195,26 @@ class HybridAlarmService {
           alarmSoundName: habit.alarmSoundName,
           snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
         );
-        
+
         scheduledCount++;
       }
     }
-    
+
     AppLogger.debug('⏰ Scheduled  daily alarms for ');
   }
 
   /// Schedule weekly habit alarms
   static Future<void> scheduleWeeklyHabitAlarms(dynamic habit) async {
     final selectedWeekdays = habit.selectedWeekdays;
-    if (selectedWeekdays == null || selectedWeekdays.isEmpty || habit.notificationTime == null) return;
-    
+    if (selectedWeekdays == null ||
+        selectedWeekdays.isEmpty ||
+        habit.notificationTime == null) return;
+
     final alarmTime = habit.notificationTime;
     final now = DateTime.now();
     final endDate = now.add(Duration(days: 28)); // 4 weeks
     int scheduledCount = 0;
-    
+
     for (DateTime date = now;
         date.isBefore(endDate);
         date = date.add(const Duration(days: 1))) {
@@ -222,13 +226,13 @@ class HybridAlarmService {
           alarmTime.hour,
           alarmTime.minute,
         );
-        
+
         if (scheduledTime.isAfter(now)) {
           final alarmId = generateHabitAlarmId(
             habit.id,
             suffix: 'weekly___',
           );
-          
+
           await scheduleExactAlarm(
             alarmId: alarmId,
             habitId: habit.id,
@@ -238,28 +242,30 @@ class HybridAlarmService {
             alarmSoundName: habit.alarmSoundName,
             snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
           );
-          
+
           scheduledCount++;
         }
       }
     }
-    
+
     AppLogger.debug('⏰ Scheduled  weekly alarms for ');
   }
 
   /// Schedule monthly habit alarms
   static Future<void> scheduleMonthlyHabitAlarms(dynamic habit) async {
     final selectedMonthDays = habit.selectedMonthDays;
-    if (selectedMonthDays == null || selectedMonthDays.isEmpty || habit.notificationTime == null) return;
-    
+    if (selectedMonthDays == null ||
+        selectedMonthDays.isEmpty ||
+        habit.notificationTime == null) return;
+
     final alarmTime = habit.notificationTime;
     final now = DateTime.now();
-    int scheduledCount = 0;
-    
+
     for (int monthOffset = 0; monthOffset < 3; monthOffset++) {
       final targetMonth = DateTime(now.year, now.month + monthOffset, 1);
-      final daysInMonth = DateTime(targetMonth.year, targetMonth.month + 1, 0).day;
-      
+      final daysInMonth =
+          DateTime(targetMonth.year, targetMonth.month + 1, 0).day;
+
       for (final monthDay in selectedMonthDays) {
         if (monthDay <= daysInMonth) {
           DateTime scheduledTime = DateTime(
@@ -269,13 +275,13 @@ class HybridAlarmService {
             alarmTime.hour,
             alarmTime.minute,
           );
-          
+
           if (scheduledTime.isAfter(now)) {
             final alarmId = generateHabitAlarmId(
               habit.id,
               suffix: 'monthly__',
             );
-            
+
             await scheduleExactAlarm(
               alarmId: alarmId,
               habitId: habit.id,
@@ -285,35 +291,34 @@ class HybridAlarmService {
               alarmSoundName: habit.alarmSoundName,
               snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
             );
-            
-            scheduledCount++;
           }
         }
       }
     }
-    
+
     AppLogger.debug('⏰ Scheduled  monthly alarms for ');
   }
 
   /// Schedule yearly habit alarms
   static Future<void> scheduleYearlyHabitAlarms(dynamic habit) async {
     final selectedYearlyDates = habit.selectedYearlyDates;
-    if (selectedYearlyDates == null || selectedYearlyDates.isEmpty || habit.notificationTime == null) return;
-    
+    if (selectedYearlyDates == null ||
+        selectedYearlyDates.isEmpty ||
+        habit.notificationTime == null) return;
+
     final alarmTime = habit.notificationTime;
     final now = DateTime.now();
-    int scheduledCount = 0;
-    
+
     for (int yearOffset = 0; yearOffset < 2; yearOffset++) {
       final targetYear = now.year + yearOffset;
-      
+
       for (final dateStr in selectedYearlyDates) {
         try {
           final dateParts = dateStr.split('-');
           if (dateParts.length >= 2) {
             final month = int.parse(dateParts[0]);
             final day = int.parse(dateParts[1]);
-            
+
             DateTime scheduledTime = DateTime(
               targetYear,
               month,
@@ -321,13 +326,13 @@ class HybridAlarmService {
               alarmTime.hour,
               alarmTime.minute,
             );
-            
+
             if (scheduledTime.isAfter(now)) {
               final alarmId = generateHabitAlarmId(
                 habit.id,
                 suffix: 'yearly___',
               );
-              
+
               await scheduleExactAlarm(
                 alarmId: alarmId,
                 habitId: habit.id,
@@ -337,7 +342,7 @@ class HybridAlarmService {
                 alarmSoundName: habit.alarmSoundName,
                 snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
               );
-              
+
               scheduledCount++;
             }
           }
@@ -346,7 +351,7 @@ class HybridAlarmService {
         }
       }
     }
-    
+
     AppLogger.debug('⏰ Scheduled  yearly alarms for ');
   }
 
@@ -355,7 +360,7 @@ class HybridAlarmService {
     try {
       // Cancel the alarm
       await Alarm.stop(alarmId);
-      
+
       // Cancel the notification
       await _notificationsPlugin.cancel(alarmId);
 
@@ -379,8 +384,6 @@ class HybridAlarmService {
     final prefs = await SharedPreferences.getInstance();
     final keys = prefs.getKeys();
 
-    int cancelledCount = 0;
-
     for (String key in keys) {
       if (key.startsWith(_alarmDataKey)) {
         try {
@@ -393,7 +396,6 @@ class HybridAlarmService {
                 await Alarm.stop(alarmId);
                 await _notificationsPlugin.cancel(alarmId);
                 await prefs.remove(key);
-                cancelledCount++;
               }
             }
           }
@@ -470,11 +472,11 @@ class HybridAlarmService {
     if (alarmSoundName == null || alarmSoundName == 'default') {
       return 'assets/sounds/digital_beep.mp3';
     }
-    
+
     if (alarmSoundName.startsWith('assets/')) {
       return alarmSoundName;
     }
-    
+
     // Map named sounds to paths
     switch (alarmSoundName) {
       case 'Gentle Chime':
@@ -489,10 +491,9 @@ class HybridAlarmService {
         return 'assets/sounds/digital_beep.mp3';
     }
   }
-}
 
   /// Get a list of available alarm sounds
-  Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
+  static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
     // Return a list of available alarm sounds
     return [
       {'id': 'default', 'name': 'Default Alarm'},
@@ -504,7 +505,7 @@ class HybridAlarmService {
   }
 
   /// Play a preview of an alarm sound
-  Future<void> playAlarmSoundPreview(String soundName) async {
+  static Future<void> playAlarmSoundPreview(String soundName) async {
     try {
       // Create temporary alarm settings for preview
       final previewSettings = AlarmSettings(
@@ -513,16 +514,22 @@ class HybridAlarmService {
         assetAudioPath: _getAlarmSoundPath(soundName),
         loopAudio: false,
         vibrate: false,
-        volumeMax: false,
-        fadeDuration: 0.0,
-        notificationTitle: 'Preview',
-        notificationBody: 'Sound preview',
-        enableNotificationOnKill: false,
+        notificationSettings: NotificationSettings(
+          title: 'Preview',
+          body: 'Sound preview',
+          stopButton: 'Stop',
+        ),
+        volumeSettings: VolumeSettings(
+          volume: 0.5,
+          fadeInDuration: 0.0,
+        ),
+        warningNotificationOnKill: false,
+        androidFullScreenIntent: false,
       );
-      
+
       // Play the sound
       await Alarm.set(alarmSettings: previewSettings);
-      
+
       AppLogger.debug('Playing alarm sound preview: ');
     } catch (e) {
       AppLogger.error('Failed to play alarm sound preview', e);
@@ -530,7 +537,7 @@ class HybridAlarmService {
   }
 
   /// Stop the alarm sound preview
-  Future<void> stopAlarmSoundPreview() async {
+  static Future<void> stopAlarmSoundPreview() async {
     try {
       // Stop the preview alarm
       await Alarm.stop(999999);
@@ -540,21 +547,50 @@ class HybridAlarmService {
     }
   }
 
-  /// Get the asset path for an alarm sound
-  String _getAlarmSoundPath(String? soundName) {
-    // Map sound name to asset path
-    switch (soundName) {
-      case 'gentle':
-        return 'assets/sounds/gentle_alarm.mp3';
-      case 'urgent':
-        return 'assets/sounds/urgent_alarm.mp3';
-      case 'nature':
-        return 'assets/sounds/nature_alarm.mp3';
-      case 'digital':
-        return 'assets/sounds/digital_alarm.mp3';
-      case 'default':
-      default:
-        return 'assets/sounds/default_alarm.mp3';
-    }
+  /// Schedule a snooze alarm
+  static Future<void> scheduleSnoozeAlarm({
+    required int originalAlarmId,
+    required String habitId,
+    required String habitName,
+    required int snoozeDelayMinutes,
+    String? alarmSoundName,
+  }) async {
+    final snoozeTime =
+        DateTime.now().add(Duration(minutes: snoozeDelayMinutes));
+    final snoozeAlarmId =
+        originalAlarmId + 1000000; // Offset to avoid conflicts
+
+    await scheduleExactAlarm(
+      alarmId: snoozeAlarmId,
+      habitId: habitId,
+      habitName: habitName,
+      scheduledTime: snoozeTime,
+      frequency: 'snooze',
+      alarmSoundName: alarmSoundName,
+      snoozeDelayMinutes: snoozeDelayMinutes,
+    );
+
+    AppLogger.info('⏰ Scheduled snooze alarm for $snoozeDelayMinutes minutes');
   }
 
+  /// Schedule recurring exact alarm (for backward compatibility)
+  static Future<void> scheduleRecurringExactAlarm({
+    required int alarmId,
+    required String habitId,
+    required String habitName,
+    required DateTime scheduledTime,
+    required String frequency,
+    String? alarmSoundName,
+    int snoozeDelayMinutes = 10,
+  }) async {
+    await scheduleExactAlarm(
+      alarmId: alarmId,
+      habitId: habitId,
+      habitName: habitName,
+      scheduledTime: scheduledTime,
+      frequency: frequency,
+      alarmSoundName: alarmSoundName,
+      snoozeDelayMinutes: snoozeDelayMinutes,
+    );
+  }
+}

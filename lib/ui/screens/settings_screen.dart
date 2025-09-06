@@ -12,7 +12,7 @@ import '../../services/theme_service.dart';
 import '../../services/health_service.dart';
 import '../../services/calendar_service.dart';
 import '../../services/calendar_renewal_service.dart';
-import '../../services/habit_continuation_service.dart';
+import '../../services/habit_continuation_manager.dart';
 import '../../services/logging_service.dart';
 import '../../services/onboarding_service.dart';
 import '../../services/automatic_habit_completion_service.dart';
@@ -1993,4 +1993,3 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
-

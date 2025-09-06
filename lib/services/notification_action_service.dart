@@ -14,7 +14,7 @@ class NotificationActionService {
     _container = container;
 
     AppLogger.info('🔧 Initializing NotificationActionService...');
-    AppLogger.info('📦 Container provided: ${container != null}');
+    AppLogger.info('📦 Container provided: true');
 
     // Set up the notification action callback using the new method
     NotificationService.setNotificationActionCallback(
@@ -340,9 +340,11 @@ class NotificationActionService {
 
           // Schedule snooze alarm using HybridAlarmService
           await HybridAlarmService.scheduleSnoozeAlarm(
+            originalAlarmId:
+                HybridAlarmService.generateHabitAlarmId(actualHabitId),
             habitId: actualHabitId,
             habitName: habit.name,
-            snoozeDelayMinutes: habit.snoozeDelayMinutes,
+            snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
             alarmSoundName: habit.alarmSoundName,
           );
 

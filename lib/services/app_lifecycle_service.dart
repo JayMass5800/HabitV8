@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
 import 'calendar_renewal_service.dart';
-import 'habit_continuation_service.dart';
+import 'habit_continuation_manager.dart';
 import 'automatic_habit_completion_service.dart';
 import 'notification_action_service.dart';
 import 'notification_service.dart';
@@ -111,10 +111,12 @@ class AppLifecycleService with WidgetsBindingObserver {
     }
 
     try {
-      // Dispose HabitContinuationService
-      HabitContinuationService.dispose();
+      // Stop HabitContinuationManager (fire and forget since we can't await in lifecycle callback)
+      HabitContinuationManager.stop().catchError((e) {
+        AppLogger.error('Error stopping HabitContinuationManager', e);
+      });
     } catch (e) {
-      AppLogger.error('Error disposing HabitContinuationService', e);
+      AppLogger.error('Error stopping HabitContinuationManager', e);
     }
 
     try {
