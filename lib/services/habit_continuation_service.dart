@@ -813,6 +813,22 @@ class HabitContinuationService {
     AppLogger.info('🔄 Habit Continuation Service stopped');
   }
 
+  /// Dispose all resources properly - call this when app is shutting down
+  static void dispose() {
+    AppLogger.info('🔄 Disposing HabitContinuationService resources...');
+
+    // Cancel the renewal timer if active
+    if (_renewalTimer != null && _renewalTimer!.isActive) {
+      _renewalTimer!.cancel();
+    }
+    _renewalTimer = null;
+
+    // Reset state
+    _isInitialized = false;
+
+    AppLogger.info('✅ HabitContinuationService disposed successfully');
+  }
+
   /// Restart the continuation service
   static Future<void> restart() async {
     stop();

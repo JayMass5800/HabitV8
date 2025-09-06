@@ -8,7 +8,8 @@ import 'dart:io';
 import 'dart:convert';
 import 'logging_service.dart';
 import 'permission_service.dart';
-import 'performance_service.dart';
+import 'background_task_service.dart';
+import 'notification_queue_processor.dart';
 import '../data/database.dart';
 import 'hybrid_alarm_service.dart';
 
@@ -37,6 +38,10 @@ class NotificationService {
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
+    // Set up the callback for the queue processor
+    NotificationQueueProcessor.setScheduleNotificationCallback(
+        scheduleHabitNotification);
+
     // Android initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -52,12 +57,12 @@ class NotificationService {
           'habit_category',
           actions: [
             DarwinNotificationAction.plain(
-              'complete_action',
+              'complete',
               'COMPLETE',
               options: {DarwinNotificationActionOption.foreground},
             ),
             DarwinNotificationAction.plain(
-              'snooze_action',
+              'snooze',
               'SNOOZE 30MIN',
               options: {},
             ),
@@ -1036,29 +1041,38 @@ class NotificationService {
       AppLogger.info('⏰ Scheduling snoozed notification for: $snoozeTime');
 
       try {
+        // Try to get habit name for better notification
+        String title = 'Habit Reminder (Snoozed)';
+        String body = 'Time to complete your habit!';
+
+        // If we have access to the callback, we can get habit details
+        if (onNotificationAction != null) {
+          try {
+            // Call the notification action service to get habit details for snooze
+            onNotificationAction!(habitId, 'snooze');
+          } catch (e) {
+            AppLogger.warning(
+                'Could not get habit details for snooze notification: $e');
+          }
+        }
+
         await scheduleHabitNotification(
           id: notificationId,
           habitId: habitId,
-          title: 'Habit Reminder',
-          body: 'Time to complete your habit!',
+          title: title,
+          body: body,
           scheduledTime: snoozeTime,
         );
         AppLogger.info(
-          '✅ Snoozed notification scheduled successfully for habit: $habitId',
+          '✅ Snoozed notification scheduled successfully for habit: $habitId at $snoozeTime',
         );
       } catch (scheduleError) {
         AppLogger.error(
           '❌ Failed to schedule snoozed notification for habit: $habitId',
           scheduleError,
         );
-        // Still call the callback even if scheduling fails
+        // Continue - the snooze action is still considered successful even if rescheduling fails
       }
-
-      // For snooze, we don't need to call the callback since we don't want to open the app
-      // The snooze action is complete once we've rescheduled the notification
-      AppLogger.info(
-        '✅ Snooze action completed without opening app for habit: $habitId',
-      );
 
       AppLogger.info('✅ Snooze action completed for habit: $habitId');
     } catch (e) {
@@ -1615,7 +1629,7 @@ class NotificationService {
     int hour,
     int minute,
   ) async {
-    AppLogger.debug('Scheduling daily notifications for ${habit.name}');
+    // Minimal logging to reduce main thread work
     final now = DateTime.now();
     DateTime nextNotification = DateTime(
       now.year,
@@ -1625,17 +1639,9 @@ class NotificationService {
       minute,
     );
 
-    AppLogger.debug('Current time: $now');
-    AppLogger.debug('Initial notification time: $nextNotification');
-
     // If the time has passed today, schedule for tomorrow
     if (nextNotification.isBefore(now)) {
       nextNotification = nextNotification.add(const Duration(days: 1));
-      AppLogger.debug(
-        'Time has passed today, scheduling for tomorrow: $nextNotification',
-      );
-    } else {
-      AppLogger.debug('Scheduling for today: $nextNotification');
     }
 
     try {
@@ -2275,16 +2281,17 @@ class NotificationService {
     final deviceNow = DateTime.now();
     final localScheduledTime = scheduledTime.toLocal();
 
-    AppLogger.info('Device current time: $deviceNow');
-    AppLogger.info('Target scheduled time: $localScheduledTime');
-    AppLogger.info(
+    // Reduce logging to debug level to prevent main thread overload
+    AppLogger.debug('Device current time: $deviceNow');
+    AppLogger.debug('Target scheduled time: $localScheduledTime');
+    AppLogger.debug(
       'Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds',
     );
 
     final tzScheduledTime = tz.TZDateTime.from(localScheduledTime, tz.local);
 
-    AppLogger.info('TZ Scheduled time: $tzScheduledTime');
-    AppLogger.info('TZ Local timezone: ${tz.local.name}');
+    AppLogger.debug('TZ Scheduled time: $tzScheduledTime');
+    AppLogger.debug('TZ Local timezone: ${tz.local.name}');
 
     final payload = jsonEncode({'habitId': habitId, 'type': 'habit_reminder'});
 
@@ -2754,6 +2761,7 @@ class NotificationService {
     AppLogger.info('🧪 Creating test notification with action buttons...');
     AppLogger.info('📱 Platform: ${Platform.operatingSystem}');
     AppLogger.info('🔧 Background handler registered: true');
+    AppLogger.info('🔗 Callback set: ${onNotificationAction != null}');
 
     await showHabitNotification(
       id: 999999,
@@ -2766,6 +2774,11 @@ class NotificationService {
     AppLogger.info(
       '💡 Tap the notification or use the action buttons to test functionality',
     );
+    AppLogger.info('🔍 Expected behavior:');
+    AppLogger.info(
+        '  - COMPLETE button should call the notification action callback');
+    AppLogger.info(
+        '  - SNOOZE button should schedule a new notification in 30 minutes');
   }
 
   /// Show a simple test notification to verify basic functionality
@@ -2842,7 +2855,56 @@ class NotificationService {
   /// Schedule notifications/alarms for all existing habits
   /// This should be called during app initialization to ensure existing habits have their notifications scheduled
   static Future<void> scheduleAllHabitNotifications() async {
-    await PerformanceService.executeHeavyOperation(
+    // Use debouncing to prevent multiple rapid calls during app startup
+    BackgroundTaskService.debounceTask(
+      'scheduleAllHabitNotifications',
+      () => _performScheduleAllHabitNotificationsWithQueue(),
+      delay: const Duration(seconds: 2),
+    );
+  }
+
+  /// Alternative method using the queue processor for better main thread protection
+  static Future<void> _performScheduleAllHabitNotificationsWithQueue() async {
+    try {
+      AppLogger.info('🔄 Starting queue-based notification scheduling...');
+
+      // First, cancel all existing notifications to prevent duplicates
+      await BackgroundTaskService.executeLightweightTask(
+        'cancelAllNotifications',
+        () => cancelAllNotifications(),
+      );
+
+      // Get all habits from the database
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+      final habits = await habitService.getAllHabits();
+
+      AppLogger.info('📋 Found ${habits.length} habits to process with queue');
+
+      // Use the queue processor to handle notifications in the background
+      await NotificationQueueProcessor.processHabitsForNotifications(habits);
+
+      AppLogger.info('✅ Queue-based notification scheduling initiated');
+    } catch (e) {
+      AppLogger.error('❌ Error in queue-based notification scheduling', e);
+    }
+  }
+
+  /// Internal method that performs the actual notification scheduling
+  static Future<void> _performScheduleAllHabitNotifications() async {
+    // Check if system is under heavy load and defer if necessary
+    if (BackgroundTaskService.isSystemUnderHeavyLoad()) {
+      AppLogger.info(
+          '🚦 System under heavy load, deferring notification scheduling');
+      BackgroundTaskService.scheduleDelayedTask(
+        'deferredNotificationScheduling',
+        () => _performScheduleAllHabitNotifications(),
+        const Duration(seconds: 30),
+      );
+      return;
+    }
+
+    await BackgroundTaskService.executeBackgroundTask(
       'scheduleAllHabitNotifications',
       () async {
         AppLogger.info(
@@ -2852,12 +2914,17 @@ class NotificationService {
         AppLogger.info(
           '🧹 Cancelling all existing notifications to prevent duplicates...',
         );
-        await cancelAllNotifications();
+        await BackgroundTaskService.executeLightweightTask(
+          'cancelAllNotifications',
+          () => cancelAllNotifications(),
+        );
 
         // Get all habits from the database
         final habitBox = await DatabaseService.getInstance();
         final habitService = HabitService(habitBox);
         final habits = await habitService.getAllHabits();
+
+        AppLogger.info('📋 Found ${habits.length} habits to process');
 
         // Create operations for batch processing
         final operations = habits.map<Future<String> Function()>((habit) {
@@ -2879,13 +2946,9 @@ class NotificationService {
           };
         }).toList();
 
-        // Execute in batches using performance service
-        final results = await PerformanceService.executeBatch(
-          'habitNotificationScheduling',
-          operations,
-          batchSize: 3, // Smaller batch size for notification operations
-          batchDelay: const Duration(milliseconds: 50),
-        );
+        // Execute using ultra-throttled approach to prevent main thread blocking
+        final results = await BackgroundTaskService
+            .scheduleNotificationsBatchUltraThrottled(operations);
 
         // Count results
         final scheduledCount =

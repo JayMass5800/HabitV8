@@ -6,7 +6,6 @@ import 'package:habitv8/domain/model/habit.dart';
 import 'package:habitv8/data/database.dart';
 import 'package:habitv8/ui/screens/timeline_screen.dart';
 import 'package:habitv8/ui/screens/create_habit_screen.dart';
-import 'package:habitv8/ui/screens/edit_habit_screen.dart';
 
 void main() {
   group('Performance Tests', () {

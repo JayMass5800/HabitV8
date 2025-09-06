@@ -203,6 +203,16 @@ class NotificationActionService {
 
           // Invalidate cache to ensure UI updates
           _invalidateHabitCache();
+
+          // Force a complete provider refresh to ensure UI updates
+          try {
+            // Invalidate all related providers to force UI refresh
+            _container!.invalidate(habitServiceProvider);
+            AppLogger.info(
+                '✅ All habit-related providers invalidated for UI refresh');
+          } catch (e) {
+            AppLogger.warning('Could not invalidate additional providers: $e');
+          }
         } else {
           // Log with frequency-specific message
           final frequencyText = _getFrequencyText(habit.frequency);

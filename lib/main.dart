@@ -16,6 +16,7 @@ import 'services/calendar_renewal_service.dart';
 import 'services/habit_continuation_service.dart';
 import 'services/health_habit_initialization_service.dart';
 import 'services/automatic_habit_completion_service.dart';
+import 'services/app_lifecycle_service.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/all_habits_screen.dart';
 import 'ui/screens/calendar_screen.dart';
@@ -41,6 +42,14 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
+
+  // Initialize app lifecycle service for proper resource cleanup
+  try {
+    AppLifecycleService.initialize();
+  } catch (e) {
+    AppLogger.error('Error initializing app lifecycle service', e);
+    // Continue with app startup even if lifecycle service fails
+  }
 
   // Initialize timezone data
   try {
@@ -145,13 +154,20 @@ void _initializeHabitContinuation() async {
 /// Schedule notifications for all existing habits (non-blocking)
 void _scheduleExistingHabitNotifications() async {
   try {
-    // Longer delay to ensure app is fully initialized and reduce startup load
-    await Future.delayed(const Duration(seconds: 5));
+    // Much longer delay to ensure app is fully initialized and UI is responsive
+    await Future.delayed(const Duration(seconds: 10));
 
     AppLogger.info('Scheduling notifications for existing habits...');
-    await NotificationService.scheduleAllHabitNotifications();
+
+    // Schedule this as a completely separate background task
+    // Don't await it to prevent blocking app startup
+    NotificationService.scheduleAllHabitNotifications().catchError((e) {
+      AppLogger.error('Error scheduling existing habit notifications', e);
+    });
+
+    AppLogger.info('Notification scheduling initiated in background');
   } catch (e) {
-    AppLogger.error('Error scheduling existing habit notifications', e);
+    AppLogger.error('Error initiating notification scheduling', e);
     // Don't block app startup if notification scheduling fails
   }
 }

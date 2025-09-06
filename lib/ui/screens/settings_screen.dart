@@ -1291,6 +1291,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               },
               child: const Text('Debug Info'),
             ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _testNotificationActions();
+              },
+              child: const Text('Test Notifications'),
+            ),
             ElevatedButton(
               onPressed: () async {
                 final navigator = Navigator.of(context);
@@ -1888,6 +1895,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       AppLogger.error('Error showing renewal settings', e);
       if (mounted) {
         _showSnackBar('Error loading settings: $e');
+      }
+    }
+  }
+
+  /// Test notification actions functionality
+  Future<void> _testNotificationActions() async {
+    try {
+      AppLogger.info('🧪 Testing notification actions...');
+
+      // Show test notifications
+      await NotificationService.showTestNotificationWithActions();
+      await NotificationService.showSimpleTestNotification();
+
+      // Debug the notification system
+      await NotificationService.debugNotificationSystem();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Test notifications sent! Check your notification shade and try the action buttons.'),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+
+      AppLogger.info('✅ Test notifications created successfully');
+    } catch (e) {
+      AppLogger.error('❌ Error testing notification actions', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error testing notifications: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     }
   }
