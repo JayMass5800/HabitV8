@@ -282,7 +282,7 @@ class CalendarService {
         AppLogger.info(
           'Calendar sync: Removing habit "${habit.name}" from calendar',
         );
-        await _removeHabitFromDeviceCalendar(habit);
+        await removeHabitFromDeviceCalendar(habit);
       } else {
         AppLogger.info(
           'Calendar sync: Syncing habit "${habit.name}" to calendar',
@@ -312,18 +312,16 @@ class CalendarService {
       }
 
       // First, remove any existing events for this habit to avoid duplicates
-      await _removeHabitFromDeviceCalendar(habit);
+      await removeHabitFromDeviceCalendar(habit);
 
       // Create calendar events for the next 90 days based on habit frequency
       // Extended from 30 to 90 days to reduce renewal frequency
       final now = DateTime.now();
       final endDate = now.add(const Duration(days: 90));
 
-      for (
-        DateTime date = now;
-        date.isBefore(endDate);
-        date = date.add(const Duration(days: 1))
-      ) {
+      for (DateTime date = now;
+          date.isBefore(endDate);
+          date = date.add(const Duration(days: 1))) {
         if (isHabitDueOnDate(habit, date)) {
           await createHabitEvent(habit, date);
         }
@@ -372,9 +370,8 @@ class CalendarService {
       // Parse the time string (format: "HH:mm")
       final timeParts = timeString.split(':');
       final hour = int.tryParse(timeParts[0]) ?? 9;
-      final minute = timeParts.length > 1
-          ? (int.tryParse(timeParts[1]) ?? 0)
-          : 0;
+      final minute =
+          timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
 
       final event = Event(_selectedCalendarId);
       event.title = habit.name;
@@ -511,7 +508,7 @@ class CalendarService {
   }
 
   /// Remove habit events from device calendar
-  static Future<void> _removeHabitFromDeviceCalendar(Habit habit) async {
+  static Future<void> removeHabitFromDeviceCalendar(Habit habit) async {
     if (_deviceCalendarPlugin == null || _selectedCalendarId == null) return;
 
     try {
@@ -733,9 +730,8 @@ class CalendarService {
 
     // Filter by category
     if (category != null && category != 'All') {
-      filteredHabits = filteredHabits
-          .where((habit) => habit.category == category)
-          .toList();
+      filteredHabits =
+          filteredHabits.where((habit) => habit.category == category).toList();
     }
 
     // Filter by date if specified
@@ -771,9 +767,8 @@ class CalendarService {
         final parts = key.split('_');
         if (parts.length >= 4) {
           try {
-            final dateStr = parts
-                .sublist(3)
-                .join('_'); // Handle dates with underscores
+            final dateStr =
+                parts.sublist(3).join('_'); // Handle dates with underscores
             final eventDate = DateTime.parse(dateStr);
 
             if (eventDate.isBefore(cutoffDate)) {
@@ -848,5 +843,72 @@ class CalendarService {
     AppLogger.info(
       'Completed bulk sync: $successCount successful, $errorCount errors',
     );
+  }
+
+  /// Remove all habit events from the calendar when sync is disabled
+  static Future<void> removeAllHabitsFromCalendar(List<Habit> habits) async {
+    AppLogger.info(
+      'removeAllHabitsFromCalendar called with ${habits.length} habits',
+    );
+
+    if (_deviceCalendarPlugin == null) {
+      AppLogger.warning(
+        'Device calendar plugin not initialized, skipping bulk removal',
+      );
+      return;
+    }
+
+    if (_selectedCalendarId == null) {
+      AppLogger.warning('No calendar selected, skipping bulk removal');
+      return;
+    }
+
+    AppLogger.info(
+      'Starting bulk removal of ${habits.length} habits from calendar $_selectedCalendarId',
+    );
+
+    int successCount = 0;
+    int errorCount = 0;
+
+    for (final habit in habits) {
+      try {
+        AppLogger.debug('Bulk removing habit: "${habit.name}"');
+        await removeHabitFromDeviceCalendar(habit);
+        successCount++;
+        // Small delay to avoid overwhelming the calendar API
+        await Future.delayed(const Duration(milliseconds: 100));
+      } catch (e) {
+        errorCount++;
+        AppLogger.error(
+          'Error removing habit "${habit.name}" during bulk removal',
+          e,
+        );
+      }
+    }
+
+    // Clean up all stored event IDs
+    await _clearAllStoredEventIds();
+
+    AppLogger.info(
+      'Completed bulk removal: $successCount successful, $errorCount errors',
+    );
+  }
+
+  /// Clear all stored event IDs from preferences
+  static Future<void> _clearAllStoredEventIds() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      final eventIdKeys =
+          keys.where((key) => key.startsWith('habit_events_')).toList();
+
+      for (final key in eventIdKeys) {
+        await prefs.remove(key);
+      }
+
+      AppLogger.info('Cleared ${eventIdKeys.length} stored event ID entries');
+    } catch (e) {
+      AppLogger.error('Error clearing stored event IDs', e);
+    }
   }
 }

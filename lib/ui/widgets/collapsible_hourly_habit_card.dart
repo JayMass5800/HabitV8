@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/model/habit.dart';
+import '../../data/database.dart';
+import '../screens/edit_habit_screen.dart';
 
-class CollapsibleHourlyHabitCard extends StatefulWidget {
+class CollapsibleHourlyHabitCard extends ConsumerStatefulWidget {
   final Habit habit;
   final DateTime selectedDate;
   final Function(Habit, TimeOfDay) onToggleHourlyCompletion;
@@ -20,11 +23,12 @@ class CollapsibleHourlyHabitCard extends StatefulWidget {
   });
 
   @override
-  State<CollapsibleHourlyHabitCard> createState() =>
+  ConsumerState<CollapsibleHourlyHabitCard> createState() =>
       _CollapsibleHourlyHabitCardState();
 }
 
-class _CollapsibleHourlyHabitCardState extends State<CollapsibleHourlyHabitCard>
+class _CollapsibleHourlyHabitCardState
+    extends ConsumerState<CollapsibleHourlyHabitCard>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _animationController;
@@ -71,10 +75,11 @@ class _CollapsibleHourlyHabitCardState extends State<CollapsibleHourlyHabitCard>
         }
       }
       return TimeOfDay.now(); // fallback
-    }).toList()..sort((a, b) {
-      if (a.hour != b.hour) return a.hour.compareTo(b.hour);
-      return a.minute.compareTo(b.minute);
-    });
+    }).toList()
+      ..sort((a, b) {
+        if (a.hour != b.hour) return a.hour.compareTo(b.hour);
+        return a.minute.compareTo(b.minute);
+      });
   }
 
   int _getCompletedCount() {
@@ -138,7 +143,9 @@ class _CollapsibleHourlyHabitCardState extends State<CollapsibleHourlyHabitCard>
                             Expanded(
                               child: Text(
                                 widget.habit.name,
-                                style: Theme.of(context).textTheme.titleMedium
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -168,7 +175,9 @@ class _CollapsibleHourlyHabitCardState extends State<CollapsibleHourlyHabitCard>
                           const SizedBox(height: 4),
                           Text(
                             widget.habit.description!,
-                            style: Theme.of(context).textTheme.bodySmall
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
                                 ?.copyWith(color: Colors.grey[600]),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -258,6 +267,33 @@ class _CollapsibleHourlyHabitCardState extends State<CollapsibleHourlyHabitCard>
                     ),
                   ),
 
+                  // Actions menu
+                  PopupMenuButton<String>(
+                    onSelected: (value) => _handleAction(context, value),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit, size: 20),
+                            SizedBox(width: 8),
+                            Text('Edit'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, size: 20, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
                   // Expand/collapse icon
                   AnimatedRotation(
                     turns: _isExpanded ? 0.5 : 0,
@@ -289,11 +325,11 @@ class _CollapsibleHourlyHabitCardState extends State<CollapsibleHourlyHabitCard>
                       children: [
                         Text(
                           'Time Slots',
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[700],
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
+                                  ),
                         ),
                         const SizedBox(height: 12),
 
@@ -302,12 +338,12 @@ class _CollapsibleHourlyHabitCardState extends State<CollapsibleHourlyHabitCard>
                           spacing: 8,
                           runSpacing: 8,
                           children: timeSlots.map((timeSlot) {
-                            final isCompleted = widget
-                                .isHourlyHabitCompletedAtTime(
-                                  widget.habit,
-                                  widget.selectedDate,
-                                  timeSlot,
-                                );
+                            final isCompleted =
+                                widget.isHourlyHabitCompletedAtTime(
+                              widget.habit,
+                              widget.selectedDate,
+                              timeSlot,
+                            );
 
                             return InkWell(
                               onTap: () => widget.onToggleHourlyCompletion(
@@ -424,5 +460,90 @@ class _CollapsibleHourlyHabitCardState extends State<CollapsibleHourlyHabitCard>
         ],
       ),
     );
+  }
+
+  void _handleAction(BuildContext context, String action) {
+    switch (action) {
+      case 'edit':
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => EditHabitScreen(habit: widget.habit),
+          ),
+        );
+        break;
+      case 'delete':
+        _showDeleteConfirmation(context);
+        break;
+    }
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Habit'),
+          content: Text(
+            'Are you sure you want to delete "${widget.habit.name}"? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _deleteHabit();
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteHabit() async {
+    try {
+      final habitServiceAsync = ref.read(habitServiceProvider);
+      await habitServiceAsync.when(
+        data: (habitService) async {
+          await habitService.deleteHabit(widget.habit);
+          // Force UI refresh by invalidating the provider
+          ref.invalidate(habitServiceProvider);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${widget.habit.name} deleted successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        },
+        loading: () {},
+        error: (error, stack) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error deleting habit: $error'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting habit: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

@@ -830,20 +830,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         _calendarSync = false;
       });
 
+      // Remove all habit events from calendar before disabling sync
+      try {
+        final container = ProviderScope.containerOf(context);
+        final habitServiceAsync = container.read(habitServiceProvider);
+
+        await habitServiceAsync.when(
+          data: (habitService) async {
+            final habits = await habitService.getAllHabits();
+            await CalendarService.removeAllHabitsFromCalendar(habits);
+          },
+          loading: () async {},
+          error: (error, stack) async {
+            AppLogger.error('Error getting habits for calendar cleanup', error);
+          },
+        );
+      } catch (e) {
+        AppLogger.error(
+            'Error removing habits from calendar during sync disable', e);
+      }
+
       // Save the preference using the service
       await CalendarService.setCalendarSyncEnabled(false);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Calendar sync disabled. Using basic calendar view.'),
+            content: Text(
+                'Calendar sync disabled. All habit events removed from calendar.'),
             backgroundColor: Colors.grey,
-            duration: Duration(seconds: 2),
+            duration: Duration(seconds: 3),
           ),
         );
       }
 
-      AppLogger.info('Calendar sync disabled');
+      AppLogger.info('Calendar sync disabled and events removed');
     }
   }
 
@@ -1826,7 +1847,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
-                  initialValue: selectedInterval,
+                  value: selectedInterval,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     contentPadding:

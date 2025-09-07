@@ -344,7 +344,7 @@ class NotificationActionService {
                 HybridAlarmService.generateHabitAlarmId(actualHabitId),
             habitId: actualHabitId,
             habitName: habit.name,
-            snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
+            snoozeDelayMinutes: habit.snoozeDelayMinutes,
             alarmSoundName: habit.alarmSoundName,
           );
 

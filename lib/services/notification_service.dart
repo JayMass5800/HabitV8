@@ -1519,8 +1519,9 @@ class NotificationService {
           break;
 
         case 'hourly':
-          AppLogger.debug('Scheduling hourly notifications');
-          await _scheduleHourlyHabitNotifications(habit);
+          AppLogger.debug(
+              'Skipping hourly notifications - handled by HabitContinuationService');
+          // Hourly habits are handled by HabitContinuationService to avoid duplicates
           break;
 
         default:
@@ -1804,91 +1805,6 @@ class NotificationService {
         );
       } catch (e) {
         AppLogger.error('Error parsing yearly date: $dateString', e);
-      }
-    }
-  }
-
-  /// Schedule hourly habit notifications
-  static Future<void> _scheduleHourlyHabitNotifications(dynamic habit) async {
-    final now = DateTime.now();
-
-    // For hourly habits, use the specific times set by the user
-    if (habit.hourlyTimes != null && habit.hourlyTimes.isNotEmpty) {
-      AppLogger.debug(
-        'Scheduling hourly notifications for specific times: ${habit.hourlyTimes}',
-      );
-
-      for (String timeString in habit.hourlyTimes) {
-        try {
-          // Parse the time string (format: "HH:mm")
-          final timeParts = timeString.split(':');
-          final hour = int.tryParse(timeParts[0]) ?? 9;
-          final minute =
-              timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
-
-          DateTime nextNotification = DateTime(
-            now.year,
-            now.month,
-            now.day,
-            hour,
-            minute,
-          );
-
-          // If the time has passed today, schedule for tomorrow
-          if (nextNotification.isBefore(now)) {
-            nextNotification = nextNotification.add(const Duration(days: 1));
-          }
-
-          await scheduleHabitNotification(
-            id: generateSafeId(
-              '${habit.id}_hourly_${hour}_$minute',
-            ), // Use hour and minute for uniqueness
-            habitId:
-                '${habit.id}|$hour:${minute.toString().padLeft(2, '0')}', // Include time slot in habitId
-            title: '⏰ ${habit.name}',
-            body: 'Time for your habit! Scheduled for $timeString',
-            scheduledTime: nextNotification,
-          );
-
-          AppLogger.debug(
-            'Scheduled hourly notification for $timeString at $nextNotification',
-          );
-        } catch (e) {
-          AppLogger.debug('Error parsing hourly time "$timeString": $e');
-          AppLogger.error(
-            'Error parsing hourly time "$timeString" for habit ${habit.name}',
-            e,
-          );
-        }
-      }
-    } else {
-      // Fallback: For hourly habits without specific times, schedule every hour during active hours (8 AM - 10 PM)
-      AppLogger.debug(
-        'No specific hourly times set, using default hourly schedule (8 AM - 10 PM)',
-      );
-      for (int hour = 8; hour <= 22; hour++) {
-        DateTime nextNotification = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          hour,
-          0,
-        );
-
-        // If the time has passed today, schedule for tomorrow
-        if (nextNotification.isBefore(now)) {
-          nextNotification = nextNotification.add(const Duration(days: 1));
-        }
-
-        await scheduleHabitNotification(
-          id: generateSafeId(
-            '${habit.id}_hourly_$hour',
-          ), // Use string concatenation for uniqueness
-          habitId: '${habit.id}|$hour:00', // Include time slot in habitId
-          title: '⏰ ${habit.name}',
-          body: 'Hourly reminder: Time for your habit!',
-          scheduledTime: nextNotification,
-        );
       }
     }
   }
@@ -2918,11 +2834,10 @@ class NotificationService {
     );
 
     await HybridAlarmService.scheduleRecurringExactAlarm(
-      baseAlarmId: alarmId,
+      alarmId: alarmId,
       habitId: habit.id,
       habitName: habit.name,
-      firstScheduledTime: nextAlarm,
-      interval: const Duration(days: 1),
+      scheduledTime: nextAlarm,
       frequency: 'daily',
       alarmSoundName: habit.alarmSoundName,
       snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
@@ -2965,11 +2880,10 @@ class NotificationService {
       );
 
       await HybridAlarmService.scheduleRecurringExactAlarm(
-        baseAlarmId: alarmId,
+        alarmId: alarmId,
         habitId: habit.id,
         habitName: habit.name,
-        firstScheduledTime: nextAlarm,
-        interval: const Duration(days: 7),
+        scheduledTime: nextAlarm,
         frequency: 'weekly',
         alarmSoundName: habit.alarmSoundName,
         snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
@@ -3022,11 +2936,10 @@ class NotificationService {
       );
 
       await HybridAlarmService.scheduleRecurringExactAlarm(
-        baseAlarmId: alarmId,
+        alarmId: alarmId,
         habitId: habit.id,
         habitName: habit.name,
-        firstScheduledTime: nextAlarm,
-        interval: const Duration(days: 30), // Approximate monthly interval
+        scheduledTime: nextAlarm,
         frequency: 'monthly',
         alarmSoundName: habit.alarmSoundName,
         snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
@@ -3078,11 +2991,10 @@ class NotificationService {
         );
 
         await HybridAlarmService.scheduleRecurringExactAlarm(
-          baseAlarmId: alarmId,
+          alarmId: alarmId,
           habitId: habit.id,
           habitName: habit.name,
-          firstScheduledTime: nextAlarm,
-          interval: const Duration(days: 365), // Approximate yearly interval
+          scheduledTime: nextAlarm,
           frequency: 'yearly',
           alarmSoundName: habit.alarmSoundName,
           snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
@@ -3139,11 +3051,10 @@ class NotificationService {
           );
 
           await HybridAlarmService.scheduleRecurringExactAlarm(
-            baseAlarmId: alarmId,
+            alarmId: alarmId,
             habitId: habit.id,
             habitName: habit.name,
-            firstScheduledTime: nextAlarm,
-            interval: const Duration(days: 1), // Daily recurrence for each time
+            scheduledTime: nextAlarm,
             frequency: 'hourly',
             alarmSoundName: habit.alarmSoundName,
             snoozeDelayMinutes:
@@ -3180,11 +3091,10 @@ class NotificationService {
         );
 
         await HybridAlarmService.scheduleRecurringExactAlarm(
-          baseAlarmId: alarmId,
+          alarmId: alarmId,
           habitId: habit.id,
           habitName: habit.name,
-          firstScheduledTime: nextAlarm,
-          interval: const Duration(days: 1), // Daily recurrence for each hour
+          scheduledTime: nextAlarm,
           frequency: 'hourly',
           alarmSoundName: habit.alarmSoundName,
           snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits

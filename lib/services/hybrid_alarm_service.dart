@@ -66,13 +66,13 @@ class HybridAlarmService {
     };
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('', jsonEncode(alarmData));
+    await prefs.setString('${_alarmDataKey}_$alarmId', jsonEncode(alarmData));
 
     AppLogger.info('🔄 Scheduling exact alarm:');
-    AppLogger.info('  - Alarm ID: ');
-    AppLogger.info('  - Habit: ');
-    AppLogger.info('  - Scheduled time: ');
-    AppLogger.info('  - Sound: ');
+    AppLogger.info('  - Alarm ID: $alarmId');
+    AppLogger.info('  - Habit: $habitName');
+    AppLogger.info('  - Scheduled time: $scheduledTime');
+    AppLogger.info('  - Sound: $alarmSoundName');
 
     try {
       // Use the alarm package for exact alarms
@@ -87,9 +87,9 @@ class HybridAlarmService {
           body: 'Time to complete your habit!',
           stopButton: 'Stop Alarm',
         ),
-        volumeSettings: VolumeSettings(
+        volumeSettings: VolumeSettings.fade(
           volume: 1.0,
-          fadeInDuration: 3.0,
+          fadeDuration: Duration(seconds: 3),
         ),
         warningNotificationOnKill: true,
         androidFullScreenIntent: true,
@@ -153,12 +153,12 @@ class HybridAlarmService {
             );
           }
         } catch (e) {
-          AppLogger.warning('Invalid hourly time format: ');
+          AppLogger.warning('Invalid hourly time format: $timeStr');
         }
       }
     }
 
-    AppLogger.debug('⏰ Scheduled  hourly alarms for ');
+    AppLogger.debug('⏰ Scheduled hourly alarms for ${habit.name}');
   }
 
   /// Schedule daily habit alarms
@@ -195,12 +195,10 @@ class HybridAlarmService {
           alarmSoundName: habit.alarmSoundName,
           snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
         );
-
-        scheduledCount++;
       }
     }
 
-    AppLogger.debug('⏰ Scheduled  daily alarms for ');
+    AppLogger.debug('⏰ Scheduled daily alarms for ${habit.name}');
   }
 
   /// Schedule weekly habit alarms
@@ -208,12 +206,13 @@ class HybridAlarmService {
     final selectedWeekdays = habit.selectedWeekdays;
     if (selectedWeekdays == null ||
         selectedWeekdays.isEmpty ||
-        habit.notificationTime == null) return;
+        habit.notificationTime == null) {
+      return;
+    }
 
     final alarmTime = habit.notificationTime;
     final now = DateTime.now();
     final endDate = now.add(Duration(days: 28)); // 4 weeks
-    int scheduledCount = 0;
 
     for (DateTime date = now;
         date.isBefore(endDate);
@@ -242,13 +241,11 @@ class HybridAlarmService {
             alarmSoundName: habit.alarmSoundName,
             snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
           );
-
-          scheduledCount++;
         }
       }
     }
 
-    AppLogger.debug('⏰ Scheduled  weekly alarms for ');
+    AppLogger.debug('⏰ Scheduled weekly alarms for ${habit.name}');
   }
 
   /// Schedule monthly habit alarms
@@ -256,7 +253,9 @@ class HybridAlarmService {
     final selectedMonthDays = habit.selectedMonthDays;
     if (selectedMonthDays == null ||
         selectedMonthDays.isEmpty ||
-        habit.notificationTime == null) return;
+        habit.notificationTime == null) {
+      return;
+    }
 
     final alarmTime = habit.notificationTime;
     final now = DateTime.now();
@@ -296,7 +295,7 @@ class HybridAlarmService {
       }
     }
 
-    AppLogger.debug('⏰ Scheduled  monthly alarms for ');
+    AppLogger.debug('⏰ Scheduled monthly alarms for ${habit.name}');
   }
 
   /// Schedule yearly habit alarms
@@ -304,7 +303,9 @@ class HybridAlarmService {
     final selectedYearlyDates = habit.selectedYearlyDates;
     if (selectedYearlyDates == null ||
         selectedYearlyDates.isEmpty ||
-        habit.notificationTime == null) return;
+        habit.notificationTime == null) {
+      return;
+    }
 
     final alarmTime = habit.notificationTime;
     final now = DateTime.now();
@@ -342,17 +343,15 @@ class HybridAlarmService {
                 alarmSoundName: habit.alarmSoundName,
                 snoozeDelayMinutes: habit.snoozeDelayMinutes ?? 10,
               );
-
-              scheduledCount++;
             }
           }
         } catch (e) {
-          AppLogger.warning('Invalid yearly date format: ');
+          AppLogger.warning('Invalid yearly date format: $dateStr');
         }
       }
     }
 
-    AppLogger.debug('⏰ Scheduled  yearly alarms for ');
+    AppLogger.debug('⏰ Scheduled yearly alarms for ${habit.name}');
   }
 
   /// Cancel an alarm
@@ -400,12 +399,12 @@ class HybridAlarmService {
             }
           }
         } catch (e) {
-          AppLogger.error('Error processing alarm data for key ', e);
+          AppLogger.error('Error processing alarm data for key $key', e);
         }
       }
     }
 
-    AppLogger.info('✅ Cancelled  alarms for habit: ');
+    AppLogger.info('✅ Cancelled alarms for habit');
   }
 
   /// Generate unique alarm ID for habit
@@ -519,9 +518,9 @@ class HybridAlarmService {
           body: 'Sound preview',
           stopButton: 'Stop',
         ),
-        volumeSettings: VolumeSettings(
+        volumeSettings: VolumeSettings.fade(
           volume: 0.5,
-          fadeInDuration: 0.0,
+          fadeDuration: Duration.zero,
         ),
         warningNotificationOnKill: false,
         androidFullScreenIntent: false,
@@ -530,7 +529,7 @@ class HybridAlarmService {
       // Play the sound
       await Alarm.set(alarmSettings: previewSettings);
 
-      AppLogger.debug('Playing alarm sound preview: ');
+      AppLogger.debug('Playing alarm sound preview: $soundName');
     } catch (e) {
       AppLogger.error('Failed to play alarm sound preview', e);
     }
