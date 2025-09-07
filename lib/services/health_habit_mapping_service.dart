@@ -3,6 +3,7 @@ import '../domain/model/habit.dart';
 import 'health_service.dart';
 import 'logging_service.dart';
 import 'minimal_health_channel.dart';
+import 'smart_threshold_service.dart';
 
 /// Health-Habit Mapping Service
 ///
@@ -1288,32 +1289,63 @@ class HealthHabitMappingService {
         }
       }
 
-      // Check if threshold is met
-      final thresholdMet = totalValue >= mapping.threshold;
+      // Get smart threshold (or use original if smart thresholds disabled)
+      final smartThresholdResult =
+          await SmartThresholdService.getAdaptiveThreshold(
+        habitId: habit.id,
+        healthDataType: mapping.healthDataType,
+        originalThreshold: mapping.threshold,
+        date: date,
+      );
+
+      final effectiveThreshold = smartThresholdResult.threshold;
+      final thresholdMet = totalValue >= effectiveThreshold;
+
+      AppLogger.info(
+          'Threshold check for "${habit.name}": value=$totalValue, original=${mapping.threshold}, '
+          'smart=$effectiveThreshold, met=$thresholdMet, adapted=${smartThresholdResult.isAdapted}');
 
       if (thresholdMet) {
         String reason = _generateCompletionReason(mapping, totalValue);
+
+        // Add smart threshold info to reason if adapted
+        if (smartThresholdResult.isAdapted) {
+          reason +=
+              ' (Smart threshold: ${effectiveThreshold.round()} ${mapping.unit})';
+        }
 
         return HabitCompletionResult(
           shouldComplete: true,
           reason: reason,
           healthValue: totalValue,
-          threshold: mapping.threshold,
+          threshold: effectiveThreshold,
           healthDataType: mapping.healthDataType,
           confidence: _calculateConfidence(
             mapping,
             totalValue,
             healthData.length,
           ),
+          smartThresholdUsed: smartThresholdResult.isAdapted,
+          smartThresholdConfidence: smartThresholdResult.confidence,
         );
       } else {
+        String reason =
+            'Threshold not met: ${totalValue.round()} ${mapping.unit} < ${effectiveThreshold.round()} ${mapping.unit}';
+
+        // Add smart threshold info if adapted
+        if (smartThresholdResult.isAdapted) {
+          reason +=
+              ' (Smart threshold adapted from ${mapping.threshold.round()})';
+        }
+
         return HabitCompletionResult(
           shouldComplete: false,
-          reason:
-              'Threshold not met: ${totalValue.round()} ${mapping.unit} < ${mapping.threshold.round()} ${mapping.unit}',
+          reason: reason,
           healthValue: totalValue,
-          threshold: mapping.threshold,
+          threshold: effectiveThreshold,
           healthDataType: mapping.healthDataType,
+          smartThresholdUsed: smartThresholdResult.isAdapted,
+          smartThresholdConfidence: smartThresholdResult.confidence,
         );
       }
     } catch (e) {
@@ -2103,6 +2135,8 @@ class HabitCompletionResult {
   final double? threshold;
   final String? healthDataType;
   final double confidence;
+  final bool smartThresholdUsed;
+  final double smartThresholdConfidence;
 
   HabitCompletionResult({
     required this.shouldComplete,
@@ -2111,6 +2145,8 @@ class HabitCompletionResult {
     this.threshold,
     this.healthDataType,
     this.confidence = 0.0,
+    this.smartThresholdUsed = false,
+    this.smartThresholdConfidence = 0.0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -2120,5 +2156,7 @@ class HabitCompletionResult {
         'threshold': threshold,
         'healthDataType': healthDataType,
         'confidence': confidence,
+        'smartThresholdUsed': smartThresholdUsed,
+        'smartThresholdConfidence': smartThresholdConfidence,
       };
 }

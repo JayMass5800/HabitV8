@@ -8,6 +8,7 @@ import 'notification_service.dart';
 import 'logging_service.dart';
 import 'health_habit_mapping_test.dart';
 import 'background_task_service.dart';
+import 'smart_threshold_service.dart';
 
 /// Automatic Habit Completion Service
 ///
@@ -303,6 +304,30 @@ class AutomaticHabitCompletionService {
     );
   }
 
+  /// Check if smart thresholds are enabled
+  static Future<bool> isSmartThresholdsEnabled() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_smartThresholdsEnabledKey) ??
+          false; // Default disabled for stability
+    } catch (e) {
+      AppLogger.error('Error checking smart thresholds enabled status', e);
+      return false;
+    }
+  }
+
+  /// Enable or disable smart thresholds
+  static Future<void> setSmartThresholdsEnabled(bool enabled) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_smartThresholdsEnabledKey, enabled);
+
+      AppLogger.info('Smart thresholds ${enabled ? 'enabled' : 'disabled'}');
+    } catch (e) {
+      AppLogger.error('Error setting smart thresholds enabled status', e);
+    }
+  }
+
   /// Perform lightweight health check for real-time monitoring
   static Future<void> _performLightweightHealthCheck() async {
     if (!_realTimeEnabled || !_isRunning) return;
@@ -439,6 +464,22 @@ class AutomaticHabitCompletionService {
         reason: result.reason,
       );
       await _addToCompletionHistory(completion);
+
+      // Learn from this auto-completion for smart thresholds
+      if (result.healthValue != null &&
+          result.threshold != null &&
+          result.healthDataType != null) {
+        await SmartThresholdService.learnFromCompletion(
+          habitId: habit.id,
+          healthDataType: result.healthDataType!,
+          healthValue: result.healthValue!,
+          usedThreshold: result.threshold!,
+          wasAutoCompleted: true,
+          wasManuallyCompleted:
+              false, // We don't know yet, will be updated if user manually completes
+          date: DateTime.now(),
+        );
+      }
 
       AppLogger.info('Auto-completed habit: ${habit.name} (${result.reason})');
     } catch (e) {
