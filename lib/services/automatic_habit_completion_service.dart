@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/database.dart';
+import '../domain/model/habit.dart';
 import 'health_service.dart';
 import 'health_habit_mapping_service.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
 import 'health_habit_mapping_test.dart';
+import 'background_task_service.dart';
 
 /// Automatic Habit Completion Service
 ///
@@ -19,12 +21,19 @@ class AutomaticHabitCompletionService {
   static const String _completionIntervalKey =
       'completion_check_interval_minutes';
   static const String _completionHistoryKey = 'completion_history';
+  static const String _realTimeEnabledKey = 'real_time_completion_enabled';
+  static const String _smartThresholdsEnabledKey = 'smart_thresholds_enabled';
+  static const String _lastHealthDataCheckKey = 'last_health_data_check';
 
   static Timer? _completionTimer;
+  static Timer? _realTimeTimer;
   static bool _isRunning = false;
+  static bool _realTimeEnabled = true;
   static StreamController<AutoCompletionEvent>? _eventController;
   static int _recentErrorCount = 0;
   static DateTime? _lastErrorTime;
+  static Map<String, DateTime> _lastHealthDataValues = {};
+  static Set<String> _pendingCompletions = {};
 
   /// Stream of auto-completion events
   static Stream<AutoCompletionEvent>? get eventStream =>
@@ -85,16 +94,26 @@ class AutomaticHabitCompletionService {
       // Start periodic completion checks
       _completionTimer = Timer.periodic(
         Duration(minutes: intervalMinutes),
-        (_) => _performCompletionCheck(),
+        (_) => _performCompletionCheckInBackground(),
       );
+
+      // Start real-time monitoring if enabled
+      _realTimeEnabled = await isRealTimeEnabled();
+      if (_realTimeEnabled) {
+        await _startRealTimeMonitoring();
+      }
 
       _isRunning = true;
 
       // Delay initial check to prevent immediate crashes after health permissions are granted
       await Future.delayed(const Duration(seconds: 10));
 
-      // Perform initial check
-      await _performCompletionCheck();
+      // Perform initial check in background
+      BackgroundTaskService.scheduleDelayedTask(
+        'initial_completion_check',
+        () => _performCompletionCheckInBackground(),
+        const Duration(seconds: 2),
+      );
 
       // Emit service started event
       _eventController?.add(AutoCompletionEvent(
@@ -122,7 +141,14 @@ class AutomaticHabitCompletionService {
 
       _completionTimer?.cancel();
       _completionTimer = null;
+      _realTimeTimer?.cancel();
+      _realTimeTimer = null;
       _isRunning = false;
+      _realTimeEnabled = false;
+
+      // Clear pending completions
+      _pendingCompletions.clear();
+      _lastHealthDataValues.clear();
 
       // Emit service stopped event
       _eventController?.add(AutoCompletionEvent(
@@ -172,7 +198,8 @@ class AutomaticHabitCompletionService {
   static Future<int> getCheckIntervalMinutes() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getInt(_completionIntervalKey) ?? 30; // Default 30 minutes
+      return prefs.getInt(_completionIntervalKey) ??
+          30; // Default 30 minutes (battery-friendly)
     } catch (e) {
       AppLogger.error('Error getting check interval', e);
       return 30;
@@ -197,7 +224,7 @@ class AutomaticHabitCompletionService {
     }
   }
 
-  /// Get adaptive check interval that increases with recent errors
+  /// Get adaptive check interval that balances battery life with responsiveness
   static Future<int> _getAdaptiveCheckInterval() async {
     final baseInterval = await getCheckIntervalMinutes();
 
@@ -226,6 +253,200 @@ class AutomaticHabitCompletionService {
     return adaptiveInterval;
   }
 
+  /// Check if real-time monitoring is enabled
+  static Future<bool> isRealTimeEnabled() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_realTimeEnabledKey) ??
+          false; // Default disabled for battery
+    } catch (e) {
+      AppLogger.error('Error checking real-time enabled status', e);
+      return false;
+    }
+  }
+
+  /// Enable or disable real-time monitoring
+  static Future<void> setRealTimeEnabled(bool enabled) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_realTimeEnabledKey, enabled);
+
+      _realTimeEnabled = enabled;
+
+      if (_isRunning) {
+        if (enabled) {
+          await _startRealTimeMonitoring();
+        } else {
+          _realTimeTimer?.cancel();
+          _realTimeTimer = null;
+        }
+      }
+
+      AppLogger.info(
+          'Real-time monitoring ${enabled ? 'enabled' : 'disabled'}');
+    } catch (e) {
+      AppLogger.error('Error setting real-time enabled status', e);
+    }
+  }
+
+  /// Start real-time monitoring (battery-conscious)
+  static Future<void> _startRealTimeMonitoring() async {
+    if (_realTimeTimer != null) return;
+
+    AppLogger.info('Starting battery-conscious real-time monitoring...');
+
+    // Use a longer interval for real-time checks to preserve battery
+    // Only check every 5 minutes for "real-time" responsiveness
+    _realTimeTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => _performLightweightHealthCheck(),
+    );
+  }
+
+  /// Perform lightweight health check for real-time monitoring
+  static Future<void> _performLightweightHealthCheck() async {
+    if (!_realTimeEnabled || !_isRunning) return;
+
+    try {
+      // Only check if we haven't checked recently (prevent excessive calls)
+      final prefs = await SharedPreferences.getInstance();
+      final lastCheck = prefs.getInt(_lastHealthDataCheckKey) ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      // Skip if we checked less than 3 minutes ago
+      if (now - lastCheck < 180000) return;
+
+      await prefs.setInt(_lastHealthDataCheckKey, now);
+
+      // Perform a quick check for high-priority habits only
+      await BackgroundTaskService.executeLightweightTask<void>(
+        'realtime_health_check',
+        () async => await _performQuickCompletionCheck(),
+      );
+    } catch (e) {
+      AppLogger.warning('Real-time health check failed: $e');
+    }
+  }
+
+  /// Perform quick completion check for high-priority habits
+  static Future<void> _performQuickCompletionCheck() async {
+    try {
+      // Check if health operations should proceed
+      final shouldProceed =
+          await HealthService.shouldPerformHealthOperations().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => false,
+      );
+
+      if (!shouldProceed) return;
+
+      // Get only habits that are likely to be completed today
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+      final allHabits = await habitService.getActiveHabits();
+
+      // Filter to habits that haven't been completed today and are health-mappable
+      final today = DateTime.now();
+      final todayHabits = allHabits.where((habit) {
+        final completions = habit.completions;
+        final todayCompletion = completions.any((completion) {
+          return completion.year == today.year &&
+              completion.month == today.month &&
+              completion.day == today.day;
+        });
+        return !todayCompletion;
+      }).toList();
+
+      if (todayHabits.isEmpty) return;
+
+      // Only check the first few habits to keep it lightweight
+      final priorityHabits = todayHabits.take(3).toList();
+
+      for (final habit in priorityHabits) {
+        if (_pendingCompletions.contains(habit.id)) continue;
+
+        final result = await HealthHabitMappingService.checkHabitCompletion(
+          habit: habit,
+          date: today,
+        );
+
+        if (result.shouldComplete) {
+          _pendingCompletions.add(habit.id);
+          await _completeHabitWithNotification(habit, result);
+        }
+      }
+    } catch (e) {
+      AppLogger.warning('Quick completion check failed: $e');
+    }
+  }
+
+  /// Perform completion check in background to prevent UI blocking
+  static Future<void> _performCompletionCheckInBackground() async {
+    try {
+      await BackgroundTaskService.executeBackgroundTask<AutoCompletionResult>(
+        'habit_completion_check',
+        () => _performCompletionCheck(),
+        timeout: const Duration(minutes: 2),
+      );
+    } catch (e) {
+      AppLogger.error('Background completion check failed', e);
+      _recentErrorCount++;
+      _lastErrorTime = DateTime.now();
+    }
+  }
+
+  /// Complete habit with notification
+  static Future<void> _completeHabitWithNotification(
+    Habit habit,
+    HabitCompletionResult result,
+  ) async {
+    try {
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+
+      // Mark habit as complete
+      await habitService.markHabitComplete(habit.id, DateTime.now());
+
+      // Send notification
+      await NotificationService.showNotification(
+        id: habit.id.hashCode,
+        title: 'Habit Completed! 🎉',
+        body: '${habit.name} - ${result.reason}',
+      );
+
+      // Emit completion event
+      _eventController?.add(AutoCompletionEvent(
+        type: AutoCompletionEventType.habitCompleted,
+        message: 'Auto-completed: ${habit.name}',
+        habitId: habit.id,
+        habitName: habit.name,
+        timestamp: DateTime.now(),
+        healthValue: result.healthValue,
+        threshold: result.threshold,
+        healthDataType: result.healthDataType,
+        confidence: result.confidence,
+      ));
+
+      // Add to completion history
+      final completion = HabitAutoCompletion(
+        habitId: habit.id,
+        habitName: habit.name,
+        completedAt: DateTime.now(),
+        healthDataType: result.healthDataType,
+        healthValue: result.healthValue,
+        threshold: result.threshold,
+        confidence: result.confidence,
+        reason: result.reason,
+      );
+      await _addToCompletionHistory(completion);
+
+      AppLogger.info('Auto-completed habit: ${habit.name} (${result.reason})');
+    } catch (e) {
+      AppLogger.error('Failed to complete habit ${habit.name}', e);
+      _pendingCompletions.remove(habit.id);
+    }
+  }
+
   /// Perform a manual completion check
   static Future<AutoCompletionResult> performManualCheck() async {
     AppLogger.info('Performing manual habit completion check...');
@@ -242,6 +463,7 @@ class AutomaticHabitCompletionService {
       return {
         'isRunning': _isRunning,
         'isEnabled': await isServiceEnabled(),
+        'realTimeEnabled': _realTimeEnabled,
         'lastCheckTime': lastCheck,
         'lastCheckDate': lastCheck > 0
             ? DateTime.fromMillisecondsSinceEpoch(lastCheck).toIso8601String()
@@ -250,6 +472,9 @@ class AutomaticHabitCompletionService {
         'nextCheckTime': _isRunning && lastCheck > 0
             ? lastCheck + (intervalMinutes * 60 * 1000)
             : null,
+        'recentErrorCount': _recentErrorCount,
+        'pendingCompletions': _pendingCompletions.length,
+        'batteryOptimized': true,
       };
     } catch (e) {
       AppLogger.error('Error getting service status', e);
@@ -259,6 +484,81 @@ class AutomaticHabitCompletionService {
         'error': e.toString(),
       };
     }
+  }
+
+  /// Get battery optimization recommendations
+  static Future<Map<String, dynamic>> getBatteryOptimizationStatus() async {
+    try {
+      final intervalMinutes = await getCheckIntervalMinutes();
+      final realTimeEnabled = await isRealTimeEnabled();
+
+      final recommendations = <String>[];
+      var batteryScore = 100; // Start with perfect score
+
+      // Check interval frequency
+      if (intervalMinutes < 30) {
+        recommendations.add(
+            'Consider increasing check interval to 30+ minutes for better battery life');
+        batteryScore -= 20;
+      }
+
+      // Real-time monitoring impact
+      if (realTimeEnabled) {
+        recommendations.add(
+            'Real-time monitoring uses additional battery. Disable if not needed.');
+        batteryScore -= 15;
+      }
+
+      // Error rate impact
+      if (_recentErrorCount > 3) {
+        recommendations.add(
+            'High error rate detected. Service will automatically reduce frequency.');
+        batteryScore -= 10;
+      }
+
+      // Optimal settings
+      if (intervalMinutes >= 30 && !realTimeEnabled && _recentErrorCount == 0) {
+        recommendations.add('Battery optimization is excellent! 🔋');
+      }
+
+      return {
+        'batteryScore': batteryScore,
+        'recommendations': recommendations,
+        'checkIntervalMinutes': intervalMinutes,
+        'realTimeEnabled': realTimeEnabled,
+        'errorCount': _recentErrorCount,
+        'estimatedBatteryImpact':
+            _calculateBatteryImpact(intervalMinutes, realTimeEnabled),
+      };
+    } catch (e) {
+      AppLogger.error('Error getting battery optimization status', e);
+      return {
+        'batteryScore': 0,
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// Calculate estimated battery impact
+  static String _calculateBatteryImpact(
+      int intervalMinutes, bool realTimeEnabled) {
+    var impact = 'Low';
+
+    if (intervalMinutes < 15) {
+      impact = 'High';
+    } else if (intervalMinutes < 30) {
+      impact = 'Medium';
+    }
+
+    if (realTimeEnabled) {
+      if (impact == 'Low') {
+        impact = 'Medium';
+      } else if (impact == 'Medium') {
+        impact = 'High';
+      }
+    }
+
+    return impact;
   }
 
   /// Get completion history
@@ -621,6 +921,8 @@ class AutoCompletionEvent {
   final String? habitId;
   final String? habitName;
   final double? healthValue;
+  final double? threshold;
+  final String? healthDataType;
   final double? confidence;
 
   AutoCompletionEvent({
@@ -630,6 +932,8 @@ class AutoCompletionEvent {
     this.habitId,
     this.habitName,
     this.healthValue,
+    this.threshold,
+    this.healthDataType,
     this.confidence,
   });
 }

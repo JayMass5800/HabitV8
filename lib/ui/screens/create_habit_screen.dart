@@ -575,7 +575,11 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey.shade600
+              : Colors.grey.shade300,
+        ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -595,15 +599,27 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             focusedDay: focusedDay,
             calendarFormat: CalendarFormat.month,
             startingDayOfWeek: StartingDayOfWeek.sunday,
-            headerStyle: const HeaderStyle(
+            headerStyle: HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
               leftChevronVisible: false,
               rightChevronVisible: false,
+              titleTextStyle: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             calendarStyle: CalendarStyle(
               outsideDaysVisible: false,
-              weekendTextStyle: TextStyle(color: Colors.red.shade600),
+              weekendTextStyle: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.red.shade300
+                    : Colors.red.shade600,
+              ),
+              defaultTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               selectedDecoration: BoxDecoration(
                 color: _selectedColor,
                 shape: BoxShape.circle,
@@ -641,7 +657,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                     border: Border.all(
                       color: isSelected
                           ? Colors.transparent
-                          : Colors.grey.shade300,
+                          : Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey.shade600
+                              : Colors.grey.shade300,
                     ),
                   ),
                   child: Center(
@@ -649,7 +667,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                       day.day.toString(),
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        color: isSelected ? Colors.white : Colors.black,
+                        color: isSelected
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ),
@@ -684,7 +704,11 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       children: [
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey.shade600
+                  : Colors.grey.shade300,
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -707,16 +731,30 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 headerStyle: HeaderStyle(
                   formatButtonVisible: false,
                   titleCentered: true,
-                  titleTextStyle: const TextStyle(
+                  titleTextStyle: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  leftChevronIcon: const Icon(Icons.chevron_left),
-                  rightChevronIcon: const Icon(Icons.chevron_right),
+                  leftChevronIcon: Icon(
+                    Icons.chevron_left,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  rightChevronIcon: Icon(
+                    Icons.chevron_right,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
                 calendarStyle: CalendarStyle(
                   outsideDaysVisible: false,
-                  weekendTextStyle: TextStyle(color: Colors.red.shade600),
+                  weekendTextStyle: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.red.shade300
+                        : Colors.red.shade600,
+                  ),
+                  defaultTextStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                   selectedDecoration: BoxDecoration(
                     color: _selectedColor,
                     shape: BoxShape.circle,
@@ -779,7 +817,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                         border: Border.all(
                           color: isSelected || isToday
                               ? Colors.transparent
-                              : Colors.grey.shade300,
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey.shade600
+                                  : Colors.grey.shade300,
                         ),
                       ),
                       child: Center(
@@ -791,7 +831,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                 ? Colors.white
                                 : isToday
                                     ? _selectedColor
-                                    : Colors.black,
+                                    : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),

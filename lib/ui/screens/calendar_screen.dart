@@ -42,7 +42,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   void _onDayTapped(DateTime day, List<Habit> habits) {
     final dayHabits = _getEventsForDay(day, habits);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -65,12 +65,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         } else {
           await habitService.markHabitComplete(habit.id, day);
         }
-        
+
         // Sync changes if calendar sync is enabled
         if (_calendarSyncEnabled) {
           await CalendarService.syncHabitChanges(habit);
         }
-        
+
         setState(() {}); // Refresh the calendar
       }
     } catch (e) {
@@ -90,16 +90,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   bool _isHabitDueOnDate(Habit habit, DateTime date) {
-    final habitDate = DateTime(habit.createdAt.year, habit.createdAt.month, habit.createdAt.day);
+    final habitDate = DateTime(
+        habit.createdAt.year, habit.createdAt.month, habit.createdAt.day);
     final checkDate = DateTime(date.year, date.month, date.day);
-    
+
     // Don't show habits before they were created
     if (checkDate.isBefore(habitDate)) return false;
-    
+
     switch (habit.frequency) {
       case HabitFrequency.daily:
         return true;
-        
+
       case HabitFrequency.weekly:
         // Check if the day of week is in the selected weekdays
         if (habit.selectedWeekdays.isEmpty) {
@@ -109,7 +110,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         // Convert DateTime.weekday (1=Monday) to our format (0=Sunday)
         final dayOfWeek = checkDate.weekday == 7 ? 0 : checkDate.weekday;
         return habit.selectedWeekdays.contains(dayOfWeek);
-        
+
       case HabitFrequency.monthly:
         // Check if the day of month is in the selected month days
         if (habit.selectedMonthDays.isEmpty) {
@@ -117,7 +118,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           return checkDate.day == habitDate.day;
         }
         return habit.selectedMonthDays.contains(checkDate.day);
-        
+
       case HabitFrequency.hourly:
         // Hourly habits should only appear on days when they have scheduled times
         // and only if there are selected weekdays (days of week when hourly habit applies)
@@ -127,15 +128,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         // Convert DateTime.weekday (1=Monday) to our format (0=Sunday)
         final dayOfWeek = checkDate.weekday == 7 ? 0 : checkDate.weekday;
         return habit.selectedWeekdays.contains(dayOfWeek);
-        
+
       case HabitFrequency.yearly:
         // Check if the date is in the selected yearly dates
         if (habit.selectedYearlyDates.isEmpty) {
           // Fallback: use creation date but only show on or after the anniversary
           final currentYear = checkDate.year;
-          return checkDate.month == habitDate.month && 
-                 checkDate.day == habitDate.day &&
-                 currentYear >= habitDate.year;
+          return checkDate.month == habitDate.month &&
+              checkDate.day == habitDate.day &&
+              currentYear >= habitDate.year;
         }
         // For yearly habits, we need to check if the month-day combination matches any selected date
         return habit.selectedYearlyDates.any((selectedDate) {
@@ -144,11 +145,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             final selectedMonth = int.tryParse(parts[1]);
             final selectedDay = int.tryParse(parts[2]);
             final selectedYear = int.tryParse(parts[0]);
-            if (selectedMonth != null && selectedDay != null && selectedYear != null) {
+            if (selectedMonth != null &&
+                selectedDay != null &&
+                selectedYear != null) {
               // Only show if the date is on or after the selected year
-              return selectedMonth == checkDate.month && 
-                     selectedDay == checkDate.day &&
-                     checkDate.year >= selectedYear;
+              return selectedMonth == checkDate.month &&
+                  selectedDay == checkDate.day &&
+                  checkDate.year >= selectedYear;
             }
           }
           return false;
@@ -172,6 +175,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         backgroundColor: Colors.transparent,
         foregroundColor: Theme.of(context).textTheme.titleLarge?.color,
         title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Calendar'),
             if (_calendarSyncEnabled) ...[
@@ -181,7 +186,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                  border:
+                      Border.all(color: Colors.green.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -206,6 +212,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ],
           ],
         ),
+        centerTitle: true,
         actions: [
           CategoryFilterWidget(
             selectedCategory: _selectedCategory,
@@ -238,7 +245,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 final allHabits = snapshot.data!;
                 final filteredHabits = _selectedCategory == 'All'
                     ? allHabits
-                    : allHabits.where((habit) => habit.category == _selectedCategory).toList();
+                    : allHabits
+                        .where((habit) => habit.category == _selectedCategory)
+                        .toList();
 
                 return SingleChildScrollView(
                   child: Padding(
@@ -298,7 +307,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             });
           },
           icon: Icon(
-            Icons.chevron_left, 
+            Icons.chevron_left,
             size: 28,
             color: Theme.of(context).primaryColor,
           ),
@@ -306,8 +315,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         Text(
           DateFormat('MMMM yyyy').format(_focusedDay),
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+                fontWeight: FontWeight.bold,
+              ),
         ),
         IconButton(
           onPressed: () {
@@ -316,7 +325,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             });
           },
           icon: Icon(
-            Icons.chevron_right, 
+            Icons.chevron_right,
             size: 28,
             color: Theme.of(context).primaryColor,
           ),
@@ -353,7 +362,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12, 
+            fontSize: 12,
             color: Theme.of(context).textTheme.bodySmall?.color,
           ),
         ),
@@ -363,8 +372,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildCustomCalendar(List<Habit> habits) {
     final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
-    final startDate = firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday % 7));
-    
+    final startDate =
+        firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday % 7));
+
     return Column(
       children: [
         // Weekday headers
@@ -377,7 +387,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withValues(alpha: 0.7),
                         ),
                       ),
                     ),
@@ -388,21 +402,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         // Calendar grid
         ...List.generate(6, (weekIndex) {
           final weekStart = startDate.add(Duration(days: weekIndex * 7));
-          final weekDays = List.generate(7, (dayIndex) => 
-              weekStart.add(Duration(days: dayIndex)));
-          
+          final weekDays = List.generate(
+              7, (dayIndex) => weekStart.add(Duration(days: dayIndex)));
+
           // Skip empty weeks
-          if (weekDays.every((day) => 
-              day.month != _focusedDay.month && 
+          if (weekDays.every((day) =>
+              day.month != _focusedDay.month &&
               (weekIndex == 0 || weekIndex == 5))) {
             return const SizedBox.shrink();
           }
-          
+
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
-              children: weekDays.map((day) => 
-                  Expanded(child: _buildCalendarDay(day, habits))).toList(),
+              children: weekDays
+                  .map((day) => Expanded(child: _buildCalendarDay(day, habits)))
+                  .toList(),
             ),
           );
         }),
@@ -414,13 +429,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final isCurrentMonth = day.month == _focusedDay.month;
     final isToday = isSameDay(day, DateTime.now());
     final events = _getEventsForDay(day, habits);
-    final completedCount = events.where((habit) => _isHabitCompletedOnDate(habit, day)).length;
+    final completedCount =
+        events.where((habit) => _isHabitCompletedOnDate(habit, day)).length;
     final totalCount = events.length;
-    
+
     Color backgroundColor = Colors.transparent;
-    Color textColor = Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87;
+    Color textColor =
+        Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87;
     Color? indicatorColor;
-    
+
     if (!isCurrentMonth) {
       textColor = textColor.withValues(alpha: 0.3);
     } else if (totalCount > 0) {
@@ -432,7 +449,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         indicatorColor = Colors.red.shade300;
       }
     }
-    
+
     if (isToday) {
       backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.1);
       textColor = Theme.of(context).primaryColor;
@@ -446,7 +463,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(12),
-          border: isToday ? Border.all(color: Theme.of(context).primaryColor, width: 2) : null,
+          border: isToday
+              ? Border.all(color: Theme.of(context).primaryColor, width: 2)
+              : null,
         ),
         child: Stack(
           children: [

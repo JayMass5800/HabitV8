@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:timezone/timezone.dart' as tz;
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/health_habit_mapping_service.dart';
@@ -38,6 +40,10 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       _originalHashCode; // Store original hash code for notification management
   final List<TimeOfDay> _hourlyTimes = []; // For hourly habits
   bool _isSaving = false;
+
+  // Calendar-related state variables
+  DateTime _focusedMonth = DateTime.now(); // For calendar navigation
+  final List<DateTime> _selectedYearlyDates = []; // For yearly habits
 
   // Comprehensive categories from the category suggestion service
   List<String> get _categories {
@@ -99,6 +105,20 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         final minute = int.tryParse(parts[1]);
         if (hour != null && minute != null) {
           _hourlyTimes.add(TimeOfDay(hour: hour, minute: minute));
+        }
+      }
+    }
+
+    // Initialize yearly dates from existing habit data
+    _selectedYearlyDates.clear();
+    for (final dateString in widget.habit.selectedYearlyDates) {
+      final parts = dateString.split('-');
+      if (parts.length == 3) {
+        final year = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final day = int.tryParse(parts[2]);
+        if (year != null && month != null && day != null) {
+          _selectedYearlyDates.add(DateTime(year, month, day));
         }
       }
     }
@@ -407,6 +427,17 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               const SizedBox(height: 16),
               _buildHourlyTimeSelector(),
             ],
+            if (_selectedFrequency == HabitFrequency.yearly) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Select Yearly Dates',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              _buildYearlyCalendarSelector(),
+            ],
           ],
         ),
       ),
@@ -443,29 +474,129 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   }
 
   Widget _buildMonthDaySelector() {
-    return Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      children: List.generate(31, (index) {
-        final day = index + 1;
-        final isSelected = _selectedMonthDays.contains(day);
+    final now = tz.TZDateTime.now(tz.local);
+    final focusedDay = DateTime(now.year, now.month, 1);
 
-        return FilterChip(
-          label: Text(day.toString()),
-          selected: isSelected,
-          onSelected: (_) {
-            setState(() {
-              if (isSelected) {
-                _selectedMonthDays.remove(day);
-              } else {
-                _selectedMonthDays.add(day);
-              }
-            });
-          },
-          selectedColor: _selectedColor.withValues(alpha: 0.2),
-          checkmarkColor: _selectedColor,
-        );
-      }),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey.shade600
+              : Colors.grey.shade300,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              'Select days of the month for your habit',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+            ),
+          ),
+          TableCalendar<int>(
+            firstDay: DateTime(2020, 1, 1),
+            lastDay: DateTime(2030, 12, 31),
+            focusedDay: focusedDay,
+            calendarFormat: CalendarFormat.month,
+            startingDayOfWeek: StartingDayOfWeek.sunday,
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              leftChevronVisible: false,
+              rightChevronVisible: false,
+              titleTextStyle: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            calendarStyle: CalendarStyle(
+              outsideDaysVisible: false,
+              weekendTextStyle: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.red.shade300
+                    : Colors.red.shade600,
+              ),
+              defaultTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: _selectedColor,
+                shape: BoxShape.circle,
+              ),
+              todayDecoration: BoxDecoration(
+                color: _selectedColor.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              markerDecoration: BoxDecoration(
+                color: _selectedColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            selectedDayPredicate: (day) {
+              return _selectedMonthDays.contains(day.day);
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                final dayNumber = selectedDay.day;
+                if (_selectedMonthDays.contains(dayNumber)) {
+                  _selectedMonthDays.remove(dayNumber);
+                } else {
+                  _selectedMonthDays.add(dayNumber);
+                }
+              });
+            },
+            calendarBuilders: CalendarBuilders(
+              defaultBuilder: (context, day, focusedDay) {
+                final isSelected = _selectedMonthDays.contains(day.day);
+                return Container(
+                  margin: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: isSelected ? _selectedColor : null,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? Colors.transparent
+                          : Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey.shade600
+                              : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      day.day.toString(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: isSelected
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          if (_selectedMonthDays.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              child: Text(
+                'Selected days: ${_selectedMonthDays.map((d) => d.toString()).join(', ')}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: _selectedColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -494,18 +625,34 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey.shade800
+                  : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey.shade600
+                    : Colors.grey.shade300,
+              ),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),
+                Icon(
+                  Icons.info_outline,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey.shade400
+                      : Colors.grey.shade600,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'No times selected. Add times when you want to be reminded.',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
                   ),
                 ),
               ],
@@ -575,6 +722,218 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         }
       }
     }
+  }
+
+  Widget _buildYearlyCalendarSelector() {
+    final now = tz.TZDateTime.now(tz.local);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.grey.shade600
+                  : Colors.grey.shade300,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  'Select specific dates for your yearly habit',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ),
+              TableCalendar<DateTime>(
+                firstDay: DateTime(2020, 1, 1),
+                lastDay: DateTime(2030, 12, 31),
+                focusedDay: _focusedMonth,
+                calendarFormat: CalendarFormat.month,
+                startingDayOfWeek: StartingDayOfWeek.sunday,
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  titleTextStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  leftChevronIcon: Icon(
+                    Icons.chevron_left,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  rightChevronIcon: Icon(
+                    Icons.chevron_right,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                calendarStyle: CalendarStyle(
+                  outsideDaysVisible: false,
+                  weekendTextStyle: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.red.shade300
+                        : Colors.red.shade600,
+                  ),
+                  defaultTextStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: _selectedColor,
+                    shape: BoxShape.circle,
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: _selectedColor.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  markerDecoration: BoxDecoration(
+                    color: _selectedColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                selectedDayPredicate: (day) {
+                  return _selectedYearlyDates.any(
+                    (selectedDate) =>
+                        selectedDate.year == day.year &&
+                        selectedDate.month == day.month &&
+                        selectedDate.day == day.day,
+                  );
+                },
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    final normalizedDate = DateTime(
+                      selectedDay.year,
+                      selectedDay.month,
+                      selectedDay.day,
+                    );
+                    if (_selectedYearlyDates.contains(normalizedDate)) {
+                      _selectedYearlyDates.remove(normalizedDate);
+                    } else {
+                      _selectedYearlyDates.add(normalizedDate);
+                    }
+                  });
+                },
+                onPageChanged: (focusedDay) {
+                  setState(() {
+                    _focusedMonth = focusedDay;
+                  });
+                },
+                calendarBuilders: CalendarBuilders(
+                  defaultBuilder: (context, day, focusedDay) {
+                    final isSelected = _selectedYearlyDates.any(
+                      (selectedDate) =>
+                          selectedDate.year == day.year &&
+                          selectedDate.month == day.month &&
+                          selectedDate.day == day.day,
+                    );
+                    final isToday = _isSameDay(day, now);
+
+                    return Container(
+                      margin: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? _selectedColor
+                            : isToday
+                                ? _selectedColor.withValues(alpha: 0.3)
+                                : null,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected || isToday
+                              ? Colors.transparent
+                              : Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.grey.shade600
+                                  : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          day.day.toString(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: isSelected
+                                ? Colors.white
+                                : isToday
+                                    ? _selectedColor
+                                    : Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_selectedYearlyDates.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Selected dates (${_selectedYearlyDates.length}):',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 80,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: _selectedYearlyDates.map((date) {
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: Chip(
+                    label: Text(
+                      '${_getMonthName(date.month)} ${date.day}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () {
+                      setState(() {
+                        _selectedYearlyDates.remove(date);
+                      });
+                    },
+                    backgroundColor: _selectedColor.withValues(alpha: 0.1),
+                    side: BorderSide(
+                        color: _selectedColor.withValues(alpha: 0.3)),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  bool _isSameDay(DateTime date1, DateTime date2) {
+    return date1.year == date2.year &&
+        date1.month == date2.month &&
+        date1.day == date2.day;
+  }
+
+  String _getMonthName(int month) {
+    const monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return monthNames[month - 1];
   }
 
   Widget _buildNotificationSection() {
@@ -787,9 +1146,14 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
             height: 400,
             child: Column(
               children: [
-                const Text(
+                Text(
                   'Tap the play button to preview sounds',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey.shade400
+                        : Colors.grey.shade600,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Expanded(
@@ -959,6 +1323,20 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       return;
     }
 
+    if (_selectedFrequency == HabitFrequency.yearly &&
+        _selectedYearlyDates.isEmpty) {
+      setState(() {
+        _isSaving = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one date for yearly habits'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Only require notification time for non-hourly habits
     if (_notificationsEnabled &&
         _selectedFrequency != HabitFrequency.hourly &&
@@ -1010,6 +1388,12 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
             (time) =>
                 '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
           )
+          .toList();
+
+      // Save yearly dates
+      widget.habit.selectedYearlyDates = _selectedYearlyDates
+          .map((date) =>
+              '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}')
           .toList();
 
       // Save alarm settings
