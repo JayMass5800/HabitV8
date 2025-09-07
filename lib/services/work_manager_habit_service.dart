@@ -95,12 +95,12 @@ class WorkManagerHabitService {
         _renewalTaskName,
         frequency: Duration(hours: intervalHours),
         constraints: Constraints(
-          networkType: NetworkType.not_required,
+          networkType: NetworkType.notRequired,
           requiresBatteryNotLow: false,
           requiresCharging: false,
           requiresDeviceIdle: false,
         ),
-        existingWorkPolicy: ExistingWorkPolicy.replace,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
         backoffPolicy: BackoffPolicy.linear,
         backoffPolicyDelay: Duration(minutes: 15),
       );
@@ -119,7 +119,7 @@ class WorkManagerHabitService {
         _bootCompletionTaskName,
         _bootCompletionTaskName,
         constraints: Constraints(
-          networkType: NetworkType.not_required,
+          networkType: NetworkType.notRequired,
           requiresBatteryNotLow: false,
           requiresCharging: false,
           requiresDeviceIdle: false,
