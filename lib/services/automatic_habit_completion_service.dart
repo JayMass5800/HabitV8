@@ -32,8 +32,8 @@ class AutomaticHabitCompletionService {
   static StreamController<AutoCompletionEvent>? _eventController;
   static int _recentErrorCount = 0;
   static DateTime? _lastErrorTime;
-  static Map<String, DateTime> _lastHealthDataValues = {};
-  static Set<String> _pendingCompletions = {};
+  static final Map<String, DateTime> _lastHealthDataValues = {};
+  static final Set<String> _pendingCompletions = {};
 
   /// Stream of auto-completion events
   static Stream<AutoCompletionEvent>? get eventStream =>

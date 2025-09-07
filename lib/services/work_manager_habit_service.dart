@@ -1,9 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
-import '../domain/model/habit.dart';
 import '../data/database.dart';
 
 import 'notification_service.dart';
@@ -279,136 +276,18 @@ class WorkManagerHabitService {
   }
 
   /// Check if a habit should be renewed based on its schedule
+  /// For continuation service, we should renew ALL active habits to ensure they continue working
   static bool _shouldRenewHabit(dynamic habit, {bool forceRenewal = false}) {
     // If force renewal is requested for a specific habit, allow it
     if (forceRenewal && habit.id != null) return true;
 
-    final now = DateTime.now();
+    // For habit continuation, we should renew ALL active habits regardless of current time
+    // The purpose of the continuation service is to ensure habits don't lose their future notifications
+    // The original logic was too restrictive and caused habits to lose notifications
+    // when renewal happened at times that didn't match their scheduled times
 
-    switch (habit.frequency) {
-      case HabitFrequency.hourly:
-        // For hourly habits, check if any of the specified times match the current hour
-        if (habit.hourlyTimes != null && habit.hourlyTimes.isNotEmpty) {
-          for (final timeStr in habit.hourlyTimes) {
-            try {
-              final parts = timeStr.split(':');
-              final hour = int.parse(parts[0]);
-              // final minute = int.parse(parts[1]); // Not used for hourly check
-
-              // Check if this time is within the current hour
-              if (hour == now.hour) {
-                return true;
-              }
-            } catch (e) {
-              // Invalid time format, skip
-            }
-          }
-          return false;
-        }
-        return true; // Default hourly habit with no specific times
-
-      case HabitFrequency.daily:
-        // For daily habits, check if the notification time matches the current time
-        if (habit.notificationTime != null) {
-          final targetHour = habit.notificationTime.hour;
-          final targetMinute = habit.notificationTime.minute;
-
-          // Only renew if we're within 15 minutes of the target time
-          final targetTime =
-              DateTime(now.year, now.month, now.day, targetHour, targetMinute);
-          final diff = now.difference(targetTime).inMinutes.abs();
-          return diff <= 15;
-        }
-        return true; // Default daily habit with no specific time
-
-      case HabitFrequency.weekly:
-        // For weekly habits, check if today is one of the selected weekdays
-        if (habit.selectedWeekdays != null &&
-            habit.selectedWeekdays.isNotEmpty) {
-          if (!habit.selectedWeekdays.contains(now.weekday)) {
-            return false; // Not scheduled for today
-          }
-
-          // Check if the notification time matches the current time
-          if (habit.notificationTime != null) {
-            final targetHour = habit.notificationTime.hour;
-            final targetMinute = habit.notificationTime.minute;
-
-            // Only renew if we're within 15 minutes of the target time
-            final targetTime = DateTime(
-                now.year, now.month, now.day, targetHour, targetMinute);
-            final diff = now.difference(targetTime).inMinutes.abs();
-            return diff <= 15;
-          }
-        }
-        return true; // Default weekly habit with no specific weekdays
-
-      case HabitFrequency.monthly:
-        // For monthly habits, check if today is one of the selected month days
-        if (habit.selectedMonthDays != null &&
-            habit.selectedMonthDays.isNotEmpty) {
-          if (!habit.selectedMonthDays.contains(now.day)) {
-            return false; // Not scheduled for today
-          }
-
-          // Check if the notification time matches the current time
-          if (habit.notificationTime != null) {
-            final targetHour = habit.notificationTime.hour;
-            final targetMinute = habit.notificationTime.minute;
-
-            // Only renew if we're within 15 minutes of the target time
-            final targetTime = DateTime(
-                now.year, now.month, now.day, targetHour, targetMinute);
-            final diff = now.difference(targetTime).inMinutes.abs();
-            return diff <= 15;
-          }
-        }
-        return true; // Default monthly habit with no specific month days
-
-      case HabitFrequency.yearly:
-        // For yearly habits, check if today is one of the selected yearly dates
-        if (habit.selectedYearlyDates != null &&
-            habit.selectedYearlyDates.isNotEmpty) {
-          bool isScheduledForToday = false;
-
-          for (final dateStr in habit.selectedYearlyDates) {
-            try {
-              final dateParts = dateStr.split('-');
-              if (dateParts.length >= 2) {
-                final month = int.parse(dateParts[0]);
-                final day = int.parse(dateParts[1]);
-
-                if (month == now.month && day == now.day) {
-                  isScheduledForToday = true;
-                  break;
-                }
-              }
-            } catch (e) {
-              // Invalid date format, skip
-            }
-          }
-
-          if (!isScheduledForToday) {
-            return false; // Not scheduled for today
-          }
-
-          // Check if the notification time matches the current time
-          if (habit.notificationTime != null) {
-            final targetHour = habit.notificationTime.hour;
-            final targetMinute = habit.notificationTime.minute;
-
-            // Only renew if we're within 15 minutes of the target time
-            final targetTime = DateTime(
-                now.year, now.month, now.day, targetHour, targetMinute);
-            final diff = now.difference(targetTime).inMinutes.abs();
-            return diff <= 15;
-          }
-        }
-        return true; // Default yearly habit with no specific dates
-
-      default:
-        return false;
-    }
+    // Simply check if the habit is active and has notifications enabled
+    return habit.isActive && habit.notificationsEnabled;
   }
 
   /// Renew notifications for a habit
@@ -419,13 +298,279 @@ class WorkManagerHabitService {
         NotificationService.generateSafeId(habit.id),
       );
 
-      // Schedule new notifications for the habit
-      await NotificationService.scheduleHabitNotifications(habit);
+      // Use continuous scheduling to ensure habits work long-term
+      // Import the HabitContinuationService methods for continuous scheduling
+      await _scheduleContinuousNotifications(habit);
     } catch (e) {
       AppLogger.error(
           '❌ Error renewing notifications for habit: ${habit.name}', e);
       rethrow;
     }
+  }
+
+  /// Schedule continuous notifications for a habit (similar to HabitContinuationService)
+  static Future<void> _scheduleContinuousNotifications(dynamic habit) async {
+    if (!habit.notificationsEnabled) {
+      return;
+    }
+
+    // For non-hourly habits, require notification time
+    final frequency = habit.frequency.toString().split('.').last;
+    if (frequency != 'hourly' && habit.notificationTime == null) {
+      return;
+    }
+
+    switch (frequency) {
+      case 'daily':
+        await _scheduleDailyContinuous(habit);
+        break;
+      case 'weekly':
+        await _scheduleWeeklyContinuous(habit);
+        break;
+      case 'monthly':
+        await _scheduleMonthlyContinuous(habit);
+        break;
+      case 'yearly':
+        await _scheduleYearlyContinuous(habit);
+        break;
+      case 'hourly':
+        await _scheduleHourlyContinuous(habit);
+        break;
+      default:
+        AppLogger.warning('Unknown habit frequency: ${habit.frequency}');
+    }
+  }
+
+  /// Schedule continuous daily notifications (next 30 days)
+  static Future<void> _scheduleDailyContinuous(dynamic habit) async {
+    final notificationTime = habit.notificationTime;
+    final now = DateTime.now();
+
+    int scheduledCount = 0;
+
+    for (int dayOffset = 0; dayOffset < 30; dayOffset++) {
+      final targetDate = now.add(Duration(days: dayOffset));
+      DateTime scheduledTime = DateTime(
+        targetDate.year,
+        targetDate.month,
+        targetDate.day,
+        notificationTime.hour,
+        notificationTime.minute,
+      );
+
+      if (scheduledTime.isAfter(now)) {
+        final id = NotificationService.generateSafeId(
+            '${habit.id}_daily_${targetDate.day}_${targetDate.month}');
+
+        await NotificationService.scheduleNotification(
+          id: id,
+          title: '🎯 ${habit.name}',
+          body: 'Time to complete your daily habit! Keep your streak going.',
+          scheduledTime: scheduledTime,
+          payload: _createNotificationPayload(habit.id, 'daily'),
+        );
+
+        scheduledCount++;
+      }
+    }
+
+    AppLogger.debug(
+        '📅 Scheduled $scheduledCount daily notifications for ${habit.name}');
+  }
+
+  /// Schedule continuous weekly notifications (next 12 weeks)
+  static Future<void> _scheduleWeeklyContinuous(dynamic habit) async {
+    final selectedWeekdays = habit.selectedWeekdays;
+    if (selectedWeekdays == null || selectedWeekdays.isEmpty) return;
+
+    final notificationTime = habit.notificationTime;
+    final now = DateTime.now();
+    final endDate = now.add(const Duration(days: 84)); // 12 weeks
+
+    int scheduledCount = 0;
+
+    for (DateTime date = now;
+        date.isBefore(endDate);
+        date = date.add(const Duration(days: 1))) {
+      if (selectedWeekdays.contains(date.weekday)) {
+        DateTime scheduledTime = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          notificationTime.hour,
+          notificationTime.minute,
+        );
+
+        if (scheduledTime.isAfter(now)) {
+          final id = NotificationService.generateSafeId(
+              '${habit.id}_weekly_${date.weekday}_${date.day}_${date.month}');
+
+          await NotificationService.scheduleNotification(
+            id: id,
+            title: '🎯 ${habit.name}',
+            body:
+                'Time to complete your weekly habit! Don\'t break your streak.',
+            scheduledTime: scheduledTime,
+            payload: _createNotificationPayload(habit.id, 'weekly'),
+          );
+
+          scheduledCount++;
+        }
+      }
+    }
+
+    AppLogger.debug(
+        '📅 Scheduled $scheduledCount weekly notifications for ${habit.name}');
+  }
+
+  /// Schedule continuous monthly notifications (next 12 months)
+  static Future<void> _scheduleMonthlyContinuous(dynamic habit) async {
+    final selectedMonthDays = habit.selectedMonthDays;
+    if (selectedMonthDays == null || selectedMonthDays.isEmpty) return;
+
+    final notificationTime = habit.notificationTime;
+    final now = DateTime.now();
+
+    int scheduledCount = 0;
+
+    for (int monthOffset = 0; monthOffset < 12; monthOffset++) {
+      final targetMonth = DateTime(now.year, now.month + monthOffset, 1);
+      final daysInMonth =
+          DateTime(targetMonth.year, targetMonth.month + 1, 0).day;
+
+      for (final monthDay in selectedMonthDays) {
+        if (monthDay <= daysInMonth) {
+          DateTime scheduledTime = DateTime(
+            targetMonth.year,
+            targetMonth.month,
+            monthDay,
+            notificationTime.hour,
+            notificationTime.minute,
+          );
+
+          if (scheduledTime.isAfter(now)) {
+            final id = NotificationService.generateSafeId(
+                '${habit.id}_monthly_${targetMonth.month}_$monthDay');
+
+            await NotificationService.scheduleNotification(
+              id: id,
+              title: '🎯 ${habit.name}',
+              body: 'Time to complete your monthly habit! Stay consistent.',
+              scheduledTime: scheduledTime,
+              payload: _createNotificationPayload(habit.id, 'monthly'),
+            );
+
+            scheduledCount++;
+          }
+        }
+      }
+    }
+
+    AppLogger.debug(
+        '📅 Scheduled $scheduledCount monthly notifications for ${habit.name}');
+  }
+
+  /// Schedule continuous yearly notifications (next 5 years)
+  static Future<void> _scheduleYearlyContinuous(dynamic habit) async {
+    final selectedYearlyDates = habit.selectedYearlyDates;
+    if (selectedYearlyDates == null || selectedYearlyDates.isEmpty) return;
+
+    final notificationTime = habit.notificationTime;
+    final now = DateTime.now();
+
+    int scheduledCount = 0;
+
+    for (int yearOffset = 0; yearOffset < 5; yearOffset++) {
+      final targetYear = now.year + yearOffset;
+
+      for (final dateStr in selectedYearlyDates) {
+        try {
+          final dateParts = dateStr.split('-');
+          if (dateParts.length >= 2) {
+            final month = int.parse(dateParts[0]);
+            final day = int.parse(dateParts[1]);
+
+            DateTime scheduledTime = DateTime(
+              targetYear,
+              month,
+              day,
+              notificationTime.hour,
+              notificationTime.minute,
+            );
+
+            if (scheduledTime.isAfter(now)) {
+              final id = NotificationService.generateSafeId(
+                  '${habit.id}_yearly_${targetYear}_${month}_$day');
+
+              await NotificationService.scheduleNotification(
+                id: id,
+                title: '🎯 ${habit.name}',
+                body: 'Time to complete your yearly habit! Make it count.',
+                scheduledTime: scheduledTime,
+                payload: _createNotificationPayload(habit.id, 'yearly'),
+              );
+
+              scheduledCount++;
+            }
+          }
+        } catch (e) {
+          AppLogger.warning('Invalid yearly date format: $dateStr');
+        }
+      }
+    }
+
+    AppLogger.debug(
+        '📅 Scheduled $scheduledCount yearly notifications for ${habit.name}');
+  }
+
+  /// Schedule continuous hourly notifications (next 48 hours)
+  static Future<void> _scheduleHourlyContinuous(dynamic habit) async {
+    final hourlyTimes = habit.hourlyTimes;
+    if (hourlyTimes == null || hourlyTimes.isEmpty) return;
+
+    final now = DateTime.now();
+    final endTime = now.add(const Duration(hours: 48));
+
+    int scheduledCount = 0;
+
+    for (final timeStr in hourlyTimes) {
+      final timeParts = timeStr.split(':');
+      if (timeParts.length != 2) continue;
+
+      final hour = int.tryParse(timeParts[0]);
+      final minute = int.tryParse(timeParts[1]);
+      if (hour == null || minute == null) continue;
+
+      for (DateTime date = now;
+          date.isBefore(endTime);
+          date = date.add(const Duration(days: 1))) {
+        DateTime scheduledTime =
+            DateTime(date.year, date.month, date.day, hour, minute);
+
+        if (scheduledTime.isAfter(now)) {
+          final id = NotificationService.generateSafeId(
+              '${habit.id}_hourly_${date.day}_${hour}_$minute');
+
+          await NotificationService.scheduleNotification(
+            id: id,
+            title: '🎯 ${habit.name}',
+            body: 'Time to complete your hourly habit! Stay on track.',
+            scheduledTime: scheduledTime,
+            payload: _createNotificationPayload(habit.id, 'hourly'),
+          );
+
+          scheduledCount++;
+        }
+      }
+    }
+
+    AppLogger.debug(
+        '📅 Scheduled $scheduledCount hourly notifications for ${habit.name}');
+  }
+
+  /// Create notification payload
+  static String _createNotificationPayload(String habitId, String frequency) {
+    return 'habit_$habitId|$frequency';
   }
 
   /// Force a manual renewal (useful for testing or user-triggered renewal)
@@ -441,6 +586,31 @@ class WorkManagerHabitService {
     // Update the last renewal timestamp
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastRenewalKey, DateTime.now().toIso8601String());
+  }
+
+  /// Force immediate renewal of all habits (for debugging/testing)
+  static Future<void> forceImmediateRenewal() async {
+    AppLogger.info('🔄 Force immediate renewal of all habits requested');
+
+    try {
+      // Cancel the existing periodic task temporarily
+      await Workmanager().cancelByUniqueName(_renewalTaskName);
+
+      // Perform immediate renewal
+      await _performHabitContinuationRenewal(forceRenewal: true);
+
+      // Update the last renewal timestamp
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_lastRenewalKey, DateTime.now().toIso8601String());
+
+      // Reschedule the periodic task
+      await _schedulePeriodicRenewalTask();
+
+      AppLogger.info('✅ Force immediate renewal completed successfully');
+    } catch (e) {
+      AppLogger.error('❌ Error during force immediate renewal', e);
+      rethrow;
+    }
   }
 
   /// Set custom renewal interval

@@ -59,6 +59,27 @@ class HabitContinuationManager {
     }
   }
 
+  /// Force immediate renewal of all habits (for debugging/testing)
+  static Future<void> forceImmediateRenewal() async {
+    try {
+      logging.AppLogger.info(
+          '🔄 Force immediate renewal requested via manager');
+
+      if (Platform.isAndroid) {
+        await WorkManagerHabitService.forceImmediateRenewal();
+      } else if (Platform.isIOS) {
+        // iOS implementation would go here - for now just log
+        logging.AppLogger.info(
+            '⚠️ Force immediate renewal not fully implemented on iOS');
+      } else {
+        logging.AppLogger.warning(
+            '⚠️ Force immediate renewal not supported on this platform');
+      }
+    } catch (e) {
+      logging.AppLogger.error('❌ Error during force immediate renewal', e);
+    }
+  }
+
   /// Set custom renewal interval
   static Future<void> setRenewalInterval(int hours) async {
     try {

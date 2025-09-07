@@ -3,9 +3,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import 'dart:convert';
 import 'logging_service.dart';
 import 'permission_service.dart';
 import 'background_task_service.dart';
@@ -1520,8 +1518,8 @@ class NotificationService {
 
         case 'hourly':
           AppLogger.debug(
-              'Skipping hourly notifications - handled by HabitContinuationService');
-          // Hourly habits are handled by HabitContinuationService to avoid duplicates
+              'Skipping hourly notifications - handled by WorkManagerHabitService');
+          // Hourly habits are handled by WorkManagerHabitService to avoid duplicates
           break;
 
         default:
