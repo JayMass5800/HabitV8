@@ -166,7 +166,7 @@ class SmartThresholdDemo {
             await AutomaticHabitCompletionService.isSmartThresholdsEnabled(),
         'checkResult': {
           'completedHabits': checkResult.completedHabits,
-          'totalChecked': checkResult.totalChecked,
+          'checkedHabits': checkResult.checkedHabits,
           'errors': checkResult.errors,
         },
         'finalServiceStatus':

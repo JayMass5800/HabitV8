@@ -512,6 +512,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         onChanged: (value) => _toggleAutoCompletion(value),
                         secondary: const Icon(Icons.auto_awesome),
                       ),
+                      if (_autoCompletionEnabled) ...[
+                        const Divider(),
+                        _SettingsTile(
+                          title: 'Automatic Completion Settings',
+                          subtitle:
+                              'Configure smart thresholds and advanced options',
+                          leading: const Icon(Icons.tune),
+                          onTap: () =>
+                              context.push('/automatic-completion-settings'),
+                        ),
+                      ],
                       _SettingsTile(
                         title: 'Manage Health Permissions',
                         subtitle: 'Review and update health data permissions',
