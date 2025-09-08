@@ -345,8 +345,8 @@ class CalendarService {
           await _createSingleHabitEvent(habit, date, timeString);
         }
       } else {
-        // For non-hourly habits, use the habit's notification time or default to 9 AM
-        String timeString = '09:00';
+        // For non-hourly habits, use the habit's notification time or default to midnight (00:00)
+        String timeString = '00:00';
         if (habit.notificationTime != null) {
           timeString =
               '${habit.notificationTime!.hour.toString().padLeft(2, '0')}:${habit.notificationTime!.minute.toString().padLeft(2, '0')}';
@@ -369,7 +369,8 @@ class CalendarService {
     try {
       // Parse the time string (format: "HH:mm")
       final timeParts = timeString.split(':');
-      final hour = int.tryParse(timeParts[0]) ?? 9;
+      final hour = int.tryParse(timeParts[0]) ??
+          0; // Default to midnight (0) instead of 9 AM
       final minute =
           timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
 

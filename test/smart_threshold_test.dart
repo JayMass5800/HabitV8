@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../lib/services/smart_threshold_service.dart';
+import 'package:habitv8/services/smart_threshold_service.dart';
 
 void main() {
   group('SmartThresholdService Tests', () {

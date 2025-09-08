@@ -16,6 +16,7 @@ import '../../services/calendar_renewal_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/onboarding_service.dart';
 import '../../services/automatic_habit_completion_service.dart';
+import '../../services/midnight_habit_reset_service.dart';
 
 import '../../data/database.dart';
 import '../widgets/calendar_selection_dialog.dart';
@@ -533,6 +534,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ),
                 ),
               ],
+            ],
+          ),
+          const SizedBox(height: 24),
+          _SettingsSection(
+            title: 'Habit Management',
+            children: [
+              _SettingsTile(
+                title: 'Habit Reset Status',
+                subtitle: _getHabitResetStatusText(),
+                leading: const Icon(Icons.schedule),
+                onTap: () => _showHabitResetInfo(),
+              ),
+              _SettingsTile(
+                title: 'Force Reset Now',
+                subtitle: 'Manually trigger habit reset (for testing)',
+                leading: const Icon(Icons.refresh),
+                onTap: () => _forceHabitReset(),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -1682,6 +1701,128 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error testing notifications: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Get habit reset status text
+  String _getHabitResetStatusText() {
+    try {
+      final status = MidnightHabitResetService.getStatus();
+      if (status['isActive'] == true) {
+        return 'Next reset: ${status['timeUntilReset']}';
+      } else {
+        return 'Habit reset service not active';
+      }
+    } catch (e) {
+      return 'Status unavailable';
+    }
+  }
+
+  /// Show habit reset information dialog
+  void _showHabitResetInfo() {
+    final status = MidnightHabitResetService.getStatus();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Habit Reset System'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'The habit reset system automatically resets your habits at midnight based on their frequency:',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            const Text('• Daily habits: Reset every day at midnight'),
+            const Text('• Weekly habits: Reset on selected weekdays'),
+            const Text('• Monthly habits: Reset on selected days'),
+            const Text('• Yearly habits: Reset on selected date'),
+            const SizedBox(height: 12),
+            Text(
+              'Status: ${status['isActive'] == true ? 'Active' : 'Inactive'}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            if (status['isActive'] == true) ...[
+              Text('Next reset: ${status['timeUntilReset']}'),
+              Text('Reset time: ${status['nextReset']}'),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Force habit reset now
+  void _forceHabitReset() async {
+    try {
+      // Show confirmation dialog
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Force Habit Reset'),
+          content: const Text(
+            'This will immediately reset all habits based on their frequency and reschedule notifications. Are you sure?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Reset'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true) {
+        // Show loading indicator
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Resetting habits...'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+
+        // Force reset
+        await MidnightHabitResetService.forceReset();
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Habits reset successfully! 🎯'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+
+        // Refresh the UI to show updated status
+        setState(() {});
+      }
+    } catch (e) {
+      AppLogger.error('Error forcing habit reset', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error resetting habits: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),

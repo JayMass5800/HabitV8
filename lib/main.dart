@@ -13,8 +13,7 @@ import 'services/permission_service.dart';
 import 'services/theme_service.dart';
 import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
-import 'services/calendar_renewal_service.dart';
-import 'services/habit_continuation_manager.dart';
+import 'services/midnight_habit_reset_service.dart';
 import 'services/health_habit_initialization_service.dart';
 import 'services/automatic_habit_completion_service.dart';
 import 'services/app_lifecycle_service.dart';
@@ -65,8 +64,7 @@ void main() async {
   try {
     await NotificationService.initialize();
 
-    // Schedule notifications for all existing habits (non-blocking)
-    _scheduleExistingHabitNotifications();
+    // Notification scheduling is now handled by the midnight reset service
   } catch (e) {
     AppLogger.error('Error initializing notification service', e);
     // Continue with app startup even if notifications fail
@@ -108,11 +106,9 @@ void main() async {
     NotificationActionService.ensureCallbackRegistered();
   });
 
-  // Initialize calendar renewal service (non-blocking)
-  _initializeCalendarRenewal();
-
-  // Initialize habit continuation service (non-blocking)
-  _initializeHabitContinuation();
+  // Initialize midnight habit reset service (non-blocking)
+  // This replaces the old calendar renewal and habit continuation systems
+  _initializeMidnightReset();
 
   // Initialize health-habit integration (non-blocking)
   _initializeHealthHabitIntegration();
@@ -133,50 +129,21 @@ void _requestEssentialPermissions() async {
   }
 }
 
-/// Initialize calendar renewal service (non-blocking)
-void _initializeCalendarRenewal() async {
-  try {
-    // Small delay to let the app finish initializing
-    await Future.delayed(const Duration(seconds: 5));
-    await CalendarRenewalService.initialize();
-  } catch (e) {
-    AppLogger.error('Error initializing calendar renewal service', e);
-    // Don't block app startup if calendar renewal fails
-  }
-}
+// Calendar renewal service removed - now handled by midnight reset service
 
-/// Initialize habit continuation service (non-blocking)
-void _initializeHabitContinuation() async {
+/// Initialize midnight habit reset service (non-blocking)
+void _initializeMidnightReset() async {
   try {
     // Small delay to let the app finish initializing
     await Future.delayed(const Duration(seconds: 4));
-    await HabitContinuationManager.initialize();
+    await MidnightHabitResetService.initialize();
   } catch (e) {
-    AppLogger.error('Error initializing habit continuation service', e);
-    // Don't block app startup if habit continuation fails
+    AppLogger.error('Error initializing midnight habit reset service', e);
+    // Don't block app startup if midnight reset fails
   }
 }
 
-/// Schedule notifications for all existing habits (non-blocking)
-void _scheduleExistingHabitNotifications() async {
-  try {
-    // Much longer delay to ensure app is fully initialized and UI is responsive
-    await Future.delayed(const Duration(seconds: 10));
-
-    AppLogger.info('Scheduling notifications for existing habits...');
-
-    // Schedule this as a completely separate background task
-    // Don't await it to prevent blocking app startup
-    NotificationService.scheduleAllHabitNotifications().catchError((e) {
-      AppLogger.error('Error scheduling existing habit notifications', e);
-    });
-
-    AppLogger.info('Notification scheduling initiated in background');
-  } catch (e) {
-    AppLogger.error('Error initiating notification scheduling', e);
-    // Don't block app startup if notification scheduling fails
-  }
-}
+// Notification scheduling function removed - now handled by midnight reset service
 
 /// Initialize health-habit integration (non-blocking)
 void _initializeHealthHabitIntegration() async {
@@ -775,5 +742,3 @@ class _AppWrapperState extends State<AppWrapper> {
     return const AllHabitsScreen();
   }
 }
-
-

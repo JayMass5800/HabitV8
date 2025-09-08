@@ -269,7 +269,7 @@ class SmartThresholdDemo {
 
 /// Widget to display smart threshold demo results
 class SmartThresholdDemoWidget extends StatefulWidget {
-  const SmartThresholdDemoWidget({Key? key}) : super(key: key);
+  const SmartThresholdDemoWidget({super.key});
 
   @override
   State<SmartThresholdDemoWidget> createState() =>

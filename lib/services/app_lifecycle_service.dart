@@ -4,8 +4,7 @@
 import 'package:flutter/material.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
-import 'calendar_renewal_service.dart';
-import 'habit_continuation_manager.dart';
+// Old renewal services removed - now using midnight_habit_reset_service.dart
 import 'automatic_habit_completion_service.dart';
 import 'notification_action_service.dart';
 import 'notification_service.dart';
@@ -103,21 +102,8 @@ class AppLifecycleService with WidgetsBindingObserver {
       AppLogger.error('Error disposing NotificationQueueProcessor', e);
     }
 
-    try {
-      // Dispose CalendarRenewalService
-      CalendarRenewalService.dispose();
-    } catch (e) {
-      AppLogger.error('Error disposing CalendarRenewalService', e);
-    }
-
-    try {
-      // Stop HabitContinuationManager (fire and forget since we can't await in lifecycle callback)
-      HabitContinuationManager.stop().catchError((e) {
-        AppLogger.error('Error stopping HabitContinuationManager', e);
-      });
-    } catch (e) {
-      AppLogger.error('Error stopping HabitContinuationManager', e);
-    }
+    // Old renewal services removed - now using MidnightHabitResetService
+    AppLogger.info('App paused - midnight reset service continues running');
 
     try {
       // Dispose AutomaticHabitCompletionService

@@ -273,6 +273,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildHabitPerformanceChart(List<Habit> habits) {
+    final theme = Theme.of(context);
+    final weeklyData = _calculateWeeklyCompletionData(habits);
+    final currentWeekPerformance =
+        weeklyData.isNotEmpty ? weeklyData.last : 0.0;
+    final trend = weeklyData.length >= 2
+        ? weeklyData.last - weeklyData[weeklyData.length - 2]
+        : 0.0;
+
     return Card(
       elevation: 4,
       child: Padding(
@@ -280,14 +288,119 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Habit Performance Deep Dive',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Icon(
+                  Icons.trending_up,
+                  color: theme.colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Habit Performance Deep Dive',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Explanation and current stats
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Weekly Completion Trends',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This chart shows your overall habit completion percentage across the last 4 weeks. Each point represents the average completion rate of all your habits for that week.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildPerformanceMetric(
+                          'This Week',
+                          '${currentWeekPerformance.toStringAsFixed(1)}%',
+                          theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildPerformanceMetric(
+                          'Trend',
+                          '${trend >= 0 ? '+' : ''}${trend.toStringAsFixed(1)}%',
+                          trend >= 0
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
+
+            // Chart
             SizedBox(
               height: 200,
               child: _buildWeeklyCompletionChart(habits),
+            ),
+
+            // Chart legend and interpretation
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Higher percentages indicate better consistency across all habits',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -295,12 +408,52 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
+  Widget _buildPerformanceMetric(String label, String value, Color color) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildWeeklyCompletionChart(List<Habit> habits) {
     final weeklyData = _calculateWeeklyCompletionData(habits);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: true,
+          horizontalInterval: 20,
+          verticalInterval: 1,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color:
+                theme.colorScheme.outline.withValues(alpha: isDark ? 0.2 : 0.3),
+            strokeWidth: 1,
+          ),
+          getDrawingVerticalLine: (value) => FlLine(
+            color:
+                theme.colorScheme.outline.withValues(alpha: isDark ? 0.1 : 0.2),
+            strokeWidth: 1,
+          ),
+        ),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
@@ -309,7 +462,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               getTitlesWidget: (value, meta) {
                 return Text(
                   '${value.toInt()}%',
-                  style: const TextStyle(fontSize: 12),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
                 );
               },
             ),
@@ -320,7 +475,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               getTitlesWidget: (value, meta) {
                 final weeks = ['W1', 'W2', 'W3', 'W4'];
                 if (value.toInt() < weeks.length) {
-                  return Text(weeks[value.toInt()]);
+                  return Text(
+                    weeks[value.toInt()],
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  );
                 }
                 return const Text('');
               },
@@ -331,19 +491,36 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           topTitles:
               const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-        borderData: FlBorderData(show: true),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(
+            color:
+                theme.colorScheme.outline.withValues(alpha: isDark ? 0.3 : 0.5),
+            width: 1,
+          ),
+        ),
         lineBarsData: [
           LineChartBarData(
             spots: weeklyData.asMap().entries.map((entry) {
               return FlSpot(entry.key.toDouble(), entry.value);
             }).toList(),
             isCurved: true,
-            color: Theme.of(context).primaryColor,
+            color: theme.colorScheme.primary,
             barWidth: 3,
-            dotData: const FlDotData(show: true),
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) =>
+                  FlDotCirclePainter(
+                radius: 4,
+                color: theme.colorScheme.primary,
+                strokeWidth: 2,
+                strokeColor: theme.colorScheme.surface,
+              ),
+            ),
             belowBarData: BarAreaData(
               show: true,
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+              color: theme.colorScheme.primary
+                  .withValues(alpha: isDark ? 0.15 : 0.1),
             ),
           ),
         ],
@@ -354,6 +531,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildAIInsightsSection(List<Habit> habits) {
+    final theme = Theme.of(context);
+
     return Card(
       elevation: 4,
       child: Padding(
@@ -363,11 +542,18 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           children: [
             Row(
               children: [
-                Icon(Icons.psychology, color: Theme.of(context).primaryColor),
+                Icon(
+                  Icons.psychology,
+                  color: theme.colorScheme.primary,
+                  size: 24,
+                ),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'AI-Generated Insights',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
@@ -384,10 +570,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Smart Habit Suggestions',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       ...snapshot.data!.take(3).map(
@@ -564,15 +752,25 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       (achievement) => Card(
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: Colors.amber,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
                             child: Text(
                               achievement.icon,
-                              style: const TextStyle(fontSize: 20),
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
                             ),
                           ),
                           title: Text(achievement.title),
                           subtitle: Text(achievement.description),
-                          trailing: Text('+${achievement.xpReward} XP'),
+                          trailing: Text(
+                            '+${achievement.xpReward} XP',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -598,21 +796,37 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       final achievementProgress =
                           progress[achievement.id] ?? 0.0;
 
+                      final theme = Theme.of(context);
+                      final isDark = theme.brightness == Brightness.dark;
+
                       return Card(
-                        color: isUnlocked ? Colors.amber[50] : null,
+                        color: isUnlocked
+                            ? theme.colorScheme.primaryContainer
+                                .withValues(alpha: 0.3)
+                            : null,
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor:
-                                isUnlocked ? Colors.amber : Colors.grey,
+                            backgroundColor: isUnlocked
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.outline
+                                    .withValues(alpha: 0.5),
                             child: Text(
                               isUnlocked ? achievement.icon : '🔒',
-                              style: const TextStyle(fontSize: 20),
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: isUnlocked
+                                    ? theme.colorScheme.onPrimary
+                                    : theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.7),
+                              ),
                             ),
                           ),
                           title: Text(
                             achievement.title,
                             style: TextStyle(
-                              color: isUnlocked ? Colors.amber[700] : null,
+                              color: isUnlocked
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface,
                               fontWeight: isUnlocked ? FontWeight.bold : null,
                             ),
                           ),
@@ -624,10 +838,18 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                                 const SizedBox(height: 4),
                                 LinearProgressIndicator(
                                   value: achievementProgress,
-                                  backgroundColor: Colors.grey[300],
+                                  backgroundColor: theme.colorScheme.outline
+                                      .withValues(alpha: 0.2),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    theme.colorScheme.primary,
+                                  ),
                                 ),
                                 Text(
                                   'Progress: ${(achievementProgress * 100).toStringAsFixed(0)}%',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.7),
+                                  ),
                                 ),
                               ],
                             ],
@@ -637,8 +859,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                                 ? 'Unlocked!'
                                 : '+${achievement.xpReward} XP',
                             style: TextStyle(
-                              color:
-                                  isUnlocked ? Colors.amber[700] : Colors.grey,
+                              color: isUnlocked
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
                               fontWeight: isUnlocked ? FontWeight.bold : null,
                             ),
                           ),
@@ -745,17 +969,25 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildInsightTile(String text, IconData icon) {
+    final theme = Theme.of(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+          Icon(
+            icon,
+            size: 20,
+            color: theme.colorScheme.primary,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 14),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
         ],
@@ -764,20 +996,36 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildSuggestionTile(HabitSuggestion suggestion) {
+    final theme = Theme.of(context);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor:
-              Theme.of(context).primaryColor.withValues(alpha: 0.1),
+          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
           child: Icon(
             Icons.add,
-            color: Theme.of(context).primaryColor,
+            color: theme.colorScheme.primary,
           ),
         ),
-        title: Text(suggestion.name),
-        subtitle: Text(suggestion.description),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        title: Text(
+          suggestion.name,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        subtitle: Text(
+          suggestion.description,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
         onTap: () {
           // Navigate to create habit with prefilled data from the suggestion
           final prefilledData = {
@@ -828,19 +1076,26 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildTrendsOverview(Map<String, dynamic> trendsData) {
+    final theme = Theme.of(context);
+
     if (!(trendsData['hasEnoughData'] ?? false)) {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              Icon(Icons.hourglass_empty,
-                  size: 48, color: Theme.of(context).primaryColor),
+              Icon(
+                Icons.hourglass_empty,
+                size: 48,
+                color: theme.colorScheme.primary,
+              ),
               const SizedBox(height: 16),
               Text(
                 trendsData['message'] ?? 'Not enough data for trends analysis',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
             ],
           ),
@@ -857,9 +1112,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Overall Trends',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 16),
             _buildTrendIndicator(
@@ -871,7 +1129,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             Text(
               overallTrends['message'] ??
                   'Your habits are showing stable progress.',
-              style: const TextStyle(fontSize: 14),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ],
         ),
@@ -880,21 +1140,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildTrendIndicator(String label, String direction, String trend) {
+    final theme = Theme.of(context);
     IconData icon;
     Color color;
 
     switch (direction) {
       case 'upward':
         icon = Icons.trending_up;
-        color = Colors.green;
+        color = theme.colorScheme.primary;
         break;
       case 'downward':
         icon = Icons.trending_down;
-        color = Colors.red;
+        color = theme.colorScheme.error;
         break;
       default:
         icon = Icons.trending_flat;
-        color = Colors.orange;
+        color = theme.colorScheme.secondary;
     }
 
     return Row(
@@ -903,7 +1164,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         const SizedBox(width: 8),
         Text(
           '$label: ${trend.replaceAll('_', ' ').toUpperCase()}',
-          style: TextStyle(
+          style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
             color: color,
           ),
@@ -958,17 +1219,39 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       return FlSpot(dayIndex.toDouble(), (entry.value as double) * 100);
     }).toList();
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return LineChart(
       LineChartData(
-        gridData: FlGridData(show: true),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: true,
+          horizontalInterval: 20,
+          verticalInterval: 1,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color:
+                theme.colorScheme.outline.withValues(alpha: isDark ? 0.2 : 0.3),
+            strokeWidth: 1,
+          ),
+          getDrawingVerticalLine: (value) => FlLine(
+            color:
+                theme.colorScheme.outline.withValues(alpha: isDark ? 0.1 : 0.2),
+            strokeWidth: 1,
+          ),
+        ),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
               getTitlesWidget: (value, meta) {
-                return Text('${value.toInt()}%',
-                    style: const TextStyle(fontSize: 10));
+                return Text(
+                  '${value.toInt()}%',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
+                );
               },
             ),
           ),
@@ -978,7 +1261,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               getTitlesWidget: (value, meta) {
                 final days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
                 if (value.toInt() < days.length) {
-                  return Text(days[value.toInt()]);
+                  return Text(
+                    days[value.toInt()],
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  );
                 }
                 return const Text('');
               },
@@ -989,14 +1277,35 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           topTitles:
               const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-        borderData: FlBorderData(show: true),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(
+            color:
+                theme.colorScheme.outline.withValues(alpha: isDark ? 0.3 : 0.5),
+            width: 1,
+          ),
+        ),
         lineBarsData: [
           LineChartBarData(
             spots: data,
             isCurved: true,
-            color: Theme.of(context).primaryColor,
+            color: theme.colorScheme.secondary,
             barWidth: 3,
-            dotData: const FlDotData(show: true),
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) =>
+                  FlDotCirclePainter(
+                radius: 4,
+                color: theme.colorScheme.secondary,
+                strokeWidth: 2,
+                strokeColor: theme.colorScheme.surface,
+              ),
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              color: theme.colorScheme.secondary
+                  .withValues(alpha: isDark ? 0.15 : 0.1),
+            ),
           ),
         ],
       ),
@@ -1238,16 +1547,17 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   // Gamification methods
   Widget _buildMotivationalHeader(String title, String subtitle) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDarkMode ? Colors.black : Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -1256,18 +1566,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         children: [
           Text(
             title,
-            style: TextStyle(
-              color: isDarkMode ? Colors.white : Colors.black,
-              fontSize: 24,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
-            style: TextStyle(
-              color: isDarkMode ? Colors.white70 : Colors.black54,
-              fontSize: 16,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -1277,6 +1585,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   Widget _buildGamificationCard() {
     final stats = _gamificationStats!;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return ProgressiveDisclosure(
       title: 'Level ${stats['level']} ${stats['rank']}',
       subtitle: 'View detailed achievements and progress',
@@ -1284,20 +1595,29 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         children: [
           Row(
             children: [
-              const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
+              Icon(
+                Icons.emoji_events,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: LinearProgressIndicator(
                   value: stats['levelProgress'],
-                  backgroundColor: Colors.grey[300],
+                  backgroundColor:
+                      theme.colorScheme.outline.withValues(alpha: 0.2),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    theme.colorScheme.primary,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Text(
                 '${stats['xp']} XP',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
               ),
             ],
           ),
@@ -1323,9 +1643,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         children: [
           Text(
             'Detailed Progress',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 12),
           _buildDetailRow('Current Level', 'Level ${stats['level']}'),
@@ -1346,18 +1666,21 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           const SizedBox(height: 12),
           LinearProgressIndicator(
             value: stats['levelProgress'],
-            backgroundColor: Colors.grey[300],
+            backgroundColor: theme.colorScheme.outline.withValues(alpha: 0.2),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              theme.colorScheme.primary,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Progress to next level: ${((stats['levelProgress'] as double) * 100).toInt()}%',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
           ),
         ],
       ),
-      headerColor: Colors.amber,
+      headerColor: theme.colorScheme.primary,
     );
   }
 
@@ -2207,20 +2530,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark
-                ? theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.3)
-                : Colors.indigo.shade50,
+            color: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark
-                  ? theme.colorScheme.outline.withValues(alpha: 0.3)
-                  : Colors.indigo.shade200,
+              color: theme.colorScheme.outline.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
             children: [
-              Icon(Icons.bedtime, color: Colors.indigo, size: 32),
+              Icon(Icons.bedtime, color: theme.colorScheme.tertiary, size: 32),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -2238,7 +2557,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                           ? 'Great sleep supports habit consistency!'
                           : 'Better sleep could improve habit performance',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: sleepHours >= 7 ? Colors.green : Colors.orange,
+                        color: sleepHours >= 7
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.error,
                       ),
                     ),
                   ],
@@ -2312,12 +2633,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     return FlSpot(entry.key.toDouble(), entry.value['value']);
                   }).toList(),
                   isCurved: true,
-                  color: Colors.indigo,
+                  color: theme.colorScheme.tertiary,
                   barWidth: 3,
-                  dotData: const FlDotData(show: true),
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) =>
+                        FlDotCirclePainter(
+                      radius: 3,
+                      color: theme.colorScheme.tertiary,
+                      strokeWidth: 1,
+                      strokeColor: theme.colorScheme.surface,
+                    ),
+                  ),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: Colors.indigo.withValues(alpha: 0.1),
+                    color: theme.colorScheme.tertiary
+                        .withValues(alpha: isDark ? 0.15 : 0.1),
                   ),
                 ),
                 // Habit completion percentage line (scaled to sleep range)
@@ -2328,7 +2659,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                         percentage / 100 * 10); // Scale to 0-10 range
                   }).toList(),
                   isCurved: true,
-                  color: Colors.green,
+                  color: theme.colorScheme.secondary,
                   barWidth: 2,
                   dotData: const FlDotData(show: false),
                   dashArray: [5, 5],
@@ -2343,9 +2674,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildLegendItem('Sleep Hours', Colors.indigo),
+            _buildLegendItem('Sleep Hours', theme.colorScheme.tertiary),
             const SizedBox(width: 20),
-            _buildLegendItem('Habit Completion %', Colors.green),
+            _buildLegendItem('Habit Completion %', theme.colorScheme.secondary),
           ],
         ),
       ],
@@ -2387,7 +2718,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           'Activity & Energy Levels',
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w600,
-            color: isDark ? theme.colorScheme.primary : Colors.orange[700],
+            color: theme.colorScheme.primary,
           ),
         ),
         const SizedBox(height: 16),
@@ -2501,12 +2832,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     return FlSpot(entry.key.toDouble(), entry.value['value']);
                   }).toList(),
                   isCurved: true,
-                  color: Colors.orange,
+                  color: theme.colorScheme.primary,
                   barWidth: 3,
-                  dotData: const FlDotData(show: true),
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) =>
+                        FlDotCirclePainter(
+                      radius: 3,
+                      color: theme.colorScheme.primary,
+                      strokeWidth: 1,
+                      strokeColor: theme.colorScheme.surface,
+                    ),
+                  ),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: Colors.orange.withValues(alpha: 0.1),
+                    color: theme.colorScheme.primary
+                        .withValues(alpha: isDark ? 0.15 : 0.1),
                   ),
                 ),
                 // Habit completion percentage line (scaled to steps range)
@@ -2517,7 +2858,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                         percentage / 100 * 12000); // Scale to steps range
                   }).toList(),
                   isCurved: true,
-                  color: Colors.green,
+                  color: theme.colorScheme.secondary,
                   barWidth: 2,
                   dotData: const FlDotData(show: false),
                   dashArray: [5, 5],
@@ -2532,9 +2873,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildLegendItem('Steps', Colors.orange),
+            _buildLegendItem('Steps', theme.colorScheme.primary),
             const SizedBox(width: 20),
-            _buildLegendItem('Habit Completion %', Colors.green),
+            _buildLegendItem('Habit Completion %', theme.colorScheme.secondary),
           ],
         ),
       ],
@@ -2691,12 +3032,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     return FlSpot(entry.key.toDouble(), entry.value['value']);
                   }).toList(),
                   isCurved: true,
-                  color: Colors.red,
+                  color: theme.colorScheme.error,
                   barWidth: 3,
-                  dotData: const FlDotData(show: true),
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) =>
+                        FlDotCirclePainter(
+                      radius: 3,
+                      color: theme.colorScheme.error,
+                      strokeWidth: 1,
+                      strokeColor: theme.colorScheme.surface,
+                    ),
+                  ),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: theme.colorScheme.error
+                        .withValues(alpha: isDark ? 0.15 : 0.1),
                   ),
                 ),
                 // Habit completion percentage line (scaled to heart rate range)
@@ -2714,7 +3065,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                                 range)); // Scale to dynamic range
                   }).toList(),
                   isCurved: true,
-                  color: Colors.green,
+                  color: theme.colorScheme.secondary,
                   barWidth: 2,
                   dotData: const FlDotData(show: false),
                   dashArray: [5, 5],
@@ -2729,9 +3080,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildLegendItem('Heart Rate (BPM)', Colors.red),
+            _buildLegendItem('Heart Rate (BPM)', theme.colorScheme.error),
             const SizedBox(width: 20),
-            _buildLegendItem('Habit Completion %', Colors.green),
+            _buildLegendItem('Habit Completion %', theme.colorScheme.secondary),
           ],
         ),
       ],
@@ -2886,12 +3237,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     return FlSpot(entry.key.toDouble(), entry.value['value']);
                   }).toList(),
                   isCurved: true,
-                  color: Colors.blue,
+                  color: theme.colorScheme.primary,
                   barWidth: 3,
-                  dotData: const FlDotData(show: true),
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) =>
+                        FlDotCirclePainter(
+                      radius: 3,
+                      color: theme.colorScheme.primary,
+                      strokeWidth: 1,
+                      strokeColor: theme.colorScheme.surface,
+                    ),
+                  ),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: Colors.blue.withValues(alpha: 0.1),
+                    color: theme.colorScheme.primary
+                        .withValues(alpha: isDark ? 0.15 : 0.1),
                   ),
                 ),
                 // Habit completion percentage line (scaled to water range)
@@ -2902,7 +3263,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                         percentage / 100 * 3); // Scale to 0-3L range
                   }).toList(),
                   isCurved: true,
-                  color: Colors.green,
+                  color: theme.colorScheme.secondary,
                   barWidth: 2,
                   dotData: const FlDotData(show: false),
                   dashArray: [5, 5],
@@ -2917,9 +3278,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildLegendItem('Water Intake (L)', Colors.blue),
+            _buildLegendItem('Water Intake (L)', theme.colorScheme.primary),
             const SizedBox(width: 20),
-            _buildLegendItem('Habit Completion %', Colors.green),
+            _buildLegendItem('Habit Completion %', theme.colorScheme.secondary),
           ],
         ),
         const SizedBox(height: 12),

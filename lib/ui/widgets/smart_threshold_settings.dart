@@ -7,7 +7,7 @@ import '../../services/logging_service.dart';
 ///
 /// Provides UI for configuring and monitoring smart threshold functionality
 class SmartThresholdSettings extends StatefulWidget {
-  const SmartThresholdSettings({Key? key}) : super(key: key);
+  const SmartThresholdSettings({super.key});
 
   @override
   State<SmartThresholdSettings> createState() => _SmartThresholdSettingsState();

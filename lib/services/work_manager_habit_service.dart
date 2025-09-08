@@ -293,13 +293,15 @@ class WorkManagerHabitService {
   /// Renew notifications for a habit
   static Future<void> _renewHabitNotifications(dynamic habit) async {
     try {
-      // Cancel existing notifications first
-      await NotificationService.cancelHabitNotifications(
-        NotificationService.generateSafeId(habit.id),
-      );
+      // DO NOT cancel existing notifications during renewal
+      // This was causing all notifications to fire at renewal time instead of scheduled time
+      // Only extend future notifications to ensure long-term continuity
+
+      AppLogger.info(
+          '🔄 Extending future notifications for habit: ${habit.name}');
 
       // Use continuous scheduling to ensure habits work long-term
-      // Import the HabitContinuationService methods for continuous scheduling
+      // This will only schedule notifications that don't already exist
       await _scheduleContinuousNotifications(habit);
     } catch (e) {
       AppLogger.error(

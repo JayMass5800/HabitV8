@@ -8,7 +8,7 @@ import '../widgets/smart_threshold_settings.dart';
 ///
 /// Comprehensive settings screen for all automatic habit completion features
 class AutomaticCompletionSettingsScreen extends StatefulWidget {
-  const AutomaticCompletionSettingsScreen({Key? key}) : super(key: key);
+  const AutomaticCompletionSettingsScreen({super.key});
 
   @override
   State<AutomaticCompletionSettingsScreen> createState() =>

@@ -98,7 +98,7 @@ flutter test
 - Notifications and reminders
 - Multi-platform support (mobile, web, desktop)
 
-## Application Interaction Map
+## Service Interaction Map
 
 ### Core Components and Data Flow
 
@@ -120,6 +120,9 @@ flutter test
 - **Notification System**:
   - `NotificationService`: Manages local notifications with platform-specific implementations
   - `NotificationActionService`: Handles notification action responses (complete/snooze)
+  - `HybridAlarmService`: Combines notification and system alarms for reliable reminders
+  - `TrueAlarmService`: Handles system-level alarms for critical reminders
+  - `NotificationQueueProcessor`: Manages notification delivery queue
   - Bidirectional connection with habit completion tracking
 
 - **Health Integration**:
@@ -128,6 +131,9 @@ flutter test
   - `HealthHabitMappingService`: Determines which habits can be auto-completed
   - `AutomaticHabitCompletionService`: Completes habits based on health metrics
   - `HealthHabitAnalyticsService`: Analyzes correlations between habits and health
+  - `SmartThresholdService`: Dynamically adjusts health thresholds based on user patterns
+  - `HealthHabitUIService`: Provides UI components for health data visualization
+  - `HealthHabitBackgroundService`: Manages background health data processing
 
 - **Calendar Integration**:
   - `CalendarService`: Syncs habits with device calendar
@@ -137,12 +143,20 @@ flutter test
   - `HabitStatsService`: Calculates statistics (streaks, completion rates)
   - `TrendAnalysisService`: Identifies patterns in habit completion
   - `ComprehensiveHabitSuggestionsService`: Generates habit recommendations
+  - `CategorySuggestionService`: Suggests categories for new habits
+  - `AchievementsService`: Tracks and awards user achievements
 
 - **System Services**:
   - `PermissionService`: Manages permission requests
   - `LoggingService`: Centralized logging
   - `ThemeService`: UI theme management
   - `CacheService`: Performance optimization
+  - `AppLifecycleService`: Manages application lifecycle events
+  - `BackgroundTaskService`: Handles background processing
+  - `WorkManagerHabitService`: Schedules background work for habit processing
+  - `PerformanceService`: Monitors and optimizes app performance
+  - `OnboardingService`: Manages user onboarding experience
+  - `ActivityRecognitionService`: Detects user activity for context-aware features
 
 #### 3. UI Layer
 - **Screens**:
@@ -154,6 +168,8 @@ flutter test
   - `SettingsScreen`: App configuration
   - `CreateHabitScreen`/`EditHabitScreen`: Habit management
   - `HealthIntegrationScreen`: Health data connection
+  - `AutomaticCompletionSettingsScreen`: Configure auto-completion
+  - `OnboardingScreen`: User onboarding experience
 
 - **State Management**:
   - Uses Riverpod for dependency injection and state management
@@ -162,42 +178,77 @@ flutter test
 
 ### Key Interaction Flows
 
-#### 1. Habit Creation & Management Flow
+#### 1. Application Initialization Flow
 ```
-User → CreateHabitScreen → HabitService.addHabit() → Database
-                         → NotificationService (schedule notifications)
-                         → CalendarService (create calendar events)
-                         → HealthHabitMappingService (if health-related)
+main() → AppLifecycleService.initialize()
+       → NotificationService.initialize()
+       → HybridAlarmService.initialize()
+       → PermissionService.requestEssentialPermissions()
+       → NotificationActionService.initialize()
+       → CalendarRenewalService.initialize() (delayed)
+       → HabitContinuationManager.initialize() (delayed)
+       → HealthHabitInitializationService.initialize() (delayed)
+       → AutomaticHabitCompletionService.initialize() (after health init)
 ```
 
-#### 2. Habit Completion Flow
+#### 2. Habit Creation & Management Flow
+```
+User → CreateHabitScreen → HabitService.addHabit() → Database
+                         → NotificationService.scheduleHabitNotifications()
+                         → CalendarService.syncHabitChanges()
+                         → HealthHabitMappingService (if health-related)
+                         → CategorySuggestionService (for category recommendations)
+```
+
+#### 3. Habit Completion Flow
 ```
 User → TimelineScreen → HabitService.markHabitComplete() → Database
                       → HabitStatsService (update statistics)
-                      → CalendarService (update calendar)
+                      → CalendarService.syncHabitChanges()
                       → NotificationService (cancel notifications)
+                      → AchievementsService (check for achievements)
 ```
 
-#### 3. Health-Based Auto-Completion Flow
+#### 4. Health-Based Auto-Completion Flow
 ```
 HealthService → HealthHabitIntegrationService → HealthHabitMappingService
               → AutomaticHabitCompletionService → HabitService.markHabitComplete()
               → NotificationService (send completion notification)
+              → SmartThresholdService (adjust thresholds based on completion)
+              → HealthHabitAnalyticsService (update analytics)
 ```
 
-#### 4. Notification Action Flow
+#### 5. Notification Action Flow
 ```
 System Notification → NotificationActionService → HabitService
                     → Database (update habit)
                     → UI refresh via Riverpod
+                    → NotificationQueueProcessor (process next notifications)
 ```
 
-#### 5. Analytics & Insights Flow
+#### 6. Analytics & Insights Flow
 ```
 HabitStatsService ← Database
                   → TrendAnalysisService
                   → ComprehensiveHabitSuggestionsService
                   → InsightsScreen
+                  → AchievementsService
+```
+
+#### 7. Calendar Synchronization Flow
+```
+HabitService (CRUD operations) → CalendarService.syncHabitChanges()
+                               → Device Calendar API
+CalendarRenewalService (periodic) → CalendarService
+                                  → Device Calendar API
+```
+
+#### 8. Performance Optimization Flow
+```
+PerformanceService → CacheService (manage cache TTL)
+                   → Database (optimize queries)
+                   → UI (optimize rendering)
+                   → BackgroundTaskService (manage background tasks)
 ```
 
 ### Cross-Component Dependencies
@@ -205,6 +256,7 @@ HabitStatsService ← Database
 #### 1. Database Dependencies
 - **HabitService** depends on Hive database
 - **HabitStatsService** depends on habit data from database
+- **CacheService** provides caching for database queries
 - All UI screens depend on database for habit data
 
 #### 2. Service Interdependencies
@@ -213,11 +265,20 @@ HabitStatsService ← Database
 - **CalendarService** depends on PermissionService
 - **AutomaticHabitCompletionService** depends on HealthService and HabitService
 - **HealthHabitIntegrationService** depends on HealthService, HabitService, and NotificationService
+- **NotificationActionService** depends on HabitService and NotificationService
+- **WorkManagerHabitService** depends on HabitService and NotificationService
+- **TrendAnalysisService** depends on HabitStatsService
+- **ComprehensiveHabitSuggestionsService** depends on HabitStatsService and TrendAnalysisService
+- **SmartThresholdService** depends on HealthService and HabitStatsService
+- **AchievementsService** depends on HabitStatsService
+- **ActivityRecognitionService** depends on PermissionService
 
 #### 3. UI Dependencies
 - All screens depend on Riverpod providers for state management
 - Screens access services through provider containers
 - UI updates reactively when underlying data changes
+- `HealthIntegrationScreen` depends on HealthService and HealthHabitUIService
+- `AutomaticCompletionSettingsScreen` depends on SmartThresholdService
 
 ### Initialization Sequence
 
@@ -225,15 +286,18 @@ HabitStatsService ← Database
    - Initialize Flutter binding
    - Set up system UI appearance
    - Initialize timezone data
+   - Initialize AppLifecycleService for resource management
 
 2. **Core Services Initialization**:
    - Initialize NotificationService
+   - Initialize HybridAlarmService
    - Request essential permissions
    - Create Riverpod provider container
    - Initialize NotificationActionService
 
 3. **Background Services Initialization**:
    - Initialize CalendarRenewalService (delayed)
+   - Initialize HabitContinuationManager (delayed)
    - Initialize HealthHabitIntegration (delayed)
    - Initialize AutomaticHabitCompletionService (after health integration)
 
@@ -248,16 +312,20 @@ HabitStatsService ← Database
    - Periodic background sync via HealthHabitIntegrationService
    - On-demand sync when viewing health-related screens
    - Automatic habit completion based on health thresholds
+   - Smart threshold adjustment based on user patterns
+   - Background processing via HealthHabitBackgroundService
 
 2. **Calendar Sync**:
    - Two-way sync between habits and device calendar
    - Calendar events created/updated when habits change
    - Calendar renewal for recurring habits
+   - Periodic background sync via CalendarRenewalService
 
 3. **Cache Management**:
    - Performance optimization via CacheService
    - Cached habit statistics with TTL (time-to-live)
    - Cache invalidation on habit updates
+   - Memory-efficient caching with dependency tracking
 
 ### Error Handling & Recovery
 
@@ -265,13 +333,19 @@ HabitStatsService ← Database
    - Graceful degradation if notifications unavailable
    - Retry mechanisms for scheduled notifications
    - Fallback to in-app notifications
+   - HybridAlarmService provides redundancy with system alarms
+   - NotificationQueueProcessor manages notification delivery retries
 
 2. **Health Integration Failures**:
    - Continues with limited functionality if health permissions denied
    - Fallback to manual habit tracking
    - Periodic permission re-requests
+   - Timeout handling for health API calls
+   - Error reporting and diagnostics via HealthHabitUIService
 
 3. **Database Errors**:
    - Recovery mechanisms for corrupted database
    - Automatic database reset if adapter issues detected
    - Logging of database operations for debugging
+   - Cache invalidation on database errors
+   - Automatic retry for failed database operations
