@@ -109,6 +109,9 @@ class AutomaticHabitCompletionService {
       // Delay initial check to prevent immediate crashes after health permissions are granted
       await Future.delayed(const Duration(seconds: 10));
 
+      // Initialize smart thresholds for existing habits
+      await _initializeSmartThresholds();
+
       // Perform initial check in background
       BackgroundTaskService.scheduleDelayedTask(
         'initial_completion_check',
@@ -494,17 +497,108 @@ class AutomaticHabitCompletionService {
     return await _performCompletionCheck();
   }
 
+  /// Initialize smart thresholds for existing habits
+  static Future<void> _initializeSmartThresholds() async {
+    try {
+      final isSmartThresholdsEnabled = await isSmartThresholdsEnabled();
+      if (!isSmartThresholdsEnabled) {
+        AppLogger.info('Smart thresholds disabled, skipping initialization');
+        return;
+      }
+
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+      final allHabits = await habitService.getActiveHabits();
+
+      AppLogger.info(
+          'Initializing smart thresholds for ${allHabits.length} habits...');
+
+      for (final habit in allHabits) {
+        await SmartThresholdService.initializeHabitThresholds(habit.id);
+      }
+
+      AppLogger.info('Smart thresholds initialization completed');
+    } catch (e) {
+      AppLogger.error('Error initializing smart thresholds', e);
+    }
+  }
+
+  /// Learn from manual habit completion
+  static Future<void> learnFromManualCompletion({
+    required String habitId,
+    required DateTime completionDate,
+  }) async {
+    try {
+      final isSmartThresholdsEnabled = await isSmartThresholdsEnabled();
+      if (!isSmartThresholdsEnabled) return;
+
+      // Get the habit to determine its health mapping
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+      final habit = await habitService.getHabit(habitId);
+
+      if (habit == null) return;
+
+      // Get health mapping for this habit
+      final mapping =
+          await HealthHabitMappingService.analyzeHabitForHealthMapping(habit);
+      if (mapping == null) return;
+
+      // Get health data for the completion date
+      final startOfDay = DateTime(
+          completionDate.year, completionDate.month, completionDate.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+      final now = DateTime.now();
+      final actualEndTime = endOfDay.isAfter(now) ? now : endOfDay;
+
+      final healthData = await HealthService.getHealthDataFromTypes(
+        types: [mapping.healthDataType],
+        startTime: startOfDay,
+        endTime: actualEndTime,
+      );
+
+      if (healthData.isNotEmpty) {
+        // Calculate the health value for that day
+        double totalValue = 0.0;
+        for (final point in healthData) {
+          final value = (point['value'] as num?)?.toDouble() ?? 0.0;
+          totalValue += value;
+        }
+
+        // Learn from this manual completion
+        await SmartThresholdService.learnFromCompletion(
+          habitId: habitId,
+          healthDataType: mapping.healthDataType,
+          healthValue: totalValue,
+          usedThreshold: mapping.threshold,
+          wasAutoCompleted: false,
+          wasManuallyCompleted: true,
+          date: completionDate,
+        );
+
+        AppLogger.info(
+            'Learned from manual completion: $habitId, value: $totalValue');
+      }
+    } catch (e) {
+      AppLogger.error(
+          'Error learning from manual completion for habit $habitId', e);
+    }
+  }
+
   /// Get service status
   static Future<Map<String, dynamic>> getServiceStatus() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final lastCheck = prefs.getInt(_lastCompletionCheckKey) ?? 0;
       final intervalMinutes = await getCheckIntervalMinutes();
+      final smartThresholdStats =
+          await SmartThresholdService.getSmartThresholdStats();
 
       return {
         'isRunning': _isRunning,
         'isEnabled': await isServiceEnabled(),
         'realTimeEnabled': _realTimeEnabled,
+        'smartThresholdsEnabled': await isSmartThresholdsEnabled(),
         'lastCheckTime': lastCheck,
         'lastCheckDate': lastCheck > 0
             ? DateTime.fromMillisecondsSinceEpoch(lastCheck).toIso8601String()
@@ -516,6 +610,7 @@ class AutomaticHabitCompletionService {
         'recentErrorCount': _recentErrorCount,
         'pendingCompletions': _pendingCompletions.length,
         'batteryOptimized': true,
+        'smartThresholds': smartThresholdStats,
       };
     } catch (e) {
       AppLogger.error('Error getting service status', e);

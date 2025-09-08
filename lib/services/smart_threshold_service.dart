@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../data/database.dart';
-import '../domain/model/habit.dart';
 import 'logging_service.dart';
 import 'automatic_habit_completion_service.dart';
 
@@ -19,7 +17,6 @@ import 'automatic_habit_completion_service.dart';
 class SmartThresholdService {
   static const String _thresholdDataKey = 'smart_threshold_data';
   static const String _learningDataKey = 'threshold_learning_data';
-  static const String _lastAnalysisKey = 'last_threshold_analysis';
   static const String _userBaselineKey = 'user_baseline_data';
 
   // Learning parameters
@@ -34,7 +31,6 @@ class SmartThresholdService {
   /// Initialize smart thresholds for a habit
   static Future<void> initializeHabitThresholds(String habitId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final thresholdData = await _getThresholdData();
 
       if (!thresholdData.containsKey(habitId)) {
