@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/automatic_habit_completion_service.dart';
-import '../../services/smart_threshold_service.dart';
+
 import '../../services/logging_service.dart';
 import '../widgets/smart_threshold_settings.dart';
 
@@ -236,7 +236,8 @@ class _AutomaticCompletionSettingsScreenState
               _buildStatusRow(
                   'Next Check',
                   _formatDateTime(
-                      DateTime.fromMillisecondsSinceEpoch(nextCheckTime)),
+                      DateTime.fromMillisecondsSinceEpoch(nextCheckTime)
+                          .toIso8601String()),
                   Colors.blue),
             _buildStatusRow('Recent Errors', recentErrorCount.toString(),
                 recentErrorCount > 0 ? Colors.orange : Colors.green),
@@ -280,7 +281,7 @@ class _AutomaticCompletionSettingsScreenState
                 subtitle: const Text('More responsive but uses more battery'),
                 value: _realTimeEnabled,
                 onChanged: _toggleRealTime,
-                secondary: const Icon(Icons.real_time_sync),
+                secondary: const Icon(Icons.sync),
               ),
 
               const Divider(),

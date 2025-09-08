@@ -500,8 +500,8 @@ class AutomaticHabitCompletionService {
   /// Initialize smart thresholds for existing habits
   static Future<void> _initializeSmartThresholds() async {
     try {
-      final isSmartThresholdsEnabled = await isSmartThresholdsEnabled();
-      if (!isSmartThresholdsEnabled) {
+      final smartThresholdsEnabled = await isSmartThresholdsEnabled();
+      if (!smartThresholdsEnabled) {
         AppLogger.info('Smart thresholds disabled, skipping initialization');
         return;
       }
@@ -529,13 +529,13 @@ class AutomaticHabitCompletionService {
     required DateTime completionDate,
   }) async {
     try {
-      final isSmartThresholdsEnabled = await isSmartThresholdsEnabled();
-      if (!isSmartThresholdsEnabled) return;
+      final smartThresholdsEnabled = await isSmartThresholdsEnabled();
+      if (!smartThresholdsEnabled) return;
 
       // Get the habit to determine its health mapping
       final habitBox = await DatabaseService.getInstance();
       final habitService = HabitService(habitBox);
-      final habit = await habitService.getHabit(habitId);
+      final habit = await habitService.getHabitById(habitId);
 
       if (habit == null) return;
 

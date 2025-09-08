@@ -345,8 +345,9 @@ class SmartThresholdService {
       // Calculate multiplier for current day of week
       final currentDayOfWeek = date.weekday;
       final currentDayValues = dayAverages[currentDayOfWeek];
-      if (currentDayValues == null || currentDayValues.isEmpty)
+      if (currentDayValues == null || currentDayValues.isEmpty) {
         return threshold;
+      }
 
       final currentDayAverage =
           currentDayValues.reduce((a, b) => a + b) / currentDayValues.length;
