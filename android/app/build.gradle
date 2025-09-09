@@ -109,24 +109,10 @@ android {
     }
 }
 
-// Apply health permission management scripts for custom minimal health implementation
-apply from: 'add_health_permissions.gradle'
-apply from: 'remove_health_permissions.gradle'
-
 flutter {
     source '../..'
 }
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'
-    
-    // Health Connect dependencies - using latest stable version for better compatibility
-    // Based on official Health Connect samples and documentation
-    implementation 'androidx.health.connect:connect-client:1.1.0-alpha12'
-    
-    // Coroutines for async operations
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
-    
-    // Activity recognition
-    implementation 'com.google.android.gms:play-services-location:21.0.1'
 }
