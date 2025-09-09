@@ -81,7 +81,7 @@ class HybridAlarmService {
       // Get and validate the alarm sound path
       final soundPath = _getAlarmSoundPath(alarmSoundName);
       AppLogger.info('  - Resolved sound path: $soundPath');
-      
+
       // Use the alarm package for exact alarms
       final alarmSettings = AlarmSettings(
         id: alarmId,
@@ -106,8 +106,10 @@ class HybridAlarmService {
 
       AppLogger.info('✅ Exact alarm scheduled successfully');
     } catch (e) {
-      AppLogger.error('❌ Failed to schedule exact alarm for $habitName with sound $alarmSoundName', e);
-      
+      AppLogger.error(
+          '❌ Failed to schedule exact alarm for $habitName with sound $alarmSoundName',
+          e);
+
       // Try with default sound as fallback
       try {
         AppLogger.info('🔄 Retrying with default sound...');
@@ -134,13 +136,13 @@ class HybridAlarmService {
         AppLogger.info('✅ Alarm scheduled with default sound as fallback');
       } catch (e2) {
         AppLogger.error('❌ Even fallback alarm failed', e2);
-        
+
         // Final fallback to notification
         await _scheduleNotificationAlarm(
           alarmId: alarmId,
           habitName: habitName,
           scheduledTime: scheduledTime,
-          alarmSoundName: 'Digital Beep',  // Use known working sound name
+          alarmSoundName: 'Digital Beep', // Use known working sound name
           snoozeDelayMinutes: snoozeDelayMinutes,
         );
       }
@@ -536,10 +538,12 @@ class HybridAlarmService {
       case 'Bell':
       case 'Chime':
       case 'Default':
-        AppLogger.warning('System ringtone "$alarmSoundName" mapped to default asset sound');
+        AppLogger.warning(
+            'System ringtone "$alarmSoundName" mapped to default asset sound');
         return 'assets/sounds/gentle_chime.mp3'; // Use gentle_chime as fallback for unrecognized sounds
       default:
-        AppLogger.warning('Unknown alarm sound "$alarmSoundName" mapped to default sound');
+        AppLogger.warning(
+            'Unknown alarm sound "$alarmSoundName" mapped to default sound');
         return 'assets/sounds/digital_beep.mp3';
     }
   }
