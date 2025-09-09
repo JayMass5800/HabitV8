@@ -1,42 +1,40 @@
-75 issues found. (ran in 2.6s)
-  error - Undefined name 'theme' - lib\ui\screens\insights_screen.dart:1867:30 - undefined_identifier
-  error - Undefined name 'habits' - lib\ui\screens\insights_screen.dart:1878:47 - undefined_identifier
-  error - Undefined name 'habits' - lib\ui\screens\insights_screen.dart:1880:51 - undefined_identifier
-  error - Undefined name 'habits' - lib\ui\screens\insights_screen.dart:1882:46 - undefined_identifier
-  error - Undefined name 'habits' - lib\ui\screens\insights_screen.dart:1884:48 - undefined_identifier
-  error - The method '_buildHealthDataPlaceholder' isn't defined for the type '_InsightsScreenState' - lib\ui\screens\insights_screen.dart:1886:15 - undefined_method
-  error - Undefined name 'HealthService' - lib\ui\screens\insights_screen.dart:1915:28 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\insights_screen.dart:1922:28 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\insights_screen.dart:1929:28 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\insights_screen.dart:1936:28 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\insights_screen.dart:2026:45 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\insights_screen.dart:2033:42 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\insights_screen.dart:2041:27 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2064:11 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2064:38 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2072:24 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2075:24 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2078:24 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2081:24 - undefined_identifier
-  error - Undefined name 'context' - lib\ui\screens\insights_screen.dart:2168:28 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2170:24 - undefined_identifier
-  error - Undefined name 'context' - lib\ui\screens\insights_screen.dart:2363:28 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2365:19 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2366:22 - undefined_identifier
-  error - Undefined name 'context' - lib\ui\screens\insights_screen.dart:2562:28 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2564:23 - undefined_identifier
-  error - Undefined name 'context' - lib\ui\screens\insights_screen.dart:2769:28 - undefined_identifier
-  error - Undefined name '_healthSummary' - lib\ui\screens\insights_screen.dart:2771:25 - undefined_identifier
-  error - Undefined name 'context' - lib\ui\screens\insights_screen.dart:3014:27 - undefined_identifier
-  error - Expected a method, getter, setter or operator declaration - lib\ui\screens\insights_screen.dart:3049:1 - expected_executable
-  error - Undefined name 'hasPermissions' - lib\ui\screens\settings_screen.dart:202:11 - undefined_identifier
-  error - Undefined name 'permissionServiceCheck' - lib\ui\screens\settings_screen.dart:202:29 - undefined_identifier
-  error - Undefined name 'hasPermissions' - lib\ui\screens\settings_screen.dart:205:53 - undefined_identifier
-  error - Undefined name 'permissionServiceCheck' - lib\ui\screens\settings_screen.dart:205:89 - undefined_identifier
-  error - Undefined name 'HealthEducationDialog' - lib\ui\screens\settings_screen.dart:918:41 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\settings_screen.dart:946:35 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\settings_screen.dart:961:38 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\settings_screen.dart:969:36 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\settings_screen.dart:1325:38 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\settings_screen.dart:1352:33 - undefined_identifier
-  error - Undefined name 'HealthService' - lib\ui\screens\settings_screen.dart:1440:31 - undefined_identifier
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:12:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:13:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:14:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:15:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:16:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:17:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:18:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:19:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:20:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:21:17 Unresolved reference 'health'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:44:45 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:44:45 Not enough information to infer type argument for 'I'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:44:45 Not enough information to infer type argument for 'O'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:45:9 Unresolved reference 'PermissionController'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:46:9 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:50:52 Unresolved reference 'size'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:53:27 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:77:34 Unresolved reference 'HealthConnectClient'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:81:13 Unresolved reference 'HealthConnectClient'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:86:13 Unresolved reference 'HealthConnectClient'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:94:35 Unresolved reference 'HealthConnectClient'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:106:46 Cannot infer type for this parameter. Please specify it explicitly.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:180:29 Unresolved reference 'HealthPermission'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:180:64 Unresolved reference 'StepsRecord'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:181:29 Unresolved reference 'HealthPermission'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:181:64 Unresolved reference 'ActiveCaloriesBurnedRecord'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:182:29 Unresolved reference 'HealthPermission'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:182:64 Unresolved reference 'TotalCaloriesBurnedRecord'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:183:29 Unresolved reference 'HealthPermission'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:183:64 Unresolved reference 'SleepSessionRecord'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:184:29 Unresolved reference 'HealthPermission'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:184:64 Unresolved reference 'HydrationRecord'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:185:29 Unresolved reference 'HealthPermission'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:185:64 Unresolved reference 'WeightRecord'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:186:29 Unresolved reference 'HealthPermission'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/HealthConnectActivity.kt:186:64 Unresolved reference 'HeartRateRecord'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MainActivity.kt:53:35 Unresolved reference 'MinimalHealthPlugin'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MainActivity.kt:54:35 Unresolved reference 'SimpleHealthPlugin'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MainActivity.kt:154:9 Unresolved reference 'HealthMonitoringService'.
+e: file:///C:/HabitV8/android/app/src/main/kotlin/com/habittracker/habitv8/MainActivity.kt:158:9 Unresolved reference 'HealthMonitoringService'.

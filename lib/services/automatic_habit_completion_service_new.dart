@@ -1,11 +1,6 @@
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../data/database.dart';
-import '../domain/model/habit.dart';
-import 'notification_service.dart';
 import 'logging_service.dart';
-import 'background_task_service.dart';
-import 'smart_threshold_service.dart';
 
 /// Simple result class for habit completion checks
 class HabitCompletionResult {

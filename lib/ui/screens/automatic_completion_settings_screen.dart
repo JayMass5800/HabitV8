@@ -165,7 +165,7 @@ class _AutomaticCompletionSettingsScreenState
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-              'Manual check completed: ${result.completedHabits} habits completed'),
+              'Manual check completed: ${result['habitsCompleted']} habits completed'),
           backgroundColor: Colors.green,
         ),
       );

@@ -44,10 +44,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   DateTime _focusedMonth = DateTime.now(); // New: For calendar navigation
 
   // Health integration fields
-  bool _enableHealthIntegration = false;
+  final bool _enableHealthIntegration = false;
   String? _selectedHealthDataType;
   double? _customThreshold;
-  String _thresholdLevel = 'moderate';
+  final String _thresholdLevel = 'moderate';
   List<HabitSuggestion> _habitSuggestions = [];
   bool _loadingSuggestions = false;
   bool _showSuggestions = false;

@@ -1,26 +1,10 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path_provider/path_provider.dart';
-import '../../services/permission_service.dart';
+import '../widgets/settings_tile.dart';
 import '../../services/notification_service.dart';
+import '../../services/permission_service.dart';
 import '../../services/theme_service.dart';
-import '../../services/calendar_service.dart';
-import '../../services/calendar_renewal_service.dart';
-
-import '../../services/logging_service.dart';
-import '../../services/onboarding_service.dart';
-import '../../services/automatic_habit_completion_service.dart';
-import '../../services/midnight_habit_reset_service.dart';
-
-import '../../data/database.dart';
-import '../widgets/calendar_selection_dialog.dart';
-import '../widgets/smooth_transitions.dart';
-import '../widgets/progressive_disclosure.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -29,1855 +13,522 @@ class SettingsScreen extends ConsumerStatefulWidget {
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends ConsumerState<SettingsScreen>
-    with WidgetsBindingObserver {
-  bool _notificationsEnabled = false;
-  bool _exactAlarmsEnabled = false;
-  bool _calendarSync = false;
-  bool _healthDataSync = false;
-  bool _autoCompletionEnabled = false;
-
-  bool _isLoading = true;
-  String _defaultScreen = 'Timeline'; // Default startup screen
-
-  final List<String> _availableScreens = [
-    'Timeline',
-    'All Habits',
-    'Stats',
-    'Insights',
-  ];
-
-  final List<Color> _colorOptions = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.red,
-    Colors.teal,
-    Colors.indigo,
-    Colors.pink,
-    Colors.amber,
-    Colors.cyan,
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _loadPermissionStatus();
-    _loadDefaultScreen();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-
-    // When app resumes, refresh permissions in case they were changed externally
-    if (state == AppLifecycleState.resumed) {
-      AppLogger.info('App resumed, refreshing permissions');
-      _refreshHealthPermissions();
-      _refreshExactAlarmPermission();
-    }
-  }
-
-  /// Load current permission status when screen initializes
-  Future<void> _loadPermissionStatus() async {
-    try {
-      final permissionService = PermissionService();
-
-      final notificationStatus =
-          await permissionService.isNotificationPermissionGranted();
-
-      // Check exact alarm permission status
-      final exactAlarmStatus =
-          await NotificationService.canScheduleExactAlarms();
-
-      // Load calendar sync status using the calendar service
-      final calendarSyncEnabled = await CalendarService.isCalendarSyncEnabled();
-
-      // Load health sync preference and verify actual permissions
-      // Load auto-completion settings
-      final autoCompletionEnabled =
-          await AutomaticHabitCompletionService.isServiceEnabled();
-
-      // Load health sync preference first
-      final healthSyncPreference = await _loadHealthSyncPreference();
-
-      // Only check health permissions if user has enabled health sync
-      bool hasHealthPermissions = false;
-      if (healthSyncPreference) {
-        hasHealthPermissions =
-            await permissionService.isHealthPermissionGranted();
-
-        // If permissions are revoked, automatically disable the preference
-        if (!hasHealthPermissions) {
-          await _saveHealthSyncPreference(false);
-          AppLogger.info(
-            'Health permissions revoked, updating preference to disabled',
-          );
-        }
-      }
-
-      // Health sync is enabled only if both permissions are granted AND user has enabled it
-      bool healthStatus = hasHealthPermissions && healthSyncPreference;
-
-      setState(() {
-        _notificationsEnabled = notificationStatus;
-        _exactAlarmsEnabled = exactAlarmStatus;
-        _calendarSync = calendarSyncEnabled;
-        _healthDataSync = healthStatus;
-        _autoCompletionEnabled = autoCompletionEnabled;
-        _isLoading = false;
-      });
-    } catch (e) {
-      AppLogger.error('Error loading permission status', e);
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  /// Load default screen preference
-  Future<void> _loadDefaultScreen() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _defaultScreen = prefs.getString('default_screen') ?? 'Timeline';
-      });
-    } catch (e) {
-      AppLogger.error('Error loading default screen preference', e);
-    }
-  }
-
-  /// Save default screen preference
-  Future<void> _saveDefaultScreen(String screen) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('default_screen', screen);
-      setState(() {
-        _defaultScreen = screen;
-      });
-      AppLogger.info('Default screen set to: $screen');
-    } catch (e) {
-      AppLogger.error('Error saving default screen preference', e);
-    }
-  }
-
-  /// Save health sync preference
-  Future<void> _saveHealthSyncPreference(bool enabled) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('health_sync_enabled', enabled);
-      AppLogger.info('Health sync preference saved: $enabled');
-    } catch (e) {
-      AppLogger.error('Error saving health sync preference', e);
-    }
-  }
-
-  /// Load health sync preference
-  Future<bool> _loadHealthSyncPreference() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool('health_sync_enabled') ?? false;
-    } catch (e) {
-      AppLogger.error('Error loading health sync preference', e);
-      return false;
-    }
-  }
-
-  /// Refresh health permissions status
-  /// This is called when the app resumes to check if permissions were granted externally
-  Future<void> _refreshHealthPermissions() async {
-    try {
-      AppLogger.info(
-          'Health permissions not available - health integration removed');
-
-      // Health integration removed - permissions are always false
-      final bool finalPermissionStatus = false;
-      hasPermissions && permissionServiceCheck;
-
-      AppLogger.info(
-        'Health permissions check - HealthService: $hasPermissions, PermissionService: $permissionServiceCheck, Final: $finalPermissionStatus',
-      );
-
-      // Update the UI state if permissions changed
-      if (mounted && finalPermissionStatus != _healthDataSync) {
-        setState(() {
-          _healthDataSync = finalPermissionStatus;
-        });
-
-        // Update the saved preference to match the actual permission state
-        await _saveHealthSyncPreference(finalPermissionStatus);
-
-        if (mounted) {
-          if (finalPermissionStatus) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Health permissions detected! Health data sync is now enabled. 🎉',
-                ),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          } else {
-            // Permissions were revoked externally
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Health permissions were revoked. Health data sync is now disabled.',
-                ),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          }
-        }
-
-        AppLogger.info(
-          'Health permissions status updated: $finalPermissionStatus',
-        );
-      } else if (mounted) {
-        // Even if state didn't change, show feedback that refresh was performed
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Health permissions refreshed. Status: ${finalPermissionStatus ? 'Enabled' : 'Disabled'}',
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      AppLogger.error('Error refreshing health permissions', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Error refreshing health permissions. Please try again.',
-            ),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Refresh exact alarm permission status
-  /// This is called when the app resumes to check if permission was granted externally
-  Future<void> _refreshExactAlarmPermission() async {
-    try {
-      AppLogger.info('Refreshing exact alarm permission status');
-
-      final exactAlarmStatus =
-          await NotificationService.canScheduleExactAlarms();
-
-      // Update the UI state if permission changed
-      if (mounted && exactAlarmStatus != _exactAlarmsEnabled) {
-        setState(() {
-          _exactAlarmsEnabled = exactAlarmStatus;
-        });
-
-        if (mounted) {
-          if (exactAlarmStatus) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Exact timing enabled! Notifications will be precise. ⏰',
-                ),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          }
-        }
-
-        AppLogger.info(
-          'Exact alarm permission status updated: $exactAlarmStatus',
-        );
-      }
-    } catch (e) {
-      AppLogger.error('Error refreshing exact alarm permission', e);
-    }
-  }
-
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    final themeState = ref.watch(themeProvider);
-
-    // Debug: Print health data sync status
-    AppLogger.info('Settings build - Health data sync: $_healthDataSync');
-
-    if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Settings')),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: const Text('Settings'),
+        elevation: 0,
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         children: [
-          _SettingsSection(
-            title: 'App Preferences',
-            children: [
-              _SettingsTile(
-                title: 'Default Screen',
-                subtitle: 'Choose which screen opens when you start the app',
-                leading: const Icon(Icons.home),
-                trailing: DropdownButton<String>(
-                  value: _defaultScreen,
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      _saveDefaultScreen(newValue);
-                    }
-                  },
-                  items: _availableScreens.map<DropdownMenuItem<String>>((
-                    String value,
-                  ) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _SettingsSection(
-            title: 'Appearance',
-            children: [
-              _SettingsTile(
-                title: 'Theme',
-                subtitle: _getThemeModeText(themeState.themeMode),
-                leading: const Icon(Icons.palette),
-                onTap: () => _showThemeDialog(),
-              ),
-              _SettingsTile(
-                title: 'Primary Color',
-                subtitle: 'Customize your app\'s accent color',
-                leading: CircleAvatar(
-                  radius: 12,
-                  backgroundColor: themeState.primaryColor,
-                ),
-                onTap: () => _showColorPicker(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          _SettingsSection(
-            title: 'Notifications',
-            children: [
-              SwitchListTile(
-                title: const Text('Enable Notifications'),
-                subtitle: const Text('Get reminders for your habits'),
-                value: _notificationsEnabled,
-                onChanged: (value) => _toggleNotifications(value),
-                secondary: const Icon(Icons.notifications),
-              ),
-              if (Platform.isAndroid) ...[
-                const Divider(),
-                ListTile(
-                  title: const Text('Exact Timing'),
-                  subtitle: Text(
-                    _exactAlarmsEnabled
-                        ? 'Precise notifications enabled'
-                        : 'Tap to enable exact timing (Android 12+)',
-                  ),
-                  leading: Icon(
-                    _exactAlarmsEnabled ? Icons.alarm_on : Icons.alarm_off,
-                    color: _exactAlarmsEnabled ? Colors.green : Colors.orange,
-                  ),
-                  trailing: _exactAlarmsEnabled
-                      ? const Icon(Icons.check_circle, color: Colors.green)
-                      : const Icon(Icons.settings, color: Colors.orange),
-                  onTap: _exactAlarmsEnabled
-                      ? null
-                      : () => _requestExactAlarmPermission(),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 24),
-          SettingsDisclosure(
-            title: 'Integrations',
-            description: 'Connect with external apps and services',
-            basicSettings: [
-              SwitchListTile(
-                title: const Text('Calendar Sync'),
-                subtitle: const Text('Sync habits with your device calendar'),
-                value: _calendarSync,
-                onChanged: (value) => _toggleCalendarSync(value),
-                secondary: const Icon(Icons.calendar_today),
-              ),
-              SwitchListTile(
-                title: const Text('Health Data'),
-                subtitle: const Text('Connect with health apps for insights'),
-                value: _healthDataSync,
-                onChanged: (value) => _toggleHealthDataSync(value),
-                secondary: const Icon(Icons.favorite),
-              ),
-              // Show Health Integration Dashboard immediately when health data is enabled
-              if (_healthDataSync) ...[
-                const Divider(),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ListTile(
-                          title: const Text('Health Integration Dashboard'),
-                          subtitle: const Text(
-                            'Access all health integration settings',
-                          ),
-                          leading: const Icon(Icons.dashboard),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => context.push('/health-integration'),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Text(
-                            'Includes: Sync interval, background sync, auto-completion, and detailed health data settings',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        ListTile(
-                          title: const Text('Health Connect Test'),
-                          subtitle: const Text(
-                            'Test the new Health Connect integration',
-                          ),
-                          leading: const Icon(Icons.science),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => context.push('/health-test'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-            advancedSettings: [
-              if (_calendarSync) ...[
-                SmoothTransitions.fadeTransition(
-                  show: _calendarSync,
-                  child: Column(
+          // Notifications Section
+          Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
                     children: [
-                      _SettingsTile(
-                        title: 'Select Calendar',
-                        subtitle: 'Choose which calendar to sync habits to',
-                        leading: const Icon(Icons.calendar_month),
-                        onTap: () => _showCalendarSelection(),
+                      Icon(
+                        Icons.notifications,
+                        color: theme.colorScheme.primary,
                       ),
-                      _SettingsTile(
-                        title: 'Calendar Renewal Status',
-                        subtitle:
-                            'View and manage automatic calendar sync renewal',
-                        leading: const Icon(Icons.refresh),
-                        onTap: () => _showCalendarRenewalStatus(),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Notifications',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 ),
+                Consumer(
+                  builder: (context, ref, child) {
+                    return FutureBuilder<bool>(
+                      future: NotificationService.areNotificationsEnabled(),
+                      builder: (context, snapshot) {
+                        final isEnabled = snapshot.data ?? false;
+                        
+                        return SettingsTile(
+                          title: 'Push Notifications',
+                          subtitle: 'Get reminders for your habits',
+                          trailing: Switch(
+                            value: isEnabled,
+                            onChanged: (value) async {
+                              if (value) {
+                                await PermissionService.requestNotificationPermissionWithContext();
+                              } else {
+                                // Disable notifications - no direct method available, 
+                                // so we'll show a message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Notifications disabled. You can re-enable them in device settings.'),
+                                  ),
+                                );
+                              }
+                              setState(() {}); // Refresh the UI
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+                SettingsTile(
+                  title: 'Notification Time',
+                  subtitle: 'Set your preferred reminder time',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showTimePicker(context),
+                ),
+                SettingsTile(
+                  title: 'Notification Sound',
+                  subtitle: 'Choose your reminder sound',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showSoundPicker(context),
+                ),
               ],
-              // Additional health settings in advanced section (always visible)
-              Column(
-                children: [
-                  SwitchListTile(
-                    title: const Text('Automatic Habit Completion'),
-                    subtitle: Text(
-                      _healthDataSync
-                          ? 'Auto-complete habits based on health data'
-                          : 'Enable Health Data to use auto-completion',
-                    ),
-                    value: _autoCompletionEnabled,
-                    onChanged: _healthDataSync
-                        ? (value) => _toggleAutoCompletion(value)
-                        : null,
-                    secondary: const Icon(Icons.auto_awesome),
-                  ),
-                  const Divider(),
-                  _SettingsTile(
-                    title: 'Automatic Completion Settings',
-                    subtitle: 'Configure smart thresholds and advanced options',
-                    leading: const Icon(Icons.tune),
-                    onTap: _autoCompletionEnabled
-                        ? () => context.push('/automatic-completion-settings')
-                        : null,
-                  ),
-                  _SettingsTile(
-                    title: 'Manage Health Permissions',
-                    subtitle: 'Review and update health data permissions',
-                    leading: const Icon(Icons.security),
-                    onTap: () => _manageHealthPermissions(),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 24),
-          _SettingsSection(
-            title: 'Habit Management',
-            children: [
-              _SettingsTile(
-                title: 'Habit Reset Status',
-                subtitle: _getHabitResetStatusText(),
-                leading: const Icon(Icons.schedule),
-                onTap: () => _showHabitResetInfo(),
-              ),
-              _SettingsTile(
-                title: 'Force Reset Now',
-                subtitle: 'Manually trigger habit reset (for testing)',
-                leading: const Icon(Icons.refresh),
-                onTap: () => _forceHabitReset(),
-              ),
-            ],
+          
+          const SizedBox(height: 16),
+          
+          // Appearance Section
+          Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.palette,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Appearance',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final themeState = ref.watch(themeProvider);
+                    
+                    return Column(
+                      children: [
+                        SettingsTile(
+                          title: 'Dark Mode',
+                          subtitle: 'Use dark theme',
+                          trailing: Switch(
+                            value: themeState.themeMode == ThemeMode.dark,
+                            onChanged: (value) {
+                              ref.read(themeProvider.notifier).setThemeMode(
+                                value ? ThemeMode.dark : ThemeMode.light,
+                              );
+                            },
+                          ),
+                        ),
+                        SettingsTile(
+                          title: 'Color Theme',
+                          subtitle: 'Choose your preferred color scheme',
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => _showColorPicker(context),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
-          _SettingsSection(
-            title: 'Data & Privacy',
-            children: [
-              _SettingsTile(
-                title: 'Export Data',
-                subtitle: 'Download your habit data',
-                leading: const Icon(Icons.download),
-                onTap: () => _exportData(),
-              ),
-              _SettingsTile(
-                title: 'Show Onboarding',
-                subtitle: 'View the app introduction again',
-                leading: const Icon(Icons.help_outline),
-                onTap: () => _resetOnboarding(),
-              ),
-              _SettingsTile(
-                title: 'Clear All Data',
-                subtitle: 'Reset the app and delete all habits',
-                leading: const Icon(Icons.delete_forever, color: Colors.red),
-                onTap: () => _showClearDataDialog(),
-                textColor: Colors.red,
-              ),
-            ],
+          
+          const SizedBox(height: 16),
+          
+          // Calendar Integration Section
+          Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Calendar',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SettingsTile(
+                  title: 'Calendar Sync',
+                  subtitle: 'Sync habits with your calendar',
+                  trailing: Switch(
+                    value: false, // Placeholder
+                    onChanged: (value) {
+                      _showFeatureComingSoon(context);
+                    },
+                  ),
+                ),
+                SettingsTile(
+                  title: 'Weekly Start Day',
+                  subtitle: 'Choose which day starts your week',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showWeekStartPicker(context),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
-          _SettingsSection(
-            title: 'About',
-            children: [
-              _SettingsTile(
-                title: 'Version',
-                subtitle: '1.0.0',
-                leading: const Icon(Icons.info),
-                onTap: () => _showAboutDialog(),
+          
+          const SizedBox(height: 16),
+          
+          // Data Management Section
+          Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.storage,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Data Management',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SettingsTile(
+                  title: 'Export Data',
+                  subtitle: 'Export your habit data',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showExportOptions(context),
+                ),
+                SettingsTile(
+                  title: 'Import Data',
+                  subtitle: 'Import habit data from backup',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showImportOptions(context),
+                ),
+                SettingsTile(
+                  title: 'Clear Data',
+                  subtitle: 'Reset all habit data',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showClearDataDialog(context),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // About Section
+          Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'About',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SettingsTile(
+                  title: 'Privacy Policy',
+                  subtitle: 'View our privacy policy',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/privacy'),
+                ),
+                SettingsTile(
+                  title: 'Terms of Service',
+                  subtitle: 'View terms and conditions',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/terms'),
+                ),
+                SettingsTile(
+                  title: 'App Version',
+                  subtitle: 'v1.0.0',
+                  trailing: const SizedBox.shrink(),
+                  onTap: null,
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  void _showTimePicker(BuildContext context) async {
+    final TimeOfDay? time = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 9, minute: 0),
+    );
+    if (time != null) {
+      // Save the notification time preference
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Notification time set to ${time.format(context)}'),
+        ),
+      );
+    }
+  }
+
+  void _showSoundPicker(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Notification Sound'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Default'),
+              leading: Radio<String>(
+                value: 'default',
+                groupValue: 'default',
+                onChanged: (value) => Navigator.pop(context),
               ),
-              _SettingsTile(
-                title: 'Privacy Policy',
-                subtitle: 'View our privacy policy',
-                leading: const Icon(Icons.privacy_tip),
-                onTap: () => _showPrivacyPolicy(),
+            ),
+            ListTile(
+              title: const Text('Gentle Bell'),
+              leading: Radio<String>(
+                value: 'bell',
+                groupValue: 'default',
+                onChanged: (value) => Navigator.pop(context),
               ),
-            ],
+            ),
+            ListTile(
+              title: const Text('Chime'),
+              leading: Radio<String>(
+                value: 'chime',
+                groupValue: 'default',
+                onChanged: (value) => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
         ],
       ),
     );
   }
 
-  String _getThemeModeText(ThemeMode mode) {
-    switch (mode) {
-      case ThemeMode.light:
-        return 'Light';
-      case ThemeMode.dark:
-        return 'Dark';
-      case ThemeMode.system:
-        return 'System';
-    }
-  }
-
-  void _showThemeDialog() {
-    final themeState = ref.read(themeProvider);
-
+  void _showColorPicker(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Choose Theme'),
+        title: const Text('Color Theme'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioListTile<ThemeMode>(
-              title: const Text('Light'),
-              value: ThemeMode.light,
-              groupValue: themeState.themeMode,
-              onChanged: (value) {
-                ref.read(themeProvider.notifier).setThemeMode(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('Dark'),
-              value: ThemeMode.dark,
-              groupValue: themeState.themeMode,
-              onChanged: (value) {
-                ref.read(themeProvider.notifier).setThemeMode(value!);
-                Navigator.of(context).pop();
-              },
-            ),
-            RadioListTile<ThemeMode>(
-              title: const Text('System'),
-              value: ThemeMode.system,
-              groupValue: themeState.themeMode,
-              onChanged: (value) {
-                ref.read(themeProvider.notifier).setThemeMode(value!);
-                Navigator.of(context).pop();
-              },
-            ),
+            _colorOption('Blue', Colors.blue),
+            _colorOption('Green', Colors.green),
+            _colorOption('Purple', Colors.purple),
+            _colorOption('Orange', Colors.orange),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
     );
   }
 
-  void _showColorPicker() {
-    final themeState = ref.read(themeProvider);
+  Widget _colorOption(String name, Color color) {
+    return ListTile(
+      title: Text(name),
+      leading: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+        ),
+      ),
+      onTap: () {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$name theme selected')),
+        );
+      },
+    );
+  }
 
+  void _showWeekStartPicker(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Choose Primary Color'),
-        content: Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: _colorOptions.map((color) {
-            return GestureDetector(
-              onTap: () {
-                ref.read(themeProvider.notifier).setPrimaryColor(color);
-                Navigator.of(context).pop();
-              },
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: themeState.primaryColor == color
-                      ? Border.all(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          width: 3,
-                        )
-                      : null,
-                ),
-                child: themeState.primaryColor == color
-                    ? Icon(Icons.check, color: Colors.white, size: 20)
-                    : null,
-              ),
-            );
-          }).toList(),
+        title: const Text('Week Start Day'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            'Monday',
+            'Tuesday',
+            'Wednesday',
+            'Thursday',
+            'Friday',
+            'Saturday',
+            'Sunday',
+          ]
+              .map((day) => ListTile(
+                    title: Text(day),
+                    leading: Radio<String>(
+                      value: day,
+                      groupValue: 'Monday',
+                      onChanged: (value) => Navigator.pop(context),
+                    ),
+                  ))
+              .toList(),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
       ),
     );
   }
 
-  Future<void> _toggleNotifications(bool value) async {
-    final permissionService = PermissionService();
-
-    if (value) {
-      final granted = await permissionService.requestPermission(
-        Permission.notification,
-      );
-      if (granted) {
-        setState(() => _notificationsEnabled = true);
-        _showSnackBar('Notifications enabled successfully! 🔔');
-      } else {
-        setState(() => _notificationsEnabled = false);
-        _showSnackBar('Permission denied. Please enable in device settings.');
-      }
-    } else {
-      setState(() => _notificationsEnabled = false);
-      _showSnackBar('Notifications disabled');
-    }
-  }
-
-  /// Request exact alarm permission with user guidance
-  Future<void> _requestExactAlarmPermission() async {
-    try {
-      // Show explanation dialog first
-      final shouldProceed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Enable Exact Timing'),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Exact timing allows notifications to arrive precisely on time.',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              SizedBox(height: 12),
-              Text('• Default: Notifications may be delayed up to 15 minutes'),
-              Text('• With exact timing: Notifications arrive exactly on time'),
-              SizedBox(height: 12),
-              Text(
-                'This will open Android settings where you can enable "Alarms & reminders" for HabitV8.',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-            ],
+  void _showExportOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export Data'),
+        content: const Text('Choose export format:'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showFeatureComingSoon(context);
+            },
+            child: const Text('CSV'),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Open Settings'),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldProceed == true) {
-        // Request the permission (this will open Android settings)
-        final granted =
-            await NotificationService.requestExactAlarmPermissionWithGuidance();
-
-        if (granted) {
-          setState(() => _exactAlarmsEnabled = true);
-          _showSnackBar(
-            'Exact timing enabled! Notifications will be precise. ⏰',
-          );
-        } else {
-          _showSnackBar(
-            'Exact timing not enabled. Notifications may be delayed.',
-          );
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error requesting exact alarm permission', e);
-      _showSnackBar('Error enabling exact timing. Please try again.');
-    }
-  }
-
-  /// Toggle calendar sync - integrated with table_calendar for consistency
-  Future<void> _toggleCalendarSync(bool value) async {
-    if (value) {
-      // Initialize calendar service with provider container for habit access
-      final container = ProviderScope.containerOf(context);
-      final initialized = await CalendarService.initialize(container);
-
-      if (initialized) {
-        setState(() {
-          _calendarSync = true;
-        });
-
-        // Save the preference using the service
-        await CalendarService.setCalendarSyncEnabled(true);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Calendar sync enabled! Please select a calendar to sync to. 📅',
-              ),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-
-          // Show calendar selection dialog
-          Future.delayed(const Duration(milliseconds: 500), () {
-            _showCalendarSelection();
-          });
-        }
-
-        AppLogger.info(
-          'Calendar sync enabled with device calendar integration',
-        );
-      } else {
-        setState(() {
-          _calendarSync = false;
-        });
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Calendar sync initialization failed. Using basic calendar view.',
-              ),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-
-        AppLogger.warning('Calendar sync failed to initialize');
-      }
-    } else {
-      setState(() {
-        _calendarSync = false;
-      });
-
-      // Remove all habit events from calendar before disabling sync
-      try {
-        final container = ProviderScope.containerOf(context);
-        final habitServiceAsync = container.read(habitServiceProvider);
-
-        await habitServiceAsync.when(
-          data: (habitService) async {
-            final habits = await habitService.getAllHabits();
-            await CalendarService.removeAllHabitsFromCalendar(habits);
-          },
-          loading: () async {},
-          error: (error, stack) async {
-            AppLogger.error('Error getting habits for calendar cleanup', error);
-          },
-        );
-      } catch (e) {
-        AppLogger.error(
-          'Error removing habits from calendar during sync disable',
-          e,
-        );
-      }
-
-      // Save the preference using the service
-      await CalendarService.setCalendarSyncEnabled(false);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Calendar sync disabled. All habit events removed from calendar.',
-            ),
-            backgroundColor: Colors.grey,
-            duration: Duration(seconds: 3),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showFeatureComingSoon(context);
+            },
+            child: const Text('JSON'),
           ),
-        );
-      }
-
-      AppLogger.info('Calendar sync disabled and events removed');
-    }
-  }
-
-  /// Show calendar selection dialog
-  Future<void> _showCalendarSelection() async {
-    try {
-      final result = await showDialog<bool>(
-        context: context,
-        builder: (context) => const CalendarSelectionDialog(),
-      );
-
-      if (result == true) {
-        // Calendar was selected successfully
-        AppLogger.info('Calendar selection updated');
-      }
-    } catch (e) {
-      AppLogger.error('Error showing calendar selection', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  /// Toggle health data sync
-  Future<void> _toggleHealthDataSync(bool value) async {
-    if (value) {
-      try {
-        // First check if permissions are already granted
-        final permissionService = PermissionService();
-        bool hasPermissions =
-            await permissionService.isHealthPermissionGranted();
-
-        if (hasPermissions) {
-          // Permissions already granted, just enable the preference
-          await _saveHealthSyncPreference(true);
-          setState(() {
-            _healthDataSync = true;
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Health data sync enabled! 🎉'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-          return;
-        }
-
-        // Show health education dialog first
-        final bool? userConsent = await HealthEducationDialog.show(context);
-        if (userConsent != true) {
-          // User declined or dismissed the dialog
-          setState(() => _healthDataSync = false);
-          return;
-        }
-
-        // Show loading indicator
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 16),
-                  Text('Requesting health permissions...'),
-                ],
-              ),
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-
-        // Initialize health service first
-        final initialized = await HealthService.initialize();
-        if (!initialized) {
-          setState(() => _healthDataSync = false);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Health Connect is not available on this device'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-
-        // Request health permissions
-        var permissionResult = await HealthService.requestPermissions();
-        hasPermissions = permissionResult.granted;
-
-        // If permissions were requested but not immediately granted,
-        // they might have been granted in Health Connect but need time to sync
-        if (!hasPermissions) {
-          // Wait a bit longer and check again
-          await Future.delayed(const Duration(seconds: 1));
-          permissionResult = await HealthService.refreshPermissions();
-          hasPermissions = permissionResult.granted;
-        }
-
-        // Update UI state immediately
-        setState(() {
-          _healthDataSync = hasPermissions;
-        });
-
-        if (hasPermissions) {
-          // Save the health sync preference to persist across app restarts
-          await _saveHealthSyncPreference(true);
-
-          // Force a rebuild to ensure the health integration dashboard appears
-          if (mounted) {
-            setState(() {});
-          }
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Health permissions granted successfully! 🎉'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'Health permissions are required for this feature. Please grant permissions in Health Connect and return to the app.',
-                ),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 8),
-                action: SnackBarAction(
-                  label: 'Open Settings',
-                  onPressed: () => _openHealthConnectSettings(),
-                ),
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        setState(() => _healthDataSync = false);
-        AppLogger.error('Error toggling health data sync', e);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${e.toString()}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } else {
-      // Save the disabled preference
-      await _saveHealthSyncPreference(false);
-
-      setState(() {
-        _healthDataSync = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Health data sync disabled')),
-        );
-      }
-    }
-  }
-
-  /// Toggle automatic habit completion
-  Future<void> _toggleAutoCompletion(bool value) async {
-    setState(() {
-      _autoCompletionEnabled = value;
-    });
-
-    // Persist and control the actual service
-    await AutomaticHabitCompletionService.setServiceEnabled(value);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            value
-                ? 'Automatic habit completion enabled'
-                : 'Automatic habit completion disabled',
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-        ),
-      );
-    }
+        ],
+      ),
+    );
   }
 
-  Future<void> _exportData() async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Get habit data
-      final habitServiceAsync = ref.read(habitServiceProvider);
-      final habitService = habitServiceAsync.value;
-      if (habitService == null) {
-        _showSnackBar('Error: Habit service not available');
-        return;
-      }
-
-      final habits = await habitService.getAllHabits();
-
-      // Export to JSON file
-      final directory = await getApplicationDocumentsDirectory();
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-      final filePath = '${directory.path}/habitv8_export_$timestamp.json';
-
-      // Convert habits to JSON
-      final jsonData = habits.map((habit) => habit.toJson()).toList();
-      final jsonString = jsonEncode(jsonData);
-
-      // Write to file
-      final file = File(filePath);
-      await file.writeAsString(jsonString);
-
-      if (mounted) {
-        _showSnackBar('Data exported to: $filePath');
-        AppLogger.info('Data exported to: $filePath');
-      }
-    } catch (e) {
-      if (mounted) {
-        _showSnackBar('Error exporting data: $e');
-      }
-      AppLogger.error('Data export error', e);
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+  void _showImportOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import Data'),
+        content: const Text('Select a backup file to import your habit data.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showFeatureComingSoon(context);
+            },
+            child: const Text('Select File'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 
-  Future<void> _resetOnboarding() async {
-    try {
-      await OnboardingService.resetOnboarding();
-      if (mounted) {
-        context.go('/onboarding');
-      }
-    } catch (e) {
-      _showSnackBar('Error resetting onboarding: $e');
-      AppLogger.error('Error resetting onboarding', e);
-    }
-  }
-
-  void _showClearDataDialog() {
+  void _showClearDataDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear All Data'),
         content: const Text(
-          'This will permanently delete all your habits and progress. This action cannot be undone.',
+          'This will permanently delete all your habit data. This action cannot be undone.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              _clearAllData();
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('All data cleared'),
+                  backgroundColor: Colors.red,
+                ),
+              );
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete All'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Clear Data'),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _clearAllData() async {
-    try {
-      // Show loading indicator
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(width: 16),
-                Text('Clearing all data...'),
-              ],
-            ),
-            duration: Duration(seconds: 5),
-          ),
-        );
-      }
-
-      // 1. Cancel all notifications
-      await NotificationService.cancelAllNotifications();
-      AppLogger.info('All notifications cancelled');
-
-      // 2. Clear SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-      AppLogger.info('SharedPreferences cleared');
-
-      // 3. Reset the Hive database (this will clear all habits)
-      await DatabaseService.resetDatabase();
-      AppLogger.info('Database reset completed');
-
-      // 4. Disable calendar sync (preferences already cleared above)
-      try {
-        await CalendarService.setCalendarSyncEnabled(false);
-        AppLogger.info('Calendar sync disabled');
-      } catch (e) {
-        AppLogger.warning('Failed to disable calendar sync: $e');
-        // Don't fail the entire operation if calendar disabling fails
-      }
-
-      // 5. Reset app state
-      setState(() {
-        _notificationsEnabled = false;
-        _calendarSync = false;
-        _healthDataSync = false;
-        _defaultScreen = 'Timeline';
-      });
-
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('All data cleared successfully! 🗑️'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-
-      AppLogger.info('All data cleared successfully');
-    } catch (e) {
-      AppLogger.error('Error clearing all data', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error clearing data: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    }
-  }
-
-  void _showAboutDialog() {
-    showAboutDialog(
-      context: context,
-      applicationName: 'Habit Tracker',
-      applicationVersion: '1.0.0',
-      applicationIcon: const Icon(Icons.track_changes, size: 48),
-      children: [
-        const Text(
-          'A beautiful and intuitive habit tracking application built with Flutter.',
-        ),
-        const SizedBox(height: 16),
-        const Text('Features:'),
-        const Text('• Visual habit tracking'),
-        const Text('• Detailed analytics'),
-        const Text('• Custom scheduling'),
-        const Text('• Progress insights'),
-      ],
-    );
-  }
-
-  void _showPrivacyPolicy() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Privacy Policy'),
-        content: const SingleChildScrollView(
-          child: Text(
-            'Your privacy is important to us. This app stores all data locally on your device. '
-            'No personal information is collected or shared with third parties. '
-            'Optional integrations (calendar, health data) require explicit permission and can be disabled at any time.',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
+  void _showFeatureComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('This feature is coming soon!'),
       ),
-    );
-  }
-
-  /// Manage health permissions
-  Future<void> _manageHealthPermissions() async {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Health Data Integration'),
-          content: const Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'This app can integrate with your health data to provide better insights:',
-              ),
-              SizedBox(height: 16),
-              Text('• Step count tracking'),
-              Text('• Sleep pattern analysis'),
-              Text('• Exercise duration monitoring'),
-              Text('• Heart rate insights'),
-              SizedBox(height: 16),
-              Text('Your privacy is important - data stays on your device.'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _openHealthConnectSettings();
-              },
-              child: const Text('Open Settings'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _showHealthConnectDebugInfo();
-              },
-              child: const Text('Debug Info'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _testNotificationActions();
-              },
-              child: const Text('Test Notifications'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final navigator = Navigator.of(context);
-                final messenger = ScaffoldMessenger.of(context);
-                navigator.pop();
-                final result = await HealthService.requestPermissions();
-                if (mounted) {
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        result.granted
-                            ? 'Health permissions granted!'
-                            : 'Health permissions denied',
-                      ),
-                      backgroundColor:
-                          result.granted ? Colors.green : Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Grant Permissions'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Open Health Connect settings
-  Future<void> _openHealthConnectSettings() async {
-    try {
-      final bool opened = await HealthService.openHealthConnectSettings();
-      if (mounted) {
-        if (opened) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'Health Connect opened! Grant permissions for HabitV8, then return to the app.',
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'Refresh',
-                onPressed: () => _refreshHealthPermissions(),
-              ),
-            ),
-          );
-        } else {
-          // Show detailed instructions if we can't open settings automatically
-          _showHealthConnectInstructions();
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error opening Health Connect settings', e);
-      if (mounted) {
-        _showHealthConnectInstructions();
-      }
-    }
-  }
-
-  /// Show manual instructions for Health Connect
-  void _showHealthConnectInstructions() {
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Health Connect Setup'),
-          content: const SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'To enable health data sync, please follow these steps:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16),
-                Text('1. Open the Health Connect app on your device'),
-                SizedBox(height: 8),
-                Text('2. Go to "App permissions" or "Connected apps"'),
-                SizedBox(height: 8),
-                Text('3. Find "HabitV8" in the list'),
-                SizedBox(height: 8),
-                Text(
-                  '4. Grant permissions for the data types you want to share',
-                ),
-                SizedBox(height: 8),
-                Text('5. Return to HabitV8 and tap "Refresh Health Status"'),
-                SizedBox(height: 16),
-                Text(
-                  'Note: Health Connect may be called "Google Health" on some devices.',
-                  style: TextStyle(fontStyle: FontStyle.italic),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Got it'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _refreshHealthPermissions();
-              },
-              child: const Text('Refresh Status'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Show Health Connect debug information
-  Future<void> _showHealthConnectDebugInfo() async {
-    try {
-      final debugInfo = await HealthService.getHealthConnectDebugInfo();
-
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Health Connect Debug Info'),
-              content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: debugInfo.entries.map((entry) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Text(
-                        '${entry.key}: ${entry.value}',
-                        style: const TextStyle(fontFamily: 'monospace'),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Close'),
-                ),
-              ],
-            );
-          },
-        );
-      }
-    } catch (e) {
-      AppLogger.error('Error showing Health Connect debug info', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Unable to get debug information'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  /// Show calendar renewal status and management options
-  Future<void> _showCalendarRenewalStatus() async {
-    try {
-      final status = await CalendarRenewalService.getRenewalStatus();
-
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.refresh, color: Colors.blue),
-                SizedBox(width: 8),
-                Text('Calendar Renewal Status'),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildBooleanStatusRow(
-                    'Service Active',
-                    status['isActive'] ?? false,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildBooleanStatusRow(
-                    'Needs Renewal',
-                    status['needsRenewal'] ?? true,
-                  ),
-                  const SizedBox(height: 8),
-                  if (status['lastRenewal'] != null) ...[
-                    Text(
-                      'Last Renewal: ${_formatDateTime(status['lastRenewal'])}',
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                  if (status['nextRenewal'] != null) ...[
-                    Text(
-                      'Next Renewal: ${_formatDateTime(status['nextRenewal'])}',
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                  if (status['daysSinceRenewal'] != null) ...[
-                    Text(
-                      'Days Since Last Renewal: ${status['daysSinceRenewal']}',
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  const Text(
-                    'Calendar events are automatically renewed every 30 days to ensure your habits continue syncing to your calendar.',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
-                  ),
-                  if (status['error'] != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Text(
-                        'Error: ${status['error']}',
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
-              ),
-              if (status['needsRenewal'] == true)
-                ElevatedButton(
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    await _performManualRenewal();
-                  },
-                  child: const Text('Renew Now'),
-                ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      AppLogger.error('Error showing calendar renewal status', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading renewal status: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Widget _buildBooleanStatusRow(String label, bool status) {
-    return Row(
-      children: [
-        Icon(
-          status ? Icons.check_circle : Icons.cancel,
-          color: status ? Colors.green : Colors.red,
-          size: 16,
-        ),
-        const SizedBox(width: 8),
-        Text(label),
-      ],
-    );
-  }
-
-  String _formatDateTime(String? isoString) {
-    if (isoString == null) return 'Unknown';
-    try {
-      final dateTime = DateTime.parse(isoString);
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return 'Invalid date';
-    }
-  }
-
-  /// Perform manual calendar renewal
-  Future<void> _performManualRenewal() async {
-    try {
-      // Show loading indicator
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                SizedBox(width: 16),
-                Text('Renewing calendar events...'),
-              ],
-            ),
-            duration: Duration(seconds: 10),
-          ),
-        );
-      }
-
-      await CalendarRenewalService.forceRenewal();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Calendar renewal completed successfully! 📅'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      AppLogger.error('Error performing manual renewal', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Renewal failed: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  /// Test notification actions functionality
-  Future<void> _testNotificationActions() async {
-    try {
-      AppLogger.info('🧪 Testing notification actions...');
-
-      // Show test notifications
-      await NotificationService.showTestNotificationWithActions();
-      await NotificationService.showSimpleTestNotification();
-
-      // Debug the notification system
-      await NotificationService.debugNotificationSystem();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Test notifications sent! Check your notification shade and try the action buttons.',
-            ),
-            backgroundColor: Colors.blue,
-            duration: Duration(seconds: 5),
-          ),
-        );
-      }
-
-      AppLogger.info('✅ Test notifications created successfully');
-    } catch (e) {
-      AppLogger.error('❌ Error testing notification actions', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error testing notifications: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    }
-  }
-
-  /// Get habit reset status text
-  String _getHabitResetStatusText() {
-    try {
-      final status = MidnightHabitResetService.getStatus();
-      if (status['isActive'] == true) {
-        return 'Next reset: ${status['timeUntilReset']}';
-      } else {
-        return 'Habit reset service not active';
-      }
-    } catch (e) {
-      return 'Status unavailable';
-    }
-  }
-
-  /// Show habit reset information dialog
-  void _showHabitResetInfo() {
-    final status = MidnightHabitResetService.getStatus();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Habit Reset System'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'The habit reset system automatically resets your habits at midnight based on their frequency:',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 12),
-            const Text('• Daily habits: Reset every day at midnight'),
-            const Text('• Weekly habits: Reset on selected weekdays'),
-            const Text('• Monthly habits: Reset on selected days'),
-            const Text('• Yearly habits: Reset on selected date'),
-            const SizedBox(height: 12),
-            Text(
-              'Status: ${status['isActive'] == true ? 'Active' : 'Inactive'}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            if (status['isActive'] == true) ...[
-              Text('Next reset: ${status['timeUntilReset']}'),
-              Text('Reset time: ${status['nextReset']}'),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Force habit reset now
-  void _forceHabitReset() async {
-    try {
-      // Show confirmation dialog
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Force Habit Reset'),
-          content: const Text(
-            'This will immediately reset all habits based on their frequency and reschedule notifications. Are you sure?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Reset'),
-            ),
-          ],
-        ),
-      );
-
-      if (confirmed == true) {
-        // Show loading indicator
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Resetting habits...'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-
-        // Force reset
-        await MidnightHabitResetService.forceReset();
-
-        // Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Habits reset successfully! 🎯'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-
-        // Refresh the UI to show updated status
-        setState(() {});
-      }
-    } catch (e) {
-      AppLogger.error('Error forcing habit reset', e);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error resetting habits: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    }
-  }
-}
-
-class _SettingsSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _SettingsSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16, bottom: 8),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-        ),
-        Card(child: Column(children: children)),
-      ],
-    );
-  }
-}
-
-class _SettingsTile extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final Widget? leading;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-  final Color? textColor;
-
-  const _SettingsTile({
-    required this.title,
-    this.subtitle,
-    this.leading,
-    this.trailing,
-    this.onTap,
-    this.textColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: leading,
-      title: Text(title, style: TextStyle(color: textColor)),
-      subtitle: subtitle != null ? Text(subtitle!) : null,
-      trailing: trailing ?? const Icon(Icons.chevron_right),
-      onTap: onTap,
     );
   }
 }

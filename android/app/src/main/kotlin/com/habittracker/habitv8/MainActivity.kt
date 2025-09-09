@@ -1,7 +1,5 @@
 package com.habittracker.habitv8
 
-import android.content.Intent
-import android.content.SharedPreferences
 import android.database.Cursor
 import android.media.AudioAttributes
 import android.media.Ringtone
@@ -15,17 +13,12 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val CHANNEL = "com.habittracker.habitv8/health_service"
     private val RINGTONE_CHANNEL = "com.habittracker.habitv8/ringtones"
-    private lateinit var sharedPreferences: SharedPreferences
 
     private var previewRingtone: Ringtone? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize shared preferences
-        sharedPreferences = getSharedPreferences("com.habittracker.habitv8.health", MODE_PRIVATE)
 
         // Enable edge-to-edge display for Android 15+ compatibility
         // This addresses the deprecated API warning from Google Play Store
@@ -39,39 +32,10 @@ class MainActivity : FlutterFragmentActivity() {
             @Suppress("DEPRECATION")
             window.navigationBarColor = android.graphics.Color.TRANSPARENT
         }
-
-        // Start health monitoring service if enabled
-        if (sharedPreferences.getBoolean("health_monitoring_enabled", false)) {
-            startHealthMonitoringService()
-        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
-        // Register our health plugins
-        flutterEngine.plugins.add(MinimalHealthPlugin())
-        flutterEngine.plugins.add(SimpleHealthPlugin())
-
-        // Health service channel
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "startHealthMonitoring" -> {
-                    startHealthMonitoringService()
-                    sharedPreferences.edit().putBoolean("health_monitoring_enabled", true).apply()
-                    result.success(true)
-                }
-                "stopHealthMonitoring" -> {
-                    stopHealthMonitoringService()
-                    sharedPreferences.edit().putBoolean("health_monitoring_enabled", false).apply()
-                    result.success(true)
-                }
-                "isHealthMonitoringRunning" -> {
-                    result.success(sharedPreferences.getBoolean("health_monitoring_enabled", false))
-                }
-                else -> result.notImplemented()
-            }
-        }
 
         // Ringtone listing/preview channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, RINGTONE_CHANNEL).setMethodCallHandler { call, result ->
@@ -148,13 +112,5 @@ class MainActivity : FlutterFragmentActivity() {
             previewRingtone = null
         } catch (_: Exception) {
         }
-    }
-
-    private fun startHealthMonitoringService() {
-        HealthMonitoringService.startService(this)
-    }
-
-    private fun stopHealthMonitoringService() {
-        HealthMonitoringService.stopService(this)
     }
 }
