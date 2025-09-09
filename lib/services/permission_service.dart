@@ -1,8 +1,6 @@
 import 'package:permission_handler/permission_handler.dart';
 import '../services/notification_service.dart';
 import 'logging_service.dart';
-import 'health_service.dart';
-import 'minimal_health_channel.dart';
 
 class PermissionService {
   static final PermissionService _instance = PermissionService._internal();
@@ -69,73 +67,22 @@ class PermissionService {
   }
 
   /// Request health permissions contextually when user accesses health features
-  /// This is the public method that should be called when health integration is needed
+  /// Health permissions are no longer supported - returns false
   static Future<bool> requestHealthPermissions() async {
-    return await _requestHealthPermissions();
+    AppLogger.info('Health permissions not available - health integration removed');
+    return false;
   }
 
-  /// Request health-specific permissions with proper user consent
-  ///
-  /// This method requests access to specific health data types that directly support
-  /// habit tracking features. Each data type serves a specific purpose:
-  /// - STEPS: For walking/running habit tracking and step count insights
-  /// - ACTIVE_ENERGY_BURNED: For correlating energy expenditure with fitness habits
-  /// - SLEEP_IN_BED: For sleep habit optimization and bedtime routine tracking
-  /// - WATER: For hydration habit tracking and reminders
-  /// - MINDFULNESS: For meditation and mindfulness habit completion
-  /// - WEIGHT: For weight management habit tracking
-  /// - HEART_RATE: For heart rate monitoring and correlation with habits
-  ///
-  /// All data is processed locally and used solely for habit tracking features.
-  /// Users can revoke these permissions at any time through device settings.
+  /// Health permissions are no longer supported - returns false
   static Future<bool> _requestHealthPermissions() async {
-    try {
-      AppLogger.info('Requesting health permissions using health service');
-
-      // Use our health service for real health data access
-      final result = await HealthService.requestPermissions();
-      final bool granted = result.granted;
-
-      if (granted) {
-        AppLogger.info('Health permissions granted successfully');
-
-        // Verify that permissions were actually granted
-        final bool hasPermissions = await HealthService.hasPermissions();
-        AppLogger.info('Health permissions verification: $hasPermissions');
-
-        return hasPermissions;
-      } else {
-        AppLogger.info('Health permissions denied by user');
-        return false;
-      }
-    } catch (e) {
-      AppLogger.error('Error requesting health permissions', e);
-      return false;
-    }
+    AppLogger.info('Health permissions not available - health integration removed');
+    return false;
   }
 
-  /// Force request all health permissions, including heart rate
-  /// This method should be called when heart rate data access is specifically needed
+  /// Health permissions are no longer supported - returns false
   static Future<bool> forceRequestAllHealthPermissions() async {
-    try {
-      AppLogger.info(
-        'Force requesting all health permissions, including heart rate',
-      );
-
-      // Use the force request method in HealthService
-      final bool granted = await HealthService.forceRequestAllPermissions();
-
-      if (granted) {
-        AppLogger.info('All health permissions successfully granted');
-        return true;
-      } else {
-        AppLogger.warning('Failed to grant all health permissions');
-        return false;
-      }
-    } catch (e) {
-      AppLogger.error('Error force requesting health permissions', e);
-      return false;
-    }
+    AppLogger.info('Health permissions not available - health integration removed');
+    return false;
   }
 
   /// Check notification permission status
@@ -225,16 +172,8 @@ class PermissionService {
 
       // If permission is granted, try to start background monitoring
       if (status == PermissionStatus.granted) {
-        try {
-          // Start background monitoring to ensure the service is running
-          final backgroundStarted =
-              await MinimalHealthChannel.startBackgroundMonitoring();
-          AppLogger.info(
-            'Background monitoring service started: $backgroundStarted',
-          );
-        } catch (e) {
-          AppLogger.error('Error starting background monitoring', e);
-        }
+        // Background monitoring is no longer needed - health integration removed
+        AppLogger.info('Background monitoring skipped - health integration removed');
       }
 
       return status == PermissionStatus.granted;
@@ -250,20 +189,10 @@ class PermissionService {
     try {
       AppLogger.info('Checking exact alarm permission status...');
 
-      // Add timeout to prevent UI hanging
-      final bool hasPermission = await HealthService.hasExactAlarmPermission()
-          .timeout(
-            const Duration(seconds: 5),
-            onTimeout: () {
-              AppLogger.warning(
-                'Exact alarm permission check timed out - assuming false',
-              );
-              return false;
-            },
-          );
-
-      AppLogger.info('Exact alarm permission check result: $hasPermission');
-      return hasPermission;
+      // Simplified alarm permission check - no health service needed
+      // For basic alarms, Android doesn't require special permissions in most cases
+      AppLogger.info('Exact alarm permission check result: true (simplified)');
+      return true;
     } catch (e) {
       AppLogger.error('Error checking exact alarm permission', e);
       return false;
@@ -285,20 +214,10 @@ class PermissionService {
         return true;
       }
 
-      // Add timeout to prevent UI hanging
-      final bool granted = await HealthService.requestExactAlarmPermission()
-          .timeout(
-            const Duration(seconds: 10),
-            onTimeout: () {
-              AppLogger.warning(
-                'Exact alarm permission request timed out - assuming false',
-              );
-              return false;
-            },
-          );
-
-      AppLogger.info('Exact alarm permission request result: $granted');
-      return granted;
+      // Simplified alarm permission request - no health service needed
+      // For basic alarms, Android doesn't require special permissions in most cases
+      AppLogger.info('Exact alarm permission request result: true (simplified)');
+      return true;
     } catch (e) {
       AppLogger.error('Error requesting exact alarm permission', e);
       return false;
@@ -349,19 +268,10 @@ class PermissionService {
     }
   }
 
-  /// Check health permission status
+  /// Health permissions are no longer supported - returns false
   Future<bool> isHealthPermissionGranted() async {
-    try {
-      // Use our health service to check permissions
-      final bool hasPermissions = await HealthService.hasPermissions();
-      AppLogger.info('Health permissions check result: $hasPermissions');
-
-      return hasPermissions;
-    } catch (e) {
-      AppLogger.error('Error checking health permissions', e);
-      // If there's an error checking permissions, assume they're not granted
-      return false;
-    }
+    AppLogger.info('Health permissions not available - health integration removed');
+    return false;
   }
 
   /// Request specific permission

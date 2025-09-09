@@ -5,7 +5,6 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
-import '../../services/health_habit_mapping_service.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/hybrid_alarm_service.dart';
 
@@ -1404,20 +1403,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       // Save to database
       await widget.habit.save();
 
-      // Analyze habit for health mapping after saving
-      try {
-        final healthMapping =
-            await HealthHabitMappingService.analyzeHabitForHealthMapping(
-          widget.habit,
-        );
-        if (healthMapping != null) {
-          // Log successful health mapping analysis
-          // Health mapping found for habit: ${widget.habit.name} -> ${healthMapping.healthDataType}
-        }
-      } catch (e) {
-        // Log health mapping analysis error but don't fail the save operation
-        // Error analyzing habit for health mapping: $e
-      }
+      // Health mapping is no longer supported
+      // Health integration has been removed from the app
 
       // Schedule new notifications with the updated habit
       await _scheduleHabitNotifications(widget.habit);

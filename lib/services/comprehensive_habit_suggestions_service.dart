@@ -1,12 +1,10 @@
 import '../domain/model/habit.dart';
-import '../services/health_enhanced_habit_creation_service.dart';
-import '../services/health_service.dart';
 import '../services/logging_service.dart';
 
 /// Comprehensive Habit Suggestions Service
 ///
-/// This service provides habit suggestions for all categories, not just health-related ones.
-/// It includes health-based suggestions when health data is activated.
+/// This service provides habit suggestions for all categories.
+/// Health data integration has been removed.
 class ComprehensiveHabitSuggestionsService {
   /// Generate comprehensive habit suggestions
   static Future<List<HabitSuggestion>> generateSuggestions() async {
@@ -16,38 +14,8 @@ class ComprehensiveHabitSuggestionsService {
       // Add general habit suggestions
       suggestions.addAll(_getGeneralHabitSuggestions());
 
-      // Add health-based suggestions if health data is available
-      try {
-        final healthSyncEnabled = await HealthService.isHealthSyncEnabled();
-        if (healthSyncEnabled && await HealthService.hasPermissions()) {
-          final healthSuggestions = await HealthEnhancedHabitCreationService
-              .generateHealthBasedSuggestions();
-          for (final healthSuggestion in healthSuggestions) {
-            suggestions.add(HabitSuggestion(
-              name: healthSuggestion.name,
-              description: healthSuggestion.description,
-              category: healthSuggestion.category,
-              frequency: healthSuggestion.frequency,
-              icon: _getHealthDataTypeIcon(healthSuggestion.healthDataType),
-              type: 'Health',
-              priority: 0.9,
-              isHealthBased: true,
-              healthDataType: healthSuggestion.healthDataType,
-              suggestedThreshold: healthSuggestion.suggestedThreshold,
-            ));
-          }
-        }
-      } catch (e) {
-        AppLogger.warning('Could not load health suggestions: $e');
-      }
-
-      // Sort by priority and type
+      // Sort by priority
       suggestions.sort((a, b) {
-        // Health suggestions first if available
-        if (a.isHealthBased && !b.isHealthBased) return -1;
-        if (!a.isHealthBased && b.isHealthBased) return 1;
-
-        // Then by priority
         return b.priority.compareTo(a.priority);
       });
 
@@ -266,27 +234,6 @@ class ComprehensiveHabitSuggestionsService {
     ];
   }
 
-  /// Get icon name for health data type
-  static String _getHealthDataTypeIcon(String? healthDataType) {
-    switch (healthDataType) {
-      case 'STEPS':
-        return 'directions_walk';
-      case 'ACTIVE_ENERGY_BURNED':
-        return 'local_fire_department';
-      case 'SLEEP_IN_BED':
-        return 'bedtime';
-      case 'WATER':
-        return 'water_drop';
-      case 'MINDFULNESS':
-        return 'self_improvement';
-      case 'WEIGHT':
-        return 'monitor_weight';
-      case 'MEDICATION':
-        return 'medication';
-      default:
-        return 'health_and_safety';
-    }
-  }
 }
 
 /// Comprehensive habit suggestion model
@@ -298,9 +245,6 @@ class HabitSuggestion {
   final String icon;
   final String type;
   final double priority;
-  final bool isHealthBased;
-  final String? healthDataType;
-  final double? suggestedThreshold;
 
   HabitSuggestion({
     required this.name,
@@ -310,8 +254,5 @@ class HabitSuggestion {
     required this.icon,
     required this.type,
     required this.priority,
-    this.isHealthBased = false,
-    this.healthDataType,
-    this.suggestedThreshold,
   });
 }

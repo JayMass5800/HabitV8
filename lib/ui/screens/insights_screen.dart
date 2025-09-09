@@ -878,9 +878,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             'frequency': suggestion.frequency.toString(),
             'icon': suggestion.icon,
             'type': suggestion.type,
-            'isHealthBased': suggestion.isHealthBased,
-            'healthDataType': suggestion.healthDataType,
-            'suggestedThreshold': suggestion.suggestedThreshold,
           };
 
           AppLogger.info(
@@ -1834,21 +1831,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     // Health data integration removed - no longer checking availability or running health processes
     return const SizedBox.shrink();
   }
-
-  Widget _buildHealthPermissionCard() {
-    // Health data integration removed
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildHealthDataPlaceholder() {
-    // Health data integration removed
-    return const SizedBox.shrink();
-  }
-  }
-
-  Widget _buildActiveHealthHubWithGraphs(List<Habit> habits) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Card(
       elevation: 2,

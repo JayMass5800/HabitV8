@@ -6,8 +6,6 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
-import '../../services/health_enhanced_habit_creation_service.dart';
-import '../../services/health_habit_mapping_service.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/comprehensive_habit_suggestions_service.dart';
 import '../../services/logging_service.dart';
@@ -1509,74 +1507,33 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       }
 
       // Create habit - use health-integrated creation if health integration is enabled
-      final Habit habit;
-      if (_enableHealthIntegration && _selectedHealthDataType != null) {
-        // Create health-integrated habit with custom threshold and level
-        final baseHabit = await HealthEnhancedHabitCreationService
-            .createHealthIntegratedHabit(
-          name: _nameController.text.trim(),
-          description: _descriptionController.text.trim(),
-          frequency: _selectedFrequency,
-          category: _selectedCategory,
-          healthDataType: _selectedHealthDataType,
-          customThreshold: _customThreshold,
-          thresholdLevel: _thresholdLevel,
-        );
-
-        // Update with UI-specific properties
-        baseHabit.colorValue = _selectedColor.toARGB32();
-        baseHabit.targetCount = 1;
-        baseHabit.notificationsEnabled = _notificationsEnabled;
-        baseHabit.notificationTime = notificationDateTime;
-        baseHabit.selectedWeekdays = _selectedWeekdays;
-        baseHabit.selectedMonthDays = _selectedMonthDays;
-        baseHabit.hourlyTimes = _hourlyTimes
+      // Create regular habit (health integration removed)
+      final habit = Habit.create(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        category: _selectedCategory,
+        colorValue: _selectedColor.toARGB32(),
+        frequency: _selectedFrequency,
+        targetCount: 1,
+        notificationsEnabled: _notificationsEnabled,
+        notificationTime: notificationDateTime,
+        selectedWeekdays: _selectedWeekdays,
+        selectedMonthDays: _selectedMonthDays,
+        hourlyTimes: _hourlyTimes
             .map(
               (time) =>
                   '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
             )
-            .toList();
-        baseHabit.selectedYearlyDates = _selectedYearlyDates
+            .toList(),
+        selectedYearlyDates: _selectedYearlyDates
             .map(
               (date) =>
                   '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
             )
-            .toList();
-
-        // Add alarm settings
-        baseHabit.alarmEnabled = _alarmEnabled;
-        baseHabit.alarmSoundName = _selectedAlarmSoundName;
-
-        habit = baseHabit;
-      } else {
-        // Create regular habit
-        habit = Habit.create(
-          name: _nameController.text.trim(),
-          description: _descriptionController.text.trim(),
-          category: _selectedCategory,
-          colorValue: _selectedColor.toARGB32(),
-          frequency: _selectedFrequency,
-          targetCount: 1,
-          notificationsEnabled: _notificationsEnabled,
-          notificationTime: notificationDateTime,
-          selectedWeekdays: _selectedWeekdays,
-          selectedMonthDays: _selectedMonthDays,
-          hourlyTimes: _hourlyTimes
-              .map(
-                (time) =>
-                    '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-              )
-              .toList(),
-          selectedYearlyDates: _selectedYearlyDates
-              .map(
-                (date) =>
-                    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-              )
-              .toList(),
-          alarmEnabled: _alarmEnabled,
-          alarmSoundName: _selectedAlarmSoundName,
-        );
-      }
+            .toList(),
+        alarmEnabled: _alarmEnabled,
+        alarmSoundName: _selectedAlarmSoundName,
+      );
 
       // Get HabitService instead of direct database access
       final habitServiceAsync = ref.read(habitServiceProvider);
@@ -1605,22 +1562,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           'Health-integrated habit created: ${habit.name} -> $_selectedHealthDataType (threshold: $_customThreshold, level: $_thresholdLevel)',
         );
       } else {
-        // Analyze habit for automatic health mapping
-        try {
-          final healthMapping =
-              await HealthHabitMappingService.analyzeHabitForHealthMapping(
-            habit,
-          );
-          if (healthMapping != null) {
-            AppLogger.info(
-              'Automatic health mapping found for habit: ${habit.name} -> ${healthMapping.healthDataType}',
-            );
-          }
-        } catch (e) {
-          AppLogger.warning(
-            'Error analyzing habit for health mapping: ${habit.name} - $e',
-          );
-        }
+        // Health mapping is no longer supported
+        AppLogger.info('Health mapping skipped - health integration removed');
       }
 
       // Schedule notifications/alarms if enabled (non-blocking)
@@ -1838,14 +1781,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                   elevation: 1,
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: suggestion.isHealthBased
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : Theme.of(context).colorScheme.primaryContainer,
+                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                       child: Icon(
                         _getIconData(suggestion.icon),
-                        color: suggestion.isHealthBased
-                            ? Colors.green
-                            : Theme.of(context).colorScheme.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         size: 20,
                       ),
                     ),
@@ -1861,32 +1800,13 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (suggestion.isHealthBased)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Health',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.green.shade700,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        const SizedBox(width: 8),
                         TextButton(
                           onPressed: () => _applySuggestion(suggestion),
                           child: const Text('Apply'),
                         ),
                       ],
                     ),
+                    onTap: () => _applySuggestion(suggestion),
                   ),
                 ),
               ),
@@ -1994,13 +1914,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       _selectedCategory = suggestion.category;
       _selectedFrequency = suggestion.frequency;
 
-      // Enable health integration if it's a health-based suggestion
-      if (suggestion.isHealthBased) {
-        _enableHealthIntegration = true;
-        _selectedHealthDataType = suggestion.healthDataType;
-        _customThreshold = suggestion.suggestedThreshold;
-        _thresholdLevel = 'custom';
-      }
+      // Health integration is no longer supported - removed
     });
 
     // Show success message

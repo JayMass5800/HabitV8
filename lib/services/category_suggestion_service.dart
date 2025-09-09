@@ -1,4 +1,3 @@
-import '../services/health_habit_mapping_service.dart';
 import '../services/logging_service.dart';
 
 /// Comprehensive Category Suggestion Service
@@ -189,15 +188,6 @@ class CategorySuggestionService {
         }
       }
       
-      // Also get health-related suggestions
-      final healthSuggestions = HealthHabitMappingService.getCategorySuggestions(habitName, habitDescription);
-      for (final healthCategory in healthSuggestions) {
-        final existing = suggestions.where((s) => s.category.toLowerCase() == healthCategory.toLowerCase()).firstOrNull;
-        if (existing == null) {
-          suggestions.add(CategorySuggestion(healthCategory, 0.8, 1));
-        }
-      }
-      
       // Sort by score (highest first)
       suggestions.sort((a, b) => b.score.compareTo(a.score));
       
@@ -219,15 +209,6 @@ class CategorySuggestionService {
     
     // Add general categories
     categories.addAll(categoryMappings.keys.map(_capitalizeCategory));
-    
-    // Add health-related categories
-    final healthCategories = HealthHabitMappingService.getHealthRelatedCategories();
-    for (final category in healthCategories) {
-      final capitalized = _capitalizeCategory(category);
-      if (!categories.contains(capitalized)) {
-        categories.add(capitalized);
-      }
-    }
     
     // Add some additional standard categories
     const additionalCategories = [

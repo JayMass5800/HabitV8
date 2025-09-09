@@ -14,7 +14,6 @@ import 'services/theme_service.dart';
 import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/midnight_habit_reset_service.dart';
-import 'services/health_habit_initialization_service.dart';
 import 'services/automatic_habit_completion_service.dart';
 import 'services/app_lifecycle_service.dart';
 import 'ui/screens/timeline_screen.dart';
@@ -25,8 +24,6 @@ import 'ui/screens/insights_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/create_habit_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
-import 'ui/screens/health_integration_screen.dart';
-import 'ui/screens/health_test_screen.dart';
 import 'ui/screens/automatic_completion_settings_screen.dart';
 
 void main() async {
@@ -111,8 +108,8 @@ void main() async {
   // This replaces the old calendar renewal and habit continuation systems
   _initializeMidnightReset();
 
-  // Initialize health-habit integration (non-blocking)
-  _initializeHealthHabitIntegration();
+  // Initialize automatic habit completion service (non-blocking)
+  _initializeAutomaticHabitCompletion();
 
   runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
 }
@@ -146,62 +143,35 @@ void _initializeMidnightReset() async {
 
 // Notification scheduling function removed - now handled by midnight reset service
 
-/// Initialize health-habit integration (non-blocking)
-void _initializeHealthHabitIntegration() async {
+/// Initialize automatic habit completion service (non-blocking)
+void _initializeAutomaticHabitCompletion() async {
   try {
     // Delay to let the app finish core initialization
     await Future.delayed(const Duration(seconds: 3));
 
-    AppLogger.info('Starting health-habit integration initialization...');
-
-    // Add timeout to prevent hanging during initialization
-    final result = await HealthHabitInitializationService.initialize().timeout(
-      const Duration(seconds: 30),
+    AppLogger.info('Initializing automatic habit completion service...');
+    final completionServiceInitialized =
+        await AutomaticHabitCompletionService.initialize().timeout(
+      const Duration(seconds: 15),
       onTimeout: () {
-        AppLogger.warning('Health-habit integration initialization timed out');
-        return HealthHabitInitializationResult()
-          ..success = false
-          ..message = 'Initialization timed out';
+        AppLogger.warning(
+            'Automatic habit completion service initialization timed out');
+        return false;
       },
     );
 
-    if (result.success) {
-      AppLogger.info('Health-habit integration initialized successfully');
-      if (result.hasWarnings) {
-        AppLogger.warning(
-          'Health-habit integration warnings: ${result.warnings.join(', ')}',
-        );
-      }
-
-      // Initialize automatic habit completion service with timeout
-      AppLogger.info('Initializing automatic habit completion service...');
-      final completionServiceInitialized =
-          await AutomaticHabitCompletionService.initialize().timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          AppLogger.warning(
-              'Automatic habit completion service initialization timed out');
-          return false;
-        },
+    if (completionServiceInitialized) {
+      AppLogger.info(
+        'Automatic habit completion service initialized successfully',
       );
-
-      if (completionServiceInitialized) {
-        AppLogger.info(
-          'Automatic habit completion service initialized successfully',
-        );
-      } else {
-        AppLogger.warning(
-          'Automatic habit completion service initialization failed or timed out',
-        );
-      }
     } else {
       AppLogger.warning(
-        'Health-habit integration initialization failed: ${result.message}',
+        'Automatic habit completion service initialization failed or timed out',
       );
     }
   } catch (e) {
-    AppLogger.error('Error initializing health-habit integration', e);
-    // Don't block app startup if health integration fails
+    AppLogger.error('Error initializing automatic habit completion service', e);
+    // Don't block app startup if initialization fails
   }
 }
 
@@ -543,14 +513,6 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
-        ),
-        GoRoute(
-          path: '/health-integration',
-          builder: (context, state) => const HealthIntegrationScreen(),
-        ),
-        GoRoute(
-          path: '/health-test',
-          builder: (context, state) => const HealthTestScreen(),
         ),
         GoRoute(
           path: '/automatic-completion-settings',

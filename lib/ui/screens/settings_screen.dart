@@ -195,19 +195,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// This is called when the app resumes to check if permissions were granted externally
   Future<void> _refreshHealthPermissions() async {
     try {
-      AppLogger.info('Refreshing health permissions status');
+      AppLogger.info('Health permissions not available - health integration removed');
 
-      // Use both the refresh method and direct permission check for reliability
-      final result = await HealthService.refreshPermissions();
-      final bool hasPermissions = result.granted;
-
-      // Double-check with permission service for consistency
-      final permissionService = PermissionService();
-      final bool permissionServiceCheck = await permissionService
-          .isHealthPermissionGranted();
-
-      // Use the more reliable result (both should agree, but prefer the direct check)
-      final bool finalPermissionStatus =
+      // Health integration removed - permissions are always false
+      final bool finalPermissionStatus = false;
           hasPermissions && permissionServiceCheck;
 
       AppLogger.info(
