@@ -147,6 +147,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
+          // See note in create_habit_screen: value is kept for compatibility.
           value: _selectedCategory,
           decoration: const InputDecoration(
             labelText: 'Category',

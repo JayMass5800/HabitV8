@@ -37,6 +37,7 @@ void main() {
                 name: 'Test Habit $index',
                 description: 'Description for habit $index',
                 category: 'Test',
+                // ignore: deprecated_member_use
                 colorValue: Colors.blue.value,
                 frequency: HabitFrequency.daily,
               ));
@@ -78,6 +79,7 @@ void main() {
         name: 'Test Habit',
         description: 'Test Description',
         category: 'Test',
+        // ignore: deprecated_member_use
         colorValue: Colors.blue.value,
         frequency: HabitFrequency.daily,
       );
@@ -154,6 +156,7 @@ void main() {
                 name: 'Cached Habit $index',
                 description: 'Description $index',
                 category: 'Test',
+                // ignore: deprecated_member_use
                 colorValue: Colors.blue.value,
                 frequency: HabitFrequency.daily,
               ));
@@ -185,6 +188,7 @@ void main() {
         name: 'Optimistic Test Habit',
         description: 'Test Description',
         category: 'Test',
+        // ignore: deprecated_member_use
         colorValue: Colors.blue.value,
         frequency: HabitFrequency.daily,
       );

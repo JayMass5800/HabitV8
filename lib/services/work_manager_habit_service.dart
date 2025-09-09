@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+// Removed unused kDebugMode import to satisfy analyzer
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import '../data/database.dart';
@@ -30,7 +30,8 @@ class WorkManagerHabitService {
       // Initialize WorkManager
       await Workmanager().initialize(
         callbackDispatcher,
-        isInDebugMode: kDebugMode,
+        // isInDebugMode is deprecated in newer workmanager versions.
+        // Debugging can be configured via Workmanager's own debug handlers.
       );
 
       // Schedule periodic renewal task

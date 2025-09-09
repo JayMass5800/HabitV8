@@ -22,9 +22,11 @@ class TrueAlarmService {
       // Initialize the alarm package
       await Alarm.init();
 
-      // Listen for alarm ring events to handle app opening
-      Alarm.ringStream.stream.listen((alarmSettings) {
-        AppLogger.info('🚨 Alarm ringing: ${alarmSettings.id}');
+      // Listen for alarm ring events to handle app opening (updated API)
+      Alarm.ringing.listen((alarmSet) {
+        for (final alarm in alarmSet.alarms) {
+          AppLogger.info('🚨 Alarm ringing: ${alarm.id}');
+        }
         // The alarm package automatically handles opening the app when the alarm rings
         // or when the notification is tapped
       });

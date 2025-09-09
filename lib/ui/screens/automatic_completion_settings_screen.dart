@@ -60,11 +60,14 @@ class _AutomaticCompletionSettingsScreenState
   }
 
   Future<void> _toggleService(bool enabled) async {
+    // Capture messenger up front to avoid using context after awaits
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await AutomaticHabitCompletionService.setServiceEnabled(enabled);
+      if (!mounted) return;
       setState(() => _serviceEnabled = enabled);
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             enabled
@@ -78,7 +81,8 @@ class _AutomaticCompletionSettingsScreenState
       await _loadSettings();
     } catch (e) {
       AppLogger.error('Error toggling service', e);
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Error updating service: $e'),
           backgroundColor: Colors.red,
@@ -88,11 +92,13 @@ class _AutomaticCompletionSettingsScreenState
   }
 
   Future<void> _toggleRealTime(bool enabled) async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await AutomaticHabitCompletionService.setRealTimeEnabled(enabled);
+      if (!mounted) return;
       setState(() => _realTimeEnabled = enabled);
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             enabled
@@ -106,7 +112,8 @@ class _AutomaticCompletionSettingsScreenState
       await _loadSettings();
     } catch (e) {
       AppLogger.error('Error toggling real-time monitoring', e);
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Error updating real-time monitoring: $e'),
           backgroundColor: Colors.red,
@@ -116,11 +123,13 @@ class _AutomaticCompletionSettingsScreenState
   }
 
   Future<void> _updateCheckInterval(int minutes) async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await AutomaticHabitCompletionService.setCheckIntervalMinutes(minutes);
+      if (!mounted) return;
       setState(() => _checkInterval = minutes);
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Check interval updated to $minutes minutes'),
           backgroundColor: Colors.blue,
@@ -130,7 +139,8 @@ class _AutomaticCompletionSettingsScreenState
       await _loadSettings();
     } catch (e) {
       AppLogger.error('Error updating check interval', e);
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Error updating check interval: $e'),
           backgroundColor: Colors.red,
@@ -140,8 +150,9 @@ class _AutomaticCompletionSettingsScreenState
   }
 
   Future<void> _performManualCheck() async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Performing manual check...'),
           backgroundColor: Colors.blue,
@@ -150,7 +161,8 @@ class _AutomaticCompletionSettingsScreenState
 
       final result = await AutomaticHabitCompletionService.performManualCheck();
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
               'Manual check completed: ${result.completedHabits} habits completed'),
@@ -161,7 +173,8 @@ class _AutomaticCompletionSettingsScreenState
       await _loadSettings();
     } catch (e) {
       AppLogger.error('Error performing manual check', e);
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Manual check failed: $e'),
           backgroundColor: Colors.red,
@@ -329,7 +342,8 @@ class _AutomaticCompletionSettingsScreenState
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getBatteryScoreColor(batteryScore).withOpacity(0.2),
+                    color: _getBatteryScoreColor(batteryScore)
+                        .withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -437,6 +451,8 @@ class _AutomaticCompletionSettingsScreenState
                   title: Text('$minutes minutes'),
                   subtitle: Text(_getIntervalDescription(minutes)),
                   value: minutes,
+                  // TODO(Flutter 3.32+): Migrate to RadioGroup when available in stable.
+                  // For now keep using groupValue/onChanged to avoid breaking UI.
                   groupValue: _checkInterval,
                   onChanged: (value) {
                     Navigator.of(context).pop();

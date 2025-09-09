@@ -54,7 +54,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             .textTheme
                             .bodyMedium
                             ?.color
-                            ?.withOpacity(0.7),
+                            ?.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -205,7 +205,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             .textTheme
                                             .bodyMedium
                                             ?.color
-                                            ?.withOpacity(0.7),
+                                            ?.withValues(alpha: 0.7),
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -412,7 +412,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       .textTheme
                       .bodySmall
                       ?.color
-                      ?.withOpacity(0.7),
+                      ?.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -443,8 +443,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           label,
           style: TextStyle(
             fontSize: 12,
-            color:
-                Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+            color: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.color
+                ?.withValues(alpha: 0.7),
           ),
         ),
       ],

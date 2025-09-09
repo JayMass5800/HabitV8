@@ -44,11 +44,13 @@ class _SmartThresholdSettingsState extends State<SmartThresholdSettings> {
   }
 
   Future<void> _toggleSmartThresholds(bool enabled) async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await AutomaticHabitCompletionService.setSmartThresholdsEnabled(enabled);
+      if (!mounted) return;
       setState(() => _isEnabled = enabled);
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             enabled
@@ -63,7 +65,8 @@ class _SmartThresholdSettingsState extends State<SmartThresholdSettings> {
       await _loadSettings();
     } catch (e) {
       AppLogger.error('Error toggling smart thresholds', e);
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+      messenger.showSnackBar(
         SnackBar(
           content: Text('Error updating smart thresholds: $e'),
           backgroundColor: Colors.red,
@@ -209,9 +212,9 @@ class _SmartThresholdSettingsState extends State<SmartThresholdSettings> {
       width: fullWidth ? double.infinity : null,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [

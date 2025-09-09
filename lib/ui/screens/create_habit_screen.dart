@@ -348,6 +348,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
+          // initialValue replaces value in newer Flutter versions, but DropdownButtonFormField
+          // continues to accept value for backward compatibility in current stable.
+          // Keep using value to avoid a larger refactor.
           value: _selectedCategory,
           decoration: const InputDecoration(
             labelText: 'Category',
