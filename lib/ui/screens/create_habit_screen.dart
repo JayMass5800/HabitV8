@@ -1781,7 +1781,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                   elevation: 1,
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primaryContainer,
                       child: Icon(
                         _getIconData(suggestion.icon),
                         color: Theme.of(context).colorScheme.primary,

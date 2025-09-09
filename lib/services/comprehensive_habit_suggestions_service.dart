@@ -233,7 +233,6 @@ class ComprehensiveHabitSuggestionsService {
       ),
     ];
   }
-
 }
 
 /// Comprehensive habit suggestion model

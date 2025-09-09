@@ -91,8 +91,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     try {
       final permissionService = PermissionService();
 
-      final notificationStatus = await permissionService
-          .isNotificationPermissionGranted();
+      final notificationStatus =
+          await permissionService.isNotificationPermissionGranted();
 
       // Check exact alarm permission status
       final exactAlarmStatus =
@@ -112,8 +112,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       // Only check health permissions if user has enabled health sync
       bool hasHealthPermissions = false;
       if (healthSyncPreference) {
-        hasHealthPermissions = await permissionService
-            .isHealthPermissionGranted();
+        hasHealthPermissions =
+            await permissionService.isHealthPermissionGranted();
 
         // If permissions are revoked, automatically disable the preference
         if (!hasHealthPermissions) {
@@ -195,11 +195,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   /// This is called when the app resumes to check if permissions were granted externally
   Future<void> _refreshHealthPermissions() async {
     try {
-      AppLogger.info('Health permissions not available - health integration removed');
+      AppLogger.info(
+          'Health permissions not available - health integration removed');
 
       // Health integration removed - permissions are always false
       final bool finalPermissionStatus = false;
-          hasPermissions && permissionServiceCheck;
+      hasPermissions && permissionServiceCheck;
 
       AppLogger.info(
         'Health permissions check - HealthService: $hasPermissions, PermissionService: $permissionServiceCheck, Final: $finalPermissionStatus',
@@ -894,8 +895,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       try {
         // First check if permissions are already granted
         final permissionService = PermissionService();
-        bool hasPermissions = await permissionService
-            .isHealthPermissionGranted();
+        bool hasPermissions =
+            await permissionService.isHealthPermissionGranted();
 
         if (hasPermissions) {
           // Permissions already granted, just enable the preference
@@ -1331,9 +1332,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                             ? 'Health permissions granted!'
                             : 'Health permissions denied',
                       ),
-                      backgroundColor: result.granted
-                          ? Colors.green
-                          : Colors.red,
+                      backgroundColor:
+                          result.granted ? Colors.green : Colors.red,
                     ),
                   );
                 }
@@ -1842,9 +1842,9 @@ class _SettingsSection extends StatelessWidget {
           child: Text(
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
         ),
         Card(child: Column(children: children)),

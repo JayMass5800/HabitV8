@@ -1,6 +1,11 @@
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/database.dart';
+import '../domain/model/habit.dart';
+import 'notification_service.dart';
 import 'logging_service.dart';
+import 'background_task_service.dart';
+import 'smart_threshold_service.dart';
 
 /// Simple result class for habit completion checks
 class HabitCompletionResult {
@@ -21,6 +26,8 @@ class HabitCompletionResult {
 class AutomaticHabitCompletionService {
   static const String _serviceEnabledKey = 'auto_completion_service_enabled';
   static const String _lastCompletionCheckKey = 'last_completion_check';
+  static const String _completionIntervalKey =
+      'completion_check_interval_minutes';
 
   static Timer? _completionTimer;
   static bool _isRunning = false;
@@ -52,6 +59,7 @@ class AutomaticHabitCompletionService {
   /// Load service settings
   static Future<void> _loadSettings() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
       // Load any saved settings here if needed
       AppLogger.debug('Automatic completion service settings loaded');
     } catch (e) {
@@ -181,84 +189,6 @@ class AutomaticHabitCompletionService {
     AppLogger.info(
         'Testing habit completion for: $habitName in category: $category');
     // Basic testing without health integration
-  }
-
-  /// Legacy method compatibility - returns false since health integration removed
-  static Future<bool> isServiceEnabled() async {
-    return await isEnabled();
-  }
-
-  /// Legacy method compatibility - sets service enabled state
-  static Future<void> setServiceEnabled(bool enabled) async {
-    await setEnabled(enabled);
-  }
-
-  /// Legacy method compatibility - returns false since real-time monitoring removed
-  static Future<bool> isRealTimeEnabled() async {
-    AppLogger.info(
-        'Real-time monitoring not available - health integration removed');
-    return false;
-  }
-
-  /// Legacy method compatibility - does nothing since real-time monitoring removed
-  static Future<void> setRealTimeEnabled(bool enabled) async {
-    AppLogger.info(
-        'Real-time monitoring not available - health integration removed');
-  }
-
-  /// Legacy method compatibility - returns default interval
-  static Future<int> getCheckIntervalMinutes() async {
-    return 30; // Fixed 30-minute interval
-  }
-
-  /// Legacy method compatibility - does nothing since intervals are fixed
-  static Future<void> setCheckIntervalMinutes(int minutes) async {
-    AppLogger.info(
-        'Check interval is fixed at 30 minutes - health integration removed');
-  }
-
-  /// Legacy method compatibility - returns simplified status
-  static Future<Map<String, dynamic>> getServiceStatus() async {
-    return await getStatus();
-  }
-
-  /// Legacy method compatibility - returns false since smart thresholds removed
-  static Future<bool> isSmartThresholdsEnabled() async {
-    AppLogger.info(
-        'Smart thresholds not available - health integration removed');
-    return false;
-  }
-
-  /// Legacy method compatibility - does nothing since smart thresholds removed
-  static Future<void> setSmartThresholdsEnabled(bool enabled) async {
-    AppLogger.info(
-        'Smart thresholds not available - health integration removed');
-  }
-
-  /// Legacy method compatibility - returns simple result
-  static Future<Map<String, dynamic>> performManualCheck() async {
-    AppLogger.info(
-        'Performing manual check (simplified - health integration removed)');
-    return {
-      'success': true,
-      'message': 'Manual check completed (health integration removed)',
-      'habitsChecked': 0,
-      'habitsCompleted': 0,
-    };
-  }
-
-  /// Legacy method compatibility - returns false since battery optimization not used
-  static Future<Map<String, dynamic>> getBatteryOptimizationStatus() async {
-    return {
-      'optimizationDisabled': true,
-      'message':
-          'Battery optimization not required - health integration removed',
-    };
-  }
-
-  /// Legacy method compatibility - dispose method for cleanup
-  static Future<void> dispose() async {
-    await cleanup();
   }
 
   /// Cleanup method

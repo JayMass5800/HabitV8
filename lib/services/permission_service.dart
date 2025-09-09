@@ -69,19 +69,22 @@ class PermissionService {
   /// Request health permissions contextually when user accesses health features
   /// Health permissions are no longer supported - returns false
   static Future<bool> requestHealthPermissions() async {
-    AppLogger.info('Health permissions not available - health integration removed');
+    AppLogger.info(
+        'Health permissions not available - health integration removed');
     return false;
   }
 
   /// Health permissions are no longer supported - returns false
   static Future<bool> _requestHealthPermissions() async {
-    AppLogger.info('Health permissions not available - health integration removed');
+    AppLogger.info(
+        'Health permissions not available - health integration removed');
     return false;
   }
 
   /// Health permissions are no longer supported - returns false
   static Future<bool> forceRequestAllHealthPermissions() async {
-    AppLogger.info('Health permissions not available - health integration removed');
+    AppLogger.info(
+        'Health permissions not available - health integration removed');
     return false;
   }
 
@@ -98,8 +101,7 @@ class PermissionService {
       AppLogger.info('Requesting notification permission when needed...');
       final notificationStatus = await Permission.notification.request();
 
-      final granted =
-          notificationStatus == PermissionStatus.granted ||
+      final granted = notificationStatus == PermissionStatus.granted ||
           notificationStatus == PermissionStatus.limited;
 
       AppLogger.info('Notification permission request result: $granted');
@@ -173,7 +175,8 @@ class PermissionService {
       // If permission is granted, try to start background monitoring
       if (status == PermissionStatus.granted) {
         // Background monitoring is no longer needed - health integration removed
-        AppLogger.info('Background monitoring skipped - health integration removed');
+        AppLogger.info(
+            'Background monitoring skipped - health integration removed');
       }
 
       return status == PermissionStatus.granted;
@@ -216,7 +219,8 @@ class PermissionService {
 
       // Simplified alarm permission request - no health service needed
       // For basic alarms, Android doesn't require special permissions in most cases
-      AppLogger.info('Exact alarm permission request result: true (simplified)');
+      AppLogger.info(
+          'Exact alarm permission request result: true (simplified)');
       return true;
     } catch (e) {
       AppLogger.error('Error requesting exact alarm permission', e);
@@ -270,7 +274,8 @@ class PermissionService {
 
   /// Health permissions are no longer supported - returns false
   Future<bool> isHealthPermissionGranted() async {
-    AppLogger.info('Health permissions not available - health integration removed');
+    AppLogger.info(
+        'Health permissions not available - health integration removed');
     return false;
   }
 
