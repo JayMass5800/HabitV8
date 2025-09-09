@@ -45,6 +45,32 @@ class CalendarService {
     }
   }
 
+  /// Reinitialize the calendar service after permissions are granted
+  static Future<bool> reinitializeAfterPermissions() async {
+    try {
+      AppLogger.info(
+          'Reinitializing calendar service after permissions granted');
+
+      // Reset initialization flag to force reinitialization
+      _isInitialized = false;
+      _deviceCalendarPlugin = null;
+
+      // Reinitialize
+      final success = await initialize();
+
+      if (success) {
+        AppLogger.info('Calendar service reinitialized successfully');
+      } else {
+        AppLogger.error('Failed to reinitialize calendar service');
+      }
+
+      return success;
+    } catch (e) {
+      AppLogger.error('Error during calendar service reinitialization', e);
+      return false;
+    }
+  }
+
   /// Request calendar permissions (for future device calendar integration)
   static Future<bool> _requestCalendarPermissions() async {
     try {

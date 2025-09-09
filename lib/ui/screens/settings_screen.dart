@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../widgets/settings_tile.dart';
+import '../widgets/calendar_selection_dialog.dart';
 import '../../services/notification_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/theme_service.dart';
+import '../../services/calendar_service.dart';
+import '../../services/logging_service.dart';
+import '../../data/database.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -14,10 +19,47 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _calendarSyncEnabled = false;
+  String? _selectedCalendarName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCalendarSettings();
+  }
+
+  Future<void> _loadCalendarSettings() async {
+    try {
+      final syncEnabled = await CalendarService.isCalendarSyncEnabled();
+      final selectedCalendar = await CalendarService.getSelectedCalendar();
+
+      if (mounted) {
+        setState(() {
+          _calendarSyncEnabled = syncEnabled;
+          _selectedCalendarName = selectedCalendar?.name;
+        });
+      }
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  String _getCalendarSyncSubtitle(bool hasPermissions) {
+    if (_calendarSyncEnabled && _selectedCalendarName != null) {
+      return 'Syncing to $_selectedCalendarName';
+    } else if (_calendarSyncEnabled && _selectedCalendarName == null) {
+      return 'Calendar sync enabled - select calendar';
+    } else if (hasPermissions) {
+      return 'Sync habits with your calendar';
+    } else {
+      return 'Tap to enable and grant permissions';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -55,7 +97,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       future: NotificationService.areNotificationsEnabled(),
                       builder: (context, snapshot) {
                         final isEnabled = snapshot.data ?? false;
-                        
+
                         return SettingsTile(
                           title: 'Push Notifications',
                           subtitle: 'Get reminders for your habits',
@@ -63,13 +105,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             value: isEnabled,
                             onChanged: (value) async {
                               if (value) {
-                                await PermissionService.requestNotificationPermissionWithContext();
+                                await PermissionService
+                                    .requestNotificationPermissionWithContext();
                               } else {
-                                // Disable notifications - no direct method available, 
+                                // Disable notifications - no direct method available,
                                 // so we'll show a message
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Notifications disabled. You can re-enable them in device settings.'),
+                                    content: Text(
+                                        'Notifications disabled. You can re-enable them in device settings.'),
                                   ),
                                 );
                               }
@@ -81,24 +125,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     );
                   },
                 ),
-                SettingsTile(
-                  title: 'Notification Time',
-                  subtitle: 'Set your preferred reminder time',
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showTimePicker(context),
-                ),
-                SettingsTile(
-                  title: 'Notification Sound',
-                  subtitle: 'Choose your reminder sound',
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showSoundPicker(context),
-                ),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Appearance Section
           Card(
             child: Column(
@@ -125,7 +157,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 Consumer(
                   builder: (context, ref, child) {
                     final themeState = ref.watch(themeProvider);
-                    
+
                     return Column(
                       children: [
                         SettingsTile(
@@ -135,8 +167,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             value: themeState.themeMode == ThemeMode.dark,
                             onChanged: (value) {
                               ref.read(themeProvider.notifier).setThemeMode(
-                                value ? ThemeMode.dark : ThemeMode.light,
-                              );
+                                    value ? ThemeMode.dark : ThemeMode.light,
+                                  );
                             },
                           ),
                         ),
@@ -153,9 +185,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Calendar Integration Section
           Card(
             child: Column(
@@ -179,15 +211,86 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                 ),
-                SettingsTile(
-                  title: 'Calendar Sync',
-                  subtitle: 'Sync habits with your calendar',
-                  trailing: Switch(
-                    value: false, // Placeholder
-                    onChanged: (value) {
-                      _showFeatureComingSoon(context);
-                    },
-                  ),
+                Consumer(
+                  builder: (context, ref, child) {
+                    return FutureBuilder<bool>(
+                      future: CalendarService.hasPermissions(),
+                      builder: (context, permissionSnapshot) {
+                        final hasPermissions = permissionSnapshot.data ?? false;
+
+                        return Column(
+                          children: [
+                            SettingsTile(
+                              title: 'Calendar Sync',
+                              subtitle:
+                                  _getCalendarSyncSubtitle(hasPermissions),
+                              trailing: Switch(
+                                value: _calendarSyncEnabled,
+                                onChanged: (value) async {
+                                  await _handleCalendarSyncToggle(value);
+                                },
+                              ),
+                            ),
+                            if (_calendarSyncEnabled && hasPermissions) ...[
+                              SettingsTile(
+                                title: 'Select Calendar',
+                                subtitle: _selectedCalendarName ??
+                                    'Choose calendar to sync to',
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () =>
+                                    _showCalendarSelectionDialog(context),
+                              ),
+                            ],
+                            if (!hasPermissions && !_calendarSyncEnabled) ...[
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0, vertical: 8.0),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12.0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    border: Border.all(
+                                        color: Colors.blue.withOpacity(0.3)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.info_outline,
+                                          color: Colors.blue.shade700),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Calendar Sync Available',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.blue.shade700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Enable calendar sync to automatically create habit reminders in your device calendar with the correct times.',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.blue.shade600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      },
+                    );
+                  },
                 ),
                 SettingsTile(
                   title: 'Weekly Start Day',
@@ -198,9 +301,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Data Management Section
           Card(
             child: Column(
@@ -245,9 +348,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // About Section
           Card(
             child: Column(
@@ -292,66 +395,305 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  void _showTimePicker(BuildContext context) async {
-    final TimeOfDay? time = await showTimePicker(
-      context: context,
-      initialTime: const TimeOfDay(hour: 9, minute: 0),
-    );
-    if (time != null) {
-      // Save the notification time preference
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Notification time set to ${time.format(context)}'),
-        ),
-      );
+  Future<void> _handleCalendarSyncToggle(bool enabled) async {
+    try {
+      if (enabled) {
+        // Show loading indicator while requesting permissions
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Requesting calendar permissions...'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+
+        // Request calendar permissions
+        final hasPermissions = await _requestCalendarPermissions();
+        if (!hasPermissions) {
+          if (mounted) {
+            _showPermissionDeniedDialog(context, false);
+          }
+          return;
+        }
+
+        // If no calendar is selected, show selection dialog
+        if (CalendarService.getSelectedCalendarId() == null) {
+          final dialogResult = await _showCalendarSelectionDialog(context);
+          if (dialogResult != true) {
+            return; // User cancelled or dialog failed
+          }
+        }
+
+        // Enable calendar sync
+        await CalendarService.setCalendarSyncEnabled(true);
+
+        // Sync all existing habits
+        final habitServiceAsync = ref.read(habitServiceProvider);
+        final habitService = habitServiceAsync.value;
+        if (habitService != null) {
+          final allHabits = await habitService.getAllHabits();
+          await CalendarService.syncAllHabitsToCalendar(allHabits);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Calendar sync enabled and habits synced! 📅'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // Show confirmation dialog before disabling
+        final confirmDisable = await _showDisableConfirmationDialog(context);
+        if (confirmDisable != true) {
+          return;
+        }
+
+        // Disable calendar sync and remove all habit events
+        await CalendarService.setCalendarSyncEnabled(false);
+
+        final habitServiceAsync = ref.read(habitServiceProvider);
+        final habitService = habitServiceAsync.value;
+        if (habitService != null) {
+          final allHabits = await habitService.getAllHabits();
+          await CalendarService.removeAllHabitsFromCalendar(allHabits);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Calendar sync disabled and habit events removed'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+
+          // Show dialog about revoking permissions
+          _showPermissionRevokeDialog(context);
+        }
+      }
+
+      // Reload calendar settings
+      await _loadCalendarSettings();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error toggling calendar sync: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  void _showSoundPicker(BuildContext context) {
+  Future<bool?> _showCalendarSelectionDialog(BuildContext context) async {
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) => const CalendarSelectionDialog(),
+      );
+
+      if (result == true) {
+        // Reload calendar settings after selection
+        await _loadCalendarSettings();
+      }
+
+      return result;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error showing calendar selection: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<bool> _requestCalendarPermissions() async {
+    try {
+      // First check if permissions are already granted
+      final hasPermissions = await CalendarService.hasPermissions();
+      if (hasPermissions) {
+        return true;
+      }
+
+      // Request permissions using permission_handler
+      final status = await Permission.calendarFullAccess.request();
+      final granted = status.isGranted;
+
+      if (granted) {
+        // Reinitialize calendar service after permissions are granted
+        await CalendarService.reinitializeAfterPermissions();
+        AppLogger.info(
+            'Calendar permissions granted and service reinitialized');
+      } else {
+        AppLogger.warning('Calendar permissions denied: ${status.toString()}');
+      }
+
+      return granted;
+    } catch (e) {
+      AppLogger.error('Error requesting calendar permissions', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error requesting calendar permissions: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  void _showPermissionDeniedDialog(
+      BuildContext context, bool isPermanentlyDenied) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Notification Sound'),
+        title: const Text('Calendar Permission Required'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListTile(
-              title: const Text('Default'),
-              leading: Radio<String>(
-                value: 'default',
-                groupValue: 'default',
-                onChanged: (value) => Navigator.pop(context),
-              ),
+            const Text(
+              'To enable calendar sync, HabitV8 needs access to your device calendar.',
             ),
-            ListTile(
-              title: const Text('Gentle Bell'),
-              leading: Radio<String>(
-                value: 'bell',
-                groupValue: 'default',
-                onChanged: (value) => Navigator.pop(context),
+            const SizedBox(height: 12),
+            const Text('This allows the app to:'),
+            const SizedBox(height: 8),
+            const Text('• Create reminder events for your habits'),
+            const Text('• Sync habit schedules with your calendar'),
+            const Text('• Remove habit events when sync is disabled'),
+            if (isPermanentlyDenied) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Please enable calendar permissions in your device settings.',
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
-            ),
-            ListTile(
-              title: const Text('Chime'),
-              leading: Radio<String>(
-                value: 'chime',
-                groupValue: 'default',
-                onChanged: (value) => Navigator.pop(context),
-              ),
-            ),
+            ],
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text('Cancel'),
+          ),
+          if (isPermanentlyDenied)
+            FilledButton(
+              onPressed: () async {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+                await openAppSettings();
+              },
+              child: const Text('Open Settings'),
+            )
+          else
+            FilledButton(
+              onPressed: () async {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
+                await _handleCalendarSyncToggle(true);
+              },
+              child: const Text('Try Again'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _showDisableConfirmationDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Disable Calendar Sync?'),
+        content: const Text(
+          'This will remove all habit events from your calendar and disable future syncing. You can re-enable it later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context, false);
+              }
+            },
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context, true);
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.orange,
+            ),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionRevokeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Calendar Permissions'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Calendar sync has been disabled and all habit events have been removed from your calendar.',
+            ),
+            SizedBox(height: 12),
+            Text(
+              'If you want to completely revoke calendar permissions:',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: 8),
+            Text('1. Go to your device Settings'),
+            Text('2. Find "Apps" or "Application Manager"'),
+            Text('3. Select "HabitV8"'),
+            Text('4. Tap "Permissions"'),
+            Text('5. Turn off "Calendar" permission'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Got it'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+              await openAppSettings();
+            },
+            child: const Text('Open Settings'),
           ),
         ],
       ),
@@ -361,28 +703,67 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void _showColorPicker(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Color Theme'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _colorOption('Blue', Colors.blue),
-            _colorOption('Green', Colors.green),
-            _colorOption('Purple', Colors.purple),
-            _colorOption('Orange', Colors.orange),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
+      builder: (context) => Consumer(
+        builder: (context, ref, child) {
+          final themeState = ref.watch(themeProvider);
+          return AlertDialog(
+            title: const Text('Color Theme'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _colorOption(
+                      'Blue', Colors.blue, themeState.primaryColor, ref),
+                  _colorOption('Red', Colors.red, themeState.primaryColor, ref),
+                  _colorOption(
+                      'Green', Colors.green, themeState.primaryColor, ref),
+                  _colorOption(
+                      'Purple', Colors.purple, themeState.primaryColor, ref),
+                  _colorOption(
+                      'Orange', Colors.orange, themeState.primaryColor, ref),
+                  _colorOption(
+                      'Teal', Colors.teal, themeState.primaryColor, ref),
+                  _colorOption(
+                      'Pink', Colors.pink, themeState.primaryColor, ref),
+                  _colorOption(
+                      'Indigo', Colors.indigo, themeState.primaryColor, ref),
+                  _colorOption(
+                      'Amber', Colors.amber, themeState.primaryColor, ref),
+                  _colorOption('Deep Orange', Colors.deepOrange,
+                      themeState.primaryColor, ref),
+                  _colorOption('Light Blue', Colors.lightBlue,
+                      themeState.primaryColor, ref),
+                  _colorOption(
+                      'Lime', Colors.lime, themeState.primaryColor, ref),
+                  _colorOption(
+                      'Cyan', Colors.cyan, themeState.primaryColor, ref),
+                  _colorOption(
+                      'Brown', Colors.brown, themeState.primaryColor, ref),
+                  _colorOption('Blue Grey', Colors.blueGrey,
+                      themeState.primaryColor, ref),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('Cancel'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _colorOption(String name, Color color) {
+  Widget _colorOption(
+      String name, Color color, Color currentColor, WidgetRef ref) {
+    final isSelected = currentColor.value == color.value;
+
     return ListTile(
       title: Text(name),
       leading: Container(
@@ -391,13 +772,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
+          border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
         ),
+        child: isSelected
+            ? const Icon(
+                Icons.check,
+                color: Colors.white,
+                size: 16,
+              )
+            : null,
       ),
-      onTap: () {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$name theme selected')),
-        );
+      onTap: () async {
+        // Update the theme color
+        await ref.read(themeProvider.notifier).setPrimaryColor(color);
+
+        // Safely dismiss the dialog
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+
+        // Show confirmation
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$name theme selected'),
+              backgroundColor: color,
+            ),
+          );
+        }
       },
     );
   }
@@ -423,14 +825,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     leading: Radio<String>(
                       value: day,
                       groupValue: 'Monday',
-                      onChanged: (value) => Navigator.pop(context),
+                      onChanged: (value) {
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        }
+                      },
                     ),
                   ))
               .toList(),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text('Cancel'),
           ),
         ],
@@ -447,20 +857,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
               _showFeatureComingSoon(context);
             },
             child: const Text('CSV'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
               _showFeatureComingSoon(context);
             },
             child: const Text('JSON'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text('Cancel'),
           ),
         ],
@@ -477,13 +895,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
               _showFeatureComingSoon(context);
             },
             child: const Text('Select File'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text('Cancel'),
           ),
         ],
@@ -501,18 +925,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All data cleared'),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All data cleared'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,

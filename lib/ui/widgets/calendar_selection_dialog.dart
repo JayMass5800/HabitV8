@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:device_calendar/device_calendar.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../services/calendar_service.dart';
 import '../../data/database.dart';
 import '../../services/logging_service.dart';
@@ -33,15 +34,51 @@ class _CalendarSelectionDialogState
         _error = null;
       });
 
+      AppLogger.info('Loading calendars in dialog...');
+
+      // First check if calendar service is initialized
+      final isInitialized = await CalendarService.initialize();
+      if (!isInitialized) {
+        throw Exception('Calendar service initialization failed');
+      }
+
+      // Check permissions explicitly
+      final hasPermissions = await CalendarService.hasPermissions();
+      AppLogger.info('Calendar permissions granted: $hasPermissions');
+
+      if (!hasPermissions) {
+        setState(() {
+          _error =
+              'Calendar permissions are required. Please enable calendar access in your device settings and try again.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Get calendars with additional logging
       final calendars = await CalendarService.getAvailableCalendars();
       final currentSelection = CalendarService.getSelectedCalendarId();
+
+      AppLogger.info('Retrieved ${calendars.length} calendars');
+      for (final calendar in calendars) {
+        AppLogger.info(
+            'Calendar: ${calendar.name} (${calendar.id}) - ReadOnly: ${calendar.isReadOnly ?? false}');
+      }
 
       setState(() {
         _calendars = calendars;
         _selectedCalendarId = currentSelection;
         _isLoading = false;
       });
+
+      if (calendars.isEmpty) {
+        setState(() {
+          _error =
+              'No writable calendars found on your device. Please ensure you have at least one calendar account set up.';
+        });
+      }
     } catch (e) {
+      AppLogger.error('Error loading calendars in dialog', e);
       setState(() {
         _error = 'Failed to load calendars: $e';
         _isLoading = false;
@@ -102,7 +139,7 @@ class _CalendarSelectionDialogState
 
     if (_calendars.isEmpty) {
       return SizedBox(
-        height: 200,
+        height: 250,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -119,9 +156,47 @@ class _CalendarSelectionDialogState
               ),
               const SizedBox(height: 8),
               Text(
-                'Please create a calendar in your device\'s calendar app first.',
+                'Please ensure you have at least one calendar account set up on your device.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton(
+                    onPressed: () async {
+                      await openAppSettings();
+                    },
+                    child: const Text('App Settings'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _loadCalendars,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () async {
+                  await CalendarService.debugCalendarStatus();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Debug info logged - check console'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                },
+                child: Text(
+                  'Debug Info',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
               ),
             ],
           ),
