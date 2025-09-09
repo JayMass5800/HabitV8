@@ -78,11 +78,15 @@ class HybridAlarmService {
     AppLogger.info('  - Sound: $alarmSoundName');
 
     try {
+      // Get and validate the alarm sound path
+      final soundPath = _getAlarmSoundPath(alarmSoundName);
+      AppLogger.info('  - Resolved sound path: $soundPath');
+      
       // Use the alarm package for exact alarms
       final alarmSettings = AlarmSettings(
         id: alarmId,
         dateTime: scheduledTime,
-        assetAudioPath: _getAlarmSoundPath(alarmSoundName),
+        assetAudioPath: soundPath,
         loopAudio: true,
         vibrate: true,
         notificationSettings: NotificationSettings(
@@ -102,16 +106,44 @@ class HybridAlarmService {
 
       AppLogger.info('✅ Exact alarm scheduled successfully');
     } catch (e) {
-      AppLogger.error('❌ Failed to schedule exact alarm', e);
+      AppLogger.error('❌ Failed to schedule exact alarm for $habitName with sound $alarmSoundName', e);
+      
+      // Try with default sound as fallback
+      try {
+        AppLogger.info('🔄 Retrying with default sound...');
+        final defaultAlarmSettings = AlarmSettings(
+          id: alarmId,
+          dateTime: scheduledTime,
+          assetAudioPath: 'assets/sounds/digital_beep.mp3',
+          loopAudio: true,
+          vibrate: true,
+          notificationSettings: NotificationSettings(
+            title: '🚨 HABIT ALARM: $habitName',
+            body: 'Time to complete your habit!',
+            stopButton: 'Stop Alarm',
+          ),
+          volumeSettings: VolumeSettings.fade(
+            volume: 1.0,
+            fadeDuration: Duration(seconds: 3),
+          ),
+          warningNotificationOnKill: true,
+          androidFullScreenIntent: true,
+        );
 
-      // Fallback to notification if alarm fails
-      await _scheduleNotificationAlarm(
-        alarmId: alarmId,
-        habitName: habitName,
-        scheduledTime: scheduledTime,
-        alarmSoundName: alarmSoundName,
-        snoozeDelayMinutes: snoozeDelayMinutes,
-      );
+        await Alarm.set(alarmSettings: defaultAlarmSettings);
+        AppLogger.info('✅ Alarm scheduled with default sound as fallback');
+      } catch (e2) {
+        AppLogger.error('❌ Even fallback alarm failed', e2);
+        
+        // Final fallback to notification
+        await _scheduleNotificationAlarm(
+          alarmId: alarmId,
+          habitName: habitName,
+          scheduledTime: scheduledTime,
+          alarmSoundName: 'Digital Beep',  // Use known working sound name
+          snoozeDelayMinutes: snoozeDelayMinutes,
+        );
+      }
     }
   }
 
@@ -479,7 +511,7 @@ class HybridAlarmService {
       return alarmSoundName;
     }
 
-    // Map named sounds to paths
+    // Map named sounds to paths - including common system ringtone names
     switch (alarmSoundName) {
       case 'Gentle Chime':
         return 'assets/sounds/gentle_chime.mp3';
@@ -489,7 +521,25 @@ class HybridAlarmService {
         return 'assets/sounds/nature_birds.mp3';
       case 'Digital Beep':
         return 'assets/sounds/digital_beep.mp3';
+      case 'Ocean Waves':
+        return 'assets/sounds/ocean_waves.mp3';
+      case 'Soft Piano':
+        return 'assets/sounds/soft_piano.mp3';
+      case 'Upbeat Melody':
+        return 'assets/sounds/upbeat_melody.mp3';
+      case 'Zen Gong':
+        return 'assets/sounds/zen_gong.mp3';
+      // Handle common system ringtone names that may not have asset equivalents
+      case 'Full of Wonder':
+      case 'Alarm Clock':
+      case 'Rooster':
+      case 'Bell':
+      case 'Chime':
+      case 'Default':
+        AppLogger.warning('System ringtone "$alarmSoundName" mapped to default asset sound');
+        return 'assets/sounds/gentle_chime.mp3'; // Use gentle_chime as fallback for unrecognized sounds
       default:
+        AppLogger.warning('Unknown alarm sound "$alarmSoundName" mapped to default sound');
         return 'assets/sounds/digital_beep.mp3';
     }
   }
@@ -537,6 +587,26 @@ class HybridAlarmService {
       {
         'name': 'Digital Beep',
         'uri': 'assets/sounds/digital_beep.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Ocean Waves',
+        'uri': 'assets/sounds/ocean_waves.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Soft Piano',
+        'uri': 'assets/sounds/soft_piano.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Upbeat Melody',
+        'uri': 'assets/sounds/upbeat_melody.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Zen Gong',
+        'uri': 'assets/sounds/zen_gong.mp3',
         'type': 'custom',
       },
     ]);

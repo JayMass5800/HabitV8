@@ -132,6 +132,7 @@ class AppLifecycleService with WidgetsBindingObserver {
       AppLogger.info('✅ App resume handling completed');
     } catch (e) {
       AppLogger.error('Error handling app resume', e);
+      // Don't rethrow - this should not crash the app
     }
   }
 
