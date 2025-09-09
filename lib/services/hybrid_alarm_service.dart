@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alarm/alarm.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter/services.dart';
 import 'logging_service.dart';
 
 /// A hybrid alarm service that combines the reliability of the alarm package
@@ -13,6 +14,8 @@ class HybridAlarmService {
       FlutterLocalNotificationsPlugin();
   static bool _isInitialized = false;
   static const String _alarmDataKey = 'hybrid_alarm_data_';
+  static const MethodChannel _ringtoneChannel =
+      MethodChannel('com.habittracker.habitv8/ringtones');
 
   /// Initialize the hybrid alarm service
   static Future<void> initialize() async {
@@ -492,44 +495,87 @@ class HybridAlarmService {
   }
 
   /// Get a list of available alarm sounds
+  /// Combines device ringtones with bundled custom sounds (Android only lists device tones)
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
-    // Return a list of available alarm sounds
-    return [
-      {'id': 'default', 'name': 'Default Alarm'},
-      {'id': 'gentle', 'name': 'Gentle Reminder'},
-      {'id': 'urgent', 'name': 'Urgent Alarm'},
-      {'id': 'nature', 'name': 'Nature Sounds'},
-      {'id': 'digital', 'name': 'Digital Beep'},
-    ];
+    final sounds = <Map<String, String>>[];
+
+    // Try to fetch device sounds via platform channel
+    try {
+      final deviceList =
+          await _ringtoneChannel.invokeMethod<List<dynamic>>('list');
+      if (deviceList != null) {
+        for (final item in deviceList) {
+          final m = Map<String, dynamic>.from(item as Map);
+          sounds.add({
+            'name': m['name']?.toString() ?? 'Ringtone',
+            'uri': m['uri']?.toString() ?? '',
+            'type': 'system',
+          });
+        }
+      }
+    } catch (_) {
+      // Ignore and fall back to defaults
+    }
+
+    // Always include our custom assets
+    sounds.addAll([
+      {
+        'name': 'Gentle Chime',
+        'uri': 'assets/sounds/gentle_chime.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Morning Bell',
+        'uri': 'assets/sounds/morning_bell.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Nature Birds',
+        'uri': 'assets/sounds/nature_birds.mp3',
+        'type': 'custom',
+      },
+      {
+        'name': 'Digital Beep',
+        'uri': 'assets/sounds/digital_beep.mp3',
+        'type': 'custom',
+      },
+    ]);
+
+    return sounds;
   }
 
   /// Play a preview of an alarm sound
-  static Future<void> playAlarmSoundPreview(String soundName) async {
+  /// Accepts either a custom asset URI (assets/...) or a system URI
+  static Future<void> playAlarmSoundPreview(String soundUri) async {
     try {
-      // Create temporary alarm settings for preview
-      final previewSettings = AlarmSettings(
-        id: 999999, // Use a very high ID that won't conflict with real alarms
-        dateTime: DateTime.now().add(const Duration(seconds: 1)),
-        assetAudioPath: _getAlarmSoundPath(soundName),
-        loopAudio: false,
-        vibrate: false,
-        notificationSettings: NotificationSettings(
-          title: 'Preview',
-          body: 'Sound preview',
-          stopButton: 'Stop',
-        ),
-        volumeSettings: VolumeSettings.fade(
-          volume: 0.5,
-          fadeDuration: Duration.zero,
-        ),
-        warningNotificationOnKill: false,
-        androidFullScreenIntent: false,
-      );
+      // Stop any existing preview first
+      await stopAlarmSoundPreview();
 
-      // Play the sound
-      await Alarm.set(alarmSettings: previewSettings);
-
-      AppLogger.debug('Playing alarm sound preview: $soundName');
+      if (soundUri.startsWith('assets/')) {
+        // Custom asset preview using Alarm package
+        final previewSettings = AlarmSettings(
+          id: 999999,
+          dateTime: DateTime.now().add(const Duration(seconds: 1)),
+          assetAudioPath: soundUri,
+          loopAudio: false,
+          vibrate: false,
+          notificationSettings: const NotificationSettings(
+            title: 'Preview',
+            body: 'Sound preview',
+            stopButton: 'Stop',
+          ),
+          volumeSettings: VolumeSettings.fade(
+            volume: 0.5,
+            fadeDuration: Duration.zero,
+          ),
+          warningNotificationOnKill: false,
+          androidFullScreenIntent: false,
+        );
+        await Alarm.set(alarmSettings: previewSettings);
+      } else {
+        // System ringtone preview via platform channel
+        await _ringtoneChannel.invokeMethod('preview', {'uri': soundUri});
+      }
     } catch (e) {
       AppLogger.error('Failed to play alarm sound preview', e);
     }
@@ -538,9 +584,8 @@ class HybridAlarmService {
   /// Stop the alarm sound preview
   static Future<void> stopAlarmSoundPreview() async {
     try {
-      // Stop the preview alarm
       await Alarm.stop(999999);
-      AppLogger.debug('Stopped alarm sound preview');
+      await _ringtoneChannel.invokeMethod('stop');
     } catch (e) {
       AppLogger.error('Failed to stop alarm sound preview', e);
     }

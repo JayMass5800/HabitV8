@@ -797,7 +797,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                           progress[achievement.id] ?? 0.0;
 
                       final theme = Theme.of(context);
-                      final isDark = theme.brightness == Brightness.dark;
 
                       return Card(
                         color: isUnlocked
