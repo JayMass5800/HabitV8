@@ -7,8 +7,6 @@ import '../../domain/model/habit.dart';
 import '../../services/habit_stats_service.dart';
 import '../../services/trend_analysis_service.dart';
 import '../../services/comprehensive_habit_suggestions_service.dart';
-import '../../services/health_habit_analytics_service.dart';
-import '../../services/health_service.dart';
 import '../../services/achievements_service.dart';
 
 import '../../services/logging_service.dart';
@@ -75,93 +73,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             completions: allCompletions,
           );
 
-          // Load health summary if available
-          try {
-            // First check if health sync is enabled by user
-            AppLogger.info('Checking if health sync is enabled...');
-            final healthSyncEnabled = await HealthService.isHealthSyncEnabled();
-            AppLogger.info('Health sync enabled: $healthSyncEnabled');
-
-            if (!healthSyncEnabled) {
-              AppLogger.info(
-                  'Health sync disabled by user, skipping health data load');
-              _healthSummary = {
-                'error': 'Health sync disabled',
-                'hasPermissions': false,
-                'canRetry': false,
-                'needsPermissions': false,
-                'syncDisabled': true,
-                'steps': 0,
-                'activeCalories': 0.0,
-                'totalCalories': 0.0,
-                'sleepHours': 0.0,
-                'waterIntake': 0.0,
-                'mindfulnessMinutes': 0.0,
-                'weight': null,
-                'medicationAdherence': 0.0,
-                'heartRate': null,
-                'restingHeartRate': null,
-                'timestamp': DateTime.now().toIso8601String(),
-              };
-            } else {
-              AppLogger.info('Health sync enabled, checking permissions...');
-              final hasPermissions =
-                  await HealthService.hasPermissions().timeout(
-                const Duration(seconds: 5),
-                onTimeout: () {
-                  AppLogger.warning('Health permissions check timed out');
-                  return false;
-                },
-              );
-              AppLogger.info('Health permissions status: $hasPermissions');
-
-              if (hasPermissions) {
-                AppLogger.info('Loading health summary...');
-                _healthSummary =
-                    await HealthService.getTodayHealthSummary().timeout(
-                  const Duration(seconds: 30),
-                  onTimeout: () {
-                    AppLogger.warning('Health summary loading timed out');
-                    return <String, dynamic>{
-                      'error': 'Health data loading timed out',
-                      'steps': 0,
-                      'activeCalories': 0.0,
-                      'totalCalories': 0.0,
-                      'sleepHours': 0.0,
-                      'waterIntake': 0.0,
-                      'mindfulnessMinutes': 0.0,
-                      'weight': null,
-                      'medicationAdherence': 0.0,
-                      'heartRate': null,
-                      'restingHeartRate': null,
-                      'timestamp': DateTime.now().toIso8601String(),
-                    };
-                  },
-                );
-                AppLogger.info(
-                    'Health summary loaded: ${_healthSummary?.keys.join(', ')}');
-
-                // Integration status loading removed - no longer needed
-              } else {
-                AppLogger.info(
-                    'Health permissions not granted, skipping health data load');
-                _healthSummary = {
-                  'error': 'Health permissions not granted',
-                  'hasPermissions': false,
-                  'canRetry': true,
-                  'needsPermissions': true,
-                };
-              }
-            }
-          } catch (e) {
-            AppLogger.error('Failed to load health summary', e);
-            _healthSummary = {
-              'error': 'Failed to load health data',
-              'errorDetails': e.toString(),
-              'hasPermissions': false,
-              'canRetry': true,
-            };
-          }
+          // Health data integration removed
+          _healthSummary = null;
         },
         loading: () async {
           await Future.delayed(const Duration(milliseconds: 500));
@@ -176,16 +89,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       if (mounted) {
         setState(() {});
       }
-    }
-  }
-
-  Future<bool> _checkHealthAvailability() async {
-    try {
-      final healthSyncEnabled = await HealthService.isHealthSyncEnabled();
-      if (!healthSyncEnabled) return false;
-      return await HealthService.hasPermissions();
-    } catch (e) {
-      return false;
     }
   }
 
@@ -593,67 +496,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildHealthDataSection(List<Habit> habits) {
-    return FutureBuilder<bool>(
-      future: _checkHealthAvailability(),
-      builder: (context, permissionSnapshot) {
-        if (!permissionSnapshot.hasData || !permissionSnapshot.data!) {
-          return const SizedBox.shrink();
-        }
-
-        return FutureBuilder<HealthHabitAnalyticsReport>(
-          future: HealthHabitAnalyticsService.generateAnalyticsReport(
-            habitService: ref.read(habitServiceProvider).value!,
-          ),
-          builder: (context, analyticsSnapshot) {
-            if (!analyticsSnapshot.hasData ||
-                analyticsSnapshot.data!.hasError) {
-              return const SizedBox.shrink();
-            }
-
-            final report = analyticsSnapshot.data!;
-            return Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.health_and_safety,
-                            color: Theme.of(context).primaryColor),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Health Data Integration',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ...report.overallInsights.take(3).map((insight) =>
-                        _buildInsightTile(insight, Icons.health_and_safety)),
-                    if (report.recommendations.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      const Divider(),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Health-Based Recommendations',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      ...report.recommendations.take(2).map(
-                          (rec) => _buildInsightTile(rec, Icons.lightbulb)),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+    // Health data integration removed
+    return const SizedBox.shrink();
   }
 
   Widget _buildTrendsTab() {
@@ -1987,168 +1831,19 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildEnhancedHealthHub(List<Habit> habits) {
-    return FutureBuilder<bool>(
-      future: _checkHealthAvailability(),
-      builder: (context, snapshot) {
-        final hasPermissions = snapshot.data ?? false;
-
-        if (!hasPermissions) {
-          return _buildHealthPermissionCard();
-        } else {
-          return _buildActiveHealthHubWithGraphs(habits);
-        }
-      },
-    );
+    // Health data integration removed - no longer checking availability or running health processes
+    return const SizedBox.shrink();
   }
 
   Widget _buildHealthPermissionCard() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  theme.colorScheme.surface,
-                  theme.colorScheme.surfaceContainerHighest
-                ]
-              : [Colors.teal.shade50, Colors.blue.shade50],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? theme.colorScheme.outline.withValues(alpha: 0.3)
-              : Colors.teal.shade200,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? theme.colorScheme.primaryContainer
-                    : Colors.teal.shade100,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.health_and_safety,
-                size: 40,
-                color: isDark
-                    ? theme.colorScheme.onPrimaryContainer
-                    : Colors.teal.shade600,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Unlock Deeper Insights into Your Health',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Grant permission to Health Connect / HealthKit to see how your habits impact key metrics like sleep, heart rate, and activity levels.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  final result = await HealthService.requestPermissions();
-                  if (result.granted && mounted) {
-                    setState(() {
-                      _loadGamificationData(); // Reload data after permissions granted
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content:
-                            Text('Health permissions granted successfully!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Health permissions were not granted. Please try again or check your device settings.'),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error requesting permissions: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isDark ? theme.colorScheme.primary : Colors.teal,
-                foregroundColor:
-                    isDark ? theme.colorScheme.onPrimary : Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Grant Health Permissions'),
-            ),
-          ],
-        ),
-      ),
-    );
+    // Health data integration removed
+    return const SizedBox.shrink();
   }
 
   Widget _buildHealthDataPlaceholder() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.grey.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.health_and_safety, size: 48, color: Colors.grey[400]),
-          const SizedBox(height: 12),
-          Text(
-            'Health Data Loading...',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Your health insights will appear here once data is available.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
+    // Health data integration removed
+    return const SizedBox.shrink();
+  }
   }
 
   Widget _buildActiveHealthHubWithGraphs(List<Habit> habits) {

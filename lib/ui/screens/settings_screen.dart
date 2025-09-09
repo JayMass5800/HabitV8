@@ -9,7 +9,6 @@ import 'package:path_provider/path_provider.dart';
 import '../../services/permission_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/theme_service.dart';
-import '../../services/health_service.dart';
 import '../../services/calendar_service.dart';
 import '../../services/calendar_renewal_service.dart';
 
@@ -20,7 +19,6 @@ import '../../services/midnight_habit_reset_service.dart';
 
 import '../../data/database.dart';
 import '../widgets/calendar_selection_dialog.dart';
-import '../widgets/health_education_dialog.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/progressive_disclosure.dart';
 
@@ -93,8 +91,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     try {
       final permissionService = PermissionService();
 
-      final notificationStatus =
-          await permissionService.isNotificationPermissionGranted();
+      final notificationStatus = await permissionService
+          .isNotificationPermissionGranted();
 
       // Check exact alarm permission status
       final exactAlarmStatus =
@@ -114,14 +112,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       // Only check health permissions if user has enabled health sync
       bool hasHealthPermissions = false;
       if (healthSyncPreference) {
-        hasHealthPermissions =
-            await permissionService.isHealthPermissionGranted();
+        hasHealthPermissions = await permissionService
+            .isHealthPermissionGranted();
 
         // If permissions are revoked, automatically disable the preference
         if (!hasHealthPermissions) {
           await _saveHealthSyncPreference(false);
           AppLogger.info(
-              'Health permissions revoked, updating preference to disabled');
+            'Health permissions revoked, updating preference to disabled',
+          );
         }
       }
 
@@ -204,15 +203,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
       // Double-check with permission service for consistency
       final permissionService = PermissionService();
-      final bool permissionServiceCheck =
-          await permissionService.isHealthPermissionGranted();
+      final bool permissionServiceCheck = await permissionService
+          .isHealthPermissionGranted();
 
       // Use the more reliable result (both should agree, but prefer the direct check)
       final bool finalPermissionStatus =
           hasPermissions && permissionServiceCheck;
 
       AppLogger.info(
-          'Health permissions check - HealthService: $hasPermissions, PermissionService: $permissionServiceCheck, Final: $finalPermissionStatus');
+        'Health permissions check - HealthService: $hasPermissions, PermissionService: $permissionServiceCheck, Final: $finalPermissionStatus',
+      );
 
       // Update the UI state if permissions changed
       if (mounted && finalPermissionStatus != _healthDataSync) {
@@ -249,7 +249,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         }
 
         AppLogger.info(
-            'Health permissions status updated: $finalPermissionStatus');
+          'Health permissions status updated: $finalPermissionStatus',
+        );
       } else if (mounted) {
         // Even if state didn't change, show feedback that refresh was performed
         ScaffoldMessenger.of(context).showSnackBar(
@@ -850,7 +851,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         );
       } catch (e) {
         AppLogger.error(
-            'Error removing habits from calendar during sync disable', e);
+          'Error removing habits from calendar during sync disable',
+          e,
+        );
       }
 
       // Save the preference using the service
@@ -860,7 +863,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-                'Calendar sync disabled. All habit events removed from calendar.'),
+              'Calendar sync disabled. All habit events removed from calendar.',
+            ),
             backgroundColor: Colors.grey,
             duration: Duration(seconds: 3),
           ),
@@ -899,8 +903,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       try {
         // First check if permissions are already granted
         final permissionService = PermissionService();
-        bool hasPermissions =
-            await permissionService.isHealthPermissionGranted();
+        bool hasPermissions = await permissionService
+            .isHealthPermissionGranted();
 
         if (hasPermissions) {
           // Permissions already granted, just enable the preference
@@ -1336,8 +1340,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                             ? 'Health permissions granted!'
                             : 'Health permissions denied',
                       ),
-                      backgroundColor:
-                          result.granted ? Colors.green : Colors.red,
+                      backgroundColor: result.granted
+                          ? Colors.green
+                          : Colors.red,
                     ),
                   );
                 }
@@ -1684,7 +1689,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-                'Test notifications sent! Check your notification shade and try the action buttons.'),
+              'Test notifications sent! Check your notification shade and try the action buttons.',
+            ),
             backgroundColor: Colors.blue,
             duration: Duration(seconds: 5),
           ),
@@ -1845,9 +1851,9 @@ class _SettingsSection extends StatelessWidget {
           child: Text(
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         Card(child: Column(children: children)),
