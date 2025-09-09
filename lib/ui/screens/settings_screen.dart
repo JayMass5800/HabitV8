@@ -498,42 +498,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   ),
                 ),
               ],
-              // Additional health settings in advanced section
-              if (_healthDataSync) ...[
-                SmoothTransitions.fadeTransition(
-                  show: _healthDataSync,
-                  child: Column(
-                    children: [
-                      SwitchListTile(
-                        title: const Text('Automatic Habit Completion'),
-                        subtitle: const Text(
-                          'Auto-complete habits based on health data',
-                        ),
-                        value: _autoCompletionEnabled,
-                        onChanged: (value) => _toggleAutoCompletion(value),
-                        secondary: const Icon(Icons.auto_awesome),
-                      ),
-                      if (_autoCompletionEnabled) ...[
-                        const Divider(),
-                        _SettingsTile(
-                          title: 'Automatic Completion Settings',
-                          subtitle:
-                              'Configure smart thresholds and advanced options',
-                          leading: const Icon(Icons.tune),
-                          onTap: () =>
-                              context.push('/automatic-completion-settings'),
-                        ),
-                      ],
-                      _SettingsTile(
-                        title: 'Manage Health Permissions',
-                        subtitle: 'Review and update health data permissions',
-                        leading: const Icon(Icons.security),
-                        onTap: () => _manageHealthPermissions(),
-                      ),
-                    ],
+              // Additional health settings in advanced section (always visible)
+              Column(
+                children: [
+                  SwitchListTile(
+                    title: const Text('Automatic Habit Completion'),
+                    subtitle: Text(
+                      _healthDataSync
+                          ? 'Auto-complete habits based on health data'
+                          : 'Enable Health Data to use auto-completion',
+                    ),
+                    value: _autoCompletionEnabled,
+                    onChanged: _healthDataSync
+                        ? (value) => _toggleAutoCompletion(value)
+                        : null,
+                    secondary: const Icon(Icons.auto_awesome),
                   ),
-                ),
-              ],
+                  const Divider(),
+                  _SettingsTile(
+                    title: 'Automatic Completion Settings',
+                    subtitle: 'Configure smart thresholds and advanced options',
+                    leading: const Icon(Icons.tune),
+                    onTap: _autoCompletionEnabled
+                        ? () => context.push('/automatic-completion-settings')
+                        : null,
+                  ),
+                  _SettingsTile(
+                    title: 'Manage Health Permissions',
+                    subtitle: 'Review and update health data permissions',
+                    leading: const Icon(Icons.security),
+                    onTap: () => _manageHealthPermissions(),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -1050,8 +1047,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       _autoCompletionEnabled = value;
     });
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('auto_completion_enabled', value);
+    // Persist and control the actual service
+    await AutomaticHabitCompletionService.setServiceEnabled(value);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1071,49 +1071,58 @@ class HealthHabitMappingService {
           'Using custom threshold for habit ${habit.name}: $threshold',
         );
       } else {
-        // Determine appropriate threshold based on habit frequency and difficulty
-        thresholdLevel = 'moderate'; // Default
+        // Fallback 1: use habit's targetCount for compatible types (e.g., STEPS)
+        if (bestMatch.key == 'STEPS' && habit.targetCount > 0) {
+          threshold = habit.targetCount.toDouble();
+          thresholdLevel = 'custom';
+          AppLogger.info(
+            'Using habit targetCount for ${habit.name}: $threshold steps',
+          );
+        } else {
+          // Determine appropriate threshold based on habit frequency and difficulty
+          thresholdLevel = 'moderate'; // Default
 
-        if (habit.frequency == HabitFrequency.daily) {
-          thresholdLevel = 'moderate';
-        } else if (habit.frequency == HabitFrequency.weekly) {
-          thresholdLevel = 'active';
-        } else if (habit.frequency == HabitFrequency.monthly) {
-          thresholdLevel = 'very_active';
+          if (habit.frequency == HabitFrequency.daily) {
+            thresholdLevel = 'moderate';
+          } else if (habit.frequency == HabitFrequency.weekly) {
+            thresholdLevel = 'active';
+          } else if (habit.frequency == HabitFrequency.monthly) {
+            thresholdLevel = 'very_active';
+          }
+
+          // Adjust based on habit name patterns
+          if (searchText.contains('recovery') ||
+              searchText.contains('rehab') ||
+              searchText.contains('rehabilitation') ||
+              searchText.contains('medical') ||
+              searchText.contains('therapy') ||
+              searchText.contains('physical therapy') ||
+              searchText.contains('post-surgery') ||
+              searchText.contains('healing') ||
+              searchText.contains('injury') ||
+              searchText.contains('limited mobility') ||
+              searchText.contains('wheelchair') ||
+              searchText.contains('assisted')) {
+            thresholdLevel = 'recovery';
+          } else if (searchText.contains('light') ||
+              searchText.contains('easy') ||
+              searchText.contains('gentle') ||
+              searchText.contains('slow') ||
+              searchText.contains('basic') ||
+              searchText.contains('beginner')) {
+            thresholdLevel = 'minimal';
+          } else if (searchText.contains('intense') ||
+              searchText.contains('hard') ||
+              searchText.contains('vigorous') ||
+              searchText.contains('challenging') ||
+              searchText.contains('advanced') ||
+              searchText.contains('high')) {
+            thresholdLevel = 'very_active';
+          }
+
+          threshold = mapping.thresholds[thresholdLevel] ??
+              mapping.thresholds['moderate']!;
         }
-
-        // Adjust based on habit name patterns
-        if (searchText.contains('recovery') ||
-            searchText.contains('rehab') ||
-            searchText.contains('rehabilitation') ||
-            searchText.contains('medical') ||
-            searchText.contains('therapy') ||
-            searchText.contains('physical therapy') ||
-            searchText.contains('post-surgery') ||
-            searchText.contains('healing') ||
-            searchText.contains('injury') ||
-            searchText.contains('limited mobility') ||
-            searchText.contains('wheelchair') ||
-            searchText.contains('assisted')) {
-          thresholdLevel = 'recovery';
-        } else if (searchText.contains('light') ||
-            searchText.contains('easy') ||
-            searchText.contains('gentle') ||
-            searchText.contains('slow') ||
-            searchText.contains('basic') ||
-            searchText.contains('beginner')) {
-          thresholdLevel = 'minimal';
-        } else if (searchText.contains('intense') ||
-            searchText.contains('hard') ||
-            searchText.contains('vigorous') ||
-            searchText.contains('challenging') ||
-            searchText.contains('advanced') ||
-            searchText.contains('high')) {
-          thresholdLevel = 'very_active';
-        }
-
-        threshold = mapping.thresholds[thresholdLevel] ??
-            mapping.thresholds['moderate']!;
       }
 
       final result = HabitHealthMapping(

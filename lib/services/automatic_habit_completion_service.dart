@@ -172,7 +172,7 @@ class AutomaticHabitCompletionService {
     try {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool(_serviceEnabledKey) ??
-          false; // Default disabled for stability
+          true; // Default enabled so service runs out of the box
     } catch (e) {
       AppLogger.error('Error checking service enabled status', e);
       return false;
@@ -262,7 +262,7 @@ class AutomaticHabitCompletionService {
     try {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool(_realTimeEnabledKey) ??
-          false; // Default disabled for battery
+          false; // Keep default disabled to protect battery
     } catch (e) {
       AppLogger.error('Error checking real-time enabled status', e);
       return false;
