@@ -1195,6 +1195,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     bool dialogShown = false;
 
     try {
+      AppLogger.info('Starting export process for format: $format');
+      
       // Show loading dialog
       if (mounted) {
         showDialog(
@@ -1212,17 +1214,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         );
         dialogShown = true;
+        AppLogger.info('Loading dialog shown');
       }
 
       // Get all habits from database
       final habitService = await ref.read(habitServiceProvider.future);
       final habits = await habitService.getAllHabits();
+      
+      AppLogger.info('Retrieved ${habits.length} habits from database');
 
       if (habits.isEmpty) {
+        AppLogger.info('No habits found, closing dialog and showing message');
         if (mounted && dialogShown) {
           // Safely close dialog
-          if (Navigator.canPop(context)) {
-            Navigator.of(context).pop();
+          try {
+            if (Navigator.canPop(context)) {
+              Navigator.of(context).pop();
+              AppLogger.info('Loading dialog closed successfully');
+            } else {
+              AppLogger.warning('Cannot pop dialog - no route to pop');
+            }
+          } catch (e) {
+            AppLogger.error('Error closing loading dialog', e);
           }
           dialogShown = false;
 
@@ -1238,68 +1251,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       ExportResult? exportResult;
       if (format == 'JSON') {
+        AppLogger.info('Starting JSON export');
         exportResult = await DataExportImportService.exportToJSON(habits);
       } else if (format == 'CSV') {
+        AppLogger.info('Starting CSV export');
         exportResult = await DataExportImportService.exportToCSV(habits);
       }
 
+      AppLogger.info('Export completed with success: ${exportResult?.success}');
+
+      // Always try to close the loading dialog
       if (mounted && dialogShown) {
-        // Safely close dialog
-        if (Navigator.canPop(context)) {
-          Navigator.of(context).pop();
+        AppLogger.info('Attempting to close loading dialog');
+        try {
+          if (Navigator.canPop(context)) {
+            Navigator.of(context).pop();
+            AppLogger.info('Loading dialog closed successfully');
+          } else {
+            AppLogger.warning('Cannot pop dialog - no route to pop');
+          }
+        } catch (e) {
+          AppLogger.error('Error closing loading dialog', e);
         }
         dialogShown = false;
       }
 
-      if (exportResult?.success == true &&
-          exportResult?.filePath != null &&
-          mounted) {
-        // Show success dialog with share option
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Export Successful'),
-            content: Text(
-                'Data exported to $format format.\n\nFile saved to: ${exportResult!.filePath!.split('/').last}'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  if (Navigator.canPop(context)) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: const Text('OK'),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  // Close dialog first, then share
-                  if (Navigator.canPop(context)) {
-                    Navigator.of(context).pop();
-                  }
+      // Add a small delay to ensure dialog is fully closed
+      await Future.delayed(const Duration(milliseconds: 100));
 
-                  // Add a small delay to ensure navigation completes
-                  await Future.delayed(const Duration(milliseconds: 300));
-
-                  // Share file
-                  try {
-                    await DataExportImportService.shareFile(
-                        exportResult!.filePath!, format);
-                  } catch (e) {
-                    AppLogger.error('Error sharing file', e);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content:
-                              Text('Failed to share file: ${e.toString()}'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Share'),
-              ),
-            ],
+      if (exportResult?.success == true && mounted) {
+        AppLogger.info('Export successful, showing success message');
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$format export completed successfully!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
           ),
         );
       } else if (mounted) {
@@ -1327,15 +1314,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
     } catch (e) {
+      AppLogger.error('Export failed with exception', e);
+      
       // Ensure loading dialog is closed on error
       if (mounted && dialogShown) {
+        AppLogger.info('Attempting to close loading dialog after error');
         try {
           if (Navigator.canPop(context)) {
             Navigator.of(context).pop();
+            AppLogger.info('Loading dialog closed after error');
+          } else {
+            AppLogger.warning('Cannot pop dialog after error - no route to pop');
           }
         } catch (navError) {
-          AppLogger.warning('Could not close loading dialog: $navError');
+          AppLogger.error('Could not close loading dialog after error', navError);
         }
+        dialogShown = false;
       }
 
       if (mounted) {
@@ -1346,7 +1340,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         );
       }
-      AppLogger.error('Export failed', e);
     }
   }
 

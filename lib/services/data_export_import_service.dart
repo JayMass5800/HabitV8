@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../domain/model/habit.dart';
@@ -12,7 +11,7 @@ import 'logging_service.dart';
 class DataExportImportService {
   static const String _exportVersion = '1.0.0';
 
-  /// Export data in JSON format
+  /// Export data in JSON format with user-selected save location
   static Future<ExportResult> exportToJSON(List<Habit> habits) async {
     try {
       AppLogger.info('Starting JSON export for ${habits.length} habits');
@@ -35,18 +34,30 @@ class DataExportImportService {
 
       final jsonString = const JsonEncoder.withIndent('  ').convert(exportData);
 
-      // Save to app documents directory
-      final directory = await getApplicationDocumentsDirectory();
+      // Let user choose save location
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'habitv8_export_$timestamp.json';
-      final file = File('${directory.path}/$fileName');
+      
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save HabitV8 Export File',
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        bytes: utf8.encode(jsonString),
+      );
 
-      await file.writeAsString(jsonString);
+      if (result == null) {
+        AppLogger.info('User cancelled file save');
+        return ExportResult(
+          success: false,
+          message: 'Export cancelled by user',
+        );
+      }
 
-      AppLogger.info('JSON export completed: ${file.path}');
+      AppLogger.info('JSON export completed: $result');
       return ExportResult(
         success: true,
-        filePath: file.path,
+        filePath: result,
         message: 'JSON export completed successfully',
       );
     } catch (e) {
@@ -147,18 +158,30 @@ class DataExportImportService {
 
       final csv = const ListToCsvConverter().convert(csvData);
 
-      // Save to app documents directory
-      final directory = await getApplicationDocumentsDirectory();
+      // Let user choose save location
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final fileName = 'habitv8_export_$timestamp.csv';
-      final file = File('${directory.path}/$fileName');
+      
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save HabitV8 Export File',
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        bytes: utf8.encode(csv),
+      );
 
-      await file.writeAsString(csv);
+      if (result == null) {
+        AppLogger.info('User cancelled file save');
+        return ExportResult(
+          success: false,
+          message: 'Export cancelled by user',
+        );
+      }
 
-      AppLogger.info('CSV export completed: ${file.path}');
+      AppLogger.info('CSV export completed: $result');
       return ExportResult(
         success: true,
-        filePath: file.path,
+        filePath: result,
         message: 'CSV export completed successfully',
       );
     } catch (e) {
