@@ -57,7 +57,7 @@ class HabitsState {
 class HabitsNotifier extends StateNotifier<HabitsState> {
   final HabitService _habitService;
   Timer? _refreshTimer;
-  Map<String, int> _habitCompletionsCount = {};
+  final Map<String, int> _habitCompletionsCount = {};
 
   HabitsNotifier(this._habitService)
       : super(HabitsState(

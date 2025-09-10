@@ -285,9 +285,7 @@ class DataExportImportService {
           duplicateCount++;
         } else {
           // Generate new ID to avoid conflicts
-          habit.id = DateTime.now().millisecondsSinceEpoch.toString() +
-              '_' +
-              importedCount.toString();
+          habit.id = '${DateTime.now().millisecondsSinceEpoch}_$importedCount';
           await habitService.addHabit(habit);
           importedCount++;
         }
@@ -394,9 +392,7 @@ class DataExportImportService {
           duplicateCount++;
         } else {
           // Generate new ID to avoid conflicts
-          habit.id = DateTime.now().millisecondsSinceEpoch.toString() +
-              '_' +
-              importedCount.toString();
+          habit.id = '${DateTime.now().millisecondsSinceEpoch}_$importedCount';
           await habitService.addHabit(habit);
           importedCount++;
         }

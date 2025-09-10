@@ -4,8 +4,10 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/insights_service.dart';
+import '../../services/enhanced_insights_service.dart';
 import '../../services/achievements_service.dart';
 import '../widgets/smooth_transitions.dart';
+import 'ai_settings_screen.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
   const InsightsScreen({super.key});
@@ -20,6 +22,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   late AnimationController _slideController;
   late TabController _tabController;
   final InsightsService _insightsService = InsightsService();
+  final EnhancedInsightsService _enhancedInsightsService = EnhancedInsightsService();
 
   @override
   void initState() {
@@ -61,6 +64,19 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AISettingsScreen(),
+                ),
+              );
+            },
+            tooltip: 'AI Settings',
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -801,79 +817,105 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildAIInsights(List<Habit> habits, ThemeData theme) {
-    final insights = _insightsService.generateAIInsights(habits);
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _enhancedInsightsService.generateComprehensiveInsights(habits),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, 0.5),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _slideController,
-        curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
-      )),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        final insights = snapshot.data ?? [];
+
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.5),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: _slideController,
+            curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
+          )),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.secondary,
-                      theme.colorScheme.secondary.withValues(alpha: 0.7),
-                    ],
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.secondary,
+                          theme.colorScheme.secondary.withValues(alpha: 0.7),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.auto_awesome,
+                      color: Colors.white,
+                      size: 24,
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'AI-Powered Insights',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _enhancedInsightsService.isAIAvailable
+                              ? 'AI-Powered Insights'
+                              : 'Smart Insights',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          _enhancedInsightsService.isAIAvailable
+                              ? 'Personalized AI recommendations and discoveries'
+                              : 'Pattern-based insights and recommendations',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'Personalized recommendations and discoveries',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  if (!_enhancedInsightsService.isAIAvailable)
+                    IconButton(
+                      icon: Icon(
+                        Icons.psychology_outlined,
+                        color: theme.colorScheme.primary,
                       ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const AISettingsScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Enable AI Insights',
                     ),
-                  ],
-                ),
+                ],
               ),
+              const SizedBox(height: 24),
+              ...insights.asMap().entries.map((entry) {
+                final index = entry.key;
+                final insight = entry.value;
+
+                return Padding(
+                  padding: EdgeInsets.only(bottom: index < insights.length - 1 ? 16 : 0),
+                  child: SmoothTransitions.slideTransition(
+                    show: true,
+                    duration: Duration(milliseconds: 600 + (index * 200)),
+                    child: _buildInsightCard(insight, theme),
+                  ),
+                );
+              }),
+              if (insights.isEmpty) _buildEmptyInsightsCard(theme),
             ],
           ),
-          const SizedBox(height: 24),
-          ...insights.asMap().entries.map((entry) {
-            final index = entry.key;
-            final insight = entry.value;
-
-            return Padding(
-              padding:
-                  EdgeInsets.only(bottom: index < insights.length - 1 ? 16 : 0),
-              child: SmoothTransitions.slideTransition(
-                show: true,
-                duration: Duration(milliseconds: 600 + (index * 200)),
-                child: _buildInsightCard(insight, theme),
-              ),
-            );
-          }),
-          if (insights.isEmpty) _buildEmptyInsightsCard(theme),
-        ],
-      ),
+        );
+      },
     );
   }
 

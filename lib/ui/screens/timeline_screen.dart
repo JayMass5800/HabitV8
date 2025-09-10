@@ -718,7 +718,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           await habitServiceAsync.value!.updateHabit(habit);
           ref.invalidate(habitsNotifierProvider);
         } else {
-          throw e;
+          rethrow;
         }
       }
 
@@ -864,7 +864,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           await habitServiceAsync.value!.updateHabit(habit);
           ref.invalidate(habitsNotifierProvider);
         } else {
-          throw e;
+          rethrow;
         }
       }
 
