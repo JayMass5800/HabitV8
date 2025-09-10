@@ -26,8 +26,11 @@ class EnhancedInsightsService {
     final ruleBasedInsights = _insightsService.generateAIInsights(habits);
     insights.addAll(ruleBasedInsights);
 
+    // Initialize AI service and check if configured
+    final aiConfigured = await _aiService.isConfiguredAsync;
+
     // Add AI insights if enabled and configured
-    if (useAI && _aiService.isConfigured) {
+    if (useAI && aiConfigured) {
       try {
         List<Map<String, dynamic>> aiInsights;
 
@@ -67,8 +70,14 @@ class EnhancedInsightsService {
   /// Check if AI insights are available
   bool get isAIAvailable => _aiService.isConfigured;
 
+  /// Check if AI insights are available (async version)
+  Future<bool> get isAIAvailableAsync => _aiService.isConfiguredAsync;
+
   /// Get available AI providers
   List<String> get availableAIProviders => _aiService.availableProviders;
+
+  /// Get available AI providers (async version)
+  Future<List<String>> get availableAIProvidersAsync => _aiService.availableProvidersAsync;
 
   /// Generate personalized recommendations based on habit data
   Future<List<Map<String, dynamic>>> generatePersonalizedRecommendations(

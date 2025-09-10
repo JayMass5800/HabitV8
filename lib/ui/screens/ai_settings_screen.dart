@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../services/enhanced_insights_service.dart';
+import '../../services/ai_service.dart';
 
 class AISettingsScreen extends StatefulWidget {
   const AISettingsScreen({super.key});
@@ -15,6 +16,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
   final _geminiKeyController = TextEditingController();
   final _secureStorage = const FlutterSecureStorage();
   final _enhancedInsights = EnhancedInsightsService();
+  final _aiService = AIService();
 
   bool _enableAI = false;
   String _preferredProvider = 'OpenAI';
@@ -64,10 +66,13 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _secureStorage.write(
-          key: 'openai_api_key', value: _openAiKeyController.text.trim());
-      await _secureStorage.write(
-          key: 'gemini_api_key', value: _geminiKeyController.text.trim());
+      // Save API keys using AI service
+      await _aiService.saveApiKeys(
+        openAiKey: _openAiKeyController.text.trim(),
+        geminiKey: _geminiKeyController.text.trim(),
+      );
+
+      // Save other settings to secure storage
       await _secureStorage.write(
           key: 'enable_ai_insights', value: _enableAI.toString());
       await _secureStorage.write(

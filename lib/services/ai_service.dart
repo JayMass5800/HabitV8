@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../domain/model/habit.dart';
 
 /// Service for AI-powered insights using external AI APIs
@@ -10,6 +11,7 @@ class AIService {
   AIService._internal();
 
   final Logger _logger = Logger();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   // Configuration - these should be loaded from secure storage or environment variables
   static const String _openAiApiUrl =
@@ -20,18 +22,73 @@ class AIService {
   // Note: Never hardcode API keys - use secure storage or environment variables
   String? _openAiApiKey;
   String? _geminiApiKey;
+  bool _isInitialized = false;
 
   /// Initialize API keys from secure storage
   Future<void> initializeApiKeys() async {
-    // TODO: Load from secure storage (flutter_secure_storage)
-    // _openAiApiKey = await _secureStorage.read(key: 'openai_api_key');
-    // _geminiApiKey = await _secureStorage.read(key: 'gemini_api_key');
+    if (_isInitialized) return;
+    
+    try {
+      _openAiApiKey = await _secureStorage.read(key: 'openai_api_key');
+      _geminiApiKey = await _secureStorage.read(key: 'gemini_api_key');
+      _isInitialized = true;
+      
+      _logger.i('AI Service initialized - OpenAI: ${_openAiApiKey?.isNotEmpty == true ? "configured" : "not configured"}, '
+                'Gemini: ${_geminiApiKey?.isNotEmpty == true ? "configured" : "not configured"}');
+    } catch (e) {
+      _logger.e('Failed to initialize AI keys from secure storage: $e');
+      _isInitialized = false;
+    }
+  }
+
+  /// Save API keys to secure storage
+  Future<void> saveApiKeys({String? openAiKey, String? geminiKey}) async {
+    try {
+      if (openAiKey != null) {
+        if (openAiKey.isEmpty) {
+          await _secureStorage.delete(key: 'openai_api_key');
+        } else {
+          await _secureStorage.write(key: 'openai_api_key', value: openAiKey);
+        }
+        _openAiApiKey = openAiKey.isEmpty ? null : openAiKey;
+      }
+      
+      if (geminiKey != null) {
+        if (geminiKey.isEmpty) {
+          await _secureStorage.delete(key: 'gemini_api_key');
+        } else {
+          await _secureStorage.write(key: 'gemini_api_key', value: geminiKey);
+        }
+        _geminiApiKey = geminiKey.isEmpty ? null : geminiKey;
+      }
+      
+      _logger.i('API keys saved to secure storage');
+    } catch (e) {
+      _logger.e('Failed to save API keys: $e');
+      throw Exception('Failed to save API keys: $e');
+    }
+  }
+
+  /// Clear all stored API keys
+  Future<void> clearApiKeys() async {
+    try {
+      await _secureStorage.delete(key: 'openai_api_key');
+      await _secureStorage.delete(key: 'gemini_api_key');
+      _openAiApiKey = null;
+      _geminiApiKey = null;
+      _logger.i('All API keys cleared from secure storage');
+    } catch (e) {
+      _logger.e('Failed to clear API keys: $e');
+    }
   }
 
   /// Generate AI-powered insights using OpenAI GPT
   Future<List<Map<String, dynamic>>> generateOpenAIInsights(
       List<Habit> habits) async {
+    await initializeApiKeys(); // Ensure keys are loaded
+    
     if (_openAiApiKey == null || _openAiApiKey!.isEmpty) {
+      _logger.w('OpenAI API key not configured, falling back to rule-based insights');
       return _getFallbackInsights(habits);
     }
 
@@ -78,7 +135,10 @@ class AIService {
   /// Generate AI insights using Google Gemini
   Future<List<Map<String, dynamic>>> generateGeminiInsights(
       List<Habit> habits) async {
+    await initializeApiKeys(); // Ensure keys are loaded
+    
     if (_geminiApiKey == null || _geminiApiKey!.isEmpty) {
+      _logger.w('Gemini API key not configured, falling back to rule-based insights');
       return _getFallbackInsights(habits);
     }
 
@@ -232,7 +292,17 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
   }
 
   /// Check if AI services are configured
-  bool get isConfigured => _openAiApiKey != null || _geminiApiKey != null;
+  bool get isConfigured {
+    // Return true if we have at least one non-empty API key
+    return (_openAiApiKey != null && _openAiApiKey!.isNotEmpty) || 
+           (_geminiApiKey != null && _geminiApiKey!.isNotEmpty);
+  }
+
+  /// Check if AI services are configured (async version that ensures initialization)
+  Future<bool> get isConfiguredAsync async {
+    await initializeApiKeys();
+    return isConfigured;
+  }
 
   /// Get available AI providers
   List<String> get availableProviders {
@@ -244,5 +314,20 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
       providers.add('Gemini');
     }
     return providers;
+  }
+
+  /// Get available AI providers (async version that ensures initialization)
+  Future<List<String>> get availableProvidersAsync async {
+    await initializeApiKeys();
+    return availableProviders;
+  }
+
+  /// Get current API key status for debugging
+  Map<String, bool> get apiKeyStatus {
+    return {
+      'openai_configured': _openAiApiKey != null && _openAiApiKey!.isNotEmpty,
+      'gemini_configured': _geminiApiKey != null && _geminiApiKey!.isNotEmpty,
+      'initialized': _isInitialized,
+    };
   }
 }
