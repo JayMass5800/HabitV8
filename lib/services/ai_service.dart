@@ -27,14 +27,15 @@ class AIService {
   /// Initialize API keys from secure storage
   Future<void> initializeApiKeys() async {
     if (_isInitialized) return;
-    
+
     try {
       _openAiApiKey = await _secureStorage.read(key: 'openai_api_key');
       _geminiApiKey = await _secureStorage.read(key: 'gemini_api_key');
       _isInitialized = true;
-      
-      _logger.i('AI Service initialized - OpenAI: ${_openAiApiKey?.isNotEmpty == true ? "configured" : "not configured"}, '
-                'Gemini: ${_geminiApiKey?.isNotEmpty == true ? "configured" : "not configured"}');
+
+      _logger.i(
+          'AI Service initialized - OpenAI: ${_openAiApiKey?.isNotEmpty == true ? "configured" : "not configured"}, '
+          'Gemini: ${_geminiApiKey?.isNotEmpty == true ? "configured" : "not configured"}');
     } catch (e) {
       _logger.e('Failed to initialize AI keys from secure storage: $e');
       _isInitialized = false;
@@ -52,7 +53,7 @@ class AIService {
         }
         _openAiApiKey = openAiKey.isEmpty ? null : openAiKey;
       }
-      
+
       if (geminiKey != null) {
         if (geminiKey.isEmpty) {
           await _secureStorage.delete(key: 'gemini_api_key');
@@ -61,7 +62,7 @@ class AIService {
         }
         _geminiApiKey = geminiKey.isEmpty ? null : geminiKey;
       }
-      
+
       _logger.i('API keys saved to secure storage');
     } catch (e) {
       _logger.e('Failed to save API keys: $e');
@@ -127,9 +128,10 @@ class AIService {
   Future<List<Map<String, dynamic>>> generateOpenAIInsights(
       List<Habit> habits) async {
     await initializeApiKeys(); // Ensure keys are loaded
-    
+
     if (_openAiApiKey == null || _openAiApiKey!.isEmpty) {
-      _logger.w('OpenAI API key not configured, falling back to rule-based insights');
+      _logger.w(
+          'OpenAI API key not configured, falling back to rule-based insights');
       return _getFallbackInsights(habits);
     }
 
@@ -177,9 +179,10 @@ class AIService {
   Future<List<Map<String, dynamic>>> generateGeminiInsights(
       List<Habit> habits) async {
     await initializeApiKeys(); // Ensure keys are loaded
-    
+
     if (_geminiApiKey == null || _geminiApiKey!.isEmpty) {
-      _logger.w('Gemini API key not configured, falling back to rule-based insights');
+      _logger.w(
+          'Gemini API key not configured, falling back to rule-based insights');
       return _getFallbackInsights(habits);
     }
 
@@ -335,8 +338,8 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
   /// Check if AI services are configured
   bool get isConfigured {
     // Return true if we have at least one non-empty API key
-    return (_openAiApiKey != null && _openAiApiKey!.isNotEmpty) || 
-           (_geminiApiKey != null && _geminiApiKey!.isNotEmpty);
+    return (_openAiApiKey != null && _openAiApiKey!.isNotEmpty) ||
+        (_geminiApiKey != null && _geminiApiKey!.isNotEmpty);
   }
 
   /// Check if AI services are configured (async version that ensures initialization)

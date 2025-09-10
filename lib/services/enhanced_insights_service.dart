@@ -77,7 +77,8 @@ class EnhancedInsightsService {
   List<String> get availableAIProviders => _aiService.availableProviders;
 
   /// Get available AI providers (async version)
-  Future<List<String>> get availableAIProvidersAsync => _aiService.availableProvidersAsync;
+  Future<List<String>> get availableAIProvidersAsync =>
+      _aiService.availableProvidersAsync;
 
   /// Generate personalized recommendations based on habit data
   Future<List<Map<String, dynamic>>> generatePersonalizedRecommendations(

@@ -46,7 +46,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
       // Load API keys using AI service
       final openAiKey = await _aiService.getApiKey('openai') ?? '';
       final geminiKey = await _aiService.getApiKey('gemini') ?? '';
-      
+
       // Load other settings from secure storage
       final enableAI =
           await _secureStorage.read(key: 'enable_ai_insights') == 'true';
