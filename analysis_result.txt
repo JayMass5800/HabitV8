@@ -1,0 +1,25 @@
+Analyzing HabitV8...                                            
+
+warning - The declaration '_getFallbackInsights' isn't referenced - lib\services\ai_service.dart:314:30 - unused_element
+   info - 'Share' is deprecated and shouldn't be used. Use SharePlus instead - lib\services\data_export_import_service.dart:214:28 - deprecated_member_use
+   info - 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead - lib\services\data_export_import_service.dart:214:34 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\ai_settings_screen.dart:88:20 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\screens\settings_screen.dart:295:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\screens\settings_screen.dart:298:60 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:473:67 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\ui\screens\settings_screen.dart:557:30 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\ui\screens\settings_screen.dart:809:37 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\ui\screens\settings_screen.dart:809:52 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:834:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:835:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:876:48 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:877:43 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:884:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:885:39 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\ui\screens\timeline_screen.dart:56:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\ui\screens\timeline_screen.dart:67:44 - use_build_context_synchronously
+   info - Use a 'SizedBox' to add whitespace to a layout - lib\ui\widgets\ai_insights_onboarding.dart:93:14 - sized_box_for_whitespace
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\widgets\settings_tile.dart:37:64 - deprecated_member_use
+warning - The value of the local variable 'statusBefore' isn't used - test\resource_cleanup_test.dart:31:13 - unused_local_variable
+
+21 issues found. (ran in 2.7s)
