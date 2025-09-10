@@ -1220,7 +1220,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       if (habits.isEmpty) {
         if (mounted && dialogShown) {
-          Navigator.of(context).pop(); // Close loading dialog
+          // Safely close dialog
+          if (Navigator.canPop(context)) {
+            Navigator.of(context).pop();
+          }
           dialogShown = false;
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1241,7 +1244,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
 
       if (mounted && dialogShown) {
-        Navigator.of(context).pop(); // Close loading dialog
+        // Safely close dialog
+        if (Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+        }
         dialogShown = false;
       }
 
@@ -1258,14 +1264,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  if (Navigator.canPop(context)) {
+                    Navigator.of(context).pop();
+                  }
                 },
                 child: const Text('OK'),
               ),
               FilledButton(
                 onPressed: () async {
                   // Close dialog first, then share
-                  Navigator.of(context).pop();
+                  if (Navigator.canPop(context)) {
+                    Navigator.of(context).pop();
+                  }
 
                   // Add a small delay to ensure navigation completes
                   await Future.delayed(const Duration(milliseconds: 300));
@@ -1320,7 +1330,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Ensure loading dialog is closed on error
       if (mounted && dialogShown) {
         try {
-          Navigator.of(context).pop();
+          if (Navigator.canPop(context)) {
+            Navigator.of(context).pop();
+          }
         } catch (navError) {
           AppLogger.warning('Could not close loading dialog: $navError');
         }
