@@ -34,17 +34,17 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  flutter_local_notifications: ^17.2.3
+  flutter_local_notifications: ^18.0.1
   permission_handler: ^12.0.1
   device_info_plus: ^11.5.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  flutter_riverpod: ^2.5.1
+  flutter_riverpod: ^3.0.0
   provider: ^6.1.2
   go_router: ^16.1.0
   # health: ^13.1.1  # REMOVED - causes Google Play Console issues
   # Using custom minimal health implementation instead
-  fl_chart: ^0.69.0  # Using stable version compatible with current Flutter
+  fl_chart: ^1.1.0  # Using stable version compatible with current Flutter
   tflite_flutter: ^0.11.0
   path_provider: ^2.1.3
   flutter_launcher_icons: ^0.14.4
@@ -63,8 +63,8 @@ dependencies:
   
   # Data export/import dependencies
   csv: ^6.0.0 # For CSV export/import functionality
-  file_picker: ^8.1.2 # For file selection during import
-  share_plus: ^10.1.1 # For sharing exported files
+  file_picker: ^10.3.2 # For file selection during import
+  share_plus: ^11.1.0 # For sharing exported files
 
   # AI Integration dependencies
   http: ^1.1.0 # For API calls to AI services

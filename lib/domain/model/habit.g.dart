@@ -40,6 +40,7 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..selectedMonthDays = (fields[20] as List).cast<int>()
       ..hourlyTimes = (fields[21] as List).cast<String>()
       ..selectedYearlyDates = (fields[22] as List).cast<String>()
+      ..singleDateTime = fields[26] as DateTime?
       ..alarmEnabled = fields[23] as bool
       ..alarmSoundName = fields[24] as String?
       ..snoozeDelayMinutes = fields[25] as int;
@@ -48,7 +49,7 @@ class HabitAdapter extends TypeAdapter<Habit> {
   @override
   void write(BinaryWriter writer, Habit obj) {
     writer
-      ..writeByte(26)
+      ..writeByte(27)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -95,6 +96,8 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..write(obj.hourlyTimes)
       ..writeByte(22)
       ..write(obj.selectedYearlyDates)
+      ..writeByte(26)
+      ..write(obj.singleDateTime)
       ..writeByte(23)
       ..write(obj.alarmEnabled)
       ..writeByte(24)
@@ -131,6 +134,8 @@ class HabitFrequencyAdapter extends TypeAdapter<HabitFrequency> {
         return HabitFrequency.monthly;
       case 4:
         return HabitFrequency.yearly;
+      case 5:
+        return HabitFrequency.single;
       default:
         return HabitFrequency.hourly;
     }
@@ -153,6 +158,9 @@ class HabitFrequencyAdapter extends TypeAdapter<HabitFrequency> {
         break;
       case HabitFrequency.yearly:
         writer.writeByte(4);
+        break;
+      case HabitFrequency.single:
+        writer.writeByte(5);
         break;
     }
   }

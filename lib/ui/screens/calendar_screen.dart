@@ -156,6 +156,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           }
           return false;
         });
+
+      case HabitFrequency.single:
+        // Single habits only appear on their specific date
+        if (habit.singleDateTime == null) return false;
+        final singleDate = habit.singleDateTime!;
+        return checkDate.year == singleDate.year &&
+               checkDate.month == singleDate.month &&
+               checkDate.day == singleDate.day;
     }
   }
 

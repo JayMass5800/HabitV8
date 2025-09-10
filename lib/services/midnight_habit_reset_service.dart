@@ -158,6 +158,10 @@ class MidnightHabitResetService {
       case HabitFrequency.hourly:
         // Hourly habits don't need midnight reset, they reset every hour
         return false;
+
+      case HabitFrequency.single:
+        // Single habits don't need midnight reset, they only fire once
+        return false;
     }
   }
 

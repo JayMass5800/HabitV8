@@ -541,6 +541,14 @@ class InsightsService {
             : 7;
         final weeksInPeriod = (days / 7).ceil();
         return habit.hourlyTimes.length * scheduledDays * weeksInPeriod;
+      case HabitFrequency.single:
+        // Single habits can only be completed once, so check if the period contains the target date
+        if (habit.singleDateTime == null) return 0;
+        final targetDate = habit.singleDateTime!;
+        return (targetDate.isAfter(start.subtract(const Duration(days: 1))) &&
+                targetDate.isBefore(end.add(const Duration(days: 1))))
+            ? 1
+            : 0;
     }
   }
 

@@ -1354,6 +1354,20 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       return;
     }
 
+    if (_selectedFrequency == HabitFrequency.single &&
+        _singleDateTime == null) {
+      setState(() {
+        _isSaving = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a date and time for single habits'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Only require notification time for non-hourly habits
     if (_notificationsEnabled &&
         _selectedFrequency != HabitFrequency.hourly &&
@@ -1412,6 +1426,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           .map((date) =>
               '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}')
           .toList();
+
+      // Save single datetime
+      widget.habit.singleDateTime = _singleDateTime;
 
       // Save alarm settings
       widget.habit.alarmEnabled = _alarmEnabled;
@@ -1516,5 +1533,203 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     } catch (e) {
       // Error scheduling notifications/alarms
     }
+  }
+
+  // Helper method for selecting single date/time
+  Future<void> _selectSingleDateTime() async {
+    // First select date
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _singleDateTime ?? DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)), // 5 years into future
+      helpText: 'Select the date for this habit',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            datePickerTheme: DatePickerThemeData(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              headerBackgroundColor: _selectedColor,
+              headerForegroundColor: Colors.white,
+              dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return Colors.white;
+                }
+                return Theme.of(context).colorScheme.onSurface;
+              }),
+              dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return _selectedColor;
+                }
+                return null;
+              }),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate == null) return;
+
+    if (!mounted) return;
+
+    // Then select time
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _singleDateTime != null 
+          ? TimeOfDay.fromDateTime(_singleDateTime!) 
+          : const TimeOfDay(hour: 9, minute: 0),
+      helpText: 'Select the time for this habit',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              hourMinuteTextColor: Theme.of(context).colorScheme.onSurface,
+              dayPeriodTextColor: Theme.of(context).colorScheme.onSurface,
+              dialHandColor: _selectedColor,
+              dialTextColor: Theme.of(context).colorScheme.onSurface,
+              entryModeIconColor: Theme.of(context).colorScheme.onSurface,
+              helpTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedTime != null && mounted) {
+      setState(() {
+        _singleDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+      });
+    }
+  }
+
+  // Build single date/time selector for one-off habits
+  Widget _buildSingleDateTimeSelector() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_singleDateTime == null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.event_available,
+                      color: Colors.grey.shade600,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No date and time selected',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _selectSingleDateTime,
+                      icon: const Icon(Icons.calendar_today),
+                      label: const Text('Select Date & Time'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _selectedColor,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _selectedColor.withValues(alpha: 0.1),
+                  border: Border.all(color: _selectedColor),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.event_available,
+                      color: _selectedColor,
+                      size: 32,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Selected Date & Time',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedColor,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_getMonthName(_singleDateTime!.month)} ${_singleDateTime!.day}, ${_singleDateTime!.year}',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                    Text(
+                      TimeOfDay.fromDateTime(_singleDateTime!).format(context),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: _selectedColor,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _selectSingleDateTime,
+                          icon: const Icon(Icons.edit),
+                          label: const Text('Change'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedColor,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _singleDateTime = null;
+                            });
+                          },
+                          icon: const Icon(Icons.clear),
+                          label: const Text('Clear'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }

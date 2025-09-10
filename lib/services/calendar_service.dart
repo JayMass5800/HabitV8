@@ -216,6 +216,12 @@ class CalendarService {
           }
           return false;
         });
+      case HabitFrequency.single:
+        if (habit.singleDateTime == null) return false;
+        final singleDate = habit.singleDateTime!;
+        return singleDate.year == date.year &&
+               singleDate.month == date.month &&
+               singleDate.day == date.day;
     }
   }
 
