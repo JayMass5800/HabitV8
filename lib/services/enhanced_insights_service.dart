@@ -33,12 +33,38 @@ class EnhancedInsightsService {
     if (useAI && aiConfigured) {
       try {
         List<Map<String, dynamic>> aiInsights;
+        final availableProviders = await _aiService.availableProvidersAsync;
 
-        if (preferredAIProvider?.toLowerCase() == 'gemini') {
+        _logger.i(
+            'AI insights requested - Preferred: $preferredAIProvider, Available: $availableProviders');
+
+        // Try preferred provider first, then fallback to any available provider
+        if (preferredAIProvider?.toLowerCase() == 'gemini' &&
+            availableProviders.contains('Gemini')) {
+          _logger.i('Using preferred Gemini provider');
+          aiInsights = await _aiService.generateGeminiInsights(habits);
+        } else if (preferredAIProvider?.toLowerCase() == 'openai' &&
+            availableProviders.contains('OpenAI')) {
+          _logger.i('Using preferred OpenAI provider');
+          aiInsights = await _aiService.generateOpenAIInsights(habits);
+        } else if (availableProviders.contains('OpenAI')) {
+          // Fallback to OpenAI if available
+          _logger.i(
+              'Preferred provider $preferredAIProvider not available, falling back to OpenAI');
+          aiInsights = await _aiService.generateOpenAIInsights(habits);
+        } else if (availableProviders.contains('Gemini')) {
+          // Fallback to Gemini if available
+          _logger.i(
+              'Preferred provider $preferredAIProvider not available, falling back to Gemini');
           aiInsights = await _aiService.generateGeminiInsights(habits);
         } else {
-          aiInsights = await _aiService.generateOpenAIInsights(habits);
+          // No providers available, this shouldn't happen given aiConfigured check
+          _logger
+              .w('No AI providers available despite aiConfigured being true');
+          aiInsights = [];
         }
+
+        _logger.i('Generated ${aiInsights.length} AI insights');
 
         // Merge AI insights with rule-based ones, avoiding duplicates
         for (final aiInsight in aiInsights) {

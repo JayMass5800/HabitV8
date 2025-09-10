@@ -130,9 +130,8 @@ class AIService {
     await initializeApiKeys(); // Ensure keys are loaded
 
     if (_openAiApiKey == null || _openAiApiKey!.isEmpty) {
-      _logger.w(
-          'OpenAI API key not configured, falling back to rule-based insights');
-      return _getFallbackInsights(habits);
+      _logger.w('OpenAI API key not configured, cannot generate insights');
+      return [];
     }
 
     try {
@@ -167,12 +166,14 @@ class AIService {
         final data = jsonDecode(response.body);
         final content = data['choices'][0]['message']['content'];
         return _parseAIResponse(content);
+      } else {
+        _logger.w('OpenAI API returned status ${response.statusCode}');
       }
     } catch (e) {
       _logger.e('OpenAI API error: $e');
     }
 
-    return _getFallbackInsights(habits);
+    return [];
   }
 
   /// Generate AI insights using Google Gemini
@@ -181,9 +182,8 @@ class AIService {
     await initializeApiKeys(); // Ensure keys are loaded
 
     if (_geminiApiKey == null || _geminiApiKey!.isEmpty) {
-      _logger.w(
-          'Gemini API key not configured, falling back to rule-based insights');
-      return _getFallbackInsights(habits);
+      _logger.w('Gemini API key not configured, cannot generate insights');
+      return [];
     }
 
     try {
@@ -222,12 +222,14 @@ Please provide insights in this JSON format:
         final data = jsonDecode(response.body);
         final content = data['candidates'][0]['content']['parts'][0]['text'];
         return _parseAIResponse(content);
+      } else {
+        _logger.w('Gemini API returned status ${response.statusCode}');
       }
     } catch (e) {
       _logger.e('Gemini API error: $e');
     }
 
-    return _getFallbackInsights(habits);
+    return [];
   }
 
   /// Generate habit summary for AI analysis

@@ -1197,7 +1197,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     try {
       AppLogger.info('Starting export process for format: $format');
-      
+
       // Show loading overlay instead of dialog to avoid navigation conflicts
       if (mounted) {
         loadingOverlay = OverlayEntry(
@@ -1212,7 +1212,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       const CircularProgressIndicator(),
                       const SizedBox(width: 16),
-                      Text('Exporting data...', style: Theme.of(context).textTheme.bodyLarge),
+                      Text('Exporting data...',
+                          style: Theme.of(context).textTheme.bodyLarge),
                     ],
                   ),
                 ),
@@ -1228,7 +1229,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Get all habits from database
       final habitService = await ref.read(habitServiceProvider.future);
       final habits = await habitService.getAllHabits();
-      
+
       AppLogger.info('Retrieved ${habits.length} habits from database');
 
       if (habits.isEmpty) {
@@ -1318,7 +1319,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
     } catch (e) {
       AppLogger.error('Export failed with exception', e);
-      
+
       // Ensure loading overlay is closed on error
       if (mounted && dialogShown && loadingOverlay != null) {
         AppLogger.info('Attempting to close loading overlay after error');
@@ -1326,7 +1327,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           loadingOverlay.remove();
           AppLogger.info('Loading overlay closed after error');
         } catch (overlayError) {
-          AppLogger.error('Could not close loading overlay after error', overlayError);
+          AppLogger.error(
+              'Could not close loading overlay after error', overlayError);
         }
         dialogShown = false;
       }
@@ -1344,24 +1346,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _importData(String format) async {
     try {
-      // Show loading dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 16),
-                Text('Importing data...'),
-              ],
-            ),
-          ),
-        );
-      }
-
       ImportResult result;
       if (format == 'JSON') {
         result = await DataExportImportService.importFromJSON();
@@ -1374,11 +1358,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
 
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-      }
-
-      if (mounted) {
+      // Show result dialog only if there's something meaningful to show
+      if (mounted && result.message != 'No file selected') {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -1410,7 +1391,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog if still open
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Import error: ${e.toString()}'),
