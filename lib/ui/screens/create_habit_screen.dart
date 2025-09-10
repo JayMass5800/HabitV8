@@ -43,6 +43,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       {}; // New: Selected dates for yearly habits
   DateTime _focusedMonth = DateTime.now(); // New: For calendar navigation
 
+  // Single habit date/time
+  DateTime? _singleDateTime;
+
   // Health integration fields
   final bool _enableHealthIntegration = false;
   String? _selectedHealthDataType;
@@ -436,6 +439,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                         _selectedMonthDays.clear();
                         _hourlyTimes.clear();
                         _selectedYearlyDates.clear();
+                        _singleDateTime = null;
                       });
                     }
                   },
@@ -497,6 +501,18 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               ),
               const SizedBox(height: 8),
               _buildYearlyCalendarSelector(),
+            ],
+            // Single Habit - One-time date and time picker
+            if (_selectedFrequency == HabitFrequency.single) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Select the date and time for this one-time habit:',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              _buildSingleDateTimeSelector(),
             ],
             const SizedBox(height: 16),
             // Remove the target count section completely
@@ -904,6 +920,204 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         date1.day == date2.day;
   }
 
+  // Build single date/time selector for one-off habits
+  Widget _buildSingleDateTimeSelector() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_singleDateTime == null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.event_available,
+                      color: Colors.grey.shade600,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No date and time selected',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _selectSingleDateTime,
+                      icon: const Icon(Icons.calendar_today),
+                      label: const Text('Select Date & Time'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _selectedColor,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _selectedColor.withValues(alpha: 0.1),
+                  border: Border.all(color: _selectedColor),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.event_available,
+                      color: _selectedColor,
+                      size: 32,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Selected Date & Time',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: _selectedColor,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_getMonthName(_singleDateTime!.month)} ${_singleDateTime!.day}, ${_singleDateTime!.year}',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                    Text(
+                      TimeOfDay.fromDateTime(_singleDateTime!).format(context),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: _selectedColor,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _selectSingleDateTime,
+                          icon: const Icon(Icons.edit),
+                          label: const Text('Change'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedColor,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _singleDateTime = null;
+                            });
+                          },
+                          icon: const Icon(Icons.clear),
+                          label: const Text('Clear'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper method for selecting single date/time
+  Future<void> _selectSingleDateTime() async {
+    // First select date
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _singleDateTime ?? DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)), // 5 years into future
+      helpText: 'Select the date for this habit',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            datePickerTheme: DatePickerThemeData(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              headerBackgroundColor: _selectedColor,
+              headerForegroundColor: Colors.white,
+              dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return Colors.white;
+                }
+                return Theme.of(context).colorScheme.onSurface;
+              }),
+              dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return _selectedColor;
+                }
+                return null;
+              }),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate == null) return;
+
+    if (!mounted) return;
+
+    // Then select time
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _singleDateTime != null 
+          ? TimeOfDay.fromDateTime(_singleDateTime!) 
+          : const TimeOfDay(hour: 9, minute: 0),
+      helpText: 'Select the time for this habit',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              hourMinuteTextColor: Theme.of(context).colorScheme.onSurface,
+              dayPeriodTextColor: Theme.of(context).colorScheme.onSurface,
+              dialHandColor: _selectedColor,
+              dialTextColor: Theme.of(context).colorScheme.onSurface,
+              entryModeIconColor: Theme.of(context).colorScheme.onSurface,
+              helpTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedTime != null && mounted) {
+      setState(() {
+        _singleDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+      });
+    }
+  }
+
   // Helper method for adding hourly times
   Future<void> _addHourlyTime() async {
     final TimeOfDay? picked = await showTimePicker(
@@ -1072,9 +1286,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 });
               },
             ),
-            // Show time picker for non-hourly habits when notifications OR alarms are enabled
+            // Show time picker for non-hourly, non-single habits when notifications OR alarms are enabled
             if ((_notificationsEnabled || _alarmEnabled) &&
-                _selectedFrequency != HabitFrequency.hourly) ...[
+                _selectedFrequency != HabitFrequency.hourly &&
+                _selectedFrequency != HabitFrequency.single) ...[
               const SizedBox(height: 8),
               ListTile(
                 title: Text(_alarmEnabled ? 'Alarm Time' : 'Notification Time'),
@@ -1107,6 +1322,35 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                     Expanded(
                       child: Text(
                         'Hourly habits will send notifications every hour during your active hours (8 AM - 10 PM)',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(color: _selectedColor),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            // Show info for single habits
+            if ((_notificationsEnabled || _alarmEnabled) &&
+                _selectedFrequency == HabitFrequency.single) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _selectedColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _selectedColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: _selectedColor, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Single habits will send a notification/alarm at the exact date and time you selected above',
                         style: Theme.of(
                           context,
                         ).textTheme.bodySmall?.copyWith(color: _selectedColor),
@@ -1205,6 +1449,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return 'Monthly';
       case HabitFrequency.yearly:
         return 'Yearly';
+      case HabitFrequency.single:
+        return 'Single';
     }
   }
 
@@ -1426,6 +1672,20 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return;
       }
 
+      if (_selectedFrequency == HabitFrequency.single &&
+          _singleDateTime == null) {
+        setState(() {
+          _isSaving = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a date and time for this single habit'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       if (_selectedFrequency == HabitFrequency.hourly && _hourlyTimes.isEmpty) {
         setState(() {
           _isSaving = false;
@@ -1457,9 +1717,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return;
       }
 
-      // Validate time for non-hourly habits when notifications or alarms are enabled
+      // Validate time for non-hourly, non-single habits when notifications or alarms are enabled
       if ((_notificationsEnabled || _alarmEnabled) &&
           _selectedFrequency != HabitFrequency.hourly &&
+          _selectedFrequency != HabitFrequency.single &&
           _notificationTime == null) {
         setState(() {
           _isSaving = false;
@@ -1531,6 +1792,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                   '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
             )
             .toList(),
+        singleDateTime: _singleDateTime,
         alarmEnabled: _alarmEnabled,
         alarmSoundName: _selectedAlarmSoundName,
       );

@@ -233,19 +233,12 @@ class DataExportImportService {
     try {
       AppLogger.info('Starting JSON import process');
 
-      // Request storage permission
-      if (!await _requestStoragePermission()) {
-        return ImportResult(
-          success: false,
-          message: 'Storage permission required for importing files',
-        );
-      }
-
-      // Pick file
+      // Pick file directly - no permissions needed for reading via system picker
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
         allowMultiple: false,
+        dialogTitle: 'Select HabitV8 JSON Export File',
       );
 
       if (result == null || result.files.isEmpty) {
@@ -256,16 +249,21 @@ class DataExportImportService {
         );
       }
 
-      final filePath = result.files.first.path;
-      if (filePath == null) {
+      final file = result.files.first;
+      String jsonString;
+
+      // Use bytes if path is null (web/some platforms)
+      if (file.path != null) {
+        final fileObj = File(file.path!);
+        jsonString = await fileObj.readAsString();
+      } else if (file.bytes != null) {
+        jsonString = utf8.decode(file.bytes!);
+      } else {
         return ImportResult(
           success: false,
-          message: 'Invalid file path',
+          message: 'Unable to read file content',
         );
       }
-
-      final file = File(filePath);
-      final jsonString = await file.readAsString();
       final jsonData = jsonDecode(jsonString);
 
       // Validate JSON structure
@@ -340,19 +338,12 @@ class DataExportImportService {
     try {
       AppLogger.info('Starting CSV import process');
 
-      // Request storage permission
-      if (!await _requestStoragePermission()) {
-        return ImportResult(
-          success: false,
-          message: 'Storage permission required for importing files',
-        );
-      }
-
-      // Pick file
+      // Pick file directly - no permissions needed for reading via system picker
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['csv'],
         allowMultiple: false,
+        dialogTitle: 'Select HabitV8 CSV Export File',
       );
 
       if (result == null || result.files.isEmpty) {
@@ -363,16 +354,21 @@ class DataExportImportService {
         );
       }
 
-      final filePath = result.files.first.path;
-      if (filePath == null) {
+      final file = result.files.first;
+      String csvString;
+
+      // Use bytes if path is null (web/some platforms)
+      if (file.path != null) {
+        final fileObj = File(file.path!);
+        csvString = await fileObj.readAsString();
+      } else if (file.bytes != null) {
+        csvString = utf8.decode(file.bytes!);
+      } else {
         return ImportResult(
           success: false,
-          message: 'Invalid file path',
+          message: 'Unable to read file content',
         );
       }
-
-      final file = File(filePath);
-      final csvString = await file.readAsString();
       final csvData = const CsvToListConverter().convert(csvString);
 
       if (csvData.length < 2) {

@@ -134,6 +134,10 @@ class HabitStatsService {
       case HabitFrequency.yearly:
         expectedCompletions = (days / 365).ceil();
         break;
+      case HabitFrequency.single:
+        // Single habits can only be completed once
+        expectedCompletions = 1;
+        break;
     }
 
     return (recentCompletions / math.max(expectedCompletions, 1)).clamp(

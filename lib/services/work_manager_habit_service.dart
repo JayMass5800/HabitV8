@@ -317,9 +317,9 @@ class WorkManagerHabitService {
       return;
     }
 
-    // For non-hourly habits, require notification time
+    // For non-hourly, non-single habits, require notification time
     final frequency = habit.frequency.toString().split('.').last;
-    if (frequency != 'hourly' && habit.notificationTime == null) {
+    if (frequency != 'hourly' && frequency != 'single' && habit.notificationTime == null) {
       return;
     }
 
@@ -335,6 +335,9 @@ class WorkManagerHabitService {
         break;
       case 'yearly':
         await _scheduleYearlyContinuous(habit);
+        break;
+      case 'single':
+        await _scheduleSingleContinuous(habit);
         break;
       case 'hourly':
         await _scheduleHourlyContinuous(habit);
@@ -569,6 +572,31 @@ class WorkManagerHabitService {
 
     AppLogger.debug(
         '📅 Scheduled $scheduledCount hourly notifications for ${habit.name}');
+  }
+
+  /// Schedule single habit notifications (one-time notification)
+  static Future<void> _scheduleSingleContinuous(dynamic habit) async {
+    final singleDateTime = habit.singleDateTime;
+    if (singleDateTime == null) return;
+
+    final now = DateTime.now();
+
+    // Only schedule if the single date/time is in the future
+    if (singleDateTime.isAfter(now)) {
+      final id = NotificationService.generateSafeId('${habit.id}_single');
+
+      await NotificationService.scheduleNotification(
+        id: id,
+        title: '🎯 ${habit.name}',
+        body: 'Time to complete your one-time habit!',
+        scheduledTime: singleDateTime,
+        payload: _createNotificationPayload(habit.id, 'single'),
+      );
+
+      AppLogger.debug('📅 Scheduled single notification for ${habit.name} at $singleDateTime');
+    } else {
+      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
+    }
   }
 
   /// Create notification payload

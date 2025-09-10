@@ -382,6 +382,8 @@ class NotificationActionService {
         return 'for this month';
       case HabitFrequency.yearly:
         return 'for this year';
+      case HabitFrequency.single:
+        return 'permanently';
     }
   }
 

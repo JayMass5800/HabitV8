@@ -491,6 +491,11 @@ class HabitService {
               completion.isBefore(yearEnd.add(const Duration(seconds: 1)));
         });
         break;
+
+      case HabitFrequency.single:
+        // For single habits, prevent any duplicates (can only be completed once)
+        alreadyCompleted = habit.completions.isNotEmpty;
+        break;
     }
 
     if (!alreadyCompleted) {
@@ -720,6 +725,10 @@ class HabitService {
               ) &&
               completion.isBefore(yearEnd.add(const Duration(seconds: 1)));
         });
+
+      case HabitFrequency.single:
+        // Single habits can only be completed once - check if already completed
+        return habit.completions.isNotEmpty;
     }
   }
 

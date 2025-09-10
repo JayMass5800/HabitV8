@@ -75,6 +75,10 @@ class Habit extends HiveObject {
   @HiveField(22)
   List<String> selectedYearlyDates = []; // Store as string format "yyyy-MM-dd"
 
+  // Single habit date/time - stores the exact date and time for one-off habits
+  @HiveField(26)
+  DateTime? singleDateTime;
+
   // Alarm-specific fields
   @HiveField(23)
   bool alarmEnabled = false;
@@ -106,6 +110,7 @@ class Habit extends HiveObject {
     this.selectedMonthDays = const [],
     this.hourlyTimes = const [],
     this.selectedYearlyDates = const [],
+    this.singleDateTime,
     this.alarmEnabled = false,
     this.alarmSoundName,
     this.snoozeDelayMinutes = 10,
@@ -261,6 +266,10 @@ class Habit extends HiveObject {
               ) &&
               completion.isBefore(yearEnd.add(const Duration(seconds: 1)));
         });
+
+      case HabitFrequency.single:
+        // Check if completed (single habits can only be completed once)
+        return completions.isNotEmpty;
     }
   }
 
@@ -277,6 +286,8 @@ class Habit extends HiveObject {
         return '${date.year}-${date.month}';
       case HabitFrequency.yearly:
         return '${date.year}';
+      case HabitFrequency.single:
+        return 'single-${singleDateTime?.millisecondsSinceEpoch ?? 'no-date'}';
     }
   }
 
@@ -348,6 +359,9 @@ class Habit extends HiveObject {
           lastCompletion.month,
           lastCompletion.day,
         );
+      case HabitFrequency.single:
+        // Single habits don't repeat, so return null to indicate no next completion
+        return null;
     }
   }
 
@@ -413,6 +427,7 @@ class Habit extends HiveObject {
       'selectedMonthDays': selectedMonthDays,
       'hourlyTimes': hourlyTimes,
       'selectedYearlyDates': selectedYearlyDates,
+      'singleDateTime': singleDateTime?.toIso8601String(),
       'alarmEnabled': alarmEnabled,
       'alarmSoundName': alarmSoundName,
       'snoozeDelayMinutes': snoozeDelayMinutes,
@@ -432,6 +447,8 @@ enum HabitFrequency {
   monthly,
   @HiveField(4)
   yearly,
+  @HiveField(5)
+  single,
 }
 
 @HiveType(typeId: 2)

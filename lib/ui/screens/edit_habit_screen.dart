@@ -43,6 +43,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   // Calendar-related state variables
   DateTime _focusedMonth = DateTime.now(); // For calendar navigation
   final List<DateTime> _selectedYearlyDates = []; // For yearly habits
+  DateTime? _singleDateTime; // For single habits
 
   // Comprehensive categories from the category suggestion service
   List<String> get _categories {
@@ -121,6 +122,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         }
       }
     }
+
+    // Initialize single datetime from existing habit data
+    _singleDateTime = widget.habit.singleDateTime;
 
     // Add listeners to text controllers for category suggestions
     _nameController.addListener(_onHabitTextChanged);
@@ -437,6 +441,17 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               ),
               const SizedBox(height: 8),
               _buildYearlyCalendarSelector(),
+            ],
+            if (_selectedFrequency == HabitFrequency.single) ...[
+              const SizedBox(height: 16),
+              Text(
+                'Select Date and Time',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              _buildSingleDateTimeSelector(),
             ],
           ],
         ),
@@ -1126,6 +1141,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         return 'Monthly';
       case HabitFrequency.yearly:
         return 'Yearly';
+      case HabitFrequency.single:
+        return 'Single';
     }
   }
 
@@ -1473,6 +1490,10 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           break;
 
         case HabitFrequency.yearly:
+          await NotificationService.cancelNotification(_originalHashCode);
+          break;
+
+        case HabitFrequency.single:
           await NotificationService.cancelNotification(_originalHashCode);
           break;
       }

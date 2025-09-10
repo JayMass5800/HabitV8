@@ -205,6 +205,9 @@ class MidnightHabitResetService {
         case HabitFrequency.hourly:
           await _scheduleHourlyNotifications(habit);
           break;
+        case HabitFrequency.single:
+          await _scheduleSingleNotifications(habit);
+          break;
       }
 
       AppLogger.debug('📅 Scheduled notifications for habit: ${habit.name}');
@@ -390,6 +393,25 @@ class MidnightHabitResetService {
         body: 'Time for your hourly habit!',
         scheduledTime: scheduledTime,
         payload: 'habit_${habit.id}_hourly',
+      );
+    }
+  }
+
+  /// Schedule single habit notifications
+  static Future<void> _scheduleSingleNotifications(Habit habit) async {
+    final singleDateTime = habit.singleDateTime;
+    if (singleDateTime == null) return;
+
+    final now = DateTime.now();
+
+    // Only schedule if the single date/time is in the future
+    if (singleDateTime.isAfter(now)) {
+      await NotificationService.scheduleNotification(
+        id: NotificationService.generateSafeId('${habit.id}_single'),
+        title: '🎯 ${habit.name}',
+        body: 'Time to complete your one-time habit!',
+        scheduledTime: singleDateTime,
+        payload: 'habit_${habit.id}_single',
       );
     }
   }

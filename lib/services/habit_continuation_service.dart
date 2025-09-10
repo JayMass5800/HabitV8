@@ -190,6 +190,9 @@ class HabitContinuationService {
         case HabitFrequency.yearly:
           await _scheduleYearlyNotificationsContinuous(habit);
           break;
+        case HabitFrequency.single:
+          await _scheduleSingleNotificationsContinuous(habit);
+          break;
       }
 
       AppLogger.debug('✅ Renewed notifications for habit: ${habit.name}');
@@ -224,6 +227,9 @@ class HabitContinuationService {
           break;
         case HabitFrequency.yearly:
           await _scheduleYearlyAlarmsContinuous(habit);
+          break;
+        case HabitFrequency.single:
+          await _scheduleSingleAlarmsContinuous(habit);
           break;
       }
 
@@ -482,6 +488,33 @@ class HabitContinuationService {
         '📅 Scheduled $scheduledCount yearly notifications for ${habit.name}');
   }
 
+  /// Schedule single habit notifications (one-time notification)
+  static Future<void> _scheduleSingleNotificationsContinuous(
+      Habit habit) async {
+    final singleDateTime = habit.singleDateTime;
+    if (singleDateTime == null) return;
+
+    final now = DateTime.now();
+
+    // Only schedule if the single date/time is in the future
+    if (singleDateTime.isAfter(now)) {
+      final id = NotificationService.generateSafeId(
+          '${habit.id}_single');
+
+      await NotificationService.scheduleNotification(
+        id: id,
+        title: '🎯 ${habit.name}',
+        body: 'Time to complete your one-time habit!',
+        scheduledTime: singleDateTime,
+        payload: _createNotificationPayload(habit.id, 'single'),
+      );
+
+      AppLogger.debug('📅 Scheduled single notification for ${habit.name} at $singleDateTime');
+    } else {
+      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
+    }
+  }
+
   // ========== CONTINUOUS ALARM SCHEDULING METHODS ==========
 
   /// Schedule continuous hourly alarms (next 48 hours)
@@ -730,6 +763,36 @@ class HabitContinuationService {
 
     AppLogger.debug(
         '⏰ Scheduled $scheduledCount yearly alarms for ${habit.name}');
+  }
+
+  /// Schedule single habit alarms (one-time alarm)
+  static Future<void> _scheduleSingleAlarmsContinuous(Habit habit) async {
+    final singleDateTime = habit.singleDateTime;
+    if (singleDateTime == null) return;
+
+    final now = DateTime.now();
+
+    // Only schedule if the single date/time is in the future
+    if (singleDateTime.isAfter(now)) {
+      final alarmId = HybridAlarmService.generateHabitAlarmId(
+        habit.id,
+        suffix: 'single',
+      );
+
+      await HybridAlarmService.scheduleExactAlarm(
+        alarmId: alarmId,
+        habitId: habit.id,
+        habitName: habit.name,
+        scheduledTime: singleDateTime,
+        frequency: 'single',
+        alarmSoundName: habit.alarmSoundName,
+        snoozeDelayMinutes: habit.snoozeDelayMinutes,
+      );
+
+      AppLogger.debug('⏰ Scheduled single alarm for ${habit.name} at $singleDateTime');
+    } else {
+      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping alarm');
+    }
   }
 
   // ========== UTILITY METHODS ==========

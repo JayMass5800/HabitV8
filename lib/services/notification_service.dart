@@ -1463,9 +1463,9 @@ class NotificationService {
       return;
     }
 
-    // For non-hourly habits, require notification time
+    // For non-hourly, non-single habits, require notification time
     final frequency = habit.frequency.toString().split('.').last;
-    if (frequency != 'hourly' && habit.notificationTime == null) {
+    if (frequency != 'hourly' && frequency != 'single' && habit.notificationTime == null) {
       AppLogger.debug(
         'Skipping notifications - no time set for non-hourly habit',
       );
@@ -1516,6 +1516,11 @@ class NotificationService {
         case 'yearly':
           AppLogger.debug('Scheduling yearly notifications');
           await _scheduleYearlyHabitNotifications(habit, hour, minute);
+          break;
+
+        case 'single':
+          AppLogger.debug('Scheduling single habit notification');
+          await _scheduleSingleHabitNotifications(habit);
           break;
 
         case 'hourly':
@@ -1609,6 +1614,11 @@ class NotificationService {
         case 'yearly':
           AppLogger.debug('Scheduling yearly alarms');
           await _scheduleYearlyHabitAlarmsNew(habit, hour, minute);
+          break;
+
+        case 'single':
+          AppLogger.debug('Scheduling single habit alarm');
+          await _scheduleSingleHabitAlarmsNew(habit);
           break;
 
         case 'hourly':
@@ -1806,6 +1816,36 @@ class NotificationService {
       } catch (e) {
         AppLogger.error('Error parsing yearly date: $dateString', e);
       }
+    }
+  }
+
+  /// Schedule single habit notifications (one-time notification)
+  static Future<void> _scheduleSingleHabitNotifications(
+    dynamic habit,
+  ) async {
+    final singleDateTime = habit.singleDateTime;
+    if (singleDateTime == null) {
+      AppLogger.warning('No single date/time set for single habit: ${habit.name}');
+      return;
+    }
+
+    final now = DateTime.now();
+
+    // Only schedule if the single date/time is in the future
+    if (singleDateTime.isAfter(now)) {
+      await scheduleHabitNotification(
+        id: generateSafeId(
+          habit.id + '_single',
+        ), // Use string concatenation for uniqueness
+        habitId: habit.id.toString(),
+        title: '🎯 ${habit.name}',
+        body: 'Time to complete your one-time habit!',
+        scheduledTime: singleDateTime,
+      );
+      
+      AppLogger.debug('Scheduled single notification for ${habit.name} at $singleDateTime');
+    } else {
+      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
     }
   }
 
@@ -3010,6 +3050,39 @@ class NotificationService {
     AppLogger.info(
       '✅ Scheduled yearly alarms for ${habit.name} on ${selectedYearlyDates.length} dates',
     );
+  }
+
+  /// Schedule single habit alarms using AlarmService
+  static Future<void> _scheduleSingleHabitAlarmsNew(dynamic habit) async {
+    final singleDateTime = habit.singleDateTime;
+    if (singleDateTime == null) {
+      AppLogger.warning('No single date/time set for single habit: ${habit.name}');
+      return;
+    }
+
+    final now = DateTime.now();
+
+    // Only schedule if the single date/time is in the future
+    if (singleDateTime.isAfter(now)) {
+      final alarmId = HybridAlarmService.generateHabitAlarmId(
+        habit.id,
+        suffix: 'single',
+      );
+
+      await HybridAlarmService.scheduleExactAlarm(
+        alarmId: alarmId,
+        habitId: habit.id,
+        habitName: habit.name,
+        scheduledTime: singleDateTime,
+        frequency: 'single',
+        alarmSoundName: habit.alarmSoundName,
+        snoozeDelayMinutes: habit.snoozeDelayMinutes,
+      );
+
+      AppLogger.info('✅ Scheduled single alarm for ${habit.name} at $singleDateTime');
+    } else {
+      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping alarm');
+    }
   }
 
   /// Schedule hourly habit alarms using AlarmService
