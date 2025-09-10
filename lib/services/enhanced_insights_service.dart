@@ -5,7 +5,8 @@ import 'ai_service.dart';
 
 /// Enhanced insights service that combines rule-based and AI-powered insights
 class EnhancedInsightsService {
-  static final EnhancedInsightsService _instance = EnhancedInsightsService._internal();
+  static final EnhancedInsightsService _instance =
+      EnhancedInsightsService._internal();
   factory EnhancedInsightsService() => _instance;
   EnhancedInsightsService._internal();
 
@@ -29,7 +30,7 @@ class EnhancedInsightsService {
     if (useAI && _aiService.isConfigured) {
       try {
         List<Map<String, dynamic>> aiInsights;
-        
+
         if (preferredAIProvider?.toLowerCase() == 'gemini') {
           aiInsights = await _aiService.generateGeminiInsights(habits);
         } else {
@@ -40,8 +41,9 @@ class EnhancedInsightsService {
         for (final aiInsight in aiInsights) {
           // Simple deduplication based on title similarity
           final isDuplicate = insights.any((existing) =>
-              _calculateSimilarity(existing['title'], aiInsight['title']) > 0.7);
-          
+              _calculateSimilarity(existing['title'], aiInsight['title']) >
+              0.7);
+
           if (!isDuplicate) {
             insights.add(aiInsight);
           }
@@ -93,17 +95,18 @@ class EnhancedInsightsService {
   /// Calculate similarity between two strings (simple implementation)
   double _calculateSimilarity(String a, String b) {
     if (a == b) return 1.0;
-    
+
     final aWords = a.toLowerCase().split(' ').toSet();
     final bWords = b.toLowerCase().split(' ').toSet();
     final intersection = aWords.intersection(bWords).length;
     final union = aWords.union(bWords).length;
-    
+
     return union > 0 ? intersection / union : 0.0;
   }
 
   /// Prioritize insights by type and relevance
-  List<Map<String, dynamic>> _prioritizeInsights(List<Map<String, dynamic>> insights) {
+  List<Map<String, dynamic>> _prioritizeInsights(
+      List<Map<String, dynamic>> insights) {
     final priorityOrder = {
       'achievement': 5,
       'motivational': 4,
@@ -130,7 +133,8 @@ class EnhancedInsightsService {
       recommendations.add({
         'type': 'setup',
         'title': 'Start Your Journey',
-        'description': 'Create your first habit to begin tracking your progress.',
+        'description':
+            'Create your first habit to begin tracking your progress.',
         'action': 'create_habit',
         'icon': 'add_circle',
       });
@@ -139,7 +143,8 @@ class EnhancedInsightsService {
 
     final activeHabits = habits.where((h) => h.isActive).toList();
     final avgCompletionRate = activeHabits.isNotEmpty
-        ? activeHabits.map((h) => h.completionRate).reduce((a, b) => a + b) / activeHabits.length
+        ? activeHabits.map((h) => h.completionRate).reduce((a, b) => a + b) /
+            activeHabits.length
         : 0.0;
 
     // Recommend habit stacking for low performers
@@ -147,7 +152,8 @@ class EnhancedInsightsService {
       recommendations.add({
         'type': 'strategy',
         'title': 'Try Habit Stacking',
-        'description': 'Link new habits to existing routines to improve consistency.',
+        'description':
+            'Link new habits to existing routines to improve consistency.',
         'action': 'learn_stacking',
         'icon': 'link',
       });
@@ -165,7 +171,8 @@ class EnhancedInsightsService {
     }
 
     // Recommend habit reminders for inconsistent habits
-    final inconsistentHabits = activeHabits.where((h) => h.consistencyScore < 60).toList();
+    final inconsistentHabits =
+        activeHabits.where((h) => h.consistencyScore < 60).toList();
     if (inconsistentHabits.isNotEmpty) {
       recommendations.add({
         'type': 'improvement',
@@ -178,7 +185,8 @@ class EnhancedInsightsService {
   }
 
   /// Generate AI-powered recommendations
-  Future<List<Map<String, dynamic>>> _generateAIRecommendations(List<Habit> habits) async {
+  Future<List<Map<String, dynamic>>> _generateAIRecommendations(
+      List<Habit> habits) async {
     // This would call the AI service with a specific prompt for recommendations
     // For now, return empty list as this would need specific AI training
     return [];
@@ -189,8 +197,9 @@ class EnhancedInsightsService {
     if (habits.isEmpty) return {};
 
     final activeHabits = habits.where((h) => h.isActive).toList();
-    final totalCompletions = activeHabits.fold<int>(0, (sum, h) => sum + h.completions.length);
-    
+    final totalCompletions =
+        activeHabits.fold<int>(0, (sum, h) => sum + h.completions.length);
+
     final categories = <String, List<Habit>>{};
     for (final habit in activeHabits) {
       categories.putIfAbsent(habit.category, () => []).add(habit);
@@ -198,7 +207,9 @@ class EnhancedInsightsService {
 
     final categoryPerformance = <String, double>{};
     for (final entry in categories.entries) {
-      final avgRate = entry.value.map((h) => h.completionRate).reduce((a, b) => a + b) / entry.value.length;
+      final avgRate =
+          entry.value.map((h) => h.completionRate).reduce((a, b) => a + b) /
+              entry.value.length;
       categoryPerformance[entry.key] = avgRate;
     }
 
@@ -208,10 +219,13 @@ class EnhancedInsightsService {
       'categories': categories.keys.toList(),
       'categoryPerformance': categoryPerformance,
       'averageCompletionRate': activeHabits.isNotEmpty
-          ? activeHabits.map((h) => h.completionRate).reduce((a, b) => a + b) / activeHabits.length
+          ? activeHabits.map((h) => h.completionRate).reduce((a, b) => a + b) /
+              activeHabits.length
           : 0.0,
       'bestStreak': activeHabits.isNotEmpty
-          ? activeHabits.map((h) => h.streakInfo.longest).reduce((a, b) => a > b ? a : b)
+          ? activeHabits
+              .map((h) => h.streakInfo.longest)
+              .reduce((a, b) => a > b ? a : b)
           : 0,
       'currentStreaks': activeHabits.map((h) => h.streakInfo.current).toList(),
     };

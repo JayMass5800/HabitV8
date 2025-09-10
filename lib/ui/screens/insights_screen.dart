@@ -7,6 +7,10 @@ import '../../services/insights_service.dart';
 import '../../services/enhanced_insights_service.dart';
 import '../../services/achievements_service.dart';
 import '../widgets/smooth_transitions.dart';
+import '../widgets/ai_status_banner.dart';
+import '../widgets/enhanced_empty_insights_state.dart';
+import '../widgets/ai_insights_onboarding.dart';
+import '../widgets/ai_insights_debug_panel.dart';
 import 'ai_settings_screen.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
@@ -22,7 +26,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   late AnimationController _slideController;
   late TabController _tabController;
   final InsightsService _insightsService = InsightsService();
-  final EnhancedInsightsService _enhancedInsightsService = EnhancedInsightsService();
+  final EnhancedInsightsService _enhancedInsightsService =
+      EnhancedInsightsService();
 
   @override
   void initState() {
@@ -37,9 +42,30 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
     _tabController = TabController(length: 3, vsync: this);
 
+    // Listen for tab changes to show onboarding
+    _tabController.addListener(() {
+      if (_tabController.index == 1) {
+        // AI Insights tab
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            AIInsightsOnboarding.showIfNeeded(context);
+          }
+        });
+      }
+    });
+
     // Start animations
     _fadeController.forward();
     _slideController.forward();
+
+    // Show AI onboarding after a delay if on AI insights tab
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && _tabController.index == 1) {
+          AIInsightsOnboarding.showIfNeeded(context);
+        }
+      });
+    });
   }
 
   @override
@@ -172,16 +198,34 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildAIInsightsTab(List<Habit> habits, ThemeData theme) {
+    final activeHabits = habits.where((h) => h.isActive).toList();
+    final totalCompletions =
+        activeHabits.fold<int>(0, (sum, h) => sum + h.completions.length);
+
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // AI Insights Section
-          _buildAIInsights(habits, theme),
+          // Status banner for guidance
+          AIStatusBanner(
+            isAIAvailable: _enhancedInsightsService.isAIAvailable,
+            habitCount: activeHabits.length,
+            completionCount: totalCompletions,
+          ),
 
-          const SizedBox(height: 24),
+          // AI Insights content
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _buildAIInsights(habits, theme),
+          ),
+
+          // Debug panel (only in debug mode)
+          AIInsightsDebugPanel(
+            habitCount: activeHabits.length,
+            completionCount: totalCompletions,
+          ),
         ],
       ),
     );
@@ -817,11 +861,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildAIInsights(List<Habit> habits, ThemeData theme) {
+    final activeHabits = habits.where((h) => h.isActive).toList();
+    final totalCompletions =
+        activeHabits.fold<int>(0, (sum, h) => sum + h.completions.length);
+
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _enhancedInsightsService.generateComprehensiveInsights(habits),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Column(
+            children: [
+              _buildAIInsightsHeader(theme),
+              const SizedBox(height: 24),
+              const Center(child: CircularProgressIndicator()),
+              const SizedBox(height: 16),
+              Text(
+                'Analyzing your habits...',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          );
         }
 
         final insights = snapshot.data ?? [];
@@ -837,85 +898,159 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
+              _buildAIInsightsHeader(theme),
+              const SizedBox(height: 24),
+              if (insights.isNotEmpty) ...[
+                // Show loading status if AI is working
+                if (snapshot.connectionState == ConnectionState.waiting)
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.secondary,
-                          theme.colorScheme.secondary.withValues(alpha: 0.7),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                     ),
-                    child: const Icon(
-                      Icons.auto_awesome,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          _enhancedInsightsService.isAIAvailable
-                              ? 'AI-Powered Insights'
-                              : 'Smart Insights',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                        Text(
-                          _enhancedInsightsService.isAIAvailable
-                              ? 'Personalized AI recommendations and discoveries'
-                              : 'Pattern-based insights and recommendations',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                          ),
-                        ),
+                        const SizedBox(width: 12),
+                        const Text('Generating AI insights...'),
                       ],
                     ),
                   ),
-                  if (!_enhancedInsightsService.isAIAvailable)
-                    IconButton(
-                      icon: Icon(
-                        Icons.psychology_outlined,
-                        color: theme.colorScheme.primary,
-                      ),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const AISettingsScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Enable AI Insights',
-                    ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              ...insights.asMap().entries.map((entry) {
-                final index = entry.key;
-                final insight = entry.value;
+                ...insights.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final insight = entry.value;
 
-                return Padding(
-                  padding: EdgeInsets.only(bottom: index < insights.length - 1 ? 16 : 0),
-                  child: SmoothTransitions.slideTransition(
-                    show: true,
-                    duration: Duration(milliseconds: 600 + (index * 200)),
-                    child: _buildInsightCard(insight, theme),
-                  ),
-                );
-              }),
-              if (insights.isEmpty) _buildEmptyInsightsCard(theme),
+                  return Padding(
+                    padding: EdgeInsets.only(
+                        bottom: index < insights.length - 1 ? 16 : 0),
+                    child: SmoothTransitions.slideTransition(
+                      show: true,
+                      duration: Duration(milliseconds: 600 + (index * 200)),
+                      child: _buildInsightCard(insight, theme),
+                    ),
+                  );
+                }),
+              ] else
+                EnhancedEmptyInsightsState(
+                  habitCount: activeHabits.length,
+                  completionCount: totalCompletions,
+                  theme: theme,
+                ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAIInsightsHeader(ThemeData theme) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.secondary,
+                theme.colorScheme.secondary.withValues(alpha: 0.7),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.auto_awesome,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _enhancedInsightsService.isAIAvailable
+                    ? 'AI-Powered Insights'
+                    : 'Smart Insights',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                _enhancedInsightsService.isAIAvailable
+                    ? 'Personalized AI recommendations and discoveries'
+                    : 'Pattern-based insights and recommendations',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuButton<String>(
+          icon: Icon(
+            Icons.more_vert,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+          onSelected: (value) {
+            switch (value) {
+              case 'settings':
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AISettingsScreen(),
+                  ),
+                );
+                break;
+              case 'help':
+                AIInsightsOnboarding.show(context);
+                break;
+              case 'refresh':
+                setState(() {});
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'settings',
+              child: Row(
+                children: [
+                  Icon(Icons.settings),
+                  SizedBox(width: 12),
+                  Text('AI Settings'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'help',
+              child: Row(
+                children: [
+                  Icon(Icons.help_outline),
+                  SizedBox(width: 12),
+                  Text('How it Works'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'refresh',
+              child: Row(
+                children: [
+                  Icon(Icons.refresh),
+                  SizedBox(width: 12),
+                  Text('Refresh Insights'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -1008,43 +1143,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyInsightsCard(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.lightbulb_outline,
-            size: 64,
-            color: theme.colorScheme.primary.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Building Your Insights',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Keep tracking your habits and we\'ll start generating personalized insights and recommendations for you!',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
       ),
     );
   }

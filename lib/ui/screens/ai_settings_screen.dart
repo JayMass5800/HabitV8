@@ -15,7 +15,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
   final _geminiKeyController = TextEditingController();
   final _secureStorage = const FlutterSecureStorage();
   final _enhancedInsights = EnhancedInsightsService();
-  
+
   bool _enableAI = false;
   String _preferredProvider = 'OpenAI';
   bool _isLoading = false;
@@ -36,12 +36,14 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
 
   Future<void> _loadSettings() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final openAiKey = await _secureStorage.read(key: 'openai_api_key') ?? '';
       final geminiKey = await _secureStorage.read(key: 'gemini_api_key') ?? '';
-      final enableAI = await _secureStorage.read(key: 'enable_ai_insights') == 'true';
-      final preferredProvider = await _secureStorage.read(key: 'preferred_ai_provider') ?? 'OpenAI';
+      final enableAI =
+          await _secureStorage.read(key: 'enable_ai_insights') == 'true';
+      final preferredProvider =
+          await _secureStorage.read(key: 'preferred_ai_provider') ?? 'OpenAI';
 
       setState(() {
         _openAiKeyController.text = openAiKey;
@@ -62,10 +64,14 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _secureStorage.write(key: 'openai_api_key', value: _openAiKeyController.text.trim());
-      await _secureStorage.write(key: 'gemini_api_key', value: _geminiKeyController.text.trim());
-      await _secureStorage.write(key: 'enable_ai_insights', value: _enableAI.toString());
-      await _secureStorage.write(key: 'preferred_ai_provider', value: _preferredProvider);
+      await _secureStorage.write(
+          key: 'openai_api_key', value: _openAiKeyController.text.trim());
+      await _secureStorage.write(
+          key: 'gemini_api_key', value: _geminiKeyController.text.trim());
+      await _secureStorage.write(
+          key: 'enable_ai_insights', value: _enableAI.toString());
+      await _secureStorage.write(
+          key: 'preferred_ai_provider', value: _preferredProvider);
 
       _showSnackBar('Settings saved successfully!');
       Navigator.of(context).pop();
@@ -140,7 +146,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                             Text(
                               'Enable AI-powered insights and personalized recommendations for your habits.',
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.7),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -178,7 +185,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                               const SizedBox(height: 16),
                               RadioListTile<String>(
                                 title: const Text('OpenAI (ChatGPT)'),
-                                subtitle: const Text('Most reliable, costs per token'),
+                                subtitle: const Text(
+                                    'Most reliable, costs per token'),
                                 value: 'OpenAI',
                                 groupValue: _preferredProvider,
                                 onChanged: (value) {
@@ -187,7 +195,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                               ),
                               RadioListTile<String>(
                                 title: const Text('Google Gemini'),
-                                subtitle: const Text('Fast and efficient, generous free tier'),
+                                subtitle: const Text(
+                                    'Fast and efficient, generous free tier'),
                                 value: 'Gemini',
                                 groupValue: _preferredProvider,
                                 onChanged: (value) {
@@ -212,7 +221,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                                 children: [
                                   Text(
                                     'API Keys',
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -222,7 +232,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                                         ? Icons.visibility_off
                                         : Icons.visibility),
                                     onPressed: () {
-                                      setState(() => _obscureKeys = !_obscureKeys);
+                                      setState(
+                                          () => _obscureKeys = !_obscureKeys);
                                     },
                                   ),
                                 ],
@@ -231,7 +242,8 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                               Text(
                                 'Your API keys are stored securely on your device and never shared.',
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -250,17 +262,18 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                                   ),
                                 ),
                                 obscureText: _obscureKeys,
-                                validator: _preferredProvider == 'OpenAI' && _enableAI
-                                    ? (value) {
-                                        if (value?.isEmpty ?? true) {
-                                          return 'OpenAI API key is required';
-                                        }
-                                        if (!value!.startsWith('sk-')) {
-                                          return 'Invalid OpenAI API key format';
-                                        }
-                                        return null;
-                                      }
-                                    : null,
+                                validator:
+                                    _preferredProvider == 'OpenAI' && _enableAI
+                                        ? (value) {
+                                            if (value?.isEmpty ?? true) {
+                                              return 'OpenAI API key is required';
+                                            }
+                                            if (!value!.startsWith('sk-')) {
+                                              return 'Invalid OpenAI API key format';
+                                            }
+                                            return null;
+                                          }
+                                        : null,
                               ),
 
                               const SizedBox(height: 16),
@@ -279,17 +292,18 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                                   ),
                                 ),
                                 obscureText: _obscureKeys,
-                                validator: _preferredProvider == 'Gemini' && _enableAI
-                                    ? (value) {
-                                        if (value?.isEmpty ?? true) {
-                                          return 'Gemini API key is required';
-                                        }
-                                        if (!value!.startsWith('AIzaSy')) {
-                                          return 'Invalid Gemini API key format';
-                                        }
-                                        return null;
-                                      }
-                                    : null,
+                                validator:
+                                    _preferredProvider == 'Gemini' && _enableAI
+                                        ? (value) {
+                                            if (value?.isEmpty ?? true) {
+                                              return 'Gemini API key is required';
+                                            }
+                                            if (!value!.startsWith('AIzaSy')) {
+                                              return 'Invalid Gemini API key format';
+                                            }
+                                            return null;
+                                          }
+                                        : null,
                               ),
                             ],
                           ),
