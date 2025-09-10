@@ -82,6 +82,47 @@ class AIService {
     }
   }
 
+  /// Get a specific API key
+  Future<String?> getApiKey(String provider) async {
+    try {
+      await initializeApiKeys();
+      switch (provider.toLowerCase()) {
+        case 'openai':
+          return _openAiApiKey;
+        case 'gemini':
+          return _geminiApiKey;
+        default:
+          _logger.w('Unknown provider requested: $provider');
+          return null;
+      }
+    } catch (e) {
+      _logger.e('Error getting API key for $provider: $e');
+      return null;
+    }
+  }
+
+  /// Clear a specific API key
+  Future<void> clearApiKey(String provider) async {
+    try {
+      switch (provider.toLowerCase()) {
+        case 'openai':
+          await _secureStorage.delete(key: 'openai_api_key');
+          _openAiApiKey = null;
+          _logger.i('OpenAI API key cleared');
+          break;
+        case 'gemini':
+          await _secureStorage.delete(key: 'gemini_api_key');
+          _geminiApiKey = null;
+          _logger.i('Gemini API key cleared');
+          break;
+        default:
+          _logger.w('Unknown provider for key clearing: $provider');
+      }
+    } catch (e) {
+      _logger.e('Failed to clear API key for $provider: $e');
+    }
+  }
+
   /// Generate AI-powered insights using OpenAI GPT
   Future<List<Map<String, dynamic>>> generateOpenAIInsights(
       List<Habit> habits) async {

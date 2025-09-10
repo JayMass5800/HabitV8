@@ -40,8 +40,14 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final openAiKey = await _secureStorage.read(key: 'openai_api_key') ?? '';
-      final geminiKey = await _secureStorage.read(key: 'gemini_api_key') ?? '';
+      // Initialize AI service
+      await _aiService.initializeApiKeys();
+
+      // Load API keys using AI service
+      final openAiKey = await _aiService.getApiKey('openai') ?? '';
+      final geminiKey = await _aiService.getApiKey('gemini') ?? '';
+      
+      // Load other settings from secure storage
       final enableAI =
           await _secureStorage.read(key: 'enable_ai_insights') == 'true';
       final preferredProvider =
