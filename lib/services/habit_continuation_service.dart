@@ -498,8 +498,7 @@ class HabitContinuationService {
 
     // Only schedule if the single date/time is in the future
     if (singleDateTime.isAfter(now)) {
-      final id = NotificationService.generateSafeId(
-          '${habit.id}_single');
+      final id = NotificationService.generateSafeId('${habit.id}_single');
 
       await NotificationService.scheduleNotification(
         id: id,
@@ -509,9 +508,11 @@ class HabitContinuationService {
         payload: _createNotificationPayload(habit.id, 'single'),
       );
 
-      AppLogger.debug('📅 Scheduled single notification for ${habit.name} at $singleDateTime');
+      AppLogger.debug(
+          '📅 Scheduled single notification for ${habit.name} at $singleDateTime');
     } else {
-      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
+      AppLogger.warning(
+          'Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
     }
   }
 
@@ -789,9 +790,11 @@ class HabitContinuationService {
         snoozeDelayMinutes: habit.snoozeDelayMinutes,
       );
 
-      AppLogger.debug('⏰ Scheduled single alarm for ${habit.name} at $singleDateTime');
+      AppLogger.debug(
+          '⏰ Scheduled single alarm for ${habit.name} at $singleDateTime');
     } else {
-      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping alarm');
+      AppLogger.warning(
+          'Single habit ${habit.name} date/time $singleDateTime is in the past, skipping alarm');
     }
   }
 

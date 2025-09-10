@@ -411,9 +411,8 @@ class HabitStatsService {
     // Calculate variance in completion intervals
     final intervals = <int>[];
     for (int i = 1; i < recentCompletions.length; i++) {
-      final interval = recentCompletions[i]
-          .difference(recentCompletions[i - 1])
-          .inDays;
+      final interval =
+          recentCompletions[i].difference(recentCompletions[i - 1]).inDays;
       intervals.add(interval);
     }
 
@@ -422,15 +421,15 @@ class HabitStatsService {
     final mean = intervals.reduce((a, b) => a + b) / intervals.length;
     final variance =
         intervals.map((i) => math.pow(i - mean, 2)).reduce((a, b) => a + b) /
-        intervals.length;
+            intervals.length;
     final standardDeviation = math.sqrt(variance);
 
     // Lower standard deviation = higher consistency
     final maxDeviation = 7.0; // Days
     final consistencyScore =
         ((maxDeviation - math.min(standardDeviation, maxDeviation)) /
-            maxDeviation) *
-        100;
+                maxDeviation) *
+            100;
 
     return consistencyScore.clamp(0.0, 100.0);
   }

@@ -154,8 +154,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                   itemCount: filteredHabits.length,
                   itemBuilder: (context, index) {
                     final habit = filteredHabits[index];
-                    final rank =
-                        _selectedSort == 'Top Performers' ||
+                    final rank = _selectedSort == 'Top Performers' ||
                             _selectedSort == 'Bottom Performers' ||
                             _selectedSort == 'Longest Streak'
                         ? index + 1
@@ -166,8 +165,8 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                         habit.hourlyTimes.isNotEmpty) {
                       return CollapsibleHourlyHabitCard(
                         habit: habit,
-                        selectedDate:
-                            DateTime.now(), // For all habits screen, use current date
+                        selectedDate: DateTime
+                            .now(), // For all habits screen, use current date
                         onToggleHourlyCompletion: (habit, timeSlot) =>
                             _toggleHourlyHabitCompletion(habit, timeSlot),
                         isHourlyHabitCompletedAtTime:
@@ -443,7 +442,9 @@ class _HabitCard extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               habit.name,
-                              style: Theme.of(context).textTheme.titleMedium
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -555,9 +556,8 @@ class _HabitCard extends ConsumerWidget {
                     icon: Icons.local_fire_department,
                     label: 'Current',
                     value: '${habit.currentStreak}',
-                    color: habit.currentStreak > 0
-                        ? Colors.orange
-                        : Colors.grey,
+                    color:
+                        habit.currentStreak > 0 ? Colors.orange : Colors.grey,
                   ),
                 ),
                 Expanded(
@@ -576,8 +576,8 @@ class _HabitCard extends ConsumerWidget {
                     color: habit.completionRate > 0.7
                         ? Colors.green
                         : habit.completionRate > 0.4
-                        ? Colors.orange
-                        : Colors.red,
+                            ? Colors.orange
+                            : Colors.red,
                   ),
                 ),
                 Expanded(
@@ -602,8 +602,8 @@ class _HabitCard extends ConsumerWidget {
                 habit.completionRate > 0.7
                     ? Colors.green
                     : habit.completionRate > 0.4
-                    ? Colors.orange
-                    : Colors.red,
+                        ? Colors.orange
+                        : Colors.red,
               ),
             ),
           ],
@@ -788,9 +788,10 @@ class _HabitCard extends ConsumerWidget {
         if (habit.singleDateTime != null) {
           final dateTime = habit.singleDateTime!;
           final timeOfDay = TimeOfDay.fromDateTime(dateTime);
-          final hour = timeOfDay.hourOfPeriod == 0 ? 12 : timeOfDay.hourOfPeriod;
+          final hour =
+              timeOfDay.hourOfPeriod == 0 ? 12 : timeOfDay.hourOfPeriod;
           final period = timeOfDay.period == DayPeriod.am ? 'AM' : 'PM';
-          return '${dateTime.month}/${dateTime.day}/${dateTime.year.toString().substring(2)} ${hour}:${timeOfDay.minute.toString().padLeft(2, '0')} $period';
+          return '${dateTime.month}/${dateTime.day}/${dateTime.year.toString().substring(2)} $hour:${timeOfDay.minute.toString().padLeft(2, '0')} $period';
         }
         return '';
     }

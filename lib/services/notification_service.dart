@@ -1465,7 +1465,9 @@ class NotificationService {
 
     // For non-hourly, non-single habits, require notification time
     final frequency = habit.frequency.toString().split('.').last;
-    if (frequency != 'hourly' && frequency != 'single' && habit.notificationTime == null) {
+    if (frequency != 'hourly' &&
+        frequency != 'single' &&
+        habit.notificationTime == null) {
       AppLogger.debug(
         'Skipping notifications - no time set for non-hourly habit',
       );
@@ -1825,7 +1827,8 @@ class NotificationService {
   ) async {
     final singleDateTime = habit.singleDateTime;
     if (singleDateTime == null) {
-      AppLogger.warning('No single date/time set for single habit: ${habit.name}');
+      AppLogger.warning(
+          'No single date/time set for single habit: ${habit.name}');
       return;
     }
 
@@ -1842,10 +1845,12 @@ class NotificationService {
         body: 'Time to complete your one-time habit!',
         scheduledTime: singleDateTime,
       );
-      
-      AppLogger.debug('Scheduled single notification for ${habit.name} at $singleDateTime');
+
+      AppLogger.debug(
+          'Scheduled single notification for ${habit.name} at $singleDateTime');
     } else {
-      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
+      AppLogger.warning(
+          'Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
     }
   }
 
@@ -3056,7 +3061,8 @@ class NotificationService {
   static Future<void> _scheduleSingleHabitAlarmsNew(dynamic habit) async {
     final singleDateTime = habit.singleDateTime;
     if (singleDateTime == null) {
-      AppLogger.warning('No single date/time set for single habit: ${habit.name}');
+      AppLogger.warning(
+          'No single date/time set for single habit: ${habit.name}');
       return;
     }
 
@@ -3079,9 +3085,11 @@ class NotificationService {
         snoozeDelayMinutes: habit.snoozeDelayMinutes,
       );
 
-      AppLogger.info('✅ Scheduled single alarm for ${habit.name} at $singleDateTime');
+      AppLogger.info(
+          '✅ Scheduled single alarm for ${habit.name} at $singleDateTime');
     } else {
-      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping alarm');
+      AppLogger.warning(
+          'Single habit ${habit.name} date/time $singleDateTime is in the past, skipping alarm');
     }
   }
 

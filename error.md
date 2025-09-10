@@ -1,334 +1,50 @@
-/flutter (20199): │ 💡 ✅ App resume handling completed
-I/flutter (20199): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/InsetsController(20199): hide(ime())
-I/ImeTracker(20199): com.habittracker.habitv8.debug:cb9543f8: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+error - Classes can only extend other classes - lib\data\database.dart:57:30 - extends_non_class
+  error - Too many positional arguments: 0 expected, but 1 found - lib\data\database.dart:63:15 - extra_positional_arguments
+  error - Undefined name 'state' - lib\data\database.dart:74:7 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:74:15 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:77:7 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:77:15 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:83:7 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:83:15 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:111:9 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:111:17 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:123:9 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:126:47 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:156:7 - undefined_identifier
+  error - Undefined name 'state' - lib\data\database.dart:156:15 - undefined_identifier
+warning - The method doesn't override an inherited method - lib\data\database.dart:162:8 - override_on_non_overriding_member
+  error - The method 'dispose' isn't defined in a superclass of 'HabitsNotifier' - lib\data\database.dart:164:11 - undefined_super_member
+  error - The function 'StateNotifierProvider' isn't defined - lib\data\database.dart:170:5 - undefined_function
+warning - The declaration '_getFallbackInsights' isn't referenced - lib\services\ai_service.dart:314:30 - unused_element
+   info - 'Share' is deprecated and shouldn't be used. Use SharePlus instead - lib\services\data_export_import_service.dart:214:28 - deprecated_member_use
+   info - 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead - lib\services\data_export_import_service.dart:214:34 - deprecated_member_use
+  error - Classes can only extend other classes - lib\services\theme_service.dart:61:29 - extends_non_class
+  error - Too many positional arguments: 0 expected, but 1 found - lib\services\theme_service.dart:62:27 - extra_positional_arguments
+  error - Undefined name 'state' - lib\services\theme_service.dart:69:5 - undefined_identifier
+  error - Undefined name 'state' - lib\services\theme_service.dart:74:5 - undefined_identifier
+  error - Undefined name 'state' - lib\services\theme_service.dart:74:35 - undefined_identifier
+  error - Undefined name 'state' - lib\services\theme_service.dart:79:5 - undefined_identifier
+  error - Undefined name 'state' - lib\services\theme_service.dart:79:24 - undefined_identifier
+  error - The function 'StateNotifierProvider' isn't defined - lib\services\theme_service.dart:172:23 - undefined_function
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\ai_settings_screen.dart:88:20 - use_build_context_synchronously
+   info - Unnecessary braces in a string interpolation - lib\ui\screens\all_habits_screen.dart:793:94 - unnecessary_brace_in_string_interps
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\screens\settings_screen.dart:295:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\screens\settings_screen.dart:298:60 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:473:67 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\ui\screens\settings_screen.dart:557:30 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\ui\screens\settings_screen.dart:809:37 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\ui\screens\settings_screen.dart:809:52 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:834:30 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:835:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:876:48 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:877:43 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:884:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\ui\screens\settings_screen.dart:885:39 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\ui\screens\timeline_screen.dart:56:44 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\ui\screens\timeline_screen.dart:67:44 - use_build_context_synchronously
+   info - Unnecessary braces in a string interpolation - lib\ui\screens\timeline_screen.dart:798:19 - unnecessary_brace_in_string_interps
+   info - Use a 'SizedBox' to add whitespace to a layout - lib\ui\widgets\ai_insights_onboarding.dart:93:14 - sized_box_for_whitespace
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\widgets\settings_tile.dart:37:64 - deprecated_member_use
+warning - The value of the local variable 'statusBefore' isn't used - test\resource_cleanup_test.dart:31:13 - unused_local_variable
 
-══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
-The following assertion was thrown while finalizing the widget tree:
-'package:flutter/src/widgets/navigator.dart': Failed assertion: line 4064 pos 12: '!_debugLocked':
-is not true.
-
-Either the assertion indicates an error in the framework itself, or we should provide substantially
-more information in this error message to help you determine and fix the underlying cause.
-In either case, please report this assertion by filing a bug on GitHub:
-  https://github.com/flutter/flutter/issues/new?template=02_bug.yml
-
-When the exception was thrown, this was the stack:
-#2      NavigatorState.dispose (package:flutter/src/widgets/navigator.dart:4064:12)
-#3      StatefulElement.unmount (package:flutter/src/widgets/framework.dart:5922:11)
-#4      _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2075:13)
-#5      _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#6      ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#7      _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#8      _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#9      ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#10     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#11     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#12     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#13     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#14     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#15     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#16     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#17     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#18     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#19     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#20     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#21     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#22     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#23     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#24     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#25     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#26     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#27     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#28     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#29     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#30     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#31     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#32     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#33     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#34     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#35     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#36     MultiChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:7118:16)
-#37     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#38     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#39     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#40     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#41     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#42     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#43     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#44     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#45     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#46     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#47     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#48     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#49     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#50     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#51     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#52     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#53     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#54     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#55     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#56     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#57     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#58     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#59     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#60     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#61     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#62     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#63     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#64     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#65     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#66     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#67     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#68     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#69     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#70     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#71     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#72     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#73     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#74     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#75     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#76     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#77     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#78     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#79     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#80     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#81     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#82     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#83     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#84     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#85     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#86     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#87     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#88     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#89     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#90     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#91     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#92     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#93     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#94     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#95     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#96     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#97     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#98     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#99     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#100    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#101    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#102    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#103    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#104    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#105    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#106    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#107    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#108    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#109    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#110    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#111    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#112    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#113    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#114    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#115    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#116    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#117    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#118    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#119    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#120    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#121    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#122    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#123    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#124    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#125    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#126    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#127    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#128    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#129    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#130    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#131    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#132    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#133    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#134    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#135    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#136    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#137    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#138    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#139    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#140    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#141    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#142    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#143    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#144    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#145    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#146    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#147    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#148    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#149    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#150    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#151    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#152    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#153    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#154    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#155    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#156    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#157    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#158    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#159    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#160    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#161    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#162    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#163    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#164    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#165    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#166    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#167    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#168    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#169    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#170    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#171    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#172    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#173    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#174    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#175    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#176    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#177    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#178    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#179    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#180    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#181    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#182    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#183    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#184    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#185    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#186    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#187    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#188    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#189    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#190    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#191    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#192    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#193    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#194    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#195    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#196    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#197    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#198    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#199    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#200    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#201    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#202    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#203    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#204    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#205    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#206    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#207    MultiChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:7118:16)
-#208    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#209    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#210    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#211    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#212    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#213    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#214    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#215    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#216    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#217    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#218    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#219    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#220    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#221    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#222    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#223    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#224    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#225    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#226    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#227    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#228    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#229    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#230    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#231    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#232    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#233    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#234    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
-#235    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#236    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#237    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#238    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#239    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#240    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#241    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#242    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#243    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#244    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#245    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#246    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#247    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#248    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#249    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#250    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#251    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#252    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#253    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#254    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
-#255    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
-#256    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
-#257    ListIterable.forEach (dart:_internal/iterable.dart:49:13)
-#258    _InactiveElements._unmountAll (package:flutter/src/widgets/framework.dart:2084:25)
-#259    BuildOwner.lockState (package:flutter/src/widgets/framework.dart:2965:15)
-#260    BuildOwner.finalizeTree (package:flutter/src/widgets/framework.dart:3288:7)
-#261    WidgetsBinding.drawFrame (package:flutter/src/widgets/binding.dart:1247:19)
-#262    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
-#263    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1438:15)
-#264    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1351:9)
-#265    SchedulerBinding._handleDrawFrame (package:flutter/src/scheduler/binding.dart:1204:5)
-#266    _invoke (dart:ui/hooks.dart:331:13)
-#267    PlatformDispatcher._drawFrame (dart:ui/platform_dispatcher.dart:444:5)
-#268    _drawFrame (dart:ui/hooks.dart:303:31)
-(elided 2 frames from class _AssertionError)
-════════════════════════════════════════════════════════════════════════════════════════════════════
-
-I/flutter (20199): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (20199): │ #1   NotificationService.processPendingActionsManually (package:habitv8/services/notification_service.dart:1021:15)
-I/flutter (20199): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (20199): │ 💡 🔄 Manually processing pending actions
-I/flutter (20199): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (20199): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:630:17)
-I/flutter (20199): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (20199): │ 🐛 🔍 All SharedPreferences keys: [health_sync_enabled, ai_insights_onboarding_shown, onboarding_completed, sync_interval_minutes, health_habit_init_status, primary_color, last_health_habit_init, last_background_sync, background_service_enabled, selected_calendar_id, last_completion_check, last_health_sync, hybrid_alarm_data__96, default_screen, auto_completion_enabled, theme_mode, calendar_sync_enabled, health_thresholds, health_habit_notification_sent, last_midnight_reset, health_habit_init_version]
-I/flutter (20199): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (20199): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:637:17)
-I/flutter (20199): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (20199): │ 🐛 🔍 Method 1 (getStringList): null
-I/flutter (20199): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (20199): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:638:17)
-I/flutter (20199): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (20199): │ 🐛 🔍 Method 2 (get): null
-I/flutter (20199): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (20199): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:642:17)
-I/flutter (20199): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (20199): │ 🐛 🔍 Found 0 pending actions in SharedPreferences
-I/flutter (20199): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (20199): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:649:19)
-I/flutter (20199): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (20199): │ 🐛 No pending notification actions to process in SharedPreferences
-I/flutter (20199): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (20199): │ #1   NotificationService._loadActionsFromFile (package:habitv8/services/notification_service.dart:722:17)
-I/flutter (20199): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (20199): │ 🐛 🔍 File: Checking for actions at path: /data/user/0/com.habittracker.habitv8.debug/app_flutter/pending_notification_actions.json
-I/flutter (20199): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (20199): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (20199): │ #1   NotificationService._loadActionsFromFile (package:habitv8/services/notification_service.dart:725:19)
-I/flutter (20199): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (20199): │ 🐛 🔍 File: File does not exist
-I/flutter (20199): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+48 issues found. (ran in 2.7s)

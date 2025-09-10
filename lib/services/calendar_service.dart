@@ -220,8 +220,8 @@ class CalendarService {
         if (habit.singleDateTime == null) return false;
         final singleDate = habit.singleDateTime!;
         return singleDate.year == date.year &&
-               singleDate.month == date.month &&
-               singleDate.day == date.day;
+            singleDate.month == date.month &&
+            singleDate.day == date.day;
     }
   }
 

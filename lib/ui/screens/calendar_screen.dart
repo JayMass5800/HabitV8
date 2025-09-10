@@ -162,8 +162,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         if (habit.singleDateTime == null) return false;
         final singleDate = habit.singleDateTime!;
         return checkDate.year == singleDate.year &&
-               checkDate.month == singleDate.month &&
-               checkDate.day == singleDate.day;
+            checkDate.month == singleDate.month &&
+            checkDate.day == singleDate.day;
     }
   }
 

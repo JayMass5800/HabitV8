@@ -629,8 +629,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         if (habit.singleDateTime == null) return false;
         final singleDate = habit.singleDateTime!;
         return date.year == singleDate.year &&
-               date.month == singleDate.month &&
-               date.day == singleDate.day;
+            date.month == singleDate.month &&
+            date.day == singleDate.day;
     }
   }
 
@@ -793,9 +793,10 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         if (habit.singleDateTime != null) {
           final dateTime = habit.singleDateTime!;
           final timeOfDay = TimeOfDay.fromDateTime(dateTime);
-          final hour = timeOfDay.hourOfPeriod == 0 ? 12 : timeOfDay.hourOfPeriod;
+          final hour =
+              timeOfDay.hourOfPeriod == 0 ? 12 : timeOfDay.hourOfPeriod;
           final period = timeOfDay.period == DayPeriod.am ? 'AM' : 'PM';
-          return '${hour}:${timeOfDay.minute.toString().padLeft(2, '0')} $period';
+          return '$hour:${timeOfDay.minute.toString().padLeft(2, '0')} $period';
         }
         return '';
     }

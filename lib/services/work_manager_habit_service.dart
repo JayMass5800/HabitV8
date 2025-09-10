@@ -319,7 +319,9 @@ class WorkManagerHabitService {
 
     // For non-hourly, non-single habits, require notification time
     final frequency = habit.frequency.toString().split('.').last;
-    if (frequency != 'hourly' && frequency != 'single' && habit.notificationTime == null) {
+    if (frequency != 'hourly' &&
+        frequency != 'single' &&
+        habit.notificationTime == null) {
       return;
     }
 
@@ -593,9 +595,11 @@ class WorkManagerHabitService {
         payload: _createNotificationPayload(habit.id, 'single'),
       );
 
-      AppLogger.debug('📅 Scheduled single notification for ${habit.name} at $singleDateTime');
+      AppLogger.debug(
+          '📅 Scheduled single notification for ${habit.name} at $singleDateTime');
     } else {
-      AppLogger.warning('Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
+      AppLogger.warning(
+          'Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
     }
   }
 

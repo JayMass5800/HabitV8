@@ -1044,9 +1044,11 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     // First select date
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: _singleDateTime ?? DateTime.now().add(const Duration(days: 1)),
+      initialDate:
+          _singleDateTime ?? DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)), // 5 years into future
+      lastDate: DateTime.now()
+          .add(const Duration(days: 365 * 5)), // 5 years into future
       helpText: 'Select the date for this habit',
       builder: (context, child) {
         return Theme(
@@ -1081,8 +1083,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     // Then select time
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
-      initialTime: _singleDateTime != null 
-          ? TimeOfDay.fromDateTime(_singleDateTime!) 
+      initialTime: _singleDateTime != null
+          ? TimeOfDay.fromDateTime(_singleDateTime!)
           : const TimeOfDay(hour: 9, minute: 0),
       helpText: 'Select the time for this habit',
       builder: (context, child) {
@@ -1679,7 +1681,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please select a date and time for this single habit'),
+            content:
+                Text('Please select a date and time for this single habit'),
             backgroundColor: Colors.red,
           ),
         );
