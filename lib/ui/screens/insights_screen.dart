@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/insights_service.dart';
+import '../../services/achievements_service.dart';
 import '../widgets/smooth_transitions.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
@@ -17,6 +18,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
+  late TabController _tabController;
   final InsightsService _insightsService = InsightsService();
 
   @override
@@ -30,6 +32,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
+    _tabController = TabController(length: 3, vsync: this);
 
     // Start animations
     _fadeController.forward();
@@ -40,6 +43,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -57,6 +61,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.analytics), text: 'Analytics'),
+            Tab(icon: Icon(Icons.psychology), text: 'AI Insights'),
+            Tab(icon: Icon(Icons.emoji_events), text: 'Gamification'),
+          ],
+        ),
       ),
       body: Consumer(
         builder: (context, ref, child) {
@@ -78,28 +90,13 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     onRefresh: () async {
                       ref.invalidate(habitServiceProvider);
                     },
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Big Four Performance Cards
-                          _buildBigFourCards(habits, theme),
-
-                          const SizedBox(height: 32),
-
-                          // Performance Deep Dive Section
-                          _buildPerformanceDeepDive(habits, theme),
-
-                          const SizedBox(height: 32),
-
-                          // AI Insights Section
-                          _buildAIInsights(habits, theme),
-
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildAnalyticsTab(habits, theme),
+                        _buildAIInsightsTab(habits, theme),
+                        _buildGamificationTab(habits, theme),
+                      ],
                     ),
                   ),
                 );
@@ -135,6 +132,132 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         },
       ),
     );
+  }
+
+  Widget _buildAnalyticsTab(List<Habit> habits, ThemeData theme) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Big Four Performance Cards
+          _buildBigFourCards(habits, theme),
+
+          const SizedBox(height: 32),
+
+          // Performance Deep Dive Section
+          _buildPerformanceDeepDive(habits, theme),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAIInsightsTab(List<Habit> habits, ThemeData theme) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // AI Insights Section
+          _buildAIInsights(habits, theme),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGamificationTab(List<Habit> habits, ThemeData theme) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: FutureBuilder<Map<String, dynamic>>(
+        future: _getGamificationData(habits),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final gamificationData = snapshot.data ?? {};
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Player Level & XP
+              _buildPlayerLevelCard(gamificationData, theme),
+
+              const SizedBox(height: 24),
+
+              // Achievement Grid
+              _buildAchievementsSection(gamificationData, theme),
+
+              const SizedBox(height: 24),
+
+              // Streak & Stats Overview
+              _buildGamificationStats(gamificationData, habits, theme),
+
+              const SizedBox(height: 24),
+
+              // All Achievements Overview
+              _buildAllAchievementsSection(gamificationData, theme),
+
+              const SizedBox(height: 24),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> _getGamificationData(List<Habit> habits) async {
+    try {
+      // Convert habits to the format expected by AchievementsService
+      final habitData = habits
+          .map((h) => {
+                'id': h.id,
+                'name': h.name,
+                'category': h.category,
+                'currentStreak': h.streakInfo.current,
+                'longestStreak': h.streakInfo.longest,
+                'completionRate': h.completionRate,
+                'completions': h.completions
+                    .map((c) => {
+                          'timestamp': c.millisecondsSinceEpoch,
+                          'hour': c.hour,
+                        })
+                    .toList(),
+              })
+          .toList();
+
+      final completionData = habits
+          .expand((h) => h.completions)
+          .map((c) => {
+                'timestamp': c.millisecondsSinceEpoch,
+                'habitId':
+                    habits.firstWhere((h) => h.completions.contains(c)).id,
+                'hour': c.hour,
+              })
+          .toList();
+
+      return await AchievementsService.getGamificationStats(
+        habits: habitData,
+        completions: completionData,
+      );
+    } catch (e) {
+      return {
+        'level': 1,
+        'xp': 0,
+        'nextLevelXP': 100,
+        'levelProgress': 0.0,
+        'achievementsUnlocked': 0,
+        'totalAchievements': AchievementsService.getAllAchievements().length,
+        'rank': 'Novice',
+      };
+    }
   }
 
   Widget _buildBigFourCards(List<Habit> habits, ThemeData theme) {
@@ -947,6 +1070,788 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           'primary': theme.colorScheme.primary,
           'secondary': theme.colorScheme.primary.withValues(alpha: 0.7),
         };
+    }
+  }
+
+  // Gamification Tab Widgets
+
+  Widget _buildPlayerLevelCard(Map<String, dynamic> data, ThemeData theme) {
+    final level = data['level'] ?? 1;
+    final xp = data['xp'] ?? 0;
+    final nextLevelXP = data['nextLevelXP'] ?? 100;
+    final progress = data['levelProgress'] ?? 0.0;
+    final rank = data['rank'] ?? 'Novice';
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.3),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: _slideController,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOutCubic),
+      )),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.primary.withValues(alpha: 0.8),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.primary.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    Icons.person_rounded,
+                    size: 32,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Level $level',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        rank,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$xp XP',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Progress to Level ${level + 1}',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              minHeight: 8,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${((progress * 100).round())}% complete - ${nextLevelXP - xp} XP to next level',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.8),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAchievementsSection(Map<String, dynamic> data, ThemeData theme) {
+    final unlockedCount = data['achievementsUnlocked'] ?? 0;
+    final totalCount = data['totalAchievements'] ?? 0;
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.3),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: _slideController,
+        curve: const Interval(0.2, 0.5, curve: Curves.easeOutCubic),
+      )),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.emoji_events,
+                color: theme.colorScheme.primary,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Achievements',
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$unlockedCount / $totalCount',
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          FutureBuilder<List<Achievement>>(
+            future: AchievementsService.getUnlockedAchievements(),
+            builder: (context, snapshot) {
+              final achievements = snapshot.data ?? [];
+              final allAchievements = AchievementsService.getAllAchievements();
+
+              return Column(
+                children: [
+                  // Unlocked achievements
+                  if (achievements.isNotEmpty) ...[
+                    _buildAchievementGrid(
+                      achievements.take(6).toList(),
+                      'Recent Achievements',
+                      theme,
+                      true,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  // Next available achievements
+                  _buildAchievementGrid(
+                    allAchievements
+                        .where((a) => !achievements
+                            .any((unlocked) => unlocked.id == a.id))
+                        .take(4)
+                        .toList(),
+                    'Next to Unlock',
+                    theme,
+                    false,
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementGrid(
+    List<Achievement> achievements,
+    String title,
+    ThemeData theme,
+    bool isUnlocked,
+  ) {
+    if (achievements.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Use a more flexible layout approach
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: achievements.map((achievement) {
+            return SizedBox(
+              width: (MediaQuery.of(context).size.width - 48) /
+                  2, // Half screen minus padding
+              child: _buildAchievementCard(achievement, theme, isUnlocked),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAchievementCard(
+      Achievement achievement, ThemeData theme, bool isUnlocked) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 80), // Ensure minimum height
+      padding:
+          const EdgeInsets.all(12), // Reduced padding to fit content better
+      decoration: BoxDecoration(
+        color: isUnlocked
+            ? theme.colorScheme.primaryContainer
+            : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isUnlocked
+              ? theme.colorScheme.primary.withValues(alpha: 0.3)
+              : theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.start, // Align to top for better text wrapping
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6), // Reduced padding for icon
+            decoration: BoxDecoration(
+              color: isUnlocked
+                  ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                  : theme.colorScheme.outline.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              achievement.icon,
+              style: TextStyle(
+                fontSize: 18, // Slightly reduced icon size
+                color: isUnlocked ? null : theme.colorScheme.outline,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8), // Reduced spacing
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min, // Use minimum space needed
+              children: [
+                Text(
+                  achievement.title,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    // Changed to bodySmall for better fit
+                    fontWeight: FontWeight.w600,
+                    color: isUnlocked ? null : theme.colorScheme.outline,
+                  ),
+                  maxLines: 2, // Allow up to 2 lines for title
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2), // Reduced spacing
+                Text(
+                  achievement.description,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 11, // Smaller font for description
+                    color: isUnlocked
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.7)
+                        : theme.colorScheme.outline.withValues(alpha: 0.7),
+                    height: 1.2, // Tighter line height
+                  ),
+                  maxLines: 3, // Allow up to 3 lines for description
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGamificationStats(
+      Map<String, dynamic> data, List<Habit> habits, ThemeData theme) {
+    final totalStreak = data['totalStreak'] ?? 0;
+    final maxStreak = data['maxStreak'] ?? 0;
+    final perfectDays = data['perfectDays'] ?? 0;
+    final completionRate = ((data['completionRate'] ?? 0.0) * 100).round();
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.3),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: _slideController,
+        curve: const Interval(0.4, 0.7, curve: Curves.easeOutCubic),
+      )),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Performance Statistics',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Total Streak',
+                  '$totalStreak',
+                  Icons.local_fire_department,
+                  Colors.orange,
+                  theme,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Best Streak',
+                  '$maxStreak',
+                  Icons.trending_up,
+                  Colors.green,
+                  theme,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Perfect Days',
+                  '$perfectDays',
+                  Icons.star,
+                  Colors.amber,
+                  theme,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  'Completion',
+                  '$completionRate%',
+                  Icons.check_circle,
+                  Colors.blue,
+                  theme,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    ThemeData theme,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            title,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: color.withValues(alpha: 0.8),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAllAchievementsSection(
+      Map<String, dynamic> data, ThemeData theme) {
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.3),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: _slideController,
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOutCubic),
+      )),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.emoji_events,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'All Achievements',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${data['achievementsUnlocked'] ?? 0} / ${data['totalAchievements'] ?? 0}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Expandable achievements list
+            Theme(
+              data: theme.copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                title: Text(
+                  'View All Achievements Progress',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                subtitle: Text(
+                  'Tap to see detailed progress on all ${data['totalAchievements'] ?? 0} achievements',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                leading: Icon(
+                  Icons.list_alt,
+                  color: theme.colorScheme.primary,
+                ),
+                children: [
+                  const SizedBox(height: 8),
+                  _buildAchievementsList(theme),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAchievementsList(ThemeData theme) {
+    return FutureBuilder<Map<String, double>>(
+      future: _getAchievementsProgress(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final progressData = snapshot.data ?? {};
+        final allAchievements = AchievementsService.getAllAchievements();
+
+        // Group achievements by category
+        final groupedAchievements = <AchievementCategory, List<Achievement>>{};
+        for (final achievement in allAchievements) {
+          groupedAchievements
+              .putIfAbsent(achievement.category, () => [])
+              .add(achievement);
+        }
+
+        return Container(
+          constraints: const BoxConstraints(maxHeight: 400),
+          child: SingleChildScrollView(
+            child: Column(
+              children: groupedAchievements.entries.map((entry) {
+                return _buildAchievementCategorySection(
+                  entry.key,
+                  entry.value,
+                  progressData,
+                  theme,
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAchievementCategorySection(
+    AchievementCategory category,
+    List<Achievement> achievements,
+    Map<String, double> progressData,
+    ThemeData theme,
+  ) {
+    final categoryName = _getCategoryDisplayName(category);
+    final categoryIcon = _getCategoryIcon(category);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Category header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              children: [
+                Text(
+                  categoryIcon,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  categoryName,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '(${achievements.length})',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Achievement items
+          ...achievements.map((achievement) {
+            final progress = progressData[achievement.id] ?? 0.0;
+            final isUnlocked = progress >= 1.0;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isUnlocked
+                    ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                    : theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isUnlocked
+                      ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                      : theme.colorScheme.outline.withValues(alpha: 0.1),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        achievement.icon,
+                        style: TextStyle(
+                          fontSize: 20,
+                          color: isUnlocked ? null : Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              achievement.title,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isUnlocked
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              achievement.description,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${(progress * achievement.requirement).round()} / ${achievement.requirement}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isUnlocked
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
+                            ),
+                          ),
+                          Text(
+                            '+${achievement.xpReward} XP',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.secondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Progress bar
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor:
+                          theme.colorScheme.outline.withValues(alpha: 0.2),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isUnlocked
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.primary.withValues(alpha: 0.6),
+                      ),
+                      minHeight: 6,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String _getCategoryDisplayName(AchievementCategory category) {
+    switch (category) {
+      case AchievementCategory.streak:
+        return 'Streak Achievements';
+      case AchievementCategory.consistency:
+        return 'Consistency Achievements';
+      case AchievementCategory.variety:
+        return 'Variety Achievements';
+      case AchievementCategory.dedication:
+        return 'Dedication Achievements';
+      case AchievementCategory.health:
+        return 'Health & Fitness';
+      case AchievementCategory.mentalHealth:
+        return 'Mental Health';
+      case AchievementCategory.special:
+        return 'Special Achievements';
+    }
+  }
+
+  String _getCategoryIcon(AchievementCategory category) {
+    switch (category) {
+      case AchievementCategory.streak:
+        return '🔥';
+      case AchievementCategory.consistency:
+        return '⭐';
+      case AchievementCategory.variety:
+        return '🌟';
+      case AchievementCategory.dedication:
+        return '💪';
+      case AchievementCategory.health:
+        return '❤️';
+      case AchievementCategory.mentalHealth:
+        return '🧘';
+      case AchievementCategory.special:
+        return '🏆';
+    }
+  }
+
+  Future<Map<String, double>> _getAchievementsProgress() async {
+    try {
+      // Access the habit service through the provider
+      final habitServiceAsync = ref.read(habitServiceProvider);
+      final habitService = await habitServiceAsync.maybeWhen(
+        data: (service) => Future.value(service),
+        orElse: () => throw Exception('Habit service not available'),
+      );
+
+      // Get current habits data
+      final habits = await habitService.getAllHabits();
+
+      // Convert to the format expected by AchievementsService
+      final habitData = habits
+          .map((h) => {
+                'id': h.id,
+                'name': h.name,
+                'category': h.category,
+                'currentStreak': h.streakInfo.current,
+                'longestStreak': h.streakInfo.longest,
+                'completionRate': h.completionRate,
+              })
+          .toList();
+
+      final completionData = habits
+          .expand((h) => h.completions)
+          .map((c) => {
+                'completedAt': c,
+                'habitId':
+                    habits.firstWhere((h) => h.completions.contains(c)).id,
+              })
+          .toList();
+
+      return await AchievementsService.getAchievementProgress(
+        habits: habitData,
+        completions: completionData,
+      );
+    } catch (e) {
+      return {};
     }
   }
 }

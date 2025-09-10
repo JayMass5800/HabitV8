@@ -9,7 +9,7 @@ class AchievementsService {
   /// Get all available achievements
   static List<Achievement> getAllAchievements() {
     return [
-      // Streak Achievements
+      // === STREAK ACHIEVEMENTS (BEGINNER) ===
       Achievement(
         id: 'first_streak',
         title: 'Getting Started',
@@ -18,6 +18,16 @@ class AchievementsService {
         category: AchievementCategory.streak,
         requirement: 1,
         xpReward: 10,
+        type: AchievementType.streak,
+      ),
+      Achievement(
+        id: 'three_streak',
+        title: 'Momentum Builder',
+        description: 'Maintain a 3-day streak',
+        icon: '🚀',
+        category: AchievementCategory.streak,
+        requirement: 3,
+        xpReward: 25,
         type: AchievementType.streak,
       ),
       Achievement(
@@ -31,6 +41,16 @@ class AchievementsService {
         type: AchievementType.streak,
       ),
       Achievement(
+        id: 'two_week_streak',
+        title: 'Fortnight Fighter',
+        description: 'Maintain a 14-day streak',
+        icon: '⚡',
+        category: AchievementCategory.streak,
+        requirement: 14,
+        xpReward: 100,
+        type: AchievementType.streak,
+      ),
+      Achievement(
         id: 'month_streak',
         title: 'Monthly Master',
         description: 'Maintain a 30-day streak',
@@ -38,6 +58,16 @@ class AchievementsService {
         category: AchievementCategory.streak,
         requirement: 30,
         xpReward: 200,
+        type: AchievementType.streak,
+      ),
+      Achievement(
+        id: 'quarter_streak',
+        title: 'Quarterly Champion',
+        description: 'Maintain a 90-day streak',
+        icon: '🏅',
+        category: AchievementCategory.streak,
+        requirement: 90,
+        xpReward: 400,
         type: AchievementType.streak,
       ),
       Achievement(
@@ -50,8 +80,48 @@ class AchievementsService {
         xpReward: 500,
         type: AchievementType.streak,
       ),
+      Achievement(
+        id: 'six_month_streak',
+        title: 'Half-Year Hero',
+        description: 'Maintain a 180-day streak',
+        icon: '🌟',
+        category: AchievementCategory.streak,
+        requirement: 180,
+        xpReward: 800,
+        type: AchievementType.streak,
+      ),
+      Achievement(
+        id: 'year_streak',
+        title: 'Annual Achiever',
+        description: 'Maintain a 365-day streak',
+        icon: '💎',
+        category: AchievementCategory.streak,
+        requirement: 365,
+        xpReward: 1500,
+        type: AchievementType.streak,
+      ),
+      Achievement(
+        id: 'two_year_streak',
+        title: 'Biennial Beast',
+        description: 'Maintain a 730-day streak',
+        icon: '👑',
+        category: AchievementCategory.streak,
+        requirement: 730,
+        xpReward: 2500,
+        type: AchievementType.streak,
+      ),
+      Achievement(
+        id: 'three_year_streak',
+        title: 'Triple Threat',
+        description: 'Maintain a 1095-day streak',
+        icon: '🦄',
+        category: AchievementCategory.streak,
+        requirement: 1095,
+        xpReward: 5000,
+        type: AchievementType.streak,
+      ),
 
-      // Consistency Achievements
+      // === CONSISTENCY ACHIEVEMENTS ===
       Achievement(
         id: 'perfect_week',
         title: 'Perfect Week',
@@ -72,8 +142,48 @@ class AchievementsService {
         xpReward: 300,
         type: AchievementType.perfectDays,
       ),
+      Achievement(
+        id: 'perfect_quarter',
+        title: 'Quarterly Perfection',
+        description: 'Complete all habits for 90 consecutive days',
+        icon: '💫',
+        category: AchievementCategory.consistency,
+        requirement: 90,
+        xpReward: 750,
+        type: AchievementType.perfectDays,
+      ),
+      Achievement(
+        id: 'perfect_half_year',
+        title: 'Semi-Annual Supremacy',
+        description: 'Complete all habits for 180 consecutive days',
+        icon: '✨',
+        category: AchievementCategory.consistency,
+        requirement: 180,
+        xpReward: 1200,
+        type: AchievementType.perfectDays,
+      ),
+      Achievement(
+        id: 'perfect_year',
+        title: 'Annual Perfection',
+        description: 'Complete all habits for 365 consecutive days',
+        icon: '🏆',
+        category: AchievementCategory.consistency,
+        requirement: 365,
+        xpReward: 2000,
+        type: AchievementType.perfectDays,
+      ),
 
-      // Habit Count Achievements
+      // === HABIT COUNT ACHIEVEMENTS ===
+      Achievement(
+        id: 'habit_starter',
+        title: 'Habit Starter',
+        description: 'Create 3 different habits',
+        icon: '🌱',
+        category: AchievementCategory.variety,
+        requirement: 3,
+        xpReward: 25,
+        type: AchievementType.habitCount,
+      ),
       Achievement(
         id: 'habit_collector',
         title: 'Habit Collector',
@@ -82,6 +192,16 @@ class AchievementsService {
         category: AchievementCategory.variety,
         requirement: 5,
         xpReward: 40,
+        type: AchievementType.habitCount,
+      ),
+      Achievement(
+        id: 'habit_curator',
+        title: 'Habit Curator',
+        description: 'Create 7 different habits',
+        icon: '🗂️',
+        category: AchievementCategory.variety,
+        requirement: 7,
+        xpReward: 60,
         type: AchievementType.habitCount,
       ),
       Achievement(
@@ -94,8 +214,78 @@ class AchievementsService {
         xpReward: 100,
         type: AchievementType.habitCount,
       ),
+      Achievement(
+        id: 'habit_architect',
+        title: 'Habit Architect',
+        description: 'Create 15 different habits',
+        icon: '🏗️',
+        category: AchievementCategory.variety,
+        requirement: 15,
+        xpReward: 150,
+        type: AchievementType.habitCount,
+      ),
+      Achievement(
+        id: 'habit_guru',
+        title: 'Habit Guru',
+        description: 'Create 20 different habits',
+        icon: '🧙',
+        category: AchievementCategory.variety,
+        requirement: 20,
+        xpReward: 250,
+        type: AchievementType.habitCount,
+      ),
+      Achievement(
+        id: 'habit_legend',
+        title: 'Habit Legend',
+        description: 'Create 30 different habits',
+        icon: '🦅',
+        category: AchievementCategory.variety,
+        requirement: 30,
+        xpReward: 400,
+        type: AchievementType.habitCount,
+      ),
+      Achievement(
+        id: 'habit_overlord',
+        title: 'Habit Overlord',
+        description: 'Create 50 different habits',
+        icon: '👑',
+        category: AchievementCategory.variety,
+        requirement: 50,
+        xpReward: 750,
+        type: AchievementType.habitCount,
+      ),
 
-      // Total Completions Achievements
+      // === TOTAL COMPLETIONS ACHIEVEMENTS ===
+      Achievement(
+        id: 'first_ten',
+        title: 'Double Digits',
+        description: 'Complete 10 habits total',
+        icon: '🔟',
+        category: AchievementCategory.dedication,
+        requirement: 10,
+        xpReward: 25,
+        type: AchievementType.totalCompletions,
+      ),
+      Achievement(
+        id: 'quarter_century',
+        title: 'Quarter Century',
+        description: 'Complete 25 habits total',
+        icon: '🎊',
+        category: AchievementCategory.dedication,
+        requirement: 25,
+        xpReward: 50,
+        type: AchievementType.totalCompletions,
+      ),
+      Achievement(
+        id: 'half_century',
+        title: 'Half Century',
+        description: 'Complete 50 habits total',
+        icon: '🎉',
+        category: AchievementCategory.dedication,
+        requirement: 50,
+        xpReward: 75,
+        type: AchievementType.totalCompletions,
+      ),
       Achievement(
         id: 'hundred_completions',
         title: 'Centurion',
@@ -107,8 +297,28 @@ class AchievementsService {
         type: AchievementType.totalCompletions,
       ),
       Achievement(
+        id: 'quarter_thousand',
+        title: 'Quarter Millennium',
+        description: 'Complete 250 habits total',
+        icon: '🎯',
+        category: AchievementCategory.dedication,
+        requirement: 250,
+        xpReward: 300,
+        type: AchievementType.totalCompletions,
+      ),
+      Achievement(
+        id: 'half_thousand',
+        title: 'Half Millennium',
+        description: 'Complete 500 habits total',
+        icon: '🌟',
+        category: AchievementCategory.dedication,
+        requirement: 500,
+        xpReward: 500,
+        type: AchievementType.totalCompletions,
+      ),
+      Achievement(
         id: 'thousand_completions',
-        title: 'Dedication Legend',
+        title: 'Millennium Master',
         description: 'Complete 1000 habits total',
         icon: '💎',
         category: AchievementCategory.dedication,
@@ -116,8 +326,70 @@ class AchievementsService {
         xpReward: 750,
         type: AchievementType.totalCompletions,
       ),
+      Achievement(
+        id: 'two_thousand_completions',
+        title: 'Double Millennium',
+        description: 'Complete 2000 habits total',
+        icon: '💠',
+        category: AchievementCategory.dedication,
+        requirement: 2000,
+        xpReward: 1200,
+        type: AchievementType.totalCompletions,
+      ),
+      Achievement(
+        id: 'three_thousand_completions',
+        title: 'Triple Millennium',
+        description: 'Complete 3000 habits total',
+        icon: '💯',
+        category: AchievementCategory.dedication,
+        requirement: 3000,
+        xpReward: 1800,
+        type: AchievementType.totalCompletions,
+      ),
+      Achievement(
+        id: 'five_thousand_completions',
+        title: 'Quintuple Threat',
+        description: 'Complete 5000 habits total',
+        icon: '🔥',
+        category: AchievementCategory.dedication,
+        requirement: 5000,
+        xpReward: 2500,
+        type: AchievementType.totalCompletions,
+      ),
+      Achievement(
+        id: 'ten_thousand_completions',
+        title: 'Habit Immortal',
+        description: 'Complete 10000 habits total',
+        icon: '🦄',
+        category: AchievementCategory.dedication,
+        requirement: 10000,
+        xpReward: 5000,
+        type: AchievementType.totalCompletions,
+      ),
 
-      // Category Specific Achievements
+      // === HEALTH & FITNESS CATEGORY ACHIEVEMENTS ===
+      Achievement(
+        id: 'health_starter',
+        title: 'Health Starter',
+        description: 'Complete 10 health-related habits',
+        icon: '💊',
+        category: AchievementCategory.health,
+        requirement: 10,
+        xpReward: 30,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Health',
+      ),
+      Achievement(
+        id: 'health_enthusiast',
+        title: 'Health Enthusiast',
+        description: 'Complete 25 health-related habits',
+        icon: '🏥',
+        category: AchievementCategory.health,
+        requirement: 25,
+        xpReward: 60,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Health',
+      ),
       Achievement(
         id: 'health_hero',
         title: 'Health Hero',
@@ -128,6 +400,50 @@ class AchievementsService {
         xpReward: 100,
         type: AchievementType.categorySpecific,
         categoryFilter: 'Health',
+      ),
+      Achievement(
+        id: 'health_champion',
+        title: 'Health Champion',
+        description: 'Complete 100 health-related habits',
+        icon: '🩺',
+        category: AchievementCategory.health,
+        requirement: 100,
+        xpReward: 200,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Health',
+      ),
+      Achievement(
+        id: 'health_legend',
+        title: 'Health Legend',
+        description: 'Complete 250 health-related habits',
+        icon: '⚕️',
+        category: AchievementCategory.health,
+        requirement: 250,
+        xpReward: 400,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Health',
+      ),
+      Achievement(
+        id: 'fitness_rookie',
+        title: 'Fitness Rookie',
+        description: 'Complete 10 fitness habits',
+        icon: '🏃',
+        category: AchievementCategory.health,
+        requirement: 10,
+        xpReward: 30,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Fitness',
+      ),
+      Achievement(
+        id: 'fitness_enthusiast',
+        title: 'Fitness Enthusiast',
+        description: 'Complete 25 fitness habits',
+        icon: '🏋️',
+        category: AchievementCategory.health,
+        requirement: 25,
+        xpReward: 60,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Fitness',
       ),
       Achievement(
         id: 'fitness_fanatic',
@@ -141,6 +457,52 @@ class AchievementsService {
         categoryFilter: 'Fitness',
       ),
       Achievement(
+        id: 'fitness_warrior',
+        title: 'Fitness Warrior',
+        description: 'Complete 100 fitness habits',
+        icon: '🥊',
+        category: AchievementCategory.health,
+        requirement: 100,
+        xpReward: 200,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Fitness',
+      ),
+      Achievement(
+        id: 'fitness_legend',
+        title: 'Fitness Legend',
+        description: 'Complete 250 fitness habits',
+        icon: '🏆',
+        category: AchievementCategory.health,
+        requirement: 250,
+        xpReward: 400,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Fitness',
+      ),
+
+      // === MENTAL HEALTH ACHIEVEMENTS ===
+      Achievement(
+        id: 'mindful_beginner',
+        title: 'Mindful Beginner',
+        description: 'Complete 10 mental health habits',
+        icon: '🧠',
+        category: AchievementCategory.mentalHealth,
+        requirement: 10,
+        xpReward: 30,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Mental Health',
+      ),
+      Achievement(
+        id: 'mindful_student',
+        title: 'Mindful Student',
+        description: 'Complete 25 mental health habits',
+        icon: '🎭',
+        category: AchievementCategory.mentalHealth,
+        requirement: 25,
+        xpReward: 60,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Mental Health',
+      ),
+      Achievement(
         id: 'mindful_master',
         title: 'Mindful Master',
         description: 'Complete 50 mental health habits',
@@ -151,30 +513,190 @@ class AchievementsService {
         type: AchievementType.categorySpecific,
         categoryFilter: 'Mental Health',
       ),
+      Achievement(
+        id: 'zen_master',
+        title: 'Zen Master',
+        description: 'Complete 100 mental health habits',
+        icon: '☯️',
+        category: AchievementCategory.mentalHealth,
+        requirement: 100,
+        xpReward: 200,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Mental Health',
+      ),
+      Achievement(
+        id: 'enlightened_one',
+        title: 'Enlightened One',
+        description: 'Complete 250 mental health habits',
+        icon: '🌅',
+        category: AchievementCategory.mentalHealth,
+        requirement: 250,
+        xpReward: 400,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Mental Health',
+      ),
 
-      // Special Achievements
+      // === PRODUCTIVITY ACHIEVEMENTS ===
+      Achievement(
+        id: 'productivity_starter',
+        title: 'Productivity Starter',
+        description: 'Complete 10 productivity habits',
+        icon: '📈',
+        category: AchievementCategory.special,
+        requirement: 10,
+        xpReward: 30,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Productivity',
+      ),
+      Achievement(
+        id: 'efficiency_expert',
+        title: 'Efficiency Expert',
+        description: 'Complete 50 productivity habits',
+        icon: '⚡',
+        category: AchievementCategory.special,
+        requirement: 50,
+        xpReward: 100,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Productivity',
+      ),
+      Achievement(
+        id: 'productivity_guru',
+        title: 'Productivity Guru',
+        description: 'Complete 100 productivity habits',
+        icon: '🎯',
+        category: AchievementCategory.special,
+        requirement: 100,
+        xpReward: 200,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Productivity',
+      ),
+
+      // === LEARNING ACHIEVEMENTS ===
+      Achievement(
+        id: 'learning_apprentice',
+        title: 'Learning Apprentice',
+        description: 'Complete 10 learning habits',
+        icon: '📖',
+        category: AchievementCategory.special,
+        requirement: 10,
+        xpReward: 30,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Learning',
+      ),
+      Achievement(
+        id: 'knowledge_seeker',
+        title: 'Knowledge Seeker',
+        description: 'Complete 50 learning habits',
+        icon: '🎓',
+        category: AchievementCategory.special,
+        requirement: 50,
+        xpReward: 100,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Learning',
+      ),
+      Achievement(
+        id: 'wisdom_keeper',
+        title: 'Wisdom Keeper',
+        description: 'Complete 100 learning habits',
+        icon: '📚',
+        category: AchievementCategory.special,
+        requirement: 100,
+        xpReward: 200,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Learning',
+      ),
+
+      // === TIME-SPECIFIC ACHIEVEMENTS ===
+      Achievement(
+        id: 'sunrise_warrior',
+        title: 'Sunrise Warrior',
+        description: 'Complete 10 habits before 6 AM',
+        icon: '🌅',
+        category: AchievementCategory.special,
+        requirement: 10,
+        xpReward: 50,
+        type: AchievementType.timeSpecific,
+        timeFilter: 6,
+      ),
       Achievement(
         id: 'early_bird',
         title: 'Early Bird',
-        description: 'Complete 20 habits before 8 AM',
-        icon: '🌅',
+        description: 'Complete 25 habits before 8 AM',
+        icon: '🐦',
         category: AchievementCategory.special,
-        requirement: 20,
+        requirement: 25,
         xpReward: 75,
         type: AchievementType.timeSpecific,
         timeFilter: 8,
       ),
       Achievement(
+        id: 'dawn_patrol',
+        title: 'Dawn Patrol',
+        description: 'Complete 50 habits before 8 AM',
+        icon: '🌄',
+        category: AchievementCategory.special,
+        requirement: 50,
+        xpReward: 150,
+        type: AchievementType.timeSpecific,
+        timeFilter: 8,
+      ),
+      Achievement(
+        id: 'morning_master',
+        title: 'Morning Master',
+        description: 'Complete 100 habits before 8 AM',
+        icon: '☀️',
+        category: AchievementCategory.special,
+        requirement: 100,
+        xpReward: 250,
+        type: AchievementType.timeSpecific,
+        timeFilter: 8,
+      ),
+      Achievement(
+        id: 'midnight_warrior',
+        title: 'Midnight Warrior',
+        description: 'Complete 10 habits after midnight',
+        icon: '🌙',
+        category: AchievementCategory.special,
+        requirement: 10,
+        xpReward: 50,
+        type: AchievementType.timeSpecific,
+        timeFilter: 24,
+      ),
+      Achievement(
         id: 'night_owl',
         title: 'Night Owl',
-        description: 'Complete 20 habits after 10 PM',
+        description: 'Complete 25 habits after 10 PM',
         icon: '🦉',
         category: AchievementCategory.special,
-        requirement: 20,
+        requirement: 25,
         xpReward: 75,
         type: AchievementType.timeSpecific,
         timeFilter: 22,
       ),
+      Achievement(
+        id: 'midnight_master',
+        title: 'Midnight Master',
+        description: 'Complete 50 habits after 10 PM',
+        icon: '🌃',
+        category: AchievementCategory.special,
+        requirement: 50,
+        xpReward: 150,
+        type: AchievementType.timeSpecific,
+        timeFilter: 22,
+      ),
+      Achievement(
+        id: 'lunch_break_hero',
+        title: 'Lunch Break Hero',
+        description: 'Complete 25 habits between 12-2 PM',
+        icon: '🍽️',
+        category: AchievementCategory.special,
+        requirement: 25,
+        xpReward: 75,
+        type: AchievementType.timeSpecific,
+        timeFilter: 13,
+      ),
+
+      // === SPECIAL CIRCUMSTANCE ACHIEVEMENTS ===
       Achievement(
         id: 'comeback_kid',
         title: 'Comeback Kid',
@@ -184,6 +706,137 @@ class AchievementsService {
         requirement: 1,
         xpReward: 50,
         type: AchievementType.comeback,
+      ),
+      Achievement(
+        id: 'resilient_spirit',
+        title: 'Resilient Spirit',
+        description: 'Restart 3 habits after breaks',
+        icon: '💪',
+        category: AchievementCategory.special,
+        requirement: 3,
+        xpReward: 100,
+        type: AchievementType.comeback,
+      ),
+      Achievement(
+        id: 'phoenix_rising',
+        title: 'Phoenix Rising',
+        description: 'Restart 5 habits after breaks',
+        icon: '🔥',
+        category: AchievementCategory.special,
+        requirement: 5,
+        xpReward: 200,
+        type: AchievementType.comeback,
+      ),
+      Achievement(
+        id: 'weekend_warrior',
+        title: 'Weekend Warrior',
+        description: 'Complete 50 habits on weekends',
+        icon: '🏖️',
+        category: AchievementCategory.special,
+        requirement: 50,
+        xpReward: 100,
+        type: AchievementType.special,
+      ),
+      Achievement(
+        id: 'holiday_hero',
+        title: 'Holiday Hero',
+        description: 'Complete habits on 10 holidays',
+        icon: '🎄',
+        category: AchievementCategory.special,
+        requirement: 10,
+        xpReward: 150,
+        type: AchievementType.special,
+      ),
+
+      // === SOCIAL ACHIEVEMENTS ===
+      Achievement(
+        id: 'social_butterfly',
+        title: 'Social Butterfly',
+        description: 'Complete 25 social habits',
+        icon: '🦋',
+        category: AchievementCategory.special,
+        requirement: 25,
+        xpReward: 75,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Social',
+      ),
+      Achievement(
+        id: 'community_builder',
+        title: 'Community Builder',
+        description: 'Complete 50 social habits',
+        icon: '🏘️',
+        category: AchievementCategory.special,
+        requirement: 50,
+        xpReward: 125,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Social',
+      ),
+
+      // === FINANCE ACHIEVEMENTS ===
+      Achievement(
+        id: 'penny_wise',
+        title: 'Penny Wise',
+        description: 'Complete 10 finance habits',
+        icon: '💰',
+        category: AchievementCategory.special,
+        requirement: 10,
+        xpReward: 30,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Finance',
+      ),
+      Achievement(
+        id: 'money_master',
+        title: 'Money Master',
+        description: 'Complete 50 finance habits',
+        icon: '💵',
+        category: AchievementCategory.special,
+        requirement: 50,
+        xpReward: 100,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Finance',
+      ),
+      Achievement(
+        id: 'wealth_builder',
+        title: 'Wealth Builder',
+        description: 'Complete 100 finance habits',
+        icon: '💎',
+        category: AchievementCategory.special,
+        requirement: 100,
+        xpReward: 200,
+        type: AchievementType.categorySpecific,
+        categoryFilter: 'Finance',
+      ),
+
+      // === ULTIMATE ACHIEVEMENTS (VERY LONG TERM) ===
+      Achievement(
+        id: 'decade_dedication',
+        title: 'Decade of Dedication',
+        description: 'Maintain any habit for 3650 days (10 years)',
+        icon: '🏛️',
+        category: AchievementCategory.streak,
+        requirement: 3650,
+        xpReward: 10000,
+        type: AchievementType.streak,
+      ),
+      Achievement(
+        id: 'habit_sage',
+        title: 'Habit Sage',
+        description: 'Unlock 75% of all achievements',
+        icon: '🧙‍♂️',
+        category: AchievementCategory.special,
+        requirement: 1, // Special logic needed
+        xpReward: 2500,
+        type: AchievementType.special,
+      ),
+      Achievement(
+        id: 'habit_deity',
+        title: 'Habit Deity',
+        description: 'Unlock all achievements',
+        icon: '👑',
+        category: AchievementCategory.special,
+        requirement: 1, // Special logic needed
+        xpReward: 5000,
+        type: AchievementType.special,
       ),
     ];
   }
@@ -235,6 +888,10 @@ class AchievementsService {
 
         case AchievementType.comeback:
           earned = _hasComeback(habits, completions);
+          break;
+
+        case AchievementType.special:
+          earned = _checkSpecialAchievement(achievement, habits, completions);
           break;
       }
 
@@ -359,6 +1016,10 @@ class AchievementsService {
           break;
         case AchievementType.comeback:
           currentProgress = _hasComeback(habits, completions) ? 1.0 : 0.0;
+          break;
+        case AchievementType.special:
+          currentProgress =
+              _getSpecialAchievementProgress(achievement, habits, completions);
           break;
       }
 
@@ -575,6 +1236,84 @@ class AchievementsService {
     if (level >= 3) return 'Beginner';
     return 'Novice';
   }
+
+  /// Check if special achievement criteria are met
+  static bool _checkSpecialAchievement(
+    Achievement achievement,
+    List<Map<String, dynamic>> habits,
+    List<Map<String, dynamic>> completions,
+  ) {
+    switch (achievement.id) {
+      case 'weekend_warrior':
+        return _getWeekendCompletions(completions) >= achievement.requirement;
+      case 'holiday_hero':
+        return _getHolidayCompletions(completions) >= achievement.requirement;
+      case 'habit_sage':
+        // Check if 75% of achievements are unlocked
+        return _getAchievementUnlockPercentage() >= 0.75;
+      case 'habit_deity':
+        // Check if all achievements are unlocked
+        return _getAchievementUnlockPercentage() >= 1.0;
+      default:
+        return false;
+    }
+  }
+
+  /// Get progress for special achievements
+  static double _getSpecialAchievementProgress(
+    Achievement achievement,
+    List<Map<String, dynamic>> habits,
+    List<Map<String, dynamic>> completions,
+  ) {
+    switch (achievement.id) {
+      case 'weekend_warrior':
+        return _getWeekendCompletions(completions).toDouble();
+      case 'holiday_hero':
+        return _getHolidayCompletions(completions).toDouble();
+      case 'habit_sage':
+      case 'habit_deity':
+        return _getAchievementUnlockPercentage();
+      default:
+        return 0.0;
+    }
+  }
+
+  /// Count completions on weekends
+  static int _getWeekendCompletions(List<Map<String, dynamic>> completions) {
+    return completions.where((completion) {
+      final date = completion['completedAt'] as DateTime?;
+      if (date == null) return false;
+      return date.weekday == DateTime.saturday ||
+          date.weekday == DateTime.sunday;
+    }).length;
+  }
+
+  /// Count completions on holidays (simplified - you can expand this)
+  static int _getHolidayCompletions(List<Map<String, dynamic>> completions) {
+    // This is a simplified version - you'd want to add actual holiday dates
+    final holidays = [
+      DateTime(DateTime.now().year, 1, 1), // New Year's Day
+      DateTime(DateTime.now().year, 7, 4), // Independence Day (US)
+      DateTime(DateTime.now().year, 12, 25), // Christmas
+      // Add more holidays as needed
+    ];
+
+    return completions.where((completion) {
+      final date = completion['completedAt'] as DateTime?;
+      if (date == null) return false;
+      return holidays.any((holiday) =>
+          holiday.year == date.year &&
+          holiday.month == date.month &&
+          holiday.day == date.day);
+    }).length;
+  }
+
+  /// Get percentage of achievements unlocked (placeholder - needs async implementation)
+  static double _getAchievementUnlockPercentage() {
+    // This is a placeholder - in a real implementation, you'd need to make this async
+    // and check the actual unlocked achievements percentage
+    return 0.0; // Will need proper implementation
+  }
 }
 
 enum AchievementCategory {
@@ -595,6 +1334,7 @@ enum AchievementType {
   categorySpecific,
   timeSpecific,
   comeback,
+  special,
 }
 
 class Achievement {
