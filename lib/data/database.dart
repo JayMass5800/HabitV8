@@ -3,6 +3,7 @@
 // caching, notifications integration, and calendar synchronization.
 
 import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../domain/model/habit.dart';
@@ -21,6 +22,172 @@ final databaseProvider = FutureProvider<Box<Habit>>((ref) async {
 final habitServiceProvider = FutureProvider<HabitService>((ref) async {
   final habitBox = await ref.watch(databaseProvider.future);
   return HabitService(habitBox);
+});
+
+// State class for habits with real-time updates
+class HabitsState {
+  final List<Habit> habits;
+  final bool isLoading;
+  final String? error;
+  final DateTime lastUpdated;
+
+  const HabitsState({
+    required this.habits,
+    this.isLoading = false,
+    this.error,
+    required this.lastUpdated,
+  });
+
+  HabitsState copyWith({
+    List<Habit>? habits,
+    bool? isLoading,
+    String? error,
+    DateTime? lastUpdated,
+  }) {
+    return HabitsState(
+      habits: habits ?? this.habits,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+      lastUpdated: lastUpdated ?? this.lastUpdated,
+    );
+  }
+}
+
+// StateNotifier for real-time habit updates
+class HabitsNotifier extends StateNotifier<HabitsState> {
+  final HabitService _habitService;
+  Timer? _refreshTimer;
+  Map<String, int> _habitCompletionsCount = {};
+
+  HabitsNotifier(this._habitService)
+      : super(HabitsState(
+          habits: [],
+          isLoading: true,
+          lastUpdated: DateTime.now(),
+        )) {
+    _loadHabits();
+    _startPeriodicRefresh();
+  }
+
+  Future<void> _loadHabits() async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      final habits = await _habitService.getAllHabits();
+      _updateCompletionsCount(habits);
+      state = state.copyWith(
+        habits: habits,
+        isLoading: false,
+        lastUpdated: DateTime.now(),
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+        lastUpdated: DateTime.now(),
+      );
+    }
+  }
+
+  void _updateCompletionsCount(List<Habit> habits) {
+    _habitCompletionsCount.clear();
+    for (final habit in habits) {
+      _habitCompletionsCount[habit.id] = habit.completions.length;
+    }
+  }
+
+  void _startPeriodicRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _checkForUpdates();
+    });
+  }
+
+  Future<void> _checkForUpdates() async {
+    try {
+      final habits = await _habitService.getAllHabits();
+      // Only update if habits have actually changed
+      if (_habitsChanged(habits)) {
+        _updateCompletionsCount(habits);
+        state = state.copyWith(
+          habits: habits,
+          lastUpdated: DateTime.now(),
+        );
+      }
+    } catch (e) {
+      // Silently handle errors during periodic refresh
+      AppLogger.debug('Periodic habit refresh failed: $e');
+    }
+  }
+
+  bool _habitsChanged(List<Habit> newHabits) {
+    if (state.habits.length != newHabits.length) return true;
+
+    // Create a map for faster lookups
+    final oldHabitsMap = {for (final habit in state.habits) habit.id: habit};
+
+    for (final newHabit in newHabits) {
+      final oldHabit = oldHabitsMap[newHabit.id];
+      if (oldHabit == null) return true; // New habit added
+
+      // Check if completions count changed (fastest check)
+      final oldCompletionsCount = _habitCompletionsCount[newHabit.id] ?? 0;
+      if (newHabit.completions.length != oldCompletionsCount) return true;
+
+      // Check other key properties
+      if (oldHabit.name != newHabit.name ||
+          oldHabit.isActive != newHabit.isActive ||
+          oldHabit.notificationsEnabled != newHabit.notificationsEnabled) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> refreshHabits() async {
+    await _loadHabits();
+  }
+
+  Future<void> updateHabit(Habit habit) async {
+    try {
+      await _habitService.updateHabit(habit);
+      // Immediately refresh to show changes
+      await _loadHabits();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+}
+
+// Provider for real-time habits state
+final habitsNotifierProvider =
+    StateNotifierProvider<HabitsNotifier, HabitsState>((ref) {
+  // Watch both providers to ensure proper initialization order
+  final habitServiceAsync = ref.watch(habitServiceProvider);
+
+  return habitServiceAsync.when(
+    data: (habitService) => HabitsNotifier(habitService),
+    loading: () => throw StateError('HabitService is loading'),
+    error: (error, stackTrace) =>
+        throw StateError('HabitService error: $error'),
+  );
+});
+
+// Fallback provider that handles the loading state gracefully
+final habitsStateProvider = Provider<AsyncValue<HabitsState>>((ref) {
+  try {
+    final habitsState = ref.watch(habitsNotifierProvider);
+    return AsyncValue.data(habitsState);
+  } catch (e) {
+    // Return loading state while services are initializing
+    return const AsyncValue.loading();
+  }
 });
 
 class DatabaseService {
@@ -82,7 +249,8 @@ class HabitService {
   final HabitStatsService _statsService = HabitStatsService();
   List<Habit>? _cachedHabits;
   DateTime? _cacheTimestamp;
-  static const Duration _cacheExpiry = Duration(seconds: 30);
+  static const Duration _cacheExpiry =
+      Duration(seconds: 5); // Reduced from 30 to 5 seconds
 
   HabitService(this._habitBox);
 

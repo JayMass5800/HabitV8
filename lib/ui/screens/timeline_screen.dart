@@ -43,6 +43,41 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
               });
             },
           ),
+          // Add refresh button for manual refresh
+          Consumer(
+            builder: (context, ref, child) {
+              return IconButton(
+                onPressed: () async {
+                  try {
+                    await ref
+                        .read(habitsNotifierProvider.notifier)
+                        .refreshHabits();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Habits refreshed'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    // If provider not ready, just invalidate and retry
+                    ref.invalidate(habitsNotifierProvider);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Refreshing habits...'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Refresh habits',
+              );
+            },
+          ),
         ],
       ),
       body: Column(
@@ -104,122 +139,200 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   Widget _buildHabitsList() {
     return Consumer(
       builder: (context, ref, child) {
-        // Use ref.watch to automatically rebuild when habitServiceProvider changes
-        final habitServiceAsync = ref.watch(habitServiceProvider);
+        // Watch the habits state with proper error handling
+        final habitsStateAsync = ref.watch(habitsStateProvider);
 
-        return habitServiceAsync.when(
-          data: (habitService) => FutureBuilder<List<Habit>>(
-            // Remove the force rebuild key for better performance
-            future: habitService.getAllHabits(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+        return habitsStateAsync.when(
+          data: (habitsState) {
+            if (habitsState.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.timeline, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'No habits yet',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Create your first habit to get started!',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                );
-              }
+            if (habitsState.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error, size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading habits',
+                      style: const TextStyle(fontSize: 18, color: Colors.red),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      habitsState.error!,
+                      style: const TextStyle(color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        try {
+                          ref
+                              .read(habitsNotifierProvider.notifier)
+                              .refreshHabits();
+                        } catch (e) {
+                          // If provider not ready, just invalidate and retry
+                          ref.invalidate(habitsNotifierProvider);
+                        }
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-              final allHabits = snapshot.data!;
-
-              // Optimize filtering and sorting with single pass
-              final hourlyHabits = <Habit>[];
-              final regularHabits = <Habit>[];
-
-              for (final habit in allHabits) {
-                // Apply category filter and date filter in one pass
-                if ((_selectedCategory == 'All' ||
-                        habit.category == _selectedCategory) &&
-                    _isHabitDueOnDate(habit, _selectedDate)) {
-                  if (habit.frequency == HabitFrequency.hourly &&
-                      habit.hourlyTimes.isNotEmpty) {
-                    hourlyHabits.add(habit);
-                  } else {
-                    regularHabits.add(habit);
+            if (habitsState.habits.isEmpty) {
+              return RefreshIndicator(
+                onRefresh: () async {
+                  try {
+                    await ref
+                        .read(habitsNotifierProvider.notifier)
+                        .refreshHabits();
+                  } catch (e) {
+                    // If provider not ready, just invalidate and retry
+                    ref.invalidate(habitsNotifierProvider);
                   }
+                },
+                child: ListView(
+                  children: const [
+                    SizedBox(height: 200),
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.timeline, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(
+                            'No habits yet',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Create your first habit to get started!',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final allHabits = habitsState.habits;
+
+            // Optimize filtering and sorting with single pass
+            final hourlyHabits = <Habit>[];
+            final regularHabits = <Habit>[];
+
+            for (final habit in allHabits) {
+              // Apply category filter and date filter in one pass
+              if ((_selectedCategory == 'All' ||
+                      habit.category == _selectedCategory) &&
+                  _isHabitDueOnDate(habit, _selectedDate)) {
+                if (habit.frequency == HabitFrequency.hourly &&
+                    habit.hourlyTimes.isNotEmpty) {
+                  hourlyHabits.add(habit);
+                } else {
+                  regularHabits.add(habit);
                 }
               }
+            }
 
-              // Sort hourly habits by their earliest time slot
-              hourlyHabits.sort((a, b) {
-                final aEarliestTime = _getEarliestTimeSlot(a);
-                final bEarliestTime = _getEarliestTimeSlot(b);
+            // Sort hourly habits by their earliest time slot
+            hourlyHabits.sort((a, b) {
+              final aEarliestTime = _getEarliestTimeSlot(a);
+              final bEarliestTime = _getEarliestTimeSlot(b);
 
-                if (aEarliestTime != null && bEarliestTime != null) {
-                  if (aEarliestTime.hour != bEarliestTime.hour) {
-                    return aEarliestTime.hour.compareTo(bEarliestTime.hour);
-                  }
-                  return aEarliestTime.minute.compareTo(bEarliestTime.minute);
+              if (aEarliestTime != null && bEarliestTime != null) {
+                if (aEarliestTime.hour != bEarliestTime.hour) {
+                  return aEarliestTime.hour.compareTo(bEarliestTime.hour);
                 }
-
-                return a.createdAt.compareTo(b.createdAt);
-              });
-
-              // Sort regular habits by notification time or creation date
-              regularHabits.sort((a, b) {
-                if (a.notificationTime != null && b.notificationTime != null) {
-                  final timeA = a.notificationTime!;
-                  final timeB = b.notificationTime!;
-
-                  if (timeA.hour != timeB.hour) {
-                    return timeA.hour.compareTo(timeB.hour);
-                  }
-                  return timeA.minute.compareTo(timeB.minute);
-                }
-
-                if (a.notificationTime != null && b.notificationTime == null) {
-                  return -1;
-                }
-                if (a.notificationTime == null && b.notificationTime != null) {
-                  return 1;
-                }
-
-                return b.createdAt.compareTo(a.createdAt);
-              });
-
-              if (hourlyHabits.isEmpty && regularHabits.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        size: 64,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _selectedCategory == 'All'
-                            ? 'No habits scheduled for this day'
-                            : 'No $_selectedCategory habits for this day',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+                return aEarliestTime.minute.compareTo(bEarliestTime.minute);
               }
 
-              return ListView.builder(
+              return a.createdAt.compareTo(b.createdAt);
+            });
+
+            // Sort regular habits by notification time or creation date
+            regularHabits.sort((a, b) {
+              if (a.notificationTime != null && b.notificationTime != null) {
+                final timeA = a.notificationTime!;
+                final timeB = b.notificationTime!;
+
+                if (timeA.hour != timeB.hour) {
+                  return timeA.hour.compareTo(timeB.hour);
+                }
+                return timeA.minute.compareTo(timeB.minute);
+              }
+
+              if (a.notificationTime != null && b.notificationTime == null) {
+                return -1;
+              }
+              if (a.notificationTime == null && b.notificationTime != null) {
+                return 1;
+              }
+
+              return b.createdAt.compareTo(a.createdAt);
+            });
+
+            if (hourlyHabits.isEmpty && regularHabits.isEmpty) {
+              return RefreshIndicator(
+                onRefresh: () async {
+                  try {
+                    await ref
+                        .read(habitsNotifierProvider.notifier)
+                        .refreshHabits();
+                  } catch (e) {
+                    // If provider not ready, just invalidate and retry
+                    ref.invalidate(habitsNotifierProvider);
+                  }
+                },
+                child: ListView(
+                  children: [
+                    const SizedBox(height: 200),
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.check_circle_outline,
+                            size: 64,
+                            color: Colors.green,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _selectedCategory == 'All'
+                                ? 'No habits scheduled for this day'
+                                : 'No $_selectedCategory habits for this day',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async {
+                try {
+                  await ref
+                      .read(habitsNotifierProvider.notifier)
+                      .refreshHabits();
+                } catch (e) {
+                  // If provider not ready, just invalidate and retry
+                  ref.invalidate(habitsNotifierProvider);
+                }
+              },
+              child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: hourlyHabits.length + regularHabits.length,
                 itemBuilder: (context, index) {
@@ -250,14 +363,34 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                     );
                   }
                 },
-              );
-            },
-          ),
+              ),
+            );
+          },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stackTrace) => Center(
-            child: Text(
-              'Error: $error',
-              style: const TextStyle(color: Colors.red),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Error initializing habits',
+                  style: const TextStyle(fontSize: 18, color: Colors.red),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error.toString(),
+                  style: const TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    ref.invalidate(habitsNotifierProvider);
+                  },
+                  child: const Text('Retry'),
+                ),
+              ],
             ),
           ),
         );
@@ -555,40 +688,44 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     });
 
     try {
-      final habitServiceAsync = ref.read(habitServiceProvider);
-      final habitService = habitServiceAsync.value;
-
-      if (habitService != null) {
-        if (isCompleted) {
-          // Remove completion
-          habit.completions.removeWhere((completion) {
-            final completionDate = DateTime(
-              completion.year,
-              completion.month,
-              completion.day,
-            );
-            final selectedDate = DateTime(
-              _selectedDate.year,
-              _selectedDate.month,
-              _selectedDate.day,
-            );
-            return completionDate == selectedDate;
-          });
-        } else {
-          // Add completion
-          habit.completions.add(_selectedDate);
-        }
-
-        await habitService.updateHabit(habit);
-
-        // Clear optimistic state after successful update
-        setState(() {
-          _optimisticCompletions.remove(optimisticKey);
+      if (isCompleted) {
+        // Remove completion
+        habit.completions.removeWhere((completion) {
+          final completionDate = DateTime(
+            completion.year,
+            completion.month,
+            completion.day,
+          );
+          final selectedDate = DateTime(
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day,
+          );
+          return completionDate == selectedDate;
         });
-
-        // Force UI refresh by invalidating the provider
-        ref.invalidate(habitServiceProvider);
+      } else {
+        // Add completion
+        habit.completions.add(_selectedDate);
       }
+
+      // Use the reactive notifier to update the habit
+      try {
+        await ref.read(habitsNotifierProvider.notifier).updateHabit(habit);
+      } catch (e) {
+        // If provider not ready, fall back to direct service update
+        final habitServiceAsync = ref.read(habitServiceProvider);
+        if (habitServiceAsync.hasValue) {
+          await habitServiceAsync.value!.updateHabit(habit);
+          ref.invalidate(habitsNotifierProvider);
+        } else {
+          throw e;
+        }
+      }
+
+      // Clear optimistic state after successful update
+      setState(() {
+        _optimisticCompletions.remove(optimisticKey);
+      });
     } catch (error) {
       // Revert optimistic update on error
       setState(() {
@@ -703,34 +840,38 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     });
 
     try {
-      final habitServiceAsync = ref.read(habitServiceProvider);
-      final habitService = habitServiceAsync.value;
-
-      if (habitService != null) {
-        if (isCompleted) {
-          // Remove completion for this specific time slot
-          habit.completions.removeWhere((completion) {
-            return completion.year == targetDateTime.year &&
-                completion.month == targetDateTime.month &&
-                completion.day == targetDateTime.day &&
-                completion.hour == targetDateTime.hour &&
-                completion.minute == targetDateTime.minute;
-          });
-        } else {
-          // Add completion for this specific time slot
-          habit.completions.add(targetDateTime);
-        }
-
-        await habitService.updateHabit(habit);
-
-        // Clear optimistic state after successful update
-        setState(() {
-          _optimisticCompletions.remove(optimisticKey);
+      if (isCompleted) {
+        // Remove completion for this specific time slot
+        habit.completions.removeWhere((completion) {
+          return completion.year == targetDateTime.year &&
+              completion.month == targetDateTime.month &&
+              completion.day == targetDateTime.day &&
+              completion.hour == targetDateTime.hour &&
+              completion.minute == targetDateTime.minute;
         });
-
-        // Force UI refresh by invalidating the provider
-        ref.invalidate(habitServiceProvider);
+      } else {
+        // Add completion for this specific time slot
+        habit.completions.add(targetDateTime);
       }
+
+      // Use the reactive notifier to update the habit
+      try {
+        await ref.read(habitsNotifierProvider.notifier).updateHabit(habit);
+      } catch (e) {
+        // If provider not ready, fall back to direct service update
+        final habitServiceAsync = ref.read(habitServiceProvider);
+        if (habitServiceAsync.hasValue) {
+          await habitServiceAsync.value!.updateHabit(habit);
+          ref.invalidate(habitsNotifierProvider);
+        } else {
+          throw e;
+        }
+      }
+
+      // Clear optimistic state after successful update
+      setState(() {
+        _optimisticCompletions.remove(optimisticKey);
+      });
     } catch (error) {
       // Revert optimistic update on error
       setState(() {
