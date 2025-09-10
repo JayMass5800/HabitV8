@@ -1192,16 +1192,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _exportData(String format) async {
+    bool dialogShown = false;
+
     try {
       // Show loading dialog
       if (mounted) {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
+          builder: (context) => const AlertDialog(
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text('Exporting data...'),
+              ],
+            ),
           ),
         );
+        dialogShown = true;
       }
 
       // Get all habits from database
@@ -1209,8 +1219,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final habits = await habitService.getAllHabits();
 
       if (habits.isEmpty) {
-        if (mounted) {
-          Navigator.pop(context); // Close loading dialog
+        if (mounted && dialogShown) {
+          Navigator.of(context).pop(); // Close loading dialog
+          dialogShown = false;
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('No habits to export'),
@@ -1228,15 +1240,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         exportResult = await DataExportImportService.exportToCSV(habits);
       }
 
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+      if (mounted && dialogShown) {
+        Navigator.of(context).pop(); // Close loading dialog
+        dialogShown = false;
       }
 
       if (exportResult?.success == true &&
           exportResult?.filePath != null &&
           mounted) {
         // Show success dialog with share option
-        showDialog(
+        await showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Export Successful'),
@@ -1245,19 +1258,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  }
+                  Navigator.of(context).pop();
                 },
                 child: const Text('OK'),
               ),
               FilledButton(
                 onPressed: () async {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
+                  // Close dialog first, then share
+                  Navigator.of(context).pop();
+
+                  // Add a small delay to ensure navigation completes
+                  await Future.delayed(const Duration(milliseconds: 300));
+
+                  // Share file
+                  try {
+                    await DataExportImportService.shareFile(
+                        exportResult!.filePath!, format);
+                  } catch (e) {
+                    AppLogger.error('Error sharing file', e);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content:
+                              Text('Failed to share file: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
-                  await DataExportImportService.shareFile(
-                      exportResult!.filePath!, format);
                 },
                 child: const Text('Share'),
               ),
@@ -1289,8 +1317,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
     } catch (e) {
+      // Ensure loading dialog is closed on error
+      if (mounted && dialogShown) {
+        try {
+          Navigator.of(context).pop();
+        } catch (navError) {
+          AppLogger.warning('Could not close loading dialog: $navError');
+        }
+      }
+
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog if still open
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Export error: ${e.toString()}'),

@@ -173,6 +173,8 @@ class DataExportImportService {
   /// Share exported file
   static Future<bool> shareFile(String filePath, String fileType) async {
     try {
+      AppLogger.info('Starting file share process: $filePath');
+
       final file = File(filePath);
       if (!await file.exists()) {
         AppLogger.error('Export file not found: $filePath');
@@ -180,15 +182,21 @@ class DataExportImportService {
       }
 
       final fileName = filePath.split('/').last;
+
+      // Add a small delay to ensure any navigation operations have completed
+      await Future.delayed(const Duration(milliseconds: 100));
+
       final result = await Share.shareXFiles(
         [XFile(filePath)],
         subject: 'HabitV8 Data Export ($fileType)',
         text:
             'Here is my habit tracking data exported from HabitV8 in $fileType format.',
+        sharePositionOrigin: null, // Let the system decide position
       );
 
-      AppLogger.info('File shared successfully: $fileName');
-      return result.status == ShareResultStatus.success;
+      final success = result.status == ShareResultStatus.success;
+      AppLogger.info('File shared with result: ${result.status} - $fileName');
+      return success;
     } catch (e) {
       AppLogger.error('Error sharing file', e);
       return false;
