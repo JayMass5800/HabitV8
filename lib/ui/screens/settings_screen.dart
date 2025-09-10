@@ -1193,28 +1193,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _exportData(String format) async {
     bool dialogShown = false;
+    OverlayEntry? loadingOverlay;
 
     try {
       AppLogger.info('Starting export process for format: $format');
       
-      // Show loading dialog
+      // Show loading overlay instead of dialog to avoid navigation conflicts
       if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 16),
-                Text('Exporting data...'),
-              ],
+        loadingOverlay = OverlayEntry(
+          builder: (context) => Material(
+            color: Colors.black54,
+            child: Center(
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(width: 16),
+                      Text('Exporting data...', style: Theme.of(context).textTheme.bodyLarge),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         );
+        Overlay.of(context).insert(loadingOverlay);
         dialogShown = true;
-        AppLogger.info('Loading dialog shown');
+        AppLogger.info('Loading overlay shown');
       }
 
       // Get all habits from database
@@ -1224,18 +1232,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       AppLogger.info('Retrieved ${habits.length} habits from database');
 
       if (habits.isEmpty) {
-        AppLogger.info('No habits found, closing dialog and showing message');
-        if (mounted && dialogShown) {
-          // Safely close dialog
+        AppLogger.info('No habits found, closing overlay and showing message');
+        if (mounted && dialogShown && loadingOverlay != null) {
+          // Remove loading overlay
           try {
-            if (Navigator.canPop(context)) {
-              Navigator.of(context).pop();
-              AppLogger.info('Loading dialog closed successfully');
-            } else {
-              AppLogger.warning('Cannot pop dialog - no route to pop');
-            }
+            loadingOverlay.remove();
+            AppLogger.info('Loading overlay removed successfully');
           } catch (e) {
-            AppLogger.error('Error closing loading dialog', e);
+            AppLogger.error('Error removing loading overlay', e);
           }
           dialogShown = false;
 
@@ -1260,18 +1264,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       AppLogger.info('Export completed with success: ${exportResult?.success}');
 
-      // Always try to close the loading dialog
-      if (mounted && dialogShown) {
-        AppLogger.info('Attempting to close loading dialog');
+      // Always try to close the loading overlay
+      if (mounted && dialogShown && loadingOverlay != null) {
+        AppLogger.info('Attempting to close loading overlay');
         try {
-          if (Navigator.canPop(context)) {
-            Navigator.of(context).pop();
-            AppLogger.info('Loading dialog closed successfully');
-          } else {
-            AppLogger.warning('Cannot pop dialog - no route to pop');
-          }
+          loadingOverlay.remove();
+          AppLogger.info('Loading overlay closed successfully');
         } catch (e) {
-          AppLogger.error('Error closing loading dialog', e);
+          AppLogger.error('Error closing loading overlay', e);
         }
         dialogShown = false;
       }
@@ -1289,6 +1289,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             duration: const Duration(seconds: 3),
           ),
         );
+      } else if (exportResult?.cancelled == true) {
+        AppLogger.info('Export was cancelled by user, no message needed');
+        // User cancelled - don't show any message
       } else if (mounted) {
         final errorMessage =
             exportResult?.message ?? 'Failed to export data to $format';
@@ -1316,18 +1319,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (e) {
       AppLogger.error('Export failed with exception', e);
       
-      // Ensure loading dialog is closed on error
-      if (mounted && dialogShown) {
-        AppLogger.info('Attempting to close loading dialog after error');
+      // Ensure loading overlay is closed on error
+      if (mounted && dialogShown && loadingOverlay != null) {
+        AppLogger.info('Attempting to close loading overlay after error');
         try {
-          if (Navigator.canPop(context)) {
-            Navigator.of(context).pop();
-            AppLogger.info('Loading dialog closed after error');
-          } else {
-            AppLogger.warning('Cannot pop dialog after error - no route to pop');
-          }
-        } catch (navError) {
-          AppLogger.error('Could not close loading dialog after error', navError);
+          loadingOverlay.remove();
+          AppLogger.info('Loading overlay closed after error');
+        } catch (overlayError) {
+          AppLogger.error('Could not close loading overlay after error', overlayError);
         }
         dialogShown = false;
       }

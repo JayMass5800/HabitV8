@@ -51,6 +51,7 @@ class DataExportImportService {
         return ExportResult(
           success: false,
           message: 'Export cancelled by user',
+          cancelled: true,
         );
       }
 
@@ -175,6 +176,7 @@ class DataExportImportService {
         return ExportResult(
           success: false,
           message: 'Export cancelled by user',
+          cancelled: true,
         );
       }
 
@@ -686,10 +688,12 @@ class ExportResult {
   final bool success;
   final String message;
   final String? filePath;
+  final bool cancelled;
 
   ExportResult({
     required this.success,
     required this.message,
     this.filePath,
+    this.cancelled = false,
   });
 }
