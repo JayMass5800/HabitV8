@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
 // Old renewal services removed - now using midnight_habit_reset_service.dart
-import 'automatic_habit_completion_service.dart';
 import 'notification_action_service.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
@@ -104,13 +103,6 @@ class AppLifecycleService with WidgetsBindingObserver {
 
     // Old renewal services removed - now using MidnightHabitResetService
     AppLogger.info('App paused - midnight reset service continues running');
-
-    try {
-      // Dispose AutomaticHabitCompletionService
-      AutomaticHabitCompletionService.dispose();
-    } catch (e) {
-      AppLogger.error('Error disposing AutomaticHabitCompletionService', e);
-    }
 
     AppLogger.info('✅ Service cleanup completed');
   }

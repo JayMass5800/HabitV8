@@ -3,7 +3,6 @@ import 'package:habitv8/services/background_task_service.dart';
 import 'package:habitv8/services/notification_queue_processor.dart';
 import 'package:habitv8/services/calendar_renewal_service.dart';
 import 'package:habitv8/services/habit_continuation_service.dart';
-import 'package:habitv8/services/automatic_habit_completion_service.dart';
 import 'package:habitv8/services/app_lifecycle_service.dart';
 
 void main() {
@@ -63,7 +62,6 @@ void main() {
       expect(() => NotificationQueueProcessor.dispose(), returnsNormally);
       expect(() => CalendarRenewalService.dispose(), returnsNormally);
       expect(() => HabitContinuationService.dispose(), returnsNormally);
-      expect(() => AutomaticHabitCompletionService.dispose(), returnsNormally);
     });
   });
 }

@@ -14,7 +14,6 @@ import 'services/theme_service.dart';
 import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/midnight_habit_reset_service.dart';
-import 'services/automatic_habit_completion_service.dart';
 import 'services/app_lifecycle_service.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/all_habits_screen.dart';
@@ -24,7 +23,6 @@ import 'ui/screens/insights_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/create_habit_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
-import 'ui/screens/automatic_completion_settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -108,9 +106,6 @@ void main() async {
   // This replaces the old calendar renewal and habit continuation systems
   _initializeMidnightReset();
 
-  // Initialize automatic habit completion service (non-blocking)
-  _initializeAutomaticHabitCompletion();
-
   runApp(UncontrolledProviderScope(container: container, child: const MyApp()));
 }
 
@@ -142,38 +137,6 @@ void _initializeMidnightReset() async {
 }
 
 // Notification scheduling function removed - now handled by midnight reset service
-
-/// Initialize automatic habit completion service (non-blocking)
-void _initializeAutomaticHabitCompletion() async {
-  try {
-    // Delay to let the app finish core initialization
-    await Future.delayed(const Duration(seconds: 3));
-
-    AppLogger.info('Initializing automatic habit completion service...');
-    final completionServiceInitialized =
-        await AutomaticHabitCompletionService.initialize().timeout(
-      const Duration(seconds: 15),
-      onTimeout: () {
-        AppLogger.warning(
-            'Automatic habit completion service initialization timed out');
-        return false;
-      },
-    );
-
-    if (completionServiceInitialized) {
-      AppLogger.info(
-        'Automatic habit completion service initialized successfully',
-      );
-    } else {
-      AppLogger.warning(
-        'Automatic habit completion service initialization failed or timed out',
-      );
-    }
-  } catch (e) {
-    AppLogger.error('Error initializing automatic habit completion service', e);
-    // Don't block app startup if initialization fails
-  }
-}
 
 Future<void> _setCorrectTimezone() async {
   try {
@@ -513,11 +476,6 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
-        ),
-        GoRoute(
-          path: '/automatic-completion-settings',
-          builder: (context, state) =>
-              const AutomaticCompletionSettingsScreen(),
         ),
       ],
     ),
