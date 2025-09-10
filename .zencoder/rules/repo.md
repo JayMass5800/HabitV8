@@ -24,7 +24,7 @@ HabitV8 is a Flutter-based habit tracking application that allows users to creat
 
 ## Language & Runtime
 **Language**: Dart
-**Version**: SDK ^3.8.1
+**Version**: SDK ^3.4.0
 **Framework**: Flutter
 **Build System**: Flutter build system
 **Package Manager**: pub (Flutter/Dart package manager)
@@ -33,22 +33,30 @@ HabitV8 is a Flutter-based habit tracking application that allows users to creat
 **Main Dependencies**:
 - flutter: SDK
 - cupertino_icons: ^1.0.8
-- flutter_local_notifications: ^18.0.1
+- flutter_local_notifications: ^17.2.3
 - permission_handler: ^12.0.1
+- device_info_plus: ^11.5.0
 - hive: ^2.2.3
 - hive_flutter: ^1.1.0
 - flutter_riverpod: ^2.5.1
+- provider: ^6.1.2
 - go_router: ^16.1.0
-- health: ^13.1.1
-- device_calendar: ^4.3.3
-- fl_chart: ^1.0.0
+- fl_chart: ^0.69.0
 - tflite_flutter: ^0.11.0
 - path_provider: ^2.1.3
 - intl: ^0.20.2
 - shared_preferences: ^2.2.2
-- timezone: ^0.9.4
+- timezone: 0.9.4
 - logger: ^2.4.0
 - table_calendar: ^3.0.9
+- device_calendar: ^4.3.3
+- flutter_ringtone_manager: ^1.0.0
+- audioplayers: ^6.1.0
+- alarm: ^5.1.4
+- workmanager: ^0.9.0+3
+- csv: ^6.0.0
+- file_picker: ^8.1.2
+- share_plus: ^10.1.1
 
 **Development Dependencies**:
 - flutter_test: SDK
@@ -92,11 +100,11 @@ flutter test
 **Key Features**:
 - Habit tracking with various frequency options (hourly to yearly)
 - Streak tracking and statistics
-- Health integration
 - Calendar integration
 - Smart recommendations using TensorFlow Lite
-- Notifications and reminders
+- Notifications and reminders with system alarm backup
 - Multi-platform support (mobile, web, desktop)
+- Data export/import functionality
 
 ## Service Interaction Map
 
@@ -124,16 +132,6 @@ flutter test
   - `TrueAlarmService`: Handles system-level alarms for critical reminders
   - `NotificationQueueProcessor`: Manages notification delivery queue
   - Bidirectional connection with habit completion tracking
-
-- **Health Integration**:
-  - `HealthService`: Interfaces with device health APIs
-  - `HealthHabitIntegrationService`: Maps health data to habits
-  - `HealthHabitMappingService`: Determines which habits can be auto-completed
-  - `AutomaticHabitCompletionService`: Completes habits based on health metrics
-  - `HealthHabitAnalyticsService`: Analyzes correlations between habits and health
-  - `SmartThresholdService`: Dynamically adjusts health thresholds based on user patterns
-  - `HealthHabitUIService`: Provides UI components for health data visualization
-  - `HealthHabitBackgroundService`: Manages background health data processing
 
 - **Calendar Integration**:
   - `CalendarService`: Syncs habits with device calendar
@@ -167,8 +165,6 @@ flutter test
   - `InsightsScreen`: AI-powered habit insights
   - `SettingsScreen`: App configuration
   - `CreateHabitScreen`/`EditHabitScreen`: Habit management
-  - `HealthIntegrationScreen`: Health data connection
-  - `AutomaticCompletionSettingsScreen`: Configure auto-completion
   - `OnboardingScreen`: User onboarding experience
 
 - **State Management**:
@@ -187,8 +183,6 @@ main() → AppLifecycleService.initialize()
        → NotificationActionService.initialize()
        → CalendarRenewalService.initialize() (delayed)
        → HabitContinuationManager.initialize() (delayed)
-       → HealthHabitInitializationService.initialize() (delayed)
-       → AutomaticHabitCompletionService.initialize() (after health init)
 ```
 
 #### 2. Habit Creation & Management Flow
@@ -196,7 +190,6 @@ main() → AppLifecycleService.initialize()
 User → CreateHabitScreen → HabitService.addHabit() → Database
                          → NotificationService.scheduleHabitNotifications()
                          → CalendarService.syncHabitChanges()
-                         → HealthHabitMappingService (if health-related)
                          → CategorySuggestionService (for category recommendations)
 ```
 
@@ -209,16 +202,7 @@ User → TimelineScreen → HabitService.markHabitComplete() → Database
                       → AchievementsService (check for achievements)
 ```
 
-#### 4. Health-Based Auto-Completion Flow
-```
-HealthService → HealthHabitIntegrationService → HealthHabitMappingService
-              → AutomaticHabitCompletionService → HabitService.markHabitComplete()
-              → NotificationService (send completion notification)
-              → SmartThresholdService (adjust thresholds based on completion)
-              → HealthHabitAnalyticsService (update analytics)
-```
-
-#### 5. Notification Action Flow
+#### 4. Notification Action Flow
 ```
 System Notification → NotificationActionService → HabitService
                     → Database (update habit)
@@ -226,7 +210,7 @@ System Notification → NotificationActionService → HabitService
                     → NotificationQueueProcessor (process next notifications)
 ```
 
-#### 6. Analytics & Insights Flow
+#### 5. Analytics & Insights Flow
 ```
 HabitStatsService ← Database
                   → TrendAnalysisService
@@ -235,7 +219,7 @@ HabitStatsService ← Database
                   → AchievementsService
 ```
 
-#### 7. Calendar Synchronization Flow
+#### 6. Calendar Synchronization Flow
 ```
 HabitService (CRUD operations) → CalendarService.syncHabitChanges()
                                → Device Calendar API
@@ -243,7 +227,7 @@ CalendarRenewalService (periodic) → CalendarService
                                   → Device Calendar API
 ```
 
-#### 8. Performance Optimization Flow
+#### 7. Performance Optimization Flow
 ```
 PerformanceService → CacheService (manage cache TTL)
                    → Database (optimize queries)
@@ -261,15 +245,11 @@ PerformanceService → CacheService (manage cache TTL)
 
 #### 2. Service Interdependencies
 - **NotificationService** depends on PermissionService
-- **HealthService** depends on PermissionService
 - **CalendarService** depends on PermissionService
-- **AutomaticHabitCompletionService** depends on HealthService and HabitService
-- **HealthHabitIntegrationService** depends on HealthService, HabitService, and NotificationService
 - **NotificationActionService** depends on HabitService and NotificationService
 - **WorkManagerHabitService** depends on HabitService and NotificationService
 - **TrendAnalysisService** depends on HabitStatsService
 - **ComprehensiveHabitSuggestionsService** depends on HabitStatsService and TrendAnalysisService
-- **SmartThresholdService** depends on HealthService and HabitStatsService
 - **AchievementsService** depends on HabitStatsService
 - **ActivityRecognitionService** depends on PermissionService
 
@@ -277,8 +257,6 @@ PerformanceService → CacheService (manage cache TTL)
 - All screens depend on Riverpod providers for state management
 - Screens access services through provider containers
 - UI updates reactively when underlying data changes
-- `HealthIntegrationScreen` depends on HealthService and HealthHabitUIService
-- `AutomaticCompletionSettingsScreen` depends on SmartThresholdService
 
 ### Initialization Sequence
 
@@ -298,8 +276,6 @@ PerformanceService → CacheService (manage cache TTL)
 3. **Background Services Initialization**:
    - Initialize CalendarRenewalService (delayed)
    - Initialize HabitContinuationManager (delayed)
-   - Initialize HealthHabitIntegration (delayed)
-   - Initialize AutomaticHabitCompletionService (after health integration)
 
 4. **UI Initialization**:
    - Set up navigation routes
@@ -308,20 +284,13 @@ PerformanceService → CacheService (manage cache TTL)
 
 ### Data Synchronization Mechanisms
 
-1. **Health Data Sync**:
-   - Periodic background sync via HealthHabitIntegrationService
-   - On-demand sync when viewing health-related screens
-   - Automatic habit completion based on health thresholds
-   - Smart threshold adjustment based on user patterns
-   - Background processing via HealthHabitBackgroundService
-
-2. **Calendar Sync**:
+1. **Calendar Sync**:
    - Two-way sync between habits and device calendar
    - Calendar events created/updated when habits change
    - Calendar renewal for recurring habits
    - Periodic background sync via CalendarRenewalService
 
-3. **Cache Management**:
+2. **Cache Management**:
    - Performance optimization via CacheService
    - Cached habit statistics with TTL (time-to-live)
    - Cache invalidation on habit updates
@@ -336,14 +305,7 @@ PerformanceService → CacheService (manage cache TTL)
    - HybridAlarmService provides redundancy with system alarms
    - NotificationQueueProcessor manages notification delivery retries
 
-2. **Health Integration Failures**:
-   - Continues with limited functionality if health permissions denied
-   - Fallback to manual habit tracking
-   - Periodic permission re-requests
-   - Timeout handling for health API calls
-   - Error reporting and diagnostics via HealthHabitUIService
-
-3. **Database Errors**:
+2. **Database Errors**:
    - Recovery mechanisms for corrupted database
    - Automatic database reset if adapter issues detected
    - Logging of database operations for debugging

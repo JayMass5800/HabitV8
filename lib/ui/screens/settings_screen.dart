@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/settings_tile.dart';
 import '../widgets/calendar_selection_dialog.dart';
 import '../../services/notification_service.dart';
@@ -9,6 +10,7 @@ import '../../services/permission_service.dart';
 import '../../services/theme_service.dart';
 import '../../services/calendar_service.dart';
 import '../../services/logging_service.dart';
+import '../../services/data_export_import_service.dart';
 import '../../data/database.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -21,11 +23,30 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _calendarSyncEnabled = false;
   String? _selectedCalendarName;
+  String _defaultScreen = 'All Habits'; // Default screen setting
 
   @override
   void initState() {
     super.initState();
     _loadCalendarSettings();
+    _loadDefaultScreen();
+  }
+
+  Future<void> _loadDefaultScreen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final defaultScreen = prefs.getString('default_screen') ?? 'All Habits';
+
+      AppLogger.info('Loading default screen setting: $defaultScreen');
+
+      if (mounted) {
+        setState(() {
+          _defaultScreen = defaultScreen;
+        });
+      }
+    } catch (e) {
+      AppLogger.error('Error loading default screen setting', e);
+    }
   }
 
   Future<void> _loadCalendarSettings() async {
@@ -177,6 +198,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           subtitle: 'Choose your preferred color scheme',
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () => _showColorPicker(context),
+                        ),
+                        SettingsTile(
+                          title: 'Default Screen',
+                          subtitle:
+                              'Choose which screen opens when you start the app',
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _defaultScreen,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
+                                    ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.chevron_right),
+                            ],
+                          ),
+                          onTap: () => _showDefaultScreenPicker(context),
                         ),
                       ],
                     );
@@ -804,6 +848,95 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  void _showDefaultScreenPicker(BuildContext context) {
+    final availableScreens = [
+      'Timeline',
+      'All Habits',
+      'Calendar',
+      'Stats',
+      'Insights',
+      'Settings',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Default Screen'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: availableScreens
+              .map((screen) => ListTile(
+                    title: Text(screen),
+                    leading: Radio<String>(
+                      value: screen,
+                      groupValue: _defaultScreen,
+                      onChanged: (value) async {
+                        if (value != null) {
+                          await _saveDefaultScreen(value);
+                          if (Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
+                        }
+                      },
+                    ),
+                    onTap: () async {
+                      await _saveDefaultScreen(screen);
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
+                    },
+                  ))
+              .toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveDefaultScreen(String screenName) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('default_screen', screenName);
+
+      if (mounted) {
+        setState(() {
+          _defaultScreen = screenName;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Default screen set to $screenName'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      AppLogger.info('Default screen changed to: $screenName');
+    } catch (e) {
+      AppLogger.error('Error saving default screen setting', e);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save default screen setting'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   void _showWeekStartPicker(BuildContext context) {
     showDialog(
       context: context,
@@ -848,7 +981,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showExportOptions(BuildContext context) {
+  void _showExportOptions(BuildContext context) async {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -856,20 +989,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         content: const Text('Choose export format:'),
         actions: [
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
               }
-              _showFeatureComingSoon(context);
+              await _exportData('CSV');
             },
             child: const Text('CSV'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
               }
-              _showFeatureComingSoon(context);
+              await _exportData('JSON');
             },
             child: const Text('JSON'),
           ),
@@ -891,16 +1024,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Import Data'),
-        content: const Text('Select a backup file to import your habit data.'),
+        content: const Text(
+            'Select import format and backup file to import your habit data.'),
         actions: [
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
               }
-              _showFeatureComingSoon(context);
+              await _importData('JSON');
             },
-            child: const Text('Select File'),
+            child: const Text('JSON File'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              }
+              await _importData('CSV');
+            },
+            child: const Text('CSV File'),
           ),
           TextButton(
             onPressed: () {
@@ -933,18 +1076,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
               }
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('All data cleared'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
+              await _clearAllData();
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
@@ -956,11 +1092,293 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showFeatureComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('This feature is coming soon!'),
-      ),
-    );
+  Future<void> _clearAllData() async {
+    bool dialogShown = false;
+
+    try {
+      // Show loading dialog
+      if (mounted) {
+        dialogShown = true;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text('Clearing all data...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Cancel all notifications first
+      await NotificationService.cancelAllNotifications();
+      AppLogger.info('All notifications cancelled');
+
+      // Clear calendar events if calendar sync is enabled
+      try {
+        final syncEnabled = await CalendarService.isCalendarSyncEnabled();
+        if (syncEnabled) {
+          final habitService = await ref.read(habitServiceProvider.future);
+          final habits = await habitService.getAllHabits();
+          await CalendarService.removeAllHabitsFromCalendar(habits);
+          AppLogger.info('All calendar events removed');
+        }
+      } catch (e) {
+        AppLogger.warning('Failed to clear calendar events: $e');
+      }
+
+      // Reset the database (this will delete all habits)
+      await DatabaseService.resetDatabase();
+      AppLogger.info('Database reset completed');
+
+      // Close loading dialog BEFORE invalidating providers
+      if (mounted && dialogShown) {
+        try {
+          Navigator.pop(context);
+          dialogShown = false;
+        } catch (e) {
+          AppLogger.warning('Could not close loading dialog: $e');
+        }
+      }
+
+      // Show success message BEFORE invalidating providers
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All habit data has been permanently cleared'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Small delay to allow UI updates to process
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Invalidate providers to refresh UI (this may cause widget rebuilds)
+      if (mounted) {
+        ref.invalidate(habitServiceProvider);
+        ref.invalidate(databaseProvider);
+      }
+    } catch (e) {
+      AppLogger.error('Failed to clear all data', e);
+
+      // Close loading dialog if it's still shown
+      if (mounted && dialogShown) {
+        try {
+          Navigator.pop(context);
+        } catch (navError) {
+          AppLogger.warning(
+              'Could not close loading dialog after error: $navError');
+        }
+      }
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to clear data: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportData(String format) async {
+    try {
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      // Get all habits from database
+      final habitService = await ref.read(habitServiceProvider.future);
+      final habits = await habitService.getAllHabits();
+
+      if (habits.isEmpty) {
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No habits to export'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      ExportResult? exportResult;
+      if (format == 'JSON') {
+        exportResult = await DataExportImportService.exportToJSON(habits);
+      } else if (format == 'CSV') {
+        exportResult = await DataExportImportService.exportToCSV(habits);
+      }
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+      }
+
+      if (exportResult?.success == true &&
+          exportResult?.filePath != null &&
+          mounted) {
+        // Show success dialog with share option
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Export Successful'),
+            content: Text(
+                'Data exported to $format format.\n\nFile saved to: ${exportResult!.filePath!.split('/').last}'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('OK'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                  await DataExportImportService.shareFile(
+                      exportResult!.filePath!, format);
+                },
+                child: const Text('Share'),
+              ),
+            ],
+          ),
+        );
+      } else if (mounted) {
+        final errorMessage =
+            exportResult?.message ?? 'Failed to export data to $format';
+
+        // Check if it's a permission-related error
+        final isPermissionError = errorMessage.contains('permission') ||
+            errorMessage.contains('Permission');
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            action: isPermissionError
+                ? SnackBarAction(
+                    label: 'Settings',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      openAppSettings();
+                    },
+                  )
+                : null,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog if still open
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      AppLogger.error('Export failed', e);
+    }
+  }
+
+  Future<void> _importData(String format) async {
+    try {
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const AlertDialog(
+            content: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Text('Importing data...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      ImportResult result;
+      if (format == 'JSON') {
+        result = await DataExportImportService.importFromJSON();
+      } else if (format == 'CSV') {
+        result = await DataExportImportService.importFromCSV();
+      } else {
+        result = ImportResult(
+          success: false,
+          message: 'Invalid format: $format',
+        );
+      }
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+      }
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(
+              result.success ? 'Import Successful' : 'Import Failed',
+              style: TextStyle(
+                color: result.success ? Colors.green : Colors.red,
+              ),
+            ),
+            content: Text(result.message),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Refresh the UI to show new habits
+      if (result.success && mounted) {
+        // Invalidate the habit service provider to refresh data
+        ref.invalidate(habitServiceProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog if still open
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Import error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      AppLogger.error('Import failed', e);
+    }
   }
 }
