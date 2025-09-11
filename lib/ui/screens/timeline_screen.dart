@@ -562,7 +562,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   ),
                 ),
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200), // Faster animation
+                  duration:
+                      const Duration(milliseconds: 200), // Faster animation
                   transitionBuilder: (child, animation) {
                     return ScaleTransition(
                       scale: animation,

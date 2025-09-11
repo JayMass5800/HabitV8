@@ -164,13 +164,13 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       AppLogger.info('🚀 Force immediate habits refresh triggered');
       // Cancel periodic timer briefly to avoid conflicts
       _refreshTimer?.cancel();
-      
+
       // Force immediate reload
       await _loadHabits();
-      
+
       // Restart periodic refresh
       _startPeriodicRefresh();
-      
+
       AppLogger.info('✅ Force immediate habits refresh completed');
     } catch (e) {
       AppLogger.error('❌ Error in force immediate refresh', e);

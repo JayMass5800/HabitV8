@@ -396,11 +396,13 @@ class NotificationActionService {
         return;
       }
 
-      AppLogger.info('🚀 Triggering immediate UI update for notification completion');
+      AppLogger.info(
+          '🚀 Triggering immediate UI update for notification completion');
 
       // Get the habits notifier and force immediate refresh
       try {
-        final habitsNotifier = _container!.read(habitsNotifierProvider.notifier);
+        final habitsNotifier =
+            _container!.read(habitsNotifierProvider.notifier);
         await habitsNotifier.forceImmediateRefresh();
         AppLogger.info('✅ Immediate habits refresh completed');
       } catch (e) {
@@ -411,7 +413,6 @@ class NotificationActionService {
 
       // Also invalidate the main provider to ensure all dependent widgets update
       _container!.invalidate(habitServiceProvider);
-
     } catch (e) {
       AppLogger.error('Error in immediate UI update', e);
     }
