@@ -45,7 +45,6 @@ class PermissionService {
     final permissions = <Permission>[
       Permission.notification,
       Permission.calendarFullAccess,
-      Permission.activityRecognition,
       Permission.sensors,
       Permission.location,
       Permission.storage,
@@ -151,39 +150,17 @@ class PermissionService {
     return await Permission.calendarFullAccess.isGranted;
   }
 
-  /// Check activity recognition permission status
+  // Activity recognition is fully removed
   Future<bool> isActivityRecognitionPermissionGranted() async {
-    try {
-      final status = await Permission.activityRecognition.status;
-      AppLogger.info('Activity recognition permission status: $status');
-      return status == PermissionStatus.granted;
-    } catch (e) {
-      AppLogger.error('Error checking activity recognition permission', e);
-      return false;
-    }
+    AppLogger.info(
+        'Activity recognition permission check skipped (feature removed)');
+    return false;
   }
 
-  /// Request activity recognition permission
   Future<bool> requestActivityRecognitionPermission() async {
-    try {
-      AppLogger.info('Requesting activity recognition permission');
-
-      // Request the permission
-      final status = await Permission.activityRecognition.request();
-      AppLogger.info('Activity recognition permission request result: $status');
-
-      // If permission is granted, try to start background monitoring
-      if (status == PermissionStatus.granted) {
-        // Background monitoring is no longer needed - health integration removed
-        AppLogger.info(
-            'Background monitoring skipped - health integration removed');
-      }
-
-      return status == PermissionStatus.granted;
-    } catch (e) {
-      AppLogger.error('Error requesting activity recognition permission', e);
-      return false;
-    }
+    AppLogger.info(
+        'Activity recognition permission request skipped (feature removed)');
+    return false;
   }
 
   /// Check if exact alarm permission is granted
