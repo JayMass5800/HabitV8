@@ -59,6 +59,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
   final HabitService _habitService;
   Timer? _refreshTimer;
   final Map<String, int> _habitCompletionsCount = {};
+  static bool _databaseResetInProgress = false; // Track database reset state
 
   HabitsNotifier(this._habitService)
       : super(HabitsState(
@@ -105,6 +106,11 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
   }
 
   Future<void> _checkForUpdates() async {
+    // Skip check if database reset is in progress
+    if (_databaseResetInProgress) {
+      return;
+    }
+
     try {
       final habits = await _habitService.getAllHabits();
       // Only update if habits have actually changed
@@ -167,6 +173,12 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   /// Force immediate refresh for critical updates (like notification completions)
   Future<void> forceImmediateRefresh() async {
+    // Skip refresh if database reset is in progress
+    if (_databaseResetInProgress) {
+      AppLogger.debug('Skipping force refresh - database reset in progress');
+      return;
+    }
+
     try {
       AppLogger.info('🚀 Force immediate habits refresh triggered');
       // Cancel periodic timer briefly to avoid conflicts
@@ -196,6 +208,15 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       state = state.copyWith(error: e.toString());
       rethrow;
     }
+  }
+
+  // Static methods to control database reset state
+  static void markDatabaseResetInProgress() {
+    _databaseResetInProgress = true;
+  }
+
+  static void markDatabaseResetComplete() {
+    _databaseResetInProgress = false;
   }
 
   @override

@@ -1143,6 +1143,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         AppLogger.warning('Failed to clear calendar events: $e');
       }
 
+      // Mark database reset as in progress to prevent refresh attempts
+      HabitsNotifier.markDatabaseResetInProgress();
+
       // Invalidate providers BEFORE resetting database to stop periodic refresh
       if (mounted) {
         ref.invalidate(habitServiceProvider);
@@ -1157,6 +1160,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await DatabaseService.resetDatabase();
       AppLogger.info('Database reset completed');
 
+      // Mark reset as complete
+      HabitsNotifier.markDatabaseResetComplete();
+
       // Remove loading overlay
       if (mounted && loadingOverlay != null) {
         try {
@@ -1167,26 +1173,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         }
       }
 
+      // Additional delay to ensure database is properly closed and providers cleaned up
+      await Future.delayed(const Duration(milliseconds: 300));
+
       // Navigate to main page to reset the navigation stack
       if (mounted) {
         // Use context.go to reset the entire navigation stack
         context.go('/');
 
-        // Show success message after navigation
+        // Show success message after navigation with additional delay
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('All habit data has been permanently cleared'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 3),
-              ),
-            );
-          }
+          // Use Future.delayed to add the delay
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('All habit data has been permanently cleared'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          });
         });
       }
     } catch (e) {
       AppLogger.error('Failed to clear all data', e);
+
+      // Mark reset as complete even on error
+      HabitsNotifier.markDatabaseResetComplete();
 
       // Remove loading overlay if it's still shown
       if (mounted && loadingOverlay != null) {

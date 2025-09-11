@@ -45,8 +45,6 @@ class PermissionService {
     final permissions = <Permission>[
       Permission.notification,
       Permission.calendarFullAccess,
-      Permission.sensors,
-      Permission.location,
       Permission.storage,
     ];
 

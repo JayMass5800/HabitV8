@@ -46,25 +46,9 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 
-	<!-- Health permissions -->
-	<key>NSHealthShareUsageDescription</key>
-	<string>This app needs access to read your health data to track fitness habits and provide personalized insights.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>This app needs access to update your health data to record habit completion and fitness activities.</string>
-
 	<!-- Calendar permissions -->
 	<key>NSCalendarsUsageDescription</key>
 	<string>This app needs access to your calendar to create reminders and schedule habit tracking events.</string>
-
-	<!-- Motion and fitness permissions -->
-	<key>NSMotionUsageDescription</key>
-	<string>This app uses motion data to track your physical activity and movement patterns for habit tracking.</string>
-
-	<!-- Location permissions for fitness tracking -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs location access to track outdoor activities and provide location-based habit reminders.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs location access to track outdoor activities and provide location-based habit reminders.</string>
 
 	<!-- Notification permissions -->
 	<key>NSUserNotificationUsageDescription</key>
