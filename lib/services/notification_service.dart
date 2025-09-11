@@ -1083,7 +1083,7 @@ class NotificationService {
       final timeDiff = snoozeTime.difference(DateTime.now()).inMinutes;
       if (timeDiff < 29 || timeDiff > 31) {
         AppLogger.warning(
-            '⚠️ Snooze time calculation seems off: ${timeDiff} minutes');
+            '⚠️ Snooze time calculation seems off: $timeDiff minutes');
       }
 
       // Check exact alarm permissions before scheduling

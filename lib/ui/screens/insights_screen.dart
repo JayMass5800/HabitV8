@@ -28,6 +28,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   final InsightsService _insightsService = InsightsService();
   final EnhancedInsightsService _enhancedInsightsService =
       EnhancedInsightsService();
+  
+  // State for lazy loading AI insights to avoid unnecessary API calls
+  // AI insights are only loaded when the AI Insights tab is accessed
+  bool _aiInsightsRequested = false;
+  Future<List<Map<String, dynamic>>>? _aiInsightsFuture;
 
   @override
   void initState() {
@@ -42,10 +47,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
     _tabController = TabController(length: 3, vsync: this);
 
-    // Listen for tab changes to show onboarding
+    // Listen for tab changes to show onboarding and load AI insights
     _tabController.addListener(() {
       if (_tabController.index == 1) {
         // AI Insights tab
+        if (!_aiInsightsRequested) {
+          // Load AI insights automatically on first access
+          _loadAIInsights();
+        }
+        // Show onboarding after a delay
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
             AIInsightsOnboarding.showIfNeeded(context);
@@ -62,10 +72,30 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted && _tabController.index == 1) {
+          _loadAIInsights();
           AIInsightsOnboarding.showIfNeeded(context);
         }
       });
     });
+  }
+
+  /// Load AI insights only when requested (lazy loading)
+  void _loadAIInsights() {
+    if (!_aiInsightsRequested && mounted) {
+      setState(() {
+        _aiInsightsRequested = true;
+      });
+    }
+  }
+
+  /// Reset AI insights to force reload (useful when habits data changes)
+  void _resetAIInsights() {
+    if (mounted) {
+      setState(() {
+        _aiInsightsRequested = false;
+        _aiInsightsFuture = null;
+      });
+    }
   }
 
   @override
@@ -131,6 +161,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   child: RefreshIndicator(
                     onRefresh: () async {
                       ref.invalidate(habitServiceProvider);
+                      _resetAIInsights(); // Reset AI insights on refresh
                     },
                     child: TabBarView(
                       controller: _tabController,
@@ -873,8 +904,62 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final totalCompletions =
         activeHabits.fold<int>(0, (sum, h) => sum + h.completions.length);
 
+    // If AI insights haven't been requested yet, show a helpful message
+    if (!_aiInsightsRequested) {
+      return Column(
+        children: [
+          _buildAIInsightsHeader(theme),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.psychology_outlined,
+                  size: 64,
+                  color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Tap here to load AI insights',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'AI insights are loaded on-demand to save API usage',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _loadAIInsights,
+                  icon: const Icon(Icons.psychology),
+                  label: const Text('Load AI Insights'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Initialize the future if not already done
+    _aiInsightsFuture ??= _enhancedInsightsService.generateComprehensiveInsights(habits);
+
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _enhancedInsightsService.generateComprehensiveInsights(habits),
+      future: _aiInsightsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Column(
