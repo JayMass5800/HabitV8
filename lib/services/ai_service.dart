@@ -19,7 +19,7 @@ class AIService {
   static const String _openAiApiUrl =
       'https://api.openai.com/v1/chat/completions';
   static const String _geminiApiUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+      'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent';
 
   // Note: Never hardcode API keys - use secure storage or environment variables
   String? _openAiApiKey;
@@ -190,6 +190,7 @@ class AIService {
 
     try {
       final habitSummary = _generateHabitSummary(habits);
+      _logger.d('Sending request to Gemini API: $_geminiApiUrl');
 
       final response = await http.post(
         Uri.parse('$_geminiApiUrl?key=$_geminiApiKey'),
@@ -208,7 +209,7 @@ Please provide insights in this JSON format:
 [
   {
     "type": "motivational|pattern|insight|achievement",
-    "title": "Short insight title",
+    "title": "Short insight title", 
     "description": "Detailed insight explanation",
     "icon": "rocket_launch|trending_up|emoji_events|wb_sunny"
   }
@@ -222,10 +223,27 @@ Please provide insights in this JSON format:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final content = data['candidates'][0]['content']['parts'][0]['text'];
-        return _parseAIResponse(content);
+        if (data['candidates'] != null && 
+            data['candidates'].isNotEmpty &&
+            data['candidates'][0]['content'] != null &&
+            data['candidates'][0]['content']['parts'] != null &&
+            data['candidates'][0]['content']['parts'].isNotEmpty) {
+          final content = data['candidates'][0]['content']['parts'][0]['text'];
+          return _parseAIResponse(content);
+        } else {
+          _logger.w('Gemini API response structure unexpected: $data');
+          return _getFallbackInsights(habits);
+        }
       } else {
         _logger.w('Gemini API returned status ${response.statusCode}');
+        _logger.w('Response body: ${response.body}');
+        
+        // Try alternative API endpoint if 404
+        if (response.statusCode == 404) {
+          _logger.i('Trying alternative Gemini API endpoint...');
+          return _tryAlternativeGeminiEndpoint(habits, habitSummary);
+        }
+        
         return _getFallbackInsights(habits);
       }
     } catch (e) {
