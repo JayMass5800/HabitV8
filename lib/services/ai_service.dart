@@ -138,7 +138,8 @@ class AIService {
 
     // Validate API key format (OpenAI keys typically start with 'sk-')
     if (!_openAiApiKey!.startsWith('sk-')) {
-      _logger.w('OpenAI API key appears invalid (should start with sk-), using fallback insights');
+      _logger.w(
+          'OpenAI API key appears invalid (should start with sk-), using fallback insights');
       return _getFallbackInsights(habits);
     }
 
@@ -153,7 +154,8 @@ class AIService {
           'Authorization': 'Bearer $_openAiApiKey',
         },
         body: jsonEncode({
-          'model': 'gpt-4o-mini', // Updated to use the latest cost-effective model
+          'model':
+              'gpt-4o-mini', // Updated to use the latest cost-effective model
           'messages': [
             {
               'role': 'system',
@@ -185,7 +187,7 @@ Please provide insights in this JSON format:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['choices'] != null && 
+        if (data['choices'] != null &&
             data['choices'].isNotEmpty &&
             data['choices'][0]['message'] != null &&
             data['choices'][0]['message']['content'] != null) {
@@ -198,13 +200,13 @@ Please provide insights in this JSON format:
       } else {
         _logger.w('OpenAI API returned status ${response.statusCode}');
         _logger.w('Response body: ${response.body}');
-        
+
         // Try alternative model if current one fails
         if (response.statusCode == 404 || response.statusCode == 400) {
           _logger.i('Trying alternative OpenAI model...');
           return _tryAlternativeOpenAIModel(habits, habitSummary);
         }
-        
+
         return _getFallbackInsights(habits);
       }
     } catch (e) {
@@ -225,7 +227,8 @@ Please provide insights in this JSON format:
 
     // Validate API key format
     if (!_geminiApiKey!.startsWith('AIza')) {
-      _logger.w('Gemini API key appears invalid (should start with AIza), using fallback insights');
+      _logger.w(
+          'Gemini API key appears invalid (should start with AIza), using fallback insights');
       return _getFallbackInsights(habits);
     }
 
@@ -396,7 +399,7 @@ Please provide insights in this JSON format:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['choices'] != null && 
+        if (data['choices'] != null &&
             data['choices'].isNotEmpty &&
             data['choices'][0]['message'] != null &&
             data['choices'][0]['message']['content'] != null) {
@@ -405,8 +408,9 @@ Please provide insights in this JSON format:
           return _parseAIResponse(content);
         }
       }
-      
-      _logger.w('Alternative OpenAI model also failed with status ${response.statusCode}');
+
+      _logger.w(
+          'Alternative OpenAI model also failed with status ${response.statusCode}');
       return _getFallbackInsights(habits);
     } catch (e) {
       _logger.e('Alternative OpenAI API error: $e');
@@ -529,11 +533,11 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
   /// Check if AI services are configured
   bool get isConfigured {
     // Return true if we have at least one valid API key
-    final hasValidOpenAI = _openAiApiKey != null && 
-        _openAiApiKey!.isNotEmpty && 
+    final hasValidOpenAI = _openAiApiKey != null &&
+        _openAiApiKey!.isNotEmpty &&
         _openAiApiKey!.startsWith('sk-');
-    final hasValidGemini = _geminiApiKey != null && 
-        _geminiApiKey!.isNotEmpty && 
+    final hasValidGemini = _geminiApiKey != null &&
+        _geminiApiKey!.isNotEmpty &&
         _geminiApiKey!.startsWith('AIza');
     return hasValidOpenAI || hasValidGemini;
   }
@@ -547,13 +551,13 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
   /// Get available AI providers
   List<String> get availableProviders {
     final providers = <String>[];
-    if (_openAiApiKey != null && 
-        _openAiApiKey!.isNotEmpty && 
+    if (_openAiApiKey != null &&
+        _openAiApiKey!.isNotEmpty &&
         _openAiApiKey!.startsWith('sk-')) {
       providers.add('OpenAI');
     }
-    if (_geminiApiKey != null && 
-        _geminiApiKey!.isNotEmpty && 
+    if (_geminiApiKey != null &&
+        _geminiApiKey!.isNotEmpty &&
         _geminiApiKey!.startsWith('AIza')) {
       providers.add('Gemini');
     }
@@ -568,13 +572,13 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
 
   /// Get current API key status for debugging
   Map<String, dynamic> get apiKeyStatus {
-    final openAiValid = _openAiApiKey != null && 
-        _openAiApiKey!.isNotEmpty && 
+    final openAiValid = _openAiApiKey != null &&
+        _openAiApiKey!.isNotEmpty &&
         _openAiApiKey!.startsWith('sk-');
-    final geminiValid = _geminiApiKey != null && 
-        _geminiApiKey!.isNotEmpty && 
+    final geminiValid = _geminiApiKey != null &&
+        _geminiApiKey!.isNotEmpty &&
         _geminiApiKey!.startsWith('AIza');
-    
+
     return {
       'openai_configured': _openAiApiKey != null && _openAiApiKey!.isNotEmpty,
       'openai_valid': openAiValid,
