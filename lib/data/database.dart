@@ -250,33 +250,35 @@ class DatabaseService {
       final habitBox = await getInstance();
       final allHabits = habitBox.values.toList();
       final now = DateTime.now();
-      
+
       final expiredHabits = allHabits.where((habit) {
         return habit.frequency == HabitFrequency.single &&
-               habit.singleDateTime != null &&
-               habit.singleDateTime!.isBefore(now) &&
-               habit.completions.isEmpty; // Not completed yet
+            habit.singleDateTime != null &&
+            habit.singleDateTime!.isBefore(now) &&
+            habit.completions.isEmpty; // Not completed yet
       }).toList();
-      
+
       for (final habit in expiredHabits) {
         // Archive expired single habit instead of deleting
         habit.isActive = false;
         await habit.save();
-        
+
         // Cancel any pending notifications for this habit
         try {
           await NotificationService.cancelHabitNotifications(
-            NotificationService.generateSafeId(habit.id)
-          );
+              NotificationService.generateSafeId(habit.id));
         } catch (e) {
-          AppLogger.warning('Failed to cancel notifications for expired habit ${habit.name}: $e');
+          AppLogger.warning(
+              'Failed to cancel notifications for expired habit ${habit.name}: $e');
         }
-        
-        AppLogger.info('Archived expired single habit: "${habit.name}" (was due: ${habit.singleDateTime})');
+
+        AppLogger.info(
+            'Archived expired single habit: "${habit.name}" (was due: ${habit.singleDateTime})');
       }
-      
+
       if (expiredHabits.isNotEmpty) {
-        AppLogger.info('✅ Cleaned up ${expiredHabits.length} expired single habits');
+        AppLogger.info(
+            '✅ Cleaned up ${expiredHabits.length} expired single habits');
       }
     } catch (e) {
       AppLogger.error('❌ Error cleaning up expired single habits', e);
@@ -320,6 +322,13 @@ class HabitService {
   Future<void> addHabit(Habit habit) async {
     await _habitBox.add(habit);
     _invalidateCache(); // Invalidate cache when adding new habit
+
+    // Check for new achievements after adding habit
+    try {
+      await _checkForAchievements();
+    } catch (e) {
+      AppLogger.error('Failed to check for achievements after adding habit', e);
+    }
 
     // Schedule notifications/alarms for the new habit
     try {
@@ -550,7 +559,8 @@ class HabitService {
       try {
         await _checkForAchievements();
       } catch (e) {
-        AppLogger.error('Failed to check for achievements after habit completion', e);
+        AppLogger.error(
+            'Failed to check for achievements after habit completion', e);
       }
 
       // Sync completion to calendar if enabled
@@ -601,7 +611,8 @@ class HabitService {
     try {
       await _checkForAchievements();
     } catch (e) {
-      AppLogger.error('Failed to check for achievements after completion removal', e);
+      AppLogger.error(
+          'Failed to check for achievements after completion removal', e);
     }
 
     // Sync removal to calendar if enabled
@@ -877,7 +888,7 @@ class HabitService {
     try {
       // Get all habits
       final habits = await getAllHabits();
-      
+
       // Convert habits to the format expected by AchievementsService
       final habitData = habits
           .map((h) => {
