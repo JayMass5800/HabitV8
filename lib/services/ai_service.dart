@@ -136,8 +136,15 @@ class AIService {
       return _getFallbackInsights(habits);
     }
 
+    // Validate API key format (OpenAI keys typically start with 'sk-')
+    if (!_openAiApiKey!.startsWith('sk-')) {
+      _logger.w('OpenAI API key appears invalid (should start with sk-), using fallback insights');
+      return _getFallbackInsights(habits);
+    }
+
     try {
       final habitSummary = _generateHabitSummary(habits);
+      _logger.d('Sending request to OpenAI API: $_openAiApiUrl');
 
       final response = await http.post(
         Uri.parse(_openAiApiUrl),
@@ -146,7 +153,7 @@ class AIService {
           'Authorization': 'Bearer $_openAiApiKey',
         },
         body: jsonEncode({
-          'model': 'gpt-3.5-turbo',
+          'model': 'gpt-4o-mini', // Updated to use the latest cost-effective model
           'messages': [
             {
               'role': 'system',
@@ -156,7 +163,19 @@ class AIService {
             {
               'role': 'user',
               'content':
-                  'Analyze these habits and provide insights: $habitSummary'
+                  '''Analyze these habit tracking data and provide exactly 3 personalized insights.
+                  
+Habit Data: $habitSummary
+
+Please provide insights in this JSON format:
+[
+  {
+    "type": "motivational|pattern|insight|achievement",
+    "title": "Short insight title",
+    "description": "Detailed insight explanation",
+    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny"
+  }
+]'''
             }
           ],
           'max_tokens': 1000,
@@ -166,10 +185,26 @@ class AIService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'];
-        return _parseAIResponse(content);
+        if (data['choices'] != null && 
+            data['choices'].isNotEmpty &&
+            data['choices'][0]['message'] != null &&
+            data['choices'][0]['message']['content'] != null) {
+          final content = data['choices'][0]['message']['content'];
+          return _parseAIResponse(content);
+        } else {
+          _logger.w('OpenAI API response structure unexpected: $data');
+          return _getFallbackInsights(habits);
+        }
       } else {
         _logger.w('OpenAI API returned status ${response.statusCode}');
+        _logger.w('Response body: ${response.body}');
+        
+        // Try alternative model if current one fails
+        if (response.statusCode == 404 || response.statusCode == 400) {
+          _logger.i('Trying alternative OpenAI model...');
+          return _tryAlternativeOpenAIModel(habits, habitSummary);
+        }
+        
         return _getFallbackInsights(habits);
       }
     } catch (e) {
@@ -185,6 +220,12 @@ class AIService {
 
     if (_geminiApiKey == null || _geminiApiKey!.isEmpty) {
       _logger.w('Gemini API key not configured, using fallback insights');
+      return _getFallbackInsights(habits);
+    }
+
+    // Validate API key format
+    if (!_geminiApiKey!.startsWith('AIza')) {
+      _logger.w('Gemini API key appears invalid (should start with AIza), using fallback insights');
       return _getFallbackInsights(habits);
     }
 
@@ -311,6 +352,68 @@ Please provide insights in this JSON format:
     }
   }
 
+  /// Try alternative OpenAI model
+  Future<List<Map<String, dynamic>>> _tryAlternativeOpenAIModel(
+      List<Habit> habits, String habitSummary) async {
+    try {
+      // Try gpt-3.5-turbo as fallback
+      final response = await http.post(
+        Uri.parse(_openAiApiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_openAiApiKey',
+        },
+        body: jsonEncode({
+          'model': 'gpt-3.5-turbo', // Fallback to the stable model
+          'messages': [
+            {
+              'role': 'system',
+              'content':
+                  'You are a habit coach AI assistant. Analyze habit data and provide personalized insights and recommendations. Return exactly 3 insights in JSON format with fields: type, title, description, icon.'
+            },
+            {
+              'role': 'user',
+              'content':
+                  '''Analyze these habit tracking data and provide exactly 3 personalized insights.
+                  
+Habit Data: $habitSummary
+
+Please provide insights in this JSON format:
+[
+  {
+    "type": "motivational|pattern|insight|achievement",
+    "title": "Short insight title",
+    "description": "Detailed insight explanation",
+    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny"
+  }
+]'''
+            }
+          ],
+          'max_tokens': 1000,
+          'temperature': 0.7,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['choices'] != null && 
+            data['choices'].isNotEmpty &&
+            data['choices'][0]['message'] != null &&
+            data['choices'][0]['message']['content'] != null) {
+          final content = data['choices'][0]['message']['content'];
+          _logger.i('Alternative OpenAI model succeeded');
+          return _parseAIResponse(content);
+        }
+      }
+      
+      _logger.w('Alternative OpenAI model also failed with status ${response.statusCode}');
+      return _getFallbackInsights(habits);
+    } catch (e) {
+      _logger.e('Alternative OpenAI API error: $e');
+      return _getFallbackInsights(habits);
+    }
+  }
+
   /// Generate habit summary for AI analysis
   String _generateHabitSummary(List<Habit> habits) {
     if (habits.isEmpty) return 'No habits tracked yet.';
@@ -425,9 +528,14 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
 
   /// Check if AI services are configured
   bool get isConfigured {
-    // Return true if we have at least one non-empty API key
-    return (_openAiApiKey != null && _openAiApiKey!.isNotEmpty) ||
-        (_geminiApiKey != null && _geminiApiKey!.isNotEmpty);
+    // Return true if we have at least one valid API key
+    final hasValidOpenAI = _openAiApiKey != null && 
+        _openAiApiKey!.isNotEmpty && 
+        _openAiApiKey!.startsWith('sk-');
+    final hasValidGemini = _geminiApiKey != null && 
+        _geminiApiKey!.isNotEmpty && 
+        _geminiApiKey!.startsWith('AIza');
+    return hasValidOpenAI || hasValidGemini;
   }
 
   /// Check if AI services are configured (async version that ensures initialization)
@@ -439,10 +547,14 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
   /// Get available AI providers
   List<String> get availableProviders {
     final providers = <String>[];
-    if (_openAiApiKey != null && _openAiApiKey!.isNotEmpty) {
+    if (_openAiApiKey != null && 
+        _openAiApiKey!.isNotEmpty && 
+        _openAiApiKey!.startsWith('sk-')) {
       providers.add('OpenAI');
     }
-    if (_geminiApiKey != null && _geminiApiKey!.isNotEmpty) {
+    if (_geminiApiKey != null && 
+        _geminiApiKey!.isNotEmpty && 
+        _geminiApiKey!.startsWith('AIza')) {
       providers.add('Gemini');
     }
     return providers;
@@ -455,11 +567,21 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
   }
 
   /// Get current API key status for debugging
-  Map<String, bool> get apiKeyStatus {
+  Map<String, dynamic> get apiKeyStatus {
+    final openAiValid = _openAiApiKey != null && 
+        _openAiApiKey!.isNotEmpty && 
+        _openAiApiKey!.startsWith('sk-');
+    final geminiValid = _geminiApiKey != null && 
+        _geminiApiKey!.isNotEmpty && 
+        _geminiApiKey!.startsWith('AIza');
+    
     return {
       'openai_configured': _openAiApiKey != null && _openAiApiKey!.isNotEmpty,
+      'openai_valid': openAiValid,
       'gemini_configured': _geminiApiKey != null && _geminiApiKey!.isNotEmpty,
+      'gemini_valid': geminiValid,
       'initialized': _isInitialized,
+      'available_providers': availableProviders,
     };
   }
 }
