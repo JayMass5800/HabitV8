@@ -257,11 +257,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
               const SizedBox(height: 24),
 
-              // Streak & Stats Overview
-              _buildGamificationStats(gamificationData, habits, theme),
-
-              const SizedBox(height: 24),
-
               // All Achievements Overview
               _buildAllAchievementsSection(gamificationData, theme),
 
@@ -1541,121 +1536,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGamificationStats(
-      Map<String, dynamic> data, List<Habit> habits, ThemeData theme) {
-    final totalStreak = data['totalStreak'] ?? 0;
-    final maxStreak = data['maxStreak'] ?? 0;
-    final perfectDays = data['perfectDays'] ?? 0;
-    final completionRate = ((data['completionRate'] ?? 0.0) * 100).round();
-
-    return SlideTransition(
-      position: Tween<Offset>(
-        begin: const Offset(0, 0.3),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _slideController,
-        curve: const Interval(0.4, 0.7, curve: Curves.easeOutCubic),
-      )),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Performance Statistics',
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Total Streak',
-                  '$totalStreak',
-                  Icons.local_fire_department,
-                  Colors.orange,
-                  theme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Best Streak',
-                  '$maxStreak',
-                  Icons.trending_up,
-                  Colors.green,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Perfect Days',
-                  '$perfectDays',
-                  Icons.star,
-                  Colors.amber,
-                  theme,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Completion',
-                  '$completionRate%',
-                  Icons.check_circle,
-                  Colors.blue,
-                  theme,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-    ThemeData theme,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            title,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: color.withValues(alpha: 0.8),
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
