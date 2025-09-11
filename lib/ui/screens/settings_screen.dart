@@ -1098,26 +1098,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _clearAllData() async {
-    bool dialogShown = false;
+    OverlayEntry? loadingOverlay;
 
     try {
-      // Show loading dialog
+      // Use overlay instead of dialog to avoid navigation conflicts
       if (mounted) {
-        dialogShown = true;
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const AlertDialog(
-            content: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(width: 16),
-                Text('Clearing all data...'),
-              ],
+        loadingOverlay = OverlayEntry(
+          builder: (context) => Material(
+            color: Colors.black54,
+            child: Center(
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(width: 16),
+                      const Text('Clearing all data...'),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         );
+        Overlay.of(context).insert(loadingOverlay);
       }
 
       // Cancel all notifications first
@@ -1137,49 +1143,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         AppLogger.warning('Failed to clear calendar events: $e');
       }
 
+      // Invalidate providers BEFORE resetting database to stop periodic refresh
+      if (mounted) {
+        ref.invalidate(habitServiceProvider);
+        ref.invalidate(databaseProvider);
+        AppLogger.info('Providers invalidated');
+      }
+
+      // Small delay to allow providers to clean up properly
+      await Future.delayed(const Duration(milliseconds: 200));
+
       // Reset the database (this will delete all habits)
       await DatabaseService.resetDatabase();
       AppLogger.info('Database reset completed');
 
-      // Close loading dialog BEFORE invalidating providers
-      if (mounted && dialogShown) {
+      // Remove loading overlay
+      if (mounted && loadingOverlay != null) {
         try {
-          Navigator.pop(context);
-          dialogShown = false;
+          loadingOverlay.remove();
+          loadingOverlay = null;
         } catch (e) {
-          AppLogger.warning('Could not close loading dialog: $e');
+          AppLogger.warning('Could not remove loading overlay: $e');
         }
       }
 
-      // Show success message BEFORE invalidating providers
+      // Navigate to main page to reset the navigation stack
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('All habit data has been permanently cleared'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
+        // Use context.go to reset the entire navigation stack
+        context.go('/');
 
-      // Small delay to allow UI updates to process
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // Invalidate providers to refresh UI (this may cause widget rebuilds)
-      if (mounted) {
-        ref.invalidate(habitServiceProvider);
-        ref.invalidate(databaseProvider);
+        // Show success message after navigation
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('All habit data has been permanently cleared'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        });
       }
     } catch (e) {
       AppLogger.error('Failed to clear all data', e);
 
-      // Close loading dialog if it's still shown
-      if (mounted && dialogShown) {
+      // Remove loading overlay if it's still shown
+      if (mounted && loadingOverlay != null) {
         try {
-          Navigator.pop(context);
-        } catch (navError) {
+          loadingOverlay.remove();
+          loadingOverlay = null;
+        } catch (overlayError) {
           AppLogger.warning(
-              'Could not close loading dialog after error: $navError');
+              'Could not remove loading overlay after error: $overlayError');
         }
       }
 

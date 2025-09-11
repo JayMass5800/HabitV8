@@ -427,6 +427,11 @@ class MyApp extends ConsumerWidget {
 
 final GoRouter _router = GoRouter(
   initialLocation: '/',
+  errorBuilder: (context, state) {
+    AppLogger.error('Navigation error', state.error);
+    // Return to main screen on navigation errors
+    return const AllHabitsScreen();
+  },
   routes: [
     // Onboarding route
     GoRoute(
@@ -667,31 +672,34 @@ Future<void> _ensureServiceInitialization() async {
     try {
       // Register callback and verify it's working
       NotificationActionService.ensureCallbackRegistered();
-      
+
       // Wait a bit for registration to complete
       await Future.delayed(delay);
-      
+
       // Verify callback is actually registered
       if (NotificationService.onNotificationAction != null) {
-        AppLogger.info('✅ Notification callback successfully registered on attempt ${attempt + 1}');
-        
+        AppLogger.info(
+            '✅ Notification callback successfully registered on attempt ${attempt + 1}');
+
         // Process any pending actions now that callback is registered
         NotificationService.processPendingActionsManually();
         return;
       }
-      
+
       attempt++;
-      AppLogger.warning('⚠️ Notification callback not registered, attempt $attempt/$maxAttempts');
-      
+      AppLogger.warning(
+          '⚠️ Notification callback not registered, attempt $attempt/$maxAttempts');
     } catch (e) {
       attempt++;
-      AppLogger.error('❌ Error in service initialization attempt $attempt/$maxAttempts', e);
+      AppLogger.error(
+          '❌ Error in service initialization attempt $attempt/$maxAttempts', e);
     }
-    
+
     if (attempt < maxAttempts) {
       await Future.delayed(delay);
     }
   }
-  
-  AppLogger.error('❌ Failed to properly initialize services after $maxAttempts attempts');
+
+  AppLogger.error(
+      '❌ Failed to properly initialize services after $maxAttempts attempts');
 }

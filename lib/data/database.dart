@@ -116,7 +116,14 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
         );
       }
     } catch (e) {
-      // Silently handle errors during periodic refresh
+      // Handle specific case where box has been closed (during database reset)
+      if (e.toString().contains('Box has already been closed') ||
+          e.toString().contains('HiveError')) {
+        AppLogger.debug('Database was reset, stopping periodic refresh: $e');
+        _refreshTimer?.cancel(); // Stop the timer since database is being reset
+        return;
+      }
+      // Silently handle other errors during periodic refresh
       AppLogger.debug('Periodic habit refresh failed: $e');
     }
   }
@@ -269,11 +276,23 @@ class DatabaseService {
 
   // Method to manually reset the database if needed
   static Future<void> resetDatabase() async {
-    await closeDatabase();
-    await Hive.deleteBoxFromDisk('habits');
-    AppLogger.info(
-      'Database reset completed. All habit data has been cleared.',
-    );
+    try {
+      // Close the database connection first
+      await closeDatabase();
+
+      // Small delay to ensure proper closure
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Delete the box from disk
+      await Hive.deleteBoxFromDisk('habits');
+
+      AppLogger.info(
+        'Database reset completed. All habit data has been cleared.',
+      );
+    } catch (e) {
+      AppLogger.error('Error during database reset', e);
+      rethrow;
+    }
   }
 
   /// Clean up expired single habits to prevent clutter and improve performance

@@ -1,187 +1,342 @@
-Performing hot reload...                                                
-Reloaded 9 of 1975 libraries in 4,603ms (compile: 96 ms, reload: 2935 ms, reassemble: 1379 ms).
-D/ViewRootImpl( 2421): Skipping stats log for color mode
+erforming hot reload...                                                
+Reloaded 8 of 1975 libraries in 10,522ms (compile: 151 ms, reload: 334 ms, reassemble: 139 ms).
 I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:60:15)
+I/flutter ( 2421): │ #1   _SettingsScreenState._loadDefaultScreen (package:habitv8/ui/screens/settings_screen.dart:40:17)
 I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.hidden
+I/flutter ( 2421): │ 💡 Loading default screen setting: All Habits
 I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+D/WindowOnBackDispatcher( 2421): setTopOnBackInvokedCallback (unwrapped): androidx.activity.OnBackPressedDispatcher$Api34Impl$createOnBackAnimationCallback$1@2462e03
+D/WindowOnBackDispatcher( 2421): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@984896d
+D/WindowOnBackDispatcher( 2421): setTopOnBackInvokedCallback (unwrapped): androidx.activity.OnBackPressedDispatcher$Api34Impl$createOnBackAnimationCallback$1@2462e03
 I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:81:19)
+I/flutter ( 2421): │ #1   _SettingsScreenState._clearAllData (package:habitv8/ui/screens/settings_screen.dart:1125:17)
 I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 👁️ App hidden
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:60:15)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.inactive
+I/flutter ( 2421): │ 💡 All notifications cancelled
 I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:78:19)
+I/flutter ( 2421): │ #1   DatabaseService.resetDatabase (package:habitv8/data/database.dart:274:15)
 I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 ⏹️ App inactive
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   EnhancedInsightsService.generateComprehensiveInsights (package:habitv8/services/enhanced_insights_service.dart:38:17)
-I/flutter ( 2421): │ #1   <asynchronous suspension>
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 AI insights requested - Preferred: null, Available: [Gemini]
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   EnhancedInsightsService.generateComprehensiveInsights (package:habitv8/services/enhanced_insights_service.dart:57:19)
-I/flutter ( 2421): │ #1   <asynchronous suspension>
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 Preferred provider null not available, falling back to Gemini
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AIService.generateGeminiInsights (package:habitv8/services/ai_service.dart:237:15)
-I/flutter ( 2421): │ #1   <asynchronous suspension>
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 🐛 Sending request to Gemini API: https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/ImeBackDispatcher( 2421): switch root view (mImeCallbacks.size=0)
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:60:15)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.resumed
+I/flutter ( 2421): │ 💡 Database reset completed. All habit data has been cleared.
 I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:74:19)
+I/flutter ( 2421): │ #1   _SettingsScreenState._clearAllData (package:habitv8/ui/screens/settings_screen.dart:1142:17)
 I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 ▶️ App resumed
+I/flutter ( 2421): │ 💡 Database reset completed
 I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:113:17)
+I/flutter ( 2421): │ #0   AppLogger.warning (package:habitv8/services/logging_service.dart:24:13)
+I/flutter ( 2421): │ #1   _SettingsScreenState._clearAllData (package:habitv8/ui/screens/settings_screen.dart:1150:21)
 I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 🔄 Handling app resume - re-registering notification callbacks...
+I/flutter ( 2421): │ ! Could not close loading dialog: 'package:go_router/src/delegate.dart': Failed assertion: line 175 pos 7: 'currentConfiguration.isNotEmpty': You have popped the last page off of the stack, there are no pages left to show
 I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following assertion was thrown while finalizing the widget tree:
+'package:flutter/src/widgets/navigator.dart': Failed assertion: line 4064 pos 12: '!_debugLocked':
+is not true.
+
+Either the assertion indicates an error in the framework itself, or we should provide substantially
+more information in this error message to help you determine and fix the underlying cause.
+In either case, please report this assertion by filing a bug on GitHub:
+  https://github.com/flutter/flutter/issues/new?template=02_bug.yml
+
+When the exception was thrown, this was the stack:
+#2      NavigatorState.dispose (package:flutter/src/widgets/navigator.dart:4064:12)
+#3      StatefulElement.unmount (package:flutter/src/widgets/framework.dart:5922:11)
+#4      _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2075:13)
+#5      _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#6      ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#7      _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#8      _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#9      ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#10     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#11     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#12     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#13     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#14     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#15     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#16     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#17     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#18     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#19     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#20     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#21     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#22     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#23     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#24     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#25     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#26     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#27     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#28     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#29     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#30     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#31     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#32     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#33     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#34     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#35     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#36     MultiChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:7118:16)
+#37     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#38     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#39     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#40     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#41     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#42     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#43     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#44     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#45     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#46     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#47     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#48     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#49     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#50     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#51     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#52     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#53     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#54     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#55     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#56     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#57     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#58     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#59     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#60     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#61     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#62     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#63     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#64     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#65     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#66     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#67     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#68     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#69     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#70     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#71     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#72     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#73     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#74     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#75     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#76     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#77     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#78     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#79     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#80     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#81     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#82     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#83     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#84     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#85     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#86     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#87     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#88     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#89     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#90     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#91     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#92     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#93     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#94     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#95     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#96     ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#97     _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#98     _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#99     SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#100    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#101    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#102    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#103    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#104    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#105    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#106    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#107    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#108    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#109    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#110    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#111    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#112    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#113    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#114    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#115    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#116    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#117    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#118    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#119    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#120    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#121    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#122    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#123    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#124    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#125    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#126    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#127    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#128    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#129    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#130    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#131    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#132    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#133    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#134    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#135    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#136    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#137    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#138    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#139    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#140    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#141    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#142    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#143    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#144    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#145    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#146    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#147    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#148    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#149    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#150    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#151    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#152    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#153    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#154    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#155    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#156    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#157    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#158    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#159    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#160    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#161    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#162    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#163    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#164    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#165    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#166    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#167    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#168    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#169    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#170    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#171    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#172    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#173    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#174    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#175    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#176    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#177    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#178    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#179    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#180    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#181    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#182    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#183    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#184    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#185    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#186    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#187    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#188    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#189    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#190    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#191    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#192    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#193    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#194    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#195    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#196    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#197    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#198    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#199    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#200    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#201    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#202    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#203    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#204    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#205    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#206    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#207    MultiChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:7118:16)
+#208    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#209    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#210    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#211    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#212    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#213    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#214    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#215    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#216    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#217    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#218    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#219    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#220    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#221    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#222    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#223    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#224    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#225    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#226    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#227    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#228    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#229    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#230    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#231    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#232    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#233    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#234    SingleChildRenderObjectElement.visitChildren (package:flutter/src/widgets/framework.dart:6994:14)
+#235    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#236    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#237    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#238    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#239    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#240    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#241    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#242    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#243    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#244    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#245    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#246    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#247    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#248    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#249    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#250    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#251    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#252    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#253    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#254    _InactiveElements._unmount.<anonymous closure> (package:flutter/src/widgets/framework.dart:2073:7)
+#255    ComponentElement.visitChildren (package:flutter/src/widgets/framework.dart:5763:14)
+#256    _InactiveElements._unmount (package:flutter/src/widgets/framework.dart:2071:13)
+#257    ListIterable.forEach (dart:_internal/iterable.dart:49:13)
+#258    _InactiveElements._unmountAll (package:flutter/src/widgets/framework.dart:2084:25)
+#259    BuildOwner.lockState (package:flutter/src/widgets/framework.dart:2965:15)
+#260    BuildOwner.finalizeTree (package:flutter/src/widgets/framework.dart:3288:7)
+#261    WidgetsBinding.drawFrame (package:flutter/src/widgets/binding.dart:1247:19)
+#262    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#263    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1438:15)
+#264    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1351:9)
+#265    SchedulerBinding._handleDrawFrame (package:flutter/src/scheduler/binding.dart:1204:5)
+#266    _invoke (dart:ui/hooks.dart:331:13)
+#267    PlatformDispatcher._drawFrame (dart:ui/platform_dispatcher.dart:444:5)
+#268    _drawFrame (dart:ui/hooks.dart:303:31)
+(elided 2 frames from class _AssertionError)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Another exception was thrown: Looking up a deactivated widget's ancestor is unsafe.
+Another exception was thrown: Looking up a deactivated widget's ancestor is unsafe.
 I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:42:15)
+I/flutter ( 2421): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+I/flutter ( 2421): │ #1   HabitsNotifier._checkForUpdates (package:habitv8/data/database.dart:120:17)
 I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 🔍 Checking notification callback registration...
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:43:15)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 📦 Container available: true
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:44:15)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 🔗 Callback currently set: true
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:55:17)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 ✅ Notification action callback is properly registered
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:124:17)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 ✅ App resume handling completed
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/InsetsController( 2421): hide(ime())
-I/ImeTracker( 2421): com.habittracker.habitv8.debug:66847d6: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AIService.generateGeminiInsights (package:habitv8/services/ai_service.dart:282:17)
-I/flutter ( 2421): │ #1   <asynchronous suspension>
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ ! Gemini API returned status 404
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AIService.generateGeminiInsights (package:habitv8/services/ai_service.dart:283:17)
-I/flutter ( 2421): │ #1   <asynchronous suspension>
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ ! Response body: {
-I/flutter ( 2421): │ !   "error": {
-I/flutter ( 2421): │ !     "code": 404,
-I/flutter ( 2421): │ !     "message": "models/gemini-1.5-flash-latest is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
-I/flutter ( 2421): │ !     "status": "NOT_FOUND"
-I/flutter ( 2421): │ !   }
-I/flutter ( 2421): │ ! }
-I/flutter ( 2421): │ !
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AIService.generateGeminiInsights (package:habitv8/services/ai_service.dart:287:19)
-I/flutter ( 2421): │ #1   <asynchronous suspension>
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 Trying alternative Gemini API endpoint...
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter ( 2421): │ #1   NotificationService.processPendingActionsManually (package:habitv8/services/notification_service.dart:1041:15)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 🔄 Manually processing pending actions
+I/flutter ( 2421): │ 🐛 Periodic habit refresh failed: HiveError: Box has already been closed.
 I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter ( 2421): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:650:17)
+I/flutter ( 2421): │ #1   HabitsNotifier._checkForUpdates (package:habitv8/data/database.dart:120:17)
 I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 🐛 🔍 All SharedPreferences keys: [ai_insights_onboarding_shown, onboarding_completed, last_midnight_reset]
+I/flutter ( 2421): │ 🐛 Periodic habit refresh failed: HiveError: Box has already been closed.
 I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter ( 2421): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:657:17)
+I/flutter ( 2421): │ #1   HabitsNotifier._checkForUpdates (package:habitv8/data/database.dart:120:17)
 I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 🐛 🔍 Method 1 (getStringList): null
+I/flutter ( 2421): │ 🐛 Periodic habit refresh failed: HiveError: Box has already been closed.
 I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 I/flutter ( 2421): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter ( 2421): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:658:17)
+I/flutter ( 2421): │ #1   HabitsNotifier._checkForUpdates (package:habitv8/data/database.dart:120:17)
 I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 🐛 🔍 Method 2 (get): null
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter ( 2421): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:662:17)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 🐛 🔍 Found 0 pending actions in SharedPreferences
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter ( 2421): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:669:19)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 🐛 No pending notification actions to process in SharedPreferences
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter ( 2421): │ #1   NotificationService._loadActionsFromFile (package:habitv8/services/notification_service.dart:742:17)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 🐛 🔍 File: Checking for actions at path: /data/user/0/com.habittracker.habitv8.debug/app_flutter/pending_notification_actions.json
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter ( 2421): │ #1   NotificationService._loadActionsFromFile (package:habitv8/services/notification_service.dart:745:19)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 🐛 🔍 File: File does not exist
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter ( 2421): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:695:19)
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 🐛 No pending actions found in any storage method
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   AIService._tryAlternativeGeminiEndpoint (package:habitv8/services/ai_service.dart:344:19)
-I/flutter ( 2421): │ #1   <asynchronous suspension>
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 Alternative Gemini endpoint succeeded
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter ( 2421): │ #0   EnhancedInsightsService.generateComprehensiveInsights (package:habitv8/services/enhanced_insights_service.dart:67:17)
-I/flutter ( 2421): │ #1   <asynchronous suspension>
-I/flutter ( 2421): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter ( 2421): │ 💡 Generated 3 AI insights
-I/flutter ( 2421): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter ( 2421): │ 🐛 Periodic habit refresh failed: HiveError: Box has already been closed.
