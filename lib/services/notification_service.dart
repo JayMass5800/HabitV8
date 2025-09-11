@@ -35,7 +35,7 @@ class NotificationService {
 
   // Queue for storing pending actions when callback is not available
   static final List<Map<String, String>> _pendingActions = [];
-  
+
   // Memory management constants
   static const int _maxPendingActions = 100;
   static Timer? _cleanupTimer;
@@ -1061,48 +1061,166 @@ class NotificationService {
     return isSet;
   }
 
-  /// Handle snooze action specifically
+  /// Handle snooze action specifically with enhanced error handling and validation
   static Future<void> _handleSnoozeAction(String habitId) async {
     try {
-      final notificationId = habitId.hashCode;
+      // Generate a unique notification ID for the snooze to prevent conflicts
+      final snoozeId = _generateSnoozeNotificationId(habitId);
       AppLogger.info(
-        '🔔 Starting snooze process for habit: $habitId (notification ID: $notificationId)',
+        '🔔 Starting enhanced snooze process for habit: $habitId (snooze ID: $snoozeId)',
       );
 
-      // Cancel the current notification
-      await cancelNotification(notificationId);
+      // Cancel the current notification (use the original ID)
+      final originalNotificationId = habitId.hashCode;
+      await cancelNotification(originalNotificationId);
       AppLogger.info('❌ Cancelled current notification for habit: $habitId');
 
       // Schedule a new notification for 30 minutes later
       final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
       AppLogger.info('⏰ Scheduling snoozed notification for: $snoozeTime');
 
+      // Validate the snooze time is reasonable
+      final timeDiff = snoozeTime.difference(DateTime.now()).inMinutes;
+      if (timeDiff < 29 || timeDiff > 31) {
+        AppLogger.warning(
+            '⚠️ Snooze time calculation seems off: ${timeDiff} minutes');
+      }
+
+      // Check exact alarm permissions before scheduling
+      final canScheduleExact = await canScheduleExactAlarms();
+      AppLogger.info('📋 Can schedule exact alarms: $canScheduleExact');
+
+      if (!canScheduleExact) {
+        AppLogger.warning(
+            '⚠️ Exact alarm permission not available - snooze may be delayed');
+        AppLogger.warning(
+            '💡 Note: Exact alarm permission should have been granted during habit setup');
+        AppLogger.warning(
+            '💡 If snooze is still delayed, it\'s likely due to battery optimization');
+        // Log battery optimization guidance
+        await checkBatteryOptimizationStatus();
+      } else {
+        AppLogger.info(
+            '✅ Exact alarm permission available - checking for battery optimization issues');
+        // Even with exact alarm permission, battery optimization can still cause delays
+        AppLogger.info(
+            '💡 If snooze notifications are delayed, check battery optimization settings:');
+        AppLogger.info(
+            '1. Settings > Apps > HabitV8 > Battery > Don\'t optimize');
+        AppLogger.info('2. Samsung: Add to "Never sleeping apps"');
+        AppLogger.info(
+            '3. MIUI: Enable "Autostart" and disable "Battery saver"');
+      }
+
       try {
         // Use generic snooze notification content
         String title = 'Habit Reminder (Snoozed)';
         String body = 'Time to complete your habit!';
 
+        // Attempt to schedule the notification with the unique snooze ID
         await scheduleHabitNotification(
-          id: notificationId,
+          id: snoozeId,
           habitId: habitId,
           title: title,
           body: body,
           scheduledTime: snoozeTime,
         );
+
+        // Verify the notification was actually scheduled
+        await _verifyNotificationScheduled(snoozeId, habitId);
+
         AppLogger.info(
-          '✅ Snoozed notification scheduled successfully for habit: $habitId at $snoozeTime',
+          '✅ Snoozed notification scheduled successfully for habit: $habitId at $snoozeTime (ID: $snoozeId)',
         );
       } catch (scheduleError) {
         AppLogger.error(
           '❌ Failed to schedule snoozed notification for habit: $habitId',
           scheduleError,
         );
-        // Continue - the snooze action is still considered successful even if rescheduling fails
+
+        // Try fallback scheduling method
+        await _fallbackSnoozeScheduling(habitId, snoozeId, snoozeTime);
       }
 
       AppLogger.info('✅ Snooze action completed for habit: $habitId');
     } catch (e) {
       AppLogger.error('❌ Error handling snooze action for habit: $habitId', e);
+      // Try emergency fallback
+      await _emergencySnoozeNotification(habitId);
+    }
+  }
+
+  /// Generate a unique notification ID for snooze notifications
+  static int _generateSnoozeNotificationId(String habitId) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final baseId = habitId.hashCode.abs();
+    // Combine habitId hash with timestamp to ensure uniqueness
+    // Use modulo to keep within 32-bit integer range
+    return ((baseId + timestamp) % 2147483647) +
+        1000000; // Add offset to avoid conflicts
+  }
+
+  /// Verify that a notification was actually scheduled
+  static Future<void> _verifyNotificationScheduled(
+      int notificationId, String habitId) async {
+    try {
+      final pendingNotifications = await getPendingNotifications();
+      final isScheduled =
+          pendingNotifications.any((n) => n.id == notificationId);
+
+      if (isScheduled) {
+        AppLogger.info(
+            '✅ Verified: Snooze notification is properly scheduled for habit: $habitId');
+      } else {
+        AppLogger.warning(
+            '⚠️ Warning: Snooze notification may not be properly scheduled for habit: $habitId');
+      }
+    } catch (e) {
+      AppLogger.error('Error verifying notification scheduling', e);
+    }
+  }
+
+  /// Fallback scheduling method for when primary scheduling fails
+  static Future<void> _fallbackSnoozeScheduling(
+      String habitId, int notificationId, DateTime snoozeTime) async {
+    try {
+      AppLogger.info(
+          '🔄 Attempting fallback snooze scheduling for habit: $habitId');
+
+      // Try scheduling as an alarm instead of a notification
+      await scheduleHabitAlarm(
+        id: notificationId,
+        habitId: habitId,
+        title: 'Habit Reminder (Snoozed)',
+        body: 'Time to complete your habit!',
+        scheduledTime: snoozeTime,
+        snoozeDelayMinutes: 10,
+      );
+
+      AppLogger.info(
+          '✅ Fallback alarm scheduling successful for habit: $habitId');
+    } catch (fallbackError) {
+      AppLogger.error('❌ Fallback scheduling also failed for habit: $habitId',
+          fallbackError);
+    }
+  }
+
+  /// Emergency notification for when all scheduling methods fail
+  static Future<void> _emergencySnoozeNotification(String habitId) async {
+    try {
+      AppLogger.info(
+          '🚨 Triggering emergency snooze notification for habit: $habitId');
+
+      // Show an immediate notification telling user to check manually
+      await showNotification(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: 'Snooze Error',
+        body:
+            'Snooze failed to schedule. Please check your habit manually in 30 minutes.',
+        payload: jsonEncode({'habitId': habitId, 'type': 'snooze_error'}),
+      );
+    } catch (e) {
+      AppLogger.error('Emergency notification also failed', e);
     }
   }
 
@@ -1847,7 +1965,8 @@ class NotificationService {
   ) async {
     // Validate single habit requirements
     if (habit.singleDateTime == null) {
-      final error = 'Single habit "${habit.name}" requires a date/time to be set';
+      final error =
+          'Single habit "${habit.name}" requires a date/time to be set';
       AppLogger.error(error);
       throw ArgumentError(error);
     }
@@ -1857,7 +1976,8 @@ class NotificationService {
 
     // Check if date/time is in the past
     if (singleDateTime.isBefore(now)) {
-      final error = 'Single habit "${habit.name}" date/time is in the past: $singleDateTime';
+      final error =
+          'Single habit "${habit.name}" date/time is in the past: $singleDateTime';
       AppLogger.error(error);
       throw StateError(error);
     }
@@ -1876,7 +1996,8 @@ class NotificationService {
       AppLogger.info(
           '✅ Scheduled single notification for "${habit.name}" at $singleDateTime');
     } catch (e) {
-      final error = 'Failed to schedule single habit notification for "${habit.name}": $e';
+      final error =
+          'Failed to schedule single habit notification for "${habit.name}": $e';
       AppLogger.error(error);
       throw Exception(error);
     }
@@ -2276,17 +2397,50 @@ class NotificationService {
     final deviceNow = DateTime.now();
     final localScheduledTime = scheduledTime.toLocal();
 
-    // Reduce logging to debug level to prevent main thread overload
+    // Enhanced time validation and timezone handling
+    final timeDiff = localScheduledTime.difference(deviceNow);
     AppLogger.debug('Device current time: $deviceNow');
     AppLogger.debug('Target scheduled time: $localScheduledTime');
     AppLogger.debug(
-      'Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds',
-    );
+        'Time until notification: ${timeDiff.inSeconds} seconds (${timeDiff.inMinutes} minutes)');
 
-    final tzScheduledTime = tz.TZDateTime.from(localScheduledTime, tz.local);
+    // Validate scheduling time is reasonable
+    if (timeDiff.inSeconds < 0) {
+      AppLogger.warning(
+          '⚠️ Warning: Scheduling time is in the past! Adjusting to 1 minute from now.');
+      final adjustedTime = deviceNow.add(const Duration(minutes: 1));
+      return await scheduleHabitNotification(
+        id: id,
+        habitId: habitId,
+        title: title,
+        body: body,
+        scheduledTime: adjustedTime,
+      );
+    }
 
-    AppLogger.debug('TZ Scheduled time: $tzScheduledTime');
-    AppLogger.debug('TZ Local timezone: ${tz.local.name}');
+    if (timeDiff.inDays > 1) {
+      AppLogger.warning(
+          '⚠️ Warning: Scheduling time is more than 1 day in the future (${timeDiff.inDays} days)');
+    }
+
+    // Create timezone-aware scheduled time with proper validation
+    tz.TZDateTime tzScheduledTime;
+    try {
+      tzScheduledTime = tz.TZDateTime.from(localScheduledTime, tz.local);
+      AppLogger.debug('TZ Scheduled time: $tzScheduledTime');
+      AppLogger.debug('TZ Local timezone: ${tz.local.name}');
+
+      // Verify timezone conversion didn't cause time drift
+      final tzTimeDiff =
+          tzScheduledTime.difference(tz.TZDateTime.now(tz.local));
+      if ((tzTimeDiff.inSeconds - timeDiff.inSeconds).abs() > 60) {
+        AppLogger.warning(
+            '⚠️ Timezone conversion caused significant time drift: ${tzTimeDiff.inSeconds - timeDiff.inSeconds} seconds');
+      }
+    } catch (tzError) {
+      AppLogger.error('Timezone conversion failed, using UTC', tzError);
+      tzScheduledTime = tz.TZDateTime.from(localScheduledTime.toUtc(), tz.UTC);
+    }
 
     final payload = jsonEncode({'habitId': habitId, 'type': 'habit_reminder'});
 
@@ -2585,6 +2739,84 @@ class NotificationService {
     } catch (e) {
       AppLogger.error('Error scheduling notification', e);
       AppLogger.error('Stack trace: ${StackTrace.current}');
+    }
+  }
+
+  /// Check if the device has aggressive battery optimization that might affect notifications
+  static Future<void> checkBatteryOptimizationStatus() async {
+    try {
+      AppLogger.info('🔋 Checking battery optimization status...');
+
+      // Note: This is informational only. The actual battery optimization check
+      // would require additional platform-specific code or plugins
+      AppLogger.info('💡 To ensure reliable snooze notifications:');
+      AppLogger.info('1. Go to Settings > Apps > HabitV8 > Battery');
+      AppLogger.info('2. Set battery optimization to "Don\'t optimize"');
+      AppLogger.info('3. Ensure "Allow background activity" is enabled');
+      AppLogger.info(
+          '4. For Samsung devices: Add HabitV8 to "Never sleeping apps"');
+      AppLogger.info(
+          '5. For MIUI devices: Enable "Autostart" and disable "Battery saver"');
+      AppLogger.info(
+          '6. For OnePlus/OPPO: Disable "Smart Power Saving" for this app');
+      AppLogger.info(
+          '7. For Huawei: Add to "Protected Apps" and disable "Battery Optimization"');
+    } catch (e) {
+      AppLogger.error('Error checking battery optimization', e);
+    }
+  }
+
+  /// Test the snooze functionality with comprehensive validation
+  static Future<void> testSnoozeFunction() async {
+    try {
+      AppLogger.info('🧪 Testing snooze function...');
+
+      // Create a test habit ID
+      const testHabitId = 'test_snooze_habit';
+
+      // First, check all prerequisites
+      AppLogger.info('1. Checking prerequisites...');
+      final canScheduleExact = await canScheduleExactAlarms();
+      final notificationsEnabled = await areNotificationsEnabled();
+
+      AppLogger.info('   - Exact alarms: $canScheduleExact');
+      AppLogger.info('   - Notifications enabled: $notificationsEnabled');
+
+      if (!notificationsEnabled) {
+        AppLogger.error(
+            '❌ Notifications are not enabled - test cannot proceed');
+        return;
+      }
+
+      // Show immediate test notification
+      AppLogger.info('2. Showing immediate test notification...');
+      final testNotificationId = _generateSnoozeNotificationId(testHabitId);
+
+      await showNotification(
+        id: testNotificationId,
+        title: '🧪 Snooze Test Notification',
+        body: 'Tap "SNOOZE 30MIN" to test the snooze function',
+        payload: jsonEncode({'habitId': testHabitId, 'type': 'habit_reminder'}),
+      );
+
+      AppLogger.info('3. Test notification shown with ID: $testNotificationId');
+      AppLogger.info('4. Use the snooze button to test the function');
+      AppLogger.info('5. Check logs for snooze scheduling details');
+
+      // Set up verification timer
+      Timer(const Duration(seconds: 5), () async {
+        final pending = await getPendingNotifications();
+        AppLogger.info('6. Current pending notifications: ${pending.length}');
+        for (final notif in pending) {
+          if (notif.id == testNotificationId) {
+            AppLogger.info('   - Original test notification still pending');
+          } else if (notif.title?.contains('Snoozed') == true) {
+            AppLogger.info('   - Found snoozed notification: ID ${notif.id}');
+          }
+        }
+      });
+    } catch (e) {
+      AppLogger.error('Error testing snooze function', e);
     }
   }
 
@@ -3089,7 +3321,8 @@ class NotificationService {
   static Future<void> _scheduleSingleHabitAlarmsNew(dynamic habit) async {
     // Validate single habit requirements
     if (habit.singleDateTime == null) {
-      final error = 'Single habit "${habit.name}" requires a date/time to be set for alarms';
+      final error =
+          'Single habit "${habit.name}" requires a date/time to be set for alarms';
       AppLogger.error(error);
       throw ArgumentError(error);
     }
@@ -3099,7 +3332,8 @@ class NotificationService {
 
     // Check if date/time is in the past
     if (singleDateTime.isBefore(now)) {
-      final error = 'Single habit "${habit.name}" alarm date/time is in the past: $singleDateTime';
+      final error =
+          'Single habit "${habit.name}" alarm date/time is in the past: $singleDateTime';
       AppLogger.error(error);
       throw StateError(error);
     }
@@ -3123,7 +3357,8 @@ class NotificationService {
       AppLogger.info(
           '✅ Scheduled single alarm for "${habit.name}" at $singleDateTime');
     } catch (e) {
-      final error = 'Failed to schedule single habit alarm for "${habit.name}": $e';
+      final error =
+          'Failed to schedule single habit alarm for "${habit.name}": $e';
       AppLogger.error(error);
       throw Exception(error);
     }
@@ -3301,7 +3536,8 @@ class NotificationService {
   /// Start periodic cleanup to prevent memory leaks
   static void _startPeriodicCleanup() {
     _cleanupTimer?.cancel();
-    _cleanupTimer = Timer.periodic(Duration(hours: 1), (_) => _cleanupPendingActions());
+    _cleanupTimer =
+        Timer.periodic(Duration(hours: 1), (_) => _cleanupPendingActions());
   }
 
   /// Clean up old pending actions to prevent memory leaks
@@ -3319,7 +3555,7 @@ class NotificationService {
       final timestamp = DateTime.tryParse(action['timestamp'] ?? '');
       return timestamp != null && timestamp.isBefore(cutoff);
     });
-    
+
     final removedCount = initialCount - _pendingActions.length;
     if (removedCount > 0) {
       AppLogger.info('Cleaned up $removedCount expired pending actions');
