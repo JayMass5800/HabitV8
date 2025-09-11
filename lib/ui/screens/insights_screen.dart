@@ -303,6 +303,19 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               })
           .toList();
 
+      // Check for new achievements before getting stats
+      final newAchievements = await AchievementsService.checkForNewAchievements(
+        habits: habitData,
+        completions: completionData,
+      );
+
+      // Show achievement notifications if any new achievements were earned
+      if (newAchievements.isNotEmpty && mounted) {
+        for (final achievement in newAchievements) {
+          _showAchievementNotification(achievement);
+        }
+      }
+
       return await AchievementsService.getGamificationStats(
         habits: habitData,
         completions: completionData,
@@ -1993,5 +2006,50 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     } catch (e) {
       return {};
     }
+  }
+
+  void _showAchievementNotification(Achievement achievement) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        content: Row(
+          children: [
+            Text(
+              achievement.icon,
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Achievement Unlocked!',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  Text(
+                    '${achievement.title} (+${achievement.xpReward} XP)',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
   }
 }

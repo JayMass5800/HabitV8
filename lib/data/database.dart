@@ -12,6 +12,7 @@ import '../services/cache_service.dart';
 import '../services/notification_service.dart';
 import '../services/logging_service.dart';
 import '../services/calendar_service.dart';
+import '../services/achievements_service.dart';
 
 // Provider for the Habit database box
 final databaseProvider = FutureProvider<Box<Habit>>((ref) async {
@@ -545,6 +546,13 @@ class HabitService {
       _statsService.invalidateHabitCache(habitId);
       await habit.save();
 
+      // Check for new achievements after completing the habit
+      try {
+        await _checkForAchievements();
+      } catch (e) {
+        AppLogger.error('Failed to check for achievements after habit completion', e);
+      }
+
       // Sync completion to calendar if enabled
       try {
         final syncEnabled = await CalendarService.isCalendarSyncEnabled();
@@ -588,6 +596,13 @@ class HabitService {
     // Invalidate cache before saving
     _statsService.invalidateHabitCache(habitId);
     await habit.save();
+
+    // Check for achievement changes after removing completion
+    try {
+      await _checkForAchievements();
+    } catch (e) {
+      AppLogger.error('Failed to check for achievements after completion removal', e);
+    }
 
     // Sync removal to calendar if enabled
     try {
@@ -856,5 +871,55 @@ class HabitService {
 
     habit.currentStreak = currentStreak;
     habit.longestStreak = longestStreak;
+  }
+
+  Future<void> _checkForAchievements() async {
+    try {
+      // Get all habits
+      final habits = await getAllHabits();
+      
+      // Convert habits to the format expected by AchievementsService
+      final habitData = habits
+          .map((h) => {
+                'id': h.id,
+                'name': h.name,
+                'category': h.category,
+                'currentStreak': h.streakInfo.current,
+                'longestStreak': h.streakInfo.longest,
+                'completionRate': h.completionRate,
+                'completions': h.completions
+                    .map((c) => {
+                          'timestamp': c.millisecondsSinceEpoch,
+                          'hour': c.hour,
+                        })
+                    .toList(),
+              })
+          .toList();
+
+      final completionData = habits
+          .expand((h) => h.completions)
+          .map((c) => {
+                'timestamp': c.millisecondsSinceEpoch,
+                'habitId':
+                    habits.firstWhere((h) => h.completions.contains(c)).id,
+                'hour': c.hour,
+              })
+          .toList();
+
+      // Check for new achievements
+      final newAchievements = await AchievementsService.checkForNewAchievements(
+        habits: habitData,
+        completions: completionData,
+      );
+
+      if (newAchievements.isNotEmpty) {
+        AppLogger.info('${newAchievements.length} new achievement(s) unlocked');
+        for (final achievement in newAchievements) {
+          AppLogger.info('Achievement unlocked: ${achievement.title}');
+        }
+      }
+    } catch (e) {
+      AppLogger.error('Error checking for achievements', e);
+    }
   }
 }
