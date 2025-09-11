@@ -223,7 +223,7 @@ Please provide insights in this JSON format:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['candidates'] != null && 
+        if (data['candidates'] != null &&
             data['candidates'].isNotEmpty &&
             data['candidates'][0]['content'] != null &&
             data['candidates'][0]['content']['parts'] != null &&
@@ -237,13 +237,13 @@ Please provide insights in this JSON format:
       } else {
         _logger.w('Gemini API returned status ${response.statusCode}');
         _logger.w('Response body: ${response.body}');
-        
+
         // Try alternative API endpoint if 404
         if (response.statusCode == 404) {
           _logger.i('Trying alternative Gemini API endpoint...');
           return _tryAlternativeGeminiEndpoint(habits, habitSummary);
         }
-        
+
         return _getFallbackInsights(habits);
       }
     } catch (e) {
