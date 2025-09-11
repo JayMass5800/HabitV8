@@ -82,20 +82,8 @@ void main() async {
   final container = ProviderContainer();
   NotificationActionService.initialize(container);
 
-  // Ensure callback is registered immediately and also after a delay
-  NotificationActionService.ensureCallbackRegistered();
-
-  // Also ensure callback is registered after a short delay to allow full initialization
-  Future.delayed(const Duration(seconds: 1), () {
-    NotificationActionService.ensureCallbackRegistered();
-  });
-
-  // And ensure it's registered after a longer delay in case of timing issues
-  Future.delayed(const Duration(seconds: 5), () {
-    NotificationActionService.ensureCallbackRegistered();
-    // Also manually process any pending actions after full initialization
-    NotificationService.processPendingActionsManually();
-  });
+  // Implement proper service initialization sequencing to prevent race conditions
+  await _ensureServiceInitialization();
 
   // Set up a periodic callback check to ensure it doesn't get lost
   Timer.periodic(const Duration(minutes: 1), (timer) {
@@ -667,4 +655,43 @@ class _AppWrapperState extends State<AppWrapper> {
 
     return const AllHabitsScreen();
   }
+}
+
+/// Ensure proper service initialization sequencing to prevent race conditions
+Future<void> _ensureServiceInitialization() async {
+  int attempt = 0;
+  const maxAttempts = 5;
+  const delay = Duration(milliseconds: 500);
+
+  while (attempt < maxAttempts) {
+    try {
+      // Register callback and verify it's working
+      NotificationActionService.ensureCallbackRegistered();
+      
+      // Wait a bit for registration to complete
+      await Future.delayed(delay);
+      
+      // Verify callback is actually registered
+      if (NotificationService.onNotificationAction != null) {
+        AppLogger.info('✅ Notification callback successfully registered on attempt ${attempt + 1}');
+        
+        // Process any pending actions now that callback is registered
+        NotificationService.processPendingActionsManually();
+        return;
+      }
+      
+      attempt++;
+      AppLogger.warning('⚠️ Notification callback not registered, attempt ${attempt}/$maxAttempts');
+      
+    } catch (e) {
+      attempt++;
+      AppLogger.error('❌ Error in service initialization attempt ${attempt}/$maxAttempts', e);
+    }
+    
+    if (attempt < maxAttempts) {
+      await Future.delayed(delay);
+    }
+  }
+  
+  AppLogger.error('❌ Failed to properly initialize services after $maxAttempts attempts');
 }

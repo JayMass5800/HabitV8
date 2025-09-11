@@ -242,6 +242,45 @@ class DatabaseService {
       'Database reset completed. All habit data has been cleared.',
     );
   }
+
+  /// Clean up expired single habits to prevent clutter and improve performance
+  static Future<void> cleanupExpiredSingleHabits() async {
+    try {
+      final habitBox = await getInstance();
+      final allHabits = habitBox.values.toList();
+      final now = DateTime.now();
+      
+      final expiredHabits = allHabits.where((habit) {
+        return habit.frequency == HabitFrequency.single &&
+               habit.singleDateTime != null &&
+               habit.singleDateTime!.isBefore(now) &&
+               habit.completions.isEmpty; // Not completed yet
+      }).toList();
+      
+      for (final habit in expiredHabits) {
+        // Archive expired single habit instead of deleting
+        habit.isActive = false;
+        await habit.save();
+        
+        // Cancel any pending notifications for this habit
+        try {
+          await NotificationService.cancelHabitNotifications(
+            NotificationService.generateSafeId(habit.id)
+          );
+        } catch (e) {
+          AppLogger.warning('Failed to cancel notifications for expired habit ${habit.name}: $e');
+        }
+        
+        AppLogger.info('Archived expired single habit: "${habit.name}" (was due: ${habit.singleDateTime})');
+      }
+      
+      if (expiredHabits.isNotEmpty) {
+        AppLogger.info('✅ Cleaned up ${expiredHabits.length} expired single habits');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error cleaning up expired single habits', e);
+    }
+  }
 }
 
 class HabitService {

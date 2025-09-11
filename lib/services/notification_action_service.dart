@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/database.dart';
 import '../domain/model/habit.dart';
@@ -387,16 +388,48 @@ class NotificationActionService {
     }
   }
 
-  /// Invalidate habit cache to ensure UI updates
+  // Batch cache invalidation to reduce UI rebuild frequency
+  static final List<String> _pendingInvalidations = [];
+  static Timer? _invalidationTimer;
+
+  /// Invalidate habit cache to ensure UI updates (batched for performance)
   static void _invalidateHabitCache() {
+    _scheduleInvalidation('habitServiceProvider');
+  }
+
+  /// Schedule a cache invalidation (batched to prevent excessive rebuilds)
+  static void _scheduleInvalidation(String key) {
+    if (!_pendingInvalidations.contains(key)) {
+      _pendingInvalidations.add(key);
+    }
+    
+    // Cancel existing timer and schedule new batch
+    _invalidationTimer?.cancel();
+    _invalidationTimer = Timer(Duration(milliseconds: 100), _performBatchInvalidation);
+  }
+
+  /// Perform all pending cache invalidations in a single batch
+  static void _performBatchInvalidation() {
+    if (_pendingInvalidations.isEmpty || _container == null) {
+      return;
+    }
+
     try {
-      if (_container != null) {
-        // Invalidate the habit service provider to force UI refresh
-        _container!.invalidate(habitServiceProvider);
-        AppLogger.info('✅ Habit cache invalidated to trigger UI refresh');
+      // Invalidate all pending providers at once
+      for (final key in _pendingInvalidations) {
+        switch (key) {
+          case 'habitServiceProvider':
+            _container!.invalidate(habitServiceProvider);
+            break;
+          // Add other providers as needed
+        }
       }
+      
+      AppLogger.info('✅ Batch invalidated ${_pendingInvalidations.length} cache entries');
+      _pendingInvalidations.clear();
     } catch (e) {
-      AppLogger.error('Error invalidating habit cache', e);
+      AppLogger.error('Error in batch cache invalidation', e);
+      _pendingInvalidations.clear();
     }
   }
 

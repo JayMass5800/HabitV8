@@ -4,6 +4,8 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'logging_service.dart';
@@ -19,6 +21,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static bool _isInitialized = false;
+  static bool _channelsCreated = false;
 
   // Callback for handling notification actions
   static Function(String habitId, String action)? onNotificationAction;
@@ -32,6 +35,10 @@ class NotificationService {
 
   // Queue for storing pending actions when callback is not available
   static final List<Map<String, String>> _pendingActions = [];
+  
+  // Memory management constants
+  static const int _maxPendingActions = 100;
+  static Timer? _cleanupTimer;
 
   /// Initialize the notification service
   @pragma('vm:entry-point')
@@ -41,6 +48,9 @@ class NotificationService {
     // Set up the callback for the queue processor
     NotificationQueueProcessor.setScheduleNotificationCallback(
         scheduleHabitNotification);
+
+    // Start periodic cleanup for memory management
+    _startPeriodicCleanup();
 
     // Android initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -138,6 +148,11 @@ class NotificationService {
 
   /// Create Android notification channels
   static Future<void> _createNotificationChannels() async {
+    if (_channelsCreated) {
+      AppLogger.debug('Notification channels already created, skipping');
+      return;
+    }
+
     final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
         _notificationsPlugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
@@ -190,6 +205,8 @@ class NotificationService {
       );
       await androidImplementation.createNotificationChannel(alarmChannel);
 
+      _channelsCreated = true;
+
       AppLogger.info('Notification channels created successfully');
       AppLogger.info(
         'Habit channel: ${habitChannel.id} - ${habitChannel.name}',
@@ -225,6 +242,9 @@ class NotificationService {
       } catch (e) {
         AppLogger.warning('Some channels may not have existed: $e');
       }
+
+      // Reset the flag to allow recreation
+      _channelsCreated = false;
 
       // Recreate channels with new configuration
       await _createNotificationChannels();
@@ -1170,19 +1190,19 @@ class NotificationService {
     final deviceNow = DateTime.now();
     final localScheduledTime = scheduledTime.toLocal();
 
-    AppLogger.debug('=== Notification Scheduling Debug ===');
-    AppLogger.debug('Device current time: $deviceNow');
-    AppLogger.debug('Original scheduled time: $scheduledTime');
-    AppLogger.debug('Local scheduled time: $localScheduledTime');
-    AppLogger.debug('Device timezone offset: ${deviceNow.timeZoneOffset}');
-    AppLogger.debug(
+    _debugLog('=== Notification Scheduling Debug ===');
+    _debugLog('Device current time: $deviceNow');
+    _debugLog('Original scheduled time: $scheduledTime');
+    _debugLog('Local scheduled time: $localScheduledTime');
+    _debugLog('Device timezone offset: ${deviceNow.timeZoneOffset}');
+    _debugLog(
       'Time until notification: ${localScheduledTime.difference(deviceNow).inSeconds} seconds',
     );
 
     // Validate scheduling time
     if (localScheduledTime.isBefore(deviceNow)) {
-      AppLogger.debug('WARNING - Scheduled time is in the past!');
-      AppLogger.debug(
+      _debugLog('WARNING - Scheduled time is in the past!');
+      _debugLog(
         'Past by: ${deviceNow.difference(localScheduledTime).inSeconds} seconds',
       );
     }
@@ -1192,9 +1212,9 @@ class NotificationService {
     try {
       // First try to create from the local scheduled time
       tzScheduledTime = tz.TZDateTime.from(localScheduledTime, tz.local);
-      AppLogger.debug('TZ Scheduled time (method 1): $tzScheduledTime');
+      _debugLog('TZ Scheduled time (method 1): $tzScheduledTime');
     } catch (e) {
-      AppLogger.debug('TZDateTime.from failed: $e');
+      _debugLog('TZDateTime.from failed: $e');
       // Fallback: create manually
       try {
         tzScheduledTime = tz.TZDateTime(
@@ -1415,6 +1435,27 @@ class NotificationService {
 
   /// Schedule notifications for a habit based on its frequency and settings
   static Future<void> scheduleHabitNotifications(dynamic habit) async {
+    try {
+      await _scheduleHabitNotificationsInternal(habit);
+    } catch (e, stackTrace) {
+      // Log the error but don't propagate it to avoid disrupting user experience
+      AppLogger.error(
+        'Failed to schedule notifications for habit "${habit.name}": $e',
+        e,
+        stackTrace,
+      );
+      
+      // Optionally try to clean up any partial scheduling
+      try {
+        await cancelHabitNotifications(generateSafeId(habit.id));
+      } catch (cleanupError) {
+        AppLogger.error('Failed to cleanup after scheduling error', cleanupError);
+      }
+    }
+  }
+
+  /// Internal implementation of habit notification scheduling
+  static Future<void> _scheduleHabitNotificationsInternal(dynamic habit) async {
     AppLogger.debug(
       'Starting notification scheduling for habit: ${habit.name}',
     );
@@ -1543,17 +1584,41 @@ class NotificationService {
         'Successfully scheduled notifications for habit: ${habit.name}',
       );
     } catch (e) {
-      AppLogger.debug('Error scheduling notifications: $e');
-      AppLogger.error(
-        'Failed to schedule notifications for habit: ${habit.name}',
-        e,
-      );
-      rethrow; // Re-throw so the UI can show the error
+      final errorMsg = 'Failed to schedule notifications for habit: ${habit.name}';
+      AppLogger.error(errorMsg, e);
+      
+      // Log detailed error information for debugging but don't expose to user
+      AppLogger.error('Habit details - ID: ${habit.id}, Frequency: ${habit.frequency}');
+      
+      // Silently handle the error - user experience remains smooth
+      // The notification service will retry on the next renewal cycle
+      _debugLog('Notification scheduling failed silently, will retry in next renewal');
     }
   }
 
   /// Schedule alarm notifications for a habit (mutually exclusive with regular notifications)
   static Future<void> scheduleHabitAlarms(dynamic habit) async {
+    try {
+      await _scheduleHabitAlarmsInternal(habit);
+    } catch (e, stackTrace) {
+      // Log the error but don't propagate it to avoid disrupting user experience
+      AppLogger.error(
+        'Failed to schedule alarms for habit "${habit.name}": $e',
+        e,
+        stackTrace,
+      );
+      
+      // Optionally try to clean up any partial scheduling
+      try {
+        await HybridAlarmService.cancelHabitAlarms(habit.id);
+      } catch (cleanupError) {
+        AppLogger.error('Failed to cleanup after alarm scheduling error', cleanupError);
+      }
+    }
+  }
+
+  /// Internal implementation of habit alarm scheduling
+  static Future<void> _scheduleHabitAlarmsInternal(dynamic habit) async {
     AppLogger.debug('Starting alarm scheduling for habit: ${habit.name}');
     AppLogger.debug('Alarm enabled: ${habit.alarmEnabled}');
     AppLogger.debug('Alarm sound: ${habit.alarmSoundName}');
@@ -1825,32 +1890,40 @@ class NotificationService {
   static Future<void> _scheduleSingleHabitNotifications(
     dynamic habit,
   ) async {
-    final singleDateTime = habit.singleDateTime;
-    if (singleDateTime == null) {
-      AppLogger.warning(
-          'No single date/time set for single habit: ${habit.name}');
-      return;
+    // Validate single habit requirements
+    if (habit.singleDateTime == null) {
+      final error = 'Single habit "${habit.name}" requires a date/time to be set';
+      AppLogger.error(error);
+      throw ArgumentError(error);
     }
 
+    final singleDateTime = habit.singleDateTime!;
     final now = DateTime.now();
 
-    // Only schedule if the single date/time is in the future
-    if (singleDateTime.isAfter(now)) {
+    // Check if date/time is in the past
+    if (singleDateTime.isBefore(now)) {
+      final error = 'Single habit "${habit.name}" date/time is in the past: $singleDateTime';
+      AppLogger.error(error);
+      throw StateError(error);
+    }
+
+    try {
       await scheduleHabitNotification(
         id: generateSafeId(
-          habit.id + '_single',
-        ), // Use string concatenation for uniqueness
+          '${habit.id}_single_${singleDateTime.millisecondsSinceEpoch}',
+        ), // Use structured ID generation for uniqueness
         habitId: habit.id.toString(),
         title: '🎯 ${habit.name}',
         body: 'Time to complete your one-time habit!',
         scheduledTime: singleDateTime,
       );
 
-      AppLogger.debug(
-          'Scheduled single notification for ${habit.name} at $singleDateTime');
-    } else {
-      AppLogger.warning(
-          'Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
+      AppLogger.info(
+          '✅ Scheduled single notification for "${habit.name}" at $singleDateTime');
+    } catch (e) {
+      final error = 'Failed to schedule single habit notification for "${habit.name}": $e';
+      AppLogger.error(error);
+      throw Exception(error);
     }
   }
 
@@ -3059,20 +3132,27 @@ class NotificationService {
 
   /// Schedule single habit alarms using AlarmService
   static Future<void> _scheduleSingleHabitAlarmsNew(dynamic habit) async {
-    final singleDateTime = habit.singleDateTime;
-    if (singleDateTime == null) {
-      AppLogger.warning(
-          'No single date/time set for single habit: ${habit.name}');
-      return;
+    // Validate single habit requirements
+    if (habit.singleDateTime == null) {
+      final error = 'Single habit "${habit.name}" requires a date/time to be set for alarms';
+      AppLogger.error(error);
+      throw ArgumentError(error);
     }
 
+    final singleDateTime = habit.singleDateTime!;
     final now = DateTime.now();
 
-    // Only schedule if the single date/time is in the future
-    if (singleDateTime.isAfter(now)) {
+    // Check if date/time is in the past
+    if (singleDateTime.isBefore(now)) {
+      final error = 'Single habit "${habit.name}" alarm date/time is in the past: $singleDateTime';
+      AppLogger.error(error);
+      throw StateError(error);
+    }
+
+    try {
       final alarmId = HybridAlarmService.generateHabitAlarmId(
         habit.id,
-        suffix: 'single',
+        suffix: 'single_${singleDateTime.millisecondsSinceEpoch}',
       );
 
       await HybridAlarmService.scheduleExactAlarm(
@@ -3086,10 +3166,11 @@ class NotificationService {
       );
 
       AppLogger.info(
-          '✅ Scheduled single alarm for ${habit.name} at $singleDateTime');
-    } else {
-      AppLogger.warning(
-          'Single habit ${habit.name} date/time $singleDateTime is in the past, skipping alarm');
+          '✅ Scheduled single alarm for "${habit.name}" at $singleDateTime');
+    } catch (e) {
+      final error = 'Failed to schedule single habit alarm for "${habit.name}": $e';
+      AppLogger.error(error);
+      throw Exception(error);
     }
   }
 
@@ -3251,5 +3332,50 @@ class NotificationService {
     } catch (e) {
       AppLogger.error('Error snoozing habit notification: $habitId', e);
     }
+  }
+
+  // ========== MEMORY MANAGEMENT METHODS ==========
+
+  /// Debug logging that only runs in debug mode
+  static void _debugLog(String message) {
+    if (kDebugMode) {
+      AppLogger.debug(message);
+    }
+  }
+
+  /// Start periodic cleanup to prevent memory leaks
+  static void _startPeriodicCleanup() {
+    _cleanupTimer?.cancel();
+    _cleanupTimer = Timer.periodic(Duration(hours: 1), (_) => _cleanupPendingActions());
+  }
+
+  /// Clean up old pending actions to prevent memory leaks
+  static void _cleanupPendingActions() {
+    if (_pendingActions.length > _maxPendingActions) {
+      final removeCount = _pendingActions.length - _maxPendingActions;
+      _pendingActions.removeRange(0, removeCount);
+      AppLogger.info('Cleaned up $removeCount old pending actions');
+    }
+
+    // Remove actions older than 24 hours
+    final cutoff = DateTime.now().subtract(Duration(hours: 24));
+    final initialCount = _pendingActions.length;
+    _pendingActions.removeWhere((action) {
+      final timestamp = DateTime.tryParse(action['timestamp'] ?? '');
+      return timestamp != null && timestamp.isBefore(cutoff);
+    });
+    
+    final removedCount = initialCount - _pendingActions.length;
+    if (removedCount > 0) {
+      AppLogger.info('Cleaned up $removedCount expired pending actions');
+    }
+  }
+
+  /// Dispose resources when app is shutting down
+  static void dispose() {
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
+    _pendingActions.clear();
+    AppLogger.info('NotificationService resources disposed');
   }
 }

@@ -111,6 +111,9 @@ class HabitContinuationService {
     try {
       AppLogger.info('🔄 Starting habit continuation renewal process');
 
+      // First, clean up any expired single habits
+      await DatabaseService.cleanupExpiredSingleHabits();
+
       // Get all active habits
       final habitBox = await DatabaseService.getInstance();
       final habitService = HabitService(habitBox);
@@ -491,14 +494,26 @@ class HabitContinuationService {
   /// Schedule single habit notifications (one-time notification)
   static Future<void> _scheduleSingleNotificationsContinuous(
       Habit habit) async {
-    final singleDateTime = habit.singleDateTime;
-    if (singleDateTime == null) return;
+    // Validate single habit requirements
+    if (habit.singleDateTime == null) {
+      final error = 'Single habit "${habit.name}" requires a date/time to be set';
+      AppLogger.error(error);
+      throw ArgumentError(error);
+    }
 
+    final singleDateTime = habit.singleDateTime!;
     final now = DateTime.now();
 
-    // Only schedule if the single date/time is in the future
-    if (singleDateTime.isAfter(now)) {
-      final id = NotificationService.generateSafeId('${habit.id}_single');
+    // Check if date/time is in the past
+    if (singleDateTime.isBefore(now)) {
+      final error = 'Single habit "${habit.name}" date/time is in the past: $singleDateTime';
+      AppLogger.error(error);
+      throw StateError(error);
+    }
+
+    try {
+      final id = NotificationService.generateSafeId(
+          '${habit.id}_single_${singleDateTime.millisecondsSinceEpoch}');
 
       await NotificationService.scheduleNotification(
         id: id,
@@ -508,11 +523,12 @@ class HabitContinuationService {
         payload: _createNotificationPayload(habit.id, 'single'),
       );
 
-      AppLogger.debug(
-          '📅 Scheduled single notification for ${habit.name} at $singleDateTime');
-    } else {
-      AppLogger.warning(
-          'Single habit ${habit.name} date/time $singleDateTime is in the past, skipping notification');
+      AppLogger.info(
+          '✅ Scheduled single notification for "${habit.name}" at $singleDateTime');
+    } catch (e) {
+      final error = 'Failed to schedule single habit notification for "${habit.name}": $e';
+      AppLogger.error(error);
+      throw Exception(error);
     }
   }
 
@@ -768,16 +784,27 @@ class HabitContinuationService {
 
   /// Schedule single habit alarms (one-time alarm)
   static Future<void> _scheduleSingleAlarmsContinuous(Habit habit) async {
-    final singleDateTime = habit.singleDateTime;
-    if (singleDateTime == null) return;
+    // Validate single habit requirements
+    if (habit.singleDateTime == null) {
+      final error = 'Single habit "${habit.name}" requires a date/time to be set for alarms';
+      AppLogger.error(error);
+      throw ArgumentError(error);
+    }
 
+    final singleDateTime = habit.singleDateTime!;
     final now = DateTime.now();
 
-    // Only schedule if the single date/time is in the future
-    if (singleDateTime.isAfter(now)) {
+    // Check if date/time is in the past
+    if (singleDateTime.isBefore(now)) {
+      final error = 'Single habit "${habit.name}" alarm date/time is in the past: $singleDateTime';
+      AppLogger.error(error);
+      throw StateError(error);
+    }
+
+    try {
       final alarmId = HybridAlarmService.generateHabitAlarmId(
         habit.id,
-        suffix: 'single',
+        suffix: 'single_${singleDateTime.millisecondsSinceEpoch}',
       );
 
       await HybridAlarmService.scheduleExactAlarm(
@@ -790,11 +817,12 @@ class HabitContinuationService {
         snoozeDelayMinutes: habit.snoozeDelayMinutes,
       );
 
-      AppLogger.debug(
-          '⏰ Scheduled single alarm for ${habit.name} at $singleDateTime');
-    } else {
-      AppLogger.warning(
-          'Single habit ${habit.name} date/time $singleDateTime is in the past, skipping alarm');
+      AppLogger.info(
+          '✅ Scheduled single alarm for "${habit.name}" at $singleDateTime');
+    } catch (e) {
+      final error = 'Failed to schedule single habit alarm for "${habit.name}": $e';
+      AppLogger.error(error);
+      throw Exception(error);
     }
   }
 
