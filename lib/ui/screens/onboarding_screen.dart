@@ -206,7 +206,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 16),
 
           Text(
-            'Your personal habit tracking companion that helps you build lasting positive changes in your life.',
+            'Your intelligent habit tracking companion with AI-powered insights from OpenAI and Gemini, plus gamification to keep you motivated.',
             style: TextStyle(
               fontSize: 18,
               color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -218,23 +218,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           // Feature highlights
           _buildFeatureHighlight(
-            icon: Icons.psychology,
-            title: 'Smart & Intuitive',
-            description: 'AI-powered insights and recommendations',
+            icon: Icons.auto_awesome,
+            title: 'AI-Powered Insights',
+            description:
+                'OpenAI and Gemini integration for smart recommendations',
             colorScheme: colorScheme,
           ),
           const SizedBox(height: 16),
           _buildFeatureHighlight(
-            icon: Icons.trending_up,
-            title: 'Track Progress',
-            description: 'Visualize your journey with detailed analytics',
+            icon: Icons.sports_esports,
+            title: 'Gamification System',
+            description: 'Level up, earn achievements, and build streaks',
             colorScheme: colorScheme,
           ),
           const SizedBox(height: 16),
           _buildFeatureHighlight(
-            icon: Icons.emoji_events,
-            title: 'Stay Motivated',
-            description: 'Achievements and streaks to keep you going',
+            icon: Icons.analytics,
+            title: 'Smart Analytics',
+            description: 'Detailed progress tracking and pattern recognition',
             colorScheme: colorScheme,
           ),
         ],
@@ -313,7 +314,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 16),
 
           Text(
-            'Create and track habits with flexible frequencies - from hourly to yearly. Mark completions with a simple tap and watch your streaks grow.',
+            'Create and track habits with flexible frequencies - from hourly to yearly, or set specific dates. Mark completions with a simple tap and watch your streaks grow.',
             style: TextStyle(
               fontSize: 16,
               color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -339,7 +340,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: _buildFeatureCard(
                   icon: Icons.notifications_active,
                   title: 'Smart Reminders',
-                  description: 'Never miss a habit with intelligent notifications',
+                  description:
+                      'Never miss a habit with intelligent notifications',
                   colorScheme: colorScheme,
                 ),
               ),
@@ -414,7 +416,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 32),
 
           Text(
-            'Powerful Analytics & Insights',
+            'AI-Powered Analytics & Insights',
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -425,7 +427,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(height: 16),
 
           Text(
-            'Get detailed statistics, trend analysis, and AI-powered recommendations to optimize your habit-building journey.',
+            'Get detailed statistics, trend analysis, and AI-powered recommendations using OpenAI and Gemini to optimize your habit-building journey.',
             style: TextStyle(
               fontSize: 16,
               color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -451,9 +453,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 colorScheme: colorScheme,
               ),
               _buildFeatureCard(
-                icon: Icons.lightbulb,
-                title: 'Smart Tips',
-                description: 'AI-powered recommendations',
+                icon: Icons.psychology,
+                title: 'AI Insights',
+                description: 'OpenAI & Gemini powered recommendations',
                 colorScheme: colorScheme,
               ),
               _buildFeatureCard(
@@ -463,9 +465,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 colorScheme: colorScheme,
               ),
               _buildFeatureCard(
-                icon: Icons.favorite,
-                title: 'Health Integration',
-                description: 'Connect with health apps',
+                icon: Icons.analytics,
+                title: 'Smart Analytics',
+                description: 'Data-driven habit optimization',
                 colorScheme: colorScheme,
               ),
             ],
@@ -528,7 +530,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   bottom: 35,
                   left: 25,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: colorScheme.secondary,
                       borderRadius: BorderRadius.circular(12),
