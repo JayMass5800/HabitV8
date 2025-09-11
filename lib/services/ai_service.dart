@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../domain/model/habit.dart';
+import 'insights_service.dart';
 
 /// Service for AI-powered insights using external AI APIs
 class AIService {
@@ -12,6 +13,7 @@ class AIService {
 
   final Logger _logger = Logger();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final InsightsService _insightsService = InsightsService();
 
   // Configuration - these should be loaded from secure storage or environment variables
   static const String _openAiApiUrl =
@@ -130,8 +132,8 @@ class AIService {
     await initializeApiKeys(); // Ensure keys are loaded
 
     if (_openAiApiKey == null || _openAiApiKey!.isEmpty) {
-      _logger.w('OpenAI API key not configured, cannot generate insights');
-      return [];
+      _logger.w('OpenAI API key not configured, using fallback insights');
+      return _getFallbackInsights(habits);
     }
 
     try {
@@ -168,12 +170,12 @@ class AIService {
         return _parseAIResponse(content);
       } else {
         _logger.w('OpenAI API returned status ${response.statusCode}');
+        return _getFallbackInsights(habits);
       }
     } catch (e) {
       _logger.e('OpenAI API error: $e');
+      return _getFallbackInsights(habits);
     }
-
-    return [];
   }
 
   /// Generate AI insights using Google Gemini
@@ -182,8 +184,8 @@ class AIService {
     await initializeApiKeys(); // Ensure keys are loaded
 
     if (_geminiApiKey == null || _geminiApiKey!.isEmpty) {
-      _logger.w('Gemini API key not configured, cannot generate insights');
-      return [];
+      _logger.w('Gemini API key not configured, using fallback insights');
+      return _getFallbackInsights(habits);
     }
 
     try {
@@ -224,12 +226,12 @@ Please provide insights in this JSON format:
         return _parseAIResponse(content);
       } else {
         _logger.w('Gemini API returned status ${response.statusCode}');
+        return _getFallbackInsights(habits);
       }
     } catch (e) {
       _logger.e('Gemini API error: $e');
+      return _getFallbackInsights(habits);
     }
-
-    return [];
   }
 
   /// Generate habit summary for AI analysis
@@ -312,29 +314,36 @@ Recent performance trends: ${_getRecentTrends(activeHabits)}
 
   /// Fallback insights when AI is not available
   List<Map<String, dynamic>> _getFallbackInsights(List<Habit> habits) {
-    return [
-      {
-        'type': 'motivational',
-        'title': 'Keep Building',
-        'description':
-            'Every small step counts towards building lasting habits. Your consistency matters more than perfection.',
-        'icon': 'rocket_launch',
-      },
-      {
-        'type': 'pattern',
-        'title': 'Track Your Progress',
-        'description':
-            'Continue logging your habits to unlock personalized AI insights and recommendations.',
-        'icon': 'trending_up',
-      },
-      {
-        'type': 'achievement',
-        'title': 'You\'re Growing',
-        'description':
-            'Each day you track is a step towards better self-awareness and habit mastery.',
-        'icon': 'emoji_events',
-      },
-    ];
+    // Use the intelligent insights service instead of static messages
+    try {
+      return _insightsService.generateAIInsights(habits);
+    } catch (e) {
+      _logger.w('Failed to generate insights from InsightsService: $e');
+      // Only use static fallback if insights service fails
+      return [
+        {
+          'type': 'motivational',
+          'title': 'Keep Building',
+          'description':
+              'Every small step counts towards building lasting habits. Your consistency matters more than perfection.',
+          'icon': 'rocket_launch',
+        },
+        {
+          'type': 'pattern',
+          'title': 'Track Your Progress',
+          'description':
+              'Continue logging your habits to unlock personalized AI insights and recommendations.',
+          'icon': 'trending_up',
+        },
+        {
+          'type': 'achievement',
+          'title': 'You\'re Growing',
+          'description':
+              'Each day you track is a step towards better self-awareness and habit mastery.',
+          'icon': 'emoji_events',
+        },
+      ];
+    }
   }
 
   /// Check if AI services are configured
