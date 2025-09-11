@@ -216,7 +216,6 @@ class DataExportImportService {
         subject: 'HabitV8 Data Export ($fileType)',
         text:
             'Here is my habit tracking data exported from HabitV8 in $fileType format.',
-        sharePositionOrigin: null, // Let the system decide position
       );
 
       final success = result.status == ShareResultStatus.success;

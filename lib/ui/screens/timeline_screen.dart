@@ -48,12 +48,13 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
             builder: (context, ref, child) {
               return IconButton(
                 onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
                   try {
                     await ref
                         .read(habitsNotifierProvider.notifier)
                         .refreshHabits();
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         const SnackBar(
                           content: Text('Habits refreshed'),
                           duration: Duration(seconds: 1),
@@ -64,7 +65,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                     // If provider not ready, just invalidate and retry
                     ref.invalidate(habitsNotifierProvider);
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         const SnackBar(
                           content: Text('Refreshing habits...'),
                           duration: Duration(seconds: 1),

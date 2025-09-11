@@ -292,10 +292,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(12.0),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.1),
+                                    color: Colors.blue.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8.0),
                                     border: Border.all(
-                                        color: Colors.blue.withOpacity(0.3)),
+                                        color: Colors.blue.withValues(alpha: 0.3)),
                                   ),
                                   child: Row(
                                     children: [
@@ -470,6 +470,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
         // If no calendar is selected, show selection dialog
         if (CalendarService.getSelectedCalendarId() == null) {
+          if (!mounted) return;
           final dialogResult = await _showCalendarSelectionDialog(context);
           if (dialogResult != true) {
             return; // User cancelled or dialog failed
@@ -554,7 +555,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return result;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
           SnackBar(
             content: Text('Error showing calendar selection: $e'),
             backgroundColor: Colors.red,
@@ -806,7 +808,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _colorOption(
       String name, Color color, Color currentColor, WidgetRef ref) {
-    final isSelected = currentColor.value == color.value;
+    final isSelected = currentColor.toARGB32 == color.toARGB32;
 
     return ListTile(
       title: Text(name),
@@ -831,7 +833,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         await ref.read(themeProvider.notifier).setPrimaryColor(color);
 
         // Safely dismiss the dialog
-        if (Navigator.canPop(context)) {
+        if (mounted && Navigator.canPop(context)) {
           Navigator.pop(context);
         }
 
@@ -872,17 +874,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       groupValue: _defaultScreen,
                       onChanged: (value) async {
                         if (value != null) {
+                          final navigator = Navigator.of(context);
                           await _saveDefaultScreen(value);
-                          if (Navigator.canPop(context)) {
-                            Navigator.pop(context);
+                          if (mounted && navigator.canPop()) {
+                            navigator.pop();
                           }
                         }
                       },
                     ),
                     onTap: () async {
+                      final navigator = Navigator.of(context);
                       await _saveDefaultScreen(screen);
-                      if (Navigator.canPop(context)) {
-                        Navigator.pop(context);
+                      if (mounted && navigator.canPop()) {
+                        navigator.pop();
                       }
                     },
                   ))

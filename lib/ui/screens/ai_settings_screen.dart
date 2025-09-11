@@ -85,7 +85,7 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
           key: 'preferred_ai_provider', value: _preferredProvider);
 
       _showSnackBar('Settings saved successfully!');
-      Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop();
     } catch (e) {
       _showSnackBar('Error saving settings: $e', isError: true);
     } finally {
