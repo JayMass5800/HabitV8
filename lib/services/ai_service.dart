@@ -201,9 +201,26 @@ Please provide insights in this JSON format:
         _logger.w('OpenAI API returned status ${response.statusCode}');
         _logger.w('Response body: ${response.body}');
 
-        // Try alternative model if current one fails
-        if (response.statusCode == 404 || response.statusCode == 400) {
-          _logger.i('Trying alternative OpenAI model...');
+        // Provide specific handling for different error types
+        if (response.statusCode == 503) {
+          _logger.i(
+              'OpenAI service is temporarily overloaded, trying alternative model...');
+        } else if (response.statusCode == 429) {
+          _logger.i('OpenAI rate limit exceeded, trying alternative model...');
+        } else if (response.statusCode == 404) {
+          _logger.i('OpenAI model not found, trying alternative model...');
+        } else if (response.statusCode == 400) {
+          _logger.i('OpenAI bad request, trying alternative model...');
+        } else if (response.statusCode >= 500) {
+          _logger.i('OpenAI server error, trying alternative model...');
+        }
+
+        // Try alternative model for various error conditions
+        if (response.statusCode == 404 ||
+            response.statusCode == 400 ||
+            response.statusCode == 503 ||
+            response.statusCode == 429 ||
+            response.statusCode >= 500) {
           return _tryAlternativeOpenAIModel(habits, habitSummary);
         }
 
@@ -283,9 +300,24 @@ Please provide insights in this JSON format:
         _logger.w('Gemini API returned status ${response.statusCode}');
         _logger.w('Response body: ${response.body}');
 
-        // Try alternative API endpoint if 404
-        if (response.statusCode == 404) {
-          _logger.i('Trying alternative Gemini API endpoint...');
+        // Provide specific handling for different error types
+        if (response.statusCode == 503) {
+          _logger.i(
+              'Gemini service is temporarily overloaded, trying alternative endpoint...');
+        } else if (response.statusCode == 429) {
+          _logger
+              .i('Gemini rate limit exceeded, trying alternative endpoint...');
+        } else if (response.statusCode == 404) {
+          _logger.i('Gemini model not found, trying alternative endpoint...');
+        } else if (response.statusCode >= 500) {
+          _logger.i('Gemini server error, trying alternative endpoint...');
+        }
+
+        // Try alternative API endpoint for various error conditions
+        if (response.statusCode == 404 ||
+            response.statusCode == 503 ||
+            response.statusCode == 429 ||
+            response.statusCode >= 500) {
           return _tryAlternativeGeminiEndpoint(habits, habitSummary);
         }
 
