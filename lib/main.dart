@@ -681,11 +681,11 @@ Future<void> _ensureServiceInitialization() async {
       }
       
       attempt++;
-      AppLogger.warning('⚠️ Notification callback not registered, attempt ${attempt}/$maxAttempts');
+      AppLogger.warning('⚠️ Notification callback not registered, attempt $attempt/$maxAttempts');
       
     } catch (e) {
       attempt++;
-      AppLogger.error('❌ Error in service initialization attempt ${attempt}/$maxAttempts', e);
+      AppLogger.error('❌ Error in service initialization attempt $attempt/$maxAttempts', e);
     }
     
     if (attempt < maxAttempts) {

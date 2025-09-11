@@ -1435,27 +1435,6 @@ class NotificationService {
 
   /// Schedule notifications for a habit based on its frequency and settings
   static Future<void> scheduleHabitNotifications(dynamic habit) async {
-    try {
-      await _scheduleHabitNotificationsInternal(habit);
-    } catch (e, stackTrace) {
-      // Log the error but don't propagate it to avoid disrupting user experience
-      AppLogger.error(
-        'Failed to schedule notifications for habit "${habit.name}": $e',
-        e,
-        stackTrace,
-      );
-      
-      // Optionally try to clean up any partial scheduling
-      try {
-        await cancelHabitNotifications(generateSafeId(habit.id));
-      } catch (cleanupError) {
-        AppLogger.error('Failed to cleanup after scheduling error', cleanupError);
-      }
-    }
-  }
-
-  /// Internal implementation of habit notification scheduling
-  static Future<void> _scheduleHabitNotificationsInternal(dynamic habit) async {
     AppLogger.debug(
       'Starting notification scheduling for habit: ${habit.name}',
     );
@@ -1584,41 +1563,17 @@ class NotificationService {
         'Successfully scheduled notifications for habit: ${habit.name}',
       );
     } catch (e) {
-      final errorMsg = 'Failed to schedule notifications for habit: ${habit.name}';
-      AppLogger.error(errorMsg, e);
-      
-      // Log detailed error information for debugging but don't expose to user
-      AppLogger.error('Habit details - ID: ${habit.id}, Frequency: ${habit.frequency}');
-      
-      // Silently handle the error - user experience remains smooth
-      // The notification service will retry on the next renewal cycle
-      _debugLog('Notification scheduling failed silently, will retry in next renewal');
+      AppLogger.debug('Error scheduling notifications: $e');
+      AppLogger.error(
+        'Failed to schedule notifications for habit: ${habit.name}',
+        e,
+      );
+      rethrow; // Re-throw so the UI can show the error
     }
   }
 
   /// Schedule alarm notifications for a habit (mutually exclusive with regular notifications)
   static Future<void> scheduleHabitAlarms(dynamic habit) async {
-    try {
-      await _scheduleHabitAlarmsInternal(habit);
-    } catch (e, stackTrace) {
-      // Log the error but don't propagate it to avoid disrupting user experience
-      AppLogger.error(
-        'Failed to schedule alarms for habit "${habit.name}": $e',
-        e,
-        stackTrace,
-      );
-      
-      // Optionally try to clean up any partial scheduling
-      try {
-        await HybridAlarmService.cancelHabitAlarms(habit.id);
-      } catch (cleanupError) {
-        AppLogger.error('Failed to cleanup after alarm scheduling error', cleanupError);
-      }
-    }
-  }
-
-  /// Internal implementation of habit alarm scheduling
-  static Future<void> _scheduleHabitAlarmsInternal(dynamic habit) async {
     AppLogger.debug('Starting alarm scheduling for habit: ${habit.name}');
     AppLogger.debug('Alarm enabled: ${habit.alarmEnabled}');
     AppLogger.debug('Alarm sound: ${habit.alarmSoundName}');

@@ -90,7 +90,7 @@ class _AIInsightsOnboardingDialogState
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
+      child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.7,
         width: MediaQuery.of(context).size.width * 0.9,
         child: Column(

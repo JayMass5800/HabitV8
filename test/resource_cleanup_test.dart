@@ -27,9 +27,6 @@ void main() {
     });
 
     test('NotificationQueueProcessor dispose should clean up resources', () {
-      // Check initial state
-      final statusBefore = NotificationQueueProcessor.getQueueStatus();
-
       // Dispose the service
       NotificationQueueProcessor.dispose();
 
