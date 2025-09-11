@@ -214,7 +214,8 @@ class DataExportImportService {
       final result = await Share.shareXFiles(
         [XFile(filePath)],
         subject: 'HabitV8 Data Export ($fileType)',
-        text: 'Here is my habit tracking data exported from HabitV8 in $fileType format.',
+        text:
+            'Here is my habit tracking data exported from HabitV8 in $fileType format.',
       );
 
       final success = result.status == ShareResultStatus.success;
