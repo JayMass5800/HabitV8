@@ -19,7 +19,7 @@ class AIService {
   static const String _openAiApiUrl =
       'https://api.openai.com/v1/chat/completions';
   static const String _geminiApiUrl =
-      'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
   // Note: Never hardcode API keys - use secure storage or environment variables
   String? _openAiApiKey;
@@ -273,6 +273,7 @@ Please provide insights in this JSON format:
             data['candidates'][0]['content']['parts'] != null &&
             data['candidates'][0]['content']['parts'].isNotEmpty) {
           final content = data['candidates'][0]['content']['parts'][0]['text'];
+          _logger.i('Primary Gemini endpoint succeeded');
           return _parseAIResponse(content);
         } else {
           _logger.w('Gemini API response structure unexpected: $data');
@@ -300,9 +301,9 @@ Please provide insights in this JSON format:
   Future<List<Map<String, dynamic>>> _tryAlternativeGeminiEndpoint(
       List<Habit> habits, String habitSummary) async {
     try {
-      // Try the beta endpoint
+      // Try v1 API with gemini-pro (more stable model)
       const alternativeUrl =
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+          'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
 
       final response = await http.post(
         Uri.parse('$alternativeUrl?key=$_geminiApiKey'),
