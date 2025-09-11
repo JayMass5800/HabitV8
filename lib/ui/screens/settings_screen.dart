@@ -295,7 +295,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     color: Colors.blue.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8.0),
                                     border: Border.all(
-                                        color: Colors.blue.withValues(alpha: 0.3)),
+                                        color:
+                                            Colors.blue.withValues(alpha: 0.3)),
                                   ),
                                   child: Row(
                                     children: [
@@ -541,6 +542,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<bool?> _showCalendarSelectionDialog(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final result = await showDialog<bool>(
         context: context,
@@ -555,7 +557,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return result;
     } catch (e) {
       if (mounted) {
-        final messenger = ScaffoldMessenger.of(context);
         messenger.showSnackBar(
           SnackBar(
             content: Text('Error showing calendar selection: $e'),
