@@ -28,7 +28,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   final InsightsService _insightsService = InsightsService();
   final EnhancedInsightsService _enhancedInsightsService =
       EnhancedInsightsService();
-  
+
   // State for lazy loading AI insights to avoid unnecessary API calls
   // AI insights are only loaded when the AI Insights tab is accessed
   bool _aiInsightsRequested = false;
@@ -956,7 +956,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     }
 
     // Initialize the future if not already done
-    _aiInsightsFuture ??= _enhancedInsightsService.generateComprehensiveInsights(habits);
+    _aiInsightsFuture ??=
+        _enhancedInsightsService.generateComprehensiveInsights(habits);
 
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _aiInsightsFuture,
