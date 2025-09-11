@@ -217,8 +217,8 @@ class NotificationActionService {
           await habitService.updateHabit(habit);
           AppLogger.info('Habit data saved to database');
 
-          // Invalidate cache to ensure UI updates
-          _invalidateHabitCache();
+          // Trigger immediate UI updates for faster feedback
+          await _triggerImmediateUIUpdate();
 
           // Force a complete provider refresh to ensure UI updates
           try {
@@ -388,48 +388,32 @@ class NotificationActionService {
     }
   }
 
-  // Batch cache invalidation to reduce UI rebuild frequency
-  static final List<String> _pendingInvalidations = [];
-  static Timer? _invalidationTimer;
-
-  /// Invalidate habit cache to ensure UI updates (batched for performance)
-  static void _invalidateHabitCache() {
-    _scheduleInvalidation('habitServiceProvider');
-  }
-
-  /// Schedule a cache invalidation (batched to prevent excessive rebuilds)
-  static void _scheduleInvalidation(String key) {
-    if (!_pendingInvalidations.contains(key)) {
-      _pendingInvalidations.add(key);
-    }
-    
-    // Cancel existing timer and schedule new batch
-    _invalidationTimer?.cancel();
-    _invalidationTimer = Timer(Duration(milliseconds: 100), _performBatchInvalidation);
-  }
-
-  /// Perform all pending cache invalidations in a single batch
-  static void _performBatchInvalidation() {
-    if (_pendingInvalidations.isEmpty || _container == null) {
-      return;
-    }
-
+  /// Trigger immediate UI updates for critical changes (like notification completions)
+  static Future<void> _triggerImmediateUIUpdate() async {
     try {
-      // Invalidate all pending providers at once
-      for (final key in _pendingInvalidations) {
-        switch (key) {
-          case 'habitServiceProvider':
-            _container!.invalidate(habitServiceProvider);
-            break;
-          // Add other providers as needed
-        }
+      if (_container == null) {
+        AppLogger.warning('Container not available for immediate UI update');
+        return;
       }
-      
-      AppLogger.info('✅ Batch invalidated ${_pendingInvalidations.length} cache entries');
-      _pendingInvalidations.clear();
+
+      AppLogger.info('🚀 Triggering immediate UI update for notification completion');
+
+      // Get the habits notifier and force immediate refresh
+      try {
+        final habitsNotifier = _container!.read(habitsNotifierProvider.notifier);
+        await habitsNotifier.forceImmediateRefresh();
+        AppLogger.info('✅ Immediate habits refresh completed');
+      } catch (e) {
+        AppLogger.warning('Could not trigger immediate habits refresh: $e');
+        // Fallback to standard provider invalidation
+        _container!.invalidate(habitServiceProvider);
+      }
+
+      // Also invalidate the main provider to ensure all dependent widgets update
+      _container!.invalidate(habitServiceProvider);
+
     } catch (e) {
-      AppLogger.error('Error in batch cache invalidation', e);
-      _pendingInvalidations.clear();
+      AppLogger.error('Error in immediate UI update', e);
     }
   }
 

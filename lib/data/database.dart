@@ -98,7 +98,8 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   void _startPeriodicRefresh() {
     _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    // Reduced from 3 seconds to 1 second for faster UI updates
+    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _checkForUpdates();
     });
   }
@@ -130,9 +131,18 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       final oldHabit = oldHabitsMap[newHabit.id];
       if (oldHabit == null) return true; // New habit added
 
-      // Check if completions count changed (fastest check)
+      // Check if completions count changed (most sensitive check for timeline updates)
       final oldCompletionsCount = _habitCompletionsCount[newHabit.id] ?? 0;
       if (newHabit.completions.length != oldCompletionsCount) return true;
+
+      // Also check if completions changed by comparing the most recent completion
+      if (newHabit.completions.isNotEmpty && oldHabit.completions.isNotEmpty) {
+        final newLatest = newHabit.completions.last;
+        final oldLatest = oldHabit.completions.last;
+        if (newLatest != oldLatest) return true;
+      } else if (newHabit.completions.length != oldHabit.completions.length) {
+        return true;
+      }
 
       // Check other key properties
       if (oldHabit.name != newHabit.name ||
@@ -146,6 +156,28 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   Future<void> refreshHabits() async {
     await _loadHabits();
+  }
+
+  /// Force immediate refresh for critical updates (like notification completions)
+  Future<void> forceImmediateRefresh() async {
+    try {
+      AppLogger.info('🚀 Force immediate habits refresh triggered');
+      // Cancel periodic timer briefly to avoid conflicts
+      _refreshTimer?.cancel();
+      
+      // Force immediate reload
+      await _loadHabits();
+      
+      // Restart periodic refresh
+      _startPeriodicRefresh();
+      
+      AppLogger.info('✅ Force immediate habits refresh completed');
+    } catch (e) {
+      AppLogger.error('❌ Error in force immediate refresh', e);
+      // Ensure periodic refresh is restarted even on error
+      _startPeriodicRefresh();
+      rethrow;
+    }
   }
 
   Future<void> updateHabit(Habit habit) async {

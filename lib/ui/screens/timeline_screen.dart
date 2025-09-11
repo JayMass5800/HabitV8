@@ -171,7 +171,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                         try {
                           ref
                               .read(habitsNotifierProvider.notifier)
-                              .refreshHabits();
+                              .forceImmediateRefresh();
                         } catch (e) {
                           // If provider not ready, just invalidate and retry
                           ref.invalidate(habitsNotifierProvider);
@@ -190,7 +190,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   try {
                     await ref
                         .read(habitsNotifierProvider.notifier)
-                        .refreshHabits();
+                        .forceImmediateRefresh();
                   } catch (e) {
                     // If provider not ready, just invalidate and retry
                     ref.invalidate(habitsNotifierProvider);
@@ -324,9 +324,10 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
             return RefreshIndicator(
               onRefresh: () async {
                 try {
+                  // Force immediate refresh for faster response
                   await ref
                       .read(habitsNotifierProvider.notifier)
-                      .refreshHabits();
+                      .forceImmediateRefresh();
                 } catch (e) {
                   // If provider not ready, just invalidate and retry
                   ref.invalidate(habitsNotifierProvider);
@@ -561,9 +562,15 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   ),
                 ),
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
+                  duration: const Duration(milliseconds: 200), // Faster animation
                   transitionBuilder: (child, animation) {
-                    return ScaleTransition(scale: animation, child: child);
+                    return ScaleTransition(
+                      scale: animation,
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      ),
+                    );
                   },
                   child: Icon(
                     isCompleted ? Icons.check : Icons.circle_outlined,
@@ -689,7 +696,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     final optimisticKey = '${habit.id}_${_selectedDate.millisecondsSinceEpoch}';
     final isCompleted = _isHabitCompletedOnDate(habit, _selectedDate);
 
-    // Optimistic UI update
+    // Optimistic UI update with immediate visual feedback
     setState(() {
       _optimisticCompletions[optimisticKey] = !isCompleted;
     });
@@ -715,9 +722,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         habit.completions.add(_selectedDate);
       }
 
-      // Use the reactive notifier to update the habit
+      // Use the reactive notifier to update the habit with immediate refresh
       try {
         await ref.read(habitsNotifierProvider.notifier).updateHabit(habit);
+        // Trigger immediate refresh to ensure UI is synchronized
+        await ref.read(habitsNotifierProvider.notifier).forceImmediateRefresh();
       } catch (e) {
         // If provider not ready, fall back to direct service update
         final habitServiceAsync = ref.read(habitServiceProvider);
@@ -852,7 +861,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       timeSlot,
     );
 
-    // Optimistic UI update
+    // Optimistic UI update with immediate visual feedback
     setState(() {
       _optimisticCompletions[optimisticKey] = !isCompleted;
     });
@@ -872,9 +881,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         habit.completions.add(targetDateTime);
       }
 
-      // Use the reactive notifier to update the habit
+      // Use the reactive notifier to update the habit with immediate refresh
       try {
         await ref.read(habitsNotifierProvider.notifier).updateHabit(habit);
+        // Trigger immediate refresh to ensure UI is synchronized
+        await ref.read(habitsNotifierProvider.notifier).forceImmediateRefresh();
       } catch (e) {
         // If provider not ready, fall back to direct service update
         final habitServiceAsync = ref.read(habitServiceProvider);
