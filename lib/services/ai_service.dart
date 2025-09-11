@@ -252,6 +252,65 @@ Please provide insights in this JSON format:
     }
   }
 
+  /// Try alternative Gemini API endpoint
+  Future<List<Map<String, dynamic>>> _tryAlternativeGeminiEndpoint(
+      List<Habit> habits, String habitSummary) async {
+    try {
+      // Try the beta endpoint
+      const alternativeUrl =
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+
+      final response = await http.post(
+        Uri.parse('$alternativeUrl?key=$_geminiApiKey'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {
+                  'text':
+                      '''Analyze these habit tracking data and provide exactly 3 personalized insights.
+                  
+Habit Data: $habitSummary
+
+Please provide insights in this JSON format:
+[
+  {
+    "type": "motivational|pattern|insight|achievement",
+    "title": "Short insight title", 
+    "description": "Detailed insight explanation",
+    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny"
+  }
+]'''
+                }
+              ]
+            }
+          ]
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['candidates'] != null &&
+            data['candidates'].isNotEmpty &&
+            data['candidates'][0]['content'] != null &&
+            data['candidates'][0]['content']['parts'] != null &&
+            data['candidates'][0]['content']['parts'].isNotEmpty) {
+          final content = data['candidates'][0]['content']['parts'][0]['text'];
+          _logger.i('Alternative Gemini endpoint succeeded');
+          return _parseAIResponse(content);
+        }
+      }
+
+      _logger.w(
+          'Alternative Gemini endpoint also failed with status ${response.statusCode}');
+      return _getFallbackInsights(habits);
+    } catch (e) {
+      _logger.e('Alternative Gemini API error: $e');
+      return _getFallbackInsights(habits);
+    }
+  }
+
   /// Generate habit summary for AI analysis
   String _generateHabitSummary(List<Habit> habits) {
     if (habits.isEmpty) return 'No habits tracked yet.';
