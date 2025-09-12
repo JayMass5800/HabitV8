@@ -13,7 +13,7 @@ import 'permission_service.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
 import '../data/database.dart';
-import 'hybrid_alarm_service.dart';
+import 'alarm_manager_service.dart';
 
 @pragma('vm:entry-point')
 class NotificationService {
@@ -2025,8 +2025,8 @@ class NotificationService {
     AppLogger.debug('Alarm sound: ${habit.alarmSoundName}');
     AppLogger.debug('Snooze delay: 10 minutes (fixed default)');
 
-    // Initialize HybridAlarmService to use system alarms for this habit
-    await HybridAlarmService.initialize();
+    // Initialize AlarmManagerService to use system alarms for this habit
+    await AlarmManagerService.initialize();
 
     // Skip if alarms are disabled
     if (!habit.alarmEnabled) {
@@ -2057,7 +2057,7 @@ class NotificationService {
 
     try {
       // Cancel any existing alarms for this habit first
-      await HybridAlarmService.cancelHabitAlarms(habit.id);
+      await AlarmManagerService.cancelHabitAlarms(habit.id);
       AppLogger.debug('Cancelled existing alarms for habit ID: ${habit.id}');
 
       final frequency = habit.frequency.toString().split('.').last;
@@ -3461,12 +3461,12 @@ class NotificationService {
       nextAlarm = nextAlarm.add(const Duration(days: 1));
     }
 
-    final alarmId = HybridAlarmService.generateHabitAlarmId(
+    final alarmId = AlarmManagerService.generateHabitAlarmId(
       habit.id,
       suffix: 'daily',
     );
 
-    await HybridAlarmService.scheduleRecurringExactAlarm(
+    await AlarmManagerService.scheduleRecurringExactAlarm(
       alarmId: alarmId,
       habitId: habit.id,
       habitName: habit.name,
@@ -3507,12 +3507,12 @@ class NotificationService {
         nextAlarm = nextAlarm.add(const Duration(days: 7));
       }
 
-      final alarmId = HybridAlarmService.generateHabitAlarmId(
+      final alarmId = AlarmManagerService.generateHabitAlarmId(
         habit.id,
         suffix: 'weekly_$weekday',
       );
 
-      await HybridAlarmService.scheduleRecurringExactAlarm(
+      await AlarmManagerService.scheduleRecurringExactAlarm(
         alarmId: alarmId,
         habitId: habit.id,
         habitName: habit.name,
@@ -3563,12 +3563,12 @@ class NotificationService {
         continue;
       }
 
-      final alarmId = HybridAlarmService.generateHabitAlarmId(
+      final alarmId = AlarmManagerService.generateHabitAlarmId(
         habit.id,
         suffix: 'monthly_$monthDay',
       );
 
-      await HybridAlarmService.scheduleRecurringExactAlarm(
+      await AlarmManagerService.scheduleRecurringExactAlarm(
         alarmId: alarmId,
         habitId: habit.id,
         habitName: habit.name,
@@ -3618,12 +3618,12 @@ class NotificationService {
           nextAlarm = DateTime(now.year + 1, month, day, hour, minute);
         }
 
-        final alarmId = HybridAlarmService.generateHabitAlarmId(
+        final alarmId = AlarmManagerService.generateHabitAlarmId(
           habit.id,
           suffix: 'yearly_${month}_$day',
         );
 
-        await HybridAlarmService.scheduleRecurringExactAlarm(
+        await AlarmManagerService.scheduleRecurringExactAlarm(
           alarmId: alarmId,
           habitId: habit.id,
           habitName: habit.name,
@@ -3667,12 +3667,12 @@ class NotificationService {
     }
 
     try {
-      final alarmId = HybridAlarmService.generateHabitAlarmId(
+      final alarmId = AlarmManagerService.generateHabitAlarmId(
         habit.id,
         suffix: 'single_${singleDateTime.millisecondsSinceEpoch}',
       );
 
-      await HybridAlarmService.scheduleExactAlarm(
+      await AlarmManagerService.scheduleExactAlarm(
         alarmId: alarmId,
         habitId: habit.id,
         habitName: habit.name,
@@ -3725,12 +3725,12 @@ class NotificationService {
             nextAlarm = nextAlarm.add(const Duration(days: 1));
           }
 
-          final alarmId = HybridAlarmService.generateHabitAlarmId(
+          final alarmId = AlarmManagerService.generateHabitAlarmId(
             habit.id,
             suffix: 'hourly_${hour}_$minute',
           );
 
-          await HybridAlarmService.scheduleRecurringExactAlarm(
+          await AlarmManagerService.scheduleRecurringExactAlarm(
             alarmId: alarmId,
             habitId: habit.id,
             habitName: habit.name,
@@ -3765,12 +3765,12 @@ class NotificationService {
           nextAlarm = nextAlarm.add(const Duration(days: 1));
         }
 
-        final alarmId = HybridAlarmService.generateHabitAlarmId(
+        final alarmId = AlarmManagerService.generateHabitAlarmId(
           habit.id,
           suffix: 'hourly_default_$hour',
         );
 
-        await HybridAlarmService.scheduleRecurringExactAlarm(
+        await AlarmManagerService.scheduleRecurringExactAlarm(
           alarmId: alarmId,
           habitId: habit.id,
           habitName: habit.name,
@@ -3785,19 +3785,19 @@ class NotificationService {
     AppLogger.info('✅ Scheduled hourly alarms for ${habit.name}');
   }
 
-  /// Get available alarm sounds (delegated to HybridAlarmService)
+  /// Get available alarm sounds (delegated to AlarmManagerService)
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
-    return await HybridAlarmService.getAvailableAlarmSounds();
+    return await AlarmManagerService.getAvailableAlarmSounds();
   }
 
-  /// Play alarm sound preview (delegated to HybridAlarmService)
+  /// Play alarm sound preview (delegated to AlarmManagerService)
   static Future<void> playAlarmSoundPreview(String soundUri) async {
-    await HybridAlarmService.playAlarmSoundPreview(soundUri);
+    await AlarmManagerService.playAlarmSoundPreview(soundUri);
   }
 
-  /// Stop alarm sound preview (delegated to HybridAlarmService)
+  /// Stop alarm sound preview (delegated to AlarmManagerService)
   static Future<void> stopAlarmSoundPreview() async {
-    await HybridAlarmService.stopAlarmSoundPreview();
+    await AlarmManagerService.stopAlarmSoundPreview();
   }
 
   /// Complete habit from notification action

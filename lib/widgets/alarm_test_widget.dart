@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/new_alarm_service.dart';
+import '../services/alarm_manager_service.dart';
 
 class AlarmTestWidget extends StatefulWidget {
   const AlarmTestWidget({super.key});
@@ -20,7 +20,7 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
 
   Future<void> _initializeService() async {
     try {
-      await NewAlarmService.initialize();
+      await AlarmManagerService.initialize();
       setState(() {
         _isInitialized = true;
         _status = 'Service initialized successfully';
@@ -35,7 +35,7 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
   Future<void> _testSystemSound() async {
     try {
       setState(() => _status = 'Testing system sound...');
-      await NewAlarmService.testSystemSound('Early Twilight');
+      await AlarmManagerService.testSystemSound('Early Twilight');
       setState(() => _status = 'System sound test completed');
     } catch (e) {
       setState(() => _status = 'Sound test failed: $e');
@@ -44,7 +44,7 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
 
   Future<void> _stopSystemSound() async {
     try {
-      await NewAlarmService.stopSystemSound();
+      await AlarmManagerService.stopSystemSound();
       setState(() => _status = 'System sound stopped');
     } catch (e) {
       setState(() => _status = 'Failed to stop sound: $e');
@@ -57,7 +57,7 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
 
       final alarmTime = DateTime.now().add(const Duration(seconds: 10));
 
-      await NewAlarmService.scheduleExactAlarm(
+      await AlarmManagerService.scheduleExactAlarm(
         alarmId: 999,
         habitId: 'test_habit',
         habitName: 'Test Alarm',
@@ -75,7 +75,7 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
 
   Future<void> _cancelTestAlarm() async {
     try {
-      await NewAlarmService.cancelAlarm(999);
+      await AlarmManagerService.cancelAlarm(999);
       setState(() => _status = 'Test alarm cancelled');
     } catch (e) {
       setState(() => _status = 'Failed to cancel alarm: $e');

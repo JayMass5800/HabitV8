@@ -22,9 +22,12 @@ void playAlarmSound() async {
     String? alarmDataJson;
     String? alarmKey;
 
-    // Look for alarm data stored by the scheduling service
+    // Look for alarm data stored by the AlarmManagerService
     final keys =
-        prefs.getKeys().where((key) => key.startsWith('hybrid_alarm_data_'));
+        prefs.getKeys().where((key) => key.startsWith('alarm_manager_data_'));
+
+    AppLogger.info('🔍 Found ${keys.length} alarm data keys to check');
+
     for (final key in keys) {
       final data = prefs.getString(key);
       if (data != null) {
@@ -34,9 +37,14 @@ void playAlarmSound() async {
 
           // Check if this alarm should be firing now (within 2 minutes)
           final timeDiff = now.difference(scheduledTime).inMinutes.abs();
+          AppLogger.info(
+              '⏰ Checking alarm: ${alarmData['habitName']}, scheduled: $scheduledTime, diff: ${timeDiff}m');
+
           if (timeDiff <= 2) {
             alarmDataJson = data;
             alarmKey = key;
+            AppLogger.info(
+                '✅ Found matching alarm for ${alarmData['habitName']}');
             break;
           }
         } catch (e) {
@@ -46,58 +54,108 @@ void playAlarmSound() async {
     }
 
     if (alarmDataJson == null) {
-      AppLogger.warning('No alarm data found for current time');
-      return;
+      AppLogger.warning(
+          '❌ No matching alarm data found for current time: $now');
+
+      // Try to find any alarm data as fallback
+      final fallbackKeys = prefs.getKeys().where((key) =>
+          key.startsWith('hybrid_alarm_data_') ||
+          key.startsWith('new_alarm_data_'));
+      for (final key in fallbackKeys) {
+        final data = prefs.getString(key);
+        if (data != null) {
+          try {
+            final alarmData = jsonDecode(data);
+            final scheduledTime = DateTime.parse(alarmData['scheduledTime']);
+            final timeDiff = now.difference(scheduledTime).inMinutes.abs();
+
+            if (timeDiff <= 5) {
+              // More lenient for fallback
+              alarmDataJson = data;
+              alarmKey = key;
+              AppLogger.info('🔄 Using fallback alarm data from $key');
+              break;
+            }
+          } catch (e) {
+            AppLogger.error(
+                'Error parsing fallback alarm data for key $key', e);
+          }
+        }
+      }
+
+      if (alarmDataJson == null) {
+        AppLogger.error(
+            '❌ No alarm data found at all - alarm callback exiting');
+        return;
+      }
     }
 
+    // Parse alarm data and execute the alarm
     final alarmData = jsonDecode(alarmDataJson);
-    final habitName = alarmData['habitName'] ?? 'Habit Reminder';
-    final alarmSoundName = alarmData['alarmSoundName'] ?? 'default';
+    await _executeAlarmCallback(alarmData);
 
-    AppLogger.info('🔊 Playing alarm for habit: $habitName');
-    AppLogger.info('🔊 Sound: $alarmSoundName');
-
-    // Use platform channel to play the system sound
-    const platform = MethodChannel('com.habittracker.habitv8/alarm_sound');
-
-    try {
-      // Get the system sound URI
-      String? soundUri;
-      if (alarmSoundName == 'default') {
-        soundUri = null; // Will use default alarm sound
-      } else {
-        // Map sound name to URI (you might want to store this mapping in shared preferences)
-        soundUri = _mapSoundNameToUri(alarmSoundName);
-      }
-
-      await platform.invokeMethod('playSystemSound', {'soundUri': soundUri});
-
-      AppLogger.info('🔊 Successfully triggered alarm sound playback');
-
-      // Clean up the alarm data after successful playback
-      if (alarmKey != null) {
-        await prefs.remove(alarmKey);
-        AppLogger.info('🔊 Cleaned up alarm data: $alarmKey');
-      }
-    } catch (e) {
-      AppLogger.error('Failed to play alarm sound via platform channel', e);
+    // Clean up the alarm data after execution
+    if (alarmKey != null) {
+      await prefs.remove(alarmKey);
+      AppLogger.info('🧹 Cleaned up alarm data: $alarmKey');
     }
-  } catch (e) {
-    AppLogger.error('Error in playAlarmSound callback', e);
+  } catch (e, stackTrace) {
+    AppLogger.error('❌ Error in alarm callback', e);
+    AppLogger.error('Stack trace: $stackTrace');
   }
 }
 
-/// Map sound names to content URIs
-String? _mapSoundNameToUri(String soundName) {
-  // Map common sound names to their content URIs
-  // This could also be loaded from shared preferences for dynamic mapping
-  final soundMap = {
-    'Early Twilight': 'content://settings/system/alarm_alert',
-    'Argon': 'content://settings/system/alarm_alert',
-    'Cesium': 'content://settings/system/alarm_alert',
-    'Scandium': 'content://settings/system/alarm_alert',
-    'default': null,
-  };
+/// Execute the alarm callback with the provided alarm data
+Future<void> _executeAlarmCallback(Map<String, dynamic> alarmData) async {
+  try {
+    final habitName = alarmData['habitName'] ?? 'Unknown Habit';
+    final alarmSoundName = alarmData['alarmSoundName'];
 
-  return soundMap[soundName];
+    AppLogger.info('🚨 Executing alarm for habit: $habitName');
+    AppLogger.info('🔊 Sound: ${alarmSoundName ?? "default"}');
+
+    // Use platform channel to play system sound
+    const platform = MethodChannel('com.habittracker.habitv8/system_sound');
+
+    try {
+      await platform.invokeMethod('playSystemSound', {
+        'soundUri': alarmSoundName != 'default' ? alarmSoundName : null,
+        'volume': 0.8,
+        'loop': true,
+        'habitName': habitName,
+      });
+
+      AppLogger.info('✅ System sound playback initiated for: $habitName');
+    } catch (e) {
+      AppLogger.error('❌ Failed to play system sound via platform channel', e);
+
+      // Fallback: try to trigger a notification sound
+      await _playFallbackNotificationSound(habitName);
+    }
+
+    AppLogger.info('✅ Alarm callback execution completed for: $habitName');
+  } catch (e, stackTrace) {
+    AppLogger.error('❌ Error executing alarm callback', e);
+    AppLogger.error('Stack trace: $stackTrace');
+  }
+}
+
+/// Play a fallback notification sound if platform channel fails
+Future<void> _playFallbackNotificationSound(String habitName) async {
+  try {
+    AppLogger.info('🔄 Attempting fallback notification sound for: $habitName');
+
+    // Try using the system notification sound as fallback
+    const platform = MethodChannel('com.habittracker.habitv8/system_sound');
+    await platform.invokeMethod('playSystemSound', {
+      'soundUri': 'content://settings/system/notification_sound',
+      'volume': 0.7,
+      'loop': false,
+      'habitName': habitName,
+    });
+
+    AppLogger.info('✅ Fallback notification sound played');
+  } catch (e) {
+    AppLogger.error('❌ Fallback notification sound also failed', e);
+  }
 }

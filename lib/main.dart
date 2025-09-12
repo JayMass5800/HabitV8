@@ -8,7 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/notification_service.dart';
 import 'services/notification_action_service.dart';
-import 'services/hybrid_alarm_service.dart';
+import 'services/alarm_manager_service.dart';
 import 'services/permission_service.dart';
 import 'services/theme_service.dart';
 import 'services/logging_service.dart';
@@ -69,7 +69,7 @@ void main() async {
 
   // Initialize hybrid alarm service (handles both notification and system alarms)
   try {
-    await HybridAlarmService.initialize();
+    await AlarmManagerService.initialize();
   } catch (e) {
     AppLogger.error('Error initializing hybrid alarm service', e);
     // Continue with app startup even if alarm service fails

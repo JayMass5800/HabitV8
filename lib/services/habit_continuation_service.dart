@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'notification_service.dart';
-import 'hybrid_alarm_service.dart';
+import 'alarm_manager_service.dart';
 import 'logging_service.dart';
 
 /// Service responsible for ensuring habits continue to work indefinitely
@@ -212,7 +212,7 @@ class HabitContinuationService {
       AppLogger.debug('🚨 Renewing alarms for habit: ${habit.name}');
 
       // Cancel existing alarms first
-      await HybridAlarmService.cancelHabitAlarms(habit.id);
+      await AlarmManagerService.cancelHabitAlarms(habit.id);
 
       // Schedule new alarms based on frequency with extended duration
       switch (habit.frequency) {
@@ -496,7 +496,8 @@ class HabitContinuationService {
       Habit habit) async {
     // Validate single habit requirements
     if (habit.singleDateTime == null) {
-      final error = 'Single habit "${habit.name}" requires a date/time to be set';
+      final error =
+          'Single habit "${habit.name}" requires a date/time to be set';
       AppLogger.error(error);
       throw ArgumentError(error);
     }
@@ -506,7 +507,8 @@ class HabitContinuationService {
 
     // Check if date/time is in the past
     if (singleDateTime.isBefore(now)) {
-      final error = 'Single habit "${habit.name}" date/time is in the past: $singleDateTime';
+      final error =
+          'Single habit "${habit.name}" date/time is in the past: $singleDateTime';
       AppLogger.error(error);
       throw StateError(error);
     }
@@ -526,7 +528,8 @@ class HabitContinuationService {
       AppLogger.info(
           '✅ Scheduled single notification for "${habit.name}" at $singleDateTime');
     } catch (e) {
-      final error = 'Failed to schedule single habit notification for "${habit.name}": $e';
+      final error =
+          'Failed to schedule single habit notification for "${habit.name}": $e';
       AppLogger.error(error);
       throw Exception(error);
     }
@@ -559,12 +562,12 @@ class HabitContinuationService {
             DateTime(date.year, date.month, date.day, hour, minute);
 
         if (alarmTime.isAfter(now)) {
-          final alarmId = HybridAlarmService.generateHabitAlarmId(
+          final alarmId = AlarmManagerService.generateHabitAlarmId(
             habit.id,
             suffix: 'hourly_${date.day}_${hour}_$minute',
           );
 
-          await HybridAlarmService.scheduleExactAlarm(
+          await AlarmManagerService.scheduleExactAlarm(
             alarmId: alarmId,
             habitId: habit.id,
             habitName: habit.name,
@@ -603,12 +606,12 @@ class HabitContinuationService {
       );
 
       if (alarmTime.isAfter(now)) {
-        final alarmId = HybridAlarmService.generateHabitAlarmId(
+        final alarmId = AlarmManagerService.generateHabitAlarmId(
           habit.id,
           suffix: 'daily_${targetDate.day}_${targetDate.month}',
         );
 
-        await HybridAlarmService.scheduleExactAlarm(
+        await AlarmManagerService.scheduleExactAlarm(
           alarmId: alarmId,
           habitId: habit.id,
           habitName: habit.name,
@@ -650,12 +653,12 @@ class HabitContinuationService {
         );
 
         if (alarmTime.isAfter(now)) {
-          final alarmId = HybridAlarmService.generateHabitAlarmId(
+          final alarmId = AlarmManagerService.generateHabitAlarmId(
             habit.id,
             suffix: 'weekly_${date.day}_${date.month}_${date.weekday}',
           );
 
-          await HybridAlarmService.scheduleExactAlarm(
+          await AlarmManagerService.scheduleExactAlarm(
             alarmId: alarmId,
             habitId: habit.id,
             habitName: habit.name,
@@ -700,12 +703,12 @@ class HabitContinuationService {
           );
 
           if (alarmTime.isAfter(now)) {
-            final alarmId = HybridAlarmService.generateHabitAlarmId(
+            final alarmId = AlarmManagerService.generateHabitAlarmId(
               habit.id,
               suffix: 'monthly_${targetMonth.month}_$monthDay',
             );
 
-            await HybridAlarmService.scheduleExactAlarm(
+            await AlarmManagerService.scheduleExactAlarm(
               alarmId: alarmId,
               habitId: habit.id,
               habitName: habit.name,
@@ -754,12 +757,12 @@ class HabitContinuationService {
             );
 
             if (alarmTime.isAfter(now)) {
-              final alarmId = HybridAlarmService.generateHabitAlarmId(
+              final alarmId = AlarmManagerService.generateHabitAlarmId(
                 habit.id,
                 suffix: 'yearly_${targetYear}_${month}_$day',
               );
 
-              await HybridAlarmService.scheduleExactAlarm(
+              await AlarmManagerService.scheduleExactAlarm(
                 alarmId: alarmId,
                 habitId: habit.id,
                 habitName: habit.name,
@@ -786,7 +789,8 @@ class HabitContinuationService {
   static Future<void> _scheduleSingleAlarmsContinuous(Habit habit) async {
     // Validate single habit requirements
     if (habit.singleDateTime == null) {
-      final error = 'Single habit "${habit.name}" requires a date/time to be set for alarms';
+      final error =
+          'Single habit "${habit.name}" requires a date/time to be set for alarms';
       AppLogger.error(error);
       throw ArgumentError(error);
     }
@@ -796,18 +800,19 @@ class HabitContinuationService {
 
     // Check if date/time is in the past
     if (singleDateTime.isBefore(now)) {
-      final error = 'Single habit "${habit.name}" alarm date/time is in the past: $singleDateTime';
+      final error =
+          'Single habit "${habit.name}" alarm date/time is in the past: $singleDateTime';
       AppLogger.error(error);
       throw StateError(error);
     }
 
     try {
-      final alarmId = HybridAlarmService.generateHabitAlarmId(
+      final alarmId = AlarmManagerService.generateHabitAlarmId(
         habit.id,
         suffix: 'single_${singleDateTime.millisecondsSinceEpoch}',
       );
 
-      await HybridAlarmService.scheduleExactAlarm(
+      await AlarmManagerService.scheduleExactAlarm(
         alarmId: alarmId,
         habitId: habit.id,
         habitName: habit.name,
@@ -820,7 +825,8 @@ class HabitContinuationService {
       AppLogger.info(
           '✅ Scheduled single alarm for "${habit.name}" at $singleDateTime');
     } catch (e) {
-      final error = 'Failed to schedule single habit alarm for "${habit.name}": $e';
+      final error =
+          'Failed to schedule single habit alarm for "${habit.name}": $e';
       AppLogger.error(error);
       throw Exception(error);
     }
