@@ -124,21 +124,9 @@ class NotificationActionService {
         );
       }
 
-      // Get the habit service from the provider
-      final habitServiceAsync = _container!.read(habitServiceProvider);
-
-      // Properly await the async value
-      final habitService = await habitServiceAsync.when(
-        data: (habitService) async => habitService,
-        loading: () async {
-          AppLogger.info('Habit service loading...');
-          throw Exception('Habit service is still loading');
-        },
-        error: (error, stack) async {
-          AppLogger.error('Error accessing habit service', error);
-          throw Exception('Failed to access habit service: $error');
-        },
-      );
+      // Get the habit service from the provider and wait for it to be ready
+      AppLogger.info('Waiting for habit service to be ready...');
+      final habitService = await _container!.read(habitServiceProvider.future);
 
       try {
         AppLogger.info('Habit service obtained successfully');
@@ -253,20 +241,8 @@ class NotificationActionService {
       AppLogger.info('Starting snooze action for habit: $habitId');
 
       // Get the habit service from the provider to get habit details for better notification
-      final habitServiceAsync = _container!.read(habitServiceProvider);
-
-      // Properly await the async value
-      final habitService = await habitServiceAsync.when(
-        data: (habitService) async => habitService,
-        loading: () async {
-          AppLogger.info('Habit service loading for snooze...');
-          throw Exception('Habit service is still loading');
-        },
-        error: (error, stack) async {
-          AppLogger.error('Error accessing habit service for snooze', error);
-          throw Exception('Failed to access habit service: $error');
-        },
-      );
+      AppLogger.info('Waiting for habit service to be ready for snooze...');
+      final habitService = await _container!.read(habitServiceProvider.future);
 
       try {
         // Get the habit for better notification content
@@ -311,23 +287,9 @@ class NotificationActionService {
       }
 
       // Get the habit service from the provider to get habit details
-      final habitServiceAsync = _container!.read(habitServiceProvider);
-
-      // Properly await the async value
-      final habitService = await habitServiceAsync.when(
-        data: (habitService) async => habitService,
-        loading: () async {
-          AppLogger.info('Habit service loading for alarm snooze...');
-          throw Exception('Habit service is still loading');
-        },
-        error: (error, stack) async {
-          AppLogger.error(
-            'Error accessing habit service for alarm snooze',
-            error,
-          );
-          throw Exception('Failed to access habit service: $error');
-        },
-      );
+      AppLogger.info(
+          'Waiting for habit service to be ready for alarm snooze...');
+      final habitService = await _container!.read(habitServiceProvider.future);
 
       try {
         // Get the habit for alarm details

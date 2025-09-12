@@ -39,22 +39,40 @@ class MainActivity : FlutterFragmentActivity() {
 
         // Ringtone listing/preview channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, RINGTONE_CHANNEL).setMethodCallHandler { call, result ->
+            // Check if activity is still valid before processing method calls
+            if (isFinishing || isDestroyed) {
+                result.error("ACTIVITY_INVALID", "Activity is no longer valid", null)
+                return@setMethodCallHandler
+            }
+            
             when (call.method) {
                 "list" -> {
-                    result.success(listRingtones())
+                    try {
+                        result.success(listRingtones())
+                    } catch (e: Exception) {
+                        result.error("RINGTONE_ERROR", "Failed to list ringtones: ${e.message}", null)
+                    }
                 }
                 "preview" -> {
                     val uriStr = call.argument<String>("uri")
                     if (uriStr == null) {
                         result.error("ARG", "uri is required", null)
                     } else {
-                        previewRingtone(uriStr)
-                        result.success(true)
+                        try {
+                            previewRingtone(uriStr)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("PREVIEW_ERROR", "Failed to preview ringtone: ${e.message}", null)
+                        }
                     }
                 }
                 "stop" -> {
-                    stopPreview()
-                    result.success(true)
+                    try {
+                        stopPreview()
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("STOP_ERROR", "Failed to stop preview: ${e.message}", null)
+                    }
                 }
                 else -> result.notImplemented()
             }
@@ -65,21 +83,44 @@ class MainActivity : FlutterFragmentActivity() {
         val out = mutableListOf<Map<String, String>>()
 
         fun query(type: Int, label: String) {
-            val manager = RingtoneManager(this)
-            manager.setType(type)
-            val cursor: Cursor = manager.cursor
-            while (cursor.moveToNext()) {
-                val title = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX) ?: label
-                val uri: Uri = manager.getRingtoneUri(cursor.position)
-                out.add(
-                    mapOf(
-                        "name" to title,
-                        "uri" to uri.toString(),
-                        "type" to "system"
-                    )
-                )
+            // Check if activity is still valid before accessing cursors
+            if (isFinishing || isDestroyed) {
+                return
             }
-            cursor.close()
+            
+            var cursor: Cursor? = null
+            try {
+                val manager = RingtoneManager(this)
+                manager.setType(type)
+                cursor = manager.cursor
+                
+                // Check if cursor is valid
+                if (cursor == null || cursor.isClosed) {
+                    return
+                }
+                
+                while (cursor.moveToNext()) {
+                    val title = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX) ?: label
+                    val uri: Uri = manager.getRingtoneUri(cursor.position)
+                    out.add(
+                        mapOf(
+                            "name" to title,
+                            "uri" to uri.toString(),
+                            "type" to "system"
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                // Log error but don't crash the app
+                android.util.Log.e("MainActivity", "Error querying ringtones: ${e.message}")
+            } finally {
+                // Safely close cursor
+                try {
+                    cursor?.close()
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "Error closing cursor: ${e.message}")
+                }
+            }
         }
 
         // Include common types
@@ -112,5 +153,15 @@ class MainActivity : FlutterFragmentActivity() {
             previewRingtone = null
         } catch (_: Exception) {
         }
+    }
+
+    override fun onDestroy() {
+        try {
+            // Clean up any previewing ringtones to prevent state issues
+            stopPreview()
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error during cleanup: ${e.message}")
+        }
+        super.onDestroy()
     }
 }
