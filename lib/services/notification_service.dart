@@ -397,27 +397,35 @@ class NotificationService {
 
           // Try to process immediately using direct completion handler if available
           // This bypasses the callback system which may not be available in background
-          if (action.toLowerCase() == 'complete' && directCompletionHandler != null) {
-            AppLogger.info('Attempting direct completion in background for habit: $habitId');
+          if (action.toLowerCase() == 'complete' &&
+              directCompletionHandler != null) {
+            AppLogger.info(
+                'Attempting direct completion in background for habit: $habitId');
             try {
               // Use a Future to handle async operations in background
               Future.microtask(() async {
                 try {
                   await directCompletionHandler!(habitId);
-                  AppLogger.info('✅ Background direct completion successful for habit: $habitId');
-                  
+                  AppLogger.info(
+                      '✅ Background direct completion successful for habit: $habitId');
+
                   // Remove the stored action since we processed it successfully
                   await _removeStoredAction(habitId, action);
                 } catch (e) {
-                  AppLogger.error('❌ Background direct completion failed for habit: $habitId', e);
+                  AppLogger.error(
+                      '❌ Background direct completion failed for habit: $habitId',
+                      e);
                   // Keep the stored action for later processing
                 }
               });
             } catch (e) {
-              AppLogger.error('Error initiating background completion for habit: $habitId', e);
+              AppLogger.error(
+                  'Error initiating background completion for habit: $habitId',
+                  e);
             }
           } else {
-            AppLogger.info('Direct completion handler not available or action is not complete, action will be processed when app resumes');
+            AppLogger.info(
+                'Direct completion handler not available or action is not complete, action will be processed when app resumes');
           }
         }
       } catch (e) {
@@ -669,46 +677,54 @@ class NotificationService {
 
       // Remove from SharedPreferences
       await _removeActionFromSharedPreferences(habitId, action);
-      
+
       // Remove from file storage
       await _removeActionFromFile(habitId, action);
 
-      AppLogger.info('Successfully removed stored action: $action for habit $habitId');
+      AppLogger.info(
+          'Successfully removed stored action: $action for habit $habitId');
     } catch (e) {
       AppLogger.error('Error removing stored action', e);
     }
   }
 
   /// Remove action from SharedPreferences
-  static Future<void> _removeActionFromSharedPreferences(String habitId, String action) async {
+  static Future<void> _removeActionFromSharedPreferences(
+      String habitId, String action) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final existingActions = prefs.getStringList('pending_notification_actions') ?? [];
-      
+      final existingActions =
+          prefs.getStringList('pending_notification_actions') ?? [];
+
       // Filter out the matching action
       final filteredActions = existingActions.where((actionString) {
         try {
           final actionData = jsonDecode(actionString) as Map<String, dynamic>;
-          return !(actionData['habitId'] == habitId && actionData['action'] == action);
+          return !(actionData['habitId'] == habitId &&
+              actionData['action'] == action);
         } catch (e) {
           // Keep malformed entries to avoid data loss
           return true;
         }
       }).toList();
 
-      await prefs.setStringList('pending_notification_actions', filteredActions);
-      AppLogger.debug('Removed action from SharedPreferences. Remaining: ${filteredActions.length}');
+      await prefs.setStringList(
+          'pending_notification_actions', filteredActions);
+      AppLogger.debug(
+          'Removed action from SharedPreferences. Remaining: ${filteredActions.length}');
     } catch (e) {
       AppLogger.error('Error removing action from SharedPreferences', e);
     }
   }
 
   /// Remove action from file storage
-  static Future<void> _removeActionFromFile(String habitId, String action) async {
+  static Future<void> _removeActionFromFile(
+      String habitId, String action) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/pending_notification_actions.json';
-      final lockFilePath = '${directory.path}/pending_notification_actions.lock';
+      final lockFilePath =
+          '${directory.path}/pending_notification_actions.lock';
       final file = File(filePath);
       final lockFile = File(lockFilePath);
 
@@ -749,14 +765,16 @@ class NotificationService {
 
         // Filter out the matching action
         final filteredActions = actions.where((actionEntry) {
-          return !(actionEntry['habitId'] == habitId && actionEntry['action'] == action);
+          return !(actionEntry['habitId'] == habitId &&
+              actionEntry['action'] == action);
         }).toList();
 
         // Write back the filtered actions
         final jsonContent = jsonEncode(filteredActions);
         await file.writeAsString(jsonContent);
 
-        AppLogger.debug('Removed action from file. Remaining: ${filteredActions.length}');
+        AppLogger.debug(
+            'Removed action from file. Remaining: ${filteredActions.length}');
       } finally {
         // Always remove lock file
         if (await lockFile.exists()) {
@@ -914,7 +932,8 @@ class NotificationService {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/pending_notification_actions.json';
-      final lockFilePath = '${directory.path}/pending_notification_actions.lock';
+      final lockFilePath =
+          '${directory.path}/pending_notification_actions.lock';
       final file = File(filePath);
       final lockFile = File(lockFilePath);
 
@@ -1207,7 +1226,7 @@ class NotificationService {
   /// Manually trigger processing of pending actions (for app initialization)
   static Future<void> processPendingActionsManually() async {
     AppLogger.info('🔄 Manually processing pending actions');
-    
+
     // Always try to process actions, using either callback or direct handler
     if (onNotificationAction != null) {
       AppLogger.info('✅ Using callback to process pending actions');
@@ -1216,25 +1235,29 @@ class NotificationService {
       AppLogger.warning('⚠️ Callback not set, using direct completion handler');
       await _processPendingActionsWithDirectHandler();
     } else {
-      AppLogger.error('❌ Cannot process pending actions - neither callback nor direct handler available');
+      AppLogger.error(
+          '❌ Cannot process pending actions - neither callback nor direct handler available');
     }
   }
 
   /// Process pending actions using the direct completion handler when callback is not available
   static Future<void> _processPendingActionsWithDirectHandler() async {
     try {
-      AppLogger.info('🎯 Processing pending actions with direct completion handler');
-      
+      AppLogger.info(
+          '🎯 Processing pending actions with direct completion handler');
+
       // Load actions from both sources
       final prefs = await SharedPreferences.getInstance();
-      final sharedPrefsActions = prefs.getStringList('pending_notification_actions') ?? [];
+      final sharedPrefsActions =
+          prefs.getStringList('pending_notification_actions') ?? [];
       final fileActions = await _loadActionsFromFile();
-      
-      AppLogger.info('Found ${sharedPrefsActions.length} actions in SharedPreferences');
+
+      AppLogger.info(
+          'Found ${sharedPrefsActions.length} actions in SharedPreferences');
       AppLogger.info('Found ${fileActions.length} actions in file storage');
-      
+
       int processedCount = 0;
-      
+
       // Process SharedPreferences actions
       for (final actionString in sharedPrefsActions) {
         try {
@@ -1242,20 +1265,23 @@ class NotificationService {
           final habitId = actionData['habitId'] as String;
           final action = actionData['action'] as String;
           final timestamp = actionData['timestamp'] as int;
-          
+
           // Check if action is not too old (e.g., within last 24 hours)
           final actionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
           final now = DateTime.now();
           final timeDifference = now.difference(actionTime);
-          
+
           if (timeDifference.inHours > 24) {
-            AppLogger.warning('Skipping old pending action: $action for habit $habitId (${timeDifference.inHours} hours old)');
+            AppLogger.warning(
+                'Skipping old pending action: $action for habit $habitId (${timeDifference.inHours} hours old)');
             continue;
           }
-          
+
           // Only process complete actions with direct handler
-          if (action.toLowerCase() == 'complete' && directCompletionHandler != null) {
-            AppLogger.info('Processing complete action for habit: $habitId using direct handler');
+          if (action.toLowerCase() == 'complete' &&
+              directCompletionHandler != null) {
+            AppLogger.info(
+                'Processing complete action for habit: $habitId using direct handler');
             try {
               await directCompletionHandler!(habitId);
               processedCount++;
@@ -1264,57 +1290,67 @@ class NotificationService {
               AppLogger.error('❌ Failed to complete habit: $habitId', e);
             }
           } else {
-            AppLogger.info('Skipping non-complete action or missing handler: $action for habit $habitId');
+            AppLogger.info(
+                'Skipping non-complete action or missing handler: $action for habit $habitId');
           }
         } catch (e) {
-          AppLogger.error('Error processing individual pending action from SharedPreferences', e);
+          AppLogger.error(
+              'Error processing individual pending action from SharedPreferences',
+              e);
         }
       }
-      
+
       // Process file actions
       for (final actionData in fileActions) {
         try {
           final habitId = actionData['habitId'] as String;
           final action = actionData['action'] as String;
           final timestamp = actionData['timestamp'] as int;
-          
+
           // Check if action is not too old
           final actionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
           final now = DateTime.now();
           final timeDifference = now.difference(actionTime);
-          
+
           if (timeDifference.inHours > 24) {
-            AppLogger.warning('Skipping old file action: $action for habit $habitId (${timeDifference.inHours} hours old)');
+            AppLogger.warning(
+                'Skipping old file action: $action for habit $habitId (${timeDifference.inHours} hours old)');
             continue;
           }
-          
+
           // Only process complete actions with direct handler
-          if (action.toLowerCase() == 'complete' && directCompletionHandler != null) {
-            AppLogger.info('Processing file complete action for habit: $habitId using direct handler');
+          if (action.toLowerCase() == 'complete' &&
+              directCompletionHandler != null) {
+            AppLogger.info(
+                'Processing file complete action for habit: $habitId using direct handler');
             try {
               await directCompletionHandler!(habitId);
               processedCount++;
-              AppLogger.info('✅ Successfully completed habit from file: $habitId');
+              AppLogger.info(
+                  '✅ Successfully completed habit from file: $habitId');
             } catch (e) {
-              AppLogger.error('❌ Failed to complete habit from file: $habitId', e);
+              AppLogger.error(
+                  '❌ Failed to complete habit from file: $habitId', e);
             }
           } else {
-            AppLogger.info('Skipping non-complete file action or missing handler: $action for habit $habitId');
+            AppLogger.info(
+                'Skipping non-complete file action or missing handler: $action for habit $habitId');
           }
         } catch (e) {
-          AppLogger.error('Error processing individual pending action from file', e);
+          AppLogger.error(
+              'Error processing individual pending action from file', e);
         }
       }
-      
+
       // Clear processed actions if we successfully processed any
       if (processedCount > 0) {
         await prefs.remove('pending_notification_actions');
         await _clearActionsFromFile();
-        AppLogger.info('✅ Cleared all processed actions. Total processed: $processedCount');
+        AppLogger.info(
+            '✅ Cleared all processed actions. Total processed: $processedCount');
       } else {
         AppLogger.info('No actions were processed successfully');
       }
-      
     } catch (e) {
       AppLogger.error('Error in _processPendingActionsWithDirectHandler', e);
     }
