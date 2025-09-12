@@ -12,11 +12,11 @@ void playAlarmSound(int id) async {
     await AndroidAlarmManager.initialize();
 
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Debug: Check all stored keys
     final allKeys = prefs.getKeys();
     AppLogger.info('All SharedPreferences keys: ${allKeys.toList()}');
-    
+
     // Check for the specific alarm data
     final alarmDataJson = prefs.getString('alarm_manager_data_$id');
     AppLogger.info('Looking for key: alarm_manager_data_$id');
@@ -28,9 +28,10 @@ void playAlarmSound(int id) async {
       await prefs.remove('alarm_manager_data_$id');
     } else {
       AppLogger.warning('No alarm data found for ID: $id');
-      
+
       // Try to find any alarm data
-      final alarmKeys = allKeys.where((key) => key.startsWith('alarm_manager_data_'));
+      final alarmKeys =
+          allKeys.where((key) => key.startsWith('alarm_manager_data_'));
       if (alarmKeys.isNotEmpty) {
         AppLogger.info('Found other alarm keys: ${alarmKeys.toList()}');
         // Use the first available alarm data for now
