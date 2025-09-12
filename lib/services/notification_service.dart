@@ -1288,8 +1288,10 @@ class NotificationService {
               AppLogger.info('✅ Successfully completed habit: $habitId');
             } catch (e) {
               final errorMessage = e.toString().toLowerCase();
-              if (errorMessage.contains('still loading') || errorMessage.contains('loading')) {
-                AppLogger.warning('⏳ Habit service still loading for $habitId, will retry later');
+              if (errorMessage.contains('still loading') ||
+                  errorMessage.contains('loading')) {
+                AppLogger.warning(
+                    '⏳ Habit service still loading for $habitId, will retry later');
                 // Don't count as processed, so the action stays in storage for retry
               } else {
                 AppLogger.error('❌ Failed to complete habit: $habitId', e);
@@ -1337,8 +1339,10 @@ class NotificationService {
                   '✅ Successfully completed habit from file: $habitId');
             } catch (e) {
               final errorMessage = e.toString().toLowerCase();
-              if (errorMessage.contains('still loading') || errorMessage.contains('loading')) {
-                AppLogger.warning('⏳ Habit service still loading for $habitId (file), will retry later');
+              if (errorMessage.contains('still loading') ||
+                  errorMessage.contains('loading')) {
+                AppLogger.warning(
+                    '⏳ Habit service still loading for $habitId (file), will retry later');
                 // Don't count as processed, so the action stays in storage for retry
               } else {
                 AppLogger.error(

@@ -128,23 +128,30 @@ class AppLifecycleService with WidgetsBindingObserver {
   }
 
   /// Process pending actions with retry mechanism to handle provider initialization timing
-  static void _processPendingActionsWithRetry({int attempt = 1, int maxAttempts = 5}) {
-    final delay = Duration(milliseconds: 1000 * attempt); // Increase delay with each attempt
-    
-    AppLogger.info('🔄 Scheduling pending action processing attempt $attempt/$maxAttempts with ${delay.inMilliseconds}ms delay');
-    
+  static void _processPendingActionsWithRetry(
+      {int attempt = 1, int maxAttempts = 5}) {
+    final delay = Duration(
+        milliseconds: 1000 * attempt); // Increase delay with each attempt
+
+    AppLogger.info(
+        '🔄 Scheduling pending action processing attempt $attempt/$maxAttempts with ${delay.inMilliseconds}ms delay');
+
     Future.delayed(delay, () async {
       try {
         await NotificationService.processPendingActionsManually();
-        AppLogger.info('✅ Pending actions processed successfully on attempt $attempt');
+        AppLogger.info(
+            '✅ Pending actions processed successfully on attempt $attempt');
       } catch (e) {
         AppLogger.warning('⚠️ Attempt $attempt failed: $e');
-        
+
         if (attempt < maxAttempts) {
-          AppLogger.info('🔄 Retrying pending action processing (attempt ${attempt + 1}/$maxAttempts)');
-          _processPendingActionsWithRetry(attempt: attempt + 1, maxAttempts: maxAttempts);
+          AppLogger.info(
+              '🔄 Retrying pending action processing (attempt ${attempt + 1}/$maxAttempts)');
+          _processPendingActionsWithRetry(
+              attempt: attempt + 1, maxAttempts: maxAttempts);
         } else {
-          AppLogger.error('❌ All $maxAttempts attempts failed to process pending actions');
+          AppLogger.error(
+              '❌ All $maxAttempts attempts failed to process pending actions');
         }
       }
     });
