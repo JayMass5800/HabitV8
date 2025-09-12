@@ -1582,23 +1582,26 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       initialTime: _singleDateTime != null
           ? TimeOfDay.fromDateTime(_singleDateTime!)
           : const TimeOfDay(hour: 9, minute: 0),
-      helpText: 'Select the time for this habit',
+      helpText: 'Select the time for this habit (24-hour format)',
       builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            timePickerTheme: TimePickerThemeData(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              hourMinuteTextColor: Theme.of(context).colorScheme.onSurface,
-              dayPeriodTextColor: Theme.of(context).colorScheme.onSurface,
-              dialHandColor: _selectedColor,
-              dialTextColor: Theme.of(context).colorScheme.onSurface,
-              entryModeIconColor: Theme.of(context).colorScheme.onSurface,
-              helpTextStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              timePickerTheme: TimePickerThemeData(
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                hourMinuteTextColor: Theme.of(context).colorScheme.onSurface,
+                dayPeriodTextColor: Theme.of(context).colorScheme.onSurface,
+                dialHandColor: _selectedColor,
+                dialTextColor: Theme.of(context).colorScheme.onSurface,
+                entryModeIconColor: Theme.of(context).colorScheme.onSurface,
+                helpTextStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
+            child: child!,
           ),
-          child: child!,
         );
       },
     );
@@ -1692,7 +1695,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                           ),
                     ),
                     Text(
-                      TimeOfDay.fromDateTime(_singleDateTime!).format(context),
+                      '${_singleDateTime!.hour.toString().padLeft(2, '0')}:${_singleDateTime!.minute.toString().padLeft(2, '0')}',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             fontWeight: FontWeight.w500,
                             color: _selectedColor,
