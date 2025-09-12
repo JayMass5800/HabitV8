@@ -27,20 +27,21 @@ void playAlarmSound(int id) async {
 }
 
 /// Execute alarm in background isolate using notifications
-Future<void> _executeBackgroundAlarm(Map<String, dynamic> alarmData, int id) async {
+Future<void> _executeBackgroundAlarm(
+    Map<String, dynamic> alarmData, int id) async {
   try {
     final habitName = alarmData['habitName'] ?? 'Habit';
     AppLogger.info('🔊 Executing background alarm for: $habitName');
 
     // Initialize notifications plugin for background use
-    final FlutterLocalNotificationsPlugin notificationsPlugin = 
+    final FlutterLocalNotificationsPlugin notificationsPlugin =
         FlutterLocalNotificationsPlugin();
-    
+
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
-    
+
     await notificationsPlugin.initialize(initializationSettings);
 
     // Create high-priority alarm notification with sound
