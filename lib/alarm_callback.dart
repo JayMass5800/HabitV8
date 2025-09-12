@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'services/logging_service.dart';
 
@@ -11,53 +9,19 @@ void playAlarmSound(int id) async {
 
     await AndroidAlarmManager.initialize();
 
-    final prefs = await SharedPreferences.getInstance();
+    // Since SharedPreferences isn't shared between isolates, 
+    // create a generic habit alarm notification
+    await _executeBackgroundAlarm(id);
 
-    // Debug: Check all stored keys
-    final allKeys = prefs.getKeys();
-    AppLogger.info('All SharedPreferences keys: ${allKeys.toList()}');
-
-    // Check for the specific alarm data
-    final alarmDataJson = prefs.getString('alarm_manager_data_$id');
-    AppLogger.info('Looking for key: alarm_manager_data_$id');
-    AppLogger.info('Found data: ${alarmDataJson ?? "null"}');
-
-    if (alarmDataJson != null) {
-      final alarmData = jsonDecode(alarmDataJson);
-      await _executeBackgroundAlarm(alarmData, id);
-      await prefs.remove('alarm_manager_data_$id');
-    } else {
-      AppLogger.warning('No alarm data found for ID: $id');
-
-      // Try to find any alarm data
-      final alarmKeys =
-          allKeys.where((key) => key.startsWith('alarm_manager_data_'));
-      if (alarmKeys.isNotEmpty) {
-        AppLogger.info('Found other alarm keys: ${alarmKeys.toList()}');
-        // Use the first available alarm data for now
-        final firstKey = alarmKeys.first;
-        final firstData = prefs.getString(firstKey);
-        if (firstData != null) {
-          AppLogger.info('Using fallback alarm data from: $firstKey');
-          final alarmData = jsonDecode(firstData);
-          await _executeBackgroundAlarm(alarmData, id);
-          await prefs.remove(firstKey);
-        }
-      } else {
-        AppLogger.warning('No alarm data found at all');
-      }
-    }
   } catch (e) {
     AppLogger.error('Error in alarm callback: $e');
   }
 }
 
 /// Execute alarm in background isolate using notifications
-Future<void> _executeBackgroundAlarm(
-    Map<String, dynamic> alarmData, int id) async {
+Future<void> _executeBackgroundAlarm(int id) async {
   try {
-    final habitName = alarmData['habitName'] ?? 'Habit';
-    AppLogger.info('🔊 Executing background alarm for: $habitName');
+    AppLogger.info('🔊 Executing background alarm for ID: $id');
 
     // Initialize notifications plugin for background use
     final FlutterLocalNotificationsPlugin notificationsPlugin =
@@ -91,12 +55,12 @@ Future<void> _executeBackgroundAlarm(
 
     await notificationsPlugin.show(
       id,
-      '🔔 $habitName Reminder',
-      'Time to complete your habit: $habitName',
+      '🔔 Habit Reminder',
+      'Time to complete your habit! (ID: $id)',
       platformChannelSpecifics,
     );
 
-    AppLogger.info('✅ Background alarm executed for: $habitName');
+    AppLogger.info('✅ Background alarm executed for ID: $id');
   } catch (e) {
     AppLogger.error('❌ Failed to execute background alarm: $e');
   }
