@@ -280,46 +280,8 @@ class AlarmManagerService {
     }
   }
 
-  /// Private alarm callback function
-  @pragma('vm:entry-point')
-  static void _alarmCallback() async {
-    try {
-      AppLogger.info('🚨 Alarm fired - executing callback');
-
-      await AndroidAlarmManager.initialize();
-
-      final prefs = await SharedPreferences.getInstance();
-      final now = DateTime.now();
-
-      // Find the alarm data for the current time
-      final keys =
-          prefs.getKeys().where((key) => key.startsWith(_alarmDataKey));
-
-      for (final key in keys) {
-        final data = prefs.getString(key);
-        if (data != null) {
-          try {
-            final alarmData = jsonDecode(data);
-            final scheduledTime = DateTime.parse(alarmData['scheduledTime']);
-
-            // Check if this alarm should be firing now (within 2 minutes)
-            final timeDiff = now.difference(scheduledTime).inMinutes.abs();
-            if (timeDiff <= 2) {
-              await _executeAlarm(alarmData);
-              break;
-            }
-          } catch (e) {
-            AppLogger.error('Error processing alarm data for key $key', e);
-          }
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error in alarm callback', e);
-    }
-  }
-
   /// Execute the alarm - play sound and create notification
-  static Future<void> _executeAlarm(Map<String, dynamic> alarmData) async {
+  static Future<void> executeAlarm(Map<String, dynamic> alarmData) async {
     try {
       final habitName = alarmData['habitName'] ?? 'Habit';
       final alarmSoundName = alarmData['alarmSoundName'];
