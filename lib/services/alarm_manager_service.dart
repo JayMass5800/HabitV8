@@ -73,7 +73,7 @@ class AlarmManagerService {
     // Store in SharedPreferences for main app access
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('$_alarmDataKey$alarmId', jsonEncode(alarmData));
-    
+
     // Also store in file for background isolate access
     await _saveAlarmDataToFile(alarmId, alarmData);
 
@@ -495,7 +495,8 @@ class AlarmManagerService {
   }
 
   /// Save alarm data to file for background isolate access
-  static Future<void> _saveAlarmDataToFile(int alarmId, Map<String, dynamic> alarmData) async {
+  static Future<void> _saveAlarmDataToFile(
+      int alarmId, Map<String, dynamic> alarmData) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/alarm_data_$alarmId.json');

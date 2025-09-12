@@ -14,14 +14,15 @@ void playAlarmSound(int id) async {
 
     // Try to get alarm data from file storage (works across isolates)
     final alarmData = await _getAlarmDataFromFile(id);
-    
+
     if (alarmData != null) {
       await _executeBackgroundAlarm(alarmData, id);
       await _removeAlarmDataFile(id);
     } else {
       AppLogger.warning('No alarm data found for ID: $id, using default');
       // Fallback to generic alarm
-      await _executeBackgroundAlarm({'habitName': 'Habit', 'alarmSoundName': 'default'}, id);
+      await _executeBackgroundAlarm(
+          {'habitName': 'Habit', 'alarmSoundName': 'default'}, id);
     }
   } catch (e) {
     AppLogger.error('Error in alarm callback: $e');
@@ -33,7 +34,7 @@ Future<Map<String, dynamic>?> _getAlarmDataFromFile(int id) async {
   try {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/alarm_data_$id.json');
-    
+
     if (await file.exists()) {
       final content = await file.readAsString();
       return jsonDecode(content);
@@ -49,7 +50,7 @@ Future<void> _removeAlarmDataFile(int id) async {
   try {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/alarm_data_$id.json');
-    
+
     if (await file.exists()) {
       await file.delete();
       AppLogger.info('Alarm data file removed for ID: $id');
@@ -60,12 +61,14 @@ Future<void> _removeAlarmDataFile(int id) async {
 }
 
 /// Execute alarm in background isolate using notifications
-Future<void> _executeBackgroundAlarm(Map<String, dynamic> alarmData, int id) async {
+Future<void> _executeBackgroundAlarm(
+    Map<String, dynamic> alarmData, int id) async {
   try {
     final habitName = alarmData['habitName'] ?? 'Habit';
     final alarmSoundName = alarmData['alarmSoundName'] ?? 'default';
-    
-    AppLogger.info('🔊 Executing background alarm for: $habitName with sound: $alarmSoundName');
+
+    AppLogger.info(
+        '🔊 Executing background alarm for: $habitName with sound: $alarmSoundName');
 
     // Initialize notifications plugin for background use
     final FlutterLocalNotificationsPlugin notificationsPlugin =
@@ -80,7 +83,7 @@ Future<void> _executeBackgroundAlarm(Map<String, dynamic> alarmData, int id) asy
 
     // Create notification with custom sound if available
     AndroidNotificationDetails androidPlatformChannelSpecifics;
-    
+
     if (alarmSoundName != 'default' && alarmSoundName.isNotEmpty) {
       // Try to use the selected system sound
       androidPlatformChannelSpecifics = AndroidNotificationDetails(
