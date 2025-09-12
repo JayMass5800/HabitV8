@@ -12,7 +12,15 @@ void playAlarmSound(int id) async {
     await AndroidAlarmManager.initialize();
 
     final prefs = await SharedPreferences.getInstance();
+    
+    // Debug: Check all stored keys
+    final allKeys = prefs.getKeys();
+    AppLogger.info('All SharedPreferences keys: ${allKeys.toList()}');
+    
+    // Check for the specific alarm data
     final alarmDataJson = prefs.getString('alarm_manager_data_$id');
+    AppLogger.info('Looking for key: alarm_manager_data_$id');
+    AppLogger.info('Found data: ${alarmDataJson ?? "null"}');
 
     if (alarmDataJson != null) {
       final alarmData = jsonDecode(alarmDataJson);
@@ -20,6 +28,23 @@ void playAlarmSound(int id) async {
       await prefs.remove('alarm_manager_data_$id');
     } else {
       AppLogger.warning('No alarm data found for ID: $id');
+      
+      // Try to find any alarm data
+      final alarmKeys = allKeys.where((key) => key.startsWith('alarm_manager_data_'));
+      if (alarmKeys.isNotEmpty) {
+        AppLogger.info('Found other alarm keys: ${alarmKeys.toList()}');
+        // Use the first available alarm data for now
+        final firstKey = alarmKeys.first;
+        final firstData = prefs.getString(firstKey);
+        if (firstData != null) {
+          AppLogger.info('Using fallback alarm data from: $firstKey');
+          final alarmData = jsonDecode(firstData);
+          await _executeBackgroundAlarm(alarmData, id);
+          await prefs.remove(firstKey);
+        }
+      } else {
+        AppLogger.warning('No alarm data found at all');
+      }
     }
   } catch (e) {
     AppLogger.error('Error in alarm callback: $e');
