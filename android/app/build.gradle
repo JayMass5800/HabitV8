@@ -81,6 +81,11 @@ android {
         }
     }
 
+    // Ensure alarm audio assets are not compressed so AssetManager.openFd works
+    androidResources {
+        noCompress 'mp3', 'wav', 'ogg'
+    }
+
     signingConfigs {
         release {
             keyAlias keystoreProperties['keyAlias']

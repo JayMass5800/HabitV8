@@ -79,8 +79,18 @@ class HybridAlarmService {
     AppLogger.info('  - Volume: 80% with 1-second fade-in (testing fix)');
 
     // Get and validate the alarm sound path
-    final soundPath = _getAlarmSoundPath(alarmSoundName);
+    var soundPath = _getAlarmSoundPath(alarmSoundName);
     AppLogger.info('  - Resolved sound path: "$soundPath"');
+
+    // Preflight asset check before scheduling (ensures asset is bundled & accessible)
+    final preflightOk = await _preflightCheckAssetAudio(soundPath);
+    if (!preflightOk) {
+      AppLogger.warning(
+          '  - Preflight failed for "$soundPath". Falling back to gentle_chime.mp3');
+      soundPath = 'assets/sounds/gentle_chime.mp3';
+      final fallbackOk = await _preflightCheckAssetAudio(soundPath);
+      AppLogger.info('  - Fallback preflight: $fallbackOk for "$soundPath"');
+    }
 
     try {
       // Additional validation logging
@@ -520,147 +530,90 @@ class HybridAlarmService {
   }
 
   /// Get alarm sound path
-  /// Converts sound names/URIs to valid asset paths for the alarm package
+  /// Map names/URIs to valid ASSET paths supported by the alarm package
   static String _getAlarmSoundPath(String? alarmSoundName) {
+    // Default/fallback
     if (alarmSoundName == null || alarmSoundName == 'default') {
-      // Use system alarm sound URI instead of broken asset
-      return 'content://settings/system/alarm_alert';
+      return 'assets/sounds/digital_beep.mp3';
     }
 
-    // If it's already an asset path, validate it or use system sound
+    // Already an asset path
     if (alarmSoundName.startsWith('assets/')) {
-      // For now, since our assets are placeholders, return system sound
-      AppLogger.warning(
-          'Asset sound requested but using system sound due to placeholder files: $alarmSoundName');
-      return 'content://settings/system/alarm_alert';
-    }
-
-    // Handle content:// URIs (system sounds) - use them directly
-    if (alarmSoundName.startsWith('content://')) {
-      AppLogger.info('Using system sound URI: $alarmSoundName');
       return alarmSoundName;
     }
 
-    // Map named sounds to system sound URIs
+    // content:// URIs are NOT supported by the alarm package for assetAudioPath
+    // Map them to our best-matching bundled assets instead
+    if (alarmSoundName.startsWith('content://')) {
+      AppLogger.info('System URI provided; mapping to asset');
+      return 'assets/sounds/digital_beep.mp3';
+    }
+
+    // Named sounds → asset mapping (keep in sync with pubspec assets)
     switch (alarmSoundName) {
-      // Common Android system sounds - map to appropriate system URIs
-      case 'Full of Wonder':
-      case 'Alarm Clock':
-      case 'Rooster':
-      case 'Daybreak':
-      case 'Sunbeam':
-      case 'Sunshine':
-      case 'Bright':
       case 'System Alarm':
       case 'Alarm':
-      case 'Wake Up':
-      case 'Beep':
-      case 'Digital':
-      case 'Electronic':
+      case 'Alarm Clock':
       case 'Classic Alarm':
       case 'Loud Alarm':
+      case 'Beep':
+      case 'Digital':
       case 'Sharp':
-      case 'Argon':
-      case 'Carbon':
-      case 'Helium':
-      case 'Krypton':
-      case 'Neon':
-      case 'Oxygen':
-      case 'Platinum':
-      case 'Beep Once':
-      case 'Beep Beep':
-      case 'Triple Beep':
-      case 'Quick Beep':
-        return 'content://settings/system/alarm_alert'; // Traditional alarm sounds
+        return 'assets/sounds/digital_beep.mp3';
 
-      case 'Bell':
-      case 'Chime':
-      case 'Default':
-      case 'Classic Bell':
-      case 'Door Bell':
-      case 'Church Bell':
       case 'System Notification':
       case 'Notification':
-      case 'Soft':
+      case 'Chime':
       case 'Gentle':
-      case 'Whisper':
-      case 'Subtle':
-      case 'Atria':
-      case 'Callisto':
-      case 'Dione':
-      case 'Ganymede':
-      case 'Luna':
-      case 'Oberon':
-      case 'Phobos':
-      case 'Pyxis':
-      case 'Sedna':
-      case 'Titan':
-      case 'Triton':
-      case 'Ding':
-      case 'Ping':
-      case 'Plink':
-      case 'Pop':
-      case 'Click':
-        return 'content://settings/system/notification_sound'; // Bell-like/notification sounds
+      case 'Bell':
+        return 'assets/sounds/gentle_chime.mp3';
 
       case 'System Ringtone':
       case 'Ringtone':
-      case 'Ring':
-      case 'Classic Ring':
-      case 'Phone Ring':
-      case 'Traditional':
-      case 'Cuckoo Clock':
-      case 'Bird':
+      case 'Morning Bell':
+        return 'assets/sounds/morning_bell.mp3';
+
+      case 'Nature Birds':
       case 'Birds':
-      case 'Chirp':
-      case 'Tweet':
-      case 'Songbird':
-      case 'Morning Birds':
-      case 'Early Twilight':
-      case 'Late Twilight':
-      case 'Twilight':
-      case 'Evening':
-      case 'Dusk':
-      case 'Dawn':
-      case 'Peaceful':
+        return 'assets/sounds/nature_birds.mp3';
+
+      case 'Zen Gong':
+      case 'Gong':
+        return 'assets/sounds/zen_gong.mp3';
+
+      case 'Upbeat Melody':
+        return 'assets/sounds/upbeat_melody.mp3';
+
+      case 'Soft Piano':
+        return 'assets/sounds/soft_piano.mp3';
+
+      case 'Ocean Waves':
       case 'Ocean':
       case 'Waves':
-      case 'Beach':
-      case 'Sea':
-      case 'Water':
-      case 'Rain':
-      case 'Stream':
-      case 'Zen':
-      case 'Meditation':
-      case 'Gong':
-      case 'Tibetan Bowl':
-      case 'Singing Bowl':
-      case 'Calm':
-      case 'Serene':
-      case 'Upbeat':
-      case 'Energetic':
-      case 'Happy':
-      case 'Cheerful':
-      case 'Joyful':
-      case 'Positive':
-      case 'Motivational':
-      case 'Piano':
-      case 'Classical':
-      case 'Melody':
-      case 'Harmony':
-      case 'Musical':
-      case 'Soft Music':
-      case 'Bamboo':
-      case 'Drip':
-      case 'Droplet':
-      case 'Oasis':
-      case 'Trill':
-        return 'content://settings/system/ringtone'; // Ringtone-style/musical sounds
+        return 'assets/sounds/ocean_waves.mp3';
 
       default:
-        AppLogger.warning(
-            'Unknown alarm sound "$alarmSoundName" mapped to default sound');
-        return 'content://settings/system/alarm_alert';
+        AppLogger.warning('Unknown alarm sound "$alarmSoundName" → default');
+        return 'assets/sounds/digital_beep.mp3';
+    }
+  }
+
+  /// Preflight check: ensure an asset path resolves to a readable file descriptor on Android
+  static Future<bool> _preflightCheckAssetAudio(String assetPath) async {
+    try {
+      if (!assetPath.startsWith('assets/')) {
+        AppLogger.warning('Preflight skipped (not an asset path): $assetPath');
+        return false;
+      }
+      // Try loading via rootBundle (verifies asset is bundled)
+      AppLogger.info('🔍 Preflight: loading asset via rootBundle: $assetPath');
+      final data = await rootBundle.load(assetPath);
+      AppLogger.info(
+          '🔍 Preflight: asset bytes length = ${data.lengthInBytes}');
+      return data.lengthInBytes > 0;
+    } catch (e) {
+      AppLogger.error('❌ Preflight failed to load asset: $assetPath', e);
+      return false;
     }
   }
 
