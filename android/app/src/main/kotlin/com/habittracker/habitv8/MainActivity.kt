@@ -34,6 +34,25 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
+    override fun onRestart() {
+        try {
+            // Clean up any stale state before restart to prevent cursor issues
+            stopPreview()
+            super.onRestart()
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error during restart: ${e.message}")
+            super.onRestart()
+        }
+    }
+
+    override fun onResume() {
+        try {
+            super.onResume()
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error during resume: ${e.message}")
+        }
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 

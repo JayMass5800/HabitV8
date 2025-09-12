@@ -523,102 +523,149 @@ class HybridAlarmService {
   /// Converts sound names/URIs to valid asset paths for the alarm package
   static String _getAlarmSoundPath(String? alarmSoundName) {
     if (alarmSoundName == null || alarmSoundName == 'default') {
-      return 'assets/sounds/digital_beep.mp3';
+      // Use system alarm sound URI instead of broken asset
+      return 'content://settings/system/alarm_alert';
     }
 
-    // If it's already an asset path, use it directly
+    // If it's already an asset path, validate it or use system sound
     if (alarmSoundName.startsWith('assets/')) {
+      // For now, since our assets are placeholders, return system sound
+      AppLogger.warning(
+          'Asset sound requested but using system sound due to placeholder files: $alarmSoundName');
+      return 'content://settings/system/alarm_alert';
+    }
+
+    // Handle content:// URIs (system sounds) - use them directly
+    if (alarmSoundName.startsWith('content://')) {
+      AppLogger.info('Using system sound URI: $alarmSoundName');
       return alarmSoundName;
     }
 
-    // Handle content:// URIs (system sounds) - need to map to asset equivalent
-    if (alarmSoundName.startsWith('content://')) {
-      AppLogger.info('Converting system sound URI to asset: $alarmSoundName');
-      return _mapSystemUriToAsset(alarmSoundName);
-    }
-
-    // Map named sounds to paths - including common system ringtone names
+    // Map named sounds to system sound URIs
     switch (alarmSoundName) {
-      case 'Gentle Chime':
-        return 'assets/sounds/gentle_chime.mp3';
-      case 'Morning Bell':
-        return 'assets/sounds/morning_bell.mp3';
-      case 'Nature Birds':
-        return 'assets/sounds/nature_birds.mp3';
-      case 'Digital Beep':
-        return 'assets/sounds/digital_beep.mp3';
-      case 'Ocean Waves':
-        return 'assets/sounds/ocean_waves.mp3';
-      case 'Soft Piano':
-        return 'assets/sounds/soft_piano.mp3';
-      case 'Upbeat Melody':
-        return 'assets/sounds/upbeat_melody.mp3';
-      case 'Zen Gong':
-        return 'assets/sounds/zen_gong.mp3';
-
-      // Handle common system ringtone names that may not have asset equivalents
+      // Common Android system sounds - map to appropriate system URIs
       case 'Full of Wonder':
       case 'Alarm Clock':
       case 'Rooster':
-        return 'assets/sounds/morning_bell.mp3'; // Energetic sounds
-      case 'Bell':
-      case 'Chime':
-      case 'Default':
-        return 'assets/sounds/gentle_chime.mp3'; // Bell-like sounds
-      case 'Cuckoo Clock':
-      case 'Bird':
-      case 'Birds':
-        return 'assets/sounds/nature_birds.mp3'; // Nature-themed
+      case 'Daybreak':
+      case 'Sunbeam':
+      case 'Sunshine':
+      case 'Bright':
       case 'System Alarm':
       case 'Alarm':
       case 'Wake Up':
       case 'Beep':
-        return 'assets/sounds/digital_beep.mp3'; // Traditional alarm sounds
-      case 'System Ringtone':
-      case 'Ringtone':
-      case 'Ring':
-        return 'assets/sounds/morning_bell.mp3'; // Ringtone-style
+      case 'Digital':
+      case 'Electronic':
+      case 'Classic Alarm':
+      case 'Loud Alarm':
+      case 'Sharp':
+      case 'Argon':
+      case 'Carbon':
+      case 'Helium':
+      case 'Krypton':
+      case 'Neon':
+      case 'Oxygen':
+      case 'Platinum':
+      case 'Beep Once':
+      case 'Beep Beep':
+      case 'Triple Beep':
+      case 'Quick Beep':
+        return 'content://settings/system/alarm_alert'; // Traditional alarm sounds
+
+      case 'Bell':
+      case 'Chime':
+      case 'Default':
+      case 'Classic Bell':
+      case 'Door Bell':
+      case 'Church Bell':
       case 'System Notification':
       case 'Notification':
       case 'Soft':
       case 'Gentle':
-        return 'assets/sounds/gentle_chime.mp3'; // Gentle notification
+      case 'Whisper':
+      case 'Subtle':
+      case 'Atria':
+      case 'Callisto':
+      case 'Dione':
+      case 'Ganymede':
+      case 'Luna':
+      case 'Oberon':
+      case 'Phobos':
+      case 'Pyxis':
+      case 'Sedna':
+      case 'Titan':
+      case 'Triton':
+      case 'Ding':
+      case 'Ping':
+      case 'Plink':
+      case 'Pop':
+      case 'Click':
+        return 'content://settings/system/notification_sound'; // Bell-like/notification sounds
+
+      case 'System Ringtone':
+      case 'Ringtone':
+      case 'Ring':
+      case 'Classic Ring':
+      case 'Phone Ring':
+      case 'Traditional':
+      case 'Cuckoo Clock':
+      case 'Bird':
+      case 'Birds':
+      case 'Chirp':
+      case 'Tweet':
+      case 'Songbird':
+      case 'Morning Birds':
+      case 'Early Twilight':
+      case 'Late Twilight':
+      case 'Twilight':
+      case 'Evening':
+      case 'Dusk':
+      case 'Dawn':
+      case 'Peaceful':
+      case 'Ocean':
+      case 'Waves':
+      case 'Beach':
+      case 'Sea':
+      case 'Water':
+      case 'Rain':
+      case 'Stream':
+      case 'Zen':
+      case 'Meditation':
+      case 'Gong':
+      case 'Tibetan Bowl':
+      case 'Singing Bowl':
+      case 'Calm':
+      case 'Serene':
+      case 'Upbeat':
+      case 'Energetic':
+      case 'Happy':
+      case 'Cheerful':
+      case 'Joyful':
+      case 'Positive':
+      case 'Motivational':
+      case 'Piano':
+      case 'Classical':
+      case 'Melody':
+      case 'Harmony':
+      case 'Musical':
+      case 'Soft Music':
+      case 'Bamboo':
+      case 'Drip':
+      case 'Droplet':
+      case 'Oasis':
+      case 'Trill':
+        return 'content://settings/system/ringtone'; // Ringtone-style/musical sounds
 
       default:
         AppLogger.warning(
             'Unknown alarm sound "$alarmSoundName" mapped to default sound');
-        return 'assets/sounds/digital_beep.mp3';
-    }
-  }
-
-  /// Map system sound URIs to appropriate asset equivalents
-  static String _mapSystemUriToAsset(String uri) {
-    // Extract useful information from the URI to make intelligent mapping
-    final lowerUri = uri.toLowerCase();
-
-    if (lowerUri.contains('alarm') || lowerUri.contains('wake')) {
-      return 'assets/sounds/digital_beep.mp3';
-    } else if (lowerUri.contains('bell') || lowerUri.contains('chime')) {
-      return 'assets/sounds/gentle_chime.mp3';
-    } else if (lowerUri.contains('bird') ||
-        lowerUri.contains('nature') ||
-        lowerUri.contains('cuckoo')) {
-      return 'assets/sounds/nature_birds.mp3';
-    } else if (lowerUri.contains('morning') || lowerUri.contains('ring')) {
-      return 'assets/sounds/morning_bell.mp3';
-    } else if (lowerUri.contains('soft') ||
-        lowerUri.contains('gentle') ||
-        lowerUri.contains('notification')) {
-      return 'assets/sounds/gentle_chime.mp3';
-    } else {
-      // Default fallback for unrecognized system sounds
-      AppLogger.info('Using default asset for system URI: $uri');
-      return 'assets/sounds/digital_beep.mp3';
+        return 'content://settings/system/alarm_alert';
     }
   }
 
   /// Get a list of available alarm sounds
-  /// Combines device ringtones with bundled custom sounds (Android only lists device tones)
+  /// Returns only system sounds (no custom assets)
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
     final sounds = <Map<String, String>>[];
 
@@ -640,84 +687,42 @@ class HybridAlarmService {
       // Ignore and fall back to defaults
     }
 
-    // Always include our custom assets
-    sounds.addAll([
-      {
-        'name': 'Gentle Chime',
-        'uri': 'assets/sounds/gentle_chime.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Morning Bell',
-        'uri': 'assets/sounds/morning_bell.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Nature Birds',
-        'uri': 'assets/sounds/nature_birds.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Digital Beep',
-        'uri': 'assets/sounds/digital_beep.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Ocean Waves',
-        'uri': 'assets/sounds/ocean_waves.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Soft Piano',
-        'uri': 'assets/sounds/soft_piano.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Upbeat Melody',
-        'uri': 'assets/sounds/upbeat_melody.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Zen Gong',
-        'uri': 'assets/sounds/zen_gong.mp3',
-        'type': 'custom',
-      },
-    ]);
+    // Add default system sounds if no device sounds found
+    if (sounds.isEmpty) {
+      sounds.addAll([
+        {
+          'name': 'System Alarm',
+          'uri': 'content://settings/system/alarm_alert',
+          'type': 'system',
+        },
+        {
+          'name': 'System Ringtone',
+          'uri': 'content://settings/system/ringtone',
+          'type': 'system',
+        },
+        {
+          'name': 'System Notification',
+          'uri': 'content://settings/system/notification_sound',
+          'type': 'system',
+        },
+      ]);
+    }
 
     return sounds;
   }
 
   /// Play a preview of an alarm sound
-  /// Accepts either a custom asset URI (assets/...) or a system URI
+  /// Accepts system URI only (no asset preview since we removed assets)
   static Future<void> playAlarmSoundPreview(String soundUri) async {
     try {
       // Stop any existing preview first
       await stopAlarmSoundPreview();
 
-      if (soundUri.startsWith('assets/')) {
-        // Custom asset preview using Alarm package
-        final previewSettings = AlarmSettings(
-          id: 999999,
-          dateTime: DateTime.now().add(const Duration(seconds: 1)),
-          assetAudioPath: soundUri,
-          loopAudio: false,
-          vibrate: false,
-          notificationSettings: const NotificationSettings(
-            title: 'Preview',
-            body: 'Sound preview',
-            stopButton: 'Stop',
-          ),
-          volumeSettings: VolumeSettings.fade(
-            volume: 0.5,
-            fadeDuration: Duration.zero,
-          ),
-          warningNotificationOnKill: false,
-          androidFullScreenIntent: false,
-        );
-        await Alarm.set(alarmSettings: previewSettings);
-      } else {
+      if (soundUri.startsWith('content://')) {
         // System ringtone preview via platform channel
         await _ringtoneChannel.invokeMethod('preview', {'uri': soundUri});
+      } else {
+        AppLogger.warning('Non-system sound preview not supported: $soundUri');
       }
     } catch (e) {
       AppLogger.error('Failed to play alarm sound preview', e);
@@ -727,7 +732,6 @@ class HybridAlarmService {
   /// Stop the alarm sound preview
   static Future<void> stopAlarmSoundPreview() async {
     try {
-      await Alarm.stop(999999);
       await _ringtoneChannel.invokeMethod('stop');
     } catch (e) {
       AppLogger.error('Failed to stop alarm sound preview', e);
