@@ -1287,7 +1287,14 @@ class NotificationService {
               processedCount++;
               AppLogger.info('✅ Successfully completed habit: $habitId');
             } catch (e) {
-              AppLogger.error('❌ Failed to complete habit: $habitId', e);
+              final errorMessage = e.toString().toLowerCase();
+              if (errorMessage.contains('still loading') || errorMessage.contains('loading')) {
+                AppLogger.warning('⏳ Habit service still loading for $habitId, will retry later');
+                // Don't count as processed, so the action stays in storage for retry
+              } else {
+                AppLogger.error('❌ Failed to complete habit: $habitId', e);
+                processedCount++; // Count as processed even if failed to avoid infinite retry
+              }
             }
           } else {
             AppLogger.info(
@@ -1329,8 +1336,15 @@ class NotificationService {
               AppLogger.info(
                   '✅ Successfully completed habit from file: $habitId');
             } catch (e) {
-              AppLogger.error(
-                  '❌ Failed to complete habit from file: $habitId', e);
+              final errorMessage = e.toString().toLowerCase();
+              if (errorMessage.contains('still loading') || errorMessage.contains('loading')) {
+                AppLogger.warning('⏳ Habit service still loading for $habitId (file), will retry later');
+                // Don't count as processed, so the action stays in storage for retry
+              } else {
+                AppLogger.error(
+                    '❌ Failed to complete habit from file: $habitId', e);
+                processedCount++; // Count as processed even if failed to avoid infinite retry
+              }
             }
           } else {
             AppLogger.info(
