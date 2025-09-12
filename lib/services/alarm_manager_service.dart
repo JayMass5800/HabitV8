@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:path_provider/path_provider.dart';
 import 'logging_service.dart';
 import '../alarm_callback.dart';
 
@@ -57,7 +59,7 @@ class AlarmManagerService {
       await initialize();
     }
 
-    // Store alarm data for the callback
+    // Store alarm data for the callback (both SharedPreferences and file for cross-isolate access)
     final alarmData = {
       'habitId': habitId,
       'habitName': habitName,
@@ -68,8 +70,12 @@ class AlarmManagerService {
       'additionalData': additionalData ?? {},
     };
 
+    // Store in SharedPreferences for main app access
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('$_alarmDataKey$alarmId', jsonEncode(alarmData));
+    
+    // Also store in file for background isolate access
+    await _saveAlarmDataToFile(alarmId, alarmData);
 
     AppLogger.info('🔄 Scheduling alarm with AlarmManagerService:');
     AppLogger.info('  - Alarm ID: $alarmId');
@@ -486,5 +492,17 @@ class AlarmManagerService {
       alarmSoundName: alarmSoundName,
       snoozeDelayMinutes: snoozeDelayMinutes,
     );
+  }
+
+  /// Save alarm data to file for background isolate access
+  static Future<void> _saveAlarmDataToFile(int alarmId, Map<String, dynamic> alarmData) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/alarm_data_$alarmId.json');
+      await file.writeAsString(jsonEncode(alarmData));
+      AppLogger.info('Alarm data saved to file for ID: $alarmId');
+    } catch (e) {
+      AppLogger.error('Error saving alarm data to file: $e');
+    }
   }
 }
