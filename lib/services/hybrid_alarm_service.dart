@@ -75,12 +75,23 @@ class HybridAlarmService {
     AppLogger.info('  - Alarm ID: $alarmId');
     AppLogger.info('  - Habit: $habitName');
     AppLogger.info('  - Scheduled time: $scheduledTime');
-    AppLogger.info('  - Sound: $alarmSoundName');
+    AppLogger.info('  - Raw sound input: "$alarmSoundName"');
+    AppLogger.info('  - Volume: Gradual fade-in to 80% over 8 seconds');
 
     try {
       // Get and validate the alarm sound path
       final soundPath = _getAlarmSoundPath(alarmSoundName);
-      AppLogger.info('  - Resolved sound path: $soundPath');
+      AppLogger.info('  - Resolved sound path: "$soundPath"');
+
+      // Additional validation logging
+      if (alarmSoundName != null && alarmSoundName.startsWith('content://')) {
+        AppLogger.warning(
+            '  - System URI detected, mapped to asset: $alarmSoundName -> $soundPath');
+      } else if (alarmSoundName != null &&
+          !alarmSoundName.startsWith('assets/')) {
+        AppLogger.info(
+            '  - Sound name mapped to asset: $alarmSoundName -> $soundPath');
+      }
 
       // Use the alarm package for exact alarms
       final alarmSettings = AlarmSettings(
@@ -95,8 +106,8 @@ class HybridAlarmService {
           stopButton: 'Stop Alarm',
         ),
         volumeSettings: VolumeSettings.fade(
-          volume: 1.0,
-          fadeDuration: Duration(seconds: 3),
+          volume: 0.8, // Target volume (80% instead of 100%)
+          fadeDuration: const Duration(seconds: 8), // Gradual 8-second fade-in
         ),
         warningNotificationOnKill: true,
         androidFullScreenIntent: true,
@@ -107,16 +118,17 @@ class HybridAlarmService {
       AppLogger.info('✅ Exact alarm scheduled successfully');
     } catch (e) {
       AppLogger.error(
-          '❌ Failed to schedule exact alarm for $habitName with sound $alarmSoundName',
+          '❌ Failed to schedule exact alarm for $habitName with sound "$alarmSoundName" (resolved to: ${_getAlarmSoundPath(alarmSoundName)})',
           e);
 
-      // Try with default sound as fallback
+      // Try with gentle_chime as fallback instead of digital_beep
       try {
-        AppLogger.info('🔄 Retrying with default sound...');
+        AppLogger.info(
+            '🔄 Retrying with gentle_chime fallback for "$alarmSoundName"...');
         final defaultAlarmSettings = AlarmSettings(
           id: alarmId,
           dateTime: scheduledTime,
-          assetAudioPath: 'assets/sounds/digital_beep.mp3',
+          assetAudioPath: 'assets/sounds/gentle_chime.mp3',
           loopAudio: true,
           vibrate: true,
           notificationSettings: NotificationSettings(
@@ -125,24 +137,25 @@ class HybridAlarmService {
             stopButton: 'Stop Alarm',
           ),
           volumeSettings: VolumeSettings.fade(
-            volume: 1.0,
-            fadeDuration: Duration(seconds: 3),
+            volume: 0.7, // Target volume (70% for fallback)
+            fadeDuration:
+                const Duration(seconds: 6), // Gradual 6-second fade-in
           ),
-          warningNotificationOnKill: true,
+          warningNotificationOnKill: false,
           androidFullScreenIntent: true,
         );
 
         await Alarm.set(alarmSettings: defaultAlarmSettings);
-        AppLogger.info('✅ Alarm scheduled with default sound as fallback');
+        AppLogger.info('✅ Alarm scheduled with gentle_chime fallback');
       } catch (e2) {
-        AppLogger.error('❌ Even fallback alarm failed', e2);
+        AppLogger.error('❌ Gentle chime fallback also failed', e2);
 
         // Final fallback to notification
         await _scheduleNotificationAlarm(
           alarmId: alarmId,
           habitName: habitName,
           scheduledTime: scheduledTime,
-          alarmSoundName: 'Digital Beep', // Use known working sound name
+          alarmSoundName: 'gentle_chime',
           snoozeDelayMinutes: snoozeDelayMinutes,
         );
       }
@@ -504,13 +517,21 @@ class HybridAlarmService {
   }
 
   /// Get alarm sound path
+  /// Converts sound names/URIs to valid asset paths for the alarm package
   static String _getAlarmSoundPath(String? alarmSoundName) {
     if (alarmSoundName == null || alarmSoundName == 'default') {
       return 'assets/sounds/digital_beep.mp3';
     }
 
+    // If it's already an asset path, use it directly
     if (alarmSoundName.startsWith('assets/')) {
       return alarmSoundName;
+    }
+
+    // Handle content:// URIs (system sounds) - need to map to asset equivalent
+    if (alarmSoundName.startsWith('content://')) {
+      AppLogger.info('Converting system sound URI to asset: $alarmSoundName');
+      return _mapSystemUriToAsset(alarmSoundName);
     }
 
     // Map named sounds to paths - including common system ringtone names
@@ -531,20 +552,65 @@ class HybridAlarmService {
         return 'assets/sounds/upbeat_melody.mp3';
       case 'Zen Gong':
         return 'assets/sounds/zen_gong.mp3';
+
       // Handle common system ringtone names that may not have asset equivalents
       case 'Full of Wonder':
       case 'Alarm Clock':
       case 'Rooster':
+        return 'assets/sounds/morning_bell.mp3'; // Energetic sounds
       case 'Bell':
       case 'Chime':
       case 'Default':
-        AppLogger.warning(
-            'System ringtone "$alarmSoundName" mapped to default asset sound');
-        return 'assets/sounds/gentle_chime.mp3'; // Use gentle_chime as fallback for unrecognized sounds
+        return 'assets/sounds/gentle_chime.mp3'; // Bell-like sounds
+      case 'Cuckoo Clock':
+      case 'Bird':
+      case 'Birds':
+        return 'assets/sounds/nature_birds.mp3'; // Nature-themed
+      case 'System Alarm':
+      case 'Alarm':
+      case 'Wake Up':
+      case 'Beep':
+        return 'assets/sounds/digital_beep.mp3'; // Traditional alarm sounds
+      case 'System Ringtone':
+      case 'Ringtone':
+      case 'Ring':
+        return 'assets/sounds/morning_bell.mp3'; // Ringtone-style
+      case 'System Notification':
+      case 'Notification':
+      case 'Soft':
+      case 'Gentle':
+        return 'assets/sounds/gentle_chime.mp3'; // Gentle notification
+
       default:
         AppLogger.warning(
             'Unknown alarm sound "$alarmSoundName" mapped to default sound');
         return 'assets/sounds/digital_beep.mp3';
+    }
+  }
+
+  /// Map system sound URIs to appropriate asset equivalents
+  static String _mapSystemUriToAsset(String uri) {
+    // Extract useful information from the URI to make intelligent mapping
+    final lowerUri = uri.toLowerCase();
+
+    if (lowerUri.contains('alarm') || lowerUri.contains('wake')) {
+      return 'assets/sounds/digital_beep.mp3';
+    } else if (lowerUri.contains('bell') || lowerUri.contains('chime')) {
+      return 'assets/sounds/gentle_chime.mp3';
+    } else if (lowerUri.contains('bird') ||
+        lowerUri.contains('nature') ||
+        lowerUri.contains('cuckoo')) {
+      return 'assets/sounds/nature_birds.mp3';
+    } else if (lowerUri.contains('morning') || lowerUri.contains('ring')) {
+      return 'assets/sounds/morning_bell.mp3';
+    } else if (lowerUri.contains('soft') ||
+        lowerUri.contains('gentle') ||
+        lowerUri.contains('notification')) {
+      return 'assets/sounds/gentle_chime.mp3';
+    } else {
+      // Default fallback for unrecognized system sounds
+      AppLogger.info('Using default asset for system URI: $uri');
+      return 'assets/sounds/digital_beep.mp3';
     }
   }
 
