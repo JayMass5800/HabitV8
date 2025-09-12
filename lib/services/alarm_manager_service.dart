@@ -6,9 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'logging_service.dart';
+import '../alarm_callback.dart';
 
 /// Unified alarm service using android_alarm_manager_plus for reliable system-level alarms
 /// with native Android system sound support via Platform Channels
+@pragma('vm:entry-point')
 class AlarmManagerService {
   static bool _isInitialized = false;
   static const String _alarmDataKey = 'alarm_manager_data_';
@@ -80,7 +82,7 @@ class AlarmManagerService {
       await AndroidAlarmManager.oneShotAt(
         scheduledTime,
         alarmId,
-        _alarmCallback,
+        playAlarmSound,
         exact: true,
         wakeup: true,
         rescheduleOnReboot: false,
