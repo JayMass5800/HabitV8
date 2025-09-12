@@ -35,13 +35,18 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun onRestart() {
+        // Clean up any stale state before restart to prevent cursor issues
+        stopPreview()
         try {
-            // Clean up any stale state before restart to prevent cursor issues
-            stopPreview()
             super.onRestart()
+        } catch (e: android.database.StaleDataException) {
+            // Workaround: some legacy components may register managed cursors that crash on requery
+            android.util.Log.e("MainActivity", "Ignoring StaleDataException during restart", e)
+            // Best-effort recovery to avoid crash loop
+            try { recreate() } catch (_: Exception) {}
+            return
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Error during restart: ${e.message}")
-            super.onRestart()
         }
     }
 
