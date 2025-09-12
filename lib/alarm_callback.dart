@@ -9,10 +9,9 @@ void playAlarmSound(int id) async {
 
     await AndroidAlarmManager.initialize();
 
-    // Since SharedPreferences isn't shared between isolates, 
+    // Since SharedPreferences isn't shared between isolates,
     // create a generic habit alarm notification
     await _executeBackgroundAlarm(id);
-
   } catch (e) {
     AppLogger.error('Error in alarm callback: $e');
   }
