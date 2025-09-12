@@ -396,6 +396,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: 16),
 
+          // Developer Tools Section (only in debug mode)
+          if (true) // Always show for testing
+            Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.developer_mode,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Developer Tools',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SettingsTile(
+                    title: 'Test Alarm System',
+                    subtitle: 'Test new alarm architecture',
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/alarm-test'),
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 16),
+
           // About Section
           Card(
             child: Column(

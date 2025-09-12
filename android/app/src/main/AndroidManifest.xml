@@ -57,8 +57,7 @@
         <!-- Notification action receiver for handling button presses -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
         
-        <!-- Android Alarm Manager Plus service - temporarily disabled -->
-        <!--
+        <!-- Android Alarm Manager Plus service -->
         <service
             android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmService"
             android:permission="android.permission.BIND_JOB_SERVICE"
@@ -74,7 +73,6 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-        -->
 
         <activity
             android:name=".MainActivity"

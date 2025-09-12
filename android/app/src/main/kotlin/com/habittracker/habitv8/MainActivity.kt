@@ -1,5 +1,7 @@
 package com.habittracker.habitv8
 
+import android.app.Activity
+import android.content.Intent
 import android.database.Cursor
 import android.media.AudioAttributes
 import android.media.Ringtone
@@ -14,8 +16,16 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
     private val RINGTONE_CHANNEL = "com.habittracker.habitv8/ringtones"
+    private val ALARM_SOUND_CHANNEL = "com.habittracker.habitv8/alarm_sound"
+    private val RINGTONE_PICKER_REQUEST_CODE = 1
 
     private var previewRingtone: Ringtone? = null
+    private var methodChannelResult: MethodChannel.Result? = null
+    
+    // Keep a static reference to the alarm ringtone to control it
+    companion object {
+        private var alarmRingtone: Ringtone? = null
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,6 +128,28 @@ class MainActivity : FlutterFragmentActivity() {
                 else -> result.notImplemented()
             }
         }
+        
+        // Alarm sound channel for system sound playback
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ALARM_SOUND_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "pickSystemSound" -> {
+                    this.methodChannelResult = result
+                    openRingtonePicker()
+                }
+                "playSystemSound" -> {
+                    val uriString: String? = call.argument("soundUri")
+                    playAlarmRingtone(uriString)
+                    result.success(null) // Acknowledge the call
+                }
+                "stopSystemSound" -> {
+                    stopAlarmRingtone()
+                    result.success(null)
+                }
+                else -> {
+                    result.notImplemented()
+                }
+            }
+        }
     }
 
     private fun listRingtones(): List<Map<String, String>> {
@@ -196,10 +228,75 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
+    // Alarm sound management methods (following Gemini's approach)
+    private fun openRingtonePicker() {
+        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Select Alarm Sound")
+            // Show existing URI if one is already selected
+            // val existingUri = ... get from shared preferences if needed ...
+            // putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, existingUri)
+        }
+        startActivityForResult(intent, RINGTONE_PICKER_REQUEST_CODE)
+    }
+
+    private fun playAlarmRingtone(uriString: String?) {
+        try {
+            // Stop any currently playing alarm ringtone
+            stopAlarmRingtone()
+            val soundUri = if (uriString != null) Uri.parse(uriString) else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            
+            alarmRingtone = RingtoneManager.getRingtone(applicationContext, soundUri)
+            alarmRingtone?.isLooping = true // Alarms should loop
+            
+            // Set proper audio attributes for alarm sounds
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                alarmRingtone?.audioAttributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            }
+            
+            alarmRingtone?.play()
+
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error playing alarm ringtone: ${e.message}")
+        }
+    }
+
+    private fun stopAlarmRingtone() {
+        try {
+            alarmRingtone?.takeIf { it.isPlaying }?.stop()
+            alarmRingtone = null
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error stopping alarm ringtone: ${e.message}")
+        }
+    }
+
+    // Handle the result from the ringtone picker
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == RINGTONE_PICKER_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            val uri: Uri? = data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            if (uri != null) {
+                val ringtone = RingtoneManager.getRingtone(this, uri)
+                val name = ringtone.getTitle(this)
+                val resultData = mapOf("uri" to uri.toString(), "name" to name)
+                methodChannelResult?.success(resultData)
+            } else {
+                methodChannelResult?.success(null) // No ringtone was selected
+            }
+        } else {
+             methodChannelResult?.error("PICKER_ERROR", "Ringtone picker was cancelled or failed.", null)
+        }
+    }
+
     override fun onDestroy() {
         try {
             // Clean up any previewing ringtones to prevent state issues
             stopPreview()
+            // Clean up any alarm ringtones
+            stopAlarmRingtone()
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Error during cleanup: ${e.message}")
         }

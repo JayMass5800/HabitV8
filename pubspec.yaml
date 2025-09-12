@@ -70,7 +70,7 @@ dependencies:
   http: ^1.1.0 # For API calls to AI services
   flutter_secure_storage: ^9.2.2 # For secure API key storage
   
-  # android_alarm_manager_plus: ^4.0.8 # For scheduling exact alarms on Android - causes Gradle build issues
+  android_alarm_manager_plus: ^4.0.8 # For scheduling exact alarms on Android
   
 
 flutter_icons:
