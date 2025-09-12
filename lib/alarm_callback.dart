@@ -8,12 +8,12 @@ import 'services/alarm_manager_service.dart';
 void playAlarmSound(int id) async {
   try {
     AppLogger.info('Alarm fired for ID: $id');
-    
+
     await AndroidAlarmManager.initialize();
-    
+
     final prefs = await SharedPreferences.getInstance();
     final alarmDataJson = prefs.getString('alarm_manager_data_$id');
-    
+
     if (alarmDataJson != null) {
       final alarmData = jsonDecode(alarmDataJson);
       await AlarmManagerService.executeAlarm(alarmData);
