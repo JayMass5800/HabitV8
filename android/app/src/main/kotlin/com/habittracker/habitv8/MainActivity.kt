@@ -37,6 +37,8 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onRestart() {
         // Clean up any stale state before restart to prevent cursor issues
         stopPreview()
+        // Proactively clear legacy managed cursors to avoid framework requery crash
+        try { clearManagedCursors() } catch (_: Exception) {}
         try {
             super.onRestart()
         } catch (e: android.database.StaleDataException) {
@@ -47,6 +49,21 @@ class MainActivity : FlutterFragmentActivity() {
             return
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Error during restart: ${e.message}")
+        }
+    }
+
+    /**
+     * Clears Activity.mManagedCursors via reflection to prevent StaleDataException
+     * on Activity.performRestart requery.
+     */
+    private fun clearManagedCursors() {
+        try {
+            val field = android.app.Activity::class.java.getDeclaredField("mManagedCursors")
+            field.isAccessible = true
+            val list = field.get(this) as? MutableList<*>
+            list?.clear()
+        } catch (e: Exception) {
+            android.util.Log.w("MainActivity", "Could not clear managed cursors: ${e.message}")
         }
     }
 
