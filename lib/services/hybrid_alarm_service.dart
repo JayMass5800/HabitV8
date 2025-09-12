@@ -76,13 +76,13 @@ class HybridAlarmService {
     AppLogger.info('  - Habit: $habitName');
     AppLogger.info('  - Scheduled time: $scheduledTime');
     AppLogger.info('  - Raw sound input: "$alarmSoundName"');
-    AppLogger.info('  - Volume: Gradual fade-in to 80% over 8 seconds');
+    AppLogger.info('  - Volume: 80% with 1-second fade-in (testing fix)');
+
+    // Get and validate the alarm sound path
+    final soundPath = _getAlarmSoundPath(alarmSoundName);
+    AppLogger.info('  - Resolved sound path: "$soundPath"');
 
     try {
-      // Get and validate the alarm sound path
-      final soundPath = _getAlarmSoundPath(alarmSoundName);
-      AppLogger.info('  - Resolved sound path: "$soundPath"');
-
       // Additional validation logging
       if (alarmSoundName != null && alarmSoundName.startsWith('content://')) {
         AppLogger.warning(
@@ -94,6 +94,8 @@ class HybridAlarmService {
       }
 
       // Use the alarm package for exact alarms
+      AppLogger.info('  - Creating AlarmSettings with path: $soundPath');
+
       final alarmSettings = AlarmSettings(
         id: alarmId,
         dateTime: scheduledTime,
@@ -106,19 +108,21 @@ class HybridAlarmService {
           stopButton: 'Stop Alarm',
         ),
         volumeSettings: VolumeSettings.fade(
-          volume: 0.8, // Target volume (80% instead of 100%)
-          fadeDuration: const Duration(seconds: 8), // Gradual 8-second fade-in
+          volume: 0.8,
+          fadeDuration: const Duration(seconds: 1), // Back to shorter fade
         ),
         warningNotificationOnKill: true,
         androidFullScreenIntent: true,
       );
 
+      AppLogger.info('  - AlarmSettings created successfully');
       await Alarm.set(alarmSettings: alarmSettings);
+      AppLogger.info('  - Alarm.set() called successfully');
 
       AppLogger.info('✅ Exact alarm scheduled successfully');
     } catch (e) {
       AppLogger.error(
-          '❌ Failed to schedule exact alarm for $habitName with sound "$alarmSoundName" (resolved to: ${_getAlarmSoundPath(alarmSoundName)})',
+          '❌ Failed to schedule exact alarm for $habitName with sound "$alarmSoundName" (resolved to: $soundPath)',
           e);
 
       // Try with gentle_chime as fallback instead of digital_beep
@@ -138,8 +142,7 @@ class HybridAlarmService {
           ),
           volumeSettings: VolumeSettings.fade(
             volume: 0.7, // Target volume (70% for fallback)
-            fadeDuration:
-                const Duration(seconds: 6), // Gradual 6-second fade-in
+            fadeDuration: const Duration(seconds: 1), // Back to shorter fade
           ),
           warningNotificationOnKill: false,
           androidFullScreenIntent: true,
