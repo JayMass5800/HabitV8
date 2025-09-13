@@ -19,25 +19,10 @@ class CalendarScreen extends ConsumerStatefulWidget {
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   String _selectedCategory = 'All';
-  bool _calendarSyncEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCalendarSyncStatus();
-  }
-
-  Future<void> _loadCalendarSyncStatus() async {
-    try {
-      final syncEnabled = await CalendarService.isCalendarSyncEnabled();
-      if (mounted) {
-        setState(() {
-          _calendarSyncEnabled = syncEnabled;
-        });
-      }
-    } catch (e) {
-      // Handle error silently
-    }
   }
 
   void _onDayTapped(DateTime day, List<Habit> habits) {
@@ -66,10 +51,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           await habitService.markHabitComplete(habit.id, day);
         }
 
-        // Sync changes if calendar sync is enabled
-        if (_calendarSyncEnabled) {
-          await CalendarService.syncHabitChanges(habit);
-        }
+        // Sync changes to calendar (syncHabitChanges handles the enabled check internally)
+        await CalendarService.syncHabitChanges(habit);
 
         setState(() {}); // Refresh the calendar
       }
@@ -187,37 +170,50 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Calendar'),
-            if (_calendarSyncEnabled) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border:
-                      Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.sync,
-                      size: 14,
-                      color: Colors.green.shade700,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Synced',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.green.shade700,
-                        fontWeight: FontWeight.w500,
+            FutureBuilder<bool>(
+              future: CalendarService.isCalendarSyncEnabled(),
+              builder: (context, snapshot) {
+                final syncEnabled = snapshot.data ?? false;
+                if (syncEnabled) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: Colors.green.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.sync,
+                              size: 14,
+                              color: Colors.green.shade700,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Synced',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ],
         ),
         centerTitle: true,
