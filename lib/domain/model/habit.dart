@@ -84,7 +84,10 @@ class Habit extends HiveObject {
   bool alarmEnabled = false;
 
   @HiveField(24)
-  String? alarmSoundName; // System alarm sound name
+  String? alarmSoundName; // System alarm sound display name
+
+  @HiveField(27)
+  String? alarmSoundUri; // System alarm sound URI
 
   @HiveField(25)
   int snoozeDelayMinutes = 10; // Default 10 minutes snooze
@@ -113,6 +116,7 @@ class Habit extends HiveObject {
     this.singleDateTime,
     this.alarmEnabled = false,
     this.alarmSoundName,
+    this.alarmSoundUri,
     this.snoozeDelayMinutes = 10,
   }) {
     id = DateTime.now().millisecondsSinceEpoch.toString();
@@ -430,6 +434,7 @@ class Habit extends HiveObject {
       'singleDateTime': singleDateTime?.toIso8601String(),
       'alarmEnabled': alarmEnabled,
       'alarmSoundName': alarmSoundName,
+      'alarmSoundUri': alarmSoundUri,
       'snoozeDelayMinutes': snoozeDelayMinutes,
     };
   }

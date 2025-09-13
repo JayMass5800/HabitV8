@@ -31,6 +31,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   // Alarm-related fields
   late bool _alarmEnabled;
   String? _selectedAlarmSoundName;
+  String? _selectedAlarmSoundUri;
 
   late final List<int> _selectedWeekdays;
   late final List<int> _selectedMonthDays;
@@ -85,6 +86,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     // Initialize alarm settings
     _alarmEnabled = widget.habit.alarmEnabled;
     _selectedAlarmSoundName = widget.habit.alarmSoundName;
+    _selectedAlarmSoundUri = widget.habit.alarmSoundUri;
     // Load from new fields first, fall back to old fields for backward compatibility
     _selectedWeekdays = widget.habit.selectedWeekdays.isNotEmpty
         ? List<int>.from(widget.habit.selectedWeekdays)
@@ -1153,7 +1155,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
     String? currentlyPlaying;
 
-    final selected = await showDialog<String>(
+    final selected = await showDialog<Map<String, String>>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -1244,7 +1246,10 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                             groupValue: _selectedAlarmSoundName,
                             // ignore: deprecated_member_use
                             onChanged: (value) {
-                              Navigator.of(context).pop(value);
+                              Navigator.of(context).pop({
+                                'name': soundName,
+                                'uri': soundUri,
+                              });
                             },
                           ),
                           selected: isSelected,
@@ -1281,7 +1286,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
     if (selected != null) {
       setState(() {
-        _selectedAlarmSoundName = selected;
+        _selectedAlarmSoundName = selected['name'];
+        _selectedAlarmSoundUri = selected['uri'];
       });
     }
   }
@@ -1433,6 +1439,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       // Save alarm settings
       widget.habit.alarmEnabled = _alarmEnabled;
       widget.habit.alarmSoundName = _selectedAlarmSoundName;
+      widget.habit.alarmSoundUri = _selectedAlarmSoundUri;
 
       // Save to database
       await widget.habit.save();

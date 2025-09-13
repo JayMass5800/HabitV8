@@ -35,6 +35,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   // Alarm-related fields
   bool _alarmEnabled = false;
   String? _selectedAlarmSoundName;
+  String? _selectedAlarmSoundUri;
   final List<int> _selectedWeekdays = [];
   final List<int> _selectedMonthDays = [];
   final List<TimeOfDay> _hourlyTimes =
@@ -1496,7 +1497,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
     String? currentlyPlaying;
 
-    final selected = await showDialog<String>(
+    final selected = await showDialog<Map<String, String>>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -1582,7 +1583,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                             groupValue: _selectedAlarmSoundName,
                             // ignore: deprecated_member_use
                             onChanged: (value) {
-                              Navigator.of(context).pop(value);
+                              Navigator.of(context).pop({
+                                'name': soundName,
+                                'uri': soundUri,
+                              });
                             },
                           ),
                           selected: isSelected,
@@ -1619,7 +1623,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
     if (selected != null) {
       setState(() {
-        _selectedAlarmSoundName = selected;
+        _selectedAlarmSoundName = selected['name'];
+        _selectedAlarmSoundUri = selected['uri'];
       });
     }
   }
@@ -1801,6 +1806,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         singleDateTime: _singleDateTime,
         alarmEnabled: _alarmEnabled,
         alarmSoundName: _selectedAlarmSoundName,
+        alarmSoundUri: _selectedAlarmSoundUri,
       );
 
       // Get HabitService instead of direct database access

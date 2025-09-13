@@ -573,7 +573,7 @@ class HabitContinuationService {
             habitName: habit.name,
             scheduledTime: alarmTime,
             frequency: 'hourly',
-            alarmSoundName: habit.alarmSoundName,
+            alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
             snoozeDelayMinutes: habit.snoozeDelayMinutes,
           );
 
@@ -617,7 +617,7 @@ class HabitContinuationService {
           habitName: habit.name,
           scheduledTime: alarmTime,
           frequency: 'daily',
-          alarmSoundName: habit.alarmSoundName,
+          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
           snoozeDelayMinutes: habit.snoozeDelayMinutes,
         );
 
@@ -664,7 +664,7 @@ class HabitContinuationService {
             habitName: habit.name,
             scheduledTime: alarmTime,
             frequency: 'weekly',
-            alarmSoundName: habit.alarmSoundName,
+            alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
             snoozeDelayMinutes: habit.snoozeDelayMinutes,
           );
 
@@ -714,7 +714,7 @@ class HabitContinuationService {
               habitName: habit.name,
               scheduledTime: alarmTime,
               frequency: 'monthly',
-              alarmSoundName: habit.alarmSoundName,
+              alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
               snoozeDelayMinutes: habit.snoozeDelayMinutes,
             );
 
@@ -768,7 +768,7 @@ class HabitContinuationService {
                 habitName: habit.name,
                 scheduledTime: alarmTime,
                 frequency: 'yearly',
-                alarmSoundName: habit.alarmSoundName,
+                alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
                 snoozeDelayMinutes: habit.snoozeDelayMinutes,
               );
 
@@ -818,7 +818,7 @@ class HabitContinuationService {
         habitName: habit.name,
         scheduledTime: singleDateTime,
         frequency: 'single',
-        alarmSoundName: habit.alarmSoundName,
+        alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
         snoozeDelayMinutes: habit.snoozeDelayMinutes,
       );
 

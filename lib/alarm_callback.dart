@@ -66,16 +66,30 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
     if (notificationResponse.actionId == 'stop_alarm') {
       AppLogger.info('⏹️ Stopping alarm notification $notificationId');
 
-      // Cancel the notification
+      // Initialize notifications plugin for action handling
       final FlutterLocalNotificationsPlugin notificationsPlugin =
           FlutterLocalNotificationsPlugin();
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
+      await notificationsPlugin.initialize(initializationSettings);
+
+      // Cancel the notification
       await notificationsPlugin.cancel(notificationId);
     } else if (notificationResponse.actionId == 'snooze_alarm') {
       AppLogger.info('😴 Snoozing alarm notification $notificationId');
 
-      // Cancel current notification and reschedule for 10 minutes later
+      // Initialize notifications plugin for action handling
       final FlutterLocalNotificationsPlugin notificationsPlugin =
           FlutterLocalNotificationsPlugin();
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
+      await notificationsPlugin.initialize(initializationSettings);
+
+      // Cancel current notification
       await notificationsPlugin.cancel(notificationId);
 
       // Try to get alarm data and reschedule
@@ -161,19 +175,23 @@ Future<void> _executeBackgroundAlarm(
             [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
         ongoing: true, // Make notification persistent
         autoCancel: false, // Prevent auto-dismissal
+        onlyAlertOnce: false, // Allow repeated alerts
+        showWhen: true,
+        when: DateTime.now().millisecondsSinceEpoch,
+        usesChronometer: false,
         sound: UriAndroidNotificationSound(alarmSoundName),
         actions: [
           AndroidNotificationAction(
             'stop_alarm',
             'Stop',
-            cancelNotification: true,
-            showsUserInterface: false,
+            cancelNotification: false, // Don't auto-cancel on action
+            showsUserInterface: true,
           ),
           AndroidNotificationAction(
             'snooze_alarm',
             'Snooze',
-            cancelNotification: true,
-            showsUserInterface: false,
+            cancelNotification: false, // Don't auto-cancel on action
+            showsUserInterface: true,
           ),
         ],
       );
@@ -193,18 +211,22 @@ Future<void> _executeBackgroundAlarm(
             [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
         ongoing: true, // Make notification persistent
         autoCancel: false, // Prevent auto-dismissal
+        onlyAlertOnce: false, // Allow repeated alerts
+        showWhen: true,
+        when: DateTime.now().millisecondsSinceEpoch,
+        usesChronometer: false,
         actions: [
           AndroidNotificationAction(
             'stop_alarm',
             'Stop',
-            cancelNotification: true,
-            showsUserInterface: false,
+            cancelNotification: false, // Don't auto-cancel on action
+            showsUserInterface: true,
           ),
           AndroidNotificationAction(
             'snooze_alarm',
             'Snooze',
-            cancelNotification: true,
-            showsUserInterface: false,
+            cancelNotification: false, // Don't auto-cancel on action
+            showsUserInterface: true,
           ),
         ],
       );
