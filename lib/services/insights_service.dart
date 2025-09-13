@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:logger/logger.dart';
 import '../domain/model/habit.dart';
 
 /// Service for calculating comprehensive habit insights and analytics
@@ -6,6 +7,8 @@ class InsightsService {
   static final InsightsService _instance = InsightsService._internal();
   factory InsightsService() => _instance;
   InsightsService._internal();
+
+  final Logger _logger = Logger();
 
   /// Calculate overall completion rate for all habits in the last 30 days
   Map<String, dynamic> calculateOverallCompletionRate(List<Habit> habits) {
@@ -327,12 +330,59 @@ class InsightsService {
       return insights;
     }
 
-    // Pattern Analysis
-    _analyzeWeekendDrops(habits, insights);
-    _analyzeStreakOpportunities(habits, insights);
-    _analyzeTimeCorrelations(habits, insights);
-    _analyzeCategoryPerformance(habits, insights);
-    _analyzeConsistencyPatterns(habits, insights);
+    try {
+      // Pattern Analysis with error handling for each method
+      try {
+        _analyzeWeekendDrops(habits, insights);
+      } catch (e) {
+        _logger.e('Error in _analyzeWeekendDrops: $e');
+      }
+      
+      try {
+        _analyzeStreakOpportunities(habits, insights);
+      } catch (e) {
+        _logger.e('Error in _analyzeStreakOpportunities: $e');
+      }
+      
+      try {
+        _analyzeTimeCorrelations(habits, insights);
+      } catch (e) {
+        _logger.e('Error in _analyzeTimeCorrelations: $e');
+      }
+      
+      try {
+        _analyzeCategoryPerformance(habits, insights);
+      } catch (e) {
+        _logger.e('Error in _analyzeCategoryPerformance: $e');
+      }
+      
+      try {
+        _analyzeConsistencyPatterns(habits, insights);
+      } catch (e) {
+        _logger.e('Error in _analyzeConsistencyPatterns: $e');
+      }
+    } catch (e) {
+      _logger.e('Error in generateAIInsights: $e');
+      // Add a fallback insight if all analysis fails
+      insights.add({
+        'type': 'motivational',
+        'title': 'Keep Going!',
+        'description':
+            'Your habit journey is unique. Focus on consistency over perfection.',
+        'icon': 'trending_up',
+      });
+    }
+
+    // Ensure we always return at least one insight if we have habits
+    if (insights.isEmpty && habits.isNotEmpty) {
+      insights.add({
+        'type': 'motivational',
+        'title': 'Building Momentum',
+        'description':
+            'You have ${habits.where((h) => h.isActive).length} active habits. Every completion builds momentum!',
+        'icon': 'rocket_launch',
+      });
+    }
 
     return insights.take(3).toList(); // Limit to top 3 insights
   }

@@ -22,12 +22,26 @@ class EnhancedInsightsService {
   }) async {
     final insights = <Map<String, dynamic>>[];
 
-    // Always get rule-based insights as a baseline
-    final ruleBasedInsights = _insightsService.generateAIInsights(habits);
-    insights.addAll(ruleBasedInsights);
+    // Always get rule-based insights as a baseline with error handling
+    try {
+      final ruleBasedInsights = _insightsService.generateAIInsights(habits);
+      insights.addAll(ruleBasedInsights);
+      _logger.i('Generated ${ruleBasedInsights.length} rule-based insights');
+    } catch (e) {
+      _logger.e('Failed to generate rule-based insights: $e');
+      // If rule-based insights fail, create a minimal fallback
+      insights.add({
+        'type': 'motivational',
+        'title': 'Keep Building',
+        'description':
+            'Every small step counts towards building lasting habits. Your consistency matters more than perfection.',
+        'icon': 'rocket_launch',
+      });
+    }
 
     // Initialize AI service and check if configured
     final aiConfigured = await _aiService.isConfiguredAsync;
+    _logger.i('AI configured: $aiConfigured, useAI: $useAI');
 
     // Add AI insights if enabled and configured
     if (useAI && aiConfigured) {
@@ -85,12 +99,52 @@ class EnhancedInsightsService {
 
     // Limit to top 4 insights and prioritize by type
     final prioritizedInsights = _prioritizeInsights(insights);
-    return prioritizedInsights.take(4).toList();
+    final finalInsights = prioritizedInsights.take(4).toList();
+    
+    _logger.i('Returning ${finalInsights.length} total insights (AI configured: $aiConfigured)');
+    
+    // Ensure we always return at least one insight
+    if (finalInsights.isEmpty) {
+      _logger.w('No insights generated, adding default insight');
+      finalInsights.add({
+        'type': 'motivational',
+        'title': 'Start Your Journey',
+        'description': habits.isEmpty 
+          ? 'Create your first habit to begin tracking your progress.'
+          : 'Keep up the great work! Every day of habit tracking builds momentum.',
+        'icon': 'rocket_launch',
+      });
+    }
+    
+    return finalInsights;
   }
 
   /// Get only rule-based insights (for users without AI configured)
   List<Map<String, dynamic>> getRuleBasedInsights(List<Habit> habits) {
-    return _insightsService.generateAIInsights(habits);
+    try {
+      final insights = _insightsService.generateAIInsights(habits);
+      _logger.i('Generated ${insights.length} rule-based insights');
+      return insights;
+    } catch (e) {
+      _logger.e('Failed to generate rule-based insights: $e');
+      // Return minimal fallback insights
+      return [
+        {
+          'type': 'motivational',
+          'title': 'Keep Building',
+          'description':
+              'Every small step counts towards building lasting habits. Track your progress consistently.',
+          'icon': 'rocket_launch',
+        },
+        {
+          'type': 'pattern',
+          'title': 'Track Your Progress',
+          'description':
+              'Regular tracking helps you identify patterns and stay motivated.',
+          'icon': 'trending_up',
+        },
+      ];
+    }
   }
 
   /// Check if AI insights are available
