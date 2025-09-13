@@ -295,12 +295,20 @@ class AlarmManagerService {
       AppLogger.info('🔊 Executing alarm for: $habitName');
 
       // Play system sound using platform channel
-      await _systemSoundChannel.invokeMethod('playSystemSound', {
-        'soundUri': alarmSoundName,
-        'volume': 0.8,
-        'loop': true,
-        'habitName': habitName,
-      });
+      try {
+        await _systemSoundChannel.invokeMethod('playSystemSound', {
+          'soundUri': alarmSoundName,
+          'volume': 0.8,
+          'loop': true,
+          'habitName': habitName,
+        });
+        AppLogger.info('✅ Platform channel sound call successful');
+      } catch (e) {
+        AppLogger.error('❌ Platform channel sound call failed: $e');
+        // Fallback: enable sound in notification
+        await _showAlarmNotificationWithSound(habitName, alarmSoundName);
+        return;
+      }
 
       // Show notification as backup
       await _showAlarmNotification(habitName);
@@ -338,6 +346,57 @@ class AlarmManagerService {
       );
     } catch (e) {
       AppLogger.error('Failed to show alarm notification', e);
+    }
+  }
+
+  /// Show alarm notification with sound fallback
+  static Future<void> _showAlarmNotificationWithSound(
+      String habitName, String? alarmSoundName) async {
+    try {
+      AndroidNotificationDetails androidPlatformChannelSpecifics;
+
+      if (alarmSoundName != null && alarmSoundName != 'default') {
+        androidPlatformChannelSpecifics = AndroidNotificationDetails(
+          'habit_alarms',
+          'Habit Alarms',
+          channelDescription: 'Alarm notifications for habit reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+          fullScreenIntent: true,
+          category: AndroidNotificationCategory.alarm,
+          playSound: true,
+          enableVibration: true,
+          sound: UriAndroidNotificationSound(alarmSoundName),
+        );
+      } else {
+        androidPlatformChannelSpecifics = const AndroidNotificationDetails(
+          'habit_alarms',
+          'Habit Alarms',
+          channelDescription: 'Alarm notifications for habit reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+          fullScreenIntent: true,
+          category: AndroidNotificationCategory.alarm,
+          playSound: true,
+          enableVibration: true,
+          sound: UriAndroidNotificationSound(
+              'content://settings/system/alarm_alert'),
+        );
+      }
+
+      final NotificationDetails platformChannelSpecifics =
+          NotificationDetails(android: androidPlatformChannelSpecifics);
+
+      await _notificationsPlugin.show(
+        999998, // Use a different ID for sound fallback notifications
+        '🔊 HABIT ALARM: $habitName',
+        'Time to complete your habit! (Sound fallback)',
+        platformChannelSpecifics,
+      );
+
+      AppLogger.info('✅ Sound fallback notification shown for: $habitName');
+    } catch (e) {
+      AppLogger.error('Failed to show sound fallback notification', e);
     }
   }
 

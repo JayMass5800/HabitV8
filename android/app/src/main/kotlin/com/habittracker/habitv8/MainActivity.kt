@@ -263,16 +263,31 @@ class MainActivity : FlutterFragmentActivity() {
 
     private fun playSystemSound(soundUri: String?, volume: Double, loop: Boolean, habitName: String?) {
         try {
+            android.util.Log.i("MainActivity", "=== ALARM SOUND DEBUG ===")
+            android.util.Log.i("MainActivity", "Attempting to play sound for: ${habitName ?: "Unknown"}")
+            android.util.Log.i("MainActivity", "Sound URI: $soundUri")
+            android.util.Log.i("MainActivity", "Volume: $volume, Loop: $loop")
+            
             // Stop any currently playing alarm sound
             stopSystemSound()
             
             val uri = if (soundUri != null && soundUri != "default") {
+                android.util.Log.i("MainActivity", "Using custom sound URI: $soundUri")
                 Uri.parse(soundUri)
             } else {
+                android.util.Log.i("MainActivity", "Using default alarm sound")
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             }
             
+            android.util.Log.i("MainActivity", "Final URI: $uri")
+            
             alarmRingtone = RingtoneManager.getRingtone(applicationContext, uri)
+            
+            if (alarmRingtone == null) {
+                android.util.Log.e("MainActivity", "❌ FAILED: RingtoneManager.getRingtone returned null!")
+                throw Exception("Failed to create ringtone from URI: $uri")
+            }
+            
             alarmRingtone?.isLooping = loop
             
             // Set proper audio attributes for alarm sounds
@@ -281,14 +296,24 @@ class MainActivity : FlutterFragmentActivity() {
                     .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build()
+                android.util.Log.i("MainActivity", "✅ Audio attributes set for API ${Build.VERSION.SDK_INT}")
             }
             
+            android.util.Log.i("MainActivity", "Starting playback...")
             alarmRingtone?.play()
             
-            android.util.Log.i("MainActivity", "Playing system sound for habit: ${habitName ?: "Unknown"}")
+            // Verify it's actually playing
+            val isPlaying = alarmRingtone?.isPlaying ?: false
+            android.util.Log.i("MainActivity", "✅ Ringtone.isPlaying = $isPlaying")
+            
+            if (!isPlaying) {
+                android.util.Log.e("MainActivity", "❌ WARNING: Ringtone is not playing after play() call")
+            }
+            
+            android.util.Log.i("MainActivity", "🔊 System sound playback initiated for: ${habitName ?: "Unknown"}")
 
         } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Error playing system sound: ${e.message}")
+            android.util.Log.e("MainActivity", "❌ CRITICAL ERROR playing system sound: ${e.message}", e)
             throw e
         }
     }
