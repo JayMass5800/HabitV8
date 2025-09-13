@@ -8,6 +8,7 @@ import 'notification_queue_processor.dart';
 import 'notification_action_service.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
+import '../data/database.dart';
 
 /// Service that manages app lifecycle events and ensures proper resource cleanup
 class AppLifecycleService with WidgetsBindingObserver {
@@ -113,6 +114,9 @@ class AppLifecycleService with WidgetsBindingObserver {
       AppLogger.info(
           '🔄 Handling app resume - re-registering notification callbacks...');
 
+      // Ensure database is accessible after app resume
+      _ensureDatabaseConnection();
+
       // Re-register notification action callback in case it was lost during background
       NotificationActionService.ensureCallbackRegistered();
 
@@ -124,6 +128,23 @@ class AppLifecycleService with WidgetsBindingObserver {
     } catch (e) {
       AppLogger.error('Error handling app resume', e);
       // Don't rethrow - this should not crash the app
+    }
+  }
+
+  /// Ensure database connection is valid after app resume
+  static void _ensureDatabaseConnection() {
+    try {
+      AppLogger.debug('🔗 Ensuring database connection is valid...');
+
+      // Trigger database reconnection by calling getInstance
+      // This will check if the box is still open and recreate if needed
+      DatabaseService.getInstance().then((_) {
+        AppLogger.debug('✅ Database connection verified');
+      }).catchError((e) {
+        AppLogger.error('❌ Database reconnection failed: $e');
+      });
+    } catch (e) {
+      AppLogger.error('Error ensuring database connection: $e');
     }
   }
 

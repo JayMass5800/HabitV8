@@ -14,15 +14,56 @@ import '../services/logging_service.dart';
 import '../services/calendar_service.dart';
 import '../services/achievements_service.dart';
 
-// Provider for the Habit database box
+// Provider for the Habit database box with error recovery
 final databaseProvider = FutureProvider<Box<Habit>>((ref) async {
-  return await DatabaseService.getInstance();
+  try {
+    return await DatabaseService.getInstance();
+  } catch (e) {
+    AppLogger.error('Database provider error: $e');
+
+    // If it's a stale data or closed box error, try to recover
+    if (e.toString().contains('StaleDataException') ||
+        e.toString().contains('Box has already been closed') ||
+        e.toString().contains('cursor after it has been closed')) {
+      AppLogger.info('Attempting database recovery due to stale data...');
+
+      // Force close and reopen the database
+      await DatabaseService.closeDatabase();
+
+      // Small delay to ensure proper cleanup
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Try again
+      return await DatabaseService.getInstance();
+    }
+
+    rethrow;
+  }
 });
 
-// Provider for the HabitService
+// Provider for the HabitService with error recovery
 final habitServiceProvider = FutureProvider<HabitService>((ref) async {
-  final habitBox = await ref.watch(databaseProvider.future);
-  return HabitService(habitBox);
+  try {
+    final habitBox = await ref.watch(databaseProvider.future);
+    return HabitService(habitBox);
+  } catch (e) {
+    AppLogger.error('HabitService provider error: $e');
+
+    // If it's a stale data error, invalidate the database provider to force refresh
+    if (e.toString().contains('StaleDataException') ||
+        e.toString().contains('Box has already been closed') ||
+        e.toString().contains('cursor after it has been closed')) {
+      AppLogger.info('Invalidating database provider due to stale data...');
+      ref.invalidate(databaseProvider);
+
+      // Wait a bit and try again
+      await Future.delayed(const Duration(milliseconds: 500));
+      final habitBox = await ref.watch(databaseProvider.future);
+      return HabitService(habitBox);
+    }
+
+    rethrow;
+  }
 });
 
 // State class for habits with real-time updates
@@ -256,7 +297,19 @@ class DatabaseService {
   static bool _adaptersRegistered = false;
 
   static Future<Box<Habit>> getInstance() async {
-    if (_habitBox != null && _habitBox!.isOpen) return _habitBox!;
+    // Always check if the box is still open before returning it
+    if (_habitBox != null && _habitBox!.isOpen) {
+      try {
+        // Test if the box is actually accessible by checking if it can read
+        _habitBox!.length;
+        return _habitBox!;
+      } catch (e) {
+        // If the box is not accessible, clear it and recreate
+        AppLogger.warning(
+            'Existing habit box is not accessible, recreating: $e');
+        _habitBox = null;
+      }
+    }
 
     await Hive.initFlutter();
 
@@ -369,21 +422,40 @@ class HabitService {
   HabitService(this._habitBox);
 
   Future<List<Habit>> getAllHabits() async {
-    final now = DateTime.now();
+    try {
+      final now = DateTime.now();
 
-    // Return cached data if it's still valid
-    if (_cachedHabits != null &&
-        _cacheTimestamp != null &&
-        now.difference(_cacheTimestamp!) < _cacheExpiry) {
-      return _cachedHabits!;
+      // Return cached data if it's still valid
+      if (_cachedHabits != null &&
+          _cacheTimestamp != null &&
+          now.difference(_cacheTimestamp!) < _cacheExpiry) {
+        return _cachedHabits!;
+      }
+
+      // Check if the box is accessible before trying to use it
+      if (!_habitBox.isOpen) {
+        AppLogger.error('HabitBox is closed when trying to getAllHabits');
+        throw StateError('Database box is closed');
+      }
+
+      // Fetch fresh data and cache it
+      final habits = _habitBox.values.toList();
+      _cachedHabits = habits;
+      _cacheTimestamp = now;
+
+      return habits;
+    } catch (e) {
+      AppLogger.error('Error in getAllHabits: $e');
+
+      // If it's a database-related error, clear cache and rethrow
+      if (e.toString().contains('StaleDataException') ||
+          e.toString().contains('cursor after it has been closed') ||
+          e.toString().contains('Box has already been closed')) {
+        _invalidateCache();
+      }
+
+      rethrow;
     }
-
-    // Fetch fresh data and cache it
-    final habits = _habitBox.values.toList();
-    _cachedHabits = habits;
-    _cacheTimestamp = now;
-
-    return habits;
   }
 
   void _invalidateCache() {
@@ -392,81 +464,126 @@ class HabitService {
   }
 
   Future<void> addHabit(Habit habit) async {
-    await _habitBox.add(habit);
-    _invalidateCache(); // Invalidate cache when adding new habit
-
-    // Check for new achievements after adding habit
     try {
-      await _checkForAchievements();
-    } catch (e) {
-      AppLogger.error('Failed to check for achievements after adding habit', e);
-    }
+      // Check if the box is accessible before trying to use it
+      if (!_habitBox.isOpen) {
+        AppLogger.error('HabitBox is closed when trying to addHabit');
+        throw StateError('Database box is closed');
+      }
 
-    // Schedule notifications/alarms for the new habit
-    try {
-      if (habit.notificationsEnabled || habit.alarmEnabled) {
-        await NotificationService.scheduleHabitNotifications(habit);
-        AppLogger.info(
-            'Scheduled notifications/alarms for new habit "${habit.name}"');
+      await _habitBox.add(habit);
+      _invalidateCache(); // Invalidate cache when adding new habit
+
+      // Check for new achievements after adding habit
+      try {
+        await _checkForAchievements();
+      } catch (e) {
+        AppLogger.error(
+            'Failed to check for achievements after adding habit', e);
+      }
+
+      // Schedule notifications/alarms for the new habit
+      try {
+        if (habit.notificationsEnabled || habit.alarmEnabled) {
+          await NotificationService.scheduleHabitNotifications(habit);
+          AppLogger.info(
+              'Scheduled notifications/alarms for new habit "${habit.name}"');
+        }
+      } catch (e) {
+        AppLogger.error('Failed to schedule notifications for new habit', e);
+      }
+
+      // Sync to calendar if enabled
+      try {
+        final syncEnabled = await CalendarService.isCalendarSyncEnabled();
+        if (syncEnabled) {
+          await CalendarService.syncHabitChanges(habit);
+          AppLogger.info('Synced new habit "${habit.name}" to calendar');
+        } else {
+          AppLogger.debug(
+              'Calendar sync disabled, skipping sync for new habit "${habit.name}"');
+        }
+      } catch (e) {
+        AppLogger.error('Failed to sync new habit to calendar', e);
       }
     } catch (e) {
-      AppLogger.error('Failed to schedule notifications for new habit', e);
-    }
+      AppLogger.error('Error in addHabit: $e');
 
-    // Sync to calendar if enabled
-    try {
-      final syncEnabled = await CalendarService.isCalendarSyncEnabled();
-      if (syncEnabled) {
-        await CalendarService.syncHabitChanges(habit);
-        AppLogger.info('Synced new habit "${habit.name}" to calendar');
-      } else {
-        AppLogger.debug(
-            'Calendar sync disabled, skipping sync for new habit "${habit.name}"');
+      // If it's a database-related error, clear cache and rethrow
+      if (e.toString().contains('StaleDataException') ||
+          e.toString().contains('cursor after it has been closed') ||
+          e.toString().contains('Box has already been closed')) {
+        _invalidateCache();
       }
-    } catch (e) {
-      AppLogger.error('Failed to sync new habit to calendar', e);
+
+      rethrow;
     }
   }
 
   Future<void> updateHabit(Habit habit) async {
-    await habit.save();
-    _invalidateCache(); // Invalidate cache when updating habit
-
-    // Reschedule notifications/alarms for the updated habit
     try {
-      if (habit.notificationsEnabled || habit.alarmEnabled) {
-        await NotificationService.scheduleHabitNotifications(habit);
-        AppLogger.info(
-            'Rescheduled notifications/alarms for updated habit "${habit.name}"');
-      } else {
-        // Cancel notifications if they were disabled
-        final habitIdHash = NotificationService.generateSafeId(habit.id);
-        await NotificationService.cancelHabitNotifications(habitIdHash);
-        AppLogger.info(
-            'Cancelled notifications for habit "${habit.name}" (disabled)');
+      // Check if the box is accessible before trying to use it
+      if (!_habitBox.isOpen) {
+        AppLogger.error('HabitBox is closed when trying to updateHabit');
+        throw StateError('Database box is closed');
+      }
+
+      await habit.save();
+      _invalidateCache(); // Invalidate cache when updating habit
+
+      // Reschedule notifications/alarms for the updated habit
+      try {
+        if (habit.notificationsEnabled || habit.alarmEnabled) {
+          await NotificationService.scheduleHabitNotifications(habit);
+          AppLogger.info(
+              'Rescheduled notifications/alarms for updated habit "${habit.name}"');
+        } else {
+          // Cancel notifications if they were disabled
+          final habitIdHash = NotificationService.generateSafeId(habit.id);
+          await NotificationService.cancelHabitNotifications(habitIdHash);
+          AppLogger.info(
+              'Cancelled notifications for habit "${habit.name}" (disabled)');
+        }
+      } catch (e) {
+        AppLogger.error(
+            'Failed to reschedule notifications for updated habit', e);
+      }
+
+      // Sync to calendar if enabled
+      try {
+        final syncEnabled = await CalendarService.isCalendarSyncEnabled();
+        if (syncEnabled) {
+          await CalendarService.syncHabitChanges(habit);
+          AppLogger.info('Synced updated habit "${habit.name}" to calendar');
+        } else {
+          AppLogger.debug(
+              'Calendar sync disabled, skipping sync for updated habit "${habit.name}"');
+        }
+      } catch (e) {
+        AppLogger.error('Failed to sync updated habit to calendar', e);
       }
     } catch (e) {
-      AppLogger.error(
-          'Failed to reschedule notifications for updated habit', e);
-    }
+      AppLogger.error('Error in updateHabit: $e');
 
-    // Sync to calendar if enabled
-    try {
-      final syncEnabled = await CalendarService.isCalendarSyncEnabled();
-      if (syncEnabled) {
-        await CalendarService.syncHabitChanges(habit);
-        AppLogger.info('Synced updated habit "${habit.name}" to calendar');
-      } else {
-        AppLogger.debug(
-            'Calendar sync disabled, skipping sync for updated habit "${habit.name}"');
+      // If it's a database-related error, clear cache and rethrow
+      if (e.toString().contains('StaleDataException') ||
+          e.toString().contains('cursor after it has been closed') ||
+          e.toString().contains('Box has already been closed')) {
+        _invalidateCache();
       }
-    } catch (e) {
-      AppLogger.error('Failed to sync updated habit to calendar', e);
+
+      rethrow;
     }
   }
 
   Future<void> deleteHabit(Habit habit) async {
     try {
+      // Check if the box is accessible before trying to use it
+      if (!_habitBox.isOpen) {
+        AppLogger.error('HabitBox is closed when trying to deleteHabit');
+        throw StateError('Database box is closed');
+      }
+
       // Cancel all notifications for this habit before deletion
       final habitIdHash = NotificationService.generateSafeId(habit.id);
       await NotificationService.cancelHabitNotifications(habitIdHash);
@@ -497,6 +614,16 @@ class HabitService {
       );
     } catch (e) {
       AppLogger.error('Error deleting habit ${habit.name}', e);
+
+      // If it's a database-related error, clear cache
+      if (e.toString().contains('StaleDataException') ||
+          e.toString().contains('cursor after it has been closed') ||
+          e.toString().contains('Box has already been closed')) {
+        _invalidateCache();
+        _statsService.invalidateHabitCache(habit.id);
+        rethrow;
+      }
+
       // Still attempt to delete the habit even if notification cancellation fails
       _statsService.invalidateHabitCache(habit.id);
       _invalidateCache();
@@ -506,8 +633,23 @@ class HabitService {
 
   Future<Habit?> getHabitById(String id) async {
     try {
+      // Check if the box is accessible before trying to use it
+      if (!_habitBox.isOpen) {
+        AppLogger.error('HabitBox is closed when trying to getHabitById');
+        return null;
+      }
+
       return _habitBox.values.firstWhere((habit) => habit.id == id);
     } catch (e) {
+      AppLogger.error('Error in getHabitById: $e');
+
+      // If it's a database-related error, clear cache
+      if (e.toString().contains('StaleDataException') ||
+          e.toString().contains('cursor after it has been closed') ||
+          e.toString().contains('Box has already been closed')) {
+        _invalidateCache();
+      }
+
       return null; // Return null instead of throwing
     }
   }
