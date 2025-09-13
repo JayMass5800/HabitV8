@@ -59,6 +59,29 @@ class AlarmManagerService {
       await initialize();
     }
 
+    // Only check if this exact alarm already exists (same ID and same schedule time)
+    // This prevents true duplicates while allowing multiple legitimate alarms
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final existingAlarmData = prefs.getString('$_alarmDataKey$alarmId');
+
+      if (existingAlarmData != null) {
+        final existing = jsonDecode(existingAlarmData);
+        final existingTime = DateTime.parse(existing['scheduledTime']);
+
+        // Only cancel if it's the exact same alarm (same time and habit)
+        if (existingTime.isAtSameMomentAs(scheduledTime) &&
+            existing['habitId'] == habitId) {
+          await AndroidAlarmManager.cancel(alarmId);
+          AppLogger.debug(
+              'Cancelled duplicate alarm for habit $habitId at $scheduledTime');
+        }
+      }
+    } catch (e) {
+      // Ignore errors when checking for duplicates
+      AppLogger.debug('Could not check for duplicate alarm: $e');
+    }
+
     // Store alarm data for the callback (both SharedPreferences and file for cross-isolate access)
     final alarmData = {
       'habitId': habitId,
@@ -442,17 +465,31 @@ class AlarmManagerService {
 
   /// Generate alarm ID for hourly alarms
   static int _generateHourlyAlarmId(String habitId, DateTime dateTime) {
-    // Use a combination of habit ID hash and time to create unique IDs
-    final habitHash = habitId.hashCode.abs() % 10000;
-    final timeHash = (dateTime.hour * 100 + dateTime.minute) % 10000;
-    return habitHash + timeHash + 100000; // Add offset to avoid conflicts
+    // Create a truly unique ID for each habit's hourly alarm
+    // Use habit ID hash, year, day of year, and time in minutes
+    final habitHash = habitId.hashCode.abs() % 1000;
+    final year = dateTime.year % 100; // Last 2 digits of year
+    final dayOfYear = dateTime.difference(DateTime(dateTime.year, 1, 1)).inDays;
+    final timeMinutes = dateTime.hour * 60 + dateTime.minute;
+
+    // Create a unique ID: habitHash(3) + year(2) + dayOfYear(3) + timeMinutes(4) = 12 digits max
+    return (habitHash * 100000000) +
+        (year * 1000000) +
+        (dayOfYear * 1440) +
+        timeMinutes +
+        10000000;
   }
 
   /// Generate alarm ID for daily alarms
   static int _generateDailyAlarmId(String habitId) {
-    // Use habit ID hash with offset for daily alarms
-    return habitId.hashCode.abs() % 10000 +
-        200000; // Add offset to avoid conflicts
+    // Create a unique ID for each habit's daily alarm
+    final habitHash = habitId.hashCode.abs() % 10000;
+    final now = DateTime.now();
+    final year = now.year % 100; // Last 2 digits of year
+    final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+
+    // Create a unique ID: habitHash(4) + year(2) + dayOfYear(3) = 9 digits max
+    return (habitHash * 100000) + (year * 1000) + dayOfYear + 20000000;
   }
 
   /// Get available system ringtones
@@ -503,7 +540,14 @@ class AlarmManagerService {
   static int generateHabitAlarmId(String habitId, {String? suffix}) {
     final habitHash = habitId.hashCode.abs() % 10000;
     final suffixHash = suffix != null ? suffix.hashCode.abs() % 1000 : 0;
-    return habitHash + suffixHash + 300000; // Add offset to avoid conflicts
+    final timeComponent = DateTime.now().millisecondsSinceEpoch %
+        1000; // Add time component for uniqueness
+
+    final alarmId = habitHash + suffixHash + timeComponent + 300000;
+
+    AppLogger.debug(
+        'Generated alarm ID $alarmId for habit $habitId (suffix: $suffix)');
+    return alarmId;
   }
 
   /// Schedule recurring exact alarm (maps to scheduleExactAlarm for compatibility)

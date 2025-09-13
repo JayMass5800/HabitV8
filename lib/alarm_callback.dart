@@ -5,12 +5,20 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
 import 'services/logging_service.dart';
 
+// Global flag to track if alarm manager is already initialized in this isolate
+bool _isAlarmManagerInitialized = false;
+
 @pragma('vm:entry-point')
 void playAlarmSound(int id) async {
   try {
     AppLogger.info('Alarm fired for ID: $id');
 
-    await AndroidAlarmManager.initialize();
+    // Only initialize if not already initialized in this isolate
+    if (!_isAlarmManagerInitialized) {
+      await AndroidAlarmManager.initialize();
+      _isAlarmManagerInitialized = true;
+      AppLogger.info('AndroidAlarmManager initialized for isolate');
+    }
 
     // Try to get alarm data from file storage (works across isolates)
     final alarmData = await _getAlarmDataFromFile(id);
