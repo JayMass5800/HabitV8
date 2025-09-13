@@ -337,25 +337,25 @@ class InsightsService {
       } catch (e) {
         _logger.e('Error in _analyzeWeekendDrops: $e');
       }
-      
+
       try {
         _analyzeStreakOpportunities(habits, insights);
       } catch (e) {
         _logger.e('Error in _analyzeStreakOpportunities: $e');
       }
-      
+
       try {
         _analyzeTimeCorrelations(habits, insights);
       } catch (e) {
         _logger.e('Error in _analyzeTimeCorrelations: $e');
       }
-      
+
       try {
         _analyzeCategoryPerformance(habits, insights);
       } catch (e) {
         _logger.e('Error in _analyzeCategoryPerformance: $e');
       }
-      
+
       try {
         _analyzeConsistencyPatterns(habits, insights);
       } catch (e) {

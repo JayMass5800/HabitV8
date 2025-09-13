@@ -7,14 +7,14 @@ import 'lib/domain/model/habit.dart';
 /// Test file to debug the fallback system for habit analysis
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   print('🔍 Testing Fallback System for Habit Analysis');
   print('=' * 50);
-  
+
   // Create test habits
   final testHabits = createTestHabits();
   print('✅ Created ${testHabits.length} test habits');
-  
+
   // Test InsightsService directly
   print('\n📊 Testing InsightsService directly...');
   final insightsService = InsightsService();
@@ -23,7 +23,7 @@ void main() async {
   for (final insight in ruleBasedInsights) {
     print('   - ${insight['title']}: ${insight['description']}');
   }
-  
+
   // Test AIService configuration
   print('\n🤖 Testing AIService configuration...');
   final aiService = AIService();
@@ -32,17 +32,19 @@ void main() async {
   print('   - isConfigured: ${aiService.isConfigured}');
   print('   - isConfiguredAsync: ${await aiService.isConfiguredAsync}');
   print('   - availableProviders: ${aiService.availableProviders}');
-  print('   - availableProvidersAsync: ${await aiService.availableProvidersAsync}');
-  
+  print(
+      '   - availableProvidersAsync: ${await aiService.availableProvidersAsync}');
+
   // Test EnhancedInsightsService
   print('\n🚀 Testing EnhancedInsightsService...');
   final enhancedService = EnhancedInsightsService();
   print('   - isAIAvailable: ${enhancedService.isAIAvailable}');
   print('   - isAIAvailableAsync: ${await enhancedService.isAIAvailableAsync}');
-  
+
   try {
     print('\n📈 Generating comprehensive insights...');
-    final comprehensiveInsights = await enhancedService.generateComprehensiveInsights(testHabits);
+    final comprehensiveInsights =
+        await enhancedService.generateComprehensiveInsights(testHabits);
     print('✅ Comprehensive insights count: ${comprehensiveInsights.length}');
     for (final insight in comprehensiveInsights) {
       print('   - ${insight['title']}: ${insight['description']}');
@@ -50,7 +52,7 @@ void main() async {
   } catch (e) {
     print('❌ Error generating comprehensive insights: $e');
   }
-  
+
   // Test getRuleBasedInsights method
   print('\n📋 Testing getRuleBasedInsights method...');
   try {
@@ -62,7 +64,7 @@ void main() async {
   } catch (e) {
     print('❌ Error generating rule-based insights: $e');
   }
-  
+
   print('\n' + '=' * 50);
   print('🏁 Testing completed');
 }
@@ -70,7 +72,7 @@ void main() async {
 List<Habit> createTestHabits() {
   // Create some test habits with different patterns
   final now = DateTime.now();
-  
+
   return [
     // High-performing habit
     Habit(
@@ -91,7 +93,7 @@ List<Habit> createTestHabits() {
       createdAt: now.subtract(const Duration(days: 30)),
       updatedAt: now,
     ),
-    
+
     // Inconsistent habit
     Habit(
       id: '2',
@@ -116,7 +118,7 @@ List<Habit> createTestHabits() {
       createdAt: now.subtract(const Duration(days: 30)),
       updatedAt: now,
     ),
-    
+
     // Weekend-dropping habit
     Habit(
       id: '3',

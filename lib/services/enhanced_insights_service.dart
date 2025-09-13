@@ -100,22 +100,23 @@ class EnhancedInsightsService {
     // Limit to top 4 insights and prioritize by type
     final prioritizedInsights = _prioritizeInsights(insights);
     final finalInsights = prioritizedInsights.take(4).toList();
-    
-    _logger.i('Returning ${finalInsights.length} total insights (AI configured: $aiConfigured)');
-    
+
+    _logger.i(
+        'Returning ${finalInsights.length} total insights (AI configured: $aiConfigured)');
+
     // Ensure we always return at least one insight
     if (finalInsights.isEmpty) {
       _logger.w('No insights generated, adding default insight');
       finalInsights.add({
         'type': 'motivational',
         'title': 'Start Your Journey',
-        'description': habits.isEmpty 
-          ? 'Create your first habit to begin tracking your progress.'
-          : 'Keep up the great work! Every day of habit tracking builds momentum.',
+        'description': habits.isEmpty
+            ? 'Create your first habit to begin tracking your progress.'
+            : 'Keep up the great work! Every day of habit tracking builds momentum.',
         'icon': 'rocket_launch',
       });
     }
-    
+
     return finalInsights;
   }
 
