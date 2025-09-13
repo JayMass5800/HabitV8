@@ -58,32 +58,33 @@ Future<Map<String, dynamic>?> _getAlarmDataFromFile(int id) async {
 @pragma('vm:entry-point')
 void _handleAlarmAction(NotificationResponse notificationResponse) async {
   try {
-    AppLogger.info('🔔 Alarm action received: ${notificationResponse.actionId}');
-    
+    AppLogger.info(
+        '🔔 Alarm action received: ${notificationResponse.actionId}');
+
     final int notificationId = notificationResponse.id ?? 0;
-    
+
     if (notificationResponse.actionId == 'stop_alarm') {
       AppLogger.info('⏹️ Stopping alarm notification $notificationId');
-      
+
       // Cancel the notification
       final FlutterLocalNotificationsPlugin notificationsPlugin =
           FlutterLocalNotificationsPlugin();
       await notificationsPlugin.cancel(notificationId);
-      
     } else if (notificationResponse.actionId == 'snooze_alarm') {
       AppLogger.info('😴 Snoozing alarm notification $notificationId');
-      
+
       // Cancel current notification and reschedule for 10 minutes later
       final FlutterLocalNotificationsPlugin notificationsPlugin =
           FlutterLocalNotificationsPlugin();
       await notificationsPlugin.cancel(notificationId);
-      
+
       // Try to get alarm data and reschedule
       final alarmData = await _getAlarmDataFromFile(notificationId);
       if (alarmData != null) {
         final snoozeDelayMinutes = alarmData['snoozeDelayMinutes'] ?? 10;
-        final snoozeTime = DateTime.now().add(Duration(minutes: snoozeDelayMinutes));
-        
+        final snoozeTime =
+            DateTime.now().add(Duration(minutes: snoozeDelayMinutes));
+
         // Reschedule the alarm for snooze time
         await AndroidAlarmManager.oneShotAt(
           snoozeTime,
@@ -92,7 +93,7 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
           exact: true,
           wakeup: true,
         );
-        
+
         AppLogger.info('✅ Alarm snoozed for $snoozeDelayMinutes minutes');
       }
     }
@@ -156,7 +157,8 @@ Future<void> _executeBackgroundAlarm(
         category: AndroidNotificationCategory.alarm,
         playSound: true,
         enableVibration: true,
-        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
+        vibrationPattern: Int64List.fromList(
+            [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
         ongoing: true, // Make notification persistent
         autoCancel: false, // Prevent auto-dismissal
         sound: UriAndroidNotificationSound(alarmSoundName),
@@ -187,7 +189,8 @@ Future<void> _executeBackgroundAlarm(
         category: AndroidNotificationCategory.alarm,
         playSound: true,
         enableVibration: true,
-        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
+        vibrationPattern: Int64List.fromList(
+            [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
         ongoing: true, // Make notification persistent
         autoCancel: false, // Prevent auto-dismissal
         actions: [
