@@ -1592,7 +1592,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                           selected: isSelected,
                           onTap: () {
                             if (mounted) {
-                              Navigator.of(context).pop(soundName);
+                              Navigator.of(context).pop({
+                                'name': soundName,
+                                'uri': soundUri,
+                              });
                             }
                           },
                         ),

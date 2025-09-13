@@ -1255,7 +1255,10 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                           selected: isSelected,
                           onTap: () {
                             if (mounted) {
-                              Navigator.of(context).pop(soundName);
+                              Navigator.of(context).pop({
+                                'name': soundName,
+                                'uri': soundUri,
+                              });
                             }
                           },
                         ),
