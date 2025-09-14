@@ -59,38 +59,35 @@ Future<Map<String, dynamic>?> _getAlarmDataFromFile(int id) async {
 void _handleAlarmAction(NotificationResponse notificationResponse) async {
   try {
     AppLogger.info(
-        '🔔 Alarm action received: ${notificationResponse.actionId}');
+        '🔔 Alarm action received: ${notificationResponse.actionId} for notification ${notificationResponse.id}');
 
     final int notificationId = notificationResponse.id ?? 0;
+
+    // Initialize notifications plugin for action handling
+    final FlutterLocalNotificationsPlugin notificationsPlugin =
+        FlutterLocalNotificationsPlugin();
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+    await notificationsPlugin.initialize(initializationSettings);
 
     if (notificationResponse.actionId == 'stop_alarm') {
       AppLogger.info('⏹️ Stopping alarm notification $notificationId');
 
-      // Initialize notifications plugin for action handling
-      final FlutterLocalNotificationsPlugin notificationsPlugin =
-          FlutterLocalNotificationsPlugin();
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      const InitializationSettings initializationSettings =
-          InitializationSettings(android: initializationSettingsAndroid);
-      await notificationsPlugin.initialize(initializationSettings);
-
       // Cancel the notification
       await notificationsPlugin.cancel(notificationId);
+
+      // Also try to cancel all notifications to ensure the alarm stops
+      await notificationsPlugin.cancelAll();
+
+      AppLogger.info('✅ Alarm notification stopped successfully');
     } else if (notificationResponse.actionId == 'snooze_alarm') {
       AppLogger.info('😴 Snoozing alarm notification $notificationId');
 
-      // Initialize notifications plugin for action handling
-      final FlutterLocalNotificationsPlugin notificationsPlugin =
-          FlutterLocalNotificationsPlugin();
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      const InitializationSettings initializationSettings =
-          InitializationSettings(android: initializationSettingsAndroid);
-      await notificationsPlugin.initialize(initializationSettings);
-
-      // Cancel current notification
+      // Cancel current notification first
       await notificationsPlugin.cancel(notificationId);
+      await notificationsPlugin.cancelAll();
 
       // Try to get alarm data and reschedule
       final alarmData = await _getAlarmDataFromFile(notificationId);
@@ -109,10 +106,13 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
         );
 
         AppLogger.info('✅ Alarm snoozed for $snoozeDelayMinutes minutes');
+      } else {
+        AppLogger.warning(
+            '⚠️ Could not find alarm data for snooze, alarm stopped instead');
       }
     }
   } catch (e) {
-    AppLogger.error('Error handling alarm action: $e');
+    AppLogger.error('❌ Error handling alarm action: $e');
   }
 }
 
@@ -186,26 +186,41 @@ Future<void> _executeBackgroundAlarm(
             category: AndroidNotificationCategory.alarm,
             playSound: true,
             enableVibration: true,
-            vibrationPattern: Int64List.fromList(
-                [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
-            ongoing: true, // Make notification persistent
-            autoCancel: false, // Prevent auto-dismissal
-            onlyAlertOnce: false, // Allow repeated alerts
+            vibrationPattern: Int64List.fromList([
+              0,
+              1000,
+              500,
+              1000,
+              500,
+              1000,
+              500,
+              1000,
+              500,
+              1000,
+              500,
+              1000,
+              500,
+              1000
+            ]), // Extended vibration pattern (14 seconds total)
+            ongoing: true, // Keep notification visible until user acts
+            autoCancel: false, // Don't auto-dismiss
+            onlyAlertOnce: false, // Allow sound to repeat
             showWhen: true,
             when: DateTime.now().millisecondsSinceEpoch,
             usesChronometer: false,
+            timeoutAfter: 300000, // Auto-dismiss after 5 minutes
             sound: UriAndroidNotificationSound(resolvedSoundUri),
             actions: [
               AndroidNotificationAction(
                 'stop_alarm',
                 'Stop',
-                cancelNotification: false, // Don't auto-cancel on action
+                cancelNotification: true,
                 showsUserInterface: true,
               ),
               AndroidNotificationAction(
                 'snooze_alarm',
                 'Snooze',
-                cancelNotification: false, // Don't auto-cancel on action
+                cancelNotification: true,
                 showsUserInterface: true,
               ),
             ],
@@ -260,11 +275,16 @@ Future<bool> _isValidSoundUri(String uri) async {
 
     // Check if it's a content:// URI (Android content provider)
     if (uri.startsWith('content://')) {
-      // For content URIs, we assume they're valid if they follow the pattern
-      // Real validation would require platform channel calls to Android
+      // For the standard alarm URI, always consider it valid
+      if (uri == 'content://settings/system/alarm_alert') {
+        return true;
+      }
+
+      // For other content URIs, check if they follow valid patterns
       return uri.contains('media') ||
           uri.contains('ringtone') ||
-          uri.contains('notification');
+          uri.contains('notification') ||
+          uri.contains('settings/system');
     }
 
     // Check if it's a file:// URI
@@ -293,25 +313,40 @@ AndroidNotificationDetails _createDefaultAlarmNotification() {
     category: AndroidNotificationCategory.alarm,
     playSound: true,
     enableVibration: true,
-    vibrationPattern: Int64List.fromList(
-        [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
-    ongoing: true, // Make notification persistent
-    autoCancel: false, // Prevent auto-dismissal
-    onlyAlertOnce: false, // Allow repeated alerts
+    vibrationPattern: Int64List.fromList([
+      0,
+      1000,
+      500,
+      1000,
+      500,
+      1000,
+      500,
+      1000,
+      500,
+      1000,
+      500,
+      1000,
+      500,
+      1000
+    ]), // Extended vibration pattern (14 seconds total)
+    ongoing: true, // Keep notification visible until user acts
+    autoCancel: false, // Don't auto-dismiss
+    onlyAlertOnce: false, // Allow sound to repeat
     showWhen: true,
     when: DateTime.now().millisecondsSinceEpoch,
     usesChronometer: false,
+    timeoutAfter: 300000, // Auto-dismiss after 5 minutes
     actions: [
       AndroidNotificationAction(
         'stop_alarm',
         'Stop',
-        cancelNotification: false, // Don't auto-cancel on action
+        cancelNotification: true,
         showsUserInterface: true,
       ),
       AndroidNotificationAction(
         'snooze_alarm',
         'Snooze',
-        cancelNotification: false, // Don't auto-cancel on action
+        cancelNotification: true,
         showsUserInterface: true,
       ),
     ],
@@ -322,35 +357,74 @@ AndroidNotificationDetails _createDefaultAlarmNotification() {
 Future<String?> _resolveSoundUriFromName(String soundName) async {
   try {
     // In background isolate, we can't easily access the platform channel
-    // So we'll implement a fallback system using typical Android sound URIs
+    // So we'll implement a comprehensive fallback system using typical Android sound URIs
 
     AppLogger.info('🔍 Attempting to resolve sound URI for: $soundName');
 
-    // Common system alarm sounds and their typical URIs
-    final Map<String, String> commonSounds = {
-      'Icicles': 'content://settings/system/ringtone_2', // Common alarm URI
-      'Oxygen': 'content://settings/system/ringtone_3',
+    // Comprehensive system alarm sounds and their typical URIs
+    final Map<String, String> comprehensiveSounds = {
+      // Common Android alarm sounds
+      'Icicles': 'content://settings/system/alarm_alert',
+      'Oxygen': 'content://settings/system/alarm_alert',
       'Timer': 'content://settings/system/alarm_alert',
-      'Beep': 'content://settings/system/notification_sound',
-      'Digital': 'content://media/internal/audio/media/1',
-      'Chime': 'content://media/internal/audio/media/2',
-      'Classic': 'content://settings/system/ringtone',
+      'Beep': 'content://settings/system/alarm_alert',
+      'Digital': 'content://settings/system/alarm_alert',
+      'Chime': 'content://settings/system/alarm_alert',
+      'Classic': 'content://settings/system/alarm_alert',
+      'Full of Wonder': 'content://settings/system/alarm_alert',
+      'Gentle Alarm': 'content://settings/system/alarm_alert',
+      'Morning Flower': 'content://settings/system/alarm_alert',
+      'Rooster': 'content://settings/system/alarm_alert',
+      'Simple Bell': 'content://settings/system/alarm_alert',
+      'Carbon': 'content://settings/system/alarm_alert',
+      'Cesium': 'content://settings/system/alarm_alert',
+      'Helium': 'content://settings/system/alarm_alert',
+      'Krypton': 'content://settings/system/alarm_alert',
+      'Neon': 'content://settings/system/alarm_alert',
+      'Argon': 'content://settings/system/alarm_alert',
+      'Platinum': 'content://settings/system/alarm_alert',
+
+      // Alternative URI patterns for different Android versions
+      'default': 'content://settings/system/alarm_alert',
     };
 
-    // Try to find a match for the sound name
-    String? resolvedUri = commonSounds[soundName];
+    // First try exact match
+    String? resolvedUri = comprehensiveSounds[soundName];
 
     if (resolvedUri != null) {
       AppLogger.info('✅ Resolved $soundName to URI: $resolvedUri');
       return resolvedUri;
     }
 
-    // If no specific match, try to use default alarm sound
+    // Try case-insensitive match
+    final lowerSoundName = soundName.toLowerCase();
+    for (final entry in comprehensiveSounds.entries) {
+      if (entry.key.toLowerCase() == lowerSoundName) {
+        resolvedUri = entry.value;
+        AppLogger.info(
+            '✅ Resolved $soundName (case-insensitive) to URI: $resolvedUri');
+        return resolvedUri;
+      }
+    }
+
+    // Try partial match for compound names
+    for (final entry in comprehensiveSounds.entries) {
+      if (soundName.toLowerCase().contains(entry.key.toLowerCase()) ||
+          entry.key.toLowerCase().contains(soundName.toLowerCase())) {
+        resolvedUri = entry.value;
+        AppLogger.info(
+            '✅ Resolved $soundName (partial match with ${entry.key}) to URI: $resolvedUri');
+        return resolvedUri;
+      }
+    }
+
+    // If no match, use default alarm sound
     AppLogger.warning(
         '⚠️ Could not resolve specific URI for $soundName, using default alarm');
     return 'content://settings/system/alarm_alert';
   } catch (e) {
     AppLogger.error('❌ Error resolving sound URI for $soundName: $e');
-    return null;
+    // Return default alarm as fallback
+    return 'content://settings/system/alarm_alert';
   }
 }
