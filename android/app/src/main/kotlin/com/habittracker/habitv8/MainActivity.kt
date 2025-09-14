@@ -244,41 +244,6 @@ class MainActivity : FlutterFragmentActivity() {
                 else -> result.notImplemented()
             }
         }
-                        result.success(null)
-                    } catch (e: Exception)        
-        // Alarm service channel for background alarm service control
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ALARM_SERVICE_CHANNEL).setMethodCallHandler { call, result ->
-            // Check if activity is still valid before processing method calls
-            if (isFinishing || isDestroyed) {
-                result.error("ACTIVITY_INVALID", "Activity is no longer valid", null)
-                return@setMethodCallHandler
-            }
-            
-            when (call.method) {
-                "startAlarmService" -> {
-                    try {
-                        val soundUri = call.argument<String>("soundUri")
-                        val habitName = call.argument<String>("habitName") ?: "Habit"
-                        
-                        android.util.Log.i("MainActivity", "Starting AlarmService with sound: $soundUri")
-                        AlarmService.startAlarmService(this, soundUri, habitName)
-                        result.success(null)
-                    } catch (e: Exception) {
-                        result.error("ALARM_SERVICE_ERROR", "Failed to start alarm service: ${e.message}", null)
-                    }
-                }
-                "stopAlarmService" -> {
-                    try {
-                        android.util.Log.i("MainActivity", "Stopping AlarmService")
-                        AlarmService.stopAlarmService(this)
-                        result.success(null)
-                    } catch (e: Exception) {
-                        result.error("ALARM_SERVICE_ERROR", "Failed to stop alarm service: ${e.message}", null)
-                    }
-                }
-                else -> result.notImplemented()
-            }
-        }
     }
 
     private fun listRingtones(): List<Map<String, String>> {
