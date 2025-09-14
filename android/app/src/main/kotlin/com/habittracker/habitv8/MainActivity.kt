@@ -45,13 +45,15 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun onRestart() {
-        // Avoid framework requery path that can throw StaleDataException
+        // Clean up any stale state before restart
         stopPreview()
         try {
-            android.util.Log.d("MainActivity", "Skipping super.onRestart to avoid cursor requery crash")
-            return
-        } catch (_: Exception) {
-            return
+            super.onRestart()
+        } catch (e: android.database.StaleDataException) {
+            // Catch framework requery crash and continue
+            android.util.Log.w("MainActivity", "StaleDataException during onRestart; continuing", e)
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error during onRestart: ${e.message}", e)
         }
     }
 
