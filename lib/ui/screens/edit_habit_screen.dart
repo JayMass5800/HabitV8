@@ -1148,6 +1148,42 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     }
   }
 
+  String _getSoundTypeDisplay(String soundType) {
+    switch (soundType) {
+      case 'system_alarm':
+        return 'System Alarm';
+      case 'system_ringtone':
+        return 'System Ringtone';
+      case 'system_notification':
+        return 'System Notification';
+      case 'custom':
+        return 'Custom Sound';
+      case 'system':
+        return 'System Sound';
+      default:
+        return soundType.startsWith('system_')
+            ? 'System Sound'
+            : 'Custom Sound';
+    }
+  }
+
+  Color _getSoundTypeColor(String soundType) {
+    switch (soundType) {
+      case 'system_alarm':
+        return Colors.red;
+      case 'system_ringtone':
+        return Colors.blue;
+      case 'system_notification':
+        return Colors.orange;
+      case 'custom':
+        return Colors.green;
+      case 'system':
+        return Colors.blue;
+      default:
+        return soundType.startsWith('system_') ? Colors.blue : Colors.green;
+    }
+  }
+
   Future<void> _selectAlarmSound() async {
     final availableSounds = await AlarmManagerService.getAvailableAlarmSounds();
 
@@ -1159,22 +1195,41 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Select Alarm Sound'),
+          title: Row(
+            children: [
+              Icon(Icons.music_note, color: _selectedColor),
+              const SizedBox(width: 8),
+              const Text('Select Alarm Sound'),
+            ],
+          ),
           content: SizedBox(
             width: double.maxFinite,
-            height: 400,
+            height: 500,
             child: Column(
               children: [
-                Text(
-                  'Tap the play button to preview sounds',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey.shade400
-                        : Colors.grey.shade600,
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _selectedColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _selectedColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: _selectedColor, size: 20),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Tap the play button to preview sounds. System alarms are recommended for best reliability.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Expanded(
                   child: ListView.builder(
                     shrinkWrap: true,
@@ -1188,69 +1243,96 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                       final isPlaying = currentlyPlaying == soundUri;
 
                       return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 2),
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        elevation: isSelected ? 3 : 1,
+                        color: isSelected
+                            ? _selectedColor.withValues(alpha: 0.1)
+                            : null,
                         child: ListTile(
-                          leading: IconButton(
-                            icon: Icon(
-                              isPlaying ? Icons.stop : Icons.play_arrow,
-                              color: isPlaying ? Colors.red : Colors.blue,
+                          leading: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isPlaying
+                                  ? Colors.red.withValues(alpha: 0.1)
+                                  : Colors.blue.withValues(alpha: 0.1),
                             ),
-                            onPressed: () async {
-                              if (isPlaying) {
-                                await AlarmManagerService
-                                    .stopAlarmSoundPreview();
-                                setDialogState(() {
-                                  currentlyPlaying = null;
-                                });
-                              } else {
-                                await AlarmManagerService
-                                    .stopAlarmSoundPreview();
-                                await AlarmManagerService.playAlarmSoundPreview(
-                                  soundUri,
-                                );
-                                setDialogState(() {
-                                  currentlyPlaying = soundUri;
-                                });
+                            child: IconButton(
+                              icon: Icon(
+                                isPlaying ? Icons.stop : Icons.play_arrow,
+                                color: isPlaying ? Colors.red : Colors.blue,
+                              ),
+                              onPressed: () async {
+                                if (isPlaying) {
+                                  await AlarmManagerService
+                                      .stopAlarmSoundPreview();
+                                  setDialogState(() {
+                                    currentlyPlaying = null;
+                                  });
+                                } else {
+                                  await AlarmManagerService
+                                      .stopAlarmSoundPreview();
+                                  await AlarmManagerService
+                                      .playAlarmSoundPreview(
+                                    soundUri,
+                                  );
+                                  setDialogState(() {
+                                    currentlyPlaying = soundUri;
+                                  });
 
-                                // Auto-stop after 3 seconds
-                                Future.delayed(
-                                  const Duration(seconds: 3),
-                                  () async {
-                                    await AlarmManagerService
-                                        .stopAlarmSoundPreview();
-                                    if (mounted) {
-                                      setDialogState(() {
-                                        currentlyPlaying = null;
-                                      });
-                                    }
-                                  },
-                                );
-                              }
-                            },
+                                  // Auto-stop after 4 seconds
+                                  Future.delayed(
+                                    const Duration(seconds: 4),
+                                    () async {
+                                      await AlarmManagerService
+                                          .stopAlarmSoundPreview();
+                                      if (mounted) {
+                                        setDialogState(() {
+                                          currentlyPlaying = null;
+                                        });
+                                      }
+                                    },
+                                  );
+                                }
+                              },
+                            ),
                           ),
                           title: Text(soundName),
                           subtitle: Text(
-                            soundType == 'system'
-                                ? 'System Sound'
-                                : 'Custom Sound',
+                            _getSoundTypeDisplay(soundType),
                             style: TextStyle(
                               fontSize: 12,
-                              color: soundType == 'system'
-                                  ? Colors.orange
-                                  : Colors.green,
+                              color: _getSoundTypeColor(soundType),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          trailing: Radio<String>(
-                            value: soundName,
-                            // ignore: deprecated_member_use
-                            groupValue: _selectedAlarmSoundName,
-                            // ignore: deprecated_member_use
-                            onChanged: (value) {
-                              Navigator.of(context).pop({
-                                'name': soundName,
-                                'uri': soundUri,
-                              });
-                            },
+                          trailing: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSelected
+                                  ? _selectedColor
+                                  : Colors.transparent,
+                            ),
+                            child: Radio<String>(
+                              value: soundName,
+                              // ignore: deprecated_member_use
+                              groupValue: _selectedAlarmSoundName,
+                              // ignore: deprecated_member_use
+                              onChanged: (value) {
+                                Navigator.of(context).pop({
+                                  'name': soundName,
+                                  'uri': soundUri,
+                                });
+                              },
+                              fillColor:
+                                  WidgetStateProperty.resolveWith<Color?>(
+                                (Set<WidgetState> states) {
+                                  if (states.contains(WidgetState.selected)) {
+                                    return _selectedColor;
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
                           ),
                           selected: isSelected,
                           onTap: () {

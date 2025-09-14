@@ -76,7 +76,7 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
     if (notificationResponse.actionId == 'stop_alarm') {
       AppLogger.info('⏹️ Stopping alarm notification $notificationId');
 
-      // Stop the platform channel sound first
+      // Stop both the platform channel sound and foreground service
       try {
         const MethodChannel systemSoundChannel =
             MethodChannel('com.habittracker.habitv8/system_sound');
@@ -96,7 +96,7 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
     } else if (notificationResponse.actionId == 'snooze_alarm') {
       AppLogger.info('😴 Snoozing alarm notification $notificationId');
 
-      // Stop the platform channel sound first
+      // Stop the current alarm first
       try {
         const MethodChannel systemSoundChannel =
             MethodChannel('com.habittracker.habitv8/system_sound');
@@ -269,19 +269,23 @@ Future<void> _executeBackgroundAlarm(
       showWhen: true,
       when: DateTime.now().millisecondsSinceEpoch,
       usesChronometer: false,
-      timeoutAfter: 300000, // Auto-dismiss after 5 minutes
+      timeoutAfter: 1800000, // Auto-dismiss after 30 minutes instead of 5
+      visibility: NotificationVisibility.public,
+      ticker: 'Habit Alarm: $habitName',
       actions: [
         AndroidNotificationAction(
           'stop_alarm',
-          'Stop',
+          'STOP ALARM',
           cancelNotification: true,
           showsUserInterface: true,
+          contextual: true,
         ),
         AndroidNotificationAction(
           'snooze_alarm',
-          'Snooze',
+          'SNOOZE 10MIN',
           cancelNotification: true,
-          showsUserInterface: true,
+          showsUserInterface: false,
+          contextual: true,
         ),
       ],
     );
@@ -363,7 +367,7 @@ Future<void> _createSoundSpecificAlarmChannel(
       AppLogger.info(
           '🔔 Creating alarm channel: $channelId for sound: $soundName');
 
-      // Create channel with the specific sound
+      // Create channel with the specific sound and alarm properties
       final alarmChannel = AndroidNotificationChannel(
         channelId,
         'Habit Alarm - $soundName',
@@ -374,6 +378,8 @@ Future<void> _createSoundSpecificAlarmChannel(
         enableVibration: true,
         enableLights: true,
         showBadge: true,
+        // Add alarm-specific audio attributes
+        audioAttributesUsage: AudioAttributesUsage.alarm,
       );
 
       await androidImplementation.createNotificationChannel(alarmChannel);

@@ -13,6 +13,10 @@
     <!-- Audio permissions for alarm playback -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     
+    <!-- High priority alarm permissions -->
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
+    
     <!-- Exact alarm permissions for Android 16+ (automatically granted) -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     
@@ -69,6 +73,14 @@
             android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmService"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="false" />
+        
+        <!-- Custom Alarm Service for continuous alarm playback -->
+        <service
+            android:name=".AlarmService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+            
         <receiver
             android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmBroadcastReceiver"
             android:exported="false" />

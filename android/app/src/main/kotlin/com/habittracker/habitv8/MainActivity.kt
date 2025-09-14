@@ -173,7 +173,13 @@ class MainActivity : FlutterFragmentActivity() {
                     val loop: Boolean? = call.argument("loop")
                     val habitName: String? = call.argument("habitName")
                     try {
-                        playSystemSound(soundUri, volume ?: 0.8, loop ?: true, habitName)
+                        if (loop == true) {
+                            // For looping alarms, use the foreground service
+                            AlarmService.startAlarmService(this, soundUri, habitName)
+                        } else {
+                            // For previews, use the old method
+                            playSystemSound(soundUri, volume ?: 0.8, loop ?: false, habitName)
+                        }
                         result.success(null)
                     } catch (e: Exception) {
                         result.error("PLAY_ERROR", "Failed to play system sound: ${e.message}", null)
@@ -181,6 +187,8 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "stopSystemSound" -> {
                     try {
+                        // Stop both the foreground service and any direct ringtone
+                        AlarmService.stopAlarmService(this)
                         stopSystemSound()
                         result.success(null)
                     } catch (e: Exception) {
@@ -325,6 +333,9 @@ class MainActivity : FlutterFragmentActivity() {
                 android.util.Log.i("MainActivity", "✅ Audio attributes set for API ${Build.VERSION.SDK_INT}")
             }
             
+            // Set initial volume to 30% for gradual increase
+            alarmRingtone?.volume = 0.3f
+            
             android.util.Log.i("MainActivity", "Starting playback...")
             alarmRingtone?.play()
             
@@ -336,12 +347,45 @@ class MainActivity : FlutterFragmentActivity() {
                 android.util.Log.e("MainActivity", "❌ WARNING: Ringtone is not playing after play() call")
             }
             
+            // Gradually increase volume over 10 seconds
+            if (isPlaying) {
+                startVolumeGradualIncrease()
+            }
+            
             android.util.Log.i("MainActivity", "🔊 System sound playback initiated for: ${habitName ?: "Unknown"}")
 
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "❌ CRITICAL ERROR playing system sound: ${e.message}", e)
             throw e
         }
+    }
+    
+    private fun startVolumeGradualIncrease() {
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        var currentVolumeStep = 3 // Start at 30%
+        val maxVolumeStep = 10 // Max 100%
+        val stepDuration = 1000L // 1 second per step
+        
+        val volumeIncreaseRunnable = object : Runnable {
+            override fun run() {
+                try {
+                    if (alarmRingtone?.isPlaying == true && currentVolumeStep <= maxVolumeStep) {
+                        val volume = currentVolumeStep / 10.0f
+                        alarmRingtone?.volume = volume
+                        android.util.Log.d("MainActivity", "📈 Volume increased to: ${(volume * 100).toInt()}%")
+                        
+                        currentVolumeStep++
+                        if (currentVolumeStep <= maxVolumeStep) {
+                            handler.postDelayed(this, stepDuration)
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "Error in volume increase: ${e.message}")
+                }
+            }
+        }
+        
+        handler.postDelayed(volumeIncreaseRunnable, stepDuration)
     }
 
     private fun stopSystemSound() {
@@ -382,7 +426,7 @@ class MainActivity : FlutterFragmentActivity() {
                         mapOf(
                             "name" to title,
                             "uri" to uri.toString(),
-                            "type" to label.lowercase()
+                            "type" to "system_$label" // Properly categorize as system sound
                         )
                     )
                 }
@@ -397,10 +441,10 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
 
-        // Query all alarm, ringtone, and notification sounds
-        queryRingtones(RingtoneManager.TYPE_ALARM, "Alarm")
-        queryRingtones(RingtoneManager.TYPE_RINGTONE, "Ringtone")
-        queryRingtones(RingtoneManager.TYPE_NOTIFICATION, "Notification")
+        // Query all alarm, ringtone, and notification sounds with proper labeling
+        queryRingtones(RingtoneManager.TYPE_ALARM, "alarm")
+        queryRingtones(RingtoneManager.TYPE_RINGTONE, "ringtone")
+        queryRingtones(RingtoneManager.TYPE_NOTIFICATION, "notification")
 
         return out
     }
