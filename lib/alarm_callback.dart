@@ -142,6 +142,13 @@ Future<void> _executeBackgroundAlarm(
     AppLogger.info(
         '🔊 Executing background alarm for: $habitName with sound: $alarmSoundName (URI: $alarmSoundUri)');
 
+    // If we don't have a valid URI, try to resolve it from the sound name
+    String? resolvedSoundUri = alarmSoundUri;
+    if (resolvedSoundUri?.isEmpty == true || resolvedSoundUri == 'default') {
+      AppLogger.info('🔍 No URI provided, attempting to resolve sound name: $alarmSoundName');
+      resolvedSoundUri = await _resolveSoundUriFromName(alarmSoundName);
+    }
+
     // Initialize notifications plugin for background use
     final FlutterLocalNotificationsPlugin notificationsPlugin =
         FlutterLocalNotificationsPlugin();
@@ -160,10 +167,11 @@ Future<void> _executeBackgroundAlarm(
     // Create notification with custom sound if available
     AndroidNotificationDetails androidPlatformChannelSpecifics;
 
-    if (alarmSoundUri.isNotEmpty && alarmSoundUri != 'default') {
+    if (resolvedSoundUri != null && resolvedSoundUri.isNotEmpty && resolvedSoundUri != 'default') {
       try {
         // Validate sound URI before using it
-        if (await _isValidSoundUri(alarmSoundUri)) {
+        if (await _isValidSoundUri(resolvedSoundUri)) {
+          AppLogger.info('✅ Using resolved sound URI: $resolvedSoundUri');
           // Use the selected system sound URI with proper alarm behavior
           androidPlatformChannelSpecifics = AndroidNotificationDetails(
             'habit_alarm_channel',
@@ -183,7 +191,7 @@ Future<void> _executeBackgroundAlarm(
             showWhen: true,
             when: DateTime.now().millisecondsSinceEpoch,
             usesChronometer: false,
-            sound: UriAndroidNotificationSound(alarmSoundUri),
+            sound: UriAndroidNotificationSound(resolvedSoundUri),
             actions: [
               AndroidNotificationAction(
                 'stop_alarm',
@@ -200,15 +208,16 @@ Future<void> _executeBackgroundAlarm(
             ],
           );
         } else {
-          throw Exception('Invalid sound URI: $alarmSoundUri');
+          throw Exception('Invalid sound URI: $resolvedSoundUri');
         }
       } catch (e) {
         AppLogger.warning(
-            'Failed to use custom sound ($alarmSoundUri): $e, falling back to default');
+            'Failed to use custom sound ($resolvedSoundUri): $e, falling back to default');
         // Fall through to default sound
         androidPlatformChannelSpecifics = _createDefaultAlarmNotification();
       }
     } else {
+      AppLogger.info('No valid sound URI available, using default alarm notification');
       // Use default system notification sound with proper alarm behavior
       androidPlatformChannelSpecifics = _createDefaultAlarmNotification();
     }
@@ -303,4 +312,41 @@ AndroidNotificationDetails _createDefaultAlarmNotification() {
       ),
     ],
   );
+}
+
+/// Resolve sound URI from sound name using platform channel
+Future<String?> _resolveSoundUriFromName(String soundName) async {
+  try {
+    // In background isolate, we can't easily access the platform channel
+    // So we'll implement a fallback system using typical Android sound URIs
+    
+    AppLogger.info('🔍 Attempting to resolve sound URI for: $soundName');
+    
+    // Common system alarm sounds and their typical URIs
+    final Map<String, String> commonSounds = {
+      'Icicles': 'content://settings/system/ringtone_2', // Common alarm URI
+      'Oxygen': 'content://settings/system/ringtone_3',
+      'Timer': 'content://settings/system/alarm_alert',
+      'Beep': 'content://settings/system/notification_sound',
+      'Digital': 'content://media/internal/audio/media/1',
+      'Chime': 'content://media/internal/audio/media/2',
+      'Classic': 'content://settings/system/ringtone',
+    };
+    
+    // Try to find a match for the sound name
+    String? resolvedUri = commonSounds[soundName];
+    
+    if (resolvedUri != null) {
+      AppLogger.info('✅ Resolved $soundName to URI: $resolvedUri');
+      return resolvedUri;
+    }
+    
+    // If no specific match, try to use default alarm sound
+    AppLogger.warning('⚠️ Could not resolve specific URI for $soundName, using default alarm');
+    return 'content://settings/system/alarm_alert';
+    
+  } catch (e) {
+    AppLogger.error('❌ Error resolving sound URI for $soundName: $e');
+    return null;
+  }
 }

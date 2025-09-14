@@ -83,6 +83,14 @@ class AlarmManagerService {
       AppLogger.debug('Could not check for duplicate alarm: $e');
     }
 
+    // Debug logging for alarm data
+    AppLogger.debug('Preparing alarm data:');
+    AppLogger.debug('  - Habit ID: $habitId');
+    AppLogger.debug('  - Habit Name: $habitName');
+    AppLogger.debug('  - Sound Name: ${alarmSoundName ?? "default"}');
+    AppLogger.debug('  - Sound URI: ${alarmSoundUri ?? "NULL/EMPTY"}');
+    AppLogger.debug('  - Frequency: $frequency');
+
     // Store alarm data for the callback (both SharedPreferences and file for cross-isolate access)
     final alarmData = {
       'habitId': habitId,
@@ -527,9 +535,19 @@ class AlarmManagerService {
           await _systemSoundChannel.invokeMethod('getSystemRingtones');
       final List<dynamic> ringtonesData = result ?? [];
 
-      return ringtonesData
+      AppLogger.debug('Platform channel returned ${ringtonesData.length} ringtones');
+      
+      final mappedData = ringtonesData
           .map((item) => Map<String, String>.from(item))
           .toList();
+          
+      // Debug logging for first few sounds
+      for (int i = 0; i < mappedData.length && i < 3; i++) {
+        final sound = mappedData[i];
+        AppLogger.debug('Platform sound $i: ${sound['name']} -> ${sound['uri']} (${sound['type']})');
+      }
+
+      return mappedData;
     } catch (e) {
       AppLogger.error('Failed to get system ringtones', e);
       return [];

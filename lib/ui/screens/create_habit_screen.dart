@@ -1492,6 +1492,14 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
   Future<void> _selectAlarmSound() async {
     final availableSounds = await AlarmManagerService.getAvailableAlarmSounds();
+    
+    // Debug logging for available sounds
+    AppLogger.debug('Available sounds from platform channel:');
+    for (int i = 0; i < availableSounds.length && i < 5; i++) {
+      final sound = availableSounds[i];
+      AppLogger.debug('  Sound $i: ${sound['name']} -> URI: ${sound['uri']} (Type: ${sound['type']})');
+    }
+    AppLogger.debug('Total sounds available: ${availableSounds.length}');
 
     if (!mounted) return;
 
@@ -1633,6 +1641,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         _selectedAlarmSoundName = selected['name'];
         _selectedAlarmSoundUri = selected['uri'];
       });
+      
+      // Debug logging for sound selection
+      AppLogger.debug('Sound selected:');
+      AppLogger.debug('  - Name: ${selected['name']}');
+      AppLogger.debug('  - URI: ${selected['uri']}');
+      AppLogger.debug('  - Type: ${selected['type']}');
     }
   }
 
@@ -1815,6 +1829,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         alarmSoundName: _selectedAlarmSoundName,
         alarmSoundUri: _selectedAlarmSoundUri,
       );
+
+      // Debug logging for sound settings
+      AppLogger.debug('Creating habit with sound settings:');
+      AppLogger.debug('  - Sound Name: $_selectedAlarmSoundName');
+      AppLogger.debug('  - Sound URI: $_selectedAlarmSoundUri');
+      AppLogger.debug('  - Alarm Enabled: $_alarmEnabled');
 
       // Get HabitService instead of direct database access
       final habitServiceAsync = ref.read(habitServiceProvider);
