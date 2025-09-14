@@ -52,8 +52,9 @@ final habitServiceProvider = FutureProvider<HabitService>((ref) async {
     // If it's a stale data error, invalidate the database provider to force refresh
     if (e.toString().contains('StaleDataException') ||
         e.toString().contains('Box has already been closed') ||
-        e.toString().contains('cursor after it has been closed')) {
-      AppLogger.info('Invalidating database provider due to stale data...');
+        e.toString().contains('cursor after it has been closed') ||
+        e.toString().contains('Database box is closed')) {
+      AppLogger.info('Invalidating database provider due to database error...');
       ref.invalidate(databaseProvider);
 
       // Wait a bit and try again
@@ -165,8 +166,9 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
     } catch (e) {
       // Handle specific case where box has been closed (during database reset)
       if (e.toString().contains('Box has already been closed') ||
-          e.toString().contains('HiveError')) {
-        AppLogger.debug('Database was reset, stopping periodic refresh: $e');
+          e.toString().contains('HiveError') ||
+          e.toString().contains('Database box is closed')) {
+        AppLogger.debug('Database is closed/reset, stopping periodic refresh: $e');
         _refreshTimer?.cancel(); // Stop the timer since database is being reset
         return;
       }
@@ -455,7 +457,20 @@ class HabitService {
       // Check if the box is accessible before trying to use it
       if (!_habitBox.isOpen) {
         AppLogger.error('HabitBox is closed when trying to getAllHabits');
-        throw StateError('Database box is closed');
+        
+        // Try to reinitialize the database if it's closed
+        try {
+          AppLogger.info('Attempting to reinitialize closed database...');
+          await DatabaseService.getInstance();
+          // Note: We can't change the _habitBox reference here since it's final
+          // Instead, we'll return empty list and let the provider handle recreation
+          AppLogger.info('Database reinitialized, but this service instance needs recreation');
+          return [];
+        } catch (reinitError) {
+          AppLogger.error('Failed to reinitialize database: $reinitError');
+          // Return empty list if we can't reinitialize
+          return [];
+        }
       }
 
       // Fetch fresh data using safe iteration and cache it
@@ -484,11 +499,19 @@ class HabitService {
     } catch (e) {
       AppLogger.error('Error in getAllHabits: $e');
 
-      // If it's a database-related error, clear cache and rethrow
+      // If it's a database-related error, clear cache and handle gracefully
       if (e.toString().contains('StaleDataException') ||
           e.toString().contains('cursor after it has been closed') ||
-          e.toString().contains('Box has already been closed')) {
+          e.toString().contains('Box has already been closed') ||
+          e.toString().contains('Database box is closed')) {
         _invalidateCache();
+        
+        // Return empty list instead of throwing for closed database
+        if (e.toString().contains('Box has already been closed') ||
+            e.toString().contains('Database box is closed')) {
+          AppLogger.info('Returning empty list due to closed database');
+          return [];
+        }
       }
 
       rethrow;

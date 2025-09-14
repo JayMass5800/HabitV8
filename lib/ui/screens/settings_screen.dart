@@ -1190,11 +1190,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
 
       // Small delay to allow providers to clean up properly
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 300));
 
       // Reset the database (this will delete all habits)
       await DatabaseService.resetDatabase();
       AppLogger.info('Database reset completed');
+
+      // Wait a bit longer to ensure database cleanup is complete
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // Force database reinitialization by invalidating providers AGAIN
+      if (mounted) {
+        ref.invalidate(habitServiceProvider);
+        ref.invalidate(databaseProvider);
+        AppLogger.info('Providers re-invalidated after database reset');
+      }
 
       // Mark reset as complete
       HabitsNotifier.markDatabaseResetComplete();
