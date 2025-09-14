@@ -1492,12 +1492,13 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
   Future<void> _selectAlarmSound() async {
     final availableSounds = await AlarmManagerService.getAvailableAlarmSounds();
-    
+
     // Debug logging for available sounds
     AppLogger.debug('Available sounds from platform channel:');
     for (int i = 0; i < availableSounds.length && i < 5; i++) {
       final sound = availableSounds[i];
-      AppLogger.debug('  Sound $i: ${sound['name']} -> URI: ${sound['uri']} (Type: ${sound['type']})');
+      AppLogger.debug(
+          '  Sound $i: ${sound['name']} -> URI: ${sound['uri']} (Type: ${sound['type']})');
     }
     AppLogger.debug('Total sounds available: ${availableSounds.length}');
 
@@ -1641,7 +1642,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         _selectedAlarmSoundName = selected['name'];
         _selectedAlarmSoundUri = selected['uri'];
       });
-      
+
       // Debug logging for sound selection
       AppLogger.debug('Sound selected:');
       AppLogger.debug('  - Name: ${selected['name']}');

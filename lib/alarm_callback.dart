@@ -145,7 +145,8 @@ Future<void> _executeBackgroundAlarm(
     // If we don't have a valid URI, try to resolve it from the sound name
     String? resolvedSoundUri = alarmSoundUri;
     if (resolvedSoundUri?.isEmpty == true || resolvedSoundUri == 'default') {
-      AppLogger.info('🔍 No URI provided, attempting to resolve sound name: $alarmSoundName');
+      AppLogger.info(
+          '🔍 No URI provided, attempting to resolve sound name: $alarmSoundName');
       resolvedSoundUri = await _resolveSoundUriFromName(alarmSoundName);
     }
 
@@ -167,7 +168,9 @@ Future<void> _executeBackgroundAlarm(
     // Create notification with custom sound if available
     AndroidNotificationDetails androidPlatformChannelSpecifics;
 
-    if (resolvedSoundUri != null && resolvedSoundUri.isNotEmpty && resolvedSoundUri != 'default') {
+    if (resolvedSoundUri != null &&
+        resolvedSoundUri.isNotEmpty &&
+        resolvedSoundUri != 'default') {
       try {
         // Validate sound URI before using it
         if (await _isValidSoundUri(resolvedSoundUri)) {
@@ -217,7 +220,8 @@ Future<void> _executeBackgroundAlarm(
         androidPlatformChannelSpecifics = _createDefaultAlarmNotification();
       }
     } else {
-      AppLogger.info('No valid sound URI available, using default alarm notification');
+      AppLogger.info(
+          'No valid sound URI available, using default alarm notification');
       // Use default system notification sound with proper alarm behavior
       androidPlatformChannelSpecifics = _createDefaultAlarmNotification();
     }
@@ -319,9 +323,9 @@ Future<String?> _resolveSoundUriFromName(String soundName) async {
   try {
     // In background isolate, we can't easily access the platform channel
     // So we'll implement a fallback system using typical Android sound URIs
-    
+
     AppLogger.info('🔍 Attempting to resolve sound URI for: $soundName');
-    
+
     // Common system alarm sounds and their typical URIs
     final Map<String, String> commonSounds = {
       'Icicles': 'content://settings/system/ringtone_2', // Common alarm URI
@@ -332,19 +336,19 @@ Future<String?> _resolveSoundUriFromName(String soundName) async {
       'Chime': 'content://media/internal/audio/media/2',
       'Classic': 'content://settings/system/ringtone',
     };
-    
+
     // Try to find a match for the sound name
     String? resolvedUri = commonSounds[soundName];
-    
+
     if (resolvedUri != null) {
       AppLogger.info('✅ Resolved $soundName to URI: $resolvedUri');
       return resolvedUri;
     }
-    
+
     // If no specific match, try to use default alarm sound
-    AppLogger.warning('⚠️ Could not resolve specific URI for $soundName, using default alarm');
+    AppLogger.warning(
+        '⚠️ Could not resolve specific URI for $soundName, using default alarm');
     return 'content://settings/system/alarm_alert';
-    
   } catch (e) {
     AppLogger.error('❌ Error resolving sound URI for $soundName: $e');
     return null;

@@ -535,16 +535,17 @@ class AlarmManagerService {
           await _systemSoundChannel.invokeMethod('getSystemRingtones');
       final List<dynamic> ringtonesData = result ?? [];
 
-      AppLogger.debug('Platform channel returned ${ringtonesData.length} ringtones');
-      
-      final mappedData = ringtonesData
-          .map((item) => Map<String, String>.from(item))
-          .toList();
-          
+      AppLogger.debug(
+          'Platform channel returned ${ringtonesData.length} ringtones');
+
+      final mappedData =
+          ringtonesData.map((item) => Map<String, String>.from(item)).toList();
+
       // Debug logging for first few sounds
       for (int i = 0; i < mappedData.length && i < 3; i++) {
         final sound = mappedData[i];
-        AppLogger.debug('Platform sound $i: ${sound['name']} -> ${sound['uri']} (${sound['type']})');
+        AppLogger.debug(
+            'Platform sound $i: ${sound['name']} -> ${sound['uri']} (${sound['type']})');
       }
 
       return mappedData;
