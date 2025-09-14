@@ -73,6 +73,16 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
         InitializationSettings(android: initializationSettingsAndroid);
     await notificationsPlugin.initialize(initializationSettings);
 
+    // Handle main notification tap (no actionId) - DON'T stop alarm automatically
+    if (notificationResponse.actionId == null ||
+        notificationResponse.actionId!.isEmpty) {
+      AppLogger.info(
+          '📱 Main notification tapped - opening app but keeping alarm active');
+      // Just open the app, don't stop the alarm
+      // The alarm should only stop when user explicitly presses "STOP ALARM" button
+      return;
+    }
+
     if (notificationResponse.actionId == 'stop_alarm') {
       AppLogger.info('⏹️ Stopping alarm notification $notificationId');
 
@@ -184,6 +194,8 @@ Future<void> _executeBackgroundAlarm(
     await notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveBackgroundNotificationResponse: _handleAlarmAction,
+      onDidReceiveNotificationResponse:
+          _handleAlarmAction, // Handle main notification taps too
     );
 
     // Create or get sound-specific notification channel
@@ -257,7 +269,7 @@ Future<void> _executeBackgroundAlarm(
       channelDescription: 'High-priority alarm notifications for habits',
       importance: Importance.max,
       priority: Priority.high,
-      fullScreenIntent: true,
+      fullScreenIntent: false, // FIXED: Don't auto-open app - let user control
       category: AndroidNotificationCategory.alarm,
       playSound: true, // ENABLED - notification sound works in background
       enableVibration: true,
@@ -290,13 +302,15 @@ Future<void> _executeBackgroundAlarm(
         AndroidNotificationAction(
           'stop_alarm',
           'STOP ALARM',
-          cancelNotification: true,
+          cancelNotification:
+              false, // FIXED: Don't auto-cancel, let our handler manage it
           showsUserInterface: true,
         ),
         AndroidNotificationAction(
           'snooze_alarm',
           'SNOOZE 10MIN',
-          cancelNotification: true,
+          cancelNotification:
+              false, // FIXED: Don't auto-cancel, let our handler manage it
           showsUserInterface: false,
         ),
       ],
