@@ -215,7 +215,7 @@ Future<void> _executeBackgroundAlarm(
     }
 
     // Try to play looping sound via platform channel (only works when app is active)
-    // Note: This will fail in background isolates, so we rely on notification sound
+    // Note: This will fail in background isolates, so we use AlarmService as fallback
     try {
       const MethodChannel systemSoundChannel =
           MethodChannel('com.habittracker.habitv8/system_sound');
@@ -230,9 +230,23 @@ Future<void> _executeBackgroundAlarm(
       });
       AppLogger.info('✅ Platform channel alarm sound started (looping)');
     } catch (e) {
-      AppLogger.warning(
-          '⚠️ Platform channel sound failed (expected in background), using notification sound: $e');
-      // This is expected in background isolates - notification sound will handle it
+      AppLogger.info(
+          'ℹ️ Platform channel unavailable in background (expected), starting AlarmService with custom sound');
+
+      // CRITICAL FIX: Start AlarmService with the user's selected sound when platform channel fails
+      try {
+        const MethodChannel alarmServiceChannel =
+            MethodChannel('com.habittracker.habitv8/alarm_service');
+        await alarmServiceChannel.invokeMethod('startAlarmService', {
+          'soundUri': soundUriToUse,
+          'habitName': habitName,
+        });
+        AppLogger.info(
+            '✅ AlarmService started with custom sound: $soundUriToUse');
+      } catch (serviceError) {
+        AppLogger.warning('⚠️ AlarmService fallback failed: $serviceError');
+        // Continue with notification sound as final fallback
+      }
     }
 
     // Create notification details using the sound-specific channel

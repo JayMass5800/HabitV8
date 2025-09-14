@@ -17,6 +17,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     private val RINGTONE_CHANNEL = "com.habittracker.habitv8/ringtones"
     private val SYSTEM_SOUND_CHANNEL = "com.habittracker.habitv8/system_sound"
+    private val ALARM_SERVICE_CHANNEL = "com.habittracker.habitv8/alarm_service"
     private val RINGTONE_PICKER_REQUEST_CODE = 1
 
     private var previewRingtone: Ringtone? = null
@@ -205,6 +206,40 @@ class MainActivity : FlutterFragmentActivity() {
                 else -> result.notImplemented()
             }
         }
+        
+        // Alarm service channel for background alarm service control
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ALARM_SERVICE_CHANNEL).setMethodCallHandler { call, result ->
+            // Check if activity is still valid before processing method calls
+            if (isFinishing || isDestroyed) {
+                result.error("ACTIVITY_INVALID", "Activity is no longer valid", null)
+                return@setMethodCallHandler
+            }
+            
+            when (call.method) {
+                "startAlarmService" -> {
+                    try {
+                        val soundUri = call.argument<String>("soundUri")
+                        val habitName = call.argument<String>("habitName") ?: "Habit"
+                        
+                        android.util.Log.i("MainActivity", "Starting AlarmService with sound: $soundUri")
+                        AlarmService.startAlarmService(this, soundUri, habitName)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("ALARM_SERVICE_ERROR", "Failed to start alarm service: ${e.message}", null)
+                    }
+                }
+                "stopAlarmService" -> {
+                    try {
+                        android.util.Log.i("MainActivity", "Stopping AlarmService")
+                        AlarmService.stopAlarmService(this)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("ALARM_SERVICE_ERROR", "Failed to stop alarm service: ${e.message}", null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 
     private fun listRingtones(): List<Map<String, String>> {
@@ -216,38 +251,58 @@ class MainActivity : FlutterFragmentActivity() {
                 return
             }
             
+            var manager: RingtoneManager? = null
             var cursor: Cursor? = null
+            
             try {
-                val manager = RingtoneManager(applicationContext)
+                manager = RingtoneManager(applicationContext)
                 manager.setType(type)
                 cursor = manager.cursor
                 
-                // Check if cursor is valid
-                if (cursor == null || cursor.isClosed) {
+                // Enhanced cursor validation
+                if (cursor?.isClosed != false) {
+                    android.util.Log.w("MainActivity", "Cursor unavailable for $label sounds")
                     return
                 }
                 
-                while (cursor.moveToNext()) {
-                    val title = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX) ?: label
-                    val uri: Uri = manager.getRingtoneUri(cursor.position)
-                    out.add(
-                        mapOf(
-                            "name" to title,
-                            "uri" to uri.toString(),
-                            "type" to "system"
-                        )
-                    )
+                while (cursor.moveToNext() && !isFinishing && !isDestroyed) {
+                    try {
+                        val title = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX) ?: label
+                        val uri: Uri = manager.getRingtoneUri(cursor.position)
+                        
+                        if (uri != null) {
+                            out.add(
+                                mapOf(
+                                    "name" to title,
+                                    "uri" to uri.toString(),
+                                    "type" to "system"
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("MainActivity", "Error processing ringtone item: ${e.message}")
+                        continue
+                    }
                 }
             } catch (e: Exception) {
                 // Log error but don't crash the app
                 android.util.Log.e("MainActivity", "Error querying ringtones: ${e.message}")
             } finally {
-                // Safely close cursor
+                // Enhanced cleanup with logging
                 try {
-                    cursor?.close()
+                    cursor?.let { c ->
+                        if (!c.isClosed) {
+                            c.close()
+                            android.util.Log.d("MainActivity", "Cursor closed for $label sounds")
+                        }
+                    }
                 } catch (e: Exception) {
                     android.util.Log.e("MainActivity", "Error closing cursor: ${e.message}")
                 }
+                
+                // Clear references
+                cursor = null
+                manager = null
             }
         }
 
@@ -411,33 +466,67 @@ class MainActivity : FlutterFragmentActivity() {
         fun queryRingtones(type: Int, label: String) {
             if (isFinishing || isDestroyed) return
             
+            var manager: RingtoneManager? = null
             var cursor: Cursor? = null
+            
             try {
-                val manager = RingtoneManager(applicationContext)
+                manager = RingtoneManager(applicationContext)
                 manager.setType(type)
                 cursor = manager.cursor
                 
-                if (cursor == null || cursor.isClosed) return
+                // Additional safety checks
+                if (cursor?.isClosed != false) {
+                    android.util.Log.w("MainActivity", "Cursor is null or closed for $label ringtones")
+                    return
+                }
                 
-                while (cursor.moveToNext()) {
-                    val title = cursor.getString(RingtoneManager.TITLE_COLUMN_INDEX) ?: "$label Sound"
-                    val uri: Uri = manager.getRingtoneUri(cursor.position)
-                    out.add(
-                        mapOf(
-                            "name" to title,
-                            "uri" to uri.toString(),
-                            "type" to "system_$label" // Properly categorize as system sound
-                        )
-                    )
+                // Use indexOfOrThrow to ensure we have valid column indices
+                val titleColumnIndex = try {
+                    cursor.getColumnIndexOrThrow(RingtoneManager.TITLE_COLUMN_INDEX.toString())
+                } catch (e: Exception) {
+                    android.util.Log.w("MainActivity", "Using fallback column index for $label")
+                    RingtoneManager.TITLE_COLUMN_INDEX
+                }
+                
+                while (cursor.moveToNext() && !isFinishing && !isDestroyed) {
+                    try {
+                        val title = cursor.getString(titleColumnIndex) ?: "$label Sound"
+                        val uri: Uri = manager.getRingtoneUri(cursor.position)
+                        
+                        // Validate URI before adding
+                        if (uri != null) {
+                            out.add(
+                                mapOf(
+                                    "name" to title,
+                                    "uri" to uri.toString(),
+                                    "type" to "system_$label"
+                                )
+                            )
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("MainActivity", "Error processing ringtone at position ${cursor.position}: ${e.message}")
+                        // Continue to next item instead of breaking
+                        continue
+                    }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("MainActivity", "Error querying $label ringtones: ${e.message}")
             } finally {
+                // Enhanced cleanup
                 try {
-                    cursor?.close()
+                    cursor?.let { c ->
+                        if (!c.isClosed) {
+                            c.close()
+                            android.util.Log.d("MainActivity", "Cursor closed for $label ringtones")
+                        }
+                    }
                 } catch (e: Exception) {
-                    android.util.Log.e("MainActivity", "Error closing cursor: ${e.message}")
+                    android.util.Log.e("MainActivity", "Error closing cursor for $label: ${e.message}")
                 }
+                
+                // Clear references
+                cursor = null
+                manager = null
             }
         }
 
