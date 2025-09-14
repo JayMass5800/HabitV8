@@ -310,7 +310,7 @@ class DatabaseService {
         // If the box is not accessible, clear it and recreate
         AppLogger.warning(
             'Existing habit box is not accessible, recreating: $e');
-        
+
         // Properly close the existing box to avoid cursor leaks
         try {
           await _habitBox!.close();
@@ -355,7 +355,8 @@ class DatabaseService {
   static Future<void> closeDatabase() async {
     try {
       if (_habitBox != null && _habitBox!.isOpen) {
-        AppLogger.debug('🗄️ Properly closing habit box to prevent cursor leaks...');
+        AppLogger.debug(
+            '🗄️ Properly closing habit box to prevent cursor leaks...');
         await _habitBox!.close();
         AppLogger.debug('✅ Habit box closed successfully');
       }
@@ -470,7 +471,8 @@ class HabitService {
         _cachedHabits = habits;
         _cacheTimestamp = now;
       } catch (e) {
-        AppLogger.warning('Error during safe iteration, falling back to values: $e');
+        AppLogger.warning(
+            'Error during safe iteration, falling back to values: $e');
         // Fallback to original method if safe iteration fails
         final fallbackHabits = _habitBox.values.toList();
         _cachedHabits = fallbackHabits;
@@ -690,7 +692,7 @@ class HabitService {
           return habit;
         }
       }
-      
+
       // Not found
       return null;
     } catch (e) {
