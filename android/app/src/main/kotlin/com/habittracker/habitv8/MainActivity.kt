@@ -80,10 +80,18 @@ class MainActivity : FlutterFragmentActivity() {
         try {
             android.util.Log.d("MainActivity", "onNewIntent called with action: ${intent.action}")
 
-            // Special-case notification launch to avoid triggering restart requery
+            // Special-case notification launch: restart Activity to avoid framework restart/requery
             if ("SELECT_NOTIFICATION" == intent.action) {
                 setIntent(intent)
-                android.util.Log.d("MainActivity", "Handled SELECT_NOTIFICATION without calling super.onNewIntent")
+                android.util.Log.d("MainActivity", "Restarting activity to avoid managed cursor requery on SELECT_NOTIFICATION")
+                val restart = Intent(this, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    action = Intent.ACTION_MAIN
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                    putExtras(intent)
+                }
+                finish()
+                startActivity(restart)
                 return
             }
 
@@ -197,7 +205,7 @@ class MainActivity : FlutterFragmentActivity() {
             
             var cursor: Cursor? = null
             try {
-                val manager = RingtoneManager(this)
+                val manager = RingtoneManager(applicationContext)
                 manager.setType(type)
                 cursor = manager.cursor
                 
@@ -242,7 +250,7 @@ class MainActivity : FlutterFragmentActivity() {
         try {
             stopPreview()
             val uri = Uri.parse(uriStr)
-            previewRingtone = RingtoneManager.getRingtone(this, uri)
+            previewRingtone = RingtoneManager.getRingtone(applicationContext, uri)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 previewRingtone?.audioAttributes = AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
@@ -348,7 +356,7 @@ class MainActivity : FlutterFragmentActivity() {
             
             var cursor: Cursor? = null
             try {
-                val manager = RingtoneManager(this)
+                val manager = RingtoneManager(applicationContext)
                 manager.setType(type)
                 cursor = manager.cursor
                 
@@ -390,8 +398,8 @@ class MainActivity : FlutterFragmentActivity() {
         if (requestCode == RINGTONE_PICKER_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             val uri: Uri? = data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
             if (uri != null) {
-                val ringtone = RingtoneManager.getRingtone(this, uri)
-                val name = ringtone.getTitle(this)
+                val ringtone = RingtoneManager.getRingtone(applicationContext, uri)
+                val name = ringtone.getTitle(applicationContext)
                 val resultData = mapOf("uri" to uri.toString(), "name" to name)
                 methodChannelResult?.success(resultData)
             } else {
