@@ -324,7 +324,7 @@ class AlarmManagerService {
       // Play system sound using platform channel
       try {
         await _systemSoundChannel.invokeMethod('playSystemSound', {
-          'soundUri': alarmSoundName,
+          'soundUri': alarmSoundName, // Note: platform expects URI or "default"
           'volume': 0.8,
           'loop': true,
           'habitName': habitName,
@@ -332,8 +332,12 @@ class AlarmManagerService {
         AppLogger.info('✅ Platform channel sound call successful');
       } catch (e) {
         AppLogger.error('❌ Platform channel sound call failed: $e');
-        // Fallback: enable sound in notification
-        await _showAlarmNotificationWithSound(habitName, alarmSoundName);
+        // Fallback: enable sound in notification, prefer per-habit URI if available
+        await _showAlarmNotificationWithSound(
+          habitName,
+          alarmSoundUri: alarmData['alarmSoundUri'],
+          alarmSoundName: alarmData['alarmSoundName'],
+        );
         return;
       }
 
@@ -377,12 +381,32 @@ class AlarmManagerService {
   }
 
   /// Show alarm notification with sound fallback
-  static Future<void> _showAlarmNotificationWithSound(
-      String habitName, String? alarmSoundName) async {
+  /// Prefer per-habit URI; fall back to alarmSoundName; then system default
+  static Future<void> _showAlarmNotificationWithSound(String habitName,
+      {String? alarmSoundUri, String? alarmSoundName}) async {
     try {
       AndroidNotificationDetails androidPlatformChannelSpecifics;
 
-      if (alarmSoundName != null && alarmSoundName != 'default') {
+      final bool hasUri = alarmSoundUri != null &&
+          alarmSoundUri.isNotEmpty &&
+          alarmSoundUri != 'default';
+      final bool hasName =
+          alarmSoundName != null && alarmSoundName != 'default';
+
+      if (hasUri) {
+        androidPlatformChannelSpecifics = AndroidNotificationDetails(
+          'habit_alarms',
+          'Habit Alarms',
+          channelDescription: 'Alarm notifications for habit reminders',
+          importance: Importance.max,
+          priority: Priority.high,
+          fullScreenIntent: true,
+          category: AndroidNotificationCategory.alarm,
+          playSound: true,
+          enableVibration: true,
+          sound: UriAndroidNotificationSound(alarmSoundUri),
+        );
+      } else if (hasName) {
         androidPlatformChannelSpecifics = AndroidNotificationDetails(
           'habit_alarms',
           'Habit Alarms',
