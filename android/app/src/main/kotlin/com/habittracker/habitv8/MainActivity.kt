@@ -126,6 +126,26 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        // Handle notification actions and activity restarts without causing StaleDataException
+        try {
+            android.util.Log.d("MainActivity", "onNewIntent called with action: ${intent.action}")
+            clearManagedCursors()
+            super.onNewIntent(intent)
+            setIntent(intent)
+        } catch (e: android.database.StaleDataException) {
+            android.util.Log.w("MainActivity", "StaleDataException in onNewIntent - handling gracefully", e)
+            // Try to set the intent anyway for Flutter to handle
+            try {
+                setIntent(intent)
+            } catch (_: Exception) {
+                // Ignore any further errors
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error in onNewIntent: ${e.message}", e)
+        }
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
