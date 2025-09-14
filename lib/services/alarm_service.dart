@@ -306,7 +306,7 @@ class AlarmService {
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'habit_alarm_channel',
+      'habit_alarm_default',
       'Habit Alarms',
       channelDescription: 'High-priority alarm notifications for habits',
       importance: Importance.max,
@@ -480,7 +480,7 @@ class AlarmService {
 
       final AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
-        'habit_alarm_channel',
+        'habit_alarm_default',
         'Habit Alarms',
         channelDescription: 'High-priority alarm notifications for habits',
         importance: Importance.max,

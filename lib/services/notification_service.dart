@@ -184,12 +184,12 @@ class NotificationService {
         enableVibration: true,
       );
 
-      // Create alarm notification channel with highest priority
+      // Create default alarm notification channel (fallback for non-background alarms)
       const AndroidNotificationChannel alarmChannel =
           AndroidNotificationChannel(
-        'habit_alarm_channel',
-        'Habit Alarms',
-        description: 'High-priority alarm notifications for habits',
+        'habit_alarm_default',
+        'Habit Alarms (Default)',
+        description: 'Default high-priority alarm notifications for habits',
         importance: Importance.max,
         playSound: true,
         sound: UriAndroidNotificationSound(
@@ -237,7 +237,7 @@ class NotificationService {
         await androidImplementation
             .deleteNotificationChannel('habit_scheduled_channel');
         await androidImplementation
-            .deleteNotificationChannel('habit_alarm_channel');
+            .deleteNotificationChannel('habit_alarm_default');
         AppLogger.info('Existing notification channels deleted');
       } catch (e) {
         AppLogger.warning('Some channels may not have existed: $e');
@@ -2832,7 +2832,7 @@ class NotificationService {
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
-      'habit_alarm_channel',
+      'habit_alarm_default',
       'Habit Alarms',
       channelDescription: 'High-priority alarm notifications for habits',
       importance: Importance.max,

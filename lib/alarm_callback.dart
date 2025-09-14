@@ -165,81 +165,84 @@ Future<void> _executeBackgroundAlarm(
       onDidReceiveBackgroundNotificationResponse: _handleAlarmAction,
     );
 
-    // Create notification with custom sound if available
-    AndroidNotificationDetails androidPlatformChannelSpecifics;
+    // Create or get sound-specific notification channel
+    String channelId;
+    String soundUriToUse = resolvedSoundUri ?? '';
 
     if (resolvedSoundUri != null &&
         resolvedSoundUri.isNotEmpty &&
-        resolvedSoundUri != 'default') {
-      try {
-        // Validate sound URI before using it
-        if (await _isValidSoundUri(resolvedSoundUri)) {
-          AppLogger.info('✅ Using resolved sound URI: $resolvedSoundUri');
-          // Use the selected system sound URI with proper alarm behavior
-          androidPlatformChannelSpecifics = AndroidNotificationDetails(
-            'habit_alarm_channel',
-            'Habit Alarms',
-            channelDescription: 'High-priority alarm notifications for habits',
-            importance: Importance.max,
-            priority: Priority.high,
-            fullScreenIntent: true,
-            category: AndroidNotificationCategory.alarm,
-            playSound: true,
-            enableVibration: true,
-            vibrationPattern: Int64List.fromList([
-              0,
-              1000,
-              500,
-              1000,
-              500,
-              1000,
-              500,
-              1000,
-              500,
-              1000,
-              500,
-              1000,
-              500,
-              1000
-            ]), // Extended vibration pattern (14 seconds total)
-            ongoing: true, // Keep notification visible until user acts
-            autoCancel: false, // Don't auto-dismiss
-            onlyAlertOnce: false, // Allow sound to repeat
-            showWhen: true,
-            when: DateTime.now().millisecondsSinceEpoch,
-            usesChronometer: false,
-            timeoutAfter: 300000, // Auto-dismiss after 5 minutes
-            sound: UriAndroidNotificationSound(resolvedSoundUri),
-            actions: [
-              AndroidNotificationAction(
-                'stop_alarm',
-                'Stop',
-                cancelNotification: true,
-                showsUserInterface: true,
-              ),
-              AndroidNotificationAction(
-                'snooze_alarm',
-                'Snooze',
-                cancelNotification: true,
-                showsUserInterface: true,
-              ),
-            ],
-          );
-        } else {
-          throw Exception('Invalid sound URI: $resolvedSoundUri');
-        }
-      } catch (e) {
-        AppLogger.warning(
-            'Failed to use custom sound ($resolvedSoundUri): $e, falling back to default');
-        // Fall through to default sound
-        androidPlatformChannelSpecifics = _createDefaultAlarmNotification();
-      }
-    } else {
+        resolvedSoundUri != 'default' &&
+        await _isValidSoundUri(resolvedSoundUri)) {
       AppLogger.info(
-          'No valid sound URI available, using default alarm notification');
-      // Use default system notification sound with proper alarm behavior
-      androidPlatformChannelSpecifics = _createDefaultAlarmNotification();
+          '✅ Creating sound-specific channel for URI: $resolvedSoundUri');
+      // Create unique channel ID based on sound name to avoid conflicts
+      final safeSoundName = _makeSafeChannelId(alarmSoundName);
+      channelId = 'habit_alarm_$safeSoundName';
+
+      // Create channel with custom sound
+      await _createSoundSpecificAlarmChannel(
+          notificationsPlugin, channelId, alarmSoundName, resolvedSoundUri);
+
+      soundUriToUse = resolvedSoundUri;
+    } else {
+      AppLogger.info('Using default alarm channel');
+      channelId = 'habit_alarm_default';
+      soundUriToUse = 'content://settings/system/alarm_alert';
+
+      // Create default alarm channel
+      await _createSoundSpecificAlarmChannel(
+          notificationsPlugin, channelId, 'Default Alarm', soundUriToUse);
     }
+
+    // Create notification details using the sound-specific channel
+    final androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      channelId,
+      'Habit Alarms',
+      channelDescription: 'High-priority alarm notifications for habits',
+      importance: Importance.max,
+      priority: Priority.high,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
+      playSound: true,
+      enableVibration: true,
+      vibrationPattern: Int64List.fromList([
+        0,
+        1000,
+        500,
+        1000,
+        500,
+        1000,
+        500,
+        1000,
+        500,
+        1000,
+        500,
+        1000,
+        500,
+        1000
+      ]), // Extended vibration pattern (14 seconds total)
+      ongoing: true, // Keep notification visible until user acts
+      autoCancel: false, // Don't auto-dismiss
+      onlyAlertOnce: false, // Allow sound to repeat
+      showWhen: true,
+      when: DateTime.now().millisecondsSinceEpoch,
+      usesChronometer: false,
+      timeoutAfter: 300000, // Auto-dismiss after 5 minutes
+      actions: [
+        AndroidNotificationAction(
+          'stop_alarm',
+          'Stop',
+          cancelNotification: true,
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          'snooze_alarm',
+          'Snooze',
+          cancelNotification: true,
+          showsUserInterface: true,
+        ),
+      ],
+    );
 
     final NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -299,58 +302,6 @@ Future<bool> _isValidSoundUri(String uri) async {
     AppLogger.warning('Sound URI validation failed: $e');
     return false;
   }
-}
-
-/// Create default alarm notification settings
-AndroidNotificationDetails _createDefaultAlarmNotification() {
-  return AndroidNotificationDetails(
-    'habit_alarm_channel',
-    'Habit Alarms',
-    channelDescription: 'High-priority alarm notifications for habits',
-    importance: Importance.max,
-    priority: Priority.high,
-    fullScreenIntent: true,
-    category: AndroidNotificationCategory.alarm,
-    playSound: true,
-    enableVibration: true,
-    vibrationPattern: Int64List.fromList([
-      0,
-      1000,
-      500,
-      1000,
-      500,
-      1000,
-      500,
-      1000,
-      500,
-      1000,
-      500,
-      1000,
-      500,
-      1000
-    ]), // Extended vibration pattern (14 seconds total)
-    ongoing: true, // Keep notification visible until user acts
-    autoCancel: false, // Don't auto-dismiss
-    onlyAlertOnce: false, // Allow sound to repeat
-    showWhen: true,
-    when: DateTime.now().millisecondsSinceEpoch,
-    usesChronometer: false,
-    timeoutAfter: 300000, // Auto-dismiss after 5 minutes
-    actions: [
-      AndroidNotificationAction(
-        'stop_alarm',
-        'Stop',
-        cancelNotification: true,
-        showsUserInterface: true,
-      ),
-      AndroidNotificationAction(
-        'snooze_alarm',
-        'Snooze',
-        cancelNotification: true,
-        showsUserInterface: true,
-      ),
-    ],
-  );
 }
 
 /// Resolve sound URI from sound name using platform channel
@@ -426,5 +377,55 @@ Future<String?> _resolveSoundUriFromName(String soundName) async {
     AppLogger.error('❌ Error resolving sound URI for $soundName: $e');
     // Return default alarm as fallback
     return 'content://settings/system/alarm_alert';
+  }
+}
+
+/// Create a safe channel ID from sound name
+String _makeSafeChannelId(String soundName) {
+  // Remove special characters and spaces, make lowercase
+  return soundName
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9_]'), '_')
+      .replaceAll(
+          RegExp(r'_{2,}'), '_') // Replace multiple underscores with single
+      .replaceAll(RegExp(r'^_|_$'), ''); // Remove leading/trailing underscores
+}
+
+/// Create a sound-specific alarm notification channel
+Future<void> _createSoundSpecificAlarmChannel(
+  FlutterLocalNotificationsPlugin notificationsPlugin,
+  String channelId,
+  String soundName,
+  String soundUri,
+) async {
+  try {
+    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+        notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidImplementation != null) {
+      AppLogger.info(
+          '🔔 Creating alarm channel: $channelId for sound: $soundName');
+
+      // Create channel with the specific sound
+      final alarmChannel = AndroidNotificationChannel(
+        channelId,
+        'Habit Alarm - $soundName',
+        description: 'High-priority alarm notifications with $soundName sound',
+        importance: Importance.max,
+        playSound: true,
+        sound: UriAndroidNotificationSound(soundUri),
+        enableVibration: true,
+        enableLights: true,
+        showBadge: true,
+      );
+
+      await androidImplementation.createNotificationChannel(alarmChannel);
+      AppLogger.info(
+          '✅ Created alarm channel: $channelId with sound: $soundUri');
+    }
+  } catch (e) {
+    AppLogger.error('❌ Failed to create alarm channel $channelId: $e');
+    // Don't throw - let caller handle fallback
   }
 }
