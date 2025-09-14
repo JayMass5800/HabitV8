@@ -52,6 +52,7 @@ class AlarmManagerService {
     required DateTime scheduledTime,
     required String frequency,
     String? alarmSoundName,
+    String? alarmSoundUri,
     int snoozeDelayMinutes = 10,
     Map<String, dynamic>? additionalData,
   }) async {
@@ -87,6 +88,7 @@ class AlarmManagerService {
       'habitId': habitId,
       'habitName': habitName,
       'alarmSoundName': alarmSoundName ?? 'default',
+      'alarmSoundUri': alarmSoundUri ?? '',
       'snoozeDelayMinutes': snoozeDelayMinutes,
       'frequency': frequency,
       'scheduledTime': scheduledTime.toIso8601String(),
@@ -172,7 +174,8 @@ class AlarmManagerService {
             habitName: habit.name,
             scheduledTime: alarmTime,
             frequency: 'hourly',
-            alarmSoundName: habit.selectedSound,
+            alarmSoundName: habit.alarmSoundName,
+            alarmSoundUri: habit.alarmSoundUri,
             snoozeDelayMinutes: habit.snoozeDelay ?? 10,
           );
 
@@ -218,7 +221,8 @@ class AlarmManagerService {
         habitName: habit.name,
         scheduledTime: alarmTime,
         frequency: 'daily',
-        alarmSoundName: habit.selectedSound,
+        alarmSoundName: habit.alarmSoundName,
+        alarmSoundUri: habit.alarmSoundUri,
         snoozeDelayMinutes: habit.snoozeDelay ?? 10,
       );
 
@@ -558,6 +562,7 @@ class AlarmManagerService {
     required DateTime scheduledTime,
     required String frequency,
     String? alarmSoundName,
+    String? alarmSoundUri,
     int snoozeDelayMinutes = 10,
     Map<String, dynamic>? additionalData,
   }) async {
@@ -571,6 +576,7 @@ class AlarmManagerService {
       scheduledTime: scheduledTime,
       frequency: frequency,
       alarmSoundName: alarmSoundName,
+      alarmSoundUri: alarmSoundUri,
       snoozeDelayMinutes: snoozeDelayMinutes,
       additionalData: additionalData,
     );
@@ -583,6 +589,7 @@ class AlarmManagerService {
     required String habitName,
     required DateTime snoozeTime,
     String? alarmSoundName,
+    String? alarmSoundUri,
     int snoozeDelayMinutes = 10,
     int? originalAlarmId, // Added for compatibility
   }) async {
@@ -593,6 +600,7 @@ class AlarmManagerService {
       scheduledTime: snoozeTime,
       frequency: 'snooze',
       alarmSoundName: alarmSoundName,
+      alarmSoundUri: alarmSoundUri,
       snoozeDelayMinutes: snoozeDelayMinutes,
     );
   }

@@ -137,9 +137,10 @@ Future<void> _executeBackgroundAlarm(
   try {
     final habitName = alarmData['habitName'] ?? 'Habit';
     final alarmSoundName = alarmData['alarmSoundName'] ?? 'default';
+    final alarmSoundUri = alarmData['alarmSoundUri'] ?? '';
 
     AppLogger.info(
-        '🔊 Executing background alarm for: $habitName with sound: $alarmSoundName');
+        '🔊 Executing background alarm for: $habitName with sound: $alarmSoundName (URI: $alarmSoundUri)');
 
     // Initialize notifications plugin for background use
     final FlutterLocalNotificationsPlugin notificationsPlugin =
@@ -159,8 +160,8 @@ Future<void> _executeBackgroundAlarm(
     // Create notification with custom sound if available
     AndroidNotificationDetails androidPlatformChannelSpecifics;
 
-    if (alarmSoundName != 'default' && alarmSoundName.isNotEmpty) {
-      // Try to use the selected system sound with proper alarm behavior
+    if (alarmSoundUri.isNotEmpty && alarmSoundUri != 'default') {
+      // Use the selected system sound URI with proper alarm behavior
       androidPlatformChannelSpecifics = AndroidNotificationDetails(
         'habit_alarm_channel',
         'Habit Alarms',
@@ -179,7 +180,7 @@ Future<void> _executeBackgroundAlarm(
         showWhen: true,
         when: DateTime.now().millisecondsSinceEpoch,
         usesChronometer: false,
-        sound: UriAndroidNotificationSound(alarmSoundName),
+        sound: UriAndroidNotificationSound(alarmSoundUri),
         actions: [
           AndroidNotificationAction(
             'stop_alarm',

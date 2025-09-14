@@ -47,18 +47,26 @@ class MainActivity : FlutterFragmentActivity() {
     override fun onRestart() {
         // Clean up any stale state before restart to prevent cursor issues
         stopPreview()
+        
         // Proactively clear legacy managed cursors to avoid framework requery crash
-        try { clearManagedCursors() } catch (_: Exception) {}
+        try { 
+            clearManagedCursors() 
+        } catch (_: Exception) {
+            // Ignore errors during cleanup
+        }
+        
         try {
             super.onRestart()
         } catch (e: android.database.StaleDataException) {
-            // Workaround: some legacy components may register managed cursors that crash on requery
-            android.util.Log.e("MainActivity", "Ignoring StaleDataException during restart", e)
-            // Best-effort recovery to avoid crash loop
-            try { recreate() } catch (_: Exception) {}
+            // Handle StaleDataException during activity restart
+            android.util.Log.w("MainActivity", "StaleDataException caught during restart - recovering gracefully", e)
+            
+            // Don't call recreate() immediately as it can cause infinite loops
+            // Instead, just skip the super.onRestart() call and let the activity continue
             return
         } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Error during restart: ${e.message}")
+            android.util.Log.e("MainActivity", "Error during restart: ${e.message}", e)
+            // For other exceptions, still try to continue
         }
     }
 
@@ -68,12 +76,45 @@ class MainActivity : FlutterFragmentActivity() {
      */
     private fun clearManagedCursors() {
         try {
-            val field = android.app.Activity::class.java.getDeclaredField("mManagedCursors")
-            field.isAccessible = true
-            val list = field.get(this) as? MutableList<*>
-            list?.clear()
+            // Clear managed cursors to prevent requery on stale cursors
+            val managedCursorsField = android.app.Activity::class.java.getDeclaredField("mManagedCursors")
+            managedCursorsField.isAccessible = true
+            val managedCursors = managedCursorsField.get(this) as? MutableList<*>
+            
+            if (managedCursors != null && managedCursors.isNotEmpty()) {
+                android.util.Log.d("MainActivity", "Clearing ${managedCursors.size} managed cursors")
+                
+                // Try to close each cursor individually before clearing the list
+                managedCursors.forEach { managedCursor ->
+                    try {
+                        // Get the cursor from the ManagedCursor object
+                        val cursorField = managedCursor?.javaClass?.getDeclaredField("mCursor")
+                        cursorField?.isAccessible = true
+                        val cursor = cursorField?.get(managedCursor) as? Cursor
+                        
+                        if (cursor != null && !cursor.isClosed) {
+                            cursor.close()
+                        }
+                    } catch (_: Exception) {
+                        // Ignore individual cursor cleanup errors
+                    }
+                }
+                
+                managedCursors.clear()
+                android.util.Log.d("MainActivity", "Successfully cleared managed cursors")
+            }
         } catch (e: Exception) {
             android.util.Log.w("MainActivity", "Could not clear managed cursors: ${e.message}")
+        }
+    }
+
+    override fun onPause() {
+        // Clean up cursors before going to background to prevent StaleDataException on resume
+        try {
+            clearManagedCursors()
+            super.onPause()
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error during pause: ${e.message}")
         }
     }
 

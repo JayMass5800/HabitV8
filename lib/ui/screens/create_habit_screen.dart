@@ -1150,7 +1150,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       },
     );
 
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
         // Check if time is not already added
         bool timeExists = _hourlyTimes.any(
@@ -1483,7 +1483,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         );
       },
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
         _notificationTime = picked;
       });
@@ -1555,10 +1555,14 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                   () async {
                                     await AlarmManagerService
                                         .stopAlarmSoundPreview();
-                                    if (mounted) {
+                                    // Check if the dialog's StatefulBuilder is still mounted
+                                    // by using a try-catch around setDialogState
+                                    try {
                                       setDialogState(() {
                                         currentlyPlaying = null;
                                       });
+                                    } catch (e) {
+                                      // Dialog was closed, ignore the error
                                     }
                                   },
                                 );
@@ -1624,7 +1628,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     // Stop any playing sound when dialog closes
     await AlarmManagerService.stopAlarmSoundPreview();
 
-    if (selected != null) {
+    if (selected != null && mounted) {
       setState(() {
         _selectedAlarmSoundName = selected['name'];
         _selectedAlarmSoundUri = selected['uri'];

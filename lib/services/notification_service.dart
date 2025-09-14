@@ -3678,7 +3678,8 @@ class NotificationService {
         habitName: habit.name,
         scheduledTime: singleDateTime,
         frequency: 'single',
-        alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+        alarmSoundName: habit.alarmSoundName,
+        alarmSoundUri: habit.alarmSoundUri,
         snoozeDelayMinutes: habit.snoozeDelayMinutes,
       );
 
