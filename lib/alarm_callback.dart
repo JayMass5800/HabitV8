@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
 import 'services/logging_service.dart';
 
 // Global flag to track if alarm manager is already initialized in this isolate
@@ -75,6 +76,16 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
     if (notificationResponse.actionId == 'stop_alarm') {
       AppLogger.info('⏹️ Stopping alarm notification $notificationId');
 
+      // Stop the platform channel sound first
+      try {
+        const MethodChannel systemSoundChannel =
+            MethodChannel('com.habittracker.habitv8/system_sound');
+        await systemSoundChannel.invokeMethod('stopSystemSound');
+        AppLogger.info('✅ Platform channel alarm sound stopped');
+      } catch (e) {
+        AppLogger.warning('⚠️ Failed to stop platform channel sound: $e');
+      }
+
       // Cancel the notification
       await notificationsPlugin.cancel(notificationId);
 
@@ -84,6 +95,16 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
       AppLogger.info('✅ Alarm notification stopped successfully');
     } else if (notificationResponse.actionId == 'snooze_alarm') {
       AppLogger.info('😴 Snoozing alarm notification $notificationId');
+
+      // Stop the platform channel sound first
+      try {
+        const MethodChannel systemSoundChannel =
+            MethodChannel('com.habittracker.habitv8/system_sound');
+        await systemSoundChannel.invokeMethod('stopSystemSound');
+        AppLogger.info('✅ Platform channel alarm sound stopped for snooze');
+      } catch (e) {
+        AppLogger.warning('⚠️ Failed to stop platform channel sound: $e');
+      }
 
       // Cancel current notification first
       await notificationsPlugin.cancel(notificationId);
@@ -194,7 +215,28 @@ Future<void> _executeBackgroundAlarm(
           notificationsPlugin, channelId, 'Default Alarm', soundUriToUse);
     }
 
+    // Try to play looping sound via platform channel (works better than notification sounds)
+    try {
+      const MethodChannel systemSoundChannel =
+          MethodChannel('com.habittracker.habitv8/system_sound');
+
+      AppLogger.info(
+          '🔊 Attempting to play looping alarm sound via platform channel');
+      await systemSoundChannel.invokeMethod('playSystemSound', {
+        'soundUri': soundUriToUse,
+        'volume': 0.8,
+        'loop': true, // This is the key for continuous sound!
+        'habitName': habitName,
+      });
+      AppLogger.info('✅ Platform channel alarm sound started (looping)');
+    } catch (e) {
+      AppLogger.warning(
+          '⚠️ Platform channel sound failed, falling back to notification sound: $e');
+      // Continue with notification - it will play the sound once as fallback
+    }
+
     // Create notification details using the sound-specific channel
+    // Note: We disable playSound here since we're using platform channel for looping sound
     final androidPlatformChannelSpecifics = AndroidNotificationDetails(
       channelId,
       'Habit Alarms',
@@ -203,7 +245,7 @@ Future<void> _executeBackgroundAlarm(
       priority: Priority.high,
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
-      playSound: true,
+      playSound: false, // Disabled - using platform channel for looping sound
       enableVibration: true,
       vibrationPattern: Int64List.fromList([
         0,
