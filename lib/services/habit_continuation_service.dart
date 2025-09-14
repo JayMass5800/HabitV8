@@ -573,7 +573,8 @@ class HabitContinuationService {
             habitName: habit.name,
             scheduledTime: alarmTime,
             frequency: 'hourly',
-            alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+            alarmSoundName: habit.alarmSoundName,
+            alarmSoundUri: habit.alarmSoundUri,
             snoozeDelayMinutes: habit.snoozeDelayMinutes,
           );
 
@@ -617,7 +618,8 @@ class HabitContinuationService {
           habitName: habit.name,
           scheduledTime: alarmTime,
           frequency: 'daily',
-          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+          alarmSoundName: habit.alarmSoundName,
+          alarmSoundUri: habit.alarmSoundUri,
           snoozeDelayMinutes: habit.snoozeDelayMinutes,
         );
 
@@ -664,7 +666,8 @@ class HabitContinuationService {
             habitName: habit.name,
             scheduledTime: alarmTime,
             frequency: 'weekly',
-            alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+            alarmSoundName: habit.alarmSoundName,
+            alarmSoundUri: habit.alarmSoundUri,
             snoozeDelayMinutes: habit.snoozeDelayMinutes,
           );
 

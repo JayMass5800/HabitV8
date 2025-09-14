@@ -304,78 +304,24 @@ Future<bool> _isValidSoundUri(String uri) async {
   }
 }
 
-/// Resolve sound URI from sound name using platform channel
+/// Resolve sound URI from sound name using fallback to default system sound
+/// This should only be called if alarmSoundUri is empty but alarmSoundName is provided
 Future<String?> _resolveSoundUriFromName(String soundName) async {
   try {
-    // In background isolate, we can't easily access the platform channel
-    // So we'll implement a comprehensive fallback system using typical Android sound URIs
-
     AppLogger.info('🔍 Attempting to resolve sound URI for: $soundName');
-
-    // Comprehensive system alarm sounds and their typical URIs
-    final Map<String, String> comprehensiveSounds = {
-      // Common Android alarm sounds
-      'Icicles': 'content://settings/system/alarm_alert',
-      'Oxygen': 'content://settings/system/alarm_alert',
-      'Timer': 'content://settings/system/alarm_alert',
-      'Beep': 'content://settings/system/alarm_alert',
-      'Digital': 'content://settings/system/alarm_alert',
-      'Chime': 'content://settings/system/alarm_alert',
-      'Classic': 'content://settings/system/alarm_alert',
-      'Full of Wonder': 'content://settings/system/alarm_alert',
-      'Gentle Alarm': 'content://settings/system/alarm_alert',
-      'Morning Flower': 'content://settings/system/alarm_alert',
-      'Rooster': 'content://settings/system/alarm_alert',
-      'Simple Bell': 'content://settings/system/alarm_alert',
-      'Carbon': 'content://settings/system/alarm_alert',
-      'Cesium': 'content://settings/system/alarm_alert',
-      'Helium': 'content://settings/system/alarm_alert',
-      'Krypton': 'content://settings/system/alarm_alert',
-      'Neon': 'content://settings/system/alarm_alert',
-      'Argon': 'content://settings/system/alarm_alert',
-      'Platinum': 'content://settings/system/alarm_alert',
-
-      // Alternative URI patterns for different Android versions
-      'default': 'content://settings/system/alarm_alert',
-    };
-
-    // First try exact match
-    String? resolvedUri = comprehensiveSounds[soundName];
-
-    if (resolvedUri != null) {
-      AppLogger.info('✅ Resolved $soundName to URI: $resolvedUri');
-      return resolvedUri;
-    }
-
-    // Try case-insensitive match
-    final lowerSoundName = soundName.toLowerCase();
-    for (final entry in comprehensiveSounds.entries) {
-      if (entry.key.toLowerCase() == lowerSoundName) {
-        resolvedUri = entry.value;
-        AppLogger.info(
-            '✅ Resolved $soundName (case-insensitive) to URI: $resolvedUri');
-        return resolvedUri;
-      }
-    }
-
-    // Try partial match for compound names
-    for (final entry in comprehensiveSounds.entries) {
-      if (soundName.toLowerCase().contains(entry.key.toLowerCase()) ||
-          entry.key.toLowerCase().contains(soundName.toLowerCase())) {
-        resolvedUri = entry.value;
-        AppLogger.info(
-            '✅ Resolved $soundName (partial match with ${entry.key}) to URI: $resolvedUri');
-        return resolvedUri;
-      }
-    }
-
-    // If no match, use default alarm sound
-    AppLogger.warning(
-        '⚠️ Could not resolve specific URI for $soundName, using default alarm');
+    
+    // Since we're in a background isolate and can't access platform channels,
+    // we can only fall back to default system sound URIs
+    // The proper sound URI should have been passed through alarmSoundUri
+    AppLogger.warning('⚠️ Sound URI was empty but sound name provided: $soundName');
+    AppLogger.warning('⚠️ In background isolate, cannot resolve actual system sound URIs');
+    AppLogger.warning('⚠️ Falling back to default system alarm sound');
+    
+    // Return default system alarm as fallback since we can't resolve actual system sounds
+    // in background isolate context
     return 'content://settings/system/alarm_alert';
   } catch (e) {
     AppLogger.error('❌ Error resolving sound URI for $soundName: $e');
-    // Return default alarm as fallback
     return 'content://settings/system/alarm_alert';
   }
 }
