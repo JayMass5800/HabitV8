@@ -16,6 +16,8 @@
     <!-- High priority alarm permissions -->
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     
     <!-- Exact alarm permissions for Android 16+ (automatically granted) -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />

@@ -86,18 +86,13 @@ class MainActivity : FlutterFragmentActivity() {
         try {
             android.util.Log.d("MainActivity", "onNewIntent called with action: ${intent.action}")
 
-            // Special-case notification launch: restart Activity to avoid framework restart/requery
-            if ("SELECT_NOTIFICATION" == intent.action) {
+            // CRITICAL FIX: Don't restart app on notification interactions - preserve alarm service
+            if ("SELECT_NOTIFICATION" == intent.action || "SELECT_FOREGROUND_NOTIFICATION" == intent.action) {
                 setIntent(intent)
-                android.util.Log.d("MainActivity", "Restarting activity to avoid managed cursor requery on SELECT_NOTIFICATION")
-                val restart = Intent(this, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    action = Intent.ACTION_MAIN
-                    addCategory(Intent.CATEGORY_LAUNCHER)
-                    putExtras(intent)
-                }
-                finish()
-                startActivity(restart)
+                android.util.Log.i("MainActivity", "Notification interaction - preserving alarm service and continuing normally")
+                // Just handle the intent normally without restarting the app
+                // This prevents the alarm service from being killed
+                super.onNewIntent(intent)
                 return
             }
 
