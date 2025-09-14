@@ -45,9 +45,10 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     override fun onRestart() {
-        // Clean up any stale state before restart
-        stopPreview()
+        // Clean up any stale state before restart but preserve alarm sound
+        stopPreview() // Only stop preview ringtone, not alarm
         try {
+            android.util.Log.i("MainActivity", "onRestart: Preserving alarm sound if playing")
             super.onRestart()
         } catch (e: android.database.StaleDataException) {
             // Catch framework requery crash and continue
@@ -62,6 +63,8 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onPause() {
         try {
+            // Don't stop alarm sound on pause - it should continue until user acts
+            android.util.Log.i("MainActivity", "onPause: Preserving alarm sound if playing")
             super.onPause()
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Error during pause: ${e.message}")
@@ -70,6 +73,8 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onResume() {
         try {
+            // Don't restart or stop alarm sound on resume - let it continue
+            android.util.Log.i("MainActivity", "onResume: Preserving alarm sound state")
             super.onResume()
         } catch (e: Exception) {
             android.util.Log.e("MainActivity", "Error during resume: ${e.message}")
@@ -310,11 +315,12 @@ class MainActivity : FlutterFragmentActivity() {
             
             alarmRingtone?.isLooping = loop
             
-            // Set proper audio attributes for alarm sounds
+            // Set proper audio attributes for alarm sounds - use ALARM stream for persistence
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 alarmRingtone?.audioAttributes = AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
                     .build()
                 android.util.Log.i("MainActivity", "✅ Audio attributes set for API ${Build.VERSION.SDK_INT}")
             }
@@ -340,11 +346,18 @@ class MainActivity : FlutterFragmentActivity() {
 
     private fun stopSystemSound() {
         try {
-            alarmRingtone?.takeIf { it.isPlaying }?.stop()
+            if (alarmRingtone?.isPlaying == true) {
+                android.util.Log.i("MainActivity", "🔇 Stopping alarm sound...")
+                alarmRingtone?.stop()
+                android.util.Log.i("MainActivity", "✅ Alarm sound stopped")
+            } else {
+                android.util.Log.i("MainActivity", "ℹ️ No alarm sound playing to stop")
+            }
             alarmRingtone = null
         } catch (e: Exception) {
-            android.util.Log.e("MainActivity", "Error stopping system sound: ${e.message}")
-            throw e
+            android.util.Log.e("MainActivity", "❌ Error stopping system sound: ${e.message}")
+            // Don't rethrow - try to continue gracefully
+            alarmRingtone = null
         }
     }
 
