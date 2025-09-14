@@ -168,7 +168,8 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       if (e.toString().contains('Box has already been closed') ||
           e.toString().contains('HiveError') ||
           e.toString().contains('Database box is closed')) {
-        AppLogger.debug('Database is closed/reset, stopping periodic refresh: $e');
+        AppLogger.debug(
+            'Database is closed/reset, stopping periodic refresh: $e');
         _refreshTimer?.cancel(); // Stop the timer since database is being reset
         return;
       }
@@ -457,14 +458,15 @@ class HabitService {
       // Check if the box is accessible before trying to use it
       if (!_habitBox.isOpen) {
         AppLogger.error('HabitBox is closed when trying to getAllHabits');
-        
+
         // Try to reinitialize the database if it's closed
         try {
           AppLogger.info('Attempting to reinitialize closed database...');
           await DatabaseService.getInstance();
           // Note: We can't change the _habitBox reference here since it's final
           // Instead, we'll return empty list and let the provider handle recreation
-          AppLogger.info('Database reinitialized, but this service instance needs recreation');
+          AppLogger.info(
+              'Database reinitialized, but this service instance needs recreation');
           return [];
         } catch (reinitError) {
           AppLogger.error('Failed to reinitialize database: $reinitError');
@@ -505,7 +507,7 @@ class HabitService {
           e.toString().contains('Box has already been closed') ||
           e.toString().contains('Database box is closed')) {
         _invalidateCache();
-        
+
         // Return empty list instead of throwing for closed database
         if (e.toString().contains('Box has already been closed') ||
             e.toString().contains('Database box is closed')) {
