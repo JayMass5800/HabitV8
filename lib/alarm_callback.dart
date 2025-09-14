@@ -5,7 +5,7 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'services/logging_service.dart';
 
 // Global flag to track if alarm manager is already initialized in this isolate
@@ -25,10 +25,10 @@ Future<void> _startAlarmServiceDirectly(
     AppLogger.info('✅ AlarmService started via platform channel');
   } catch (e) {
     AppLogger.warning(
-        'Platform channel failed, using direct intent approach: $e');
-    // TODO: Implement direct intent approach if needed
-    // For now, let the notification handle the sound
-    throw e;
+        'Platform channel failed; falling back to notification sound: $e');
+    // Direct intent start from Dart is not required with the new native AlarmService integration.
+    // Fallback: notification sound will handle the audible alert.
+    rethrow;
   }
 }
 

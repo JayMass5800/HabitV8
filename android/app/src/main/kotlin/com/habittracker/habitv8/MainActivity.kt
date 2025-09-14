@@ -157,7 +157,7 @@ class MainActivity : FlutterFragmentActivity() {
                 result.error("ACTIVITY_INVALID", "Activity is no longer valid", null)
                 return@setMethodCallHandler
             }
-            
+
             when (call.method) {
                 "openRingtonePicker" -> {
                     this.methodChannelResult = result
@@ -172,20 +172,78 @@ class MainActivity : FlutterFragmentActivity() {
                         if (loop == true) {
                             // For looping alarms, use the foreground service
                             AlarmService.startAlarmService(this, soundUri, habitName)
+                            result.success(true)
                         } else {
                             // For previews, use the old method
                             playSystemSound(soundUri, volume ?: 0.8, loop ?: false, habitName)
+                            result.success(true)
                         }
-                        result.success(null)
                     } catch (e: Exception) {
-                        result.error("PLAY_ERROR", "Failed to play system sound: ${e.message}", null)
+                        result.error("SOUND_ERROR", "Failed to play system sound: ", null)
                     }
                 }
                 "stopSystemSound" -> {
                     try {
-                        // Stop both the foreground service and any direct ringtone
-                        AlarmService.stopAlarmService(this)
+                        // Stop both the foreground service and any playing ringtones
+                        val intent = Intent(this, AlarmService::class.java)
+                        stopService(intent)
+                        
+                        // Also stop any ringtones playing directly
                         stopSystemSound()
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("STOP_ERROR", "Failed to stop system sound: ", null)
+                    }
+                }
+                "getSystemRingtones" -> {
+                    try {
+                        result.success(getSystemRingtones())
+                    } catch (e: Exception) {
+                        result.error("RINGTONE_ERROR", "Failed to get system ringtones: ", null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+        
+        // Alarm service channel for starting/stopping the foreground alarm service
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ALARM_SERVICE_CHANNEL).setMethodCallHandler { call, result ->
+            // Check if activity is still valid before processing method calls
+            if (isFinishing || isDestroyed) {
+                result.error("ACTIVITY_INVALID", "Activity is no longer valid", null)
+                return@setMethodCallHandler
+            }
+
+            when (call.method) {
+                "startAlarmService" -> {
+                    try {
+                        val soundUri = call.argument<String>("soundUri")
+                        val habitName = call.argument<String>("habitName")
+                        
+                        // Start the foreground service for reliable alarm playback
+                        AlarmService.startAlarmService(this, soundUri, habitName)
+                        result.success(true)
+                        android.util.Log.i("MainActivity", "AlarmService started via platform channel")
+                    } catch (e: Exception) {
+                        result.error("SERVICE_ERROR", "Failed to start alarm service: ", null)
+                        android.util.Log.e("MainActivity", "Failed to start alarm service", e)
+                    }
+                }
+                "stopAlarmService" -> {
+                    try {
+                        // Stop the alarm service
+                        val intent = Intent(this, AlarmService::class.java)
+                        stopService(intent)
+                        result.success(true)
+                        android.util.Log.i("MainActivity", "AlarmService stopped via platform channel")
+                    } catch (e: Exception) {
+                        result.error("SERVICE_ERROR", "Failed to stop alarm service: ", null)
+                        android.util.Log.e("MainActivity", "Failed to stop alarm service", e)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
                         result.success(null)
                     } catch (e: Exception) {
                         result.error("STOP_ERROR", "Failed to stop system sound: ${e.message}", null)
