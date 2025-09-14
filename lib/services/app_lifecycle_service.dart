@@ -142,14 +142,14 @@ class AppLifecycleService with WidgetsBindingObserver {
           // Force close and reopen database if there are stale cursor issues
           await DatabaseService.closeDatabase();
           await Future.delayed(const Duration(milliseconds: 100));
-          
+
           // Trigger database reconnection by calling getInstance
           // This will check if the box is still open and recreate if needed
           await DatabaseService.getInstance();
           AppLogger.debug('✅ Database connection verified and refreshed');
         } catch (e) {
           AppLogger.error('❌ Database reconnection failed: $e');
-          
+
           // If database reconnection fails, try one more time with a full reset
           try {
             AppLogger.warning('Attempting database recovery...');

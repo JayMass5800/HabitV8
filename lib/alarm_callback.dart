@@ -203,7 +203,8 @@ Future<void> _executeBackgroundAlarm(
           throw Exception('Invalid sound URI: $alarmSoundUri');
         }
       } catch (e) {
-        AppLogger.warning('Failed to use custom sound ($alarmSoundUri): $e, falling back to default');
+        AppLogger.warning(
+            'Failed to use custom sound ($alarmSoundUri): $e, falling back to default');
         // Fall through to default sound
         androidPlatformChannelSpecifics = _createDefaultAlarmNotification();
       }
@@ -243,20 +244,22 @@ Future<bool> _isValidSoundUri(String uri) async {
   try {
     // Basic URI validation
     if (uri.isEmpty || uri == 'default') return false;
-    
+
     // Check if it's a content:// URI (Android content provider)
     if (uri.startsWith('content://')) {
       // For content URIs, we assume they're valid if they follow the pattern
       // Real validation would require platform channel calls to Android
-      return uri.contains('media') || uri.contains('ringtone') || uri.contains('notification');
+      return uri.contains('media') ||
+          uri.contains('ringtone') ||
+          uri.contains('notification');
     }
-    
+
     // Check if it's a file:// URI
     if (uri.startsWith('file://')) {
       final file = File(uri.replaceFirst('file://', ''));
       return await file.exists();
     }
-    
+
     // For other URIs, assume valid for now
     return true;
   } catch (e) {
