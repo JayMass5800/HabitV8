@@ -245,21 +245,7 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
                         result.success(null)
-                    } catch (e: Exception) {
-                        result.error("STOP_ERROR", "Failed to stop system sound: ${e.message}", null)
-                    }
-                }
-                "getSystemRingtones" -> {
-                    try {
-                        result.success(getSystemRingtones())
-                    } catch (e: Exception) {
-                        result.error("RINGTONES_ERROR", "Failed to get system ringtones: ${e.message}", null)
-                    }
-                }
-                else -> result.notImplemented()
-            }
-        }
-        
+                    } catch (e: Exception)        
         // Alarm service channel for background alarm service control
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ALARM_SERVICE_CHANNEL).setMethodCallHandler { call, result ->
             // Check if activity is still valid before processing method calls

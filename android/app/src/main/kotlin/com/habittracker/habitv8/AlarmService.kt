@@ -318,7 +318,7 @@ class AlarmService : Service() {
                 // Use VibrationEffect for modern devices
                 val effect = VibrationEffect.createWaveform(
                     pattern,
-                    intArrayOf(0, 50, 0, 100, 0, 150, 0, 200).toIntArray(),
+                    intArrayOf(0, 50, 0, 100, 0, 150, 0, 200),
                     0 // Repeat indefinitely
                 )
                 vibrator?.vibrate(effect)
