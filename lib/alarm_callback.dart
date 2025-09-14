@@ -192,8 +192,7 @@ Future<void> _executeBackgroundAlarm(
 
     if (resolvedSoundUri != null &&
         resolvedSoundUri.isNotEmpty &&
-        resolvedSoundUri != 'default' &&
-        await _isValidSoundUri(resolvedSoundUri)) {
+        resolvedSoundUri != 'default') {
       AppLogger.info(
           '✅ Creating sound-specific channel for URI: $resolvedSoundUri');
       // Create unique channel ID based on sound name to avoid conflicts
@@ -215,7 +214,8 @@ Future<void> _executeBackgroundAlarm(
           notificationsPlugin, channelId, 'Default Alarm', soundUriToUse);
     }
 
-    // Try to play looping sound via platform channel (works better than notification sounds)
+    // Try to play looping sound via platform channel (only works when app is active)
+    // Note: This will fail in background isolates, so we rely on notification sound
     try {
       const MethodChannel systemSoundChannel =
           MethodChannel('com.habittracker.habitv8/system_sound');
@@ -231,12 +231,12 @@ Future<void> _executeBackgroundAlarm(
       AppLogger.info('✅ Platform channel alarm sound started (looping)');
     } catch (e) {
       AppLogger.warning(
-          '⚠️ Platform channel sound failed, falling back to notification sound: $e');
-      // Continue with notification - it will play the sound once as fallback
+          '⚠️ Platform channel sound failed (expected in background), using notification sound: $e');
+      // This is expected in background isolates - notification sound will handle it
     }
 
     // Create notification details using the sound-specific channel
-    // Note: We disable playSound here since we're using platform channel for looping sound
+    // Enable playSound for background alarm notifications since platform channel doesn't work in background
     final androidPlatformChannelSpecifics = AndroidNotificationDetails(
       channelId,
       'Habit Alarms',
@@ -245,7 +245,7 @@ Future<void> _executeBackgroundAlarm(
       priority: Priority.high,
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
-      playSound: false, // Disabled - using platform channel for looping sound
+      playSound: true, // ENABLED - notification sound works in background
       enableVibration: true,
       vibrationPattern: Int64List.fromList([
         0,
@@ -309,40 +309,6 @@ Future<void> _executeBackgroundAlarm(
     AppLogger.info('✅ Background alarm executed for: $habitName');
   } catch (e) {
     AppLogger.error('❌ Failed to execute background alarm: $e');
-  }
-}
-
-/// Validate if a sound URI is accessible and playable
-Future<bool> _isValidSoundUri(String uri) async {
-  try {
-    // Basic URI validation
-    if (uri.isEmpty || uri == 'default') return false;
-
-    // Check if it's a content:// URI (Android content provider)
-    if (uri.startsWith('content://')) {
-      // For the standard alarm URI, always consider it valid
-      if (uri == 'content://settings/system/alarm_alert') {
-        return true;
-      }
-
-      // For other content URIs, check if they follow valid patterns
-      return uri.contains('media') ||
-          uri.contains('ringtone') ||
-          uri.contains('notification') ||
-          uri.contains('settings/system');
-    }
-
-    // Check if it's a file:// URI
-    if (uri.startsWith('file://')) {
-      final file = File(uri.replaceFirst('file://', ''));
-      return await file.exists();
-    }
-
-    // For other URIs, assume valid for now
-    return true;
-  } catch (e) {
-    AppLogger.warning('Sound URI validation failed: $e');
-    return false;
   }
 }
 
