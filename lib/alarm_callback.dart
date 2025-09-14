@@ -278,14 +278,12 @@ Future<void> _executeBackgroundAlarm(
           'STOP ALARM',
           cancelNotification: true,
           showsUserInterface: true,
-          contextual: true,
         ),
         AndroidNotificationAction(
           'snooze_alarm',
           'SNOOZE 10MIN',
           cancelNotification: true,
           showsUserInterface: false,
-          contextual: true,
         ),
       ],
     );
@@ -378,8 +376,6 @@ Future<void> _createSoundSpecificAlarmChannel(
         enableVibration: true,
         enableLights: true,
         showBadge: true,
-        // Add alarm-specific audio attributes
-        audioAttributesUsage: AudioAttributesUsage.alarm,
       );
 
       await androidImplementation.createNotificationChannel(alarmChannel);
