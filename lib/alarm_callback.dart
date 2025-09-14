@@ -5,7 +5,7 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
+import 'package:flutter/painting.dart';
 import 'services/logging_service.dart';
 
 // Global flag to track if alarm manager is already initialized in this isolate
