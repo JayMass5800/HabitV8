@@ -67,9 +67,10 @@ class AppLifecycleService with WidgetsBindingObserver {
         _disposeAllServices();
         break;
       case AppLifecycleState.paused:
-        // App is in background - could be a good time to clean up non-essential resources
+        // App is in background - perform minimal cleanup
         AppLogger.info('⏸️ App paused - performing background cleanup...');
         _performBackgroundCleanup();
+        // NOTE: We don't close the database here to avoid connection issues
         break;
       case AppLifecycleState.resumed:
         AppLogger.info('▶️ App resumed');
@@ -139,14 +140,28 @@ class AppLifecycleService with WidgetsBindingObserver {
       // Add delay to avoid race conditions during app lifecycle transitions
       Future.delayed(const Duration(milliseconds: 200), () async {
         try {
-          // Force close and reopen database if there are stale cursor issues
+          // Check if database is accessible without forcibly closing it
+          final instance = await DatabaseService.getInstance();
+
+          // Test if the database is actually working by performing a simple operation
+          try {
+            instance.length; // This will throw if the box is stale
+            AppLogger.debug('✅ Database connection is healthy');
+            return;
+          } catch (testError) {
+            AppLogger.warning('Database connection test failed: $testError');
+            // Only if the test fails, then we close and reopen
+          }
+
+          // Only close and reopen if there's actually a problem
+          AppLogger.info(
+              'Refreshing database connection due to stale state...');
           await DatabaseService.closeDatabase();
           await Future.delayed(const Duration(milliseconds: 100));
 
           // Trigger database reconnection by calling getInstance
-          // This will check if the box is still open and recreate if needed
           await DatabaseService.getInstance();
-          AppLogger.debug('✅ Database connection verified and refreshed');
+          AppLogger.debug('✅ Database connection refreshed successfully');
         } catch (e) {
           AppLogger.error('❌ Database reconnection failed: $e');
 

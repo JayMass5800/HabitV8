@@ -1839,7 +1839,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
       // Get HabitService instead of direct database access
       final habitServiceAsync = ref.read(habitServiceProvider);
-      final habitService = habitServiceAsync.value;
+      HabitService? habitService = habitServiceAsync.value;
 
       if (habitService == null) {
         setState(() {
@@ -1856,7 +1856,44 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return;
       }
 
-      await habitService.addHabit(habit);
+      try {
+        await habitService.addHabit(habit);
+      } catch (e) {
+        // If it's a database connection error, try to refresh the provider and retry once
+        if (e.toString().contains('Database box is closed') ||
+            e.toString().contains('Database connection lost')) {
+          AppLogger.info(
+              'Database connection lost, refreshing providers and retrying...');
+
+          // Invalidate the providers to force refresh
+          ref.invalidate(databaseProvider);
+          ref.invalidate(habitServiceProvider);
+
+          // Wait a moment for providers to refresh
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Try to get fresh service and retry
+          try {
+            final freshServiceAsync = ref.read(habitServiceProvider);
+            final freshService = freshServiceAsync.value;
+
+            if (freshService == null) {
+              throw StateError(
+                  'Could not obtain fresh habit service after refresh');
+            }
+
+            AppLogger.info(
+                'Retrying habit creation with fresh database connection...');
+            await freshService.addHabit(habit);
+            AppLogger.info('✅ Habit created successfully on retry');
+          } catch (retryError) {
+            AppLogger.error('Retry failed: $retryError');
+            rethrow; // Rethrow the retry error
+          }
+        } else {
+          rethrow; // Re-throw other errors
+        }
+      }
 
       // Log health integration status and analyze for additional mappings
       if (_enableHealthIntegration && _selectedHealthDataType != null) {

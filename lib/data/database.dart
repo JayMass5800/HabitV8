@@ -467,8 +467,9 @@ class HabitService {
     try {
       // Check if the box is accessible before trying to use it
       if (!_habitBox.isOpen) {
-        AppLogger.error('HabitBox is closed when trying to addHabit');
-        throw StateError('Database box is closed');
+        AppLogger.warning(
+            'HabitBox is closed when trying to addHabit, attempting to recover...');
+        throw StateError('Database box is closed - please retry the operation');
       }
 
       await _habitBox.add(habit);
@@ -509,11 +510,19 @@ class HabitService {
     } catch (e) {
       AppLogger.error('Error in addHabit: $e');
 
-      // If it's a database-related error, clear cache and rethrow
+      // If it's a database-related error, clear cache and provide helpful error message
       if (e.toString().contains('StaleDataException') ||
           e.toString().contains('cursor after it has been closed') ||
-          e.toString().contains('Box has already been closed')) {
+          e.toString().contains('Box has already been closed') ||
+          e.toString().contains('Database box is closed')) {
         _invalidateCache();
+
+        AppLogger.error(
+            'Database connection lost - this usually resolves automatically');
+
+        // Rethrow with a more user-friendly message
+        throw StateError(
+            'Database connection lost. Please try again in a moment.');
       }
 
       rethrow;
