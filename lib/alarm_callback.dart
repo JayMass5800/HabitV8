@@ -161,76 +161,55 @@ Future<void> _executeBackgroundAlarm(
     AndroidNotificationDetails androidPlatformChannelSpecifics;
 
     if (alarmSoundUri.isNotEmpty && alarmSoundUri != 'default') {
-      // Use the selected system sound URI with proper alarm behavior
-      androidPlatformChannelSpecifics = AndroidNotificationDetails(
-        'habit_alarm_channel',
-        'Habit Alarms',
-        channelDescription: 'High-priority alarm notifications for habits',
-        importance: Importance.max,
-        priority: Priority.high,
-        fullScreenIntent: true,
-        category: AndroidNotificationCategory.alarm,
-        playSound: true,
-        enableVibration: true,
-        vibrationPattern: Int64List.fromList(
-            [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
-        ongoing: true, // Make notification persistent
-        autoCancel: false, // Prevent auto-dismissal
-        onlyAlertOnce: false, // Allow repeated alerts
-        showWhen: true,
-        when: DateTime.now().millisecondsSinceEpoch,
-        usesChronometer: false,
-        sound: UriAndroidNotificationSound(alarmSoundUri),
-        actions: [
-          AndroidNotificationAction(
-            'stop_alarm',
-            'Stop',
-            cancelNotification: false, // Don't auto-cancel on action
-            showsUserInterface: true,
-          ),
-          AndroidNotificationAction(
-            'snooze_alarm',
-            'Snooze',
-            cancelNotification: false, // Don't auto-cancel on action
-            showsUserInterface: true,
-          ),
-        ],
-      );
+      try {
+        // Validate sound URI before using it
+        if (await _isValidSoundUri(alarmSoundUri)) {
+          // Use the selected system sound URI with proper alarm behavior
+          androidPlatformChannelSpecifics = AndroidNotificationDetails(
+            'habit_alarm_channel',
+            'Habit Alarms',
+            channelDescription: 'High-priority alarm notifications for habits',
+            importance: Importance.max,
+            priority: Priority.high,
+            fullScreenIntent: true,
+            category: AndroidNotificationCategory.alarm,
+            playSound: true,
+            enableVibration: true,
+            vibrationPattern: Int64List.fromList(
+                [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
+            ongoing: true, // Make notification persistent
+            autoCancel: false, // Prevent auto-dismissal
+            onlyAlertOnce: false, // Allow repeated alerts
+            showWhen: true,
+            when: DateTime.now().millisecondsSinceEpoch,
+            usesChronometer: false,
+            sound: UriAndroidNotificationSound(alarmSoundUri),
+            actions: [
+              AndroidNotificationAction(
+                'stop_alarm',
+                'Stop',
+                cancelNotification: false, // Don't auto-cancel on action
+                showsUserInterface: true,
+              ),
+              AndroidNotificationAction(
+                'snooze_alarm',
+                'Snooze',
+                cancelNotification: false, // Don't auto-cancel on action
+                showsUserInterface: true,
+              ),
+            ],
+          );
+        } else {
+          throw Exception('Invalid sound URI: $alarmSoundUri');
+        }
+      } catch (e) {
+        AppLogger.warning('Failed to use custom sound ($alarmSoundUri): $e, falling back to default');
+        // Fall through to default sound
+        androidPlatformChannelSpecifics = _createDefaultAlarmNotification();
+      }
     } else {
       // Use default system notification sound with proper alarm behavior
-      androidPlatformChannelSpecifics = AndroidNotificationDetails(
-        'habit_alarm_channel',
-        'Habit Alarms',
-        channelDescription: 'High-priority alarm notifications for habits',
-        importance: Importance.max,
-        priority: Priority.high,
-        fullScreenIntent: true,
-        category: AndroidNotificationCategory.alarm,
-        playSound: true,
-        enableVibration: true,
-        vibrationPattern: Int64List.fromList(
-            [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
-        ongoing: true, // Make notification persistent
-        autoCancel: false, // Prevent auto-dismissal
-        onlyAlertOnce: false, // Allow repeated alerts
-        showWhen: true,
-        when: DateTime.now().millisecondsSinceEpoch,
-        usesChronometer: false,
-        actions: [
-          AndroidNotificationAction(
-            'stop_alarm',
-            'Stop',
-            cancelNotification: false, // Don't auto-cancel on action
-            showsUserInterface: true,
-          ),
-          AndroidNotificationAction(
-            'snooze_alarm',
-            'Snooze',
-            cancelNotification: false, // Don't auto-cancel on action
-            showsUserInterface: true,
-          ),
-        ],
-      );
+      androidPlatformChannelSpecifics = _createDefaultAlarmNotification();
     }
 
     final NotificationDetails platformChannelSpecifics =
@@ -257,4 +236,68 @@ Future<void> _executeBackgroundAlarm(
   } catch (e) {
     AppLogger.error('❌ Failed to execute background alarm: $e');
   }
+}
+
+/// Validate if a sound URI is accessible and playable
+Future<bool> _isValidSoundUri(String uri) async {
+  try {
+    // Basic URI validation
+    if (uri.isEmpty || uri == 'default') return false;
+    
+    // Check if it's a content:// URI (Android content provider)
+    if (uri.startsWith('content://')) {
+      // For content URIs, we assume they're valid if they follow the pattern
+      // Real validation would require platform channel calls to Android
+      return uri.contains('media') || uri.contains('ringtone') || uri.contains('notification');
+    }
+    
+    // Check if it's a file:// URI
+    if (uri.startsWith('file://')) {
+      final file = File(uri.replaceFirst('file://', ''));
+      return await file.exists();
+    }
+    
+    // For other URIs, assume valid for now
+    return true;
+  } catch (e) {
+    AppLogger.warning('Sound URI validation failed: $e');
+    return false;
+  }
+}
+
+/// Create default alarm notification settings
+AndroidNotificationDetails _createDefaultAlarmNotification() {
+  return AndroidNotificationDetails(
+    'habit_alarm_channel',
+    'Habit Alarms',
+    channelDescription: 'High-priority alarm notifications for habits',
+    importance: Importance.max,
+    priority: Priority.high,
+    fullScreenIntent: true,
+    category: AndroidNotificationCategory.alarm,
+    playSound: true,
+    enableVibration: true,
+    vibrationPattern: Int64List.fromList(
+        [0, 1000, 500, 1000, 500, 1000]), // Repeating vibration
+    ongoing: true, // Make notification persistent
+    autoCancel: false, // Prevent auto-dismissal
+    onlyAlertOnce: false, // Allow repeated alerts
+    showWhen: true,
+    when: DateTime.now().millisecondsSinceEpoch,
+    usesChronometer: false,
+    actions: [
+      AndroidNotificationAction(
+        'stop_alarm',
+        'Stop',
+        cancelNotification: false, // Don't auto-cancel on action
+        showsUserInterface: true,
+      ),
+      AndroidNotificationAction(
+        'snooze_alarm',
+        'Snooze',
+        cancelNotification: false, // Don't auto-cancel on action
+        showsUserInterface: true,
+      ),
+    ],
+  );
 }

@@ -136,12 +136,31 @@ class AppLifecycleService with WidgetsBindingObserver {
     try {
       AppLogger.debug('🔗 Ensuring database connection is valid...');
 
-      // Trigger database reconnection by calling getInstance
-      // This will check if the box is still open and recreate if needed
-      DatabaseService.getInstance().then((_) {
-        AppLogger.debug('✅ Database connection verified');
-      }).catchError((e) {
-        AppLogger.error('❌ Database reconnection failed: $e');
+      // Add delay to avoid race conditions during app lifecycle transitions
+      Future.delayed(const Duration(milliseconds: 200), () async {
+        try {
+          // Force close and reopen database if there are stale cursor issues
+          await DatabaseService.closeDatabase();
+          await Future.delayed(const Duration(milliseconds: 100));
+          
+          // Trigger database reconnection by calling getInstance
+          // This will check if the box is still open and recreate if needed
+          await DatabaseService.getInstance();
+          AppLogger.debug('✅ Database connection verified and refreshed');
+        } catch (e) {
+          AppLogger.error('❌ Database reconnection failed: $e');
+          
+          // If database reconnection fails, try one more time with a full reset
+          try {
+            AppLogger.warning('Attempting database recovery...');
+            await DatabaseService.closeDatabase();
+            await Future.delayed(const Duration(milliseconds: 500));
+            await DatabaseService.getInstance();
+            AppLogger.info('✅ Database recovered successfully');
+          } catch (retryError) {
+            AppLogger.error('❌ Database recovery failed: $retryError');
+          }
+        }
       });
     } catch (e) {
       AppLogger.error('Error ensuring database connection: $e');
