@@ -103,6 +103,14 @@ class AppLifecycleService with WidgetsBindingObserver {
       AppLogger.error('Error disposing NotificationQueueProcessor', e);
     }
 
+    // Close database connections properly to avoid cursor leaks
+    try {
+      AppLogger.info('🗄️ Closing database connections...');
+      DatabaseService.closeDatabase();
+    } catch (e) {
+      AppLogger.error('Error closing database', e);
+    }
+
     // Old renewal services removed - now using MidnightHabitResetService
     AppLogger.info('App paused - midnight reset service continues running');
 

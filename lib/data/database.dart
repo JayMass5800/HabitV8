@@ -301,12 +301,22 @@ class DatabaseService {
     if (_habitBox != null && _habitBox!.isOpen) {
       try {
         // Test if the box is actually accessible by checking if it can read
-        _habitBox!.length;
-        return _habitBox!;
+        // Use a safer test that doesn't create cursors
+        final isAccessible = _habitBox!.isOpen && _habitBox!.length >= 0;
+        if (isAccessible) {
+          return _habitBox!;
+        }
       } catch (e) {
         // If the box is not accessible, clear it and recreate
         AppLogger.warning(
             'Existing habit box is not accessible, recreating: $e');
+        
+        // Properly close the existing box to avoid cursor leaks
+        try {
+          await _habitBox!.close();
+        } catch (closeError) {
+          AppLogger.warning('Error closing existing box: $closeError');
+        }
         _habitBox = null;
       }
     }
@@ -343,9 +353,18 @@ class DatabaseService {
   }
 
   static Future<void> closeDatabase() async {
-    await _habitBox?.close();
-    _habitBox = null;
-    _adaptersRegistered = false; // Reset adapter registration state
+    try {
+      if (_habitBox != null && _habitBox!.isOpen) {
+        AppLogger.debug('🗄️ Properly closing habit box to prevent cursor leaks...');
+        await _habitBox!.close();
+        AppLogger.debug('✅ Habit box closed successfully');
+      }
+    } catch (e) {
+      AppLogger.warning('Error closing habit box: $e');
+    } finally {
+      _habitBox = null;
+      _adaptersRegistered = false; // Reset adapter registration state
+    }
   }
 
   // Method to manually reset the database if needed
@@ -438,10 +457,26 @@ class HabitService {
         throw StateError('Database box is closed');
       }
 
-      // Fetch fresh data and cache it
-      final habits = _habitBox.values.toList();
-      _cachedHabits = habits;
-      _cacheTimestamp = now;
+      // Fetch fresh data using safe iteration and cache it
+      final List<Habit> habits = [];
+      try {
+        // Use safer iteration pattern to avoid cursor leaks
+        for (int i = 0; i < _habitBox.length; i++) {
+          final habit = _habitBox.getAt(i);
+          if (habit != null) {
+            habits.add(habit);
+          }
+        }
+        _cachedHabits = habits;
+        _cacheTimestamp = now;
+      } catch (e) {
+        AppLogger.warning('Error during safe iteration, falling back to values: $e');
+        // Fallback to original method if safe iteration fails
+        final fallbackHabits = _habitBox.values.toList();
+        _cachedHabits = fallbackHabits;
+        _cacheTimestamp = now;
+        return fallbackHabits;
+      }
 
       return habits;
     } catch (e) {
@@ -648,7 +683,16 @@ class HabitService {
         return null;
       }
 
-      return _habitBox.values.firstWhere((habit) => habit.id == id);
+      // Use safer iteration pattern to avoid cursor leaks
+      for (int i = 0; i < _habitBox.length; i++) {
+        final habit = _habitBox.getAt(i);
+        if (habit != null && habit.id == id) {
+          return habit;
+        }
+      }
+      
+      // Not found
+      return null;
     } catch (e) {
       AppLogger.error('Error in getHabitById: $e');
 
@@ -664,7 +708,25 @@ class HabitService {
   }
 
   Future<List<Habit>> getActiveHabits() async {
-    return _habitBox.values.where((habit) => habit.isActive).toList();
+    try {
+      if (!_habitBox.isOpen) {
+        AppLogger.error('HabitBox is closed when trying to getActiveHabits');
+        return [];
+      }
+
+      // Use safer iteration pattern to avoid cursor leaks
+      final List<Habit> activeHabits = [];
+      for (int i = 0; i < _habitBox.length; i++) {
+        final habit = _habitBox.getAt(i);
+        if (habit != null && habit.isActive) {
+          activeHabits.add(habit);
+        }
+      }
+      return activeHabits;
+    } catch (e) {
+      AppLogger.error('Error in getActiveHabits: $e');
+      return [];
+    }
   }
 
   Future<void> markHabitComplete(
