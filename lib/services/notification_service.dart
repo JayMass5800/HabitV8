@@ -3466,16 +3466,17 @@ class NotificationService {
       suffix: 'daily',
     );
 
-        await AlarmManagerService.scheduleRecurringExactAlarm(
-          alarmId: alarmId,
-          habitId: habit.id,
-          habitName: habit.name,
-          scheduledTime: nextAlarm,
-          frequency: 'daily',
-          alarmSoundName: habit.alarmSoundName,
-          alarmSoundUri: habit.alarmSoundUri,
-          snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
-        );    AppLogger.info('✅ Scheduled daily alarms for ${habit.name}');
+    await AlarmManagerService.scheduleRecurringExactAlarm(
+      alarmId: alarmId,
+      habitId: habit.id,
+      habitName: habit.name,
+      scheduledTime: nextAlarm,
+      frequency: 'daily',
+      alarmSoundName: habit.alarmSoundName,
+      alarmSoundUri: habit.alarmSoundUri,
+      snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
+    );
+    AppLogger.info('✅ Scheduled daily alarms for ${habit.name}');
   }
 
   /// Schedule weekly habit alarms using AlarmService

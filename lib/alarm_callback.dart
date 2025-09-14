@@ -309,14 +309,16 @@ Future<bool> _isValidSoundUri(String uri) async {
 Future<String?> _resolveSoundUriFromName(String soundName) async {
   try {
     AppLogger.info('🔍 Attempting to resolve sound URI for: $soundName');
-    
+
     // Since we're in a background isolate and can't access platform channels,
     // we can only fall back to default system sound URIs
     // The proper sound URI should have been passed through alarmSoundUri
-    AppLogger.warning('⚠️ Sound URI was empty but sound name provided: $soundName');
-    AppLogger.warning('⚠️ In background isolate, cannot resolve actual system sound URIs');
+    AppLogger.warning(
+        '⚠️ Sound URI was empty but sound name provided: $soundName');
+    AppLogger.warning(
+        '⚠️ In background isolate, cannot resolve actual system sound URIs');
     AppLogger.warning('⚠️ Falling back to default system alarm sound');
-    
+
     // Return default system alarm as fallback since we can't resolve actual system sounds
     // in background isolate context
     return 'content://settings/system/alarm_alert';

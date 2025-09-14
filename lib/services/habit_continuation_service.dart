@@ -717,7 +717,8 @@ class HabitContinuationService {
               habitName: habit.name,
               scheduledTime: alarmTime,
               frequency: 'monthly',
-              alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+              alarmSoundName: habit.alarmSoundName,
+              alarmSoundUri: habit.alarmSoundUri,
               snoozeDelayMinutes: habit.snoozeDelayMinutes,
             );
 
