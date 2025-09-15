@@ -2311,12 +2311,21 @@ class NotificationService {
     }
 
     final singleDateTime = habit.singleDateTime!;
-    final now = DateTime.now();
+    // Use timezone-aware current time for consistency with other frequency types
+    final now = tz.TZDateTime.now(tz.local);
+    final currentDateTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+    AppLogger.debug('Single habit scheduling debug:');
+    AppLogger.debug('  - Habit name: ${habit.name}');
+    AppLogger.debug('  - Single date/time: $singleDateTime');
+    AppLogger.debug('  - Current time (TZ): $now');
+    AppLogger.debug('  - Current time (local): $currentDateTime');
+    AppLogger.debug('  - Timezone: ${now.timeZoneName}');
 
     // Check if date/time is in the past
-    if (singleDateTime.isBefore(now)) {
+    if (singleDateTime.isBefore(currentDateTime)) {
       final error =
-          'Single habit "${habit.name}" date/time is in the past: $singleDateTime';
+          'Single habit "${habit.name}" date/time is in the past: $singleDateTime (current: $currentDateTime)';
       AppLogger.error(error);
       throw StateError(error);
     }
@@ -3675,12 +3684,21 @@ class NotificationService {
     }
 
     final singleDateTime = habit.singleDateTime!;
-    final now = DateTime.now();
+    // Use timezone-aware current time for consistency with other frequency types
+    final now = tz.TZDateTime.now(tz.local);
+    final currentDateTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+    AppLogger.debug('Single habit alarm scheduling debug:');
+    AppLogger.debug('  - Habit name: ${habit.name}');
+    AppLogger.debug('  - Single date/time: $singleDateTime');
+    AppLogger.debug('  - Current time (TZ): $now');
+    AppLogger.debug('  - Current time (local): $currentDateTime');
+    AppLogger.debug('  - Timezone: ${now.timeZoneName}');
 
     // Check if date/time is in the past
-    if (singleDateTime.isBefore(now)) {
+    if (singleDateTime.isBefore(currentDateTime)) {
       final error =
-          'Single habit "${habit.name}" alarm date/time is in the past: $singleDateTime';
+          'Single habit "${habit.name}" alarm date/time is in the past: $singleDateTime (current: $currentDateTime)';
       AppLogger.error(error);
       throw StateError(error);
     }

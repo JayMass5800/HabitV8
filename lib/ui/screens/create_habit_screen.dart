@@ -923,132 +923,230 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
   // Build single date/time selector for one-off habits
   Widget _buildSingleDateTimeSelector() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_singleDateTime == null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.event_available,
-                      color: Colors.grey.shade600,
-                      size: 48,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'No date and time selected',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontStyle: FontStyle.italic,
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.grey.shade600
+              : Colors.grey.shade300,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              'Select the date and time for this one-time habit',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_singleDateTime == null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade800
+                          : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey.shade600
+                            : Colors.grey.shade300,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _selectSingleDateTime,
-                      icon: const Icon(Icons.calendar_today),
-                      label: const Text('Select Date & Time'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedColor,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.1),
-                  border: Border.all(color: _selectedColor),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.event_available,
-                      color: _selectedColor,
-                      size: 32,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Selected Date & Time',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: _selectedColor,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${_getMonthName(_singleDateTime!.month)} ${_singleDateTime!.day}, ${_singleDateTime!.year}',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                    ),
-                    Text(
-                      '${_singleDateTime!.hour.toString().padLeft(2, '0')}:${_singleDateTime!.minute.toString().padLeft(2, '0')}',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: _selectedColor,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    child: Column(
                       children: [
+                        Icon(
+                          Icons.event_available,
+                          color: _selectedColor,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No date and time selected',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap the button below to select when this habit should remind you',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.grey.shade600,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
                         ElevatedButton.icon(
                           onPressed: _selectSingleDateTime,
-                          icon: const Icon(Icons.edit),
-                          label: const Text('Change'),
+                          icon: const Icon(Icons.calendar_today),
+                          label: const Text('Select Date & Time'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _selectedColor,
                             foregroundColor: Colors.white,
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _singleDateTime = null;
-                            });
-                          },
-                          icon: const Icon(Icons.clear),
-                          label: const Text('Clear'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            side: const BorderSide(color: Colors.red),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-          ],
-        ),
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: _selectedColor.withValues(alpha: 0.1),
+                      border: Border.all(color: _selectedColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.event_available,
+                              color: _selectedColor,
+                              size: 32,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Selected Date & Time',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: _selectedColor,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _selectedColor.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_month,
+                                    color: _selectedColor,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${_getMonthName(_singleDateTime!.month)} ${_singleDateTime!.day}, ${_singleDateTime!.year}',
+                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.schedule,
+                                    color: _selectedColor,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${_singleDateTime!.hour.toString().padLeft(2, '0')}:${_singleDateTime!.minute.toString().padLeft(2, '0')}',
+                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: _selectedColor,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _selectSingleDateTime,
+                              icon: const Icon(Icons.edit, size: 18),
+                              label: const Text('Change'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _selectedColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                              ),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _singleDateTime = null;
+                                });
+                              },
+                              icon: const Icon(Icons.clear, size: 18),
+                              label: const Text('Clear'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   // Helper method for selecting single date/time
   Future<void> _selectSingleDateTime() async {
+    // Use timezone-aware date handling for consistency with other frequencies
+    final now = tz.TZDateTime.now(tz.local);
+    final currentLocalDate = DateTime(now.year, now.month, now.day);
+    
     // First select date
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate:
-          _singleDateTime ?? DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now()
+          _singleDateTime ?? currentLocalDate.add(const Duration(days: 1)),
+      firstDate: currentLocalDate,
+      lastDate: currentLocalDate
           .add(const Duration(days: 365 * 5)), // 5 years into future
       helpText: 'Select the date for this habit',
       builder: (context, child) {
@@ -1112,6 +1210,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     );
 
     if (pickedTime != null && mounted) {
+      // Create timezone-aware DateTime for consistency with other frequencies
+      final now = tz.TZDateTime.now(tz.local);
       setState(() {
         _singleDateTime = DateTime(
           pickedDate.year,
@@ -1120,6 +1220,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           pickedTime.hour,
           pickedTime.minute,
         );
+        // Ensure the created DateTime is in local timezone context
+        AppLogger.debug('Single habit date/time created: $_singleDateTime');
+        AppLogger.debug('Timezone context used: ${now.timeZoneName}');
       });
     }
   }
