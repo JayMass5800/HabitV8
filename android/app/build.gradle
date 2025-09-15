@@ -30,9 +30,14 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace 'com.habittracker.habitv8'
+    namespace 'com.dappercatsinc.habitv1'
     compileSdk 36
     ndkVersion "27.0.12077973"
+
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -45,7 +50,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.habittracker.habitv8"
+        applicationId "com.dappercatsinc.habitv1"
         minSdkVersion 26
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()

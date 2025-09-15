@@ -15,7 +15,7 @@ class AlarmManagerService {
   static bool _isInitialized = false;
   static const String _alarmDataKey = 'alarm_manager_data_';
   static const MethodChannel _systemSoundChannel =
-      MethodChannel('com.habittracker.habitv8/system_sound');
+      MethodChannel('com.dappercatsinc.habitv1/system_sound');
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 

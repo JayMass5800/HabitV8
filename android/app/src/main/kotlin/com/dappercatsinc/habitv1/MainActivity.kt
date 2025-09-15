@@ -1,4 +1,4 @@
-package com.habittracker.habitv8
+package com.dappercatsinc.habitv1
 
 import android.app.Activity
 import android.app.AlarmManager
@@ -18,9 +18,9 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val RINGTONE_CHANNEL = "com.habittracker.habitv8/ringtones"
-    private val SYSTEM_SOUND_CHANNEL = "com.habittracker.habitv8/system_sound"
-    private val NATIVE_ALARM_CHANNEL = "com.habittracker.habitv8/native_alarm"
+    private val RINGTONE_CHANNEL = "com.dappercatsinc.habitv1/ringtones"
+    private val SYSTEM_SOUND_CHANNEL = "com.dappercatsinc.habitv1/system_sound"
+    private val NATIVE_ALARM_CHANNEL = "com.dappercatsinc.habitv1/native_alarm"
     private val RINGTONE_PICKER_REQUEST_CODE = 1
 
     private var previewRingtone: Ringtone? = null

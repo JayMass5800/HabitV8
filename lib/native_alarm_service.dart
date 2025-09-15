@@ -6,7 +6,7 @@ import 'services/logging_service.dart';
 /// to avoid platform channel issues from background isolates
 class NativeAlarmService {
   static const MethodChannel _channel =
-      MethodChannel('com.habittracker.habitv8/native_alarm');
+      MethodChannel('com.dappercatsinc.habitv1/native_alarm');
 
   /// Schedule a native Android alarm
   static Future<bool> scheduleAlarm({
@@ -65,7 +65,7 @@ class NativeAlarmService {
   static Future<bool> stopAlarmSound() async {
     try {
       const MethodChannel systemSoundChannel =
-          MethodChannel('com.habittracker.habitv8/system_sound');
+          MethodChannel('com.dappercatsinc.habitv1/system_sound');
       await systemSoundChannel.invokeMethod('stopSystemSound');
       AppLogger.info('✅ Alarm sound stopped');
       return true;

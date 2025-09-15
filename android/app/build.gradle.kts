@@ -21,12 +21,12 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.habittracker.habitv8"
+    namespace = "com.dappercatsinc.habitv1"
     compileSdk = 34
     ndkVersion = "25.1.8937393"
 
     defaultConfig {
-        applicationId = "com.habittracker.habitv8"
+        applicationId = "com.dappercatsinc.habitv1"
         minSdk = 26
         targetSdk = 36
         versionCode = flutterVersionCode

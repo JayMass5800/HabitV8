@@ -1,4 +1,4 @@
-package com.habittracker.habitv8
+package com.dappercatsinc.habitv1
 
 import android.app.Notification
 import android.app.NotificationChannel
