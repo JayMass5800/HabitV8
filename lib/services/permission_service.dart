@@ -50,9 +50,6 @@ class PermissionService {
 
     Map<Permission, PermissionStatus> statuses = await permissions.request();
 
-    // Request health permissions separately
-    final bool healthPermissionsGranted = await _requestHealthPermissions();
-
     // Check if all permissions are granted
     bool allGranted = statuses.values.every(
       (status) =>
@@ -60,29 +57,7 @@ class PermissionService {
           status == PermissionStatus.limited,
     );
 
-    return allGranted && healthPermissionsGranted;
-  }
-
-  /// Request health permissions contextually when user accesses health features
-  /// Health permissions are no longer supported - returns false
-  static Future<bool> requestHealthPermissions() async {
-    AppLogger.info(
-        'Health permissions not available - health integration removed');
-    return false;
-  }
-
-  /// Health permissions are no longer supported - returns false
-  static Future<bool> _requestHealthPermissions() async {
-    AppLogger.info(
-        'Health permissions not available - health integration removed');
-    return false;
-  }
-
-  /// Health permissions are no longer supported - returns false
-  static Future<bool> forceRequestAllHealthPermissions() async {
-    AppLogger.info(
-        'Health permissions not available - health integration removed');
-    return false;
+    return allGranted;
   }
 
   /// Check notification permission status
@@ -245,13 +220,6 @@ class PermissionService {
       );
       return false;
     }
-  }
-
-  /// Health permissions are no longer supported - returns false
-  Future<bool> isHealthPermissionGranted() async {
-    AppLogger.info(
-        'Health permissions not available - health integration removed');
-    return false;
   }
 
   /// Request specific permission

@@ -5,7 +5,6 @@
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
     
-    <!-- Removed all health/motion/activity permissions for profile builds -->
     <!-- Exact alarm permission for precise notifications (Android 12+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARMS" />
 </manifest>

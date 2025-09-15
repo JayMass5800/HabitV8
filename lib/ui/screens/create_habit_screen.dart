@@ -47,11 +47,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   // Single habit date/time
   DateTime? _singleDateTime;
 
-  // Health integration fields
-  final bool _enableHealthIntegration = false;
-  String? _selectedHealthDataType;
-  double? _customThreshold;
-  final String _thresholdLevel = 'moderate';
   List<HabitSuggestion> _habitSuggestions = [];
   bool _loadingSuggestions = false;
   bool _showSuggestions = false;
@@ -2002,8 +1997,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         );
       }
 
-      // Create habit - use health-integrated creation if health integration is enabled
-      // Create regular habit (health integration removed)
+      // Create habit
       final habit = Habit.create(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -2095,16 +2089,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         } else {
           rethrow; // Re-throw other errors
         }
-      }
-
-      // Log health integration status and analyze for additional mappings
-      if (_enableHealthIntegration && _selectedHealthDataType != null) {
-        AppLogger.info(
-          'Health-integrated habit created: ${habit.name} -> $_selectedHealthDataType (threshold: $_customThreshold, level: $_thresholdLevel)',
-        );
-      } else {
-        // Health mapping is no longer supported
-        AppLogger.info('Health mapping skipped - health integration removed');
       }
 
       // Schedule notifications/alarms if enabled (non-blocking)
