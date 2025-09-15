@@ -242,12 +242,12 @@ class MidnightHabitResetService {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
 
-    await NotificationService.scheduleNotification(
+    await NotificationService.scheduleHabitNotification(
       id: NotificationService.generateSafeId('${habit.id}_daily'),
+      habitId: habit.id,
       title: '🎯 ${habit.name}',
       body: 'Time to complete your daily habit! Keep your streak going.',
       scheduledTime: scheduledTime,
-      payload: 'habit_${habit.id}_daily',
     );
   }
 
@@ -280,12 +280,12 @@ class MidnightHabitResetService {
         notificationTime.minute,
       );
 
-      await NotificationService.scheduleNotification(
+      await NotificationService.scheduleHabitNotification(
         id: NotificationService.generateSafeId('${habit.id}_weekly_$weekday'),
+        habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your weekly habit! Don\'t break your streak.',
         scheduledTime: scheduledTime,
-        payload: 'habit_${habit.id}_weekly',
       );
     }
   }
@@ -312,12 +312,12 @@ class MidnightHabitResetService {
             notificationTime.hour, notificationTime.minute);
       }
 
-      await NotificationService.scheduleNotification(
+      await NotificationService.scheduleHabitNotification(
         id: NotificationService.generateSafeId('${habit.id}_monthly_$day'),
+        habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your monthly habit! Stay consistent.',
         scheduledTime: scheduledTime,
-        payload: 'habit_${habit.id}_monthly',
       );
     }
   }
@@ -358,13 +358,13 @@ class MidnightHabitResetService {
         );
       }
 
-      await NotificationService.scheduleNotification(
+      await NotificationService.scheduleHabitNotification(
         id: NotificationService.generateSafeId(
             '${habit.id}_yearly_${month}_$day'),
+        habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your yearly habit! Make it count.',
         scheduledTime: scheduledTime,
-        payload: 'habit_${habit.id}_yearly',
       );
     }
   }
@@ -401,13 +401,13 @@ class MidnightHabitResetService {
 
         // Only schedule future notifications
         if (scheduledTime.isAfter(now)) {
-          await NotificationService.scheduleNotification(
+          await NotificationService.scheduleHabitNotification(
             id: NotificationService.generateSafeId(
                 '${habit.id}_hourly_${date.day}_${hour}_$minute'),
+            habitId: habit.id,
             title: '⏰ ${habit.name}',
             body: 'Time for your hourly habit!',
             scheduledTime: scheduledTime,
-            payload: 'habit_${habit.id}_hourly',
           );
 
           scheduledCount++;
@@ -428,12 +428,12 @@ class MidnightHabitResetService {
 
     // Only schedule if the single date/time is in the future
     if (singleDateTime.isAfter(now)) {
-      await NotificationService.scheduleNotification(
+      await NotificationService.scheduleHabitNotification(
         id: NotificationService.generateSafeId('${habit.id}_single'),
+        habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your one-time habit!',
         scheduledTime: singleDateTime,
-        payload: 'habit_${habit.id}_single',
       );
     }
   }
