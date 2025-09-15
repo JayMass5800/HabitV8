@@ -432,7 +432,7 @@ You may not assign your rights under these Terms. We may assign our rights to an
 
 ### 14.5 Contact Information
 If you have questions about these Terms, please contact us at:
-- Email: support@dappercatsinc.com
+- Email: DapperCatsInc@gmail.com
 
 ---
 
@@ -664,8 +664,7 @@ If you choose to enable calendar integration:
 ### Questions and Concerns
 If you have any questions about this Privacy Policy or our privacy practices, please contact us:
 
-- **Email**: privacy@dappercatsinc.com
-- **Support**: support@dappercatsinc.com
+- **Email**: DapperCatsInc@gmail.com
 
 ### Response Time
 - **Email Responses**: We aim to respond to privacy inquiries within 48 hours
