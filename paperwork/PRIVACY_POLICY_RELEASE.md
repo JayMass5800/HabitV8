@@ -46,7 +46,7 @@ We want to be completely transparent about what we don't collect:
 - **Usage Analytics**: No usage data transmitted to external servers or analytics services
 - **Crash Reports**: No automatic crash reporting to external services
 - **Network Activity**: No tracking of your internet usage or browsing behavior
-- **Social Media Data**: No access to social media accounts or profiles
+- **Social Media Data**: No access to social media accounts or profilesr
 - **Contact Lists**: No access to your contacts or communication data
 - **Financial Information**: No payment information (payments handled by app stores)
 
@@ -264,7 +264,6 @@ If you choose to enable calendar integration:
 - **Feature Requests**: In-app feedback system for suggestions
 
 ### Legal Inquiries
-- **Legal Address**: [1303 9th st sw, puyallup, 98371, USA]
 - **Compliance Questions**: [DapperCatsInc@gmail.com]
 
 ## Transparency Commitment
