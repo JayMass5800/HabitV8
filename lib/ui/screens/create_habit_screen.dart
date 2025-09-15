@@ -1200,26 +1200,23 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       initialTime: _singleDateTime != null
           ? TimeOfDay.fromDateTime(_singleDateTime!)
           : const TimeOfDay(hour: 9, minute: 0),
-      helpText: 'Select the time for this habit (24-hour format)',
+      helpText: 'Select the time for this habit',
       builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              timePickerTheme: TimePickerThemeData(
-                backgroundColor: Theme.of(context).colorScheme.surface,
-                hourMinuteTextColor: Theme.of(context).colorScheme.onSurface,
-                dayPeriodTextColor: Theme.of(context).colorScheme.onSurface,
-                dialHandColor: _selectedColor,
-                dialTextColor: Theme.of(context).colorScheme.onSurface,
-                entryModeIconColor: Theme.of(context).colorScheme.onSurface,
-                helpTextStyle: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+        return Theme(
+          data: Theme.of(context).copyWith(
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              hourMinuteTextColor: Theme.of(context).colorScheme.onSurface,
+              dayPeriodTextColor: Theme.of(context).colorScheme.onSurface,
+              dialHandColor: Theme.of(context).colorScheme.primary,
+              dialTextColor: Theme.of(context).colorScheme.onSurface,
+              entryModeIconColor: Theme.of(context).colorScheme.onSurface,
+              helpTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            child: child!,
           ),
+          child: child!,
         );
       },
     );
