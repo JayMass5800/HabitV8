@@ -98,6 +98,15 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "AlarmService onStartCommand")
         
+        // Check if this is a stop alarm action
+        if (intent?.action == "STOP_ALARM") {
+            Log.i(TAG, "Received STOP_ALARM action, stopping service")
+            stopAlarmSound()
+            stopVibration()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        
         // Extract data from intent
         val soundUriString = intent?.getStringExtra("soundUri")
         val alarmId = intent?.getIntExtra("alarmId", 0) ?: 0

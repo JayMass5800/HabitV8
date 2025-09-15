@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'package:path_provider/path_provider.dart';
 import '../native_alarm_service.dart';
 import 'logging_service.dart';
@@ -131,15 +130,6 @@ class AlarmManagerService {
       }
     } catch (e) {
       AppLogger.error('❌ Failed to schedule native alarm', e);
-
-      // Fallback to notification if alarm manager fails
-      await _scheduleNotificationFallback(
-        alarmId: alarmId,
-        habitName: habitName,
-        scheduledTime: scheduledTime,
-        alarmSoundName: alarmSoundName,
-      );
-
       rethrow;
     }
   }
@@ -455,46 +445,6 @@ class AlarmManagerService {
       AppLogger.info('✅ Sound fallback notification shown for: $habitName');
     } catch (e) {
       AppLogger.error('Failed to show sound fallback notification', e);
-    }
-  }
-
-  /// Schedule notification fallback if alarm manager fails
-  static Future<void> _scheduleNotificationFallback({
-    required int alarmId,
-    required String habitName,
-    required DateTime scheduledTime,
-    String? alarmSoundName,
-  }) async {
-    try {
-      AppLogger.info('🔄 Scheduling notification fallback for $habitName');
-
-      const AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails(
-        'habit_reminders',
-        'Habit Reminders',
-        channelDescription: 'Scheduled reminders for habits',
-        importance: Importance.high,
-        priority: Priority.high,
-        sound: RawResourceAndroidNotificationSound('notification'),
-      );
-
-      const NotificationDetails platformChannelSpecifics =
-          NotificationDetails(android: androidPlatformChannelSpecifics);
-
-      await _notificationsPlugin.zonedSchedule(
-        alarmId,
-        '🚨 HABIT REMINDER: $habitName',
-        'Time to complete your habit!',
-        tz.TZDateTime.from(scheduledTime, tz.local),
-        platformChannelSpecifics,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-      );
-
-      AppLogger.info('✅ Notification fallback scheduled for $habitName');
-    } catch (e) {
-      AppLogger.error('Failed to schedule notification fallback', e);
     }
   }
 
