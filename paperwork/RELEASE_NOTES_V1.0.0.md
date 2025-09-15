@@ -56,21 +56,7 @@ We're excited to introduce **HabitV8**, the most advanced privacy-first habit tr
 - **Event Creation**: Automatic calendar events for scheduled habits and reminders
 - **Multi-Calendar Support**: Choose which calendar to use for habit-related events
 
-### 🏥 Health & Fitness Integration (Privacy-Conscious)
-- **HealthKit Integration (iOS)**: Deep integration with iOS Health app
-- **Health Connect Support (Android)**: Full compatibility with Android's health platform
-- **Google Fit Integration**: Alternative health data source for Android users
-- **Minimal Permissions**: Only 6 essential health data types requested:
-  - **Steps**: Walking/running habit tracking and step goal correlation
-  - **Active Energy Burned**: Fitness habit intensity measurement and exercise insights
-  - **Sleep Duration**: Sleep habit optimization and bedtime routine analysis
-  - **Water Intake**: Hydration habit tracking and daily intake goal monitoring
-  - **Mindfulness Sessions**: Automatic completion of meditation and mindfulness habits
-  - **Weight**: Health goal tracking and weight management habit correlation
-- **Local Processing**: All health data analysis performed on-device for complete privacy
-- **Activity Recognition**: Smart detection of physical activities for automatic habit completion
-
-### 🎨 Beautiful User Interface
+###  Beautiful User Interface
 - **Material Design 3**: Modern, beautiful interface following the latest design guidelines
 - **Adaptive Themes**: Automatic dark/light mode switching with custom theme options
 - **Smooth Animations**: Fluid transitions and delightful micro-interactions throughout the app
@@ -128,12 +114,6 @@ We're excited to introduce **HabitV8**, the most advanced privacy-first habit tr
 - Comprehensive analytics for self-analysis
 - Achievement system for sustained motivation
 - Privacy protection for personal data
-
-### For Health & Fitness Users  
-- Health app integration with minimal permissions
-- Activity recognition for automatic tracking
-- Fitness habit correlation with health metrics
-- Local processing ensuring data privacy
 
 ### For Productivity Seekers
 - Flexible scheduling for work and personal habits

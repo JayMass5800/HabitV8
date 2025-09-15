@@ -34,7 +34,6 @@ HabitV8 stores all your information locally on your device using encrypted local
 - **Feature Usage**: Which features you use to improve app design (local analysis only)
 
 #### Optional Integration Data
-- **Health Data**: If you choose to enable health integration (see Health Data section)
 - **Calendar Data**: If you choose to enable calendar integration (see Calendar Integration section)
 
 ### Data We Explicitly DO NOT Collect
@@ -70,65 +69,6 @@ Your data is used exclusively on your device to provide app functionality:
 ### Data Processing Location
 **All data processing occurs locally on your device**. No data is transmitted to external servers for processing, analysis, or storage.
 
-## Health Data Integration (Optional)
-
-### Health Data We May Access
-If you choose to enable health integration, HabitV8 may access the following health data types:
-
-1. **Steps** (Pedometer Data)
-   - **Purpose**: Correlate walking/running habits with step count goals
-   - **Usage**: Provide insights on daily activity levels and automatically track walking habits
-   - **Storage**: Processed and stored locally only
-
-2. **Active Energy Burned** (Workout Energy)
-   - **Purpose**: Correlate with fitness habits and exercise intensity tracking
-   - **Usage**: Provide insights on workout effectiveness and automatically complete exercise habits
-   - **Storage**: Processed and stored locally only
-
-3. **Sleep Duration** (Sleep Analysis)
-   - **Purpose**: Optimize sleep-related habits and bedtime routines
-   - **Usage**: Correlate sleep quality with habit completion success
-   - **Storage**: Processed and stored locally only
-
-4. **Water Intake** (Hydration Data)
-   - **Purpose**: Support hydration habit tracking and daily water intake goals
-   - **Usage**: Automatically track hydration habits and provide daily intake insights
-   - **Storage**: Processed and stored locally only
-
-5. **Mindfulness Sessions** (Mindful Minutes)
-   - **Purpose**: Automatically track meditation and mindfulness habits
-   - **Usage**: Complete mindfulness habits automatically based on recorded sessions
-   - **Storage**: Processed and stored locally only
-
-6. **Weight** (Body Mass)
-   - **Purpose**: Support weight management habits and health goal tracking
-   - **Usage**: Correlate weight trends with health-related habits
-   - **Storage**: Processed and stored locally only
-
-### Health Data Privacy Protections
-
-#### User Control
-- **Opt-In Only**: Health integration is completely optional and disabled by default
-- **Granular Control**: You can enable/disable individual health data types
-- **Revocation**: You can revoke health data access at any time through device settings
-- **Transparency**: Clear explanation of why each health data type is needed
-
-#### Data Security
-- **Local Storage**: All health data is encrypted and stored locally on your device
-- **No Transmission**: Health data is never transmitted to external servers
-- **No Sharing**: Health data is never shared with third parties
-- **No Cloud Storage**: Health data is never stored in cloud services
-
-#### Platform-Specific Integration
-- **Apple HealthKit (iOS)**: Integrates with iOS Health app following Apple's strict privacy guidelines
-- **Health Connect (Android)**: Follows Google's Health Connect privacy framework
-- **Google Fit (Android)**: Alternative health platform with similar privacy protections
-
-### Health Data Usage Limitations
-- **Habit Correlation Only**: Health data is used exclusively for habit-related insights
-- **No Medical Advice**: App does not provide medical advice or diagnosis
-- **Personal Use Only**: Health insights are for personal habit optimization only
-- **No Health Records**: App does not maintain medical records or health profiles
 
 ## Calendar Integration (Optional)
 
@@ -314,18 +254,18 @@ If you choose to enable calendar integration:
 ## Contact Information
 
 ### Privacy Questions
-- **Email**: [Your privacy email]
+- **Email**: [DapperCatsInc@gmail.com]
 - **Response Time**: We respond to privacy inquiries within 48 hours
-- **Data Requests**: Requests for data access, correction, or deletion handled promptly
+- **Data Requests**: We do not collect your data at all.
 
 ### App Support
-- **Technical Support**: [Your support email]
+- **Technical Support**: [DapperCatsInc@gmail.com]
 - **Bug Reports**: In-app bug reporting system available
 - **Feature Requests**: In-app feedback system for suggestions
 
 ### Legal Inquiries
-- **Legal Address**: [Your legal address]
-- **Compliance Questions**: [Your compliance contact]
+- **Legal Address**: [1303 9th st sw, puyallup, 98371, USA]
+- **Compliance Questions**: [DapperCatsInc@gmail.com]
 
 ## Transparency Commitment
 

@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/settings_tile.dart';
 import '../widgets/calendar_selection_dialog.dart';
+import '../widgets/document_popup_dialog.dart';
 import '../../services/notification_service.dart';
 import '../../services/permission_service.dart';
 import '../../services/theme_service.dart';
@@ -417,13 +418,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: 'Privacy Policy',
                   subtitle: 'View our privacy policy',
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/privacy'),
+                  onTap: () => DocumentPopupDialog.showPrivacyPolicy(context),
                 ),
                 SettingsTile(
                   title: 'Terms of Service',
                   subtitle: 'View terms and conditions',
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/terms'),
+                  onTap: () => DocumentPopupDialog.showTermsOfService(context),
                 ),
                 ListTile(
                   title: const Text(

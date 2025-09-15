@@ -101,7 +101,6 @@ habit tracker, habits, productivity, self improvement, routine, goals, motivatio
 - AI-powered insights and recommendations
 - Progress visualization and analytics
 - Notification and reminder system
-- Health app integration
 - Calendar integration
 - Achievement and gamification system
 - Data export capabilities
@@ -147,7 +146,6 @@ Modern, clean design showing the app interface with:
 • AI-powered insights and personalized recommendations
 • Beautiful progress visualization and analytics
 • Smart notification system with action buttons
-• Health app integration with minimal permissions
 • Achievement system with 50+ accomplishments
 • Calendar integration for habit scheduling
 • Privacy-first design with local data storage
@@ -192,7 +190,7 @@ Modern, clean design showing the app interface with:
 ### ASO (App Store Optimization)
 - Focus on "privacy-first habit tracker" positioning
 - Emphasize AI features and beautiful design
-- Target productivity and health & fitness categories
+- Target productivity categories
 - Use high-quality screenshots showing key features
 
 ### Key Selling Points
@@ -206,7 +204,6 @@ Modern, clean design showing the app interface with:
 ### Competitive Advantages
 - Most advanced privacy protection in category
 - Local AI processing (unique in market)
-- Comprehensive health integration with minimal permissions
 - Professional-grade analytics in consumer app
 - No ongoing costs or subscriptions
 - Transparent about data usage and capabilities
