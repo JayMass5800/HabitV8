@@ -82,8 +82,6 @@
             android:name=".AlarmReceiver"
             android:enabled="true"
             android:exported="false" />
-            </intent-filter>
-        </receiver>
 
         <activity
             android:name=".MainActivity"

@@ -12,8 +12,8 @@ import 'logging_service.dart';
 import 'permission_service.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
-import '../data/database.dart';
 import 'alarm_manager_service.dart';
+import '../data/database.dart';
 
 @pragma('vm:entry-point')
 class NotificationService {
@@ -2023,6 +2023,7 @@ class NotificationService {
     AppLogger.debug('Starting alarm scheduling for habit: ${habit.name}');
     AppLogger.debug('Alarm enabled: ${habit.alarmEnabled}');
     AppLogger.debug('Alarm sound: ${habit.alarmSoundName}');
+    AppLogger.debug('Alarm sound URI: ${habit.alarmSoundUri}');
     AppLogger.debug('Snooze delay: 10 minutes (fixed default)');
 
     // Initialize AlarmManagerService to use system alarms for this habit
@@ -2348,19 +2349,20 @@ class NotificationService {
         DateTime nextAlarm = _getNextWeekdayDateTime(weekday, hour, minute);
 
         try {
-          await scheduleHabitAlarm(
-            id: generateSafeId('${habit.id}_weekly_$weekday'),
+          // Use the real alarm service instead of notification-based alarms
+          await AlarmManagerService.scheduleExactAlarm(
+            alarmId: generateSafeId('${habit.id}_weekly_$weekday'),
             habitId: habit.id.toString(),
-            title: '🚨 ${habit.name}',
-            body: 'Alarm: Time for your weekly habit!',
+            habitName: habit.name,
             scheduledTime: nextAlarm,
+            frequency: 'weekly',
             alarmSoundName: habit.alarmSoundName,
-            snoozeDelayMinutes:
-                10, // Fixed default - no snooze for alarm habits
+            alarmSoundUri: habit.alarmSoundUri,
+            snoozeDelayMinutes: 10,
           );
 
           AppLogger.debug(
-            'Scheduled weekly alarm for ${habit.name} on weekday $weekday at $nextAlarm',
+            'Scheduled weekly native alarm for ${habit.name} on weekday $weekday at $nextAlarm',
           );
         } catch (e) {
           AppLogger.error(
@@ -2392,19 +2394,20 @@ class NotificationService {
         }
 
         try {
-          await scheduleHabitAlarm(
-            id: generateSafeId('${habit.id}_monthly_$day'),
+          // Use the real alarm service instead of notification-based alarms
+          await AlarmManagerService.scheduleExactAlarm(
+            alarmId: generateSafeId('${habit.id}_monthly_$day'),
             habitId: habit.id.toString(),
-            title: '🚨 ${habit.name}',
-            body: 'Alarm: Time for your monthly habit!',
+            habitName: habit.name,
             scheduledTime: nextAlarm,
+            frequency: 'monthly',
             alarmSoundName: habit.alarmSoundName,
-            snoozeDelayMinutes:
-                10, // Fixed default - no snooze for alarm habits
+            alarmSoundUri: habit.alarmSoundUri,
+            snoozeDelayMinutes: 10,
           );
 
           AppLogger.debug(
-            'Scheduled monthly alarm for ${habit.name} on day $day at $nextAlarm',
+            'Scheduled monthly native alarm for ${habit.name} on day $day at $nextAlarm',
           );
         } catch (e) {
           AppLogger.error(
@@ -2441,16 +2444,16 @@ class NotificationService {
             nextAlarm = DateTime(now.year + 1, month, day, hour, minute);
           }
 
-          await scheduleHabitAlarm(
-            id: generateSafeId('${habit.id}_yearly_${month}_$day'),
+          // Use the real alarm service instead of notification-based alarms
+          await AlarmManagerService.scheduleExactAlarm(
+            alarmId: generateSafeId('${habit.id}_yearly_${month}_$day'),
             habitId: habit.id.toString(),
-            title: '🚨 ${habit.name}',
-            body:
-                'Alarm: Time for your yearly habit! This is your special day.',
+            habitName: habit.name,
             scheduledTime: nextAlarm,
+            frequency: 'yearly',
             alarmSoundName: habit.alarmSoundName,
-            snoozeDelayMinutes:
-                10, // Fixed default - no snooze for alarm habits
+            alarmSoundUri: habit.alarmSoundUri,
+            snoozeDelayMinutes: 10,
           );
 
           AppLogger.debug(
@@ -2495,15 +2498,16 @@ class NotificationService {
             nextAlarm = nextAlarm.add(const Duration(days: 1));
           }
 
-          await scheduleHabitAlarm(
-            id: generateSafeId('${habit.id}_hourly_${hour}_$minute'),
+          // Use the real alarm service instead of notification-based alarms
+          await AlarmManagerService.scheduleExactAlarm(
+            alarmId: generateSafeId('${habit.id}_hourly_${hour}_$minute'),
             habitId: '${habit.id}|$hour:${minute.toString().padLeft(2, '0')}',
-            title: '🚨 ${habit.name}',
-            body: 'Alarm: Time for your habit! Scheduled for $timeString',
+            habitName: habit.name,
             scheduledTime: nextAlarm,
+            frequency: 'hourly',
             alarmSoundName: habit.alarmSoundName,
-            snoozeDelayMinutes:
-                10, // Fixed default - no snooze for alarm habits
+            alarmSoundUri: habit.alarmSoundUri,
+            snoozeDelayMinutes: 10,
           );
 
           AppLogger.debug(
@@ -2529,14 +2533,16 @@ class NotificationService {
           nextAlarm = nextAlarm.add(const Duration(days: 1));
         }
 
-        await scheduleHabitAlarm(
-          id: generateSafeId('${habit.id}_hourly_$hour'),
+        // Use the real alarm service instead of notification-based alarms
+        await AlarmManagerService.scheduleExactAlarm(
+          alarmId: generateSafeId('${habit.id}_hourly_$hour'),
           habitId: '${habit.id}|$hour:00',
-          title: '🚨 ${habit.name}',
-          body: 'Hourly alarm: Time for your habit!',
+          habitName: habit.name,
           scheduledTime: nextAlarm,
+          frequency: 'hourly',
           alarmSoundName: habit.alarmSoundName,
-          snoozeDelayMinutes: 10, // Fixed default - no snooze for alarm habits
+          alarmSoundUri: habit.alarmSoundUri,
+          snoozeDelayMinutes: 10,
         );
       }
     }
