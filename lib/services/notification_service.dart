@@ -13,6 +13,7 @@ import 'permission_service.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
 import 'alarm_manager_service.dart';
+import 'midnight_habit_reset_service.dart';
 import '../data/database.dart';
 
 @pragma('vm:entry-point')
@@ -1886,7 +1887,16 @@ class NotificationService {
     );
     AppLogger.debug('Notifications enabled: ${habit.notificationsEnabled}');
     AppLogger.debug('Alarm enabled: ${habit.alarmEnabled}');
-    AppLogger.debug('Notification time: ${habit.notificationTime}');
+    
+    // Log the appropriate time information based on habit frequency
+    final habitFrequency = habit.frequency.toString().split('.').last;
+    if (habitFrequency == 'hourly') {
+      AppLogger.debug('Hourly times: ${habit.hourlyTimes}');
+    } else if (habitFrequency == 'single') {
+      AppLogger.debug('Single date/time: ${habit.singleDateTime}');
+    } else {
+      AppLogger.debug('Notification time: ${habit.notificationTime}');
+    }
 
     if (!_isInitialized) {
       AppLogger.debug('Initializing notification service');
@@ -1992,9 +2002,8 @@ class NotificationService {
           break;
 
         case 'hourly':
-          AppLogger.debug(
-              'Skipping hourly notifications - handled by WorkManagerHabitService');
-          // Hourly habits are handled by WorkManagerHabitService to avoid duplicates
+          AppLogger.debug('Scheduling initial hourly notifications via MidnightHabitResetService');
+          await MidnightHabitResetService.scheduleHourlyNotifications(habit);
           break;
 
         default:

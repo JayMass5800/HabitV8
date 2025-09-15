@@ -156,8 +156,9 @@ class MidnightHabitResetService {
         return false;
 
       case HabitFrequency.hourly:
-        // Hourly habits don't need midnight reset, they reset every hour
-        return false;
+        // Hourly habits need to be rescheduled daily to ensure they continue working
+        // The previous day's notifications expire, so we need to schedule new ones
+        return true;
 
       case HabitFrequency.single:
         // Single habits don't need midnight reset, they only fire once
@@ -368,11 +369,19 @@ class MidnightHabitResetService {
     }
   }
 
+  /// Schedule hourly notifications (public method for use by NotificationService)
+  static Future<void> scheduleHourlyNotifications(Habit habit) async {
+    await _scheduleHourlyNotifications(habit);
+  }
+
   /// Schedule hourly notifications
   static Future<void> _scheduleHourlyNotifications(Habit habit) async {
     if (habit.hourlyTimes.isEmpty) return;
 
     final now = DateTime.now();
+    final endTime = now.add(const Duration(hours: 48)); // Schedule for next 48 hours
+
+    int scheduledCount = 0;
 
     for (final timeStr in habit.hourlyTimes) {
       final timeParts = timeStr.split(':');
@@ -382,23 +391,31 @@ class MidnightHabitResetService {
       final minute = int.tryParse(timeParts[1]);
       if (hour == null || minute == null) continue;
 
-      DateTime scheduledTime =
-          DateTime(now.year, now.month, now.day, hour, minute);
+      // Schedule for each day in the next 48 hours
+      for (DateTime date = now;
+          date.isBefore(endTime);
+          date = date.add(const Duration(days: 1))) {
+        DateTime scheduledTime = 
+            DateTime(date.year, date.month, date.day, hour, minute);
 
-      // If time has passed today, schedule for tomorrow
-      if (scheduledTime.isBefore(now)) {
-        scheduledTime = scheduledTime.add(const Duration(days: 1));
+        // Only schedule future notifications
+        if (scheduledTime.isAfter(now)) {
+          await NotificationService.scheduleNotification(
+            id: NotificationService.generateSafeId(
+                '${habit.id}_hourly_${date.day}_${hour}_$minute'),
+            title: '⏰ ${habit.name}',
+            body: 'Time for your hourly habit!',
+            scheduledTime: scheduledTime,
+            payload: 'habit_${habit.id}_hourly',
+          );
+
+          scheduledCount++;
+        }
       }
-
-      await NotificationService.scheduleNotification(
-        id: NotificationService.generateSafeId(
-            '${habit.id}_hourly_${hour}_$minute'),
-        title: '⏰ ${habit.name}',
-        body: 'Time for your hourly habit!',
-        scheduledTime: scheduledTime,
-        payload: 'habit_${habit.id}_hourly',
-      );
     }
+
+    AppLogger.debug(
+        '📅 Scheduled $scheduledCount hourly notifications for ${habit.name}');
   }
 
   /// Schedule single habit notifications

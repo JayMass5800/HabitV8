@@ -531,6 +531,11 @@ class WorkManagerHabitService {
         '📅 Scheduled $scheduledCount yearly notifications for ${habit.name}');
   }
 
+  /// Public method to schedule hourly notifications for a habit
+  static Future<void> scheduleHourlyNotifications(dynamic habit) async {
+    await _scheduleHourlyContinuous(habit);
+  }
+
   /// Schedule continuous hourly notifications (next 48 hours)
   static Future<void> _scheduleHourlyContinuous(dynamic habit) async {
     final hourlyTimes = habit.hourlyTimes;
