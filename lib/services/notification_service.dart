@@ -1887,7 +1887,7 @@ class NotificationService {
     );
     AppLogger.debug('Notifications enabled: ${habit.notificationsEnabled}');
     AppLogger.debug('Alarm enabled: ${habit.alarmEnabled}');
-    
+
     // Log the appropriate time information based on habit frequency
     final habitFrequency = habit.frequency.toString().split('.').last;
     if (habitFrequency == 'hourly') {
@@ -2002,7 +2002,8 @@ class NotificationService {
           break;
 
         case 'hourly':
-          AppLogger.debug('Scheduling initial hourly notifications via MidnightHabitResetService');
+          AppLogger.debug(
+              'Scheduling initial hourly notifications via MidnightHabitResetService');
           await MidnightHabitResetService.scheduleHourlyNotifications(habit);
           break;
 

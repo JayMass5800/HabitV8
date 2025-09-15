@@ -379,7 +379,8 @@ class MidnightHabitResetService {
     if (habit.hourlyTimes.isEmpty) return;
 
     final now = DateTime.now();
-    final endTime = now.add(const Duration(hours: 48)); // Schedule for next 48 hours
+    final endTime =
+        now.add(const Duration(hours: 48)); // Schedule for next 48 hours
 
     int scheduledCount = 0;
 
@@ -395,7 +396,7 @@ class MidnightHabitResetService {
       for (DateTime date = now;
           date.isBefore(endTime);
           date = date.add(const Duration(days: 1))) {
-        DateTime scheduledTime = 
+        DateTime scheduledTime =
             DateTime(date.year, date.month, date.day, hour, minute);
 
         // Only schedule future notifications

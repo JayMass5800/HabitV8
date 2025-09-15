@@ -585,7 +585,8 @@ class WorkManagerHabitService {
   static Future<void> _scheduleSingleContinuous(dynamic habit) async {
     // Validate single habit requirements
     if (habit.singleDateTime == null) {
-      final error = 'Single habit "${habit.name}" requires a date/time to be set';
+      final error =
+          'Single habit "${habit.name}" requires a date/time to be set';
       AppLogger.error(error);
       throw ArgumentError(error);
     }
@@ -595,7 +596,8 @@ class WorkManagerHabitService {
 
     // Check if date/time is in the past
     if (singleDateTime.isBefore(now)) {
-      final error = 'Single habit "${habit.name}" date/time is in the past: $singleDateTime';
+      final error =
+          'Single habit "${habit.name}" date/time is in the past: $singleDateTime';
       AppLogger.error(error);
       throw StateError(error);
     }
@@ -615,7 +617,8 @@ class WorkManagerHabitService {
       AppLogger.info(
           '✅ Scheduled single notification for "${habit.name}" at $singleDateTime');
     } catch (e) {
-      final error = 'Failed to schedule single habit notification for "${habit.name}": $e';
+      final error =
+          'Failed to schedule single habit notification for "${habit.name}": $e';
       AppLogger.error(error);
       throw Exception(error);
     }
