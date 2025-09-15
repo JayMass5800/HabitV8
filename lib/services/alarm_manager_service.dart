@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -9,10 +8,9 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:path_provider/path_provider.dart';
 import '../native_alarm_service.dart';
 import 'logging_service.dart';
-import '../alarm_callback.dart';
 
-/// Unified alarm service using android_alarm_manager_plus for reliable system-level alarms
-/// with native Android system sound support via Platform Channels
+/// Unified alarm service using native Android AlarmManager for reliable system-level alarms
+/// with proper BroadcastReceiver pattern and foreground service architecture
 @pragma('vm:entry-point')
 class AlarmManagerService {
   static bool _isInitialized = false;
@@ -27,8 +25,8 @@ class AlarmManagerService {
     if (_isInitialized) return;
 
     try {
-      // Initialize android_alarm_manager_plus
-      await AndroidAlarmManager.initialize();
+      // Initialize native alarm service
+      AppLogger.debug('Initializing native alarm service...');
 
       // Initialize notifications plugin for fallback notifications
       const AndroidInitializationSettings initializationSettingsAndroid =
@@ -245,7 +243,7 @@ class AlarmManagerService {
   /// Cancel an alarm
   static Future<void> cancelAlarm(int alarmId) async {
     try {
-      await AndroidAlarmManager.cancel(alarmId);
+      await NativeAlarmService.cancelAlarm(alarmId);
 
       // Remove alarm data
       final prefs = await SharedPreferences.getInstance();
