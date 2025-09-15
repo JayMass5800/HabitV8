@@ -64,7 +64,7 @@ HabitV8 is the ultimate privacy-first habit tracking app that combines cutting-e
 ✨ **KEY FEATURES:**
 ✓ Unlimited habit creation and tracking
 ✓ AI-powered insights and recommendations
-✓ Health and calendar app integration
+✓ Calendar app integration
 ✓ Advanced analytics and visualizations
 ✓ Gamification with achievements and XP
 ✓ Cross-platform support (Android, iOS, Web, Desktop)
@@ -74,7 +74,7 @@ HabitV8 is the ultimate privacy-first habit tracking app that combines cutting-e
 
 📱 **PERFECT FOR:**
 • Personal development enthusiasts
-• Health and fitness tracking
+• Fitness tracking
 • Productivity and routine building
 • Mindfulness and meditation habits
 • Privacy-conscious users
@@ -85,10 +85,10 @@ Whether you're building morning routines, tracking fitness goals, maintaining mi
 Download HabitV8 today and start your journey to a better you!
 
 ## Keywords/Tags
-habit tracker, habits, productivity, self improvement, routine, goals, motivation, health, fitness, mindfulness, personal development, AI insights, streak tracker, progress tracking, privacy, local storage, offline, gamification, achievements
+habit tracker, habits, productivity, self improvement, routine, goals, motivation, fitness, mindfulness, personal development, AI insights, streak tracker, progress tracking, privacy, local storage, offline, gamification, achievements
 
 ## Category
-**Primary**: Health & Fitness
+**Primary**: Productivity
 **Secondary**: Productivity
 
 ## Content Rating
@@ -119,11 +119,6 @@ habit tracker, habits, productivity, self improvement, routine, goals, motivatio
 - **WRITE_EXTERNAL_STORAGE**: For data export (optional)
 - **USE_EXACT_ALARM**: For precise notification timing on Android 12+
 
-#### Health Permissions (Optional)
-- Access to 6 essential health data types (steps, sleep, etc.)
-- Only used if user enables health integration
-- All processing done locally
-
 ## Screenshots Required (8 screenshots recommended)
 
 ### Screenshot Descriptions
@@ -133,8 +128,7 @@ habit tracker, habits, productivity, self improvement, routine, goals, motivatio
 4. **Calendar View**: Monthly calendar with habit completion visualization
 5. **Achievements**: Gamification screen showing earned badges and XP
 6. **Notifications**: Smart reminder system with action buttons
-7. **Health Integration**: Health data correlation with habits
-8. **Settings/Privacy**: Privacy controls and app customization
+7. **Settings/Privacy**: Privacy controls and app customization
 
 ## Feature Graphic Description
 Modern, clean design showing the app interface with:
