@@ -973,7 +973,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                         const SizedBox(height: 12),
                         Text(
                           'No date and time selected',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(
                                 fontWeight: FontWeight.w500,
                                 color: Theme.of(context).colorScheme.onSurface,
                               ),
@@ -981,9 +984,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                         const SizedBox(height: 8),
                         Text(
                           'Tap the button below to select when this habit should remind you',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey.shade600,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey.shade600,
+                                  ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 20),
@@ -1025,7 +1029,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                             const SizedBox(width: 12),
                             Text(
                               'Selected Date & Time',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: _selectedColor,
                                   ),
@@ -1058,9 +1065,14 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                   const SizedBox(width: 8),
                                   Text(
                                     '${_getMonthName(_singleDateTime!.month)} ${_singleDateTime!.day}, ${_singleDateTime!.year}',
-                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(
                                           fontWeight: FontWeight.w600,
-                                          color: Theme.of(context).colorScheme.onSurface,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
                                         ),
                                   ),
                                 ],
@@ -1077,7 +1089,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                   const SizedBox(width: 8),
                                   Text(
                                     '${_singleDateTime!.hour.toString().padLeft(2, '0')}:${_singleDateTime!.minute.toString().padLeft(2, '0')}',
-                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.copyWith(
                                           fontWeight: FontWeight.w600,
                                           color: _selectedColor,
                                         ),
@@ -1139,7 +1154,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     // Use timezone-aware date handling for consistency with other frequencies
     final now = tz.TZDateTime.now(tz.local);
     final currentLocalDate = DateTime(now.year, now.month, now.day);
-    
+
     // First select date
     final DateTime? pickedDate = await showDatePicker(
       context: context,

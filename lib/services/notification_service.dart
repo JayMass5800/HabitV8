@@ -2313,7 +2313,8 @@ class NotificationService {
     final singleDateTime = habit.singleDateTime!;
     // Use timezone-aware current time for consistency with other frequency types
     final now = tz.TZDateTime.now(tz.local);
-    final currentDateTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    final currentDateTime =
+        DateTime(now.year, now.month, now.day, now.hour, now.minute);
 
     AppLogger.debug('Single habit scheduling debug:');
     AppLogger.debug('  - Habit name: ${habit.name}');
@@ -3686,7 +3687,8 @@ class NotificationService {
     final singleDateTime = habit.singleDateTime!;
     // Use timezone-aware current time for consistency with other frequency types
     final now = tz.TZDateTime.now(tz.local);
-    final currentDateTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    final currentDateTime =
+        DateTime(now.year, now.month, now.day, now.hour, now.minute);
 
     AppLogger.debug('Single habit alarm scheduling debug:');
     AppLogger.debug('  - Habit name: ${habit.name}');
