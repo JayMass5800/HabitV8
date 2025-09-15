@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:path_provider/path_provider.dart';
+import '../native_alarm_service.dart';
 import 'logging_service.dart';
 import '../alarm_callback.dart';
 
@@ -73,7 +74,7 @@ class AlarmManagerService {
         // Only cancel if it's the exact same alarm (same time and habit)
         if (existingTime.isAtSameMomentAs(scheduledTime) &&
             existing['habitId'] == habitId) {
-          await AndroidAlarmManager.cancel(alarmId);
+          await NativeAlarmService.cancelAlarm(alarmId);
           AppLogger.debug(
               'Cancelled duplicate alarm for habit $habitId at $scheduledTime');
         }
@@ -117,21 +118,21 @@ class AlarmManagerService {
     AppLogger.info('  - Sound: ${alarmSoundName ?? "default"}');
 
     try {
-      // Schedule the alarm using android_alarm_manager_plus
-      await AndroidAlarmManager.oneShotAt(
-        scheduledTime,
-        alarmId,
-        playAlarmSound,
-        exact: true,
-        wakeup: true,
-        rescheduleOnReboot: false,
+      // Use native Android alarm scheduling for better reliability
+      final success = await NativeAlarmService.scheduleAlarm(
+        alarmId: alarmId,
+        triggerTime: scheduledTime,
+        habitName: habitName,
+        soundUri: alarmSoundUri,
       );
 
-      AppLogger.info(
-          '✅ Alarm scheduled successfully with android_alarm_manager_plus');
+      if (success) {
+        AppLogger.info('✅ Native alarm scheduled successfully');
+      } else {
+        throw Exception('Native alarm scheduling failed');
+      }
     } catch (e) {
-      AppLogger.error(
-          '❌ Failed to schedule alarm with android_alarm_manager_plus', e);
+      AppLogger.error('❌ Failed to schedule native alarm', e);
 
       // Fallback to notification if alarm manager fails
       await _scheduleNotificationFallback(

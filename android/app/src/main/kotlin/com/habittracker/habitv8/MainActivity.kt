@@ -1,6 +1,9 @@
 package com.habittracker.habitv8
 
 import android.app.Activity
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.media.AudioAttributes
@@ -17,7 +20,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     private val RINGTONE_CHANNEL = "com.habittracker.habitv8/ringtones"
     private val SYSTEM_SOUND_CHANNEL = "com.habittracker.habitv8/system_sound"
-    private val ALARM_SERVICE_CHANNEL = "com.habittracker.habitv8/alarm_service"
+    private val NATIVE_ALARM_CHANNEL = "com.habittracker.habitv8/native_alarm"
     private val RINGTONE_PICKER_REQUEST_CODE = 1
 
     private var previewRingtone: Ringtone? = null
@@ -206,8 +209,8 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
         
-        // Alarm service channel for starting/stopping the foreground alarm service
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ALARM_SERVICE_CHANNEL).setMethodCallHandler { call, result ->
+        // Native alarm scheduling channel (simple and reliable)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NATIVE_ALARM_CHANNEL).setMethodCallHandler { call, result ->
             // Check if activity is still valid before processing method calls
             if (isFinishing || isDestroyed) {
                 result.error("ACTIVITY_INVALID", "Activity is no longer valid", null)
@@ -215,30 +218,30 @@ class MainActivity : FlutterFragmentActivity() {
             }
 
             when (call.method) {
-                "startAlarmService" -> {
+                "scheduleNativeAlarm" -> {
                     try {
+                        val alarmId = call.argument<Int>("alarmId") ?: 0
+                        val triggerTimeMillis = call.argument<Long>("triggerTimeMillis") ?: 0L
                         val soundUri = call.argument<String>("soundUri")
-                        val habitName = call.argument<String>("habitName")
+                        val habitName = call.argument<String>("habitName") ?: "Habit Reminder"
                         
-                        // Start the foreground service for reliable alarm playback
-                        AlarmService.startAlarmService(this, soundUri, habitName)
+                        scheduleNativeAlarm(alarmId, triggerTimeMillis, soundUri, habitName)
                         result.success(true)
-                        android.util.Log.i("MainActivity", "AlarmService started via platform channel")
+                        android.util.Log.i("MainActivity", "Native alarm scheduled for: $habitName")
                     } catch (e: Exception) {
-                        result.error("SERVICE_ERROR", "Failed to start alarm service: ", null)
-                        android.util.Log.e("MainActivity", "Failed to start alarm service", e)
+                        result.error("ALARM_ERROR", "Failed to schedule native alarm: ${e.message}", null)
+                        android.util.Log.e("MainActivity", "Failed to schedule native alarm", e)
                     }
                 }
-                "stopAlarmService" -> {
+                "cancelNativeAlarm" -> {
                     try {
-                        // Stop the alarm service
-                        val intent = Intent(this, AlarmService::class.java)
-                        stopService(intent)
+                        val alarmId = call.argument<Int>("alarmId") ?: 0
+                        cancelNativeAlarm(alarmId)
                         result.success(true)
-                        android.util.Log.i("MainActivity", "AlarmService stopped via platform channel")
+                        android.util.Log.i("MainActivity", "Native alarm cancelled: $alarmId")
                     } catch (e: Exception) {
-                        result.error("SERVICE_ERROR", "Failed to stop alarm service: ", null)
-                        android.util.Log.e("MainActivity", "Failed to stop alarm service", e)
+                        result.error("ALARM_ERROR", "Failed to cancel native alarm: ${e.message}", null)
+                        android.util.Log.e("MainActivity", "Failed to cancel native alarm", e)
                     }
                 }
                 else -> result.notImplemented()
@@ -570,5 +573,91 @@ class MainActivity : FlutterFragmentActivity() {
             android.util.Log.e("MainActivity", "Error during cleanup: ${e.message}")
         }
         super.onDestroy()
+    }
+    
+    /**
+     * Schedule a native Android alarm using AlarmManager
+     * This properly integrates with the Android system and works reliably
+     */
+    private fun scheduleNativeAlarm(alarmId: Int, triggerTimeMillis: Long, soundUri: String?, habitName: String) {
+        try {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            
+            // Create intent for AlarmReceiver
+            val intent = Intent(this, AlarmReceiver::class.java).apply {
+                putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
+                putExtra(AlarmReceiver.EXTRA_SOUND_URI, soundUri)
+                putExtra(AlarmReceiver.EXTRA_HABIT_NAME, habitName)
+            }
+            
+            // Create PendingIntent with unique request code based on alarm ID
+            val pendingIntent = PendingIntent.getBroadcast(
+                this, 
+                alarmId, 
+                intent, 
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            
+            // Use exact alarm for habit reminders (user-facing feature)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // Check if we can schedule exact alarms
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerTimeMillis,
+                        pendingIntent
+                    )
+                } else {
+                    // Fall back to inexact alarm if exact alarms not permitted
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerTimeMillis,
+                        pendingIntent
+                    )
+                }
+            } else {
+                // For older Android versions, use exact alarm
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTimeMillis,
+                    pendingIntent
+                )
+            }
+            
+            android.util.Log.i("MainActivity", "Native alarm scheduled for ${java.util.Date(triggerTimeMillis)}")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error scheduling native alarm", e)
+            throw e
+        }
+    }
+    
+    /**
+     * Cancel a previously scheduled native alarm
+     */
+    private fun cancelNativeAlarm(alarmId: Int) {
+        try {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            
+            // Create the same intent used for scheduling
+            val intent = Intent(this, AlarmReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                this, 
+                alarmId, 
+                intent, 
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            )
+            
+            // Cancel the alarm if it exists
+            pendingIntent?.let {
+                alarmManager.cancel(it)
+                it.cancel()
+                android.util.Log.i("MainActivity", "Native alarm cancelled: $alarmId")
+            }
+            
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error cancelling native alarm", e)
+            throw e
+        }
     }
 }

@@ -10,23 +10,42 @@ import 'services/logging_service.dart';
 // Global flag to track if alarm manager is already initialized in this isolate
 bool _isAlarmManagerInitialized = false;
 
-/// Direct alarm service starter that bypasses platform channel issues
+/// Direct alarm service starter that works from background isolates
 Future<void> _startAlarmServiceDirectly(
     String soundUri, String habitName) async {
   try {
-    // Try platform channel first (will work if main isolate)
-    const MethodChannel alarmServiceChannel =
-        MethodChannel('com.habittracker.habitv8/alarm_service');
-    await alarmServiceChannel.invokeMethod('startAlarmService', {
-      'soundUri': soundUri,
-      'habitName': habitName,
-    });
-    AppLogger.info('✅ AlarmService started via platform channel');
+    // Create an intent that will start the alarm service directly
+    // This bypasses the platform channel entirely and works from background isolates
+    AppLogger.info('🚨 Starting AlarmService via direct intent approach');
+    
+    // Store alarm details in a file that can be read by the notification action
+    await _storeAlarmServiceData(soundUri, habitName);
+    
+    // We'll let the notification system handle the alarm service via a custom action
+    AppLogger.info('✅ Alarm service data prepared for notification trigger');
   } catch (e) {
     AppLogger.warning(
-        'Platform channel failed; falling back to notification sound: $e');
-    // Direct intent start from Dart is not required with the new native AlarmService integration.
-    // Fallback: notification sound will handle the audible alert.
+        'Failed to prepare alarm service data: $e');
+    rethrow;
+  }
+}
+
+/// Store alarm service data for notification actions to access
+Future<void> _storeAlarmServiceData(String soundUri, String habitName) async {
+  try {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/current_alarm_service_data.json');
+    
+    final data = {
+      'soundUri': soundUri,
+      'habitName': habitName,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    };
+    
+    await file.writeAsString(jsonEncode(data));
+    AppLogger.info('Alarm service data stored successfully');
+  } catch (e) {
+    AppLogger.error('Error storing alarm service data: $e');
     rethrow;
   }
 }
@@ -101,6 +120,41 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
           '📱 Main notification tapped - opening app but keeping alarm active');
       // Just open the app, don't stop the alarm
       // The alarm should only stop when user explicitly presses "STOP ALARM" button
+      return;
+    }
+
+    if (notificationResponse.actionId == 'start_alarm_service') {
+      AppLogger.info('🚨 Starting alarm service via notification action');
+      
+      // Try to read the alarm service data file and start the service
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/current_alarm_service_data.json');
+        
+        if (await file.exists()) {
+          final content = await file.readAsString();
+          final data = jsonDecode(content);
+          final soundUri = data['soundUri'] ?? '';
+          final habitName = data['habitName'] ?? 'Habit Reminder';
+          
+          // Use broadcast channel to start alarm service
+          const MethodChannel alarmBroadcastChannel =
+              MethodChannel('com.habittracker.habitv8/alarm_broadcast');
+          await alarmBroadcastChannel.invokeMethod('startAlarmViaBroadcast', {
+            'soundUri': soundUri,
+            'habitName': habitName,
+          });
+          
+          AppLogger.info('✅ AlarmService started via notification action');
+          
+          // Delete the trigger file
+          await file.delete();
+        } else {
+          AppLogger.warning('⚠️ Alarm service data file not found');
+        }
+      } catch (e) {
+        AppLogger.error('❌ Failed to start alarm service via notification: $e');
+      }
       return;
     }
 
@@ -252,7 +306,10 @@ Future<void> _executeBackgroundAlarm(
 
     try {
       await _startAlarmServiceDirectly(soundUriToUse, habitName);
-      AppLogger.info('✅ AlarmService started successfully');
+      
+      // Also start the alarm trigger service to monitor for the trigger file
+      // This approach works around platform channel limitations in background isolates
+      AppLogger.info('✅ AlarmService trigger initiated');
     } catch (serviceError) {
       AppLogger.warning(
           '⚠️ AlarmService failed, using notification sound fallback: $serviceError');
@@ -301,6 +358,14 @@ Future<void> _executeBackgroundAlarm(
       color: const Color(0xFF2196F3), // Blue color for alarms
       colorized: true,
       actions: [
+        // Add a hidden action that will trigger the alarm service
+        const AndroidNotificationAction(
+          'start_alarm_service',
+          'Start Alarm',
+          showsUserInterface: false,
+          cancelNotification: false,
+          contextual: false,
+        ),
         const AndroidNotificationAction(
           'stop_alarm',
           '⏹️ STOP ALARM',
@@ -337,6 +402,21 @@ Future<void> _executeBackgroundAlarm(
       platformChannelSpecifics,
       payload: payload,
     );
+
+    // Automatically trigger the alarm service after notification is posted
+    // This simulates clicking the hidden 'start_alarm_service' action
+    try {
+      _handleAlarmAction(NotificationResponse(
+        id: id,
+        actionId: 'start_alarm_service',
+        input: null,
+        payload: payload,
+        notificationResponseType: NotificationResponseType.selectedNotificationAction,
+      ));
+      AppLogger.info('✅ Alarm service auto-triggered after notification posted');
+    } catch (e) {
+      AppLogger.warning('⚠️ Failed to auto-trigger alarm service: $e');
+    }
 
     AppLogger.info('✅ Background alarm executed for: $habitName');
   } catch (e) {

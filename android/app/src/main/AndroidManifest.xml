@@ -83,6 +83,12 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
             
+        <!-- Alarm receiver for handling alarm broadcasts -->
+        <receiver
+            android:name=".AlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+            
         <receiver
             android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmBroadcastReceiver"
             android:exported="false" />

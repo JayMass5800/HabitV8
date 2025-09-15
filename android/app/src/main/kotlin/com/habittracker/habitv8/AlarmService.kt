@@ -100,7 +100,10 @@ class AlarmService : Service() {
         
         // Extract data from intent
         val soundUriString = intent?.getStringExtra("soundUri")
+        val alarmId = intent?.getIntExtra("alarmId", 0) ?: 0
         habitName = intent?.getStringExtra("habitName") ?: "Habit Reminder"
+        
+        Log.i(TAG, "Starting alarm service for: $habitName (ID: $alarmId)")
         
         // Create notification channel and start foreground service
         createNotificationChannel()
@@ -112,7 +115,7 @@ class AlarmService : Service() {
                 soundUri = Uri.parse(soundUriString)
                 playAlarmSound(soundUri!!)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to parse sound URI: ", e)
+                Log.e(TAG, "Failed to parse sound URI: $soundUriString", e)
                 // Fall back to default alarm sound
                 soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 playAlarmSound(soundUri!!)
