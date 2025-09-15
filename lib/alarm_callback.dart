@@ -17,15 +17,14 @@ Future<void> _startAlarmServiceDirectly(
     // Create an intent that will start the alarm service directly
     // This bypasses the platform channel entirely and works from background isolates
     AppLogger.info('🚨 Starting AlarmService via direct intent approach');
-    
+
     // Store alarm details in a file that can be read by the notification action
     await _storeAlarmServiceData(soundUri, habitName);
-    
+
     // We'll let the notification system handle the alarm service via a custom action
     AppLogger.info('✅ Alarm service data prepared for notification trigger');
   } catch (e) {
-    AppLogger.warning(
-        'Failed to prepare alarm service data: $e');
+    AppLogger.warning('Failed to prepare alarm service data: $e');
     rethrow;
   }
 }
@@ -35,13 +34,13 @@ Future<void> _storeAlarmServiceData(String soundUri, String habitName) async {
   try {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/current_alarm_service_data.json');
-    
+
     final data = {
       'soundUri': soundUri,
       'habitName': habitName,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     };
-    
+
     await file.writeAsString(jsonEncode(data));
     AppLogger.info('Alarm service data stored successfully');
   } catch (e) {
@@ -125,18 +124,18 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
 
     if (notificationResponse.actionId == 'start_alarm_service') {
       AppLogger.info('🚨 Starting alarm service via notification action');
-      
+
       // Try to read the alarm service data file and start the service
       try {
         final directory = await getApplicationDocumentsDirectory();
         final file = File('${directory.path}/current_alarm_service_data.json');
-        
+
         if (await file.exists()) {
           final content = await file.readAsString();
           final data = jsonDecode(content);
           final soundUri = data['soundUri'] ?? '';
           final habitName = data['habitName'] ?? 'Habit Reminder';
-          
+
           // Use broadcast channel to start alarm service
           const MethodChannel alarmBroadcastChannel =
               MethodChannel('com.habittracker.habitv8/alarm_broadcast');
@@ -144,9 +143,9 @@ void _handleAlarmAction(NotificationResponse notificationResponse) async {
             'soundUri': soundUri,
             'habitName': habitName,
           });
-          
+
           AppLogger.info('✅ AlarmService started via notification action');
-          
+
           // Delete the trigger file
           await file.delete();
         } else {
@@ -306,7 +305,7 @@ Future<void> _executeBackgroundAlarm(
 
     try {
       await _startAlarmServiceDirectly(soundUriToUse, habitName);
-      
+
       // Also start the alarm trigger service to monitor for the trigger file
       // This approach works around platform channel limitations in background isolates
       AppLogger.info('✅ AlarmService trigger initiated');
@@ -411,9 +410,11 @@ Future<void> _executeBackgroundAlarm(
         actionId: 'start_alarm_service',
         input: null,
         payload: payload,
-        notificationResponseType: NotificationResponseType.selectedNotificationAction,
+        notificationResponseType:
+            NotificationResponseType.selectedNotificationAction,
       ));
-      AppLogger.info('✅ Alarm service auto-triggered after notification posted');
+      AppLogger.info(
+          '✅ Alarm service auto-triggered after notification posted');
     } catch (e) {
       AppLogger.warning('⚠️ Failed to auto-trigger alarm service: $e');
     }
