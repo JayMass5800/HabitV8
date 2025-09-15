@@ -1021,7 +1021,7 @@ class NotificationService {
           break;
         case 'snooze':
           // Reschedule notification for later
-          await _snoozeHabitNotification(habitId);
+          await _handleSnoozeAction(habitId);
           break;
         default:
           AppLogger.warning('Unknown stored action: $action');
@@ -3881,16 +3881,6 @@ class NotificationService {
       }
     } catch (e) {
       AppLogger.error('Error completing habit from notification: $habitId', e);
-    }
-  }
-
-  /// Snooze habit notification
-  static Future<void> _snoozeHabitNotification(String habitId) async {
-    try {
-      AppLogger.info('Snoozing notification for habit: $habitId');
-      await _handleSnoozeAction(habitId);
-    } catch (e) {
-      AppLogger.error('Error snoozing habit notification: $habitId', e);
     }
   }
 

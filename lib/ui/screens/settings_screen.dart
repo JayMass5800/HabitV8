@@ -396,42 +396,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: 16),
 
-          // Developer Tools Section (only in debug mode)
-          if (true) // Always show for testing
-            Card(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.developer_mode,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Developer Tools',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SettingsTile(
-                    title: 'Test Alarm System',
-                    subtitle: 'Test new alarm architecture',
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/alarm-test'),
-                  ),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 16),
-
           // About Section
           Card(
             child: Column(
@@ -467,11 +431,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/terms'),
                 ),
-                SettingsTile(
-                  title: 'App Version',
-                  subtitle: 'v1.0.0',
+                ListTile(
+                  title: const Text(
+                    'App Version',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Row(
+                    children: [
+                      const Text('v1.0.0'),
+                      const SizedBox(width: 8),
+                      Text(
+                        'DapperCatsInc',
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
                   trailing: const SizedBox.shrink(),
-                  onTap: null,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 4.0),
                 ),
               ],
             ),
