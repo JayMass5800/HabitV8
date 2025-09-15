@@ -337,12 +337,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     );
                   },
                 ),
-                SettingsTile(
-                  title: 'Weekly Start Day',
-                  subtitle: 'Choose which day starts your week',
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showWeekStartPicker(context),
-                ),
               ],
             ),
           ),
@@ -959,50 +953,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
     }
-  }
-
-  void _showWeekStartPicker(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Week Start Day'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            'Monday',
-            'Tuesday',
-            'Wednesday',
-            'Thursday',
-            'Friday',
-            'Saturday',
-            'Sunday',
-          ]
-              .map((day) => ListTile(
-                    title: Text(day),
-                    leading: Radio<String>(
-                      value: day,
-                      groupValue: 'Monday',
-                      onChanged: (value) {
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                        }
-                      },
-                    ),
-                  ))
-              .toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showExportOptions(BuildContext context) async {
