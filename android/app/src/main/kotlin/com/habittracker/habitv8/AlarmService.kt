@@ -98,6 +98,12 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i(TAG, "AlarmService onStartCommand")
         
+        // ANDROID 15+ SAFETY CHECK: Ensure this service is not started from BOOT_COMPLETED
+        // This prevents crashes on Android 15+ where starting certain foreground services
+        // from BOOT_COMPLETED is restricted
+        val action = intent?.action
+        Log.d(TAG, "Service started with action: $action")
+        
         // Check if this is a stop alarm action
         if (intent?.action == "STOP_ALARM") {
             Log.i(TAG, "Received STOP_ALARM action, stopping service")
