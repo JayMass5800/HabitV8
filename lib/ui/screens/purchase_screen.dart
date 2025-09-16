@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'dart:async';
 import '../../services/subscription_service.dart';
 import '../../services/logging_service.dart';
 
-/// Screen for purchasing premium subscription
+/// Screen for purchasing premium access (one-time purchase)
 class PurchaseScreen extends ConsumerStatefulWidget {
   const PurchaseScreen({super.key});
 
@@ -18,6 +20,20 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  // In-app purchase related state
+  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
+  late StreamSubscription<List<PurchaseDetails>> _subscription;
+  List<ProductDetails> _products = [];
+  bool _isAvailable = false;
+  bool _purchasePending = false;
+  String? _queryProductError;
+
+  // Product IDs - these should match your App Store Connect/Google Play Console setup
+  static const String _kPremiumPurchaseId = 'habitv8_premium_lifetime';
+  static const Set<String> _kProductIds = {
+    _kPremiumPurchaseId,
+  };
+
   @override
   void initState() {
     super.initState();
@@ -29,11 +45,15 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.forward();
+
+    // Initialize in-app purchases
+    _initializeInAppPurchases();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _subscription.cancel();
     super.dispose();
   }
 
@@ -41,7 +61,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Upgrade to Premium'),
+        title: const Text('Get Premium'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -131,7 +151,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Unlock the full potential of your habit tracking',
+                'One-time purchase • Lifetime access',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onPrimary.withValues(alpha: 0.9),
                 ),
@@ -286,64 +306,19 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Choose Your Plan',
+          'Premium Upgrade',
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 16),
 
-        // Monthly option
+        // One-time purchase option
         Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Monthly',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Cancel anytime',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                '\$4.99/month',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        // Yearly option (recommended)
-        Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: colorScheme.primary,
               width: 2,
@@ -355,14 +330,14 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                 children: [
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
-                      'BEST VALUE',
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      'LIFETIME ACCESS',
+                      style: theme.textTheme.labelMedium?.copyWith(
                         color: colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,
                       ),
@@ -371,7 +346,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                   const Spacer(),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -379,14 +354,21 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Yearly',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                          'Premium Features',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'One-time purchase • No recurring fees',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.8),
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Save 50% • \$2.49/month',
+                          'Keep all features forever after your trial',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
@@ -397,18 +379,27 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        '\$29.99/year',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
+                      // Show dynamic pricing if products are loaded
+                      if (_products.isNotEmpty)
+                        Text(
+                          _products.first.price,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary,
+                          ),
+                        )
+                      else
+                        Text(
+                          '\$19.99',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary,
+                          ),
                         ),
-                      ),
                       Text(
-                        'was \$59.88',
+                        'once',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          decoration: TextDecoration.lineThrough,
-                          color: colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -426,35 +417,111 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handlePurchase,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    return Column(
+      children: [
+        // Show error message if there's an issue with products
+        if (_queryProductError != null) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  color: colorScheme.onErrorContainer,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _queryProductError!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        // Show loading state for purchase pending
+        if (_purchasePending) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor:
+                        AlwaysStoppedAnimation(colorScheme.onPrimaryContainer),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Processing your purchase...',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton(
+            onPressed: (_isLoading ||
+                    _purchasePending ||
+                    !_isAvailable ||
+                    _queryProductError != null)
+                ? null
+                : _handlePurchase,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                    ),
+                  )
+                : Text(
+                    !_isAvailable
+                        ? 'Purchases Not Available'
+                        : _products.isEmpty
+                            ? 'Loading Product...'
+                            : 'Get Premium - ${_products.isNotEmpty ? _products.first.price : '\$19.99'}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(Colors.white),
-                ),
-              )
-            : const Text(
-                'Start Premium Subscription',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-      ),
+      ],
     );
   }
 
@@ -475,7 +542,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     final colorScheme = theme.colorScheme;
 
     return Text(
-      'Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period. You can manage your subscription in your account settings after purchase.',
+      'One-time purchase provides lifetime access to all premium features. No recurring charges. Purchase is final and non-refundable according to store policies.',
       style: theme.textTheme.bodySmall?.copyWith(
         color: colorScheme.onSurface.withValues(alpha: 0.6),
       ),
@@ -483,21 +550,156 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     );
   }
 
-  Future<void> _handlePurchase() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+  /// Initialize in-app purchase system
+  Future<void> _initializeInAppPurchases() async {
     try {
-      // TODO: Implement actual in-app purchase logic here
-      // For now, simulate a purchase
-      await Future.delayed(const Duration(seconds: 2));
+      // Initialize in-app purchase
+      final bool isAvailable = await _inAppPurchase.isAvailable();
+      setState(() {
+        _isAvailable = isAvailable;
+      });
 
-      // Simulate successful purchase
-      await SubscriptionService().activatePremiumSubscription(
-          'mock_purchase_token_${DateTime.now().millisecondsSinceEpoch}');
+      if (!isAvailable) {
+        AppLogger.warning('In-app purchases not available');
+        return;
+      }
+
+      // Listen to purchase updates
+      _subscription = _inAppPurchase.purchaseStream.listen(
+        _onPurchaseUpdate,
+        onDone: () => _subscription.cancel(),
+        onError: (error) => AppLogger.error('Purchase stream error', error),
+      );
+
+      // Load available products
+      await _loadProducts();
+
+      AppLogger.info('In-app purchase system initialized successfully');
+    } catch (e) {
+      AppLogger.error('Failed to initialize in-app purchases', e);
+      setState(() {
+        _queryProductError = 'Failed to initialize purchases: ${e.toString()}';
+      });
+    }
+  }
+
+  /// Load available products from the store
+  Future<void> _loadProducts() async {
+    try {
+      final ProductDetailsResponse response =
+          await _inAppPurchase.queryProductDetails(_kProductIds);
+
+      if (response.notFoundIDs.isNotEmpty) {
+        AppLogger.warning('Products not found: ${response.notFoundIDs}');
+      }
+
+      if (response.error != null) {
+        setState(() {
+          _queryProductError = response.error!.message;
+        });
+        AppLogger.error('Error loading products', response.error);
+        return;
+      }
+
+      setState(() {
+        _products = response.productDetails;
+        _queryProductError = null;
+      });
+
+      AppLogger.info('Loaded ${_products.length} products');
+      for (final product in _products) {
+        AppLogger.debug(
+            'Product: ${product.id} - ${product.title} - ${product.price}');
+      }
+    } catch (e) {
+      AppLogger.error('Failed to load products', e);
+      setState(() {
+        _queryProductError = 'Failed to load products: ${e.toString()}';
+      });
+    }
+  }
+
+  /// Handle purchase updates from the store
+  void _onPurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) {
+    for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
+      AppLogger.info(
+          'Purchase update: ${purchaseDetails.status} for ${purchaseDetails.productID}');
+
+      if (purchaseDetails.status == PurchaseStatus.pending) {
+        setState(() {
+          _purchasePending = true;
+        });
+      } else {
+        setState(() {
+          _purchasePending = false;
+        });
+
+        if (purchaseDetails.status == PurchaseStatus.error) {
+          _handlePurchaseError(purchaseDetails.error!);
+        } else if (purchaseDetails.status == PurchaseStatus.purchased ||
+            purchaseDetails.status == PurchaseStatus.restored) {
+          _verifyAndFinalizePurchase(purchaseDetails);
+        }
+      }
+
+      // Always complete the purchase
+      if (purchaseDetails.pendingCompletePurchase) {
+        _inAppPurchase.completePurchase(purchaseDetails);
+      }
+    }
+  }
+
+  /// Handle purchase errors
+  void _handlePurchaseError(IAPError error) {
+    AppLogger.error('Purchase error: ${error.code} - ${error.message}', error);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      String errorMessage = 'Purchase failed';
+      switch (error.code) {
+        case 'user_cancelled':
+          errorMessage = 'Purchase was cancelled';
+          break;
+        case 'payment_invalid':
+          errorMessage = 'Payment method is invalid';
+          break;
+        case 'product_not_available':
+          errorMessage = 'Product is not available';
+          break;
+        default:
+          errorMessage = 'Purchase failed: ${error.message}';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  /// Verify and finalize a successful purchase
+  Future<void> _verifyAndFinalizePurchase(
+      PurchaseDetails purchaseDetails) async {
+    try {
+      AppLogger.info('Verifying purchase: ${purchaseDetails.productID}');
+
+      // In a real app, you would verify the purchase with your backend server
+      // For now, we'll just activate the premium access directly
+      final purchaseToken = purchaseDetails.purchaseID ??
+          purchaseDetails.verificationData.serverVerificationData;
+
+      await SubscriptionService().activatePremiumSubscription(purchaseToken);
 
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
         // Show success dialog
         showDialog(
           context: context,
@@ -505,7 +707,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
           builder: (context) => AlertDialog(
             title: const Text('🎉 Welcome to Premium!'),
             content: const Text(
-                'Your subscription has been activated. Enjoy all premium features!'),
+                'Your one-time purchase is complete! You now have lifetime access to all premium features.'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -519,23 +721,90 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
         );
       }
 
-      AppLogger.info('Premium subscription activated successfully');
+      AppLogger.info('Premium access activated successfully');
+    } catch (e) {
+      AppLogger.error('Failed to verify purchase', e);
+      _handlePurchaseError(IAPError(
+        source: 'verification',
+        code: 'verification_failed',
+        message: 'Failed to verify purchase: ${e.toString()}',
+        details: {},
+      ));
+    }
+  }
+
+  /// Start purchase for a specific product
+  Future<void> _buyProduct(ProductDetails productDetails) async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      AppLogger.info('Starting purchase for: ${productDetails.id}');
+
+      final PurchaseParam purchaseParam = PurchaseParam(
+        productDetails: productDetails,
+        applicationUserName: null, // You can set a user identifier here
+      );
+
+      await _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
+    } catch (e) {
+      AppLogger.error('Failed to start purchase', e);
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to start purchase: ${e.toString()}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handlePurchase() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Check if in-app purchases are available
+      if (!_isAvailable) {
+        throw Exception('In-app purchases are not available on this device');
+      }
+
+      // Check if products are loaded
+      if (_products.isEmpty) {
+        throw Exception('Premium product not available');
+      }
+
+      // Purchase the premium lifetime product
+      final ProductDetails productToPurchase = _products.first;
+
+      AppLogger.info('Initiating purchase for: ${productToPurchase.id}');
+
+      // Start the purchase flow
+      await _buyProduct(productToPurchase);
+
+      // Note: The actual purchase completion is handled by _onPurchaseUpdate
+      // We don't set _isLoading = false here because it will be set in the purchase callback
     } catch (e) {
       AppLogger.error('Purchase failed', e);
 
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Purchase failed: ${e.toString()}'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
       }
     }
   }
@@ -546,10 +815,29 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     });
 
     try {
-      final restored = await SubscriptionService().restorePurchases();
+      // Check if in-app purchases are available
+      if (!_isAvailable) {
+        throw Exception('In-app purchases are not available on this device');
+      }
+
+      AppLogger.info('Attempting to restore purchases...');
+
+      // Restore purchases from the store
+      await _inAppPurchase.restorePurchases();
+
+      // The actual restoration is handled by _onPurchaseUpdate
+      // If no purchases are found, we'll show a message after a brief delay
+      await Future.delayed(const Duration(seconds: 2));
 
       if (mounted) {
-        if (restored) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        // Check if we have any active subscriptions after restore
+        final status = await SubscriptionService().getSubscriptionStatus();
+
+        if (status == SubscriptionStatus.premium) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Purchases restored successfully!'),
@@ -568,18 +856,16 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       AppLogger.error('Restore failed', e);
 
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Restore failed: ${e.toString()}'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
       }
     }
   }

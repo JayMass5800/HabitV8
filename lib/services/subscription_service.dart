@@ -161,15 +161,15 @@ class SubscriptionService {
     return false;
   }
 
-  /// Mark user as having premium subscription (called after successful purchase)
+  /// Mark user as having premium access (called after successful one-time purchase)
   Future<void> activatePremiumSubscription(String purchaseToken) async {
     try {
       await _secureStorage.write(key: 'purchase_token', value: purchaseToken);
       await _updateSubscriptionStatus();
-      AppLogger.info('✅ Premium subscription activated');
+      AppLogger.info('✅ Premium access activated');
     } catch (e) {
-      AppLogger.error('Error activating premium subscription', e);
-      throw Exception('Failed to activate premium subscription');
+      AppLogger.error('Error activating premium access', e);
+      throw Exception('Failed to activate premium access');
     }
   }
 
