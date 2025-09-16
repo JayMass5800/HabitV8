@@ -201,13 +201,10 @@ This is the initial release of HabitV8, a comprehensive habit tracking applicati
   - RECEIVE_BOOT_COMPLETED (Notification persistence)
   - SCHEDULE_EXACT_ALARM (Precise timing)
   - READ_CALENDAR, WRITE_CALENDAR (Calendar integration)
-  - ACTIVITY_RECOGNITION (Health tracking)
-  - Health Connect permissions for Android 14+
 
 - **iOS**
   - Notifications (Habit reminders)
   - Calendar (Calendar integration)
-  - HealthKit (Health data access)
 
 ### 📱 Platform-Specific Features
 
@@ -215,8 +212,6 @@ This is the initial release of HabitV8, a comprehensive habit tracking applicati
 - Material Design 3 theming
 - Adaptive icons and splash screens
 - Background notification handling
-- Health Connect integration (Android 14+)
-- Google Fit synchronization
 - Android Auto compatibility preparation
 
 #### iOS

@@ -36,16 +36,7 @@
 - Monthly and weekly progress visualization
 - Historical data in calendar format
 
-### 🏥 **Health Integration**
-- Apple HealthKit support (iOS) with privacy-first design
-- Health Connect and Google Fit integration (Android)
-- Automatic activity recognition for fitness habits
-- Health metrics correlation with habit progress
-- Fitness habit tracking with real-time insights
-- Compliant with health data privacy regulations
-- All health data processed locally on your device
-
-### 🎨 **Beautiful Design**
+###  **Beautiful Design**
 - Modern Material Design 3 interface
 - Dark and light theme support
 - Smooth animations and transitions

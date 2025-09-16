@@ -1904,10 +1904,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         return 'Variety Achievements';
       case AchievementCategory.dedication:
         return 'Dedication Achievements';
-      case AchievementCategory.health:
-        return 'Health & Fitness';
-      case AchievementCategory.mentalHealth:
-        return 'Mental Health';
       case AchievementCategory.special:
         return 'Special Achievements';
     }
@@ -1923,10 +1919,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         return '🌟';
       case AchievementCategory.dedication:
         return '💪';
-      case AchievementCategory.health:
-        return '❤️';
-      case AchievementCategory.mentalHealth:
-        return '🧘';
       case AchievementCategory.special:
         return '🏆';
     }

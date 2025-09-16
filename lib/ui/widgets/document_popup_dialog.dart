@@ -168,7 +168,6 @@ HabitV8 is a privacy-first habit tracking application designed to help users bui
 - **AI-Powered Insights**: Receive personalized recommendations and analytics
 - **Progress Visualization**: View detailed charts, statistics, and progress reports
 - **Smart Notifications**: Receive intelligent reminders and notifications
-- **Health Integration**: Optional integration with device health platforms
 - **Calendar Integration**: Optional synchronization with device calendar applications
 - **Achievement System**: Earn rewards and track progress through gamification
 - **Data Export**: Export personal data for backup or analysis purposes
@@ -235,40 +234,22 @@ You may not use the App to:
 - Use the App for commercial purposes without appropriate licensing
 - Incorporate the App into commercial products or services without permission
 
-### 4.3 Health and Safety Disclaimer
+### 4.3 General Safety Disclaimer
 The App is designed for general habit tracking and is not intended for:
-- Medical diagnosis, treatment, or health advice
-- Tracking critical medical regimens without professional oversight
-- Emergency situations or time-sensitive health matters
-- Replacement of professional medical or therapeutic services
+- Tracking critical tasks without professional oversight
+- Emergency situations or time-sensitive matters
+- Replacement of professional services
 
-## 5. Health and Medical Disclaimer
+## 5. General Disclaimer
 
-### 5.1 Not a Medical Device
-**IMPORTANT**: HabitV8 is not a medical device and is not intended to diagnose, treat, cure, or prevent any disease or medical condition. The App is designed for general wellness and habit tracking purposes only.
+### 5.1 App Purpose
+**IMPORTANT**: HabitV8 is designed for general habit tracking and productivity purposes only.
 
-### 5.2 Health Integration Limitations
-If you choose to enable health platform integration:
-- Health data is used solely for habit correlation and personal insights
-- The App does not provide medical advice or health recommendations
-- Health insights are for informational purposes only
-- You should consult healthcare professionals for medical decisions
-
-### 5.3 Medical Professional Consultation
-You should consult with qualified healthcare professionals regarding:
-- Any health-related habits or goals you wish to track
-- Interpretation of health data or trends
-- Changes to medication schedules or health routines
-- Any health concerns or symptoms you may experience
-
-### 5.4 Emergency Situations
-The App is not designed for emergency situations. In case of medical emergencies, contact emergency services immediately rather than relying on the App.
-
-### 5.5 Accuracy Disclaimer
+### 5.2 Accuracy Disclaimer
 While we strive for accuracy, we cannot guarantee that:
-- Health data integration will be error-free or completely accurate
 - Habit tracking data perfectly reflects actual behavior
-- AI insights or recommendations are medically appropriate for your situation
+- AI insights or recommendations are appropriate for your specific situation
+- All features will work flawlessly on all devices
 
 ## 6. Privacy and Data Protection
 
@@ -358,13 +339,6 @@ We disclaim liability for:
 - Performance issues related to device specifications or network connectivity
 - Third-party service availability or functionality
 - Accuracy of AI-generated insights or recommendations
-
-### 9.3 Health and Medical Disclaimers
-We specifically disclaim any responsibility for:
-- Medical decisions made based on App data or insights
-- Health outcomes resulting from habit tracking or behavior changes
-- Accuracy of health data integration or analysis
-- Compatibility with medical devices or treatments
 
 ## 10. Limitation of Liability
 
@@ -466,7 +440,7 @@ HabitV8 stores all your information locally on your device using encrypted local
 #### App Settings and Preferences
 - **User Interface Settings**: Theme preferences, notification settings, and layout choices
 - **Notification Preferences**: Reminder schedules, sound choices, and quiet hours
-- **Integration Settings**: Health app and calendar integration preferences
+- **Integration Settings**: Calendar integration preferences
 - **AI Settings**: Local AI processing preferences and insight configurations
 
 #### Analytics Data (Local Only)
@@ -571,7 +545,6 @@ If you choose to enable calendar integration:
 
 #### Operating System APIs
 - **Notification Services**: For delivering habit reminders (local notifications only)
-- **Health APIs**: Optional integration with HealthKit/Health Connect (user consent required)
 - **Calendar APIs**: Optional integration with device calendar (user consent required)
 - **File System**: For local data storage and backup functionality
 
@@ -600,12 +573,11 @@ If you choose to enable calendar integration:
 
 ### Privacy Settings
 - **Notification Controls**: Customize all notification preferences
-- **Integration Controls**: Enable/disable health and calendar integrations
+- **Integration Controls**: Enable/disable calendar integrations
 - **Theme and Interface**: Control visual and interface preferences
 - **Data Export Settings**: Control what data is included in exports
 
 ### Consent Management
-- **Health Data Consent**: Granular control over each health data type
 - **Calendar Consent**: Control calendar access permissions
 - **AI Processing Consent**: Choose between local and external AI processing
 - **Notification Consent**: Control all notification permissions
