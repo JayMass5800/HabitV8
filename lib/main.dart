@@ -23,6 +23,7 @@ import 'ui/screens/insights_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/create_habit_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
+import 'ui/screens/purchase_screen.dart';
 import 'widgets/alarm_test_widget.dart';
 
 void main() async {
@@ -482,6 +483,10 @@ final GoRouter _router = GoRouter(
         final extra = state.extra as Map<String, dynamic>?;
         return CreateHabitScreen(prefilledData: extra);
       },
+    ),
+    GoRoute(
+      path: '/purchase',
+      builder: (context, state) => const PurchaseScreen(),
     ),
     GoRoute(
       path: '/alarm-test',

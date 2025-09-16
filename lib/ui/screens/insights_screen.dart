@@ -6,11 +6,13 @@ import '../../domain/model/habit.dart';
 import '../../services/insights_service.dart';
 import '../../services/enhanced_insights_service.dart';
 import '../../services/achievements_service.dart';
+import '../../services/subscription_service.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/ai_status_banner.dart';
 import '../widgets/enhanced_empty_insights_state.dart';
 import '../widgets/ai_insights_onboarding.dart';
 import '../widgets/ai_insights_debug_panel.dart';
+import '../widgets/premium_feature_guard.dart';
 import 'ai_settings_screen.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
@@ -233,31 +235,34 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final totalCompletions =
         activeHabits.fold<int>(0, (sum, h) => sum + h.completions.length);
 
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Status banner for guidance
-          AIStatusBanner(
-            isAIAvailable: _enhancedInsightsService.isAIAvailable,
-            habitCount: activeHabits.length,
-            completionCount: totalCompletions,
-          ),
+    return PremiumFeatureGuard(
+      feature: PremiumFeature.aiInsights,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status banner for guidance
+            AIStatusBanner(
+              isAIAvailable: _enhancedInsightsService.isAIAvailable,
+              habitCount: activeHabits.length,
+              completionCount: totalCompletions,
+            ),
 
-          // AI Insights content
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildAIInsights(habits, theme),
-          ),
+            // AI Insights content
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _buildAIInsights(habits, theme),
+            ),
 
-          // Debug panel (only in debug mode)
-          AIInsightsDebugPanel(
-            habitCount: activeHabits.length,
-            completionCount: totalCompletions,
-          ),
-        ],
+            // Debug panel (only in debug mode)
+            AIInsightsDebugPanel(
+              habitCount: activeHabits.length,
+              completionCount: totalCompletions,
+            ),
+          ],
+        ),
       ),
     );
   }

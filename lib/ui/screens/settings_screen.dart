@@ -12,6 +12,7 @@ import '../../services/theme_service.dart';
 import '../../services/calendar_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/data_export_import_service.dart';
+import '../../services/subscription_service.dart';
 import '../../data/database.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -223,6 +224,87 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                           onTap: () => _showDefaultScreenPicker(context),
                         ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Subscription Section
+          Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.workspace_premium,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Subscription',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                FutureBuilder<SubscriptionStatus>(
+                  future: SubscriptionService().getSubscriptionStatus(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final status =
+                        snapshot.data ?? SubscriptionStatus.trialExpired;
+                    final subscriptionService = SubscriptionService();
+
+                    return Column(
+                      children: [
+                        SettingsTile(
+                          title: 'Status',
+                          subtitle: _getSubscriptionStatusText(status),
+                          trailing: _getSubscriptionStatusIcon(status),
+                        ),
+                        if (status == SubscriptionStatus.trial)
+                          FutureBuilder<int>(
+                            future: subscriptionService.getRemainingTrialDays(),
+                            builder: (context, daysSnapshot) {
+                              final daysRemaining = daysSnapshot.data ?? 0;
+                              return SettingsTile(
+                                title: 'Trial Days Remaining',
+                                subtitle: '$daysRemaining days left',
+                                trailing: const Icon(Icons.timer),
+                              );
+                            },
+                          ),
+                        if (status != SubscriptionStatus.premium)
+                          SettingsTile(
+                            title: 'Upgrade to Premium',
+                            subtitle:
+                                'Keep all features and support development',
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => context.go('/purchase'),
+                          ),
+                        if (status == SubscriptionStatus.premium)
+                          SettingsTile(
+                            title: 'Restore Purchases',
+                            subtitle: 'Restore previous purchases',
+                            trailing: const Icon(Icons.refresh),
+                            onTap: () => _restorePurchases(),
+                          ),
                       ],
                     );
                   },
@@ -1415,6 +1497,68 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
       AppLogger.error('Import failed', e);
+    }
+  }
+
+  /// Get subscription status text for display
+  String _getSubscriptionStatusText(SubscriptionStatus status) {
+    switch (status) {
+      case SubscriptionStatus.trial:
+        return 'Free trial active';
+      case SubscriptionStatus.premium:
+        return 'Premium active';
+      case SubscriptionStatus.trialExpired:
+        return 'Trial expired - upgrade now';
+      case SubscriptionStatus.cancelled:
+        return 'Subscription cancelled';
+    }
+  }
+
+  /// Get subscription status icon for display
+  Widget _getSubscriptionStatusIcon(SubscriptionStatus status) {
+    switch (status) {
+      case SubscriptionStatus.trial:
+        return Icon(Icons.timer, color: Colors.orange);
+      case SubscriptionStatus.premium:
+        return Icon(Icons.verified, color: Colors.green);
+      case SubscriptionStatus.trialExpired:
+        return Icon(Icons.warning, color: Colors.red);
+      case SubscriptionStatus.cancelled:
+        return Icon(Icons.cancel, color: Colors.red);
+    }
+  }
+
+  /// Restore purchases
+  Future<void> _restorePurchases() async {
+    try {
+      // Show loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Restoring purchases...'),
+        ),
+      );
+
+      // For now, just refresh the subscription status
+      // In a real app, this would query the app store/play store
+      final subscriptionService = SubscriptionService();
+      await subscriptionService.initialize();
+
+      // Refresh the UI
+      setState(() {});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Purchases restored successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error restoring purchases: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }
