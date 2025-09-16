@@ -21,7 +21,7 @@ This directory contains several PowerShell scripts to automate version managemen
 
 **Features**:
 - ✅ **Auto-increments patch version by default** (8.2.0 → 8.2.1)
-- ✅ Resets build number to 10 for new versions
+- ✅ **ALWAYS increments build number** (Play Store compatible)
 - ✅ Can increment only build number with `-OnlyBuild`
 - ✅ Can set specific version with `-NewVersion`
 - ✅ Runs `flutter pub get` automatically
