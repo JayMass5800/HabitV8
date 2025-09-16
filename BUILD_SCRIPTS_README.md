@@ -155,17 +155,34 @@ flutter build appbundle --build-number=12 --build-name=8.2.1
 
 Your current version is displayed at the top of `pubspec.yaml`:
 ```yaml
-version: 8.2.0+11
+version: 8.2.1+1
 ```
 
 Where:
-- `8.2.0` = Version name (major.minor.patch)
-- `11` = Build number
+- `8.2.1` = Version name (major.minor.patch) - **displayed to users**
+- `1` = Build number (versionCode) - **used by app stores**
+
+## 🚨 **CRITICAL: Google Play Store Build Numbers**
+
+**The Google Play Store only cares about the BUILD NUMBER (the number after +), NOT the version name!**
+
+- ✅ **Correct**: `8.1.0+10` → `8.2.0+11` → `9.0.0+12`
+- ❌ **Wrong**: `8.1.0+10` → `8.2.0+10` (Play Store rejects: "Version code 10 already used")
+
+**Key Rules**:
+1. **Build number must ALWAYS increase** across all uploads
+2. **Build number can NEVER be reused**, even for different version names
+3. **Version name can be anything** (users see this, stores don't care)
+
+**Fixed Behavior**:
+- Scripts now **ALWAYS increment build number** from current value
+- **No more resetting** build numbers when version changes
+- Ensures Play Store compatibility
 
 **New Default Behavior**:
-- Running scripts **without** `-OnlyBuild` will auto-increment the patch version: `8.2.0` → `8.2.1` and reset build to `10`
-- Use `-OnlyBuild` flag when you want to keep the same version but increment build number
-- Use `-NewVersion "X.Y.Z"` to set a specific version
+- Running scripts will auto-increment patch version AND increment build number: `8.2.0+11` → `8.2.1+12`
+- Use `-OnlyBuild` flag to keep same version: `8.2.0+11` → `8.2.0+12`
+- Use `-NewVersion "X.Y.Z"` for specific version: `8.2.0+11` → `9.0.0+12`
 
 **Version Strategy**:
 - **Patch increment** (8.2.0 → 8.2.1): Bug fixes, small updates

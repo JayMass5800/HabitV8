@@ -26,7 +26,7 @@ $currentBuildNumber = [int]$match.Groups[2].Value
 # Calculate new version
 if ($Version) {
     $newVersionPart = $Version
-    $newBuildNumber = 10 # Start at build 10 for new version
+    $newBuildNumber = $currentBuildNumber + 1 # Always increment from current, never reset
 } elseif ($OnlyBuild) {
     $newVersionPart = $currentVersionPart
     $newBuildNumber = $currentBuildNumber + 1
@@ -39,7 +39,7 @@ if ($Version) {
         $patch = [int]$versionParts[2]
         $patch++ # Increment patch version
         $newVersionPart = "$major.$minor.$patch"
-        $newBuildNumber = 10 # Reset build number to 10 for new version
+        $newBuildNumber = $currentBuildNumber + 1 # Always increment, never reset
     } else {
         $newVersionPart = $currentVersionPart
         $newBuildNumber = $currentBuildNumber + 1
