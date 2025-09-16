@@ -29,7 +29,9 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   String? _queryProductError;
 
   // Product IDs - these should match your App Store Connect/Google Play Console setup
-  static const String _kPremiumPurchaseId = 'habitv8_premium_lifetime';
+  // Note: Product IDs must start with a number or lowercase letter for Google Play
+  // and can contain numbers (0-9), lowercase letters (a-z), underscores (_), and periods (.)
+  static const String _kPremiumPurchaseId = 'premium_lifetime_access';
   static const Set<String> _kProductIds = {
     _kPremiumPurchaseId,
   };
@@ -313,6 +315,63 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
         ),
         const SizedBox(height: 16),
 
+        // Show error message if products couldn't be loaded
+        if (_queryProductError != null) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colorScheme.error),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.error, color: colorScheme.error),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Store Configuration Issue',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colorScheme.error,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _queryProductError!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onErrorContainer,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    setState(() {
+                      _queryProductError = null;
+                      _isLoading = true;
+                    });
+                    await _loadProducts();
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.error,
+                    foregroundColor: colorScheme.onError,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
         // One-time purchase option
         Container(
           padding: const EdgeInsets.all(20),
@@ -388,12 +447,20 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                             color: colorScheme.primary,
                           ),
                         )
+                      else if (_queryProductError == null)
+                        Text(
+                          'Loading...',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary.withValues(alpha: 0.6),
+                          ),
+                        )
                       else
                         Text(
                           '\$19.99',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
+                            color: colorScheme.primary.withValues(alpha: 0.6),
                           ),
                         ),
                       Text(
@@ -590,12 +657,34 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
           await _inAppPurchase.queryProductDetails(_kProductIds);
 
       if (response.notFoundIDs.isNotEmpty) {
-        AppLogger.warning('Products not found: ${response.notFoundIDs}');
+        final notFoundProducts = response.notFoundIDs.join(', ');
+        AppLogger.warning('Products not found in store: $notFoundProducts');
+
+        // Provide specific guidance for Play Console setup
+        final errorMessage =
+            'Product "$notFoundProducts" not found in store.\n\n'
+            'Play Console Setup Required:\n'
+            '1. Go to Play Console → Your App → Monetize → Products → One-time products\n'
+            '2. Create a product with ID: "$_kPremiumPurchaseId"\n'
+            '3. Set title (max 55 chars): "HabitV8 Premium - Lifetime Access"\n'
+            '4. Set description (max 200 chars): "One-time purchase for lifetime access to all premium features"\n'
+            '5. Set pricing and activate the product\n'
+            '6. Ensure app is published to Internal Testing track minimum';
+
+        setState(() {
+          _queryProductError = errorMessage;
+        });
+        return;
       }
 
       if (response.error != null) {
         setState(() {
-          _queryProductError = response.error!.message;
+          _queryProductError = 'Store error: ${response.error!.message}\n\n'
+              'Common causes:\n'
+              '• App not published to any testing track in Play Console\n'
+              '• Product not activated in Play Console\n'
+              '• Device not authorized for testing\n'
+              '• Wrong product ID in code vs Play Console';
         });
         AppLogger.error('Error loading products', response.error);
         return;
@@ -614,7 +703,12 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     } catch (e) {
       AppLogger.error('Failed to load products', e);
       setState(() {
-        _queryProductError = 'Failed to load products: ${e.toString()}';
+        _queryProductError = 'Failed to load products: ${e.toString()}\n\n'
+            'Check:\n'
+            '• Internet connection\n'
+            '• Google Play Store app is updated\n'
+            '• App is signed with release key\n'
+            '• Device supports Google Play Billing';
       });
     }
   }
@@ -773,12 +867,23 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     try {
       // Check if in-app purchases are available
       if (!_isAvailable) {
-        throw Exception('In-app purchases are not available on this device');
+        throw Exception('In-app purchases are not available on this device.\n\n'
+            'Possible causes:\n'
+            '• Device doesn\'t support Google Play Billing\n'
+            '• Google Play Store is not installed or updated\n'
+            '• Device is in restricted region');
       }
 
       // Check if products are loaded
       if (_products.isEmpty) {
-        throw Exception('Premium product not available');
+        if (_queryProductError != null) {
+          throw Exception('Cannot purchase: Product not available in store.\n\n'
+              'Please check the Play Console setup instructions above and try again.');
+        } else {
+          throw Exception('Premium product not available.\n\n'
+              'The product "$_kPremiumPurchaseId" was not found in the store.\n'
+              'Please ensure it\'s properly configured in Google Play Console.');
+        }
       }
 
       // Purchase the premium lifetime product
@@ -799,10 +904,39 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
           _isLoading = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Purchase failed: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
+        // Show detailed error dialog for purchase issues
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.error, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Purchase Failed'),
+              ],
+            ),
+            content: Text(e.toString()),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+              if (_queryProductError != null)
+                TextButton(
+                  onPressed: () async {
+                    Navigator.of(context).pop();
+                    setState(() {
+                      _queryProductError = null;
+                      _isLoading = true;
+                    });
+                    await _loadProducts();
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  },
+                  child: const Text('Retry Setup'),
+                ),
+            ],
           ),
         );
       }
