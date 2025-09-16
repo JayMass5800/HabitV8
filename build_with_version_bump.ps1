@@ -1,4 +1,5 @@
 # Advanced Flutter Build Script with Automatic Version Management
+# Includes Android 16 KB native library alignment fix for Play Store compliance
 # Usage: 
 #   ./build_with_version_bump.ps1                          # Auto-increment patch version and build APK
 #   ./build_with_version_bump.ps1 -BuildType aab           # Auto-increment patch version and build AAB

@@ -81,6 +81,11 @@ android {
                 'META-INF/ASL2.0'
             ]
         }
+        
+        // 16 KB native library alignment for Android 15+ (API 35+)
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 
     // Ensure alarm audio assets are not compressed so AssetManager.openFd works
@@ -122,4 +127,6 @@ flutter {
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'
     implementation 'androidx.work:work-runtime-ktx:2.9.0'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.activity:activity-ktx:1.8.2'
 }
