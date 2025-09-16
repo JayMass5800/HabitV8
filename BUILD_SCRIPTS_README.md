@@ -9,13 +9,13 @@ This directory contains several PowerShell scripts to automate version managemen
 
 **Usage**:
 ```powershell
-# Auto-increment patch version (8.2.0 → 8.2.1) and reset build to 10
+# Auto-increment patch version (8.2.0+11 → 8.2.1+12)
 ./increment_build_number.ps1
 
-# Set specific version and increment build number
+# Set specific version and increment build number (8.2.0+11 → 8.3.0+12)
 ./increment_build_number.ps1 -NewVersion "8.3.0"
 
-# Only increment build number (no version change)
+# Only increment build number (8.2.0+11 → 8.2.0+12)
 ./increment_build_number.ps1 -OnlyBuild
 ```
 
@@ -61,7 +61,7 @@ This directory contains several PowerShell scripts to automate version managemen
 
 **Features**:
 - ✅ **Auto-increments patch version by default** (8.2.0 → 8.2.1)
-- ✅ Resets build number to 10 for new versions
+- ✅ **ALWAYS increments build number** (Play Store compatible)
 - ✅ Can increment only build number with `-OnlyBuild`
 - ✅ Supports all Flutter build types
 - ✅ Shows build time and output file size
@@ -75,19 +75,19 @@ This directory contains several PowerShell scripts to automate version managemen
 
 **Usage**:
 ```powershell
-# Auto-increment patch version (8.2.0 → 8.2.1) and reset build to 10
+# Auto-increment patch version (8.2.0+11 → 8.2.1+12)
 ./bump_version.ps1
 
-# Set specific version and reset build to 10
+# Set specific version and increment build (8.2.0+11 → 8.3.0+12)
 ./bump_version.ps1 -Version "8.3.0"
 
-# Only increment build number (no version change)
+# Only increment build number (8.2.0+11 → 8.2.0+12)
 ./bump_version.ps1 -OnlyBuild
 ```
 
 **Features**:
 - ✅ **Auto-increments patch version by default**
-- ✅ Resets build number to 10 for new versions
+- ✅ **ALWAYS increments build number** (Play Store compatible)
 - ✅ Minimal output (good for scripting)
 - ✅ Returns new version string
 - ✅ Can be integrated into other workflows
@@ -141,13 +141,13 @@ flutter build appbundle --build-number=12 --build-name=8.2.1
 
 ### Version Management Only
 ```powershell
-# Auto-increment patch version (8.2.0 → 8.2.1, build reset to 10)
+# Auto-increment patch version (8.2.0+11 → 8.2.1+12)
 ./increment_build_number.ps1
 
-# Only increment build number for hotfixes
+# Only increment build number for hotfixes (8.2.0+11 → 8.2.0+12)
 ./increment_build_number.ps1 -OnlyBuild
 
-# Major feature release
+# Major feature release (8.2.0+11 → 9.0.0+12)
 ./increment_build_number.ps1 -NewVersion "9.0.0"
 ```
 
