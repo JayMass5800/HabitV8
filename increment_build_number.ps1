@@ -40,7 +40,7 @@ Write-Host "📋 Current version: $currentVersionPart+$currentBuildNumber" -Fore
 # Determine new version and build number
 if ($NewVersion) {
     $newVersionPart = $NewVersion
-    $newBuildNumber = $currentBuildNumber + 1
+    $newBuildNumber = 10 # Start at build 10 for new version
     Write-Host "🆙 Updating to version: $newVersionPart+$newBuildNumber" -ForegroundColor Cyan
 } elseif ($OnlyBuild) {
     $newVersionPart = $currentVersionPart
@@ -55,8 +55,8 @@ if ($NewVersion) {
         $patch = [int]$versionParts[2]
         $patch++ # Increment patch version
         $newVersionPart = "$major.$minor.$patch"
-        $newBuildNumber = 1 # Reset build number for new version
-        Write-Host "🆙 Auto-incrementing patch version: $currentVersionPart → $newVersionPart (build reset to 1)" -ForegroundColor Cyan
+        $newBuildNumber = 10 # Reset build number to 10 for new version
+        Write-Host "🆙 Auto-incrementing patch version: $currentVersionPart → $newVersionPart (build reset to 10)" -ForegroundColor Cyan
     } else {
         Write-Host "⚠️ Warning: Cannot parse version parts, only incrementing build number" -ForegroundColor Yellow
         $newVersionPart = $currentVersionPart
