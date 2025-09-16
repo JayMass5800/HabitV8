@@ -717,21 +717,23 @@ Future<void> _ensureServiceInitialization() async {
 Future<void> _handleBootCompletionIfNeeded() async {
   try {
     final prefs = await SharedPreferences.getInstance();
-    final needsReschedule = prefs.getBool('needs_notification_reschedule_after_boot') ?? false;
-    
+    final needsReschedule =
+        prefs.getBool('needs_notification_reschedule_after_boot') ?? false;
+
     if (needsReschedule) {
-      AppLogger.info('🔄 Detected boot completion flag - rescheduling notifications');
-      
+      AppLogger.info(
+          '🔄 Detected boot completion flag - rescheduling notifications');
+
       // Clear the flag
       await prefs.setBool('needs_notification_reschedule_after_boot', false);
-      
+
       // Get boot timestamp for logging
       final bootTimestamp = prefs.getInt('boot_completion_timestamp') ?? 0;
       if (bootTimestamp > 0) {
         final bootTime = DateTime.fromMillisecondsSinceEpoch(bootTimestamp);
         AppLogger.info('📱 Device boot detected at: $bootTime');
       }
-      
+
       // Trigger notification rescheduling without starting foreground services
       // This runs in the background and doesn't violate Android 15+ restrictions
       _rescheduleNotificationsAfterBoot();
@@ -746,10 +748,10 @@ Future<void> _handleBootCompletionIfNeeded() async {
 Future<void> _rescheduleNotificationsAfterBoot() async {
   try {
     AppLogger.info('🔄 Starting notification rescheduling after boot');
-    
+
     // Use the midnight reset service which is already designed for this
     await MidnightHabitResetService.forceReset();
-    
+
     AppLogger.info('✅ Notification rescheduling completed after boot');
   } catch (e) {
     AppLogger.error('❌ Error rescheduling notifications after boot', e);
