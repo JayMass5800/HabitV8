@@ -21,12 +21,12 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.dappercatsinc.habitv1"
+    namespace = "com.habittracker.habitv8"
     compileSdk = 34
     ndkVersion = "25.1.8937393"
 
     defaultConfig {
-        applicationId = "com.dappercatsinc.habitv1"
+        applicationId = "com.habittracker.habitv8"
         minSdk = 26
         targetSdk = 36
         versionCode = flutterVersionCode
@@ -38,11 +38,6 @@ android {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
         }
 
-        manifestPlaceholders += mapOf(
-            "healthPermissionsOnly" to "true",
-            "healthPermissionsRestricted" to "true",
-            "healthDataTypesMinimal" to "true"
-        )
         manifestPlaceholders["applicationName"] = "android.app.Application"
     }
 
@@ -94,8 +89,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            manifestPlaceholders["stripUnusedHealthPermissions"] = "true"
-                manifestPlaceholders["applicationName"] = "android.app.Application"
+            manifestPlaceholders["applicationName"] = "android.app.Application"
         }
     }
 }
@@ -103,7 +97,6 @@ android {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.2")
 
-    implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.google.android.gms:play-services-location:21.0.1")
 }

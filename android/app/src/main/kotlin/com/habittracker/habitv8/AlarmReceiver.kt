@@ -1,4 +1,4 @@
-package com.dappercatsinc.habitv1
+package com.habittracker.habitv8
 
 import android.content.BroadcastReceiver
 import android.content.Context

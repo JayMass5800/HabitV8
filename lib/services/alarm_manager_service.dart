@@ -14,8 +14,9 @@ import 'logging_service.dart';
 class AlarmManagerService {
   static bool _isInitialized = false;
   static const String _alarmDataKey = 'alarm_manager_data_';
-  static const MethodChannel _systemSoundChannel =
-      MethodChannel('com.dappercatsinc.habitv1/system_sound');
+  static const MethodChannel _systemSoundChannel = MethodChannel(
+    'com.habittracker.habitv8/system_sound',
+  );
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -73,7 +74,8 @@ class AlarmManagerService {
             existing['habitId'] == habitId) {
           await NativeAlarmService.cancelAlarm(alarmId);
           AppLogger.debug(
-              'Cancelled duplicate alarm for habit $habitId at $scheduledTime');
+            'Cancelled duplicate alarm for habit $habitId at $scheduledTime',
+          );
         }
       }
     } catch (e) {
@@ -177,11 +179,13 @@ class AlarmManagerService {
           );
 
           AppLogger.info(
-              '✅ Scheduled hourly alarm for ${habit.name} at $timeStr');
+            '✅ Scheduled hourly alarm for ${habit.name} at $timeStr',
+          );
         } catch (e) {
           AppLogger.error(
-              'Failed to schedule hourly alarm for ${habit.name} at $timeStr',
-              e);
+            'Failed to schedule hourly alarm for ${habit.name} at $timeStr',
+            e,
+          );
         }
       }
     }
@@ -196,13 +200,7 @@ class AlarmManagerService {
     final hour = int.parse(parts[0]);
     final minute = int.parse(parts[1]);
 
-    DateTime alarmTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
+    DateTime alarmTime = DateTime(now.year, now.month, now.day, hour, minute);
 
     // If the time has passed today, schedule for tomorrow
     if (alarmTime.isBefore(now)) {
@@ -224,7 +222,8 @@ class AlarmManagerService {
       );
 
       AppLogger.info(
-          '✅ Scheduled daily alarm for ${habit.name} at ${habit.reminderTime}');
+        '✅ Scheduled daily alarm for ${habit.name} at ${habit.reminderTime}',
+      );
     } catch (e) {
       AppLogger.error('Failed to schedule daily alarm for ${habit.name}', e);
     }
@@ -249,8 +248,9 @@ class AlarmManagerService {
   static Future<void> cancelHabitAlarms(String habitId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final keys =
-          prefs.getKeys().where((key) => key.startsWith(_alarmDataKey));
+      final keys = prefs.getKeys().where(
+            (key) => key.startsWith(_alarmDataKey),
+          );
 
       for (final key in keys) {
         final data = prefs.getString(key);
@@ -277,8 +277,9 @@ class AlarmManagerService {
   /// Open system ringtone picker
   static Future<String?> openSystemRingtonePicker() async {
     try {
-      final result =
-          await _systemSoundChannel.invokeMethod('openRingtonePicker');
+      final result = await _systemSoundChannel.invokeMethod(
+        'openRingtonePicker',
+      );
       AppLogger.info('📱 System ringtone picker result: $result');
       return result;
     } catch (e) {
@@ -363,8 +364,9 @@ class AlarmManagerService {
         enableVibration: true,
       );
 
-      const NotificationDetails platformChannelSpecifics =
-          NotificationDetails(android: androidPlatformChannelSpecifics);
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+      );
 
       await _notificationsPlugin.show(
         999999, // Use a high ID for alarm notifications
@@ -379,8 +381,11 @@ class AlarmManagerService {
 
   /// Show alarm notification with sound fallback
   /// Prefer per-habit URI; fall back to alarmSoundName; then system default
-  static Future<void> _showAlarmNotificationWithSound(String habitName,
-      {String? alarmSoundUri, String? alarmSoundName}) async {
+  static Future<void> _showAlarmNotificationWithSound(
+    String habitName, {
+    String? alarmSoundUri,
+    String? alarmSoundName,
+  }) async {
     try {
       AndroidNotificationDetails androidPlatformChannelSpecifics;
 
@@ -428,12 +433,14 @@ class AlarmManagerService {
           playSound: true,
           enableVibration: true,
           sound: UriAndroidNotificationSound(
-              'content://settings/system/alarm_alert'),
+            'content://settings/system/alarm_alert',
+          ),
         );
       }
 
-      final NotificationDetails platformChannelSpecifics =
-          NotificationDetails(android: androidPlatformChannelSpecifics);
+      final NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+      );
 
       await _notificationsPlugin.show(
         999998, // Use a different ID for sound fallback notifications
@@ -480,12 +487,14 @@ class AlarmManagerService {
   /// Get available system ringtones
   static Future<List<Map<String, String>>> getSystemRingtones() async {
     try {
-      final result =
-          await _systemSoundChannel.invokeMethod('getSystemRingtones');
+      final result = await _systemSoundChannel.invokeMethod(
+        'getSystemRingtones',
+      );
       final List<dynamic> ringtonesData = result ?? [];
 
       AppLogger.debug(
-          'Platform channel returned ${ringtonesData.length} ringtones');
+        'Platform channel returned ${ringtonesData.length} ringtones',
+      );
 
       final mappedData =
           ringtonesData.map((item) => Map<String, String>.from(item)).toList();
@@ -494,7 +503,8 @@ class AlarmManagerService {
       for (int i = 0; i < mappedData.length && i < 3; i++) {
         final sound = mappedData[i];
         AppLogger.debug(
-            'Platform sound $i: ${sound['name']} -> ${sound['uri']} (${sound['type']})');
+          'Platform sound $i: ${sound['name']} -> ${sound['uri']} (${sound['type']})',
+        );
       }
 
       return mappedData;
@@ -542,7 +552,8 @@ class AlarmManagerService {
     final alarmId = habitHash + suffixHash + timeComponent + 300000;
 
     AppLogger.debug(
-        'Generated alarm ID $alarmId for habit $habitId (suffix: $suffix)');
+      'Generated alarm ID $alarmId for habit $habitId (suffix: $suffix)',
+    );
     return alarmId;
   }
 
@@ -599,7 +610,9 @@ class AlarmManagerService {
 
   /// Save alarm data to file for background isolate access
   static Future<void> _saveAlarmDataToFile(
-      int alarmId, Map<String, dynamic> alarmData) async {
+    int alarmId,
+    Map<String, dynamic> alarmData,
+  ) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/alarm_data_$alarmId.json');

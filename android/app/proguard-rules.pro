@@ -66,8 +66,9 @@
 -keep class com.dexterous.** { *; }
 -keep class androidx.work.** { *; }
 
-# Keep permission handler classes
--keep class com.baseflow.permissionhandler.** { *; }
+# Allow R8 to shrink unused permission_handler classes (removes embedded permission constants)
+# If you encounter runtime issues with permission_handler after this change, we can add minimal keeps.
+# (Currently no keeps are required for typical Flutter plugin registration.)
 
 # Keep device info classes
 -keep class dev.fluttercommunity.plus.device_info.** { *; }
