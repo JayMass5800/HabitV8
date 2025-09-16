@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App name and basic strings -->
+    <string name="app_name">HabitV8</string>
+    
+    <!-- In-App Purchase Product IDs -->
+    <!-- These product IDs must be declared here for Google Play Console to detect them -->
+    <string name="product_premium_lifetime_access">premium_lifetime_access</string>
+    
+    <!-- Product descriptions for reference -->
+    <string name="product_premium_title">HabitV8 Premium - Lifetime Access</string>
+    <string name="product_premium_description">One-time purchase for lifetime access to all premium features including unlimited habits, advanced analytics, AI suggestions, and custom alarms.</string>
+    
+    <!-- Billing-related strings -->
+    <string name="billing_unavailable">In-app purchases are not available on this device</string>
+    <string name="product_not_found">Premium product not available in store</string>
+    <string name="purchase_failed">Purchase failed. Please try again.</string>
+    <string name="purchase_successful">Welcome to Premium! Your purchase is complete.</string>
+    <string name="restore_successful">Purchases restored successfully!</string>
+    <string name="no_purchases_found">No previous purchases found</string>
+</resources>

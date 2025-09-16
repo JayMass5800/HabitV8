@@ -60,6 +60,17 @@
         android:supportsRtl="true"
         android:enableOnBackInvokedCallback="true">
 
+        <!-- Google Play Billing configuration -->
+        <!-- Declare in-app products for Google Play Console detection -->
+        <meta-data
+            android:name="com.android.vending.billing.PRODUCT_IDS"
+            android:value="premium_lifetime_access" />
+        
+        <!-- Alternative billing metadata approach -->
+        <meta-data
+            android:name="billing_product_premium_lifetime_access"
+            android:value="@string/product_premium_lifetime_access" />
+
         <!-- Notification receivers for scheduled notifications -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         

@@ -22,6 +22,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val RINGTONE_CHANNEL = "com.habittracker.habitv8/ringtones"
     private val SYSTEM_SOUND_CHANNEL = "com.habittracker.habitv8/system_sound"
     private val NATIVE_ALARM_CHANNEL = "com.habittracker.habitv8/native_alarm"
+    private val ANDROID_RESOURCES_CHANNEL = "habitv8/android_resources"
     private val RINGTONE_PICKER_REQUEST_CODE = 1
 
     private var previewRingtone: Ringtone? = null
@@ -108,6 +109,49 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // Android Resources channel for accessing string resources and billing configuration
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ANDROID_RESOURCES_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getStringResource" -> {
+                    val resourceName = call.argument<String>("resourceName")
+                    if (resourceName != null) {
+                        try {
+                            val resourceId = resources.getIdentifier(resourceName, "string", packageName)
+                            if (resourceId != 0) {
+                                val value = getString(resourceId)
+                                result.success(value)
+                            } else {
+                                result.error("RESOURCE_NOT_FOUND", "String resource not found: $resourceName", null)
+                            }
+                        } catch (e: Exception) {
+                            result.error("RESOURCE_ERROR", "Failed to get string resource: ${e.message}", null)
+                        }
+                    } else {
+                        result.error("INVALID_ARGUMENT", "resourceName is required", null)
+                    }
+                }
+                "getBillingStrings" -> {
+                    try {
+                        val billingStrings = mapOf(
+                            "product_premium_lifetime_access" to getString(R.string.product_premium_lifetime_access),
+                            "product_premium_title" to getString(R.string.product_premium_title),
+                            "product_premium_description" to getString(R.string.product_premium_description),
+                            "billing_unavailable" to getString(R.string.billing_unavailable),
+                            "product_not_found" to getString(R.string.product_not_found),
+                            "purchase_failed" to getString(R.string.purchase_failed),
+                            "purchase_successful" to getString(R.string.purchase_successful),
+                            "restore_successful" to getString(R.string.restore_successful),
+                            "no_purchases_found" to getString(R.string.no_purchases_found)
+                        )
+                        result.success(billingStrings)
+                    } catch (e: Exception) {
+                        result.error("BILLING_STRINGS_ERROR", "Failed to get billing strings: ${e.message}", null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
 
         // Ringtone listing/preview channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, RINGTONE_CHANNEL).setMethodCallHandler { call, result ->

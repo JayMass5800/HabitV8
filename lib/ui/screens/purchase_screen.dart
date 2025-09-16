@@ -5,6 +5,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'dart:async';
 import '../../services/subscription_service.dart';
 import '../../services/logging_service.dart';
+import '../../services/android_resource_service.dart';
 
 /// Screen for purchasing premium access (one-time purchase)
 class PurchaseScreen extends ConsumerStatefulWidget {
@@ -28,13 +29,11 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   bool _purchasePending = false;
   String? _queryProductError;
 
-  // Product IDs - these should match your App Store Connect/Google Play Console setup
+  // Product IDs - loaded from Android string resources for Play Console detection
   // Note: Product IDs must start with a number or lowercase letter for Google Play
   // and can contain numbers (0-9), lowercase letters (a-z), underscores (_), and periods (.)
-  static const String _kPremiumPurchaseId = 'premium_lifetime_access';
-  static const Set<String> _kProductIds = {
-    _kPremiumPurchaseId,
-  };
+  String _kPremiumPurchaseId = 'premium_lifetime_access'; // Default fallback
+  Set<String> _kProductIds = {'premium_lifetime_access'}; // Default fallback
 
   @override
   void initState() {
@@ -48,7 +47,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     );
     _animationController.forward();
 
-    // Initialize in-app purchases
+    // Initialize in-app purchases with product IDs from Android resources
     _initializeInAppPurchases();
   }
 
@@ -620,6 +619,20 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   /// Initialize in-app purchase system
   Future<void> _initializeInAppPurchases() async {
     try {
+      // First, load product IDs from Android string resources
+      // This ensures the product IDs are declared in Android resources for Play Console detection
+      try {
+        final productId = await AndroidResourceService.getProductId(
+            'product_premium_lifetime_access');
+        _kPremiumPurchaseId = productId;
+        _kProductIds = {productId};
+        AppLogger.info('Loaded product ID from Android resources: $productId');
+      } catch (e) {
+        AppLogger.warning(
+            'Failed to load product ID from Android resources, using fallback: $e');
+        // Fallback values are already set in the field declarations
+      }
+
       // Initialize in-app purchase
       final bool isAvailable = await _inAppPurchase.isAvailable();
       setState(() {
@@ -669,7 +682,8 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
             '3. Set title (max 55 chars): "HabitV8 Premium - Lifetime Access"\n'
             '4. Set description (max 200 chars): "One-time purchase for lifetime access to all premium features"\n'
             '5. Set pricing and activate the product\n'
-            '6. Ensure app is published to Internal Testing track minimum';
+            '6. Ensure app is published to Internal Testing track minimum\n'
+            '7. Product ID is declared in Android string resources for detection';
 
         setState(() {
           _queryProductError = errorMessage;
