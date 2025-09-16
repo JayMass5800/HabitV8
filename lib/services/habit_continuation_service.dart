@@ -282,7 +282,9 @@ class HabitContinuationService {
             title: '⏰ ${habit.name}',
             body: 'Time for your hourly habit!',
             scheduledTime: notificationTime,
-            payload: _createNotificationPayload(habit.id, 'hourly'),
+            payload: _createNotificationPayload(
+                '${habit.id}|${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+                'hourly'),
           );
 
           scheduledCount++;

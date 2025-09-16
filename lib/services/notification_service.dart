@@ -2431,7 +2431,8 @@ class NotificationService {
             id: generateSafeId(
               '${habit.id}_hourly_${date.day}_${timeHour}_$timeMinute',
             ),
-            habitId: habit.id.toString(),
+            habitId:
+                '${habit.id}|${timeHour.toString().padLeft(2, '0')}:${timeMinute.toString().padLeft(2, '0')}',
             title: '⏰ ${habit.name}',
             body: 'Time for your hourly habit!',
             scheduledTime: notificationTime,

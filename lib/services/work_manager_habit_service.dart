@@ -678,7 +678,9 @@ class WorkManagerHabitService {
             title: '🎯 ${habit.name}',
             body: 'Time to complete your hourly habit! Stay on track.',
             scheduledTime: scheduledTime,
-            payload: _createNotificationPayload(habit.id, 'hourly'),
+            payload: _createNotificationPayload(
+                '${habit.id}|${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+                'hourly'),
           );
 
           scheduledCount++;
