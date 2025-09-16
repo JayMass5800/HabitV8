@@ -11,11 +11,16 @@ import 'logging_service.dart';
 class WorkManagerHabitService {
   // Constants for WorkManager task names
   static const String _renewalTaskName = 'com.habitv8.HABIT_RENEWAL_TASK';
+  static const String _alarmRenewalTaskName = 'com.habitv8.ALARM_RENEWAL_TASK';
   static const String _lastRenewalKey = 'last_habit_continuation_renewal';
+  static const String _lastAlarmRenewalKey = 'last_alarm_renewal';
   static const String _renewalIntervalKey = 'habit_continuation_interval_hours';
+  static const String _bootTimestampKey = 'last_boot_timestamp';
 
   // Default renewal every 12 hours to ensure notifications don't expire
   static const int _defaultRenewalIntervalHours = 12;
+  // Alarm renewal delay after boot to comply with Android 15+ restrictions
+  static const int _alarmRenewalDelayMinutes = 30;
   static bool _isInitialized = false;
 
   /// Initialize the WorkManager habit service
@@ -34,6 +39,9 @@ class WorkManagerHabitService {
 
       // Schedule periodic renewal task
       await _schedulePeriodicRenewalTask();
+
+      // Check for boot completion and schedule alarm renewal if needed
+      await _checkBootCompletionAndScheduleAlarmRenewal();
 
       // REMOVED: Boot completion task registration to prevent Android 15+ conflicts
       // The new Android15CompatBootReceiver handles boot completion safely
@@ -59,6 +67,9 @@ class WorkManagerHabitService {
         switch (taskName) {
           case _renewalTaskName:
             await _performRenewalCheck();
+            break;
+          case _alarmRenewalTaskName:
+            await _performAlarmRenewalCheck();
             break;
           // REMOVED: Boot completion task to prevent Android 15+ conflicts
           // Boot completion is now handled by Android15CompatBootReceiver
@@ -293,6 +304,157 @@ class WorkManagerHabitService {
         break;
       default:
         AppLogger.warning('Unknown habit frequency: ${habit.frequency}');
+    }
+  }
+
+  /// Check for boot completion and schedule alarm renewal if needed
+  /// This provides automated alarm restoration while respecting Android 15+ restrictions
+  static Future<void> _checkBootCompletionAndScheduleAlarmRenewal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastBootTimestamp = prefs.getInt(_bootTimestampKey) ?? 0;
+      final currentBootTime = DateTime.now().millisecondsSinceEpoch;
+
+      // Check if this is a fresh boot (or first run)
+      // We use a simple timestamp comparison rather than relying on boot completion flags
+      final timeSinceLastBoot = currentBootTime - lastBootTimestamp;
+      final hasRebooted = timeSinceLastBoot >
+          (24 *
+              60 *
+              60 *
+              1000); // More than 24 hours difference suggests reboot
+
+      if (hasRebooted || lastBootTimestamp == 0) {
+        AppLogger.info('🔄 Boot completion detected, scheduling alarm renewal');
+
+        // Schedule delayed alarm renewal to comply with Android 15+ restrictions
+        // This gives the system time to fully boot before starting foreground services
+        await _scheduleDelayedAlarmRenewal();
+
+        // Update boot timestamp
+        await prefs.setInt(_bootTimestampKey, currentBootTime);
+      } else {
+        AppLogger.info(
+            '🔄 No recent boot detected, skipping alarm renewal scheduling');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error checking boot completion', e);
+    }
+  }
+
+  /// Schedule delayed alarm renewal to comply with Android 15+ restrictions
+  static Future<void> _scheduleDelayedAlarmRenewal() async {
+    try {
+      // Cancel any existing alarm renewal task
+      await Workmanager().cancelByUniqueName(_alarmRenewalTaskName);
+
+      // Schedule one-time alarm renewal with delay
+      await Workmanager().registerOneOffTask(
+        _alarmRenewalTaskName,
+        _alarmRenewalTaskName,
+        initialDelay: Duration(minutes: _alarmRenewalDelayMinutes),
+        constraints: Constraints(
+          networkType: NetworkType.notRequired,
+          requiresBatteryNotLow: false,
+          requiresCharging: false,
+          requiresDeviceIdle: false,
+        ),
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+        backoffPolicy: BackoffPolicy.exponential,
+        backoffPolicyDelay: Duration(minutes: 5),
+      );
+
+      AppLogger.info(
+          '🔄 Scheduled delayed alarm renewal in $_alarmRenewalDelayMinutes minutes');
+    } catch (e) {
+      AppLogger.error('❌ Failed to schedule delayed alarm renewal', e);
+    }
+  }
+
+  /// Perform alarm renewal check - safely restores alarms after boot
+  static Future<void> _performAlarmRenewalCheck() async {
+    try {
+      AppLogger.info('🚨 Performing automated alarm renewal check');
+
+      final prefs = await SharedPreferences.getInstance();
+      final lastAlarmRenewal = prefs.getString(_lastAlarmRenewalKey);
+      final now = DateTime.now();
+
+      // Check if alarm renewal is needed
+      bool needsAlarmRenewal = false;
+      if (lastAlarmRenewal == null) {
+        needsAlarmRenewal = true;
+        AppLogger.info(
+            'No previous alarm renewal found, performing alarm restoration');
+      } else {
+        try {
+          final lastRenewalTime = DateTime.parse(lastAlarmRenewal);
+          final hoursSinceAlarmRenewal =
+              now.difference(lastRenewalTime).inHours;
+          if (hoursSinceAlarmRenewal >= 24) {
+            needsAlarmRenewal = true;
+            AppLogger.info(
+                '$hoursSinceAlarmRenewal hours since last alarm renewal, renewal needed');
+          }
+        } catch (e) {
+          needsAlarmRenewal = true;
+          AppLogger.warning(
+              'Invalid alarm renewal date format, forcing renewal');
+        }
+      }
+
+      if (needsAlarmRenewal) {
+        await _performAutomatedAlarmRenewal();
+
+        // Update timestamp
+        await prefs.setString(_lastAlarmRenewalKey, now.toIso8601String());
+        AppLogger.info('✅ Automated alarm renewal completed');
+      } else {
+        AppLogger.info('⏭️ Alarm renewal not needed at this time');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error during alarm renewal check', e);
+    }
+  }
+
+  /// Perform automated alarm renewal for all habits with alarms enabled
+  static Future<void> _performAutomatedAlarmRenewal() async {
+    try {
+      AppLogger.info(
+          '🚨 Starting automated alarm renewal for all alarm-enabled habits');
+
+      // Get all active habits
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+      final habits = await habitService.getAllHabits();
+
+      // Filter to only habits with alarms enabled
+      final alarmHabits =
+          habits.where((h) => h.isActive && h.alarmEnabled).toList();
+
+      AppLogger.info(
+          '🚨 Found ${alarmHabits.length} alarm-enabled habits to renew');
+
+      int renewedCount = 0;
+      int errorCount = 0;
+
+      for (final habit in alarmHabits) {
+        try {
+          // Use NotificationService to schedule alarms directly
+          await NotificationService.scheduleHabitAlarms(habit);
+          renewedCount++;
+          AppLogger.info('✅ Renewed alarms for habit: ${habit.name}');
+        } catch (e) {
+          errorCount++;
+          AppLogger.error(
+              '❌ Error renewing alarms for habit: ${habit.name}', e);
+        }
+      }
+
+      AppLogger.info(
+          '✅ Automated alarm renewal completed: $renewedCount renewed, $errorCount errors');
+    } catch (e) {
+      AppLogger.error('❌ Error during automated alarm renewal', e);
     }
   }
 

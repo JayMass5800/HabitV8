@@ -13,7 +13,6 @@ import 'permission_service.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
 import 'alarm_manager_service.dart';
-import 'midnight_habit_reset_service.dart';
 import '../data/database.dart';
 
 @pragma('vm:entry-point')
@@ -1932,6 +1931,50 @@ class NotificationService {
       return;
     }
 
+    // Continue with notification-only scheduling
+    await _scheduleNotificationsOnly(habit);
+  }
+
+  /// Schedule ONLY notifications for a habit (never alarms) - safe for boot completion
+  /// This method ensures no foreground services are started during Android 15+ boot completion
+  static Future<void> scheduleHabitNotificationsOnly(dynamic habit) async {
+    AppLogger.debug(
+      'Starting NOTIFICATION-ONLY scheduling for habit: ${habit.name}',
+    );
+    AppLogger.debug('Notifications enabled: ${habit.notificationsEnabled}');
+    AppLogger.debug(
+        'Alarm enabled: ${habit.alarmEnabled} (IGNORED for safety)');
+
+    if (!_isInitialized) {
+      AppLogger.debug('Initializing notification service');
+      await initialize();
+    }
+
+    // Only check notification permissions (not alarm permissions)
+    if (habit.notificationsEnabled) {
+      try {
+        final bool permissionsGranted = await _ensureNotificationPermissions();
+        if (!permissionsGranted) {
+          AppLogger.warning(
+            'Cannot schedule notifications for habit: ${habit.name} - permissions not granted',
+          );
+          throw Exception('Notification permissions not granted');
+        }
+      } catch (e) {
+        AppLogger.error(
+          'Error checking notification permissions for habit: ${habit.name}',
+          e,
+        );
+        throw Exception('Failed to verify notification permissions: $e');
+      }
+    }
+
+    // ALWAYS schedule notifications only, never alarms (Android 15+ boot safety)
+    await _scheduleNotificationsOnly(habit);
+  }
+
+  /// Internal method to schedule only notifications (never alarms)
+  static Future<void> _scheduleNotificationsOnly(dynamic habit) async {
     // Skip if notifications are disabled
     if (!habit.notificationsEnabled) {
       AppLogger.debug('Skipping notifications - disabled');
@@ -2002,9 +2045,8 @@ class NotificationService {
           break;
 
         case 'hourly':
-          AppLogger.debug(
-              'Scheduling initial hourly notifications via MidnightHabitResetService');
-          await MidnightHabitResetService.scheduleHourlyNotifications(habit);
+          AppLogger.debug('Scheduling hourly notifications');
+          await _scheduleHourlyHabitNotifications(habit, hour, minute);
           break;
 
         default:
@@ -2350,6 +2392,57 @@ class NotificationService {
       AppLogger.error(error);
       throw Exception(error);
     }
+  }
+
+  /// Schedule hourly habit notifications
+  static Future<void> _scheduleHourlyHabitNotifications(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    final hourlyTimes = habit.hourlyTimes;
+    if (hourlyTimes == null || hourlyTimes.isEmpty) {
+      AppLogger.warning('No hourly times set for hourly habit: ${habit.name}');
+      return;
+    }
+
+    final now = DateTime.now();
+    // Schedule for next 48 hours (similar to work manager service)
+    final endTime = now.add(const Duration(hours: 48));
+
+    for (final timeStr in hourlyTimes) {
+      final timeParts = timeStr.split(':');
+      if (timeParts.length != 2) continue;
+
+      final timeHour = int.tryParse(timeParts[0]);
+      final timeMinute = int.tryParse(timeParts[1]);
+      if (timeHour == null || timeMinute == null) continue;
+
+      // Schedule for each day in the next 48 hours
+      for (DateTime date = now;
+          date.isBefore(endTime);
+          date = date.add(const Duration(days: 1))) {
+        DateTime notificationTime =
+            DateTime(date.year, date.month, date.day, timeHour, timeMinute);
+
+        // Only schedule future notifications
+        if (notificationTime.isAfter(now)) {
+          await scheduleHabitNotification(
+            id: generateSafeId(
+              '${habit.id}_hourly_${date.day}_${timeHour}_$timeMinute',
+            ),
+            habitId: habit.id.toString(),
+            title: '⏰ ${habit.name}',
+            body: 'Time for your hourly habit!',
+            scheduledTime: notificationTime,
+          );
+        }
+      }
+    }
+
+    AppLogger.info(
+      'Successfully scheduled hourly notifications for ${habit.name}',
+    );
   }
 
   // ============ ALARM SCHEDULING METHODS (DEPRECATED - USING AlarmService) ============
