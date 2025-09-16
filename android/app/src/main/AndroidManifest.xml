@@ -9,6 +9,7 @@
     <!-- Background service and foreground service permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     
     <!-- Audio permissions for alarm playback -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
@@ -86,11 +87,18 @@
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
         
         <!-- Custom Alarm Service for continuous alarm playback -->
+        <!-- Changed from mediaPlayback to specialUse to comply with Android 15+ restrictions -->
         <service
             android:name=".AlarmService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />
+            android:foregroundServiceType="specialUse">
+            
+            <!-- Required property declaration for specialUse foreground service type -->
+            <property 
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="alarm_clock" />
+        </service>
             
         <!-- Alarm receiver for handling alarm broadcasts -->
         <receiver
