@@ -9,7 +9,7 @@ This directory contains several PowerShell scripts to automate version managemen
 
 **Usage**:
 ```powershell
-# Auto-increment patch version (8.2.0 → 8.2.1) and reset build to 1
+# Auto-increment patch version (8.2.0 → 8.2.1) and reset build to 10
 ./increment_build_number.ps1
 
 # Set specific version and increment build number
@@ -21,7 +21,7 @@ This directory contains several PowerShell scripts to automate version managemen
 
 **Features**:
 - ✅ **Auto-increments patch version by default** (8.2.0 → 8.2.1)
-- ✅ Resets build number to 1 for new versions
+- ✅ Resets build number to 10 for new versions
 - ✅ Can increment only build number with `-OnlyBuild`
 - ✅ Can set specific version with `-NewVersion`
 - ✅ Runs `flutter pub get` automatically
@@ -61,7 +61,7 @@ This directory contains several PowerShell scripts to automate version managemen
 
 **Features**:
 - ✅ **Auto-increments patch version by default** (8.2.0 → 8.2.1)
-- ✅ Resets build number to 1 for new versions
+- ✅ Resets build number to 10 for new versions
 - ✅ Can increment only build number with `-OnlyBuild`
 - ✅ Supports all Flutter build types
 - ✅ Shows build time and output file size
@@ -75,10 +75,10 @@ This directory contains several PowerShell scripts to automate version managemen
 
 **Usage**:
 ```powershell
-# Auto-increment patch version (8.2.0 → 8.2.1) and reset build to 1
+# Auto-increment patch version (8.2.0 → 8.2.1) and reset build to 10
 ./bump_version.ps1
 
-# Set specific version and reset build to 1
+# Set specific version and reset build to 10
 ./bump_version.ps1 -Version "8.3.0"
 
 # Only increment build number (no version change)
@@ -87,7 +87,7 @@ This directory contains several PowerShell scripts to automate version managemen
 
 **Features**:
 - ✅ **Auto-increments patch version by default**
-- ✅ Resets build number to 1 for new versions
+- ✅ Resets build number to 10 for new versions
 - ✅ Minimal output (good for scripting)
 - ✅ Returns new version string
 - ✅ Can be integrated into other workflows
@@ -141,7 +141,7 @@ flutter build appbundle --build-number=12 --build-name=8.2.1
 
 ### Version Management Only
 ```powershell
-# Auto-increment patch version (8.2.0 → 8.2.1, build reset to 1)
+# Auto-increment patch version (8.2.0 → 8.2.1, build reset to 10)
 ./increment_build_number.ps1
 
 # Only increment build number for hotfixes
@@ -163,7 +163,7 @@ Where:
 - `11` = Build number
 
 **New Default Behavior**:
-- Running scripts **without** `-OnlyBuild` will auto-increment the patch version: `8.2.0` → `8.2.1` and reset build to `1`
+- Running scripts **without** `-OnlyBuild` will auto-increment the patch version: `8.2.0` → `8.2.1` and reset build to `10`
 - Use `-OnlyBuild` flag when you want to keep the same version but increment build number
 - Use `-NewVersion "X.Y.Z"` to set a specific version
 
