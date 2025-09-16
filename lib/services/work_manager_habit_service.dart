@@ -11,8 +11,6 @@ import 'logging_service.dart';
 class WorkManagerHabitService {
   // Constants for WorkManager task names
   static const String _renewalTaskName = 'com.habitv8.HABIT_RENEWAL_TASK';
-  static const String _bootCompletionTaskName =
-      'com.habitv8.BOOT_COMPLETION_TASK';
   static const String _lastRenewalKey = 'last_habit_continuation_renewal';
   static const String _renewalIntervalKey = 'habit_continuation_interval_hours';
 
@@ -37,8 +35,9 @@ class WorkManagerHabitService {
       // Schedule periodic renewal task
       await _schedulePeriodicRenewalTask();
 
-      // Register boot completion task to reschedule after device restart
-      await _registerBootCompletionTask();
+      // REMOVED: Boot completion task registration to prevent Android 15+ conflicts
+      // The new Android15CompatBootReceiver handles boot completion safely
+      // await _registerBootCompletionTask();
 
       // Perform initial renewal check to ensure all habits are properly scheduled
       await _performRenewalCheck();
@@ -61,9 +60,8 @@ class WorkManagerHabitService {
           case _renewalTaskName:
             await _performRenewalCheck();
             break;
-          case _bootCompletionTaskName:
-            await _handleBootCompletion();
-            break;
+          // REMOVED: Boot completion task to prevent Android 15+ conflicts
+          // Boot completion is now handled by Android15CompatBootReceiver
           default:
             AppLogger.warning('Unknown task name: $taskName');
         }
@@ -107,57 +105,6 @@ class WorkManagerHabitService {
           '🔄 Scheduled periodic renewal task (interval: ${intervalHours}h)');
     } catch (e) {
       AppLogger.error('❌ Failed to schedule periodic renewal task', e);
-    }
-  }
-
-  /// Register the boot completion task
-  static Future<void> _registerBootCompletionTask() async {
-    try {
-      await Workmanager().registerOneOffTask(
-        _bootCompletionTaskName,
-        _bootCompletionTaskName,
-        constraints: Constraints(
-          networkType: NetworkType.notRequired,
-          requiresBatteryNotLow: false,
-          requiresCharging: false,
-          requiresDeviceIdle: false,
-        ),
-        initialDelay: Duration(minutes: 1),
-        existingWorkPolicy: ExistingWorkPolicy.keep,
-        backoffPolicy: BackoffPolicy.linear,
-        backoffPolicyDelay: Duration(minutes: 5),
-        inputData: {'trigger': 'boot_completed'},
-      );
-
-      AppLogger.info('✅ Registered boot completion task');
-    } catch (e) {
-      AppLogger.error('❌ Failed to register boot completion task', e);
-    }
-  }
-
-  /// Handle boot completion - reschedule all active habits
-  static Future<void> _handleBootCompletion() async {
-    try {
-      AppLogger.info(
-          '🔄 Handling boot completion - rescheduling all active habits');
-
-      // Perform full renewal of all habits that should be active
-      // We use forceRenewal: true to ensure all habits are properly rescheduled after boot
-      await _performHabitContinuationRenewal(forceRenewal: true);
-
-      // Update last renewal timestamp
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_lastRenewalKey, DateTime.now().toIso8601String());
-
-      // Re-register the boot completion task for future reboots
-      await _registerBootCompletionTask();
-
-      // Re-schedule the periodic renewal task
-      await _schedulePeriodicRenewalTask();
-
-      AppLogger.info('✅ Boot completion handling completed successfully');
-    } catch (e) {
-      AppLogger.error('❌ Error handling boot completion', e);
     }
   }
 
