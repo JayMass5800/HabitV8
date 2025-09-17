@@ -173,6 +173,56 @@ class SubscriptionService {
     }
   }
 
+  /// Get existing purchase token (for duplicate purchase detection)
+  Future<String?> getExistingPurchaseToken() async {
+    try {
+      return await _secureStorage.read(key: 'purchase_token');
+    } catch (e) {
+      AppLogger.error('Error reading purchase token', e);
+      return null;
+    }
+  }
+
+  /// Store audit data securely (for purchase verification trail)
+  Future<void> storeAuditData(String key, String value) async {
+    try {
+      await _secureStorage.write(key: key, value: value);
+    } catch (e) {
+      AppLogger.error('Error storing audit data', e);
+      // Don't throw error - audit storage failure shouldn't block purchases
+    }
+  }
+
+  /// Get security audit summary (for debugging and monitoring)
+  Future<Map<String, dynamic>> getSecurityAuditSummary() async {
+    try {
+      final allKeys = await _secureStorage.readAll();
+      final auditKeys = allKeys.keys
+          .where((key) => key.startsWith('purchase_audit_'))
+          .toList();
+
+      return {
+        'totalAuditEntries': auditKeys.length,
+        'latestAuditTimestamp': auditKeys.isNotEmpty
+            ? auditKeys
+                .map((key) => key.split('_').last)
+                .reduce((a, b) => int.parse(a) > int.parse(b) ? a : b)
+            : null,
+        'hasPurchaseToken': await getExistingPurchaseToken() != null,
+        'auditStorageHealthy': true,
+      };
+    } catch (e) {
+      AppLogger.error('Error generating audit summary', e);
+      return {
+        'totalAuditEntries': 0,
+        'latestAuditTimestamp': null,
+        'hasPurchaseToken': false,
+        'auditStorageHealthy': false,
+        'error': e.toString(),
+      };
+    }
+  }
+
   /// Restore purchases (for users who already purchased on another device)
   Future<bool> restorePurchases() async {
     try {
