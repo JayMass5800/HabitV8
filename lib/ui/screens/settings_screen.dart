@@ -1467,17 +1467,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: result.success ? Colors.green : Colors.red,
               ),
             ),
-            content: Text(result.message),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('OK'),
-              ),
-            ],
+            content: result.success
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(result.message),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Note: Imported habits will start working after the next midnight refresh, or you can refresh notifications now.',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ],
+                  )
+                : Text(result.message),
+            actions: result.success
+                ? [
+                    TextButton(
+                      onPressed: () {
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('OK'),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        }
+                        await _refreshNotificationsAfterImport();
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Refresh Notifications'),
+                    ),
+                  ]
+                : [
+                    TextButton(
+                      onPressed: () {
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('OK'),
+                    ),
+                  ],
           ),
         );
       }
@@ -1497,6 +1531,82 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
       AppLogger.error('Import failed', e);
+    }
+  }
+
+  /// Refresh all notifications and alarms after importing habits
+  Future<void> _refreshNotificationsAfterImport() async {
+    OverlayEntry? loadingOverlay;
+
+    try {
+      // Show loading overlay
+      if (mounted) {
+        loadingOverlay = OverlayEntry(
+          builder: (context) => Material(
+            color: Colors.black54,
+            child: Center(
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      const Text('Refreshing notifications and alarms...'),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'This may take a moment',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        Overlay.of(context).insert(loadingOverlay);
+      }
+
+      AppLogger.info('🔔 Starting notification refresh after import');
+
+      // Schedule all habit notifications and alarms
+      await NotificationService.scheduleAllHabitNotifications();
+
+      AppLogger.info('✅ Notification refresh completed after import');
+
+      // Remove loading overlay
+      loadingOverlay?.remove();
+      loadingOverlay = null;
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Notifications and alarms refreshed successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error refreshing notifications after import', e);
+
+      // Remove loading overlay
+      loadingOverlay?.remove();
+      loadingOverlay = null;
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⚠️ Error refreshing notifications: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 
