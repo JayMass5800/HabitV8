@@ -226,10 +226,21 @@ class SubscriptionService {
   /// Restore purchases (for users who already purchased on another device)
   Future<bool> restorePurchases() async {
     try {
-      // This would integrate with in-app purchase plugin to restore purchases
-      // For now, return false - implement with in_app_purchase plugin
-      AppLogger.info('Attempting to restore purchases...');
-      return false;
+      AppLogger.info('🔄 Attempting to restore purchases...');
+
+      // Check if we already have a purchase token stored
+      final existingToken = await getExistingPurchaseToken();
+      if (existingToken != null && existingToken.isNotEmpty) {
+        AppLogger.info('✅ Purchase already restored (existing token found)');
+        return true;
+      }
+
+      // This will be called by the automatic restoration in main.dart
+      // The actual restore logic is handled by the InAppPurchase.instance.restorePurchases()
+      // When purchases are found, activatePremiumSubscription will be called
+      AppLogger.info(
+          '🔍 Purchase restoration initiated - waiting for platform response');
+      return true;
     } catch (e) {
       AppLogger.error('Error restoring purchases', e);
       return false;

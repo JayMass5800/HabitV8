@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'services/notification_service.dart';
 import 'services/notification_action_service.dart';
 import 'services/alarm_manager_service.dart';
@@ -15,6 +16,7 @@ import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/midnight_habit_reset_service.dart';
 import 'services/app_lifecycle_service.dart';
+import 'services/subscription_service.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/all_habits_screen.dart';
 import 'ui/screens/calendar_screen.dart';
@@ -87,6 +89,9 @@ void main() async {
   // Implement proper service initialization sequencing to prevent race conditions
   await _ensureServiceInitialization();
 
+  // Initialize subscription service and check for existing purchases (critical for device loss recovery)
+  _initializeSubscriptionService();
+
   // Set up a periodic callback check to ensure it doesn't get lost
   Timer.periodic(const Duration(minutes: 1), (timer) {
     NotificationActionService.ensureCallbackRegistered();
@@ -117,7 +122,53 @@ void _requestEssentialPermissions() async {
 
 // Calendar renewal service removed - now handled by midnight reset service
 
-/// Initialize midnight habit reset service (non-blocking)
+/// Initialize subscription service and handle purchase restoration (non-blocking)
+void _initializeSubscriptionService() async {
+  try {
+    AppLogger.info('🛒 Initializing subscription service...');
+
+    // Small delay to ensure app is fully loaded
+    await Future.delayed(const Duration(seconds: 2));
+
+    final subscriptionService = SubscriptionService();
+    await subscriptionService.initialize();
+
+    // Automatically check for existing purchases (critical for device loss recovery)
+    await _checkForExistingPurchasesQuietly();
+
+    AppLogger.info('✅ Subscription service initialized successfully');
+  } catch (e) {
+    AppLogger.error('Error initializing subscription service', e);
+    // Don't block app startup for subscription issues
+  }
+}
+
+/// Quietly check for existing purchases without showing UI to user
+/// This is essential for users who lost their device and reinstalled the app
+Future<void> _checkForExistingPurchasesQuietly() async {
+  try {
+    AppLogger.info(
+        '🔍 Checking for existing purchases (device loss recovery)...');
+
+    // Check if in-app purchases are available
+    final isAvailable = await InAppPurchase.instance.isAvailable();
+    if (!isAvailable) {
+      AppLogger.info(
+          'In-app purchases not available, skipping purchase restoration');
+      return;
+    }
+
+    // Restore purchases silently - this will trigger our purchase update handler
+    // if the user has any existing purchases tied to their Google account
+    await InAppPurchase.instance.restorePurchases();
+
+    AppLogger.info('✅ Purchase restoration check completed');
+  } catch (e) {
+    AppLogger.error('Error during quiet purchase restoration check', e);
+    // This is not critical enough to show an error to the user
+  }
+}
+
 void _initializeMidnightReset() async {
   try {
     // Small delay to let the app finish initializing
