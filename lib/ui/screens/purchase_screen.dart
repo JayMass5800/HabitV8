@@ -228,11 +228,6 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
         description: 'Detailed progress tracking and trend analysis',
       ),
       _FeatureItem(
-        icon: Icons.cloud_sync,
-        title: 'Cloud Sync',
-        description: 'Sync your data across all your devices',
-      ),
-      _FeatureItem(
         icon: Icons.file_download,
         title: 'Data Export/Import',
         description: 'Backup and transfer your habit data',
@@ -426,7 +421,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Keep all features forever after your trial',
+                          'Keep all features after your trial',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
