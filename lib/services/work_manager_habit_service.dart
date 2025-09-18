@@ -653,6 +653,9 @@ class WorkManagerHabitService {
     final now = DateTime.now();
     final endTime = now.add(const Duration(hours: 48));
 
+    // Check if weekdays are specified for this hourly habit
+    final selectedWeekdays = habit.selectedWeekdays ?? <int>[];
+
     int scheduledCount = 0;
 
     for (final timeStr in hourlyTimes) {
@@ -666,6 +669,14 @@ class WorkManagerHabitService {
       for (DateTime date = now;
           date.isBefore(endTime);
           date = date.add(const Duration(days: 1))) {
+        // Check if weekdays are specified and if this date matches
+        if (selectedWeekdays.isNotEmpty &&
+            !selectedWeekdays.contains(date.weekday)) {
+          AppLogger.debug(
+              'Skipping hourly notification for ${habit.name} - ${date.toString().split(' ')[0]} (weekday ${date.weekday}) is not in selected weekdays: $selectedWeekdays');
+          continue; // Skip this day as it's not a selected weekday
+        }
+
         DateTime scheduledTime =
             DateTime(date.year, date.month, date.day, hour, minute);
 

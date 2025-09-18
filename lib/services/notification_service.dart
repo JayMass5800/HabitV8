@@ -2578,6 +2578,9 @@ class NotificationService {
     // Schedule for next 48 hours (similar to work manager service)
     final endTime = now.add(const Duration(hours: 48));
 
+    // Check if weekdays are specified for this hourly habit
+    final selectedWeekdays = habit.selectedWeekdays ?? <int>[];
+
     for (final timeStr in hourlyTimes) {
       final timeParts = timeStr.split(':');
       if (timeParts.length != 2) continue;
@@ -2590,6 +2593,14 @@ class NotificationService {
       for (DateTime date = now;
           date.isBefore(endTime);
           date = date.add(const Duration(days: 1))) {
+        // Check if weekdays are specified and if this date matches
+        if (selectedWeekdays.isNotEmpty &&
+            !selectedWeekdays.contains(date.weekday)) {
+          AppLogger.debug(
+              'Skipping hourly notification for ${habit.name} - ${date.toString().split(' ')[0]} (weekday ${date.weekday}) is not in selected weekdays: $selectedWeekdays');
+          continue; // Skip this day as it's not a selected weekday
+        }
+
         DateTime notificationTime =
             DateTime(date.year, date.month, date.day, timeHour, timeMinute);
 
@@ -2753,6 +2764,9 @@ class NotificationService {
   static Future<void> _scheduleHourlyHabitAlarms(dynamic habit) async {
     final now = DateTime.now();
 
+    // Check if weekdays are specified for this hourly habit
+    final selectedWeekdays = habit.selectedWeekdays ?? <int>[];
+
     // For hourly habits, use the specific times set by the user
     if (habit.hourlyTimes != null && habit.hourlyTimes.isNotEmpty) {
       AppLogger.debug(
@@ -2767,6 +2781,14 @@ class NotificationService {
           final minute =
               timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
 
+          // Check if weekdays are specified and if today matches
+          if (selectedWeekdays.isNotEmpty &&
+              !selectedWeekdays.contains(now.weekday)) {
+            AppLogger.debug(
+                'Skipping hourly alarm for ${habit.name} - today (weekday ${now.weekday}) is not in selected weekdays: $selectedWeekdays');
+            continue; // Skip scheduling for today if it's not a selected weekday
+          }
+
           DateTime nextAlarm = DateTime(
             now.year,
             now.month,
@@ -2778,6 +2800,14 @@ class NotificationService {
           // If the time has passed today, schedule for tomorrow
           if (nextAlarm.isBefore(now)) {
             nextAlarm = nextAlarm.add(const Duration(days: 1));
+
+            // Check weekday constraint for next day too
+            if (selectedWeekdays.isNotEmpty &&
+                !selectedWeekdays.contains(nextAlarm.weekday)) {
+              AppLogger.debug(
+                  'Skipping hourly alarm for ${habit.name} - next day (weekday ${nextAlarm.weekday}) is not in selected weekdays: $selectedWeekdays');
+              continue;
+            }
           }
 
           // Use the real alarm service instead of notification-based alarms
@@ -2807,12 +2837,27 @@ class NotificationService {
       AppLogger.debug(
         'No specific hourly times set, using default hourly alarm schedule (8 AM - 10 PM)',
       );
+
+      // Check if weekdays are specified and if today matches
+      if (selectedWeekdays.isNotEmpty &&
+          !selectedWeekdays.contains(now.weekday)) {
+        AppLogger.debug(
+            'Skipping default hourly alarms for ${habit.name} - today (weekday ${now.weekday}) is not in selected weekdays: $selectedWeekdays');
+        return; // Don't schedule any alarms for today if it's not a selected weekday
+      }
+
       for (int hour = 8; hour <= 22; hour++) {
         DateTime nextAlarm = DateTime(now.year, now.month, now.day, hour, 0);
 
         // If the time has passed today, schedule for tomorrow
         if (nextAlarm.isBefore(now)) {
           nextAlarm = nextAlarm.add(const Duration(days: 1));
+
+          // Check weekday constraint for next day too
+          if (selectedWeekdays.isNotEmpty &&
+              !selectedWeekdays.contains(nextAlarm.weekday)) {
+            continue; // Skip this hour if next day is not a selected weekday
+          }
         }
 
         // Use the real alarm service instead of notification-based alarms
@@ -3998,6 +4043,9 @@ class NotificationService {
   static Future<void> _scheduleHourlyHabitAlarmsNew(dynamic habit) async {
     final now = DateTime.now();
 
+    // Check if weekdays are specified for this hourly habit
+    final selectedWeekdays = habit.selectedWeekdays ?? <int>[];
+
     // For hourly habits, use the specific times set by the user
     if (habit.hourlyTimes != null && habit.hourlyTimes.isNotEmpty) {
       AppLogger.debug(
@@ -4014,6 +4062,14 @@ class NotificationService {
           final minute =
               timeParts.length > 1 ? (int.tryParse(timeParts[1]) ?? 0) : 0;
 
+          // Check if weekdays are specified and if today matches
+          if (selectedWeekdays.isNotEmpty &&
+              !selectedWeekdays.contains(now.weekday)) {
+            AppLogger.debug(
+                'Skipping hourly alarm for ${habit.name} - today (weekday ${now.weekday}) is not in selected weekdays: $selectedWeekdays');
+            continue; // Skip scheduling for today if it's not a selected weekday
+          }
+
           DateTime nextAlarm = DateTime(
             now.year,
             now.month,
@@ -4025,6 +4081,14 @@ class NotificationService {
           // If the time has passed today, schedule for tomorrow
           if (nextAlarm.isBefore(now)) {
             nextAlarm = nextAlarm.add(const Duration(days: 1));
+
+            // Check weekday constraint for next day too
+            if (selectedWeekdays.isNotEmpty &&
+                !selectedWeekdays.contains(nextAlarm.weekday)) {
+              AppLogger.debug(
+                  'Skipping hourly alarm for ${habit.name} - next day (weekday ${nextAlarm.weekday}) is not in selected weekdays: $selectedWeekdays');
+              continue;
+            }
           }
 
           final alarmId = AlarmManagerService.generateHabitAlarmId(
@@ -4060,12 +4124,26 @@ class NotificationService {
         'No specific hourly times set, using default hourly alarm schedule (8 AM - 10 PM)',
       );
 
+      // Check if weekdays are specified and if today matches
+      if (selectedWeekdays.isNotEmpty &&
+          !selectedWeekdays.contains(now.weekday)) {
+        AppLogger.debug(
+            'Skipping default hourly alarms for ${habit.name} - today (weekday ${now.weekday}) is not in selected weekdays: $selectedWeekdays');
+        return; // Don't schedule any alarms for today if it's not a selected weekday
+      }
+
       for (int hour = 8; hour <= 22; hour++) {
         DateTime nextAlarm = DateTime(now.year, now.month, now.day, hour, 0);
 
         // If the time has passed today, schedule for tomorrow
         if (nextAlarm.isBefore(now)) {
           nextAlarm = nextAlarm.add(const Duration(days: 1));
+
+          // Check weekday constraint for next day too
+          if (selectedWeekdays.isNotEmpty &&
+              !selectedWeekdays.contains(nextAlarm.weekday)) {
+            continue; // Skip this hour if next day is not a selected weekday
+          }
         }
 
         final alarmId = AlarmManagerService.generateHabitAlarmId(
