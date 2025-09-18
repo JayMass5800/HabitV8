@@ -234,7 +234,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           const SizedBox(height: 16),
 
-          // Subscription Section
+          // Premium Section
           Card(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,7 +249,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Subscription',
+                        'Premium Version',
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -292,9 +292,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                         if (status != SubscriptionStatus.premium)
                           SettingsTile(
-                            title: 'Upgrade to Premium',
+                            title: 'Purchase Premium',
                             subtitle:
-                                'Keep all features and support development',
+                                'One-time purchase to unlock all features',
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () => context.go('/purchase'),
                           ),
@@ -1616,11 +1616,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       case SubscriptionStatus.trial:
         return 'Free trial active';
       case SubscriptionStatus.premium:
-        return 'Premium active';
+        return 'Premium purchased';
       case SubscriptionStatus.trialExpired:
-        return 'Trial expired - upgrade now';
+        return 'Trial expired - purchase now';
       case SubscriptionStatus.cancelled:
-        return 'Subscription cancelled';
+        return 'Purchase cancelled';
     }
   }
 

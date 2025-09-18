@@ -67,7 +67,15 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Multiple fallback methods to ensure navigation works
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              // Fallback to go router
+              context.go('/settings');
+            }
+          },
         ),
       ),
       body: FadeTransition(
@@ -882,7 +890,12 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Close dialog
-                  context.pop(); // Go back to previous screen
+                  // Navigate back with fallback
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else {
+                    context.go('/settings');
+                  }
                 },
                 child: const Text('Start Using Premium'),
               ),
@@ -1266,7 +1279,12 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
               content: Text('Purchases restored successfully!'),
             ),
           );
-          context.pop();
+          // Navigate back with fallback
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            context.go('/settings');
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
