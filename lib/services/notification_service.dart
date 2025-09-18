@@ -1441,9 +1441,16 @@ class NotificationService {
       }
 
       try {
-        // Use generic snooze notification content
-        String title = 'Habit Reminder (Snoozed)';
-        String body = 'Time to complete your habit!';
+        // Create personalized snooze notification content
+        String title = '⏰ Habit Reminder (Snoozed)';
+        String body =
+            'Time to complete your snoozed habit! Don\'t forget to stay consistent.';
+
+        // Cancel any existing snooze notifications for this habit to prevent duplicates
+        final existingSnoozeId = _generateSnoozeNotificationId(habitId);
+        await cancelNotification(existingSnoozeId);
+        AppLogger.debug(
+            'Cancelled any existing snooze notification for habit: $habitId');
 
         // Attempt to schedule the notification with the unique snooze ID
         await scheduleHabitNotification(
@@ -1473,6 +1480,104 @@ class NotificationService {
       AppLogger.info('✅ Snooze action completed for habit: $habitId');
     } catch (e) {
       AppLogger.error('❌ Error handling snooze action for habit: $habitId', e);
+      // Try emergency fallback
+      await _emergencySnoozeNotification(habitId);
+    }
+  }
+
+  /// Handle snooze action with habit name for personalized notifications
+  static Future<void> handleSnoozeActionWithName(
+      String habitId, String habitName) async {
+    try {
+      // Generate a unique notification ID for the snooze to prevent conflicts
+      final snoozeId = _generateSnoozeNotificationId(habitId);
+      AppLogger.info(
+        '🔔 Starting enhanced snooze process for habit: $habitName ($habitId) (snooze ID: $snoozeId)',
+      );
+
+      // Cancel the current notification (use the original ID)
+      final originalNotificationId = habitId.hashCode;
+      await cancelNotification(originalNotificationId);
+      AppLogger.info('❌ Cancelled current notification for habit: $habitName');
+
+      // Schedule a new notification for 30 minutes later
+      final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
+      AppLogger.info('⏰ Scheduling snoozed notification for: $snoozeTime');
+
+      // Validate the snooze time is reasonable
+      final timeDiff = snoozeTime.difference(DateTime.now()).inMinutes;
+      if (timeDiff < 29 || timeDiff > 31) {
+        AppLogger.warning(
+            '⚠️ Snooze time calculation seems off: $timeDiff minutes');
+      }
+
+      // Check exact alarm permissions before scheduling
+      final canScheduleExact = await canScheduleExactAlarms();
+      AppLogger.info('📋 Can schedule exact alarms: $canScheduleExact');
+
+      if (!canScheduleExact) {
+        AppLogger.warning(
+            '⚠️ Exact alarm permission not available - snooze may be delayed');
+        AppLogger.warning(
+            '💡 Note: Exact alarm permission should have been granted during habit setup');
+        AppLogger.warning(
+            '💡 If snooze is still delayed, it\'s likely due to battery optimization');
+        // Log battery optimization guidance
+        await checkBatteryOptimizationStatus();
+      } else {
+        AppLogger.info(
+            '✅ Exact alarm permission available - checking for battery optimization issues');
+        // Even with exact alarm permission, battery optimization can still cause delays
+        AppLogger.info(
+            '💡 If snooze notifications are delayed, check battery optimization settings:');
+        AppLogger.info(
+            '1. Settings > Apps > HabitV8 > Battery > Don\'t optimize');
+        AppLogger.info('2. Samsung: Add to "Never sleeping apps"');
+        AppLogger.info(
+            '3. MIUI: Enable "Autostart" and disable "Battery saver"');
+      }
+
+      try {
+        // Create personalized snooze notification content with habit name
+        String title = '⏰ $habitName (Snoozed)';
+        String body =
+            'Time to complete "$habitName"! Don\'t break your streak.';
+
+        // Cancel any existing snooze notifications for this habit to prevent duplicates
+        final existingSnoozeId = _generateSnoozeNotificationId(habitId);
+        await cancelNotification(existingSnoozeId);
+        AppLogger.debug(
+            'Cancelled any existing snooze notification for habit: $habitName');
+
+        // Attempt to schedule the notification with the unique snooze ID
+        await scheduleHabitNotification(
+          id: snoozeId,
+          habitId: habitId,
+          title: title,
+          body: body,
+          scheduledTime: snoozeTime,
+        );
+
+        // Verify the notification was actually scheduled
+        await _verifyNotificationScheduled(snoozeId, habitId);
+
+        AppLogger.info(
+          '✅ Snoozed notification scheduled successfully for habit: $habitName at $snoozeTime (ID: $snoozeId)',
+        );
+      } catch (scheduleError) {
+        AppLogger.error(
+          '❌ Failed to schedule snoozed notification for habit: $habitName',
+          scheduleError,
+        );
+
+        // Try fallback scheduling method
+        await _fallbackSnoozeScheduling(habitId, snoozeId, snoozeTime);
+      }
+
+      AppLogger.info('✅ Snooze action completed for habit: $habitName');
+    } catch (e) {
+      AppLogger.error(
+          '❌ Error handling snooze action for habit: $habitName ($habitId)', e);
       // Try emergency fallback
       await _emergencySnoozeNotification(habitId);
     }
@@ -4099,12 +4204,13 @@ class NotificationService {
       if (!canScheduleExact) {
         AppLogger.warning(
             '⚠️ SNOOZE RELIABILITY ISSUE: Exact alarm permission not granted');
-        AppLogger.info('💡 To fix snooze timing issues:');
         AppLogger.info(
-            '   1. Go to Settings > Apps > HabitV8 > Alarms & reminders');
-        AppLogger.info('   2. Enable "Allow setting alarms and reminders"');
+            '💡 Note: Exact alarm permission is automatically requested by the system when needed');
         AppLogger.info(
-            '   3. This prevents Android from delaying snooze notifications');
+            '💡 If snooze timing is still delayed, the main cause is likely battery optimization');
+      } else {
+        AppLogger.info(
+            '✅ Exact alarm permission is granted - alarms should work at correct timings');
       }
 
       // Check notifications enabled
@@ -4117,15 +4223,21 @@ class NotificationService {
             '💡 Enable notifications in Settings > Apps > HabitV8 > Notifications');
       }
 
-      // Log battery optimization guidance
-      AppLogger.info('💡 For best snooze reliability, also ensure:');
+      // Log battery optimization guidance (main cause of snooze delays)
       AppLogger.info(
-          '   • Settings > Apps > HabitV8 > Battery > Don\'t optimize');
-      AppLogger.info('   • Samsung: Add to "Never sleeping apps"');
+          '💡 For best snooze reliability, ensure battery optimization is disabled:');
       AppLogger.info(
-          '   • MIUI: Enable "Autostart" and disable "Battery saver"');
-      AppLogger.info('   • OnePlus: Disable "Smart Power Saving"');
-      AppLogger.info('   • Huawei: Add to "Protected Apps"');
+          '   • Settings > Apps > HabitV8 > Battery > Don\'t optimize (or "Unrestricted")');
+      AppLogger.info(
+          '   • Samsung: Settings > Device care > Battery > App power management > "Never sleeping apps"');
+      AppLogger.info(
+          '   • MIUI (Xiaomi): Settings > Apps > Manage apps > HabitV8 > "Autostart" ON, "Battery saver" OFF');
+      AppLogger.info(
+          '   • OnePlus: Settings > Battery > Battery optimization > HabitV8 > "Don\'t optimize"');
+      AppLogger.info(
+          '   • Huawei: Settings > Apps > HabitV8 > Battery > "Protected Apps" or "Ignore battery optimization"');
+      AppLogger.info(
+          '   • OPPO/ColorOS: Settings > Battery > App Battery Management > HabitV8 > "Allow background activity"');
     } catch (e) {
       AppLogger.error('Error checking snooze reliability settings', e);
     }

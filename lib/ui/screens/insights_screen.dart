@@ -14,6 +14,7 @@ import '../widgets/ai_insights_onboarding.dart';
 import '../widgets/ai_insights_debug_panel.dart';
 import '../widgets/premium_feature_guard.dart';
 import 'ai_settings_screen.dart';
+import 'edit_habit_screen.dart';
 
 class InsightsScreen extends ConsumerStatefulWidget {
   const InsightsScreen({super.key});
@@ -223,6 +224,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
           // Performance Deep Dive Section
           _buildPerformanceDeepDive(habits, theme),
+
+          const SizedBox(height: 32),
+
+          // Volatility Analysis Section
+          _buildVolatilityAnalysisSection(habits, theme),
+
+          const SizedBox(height: 32),
+
+          // Time-of-Day Patterns Section
+          _buildTimeOfDayPatternsSection(habits, theme),
 
           const SizedBox(height: 24),
         ],
@@ -1158,6 +1169,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     final title = insight['title'] as String;
     final description = insight['description'] as String;
     final iconName = insight['icon'] as String;
+    final action = insight['action'] as String?;
+    final ctaLabel = insight['ctaLabel'] as String?;
+    final habitId = insight['habitId'] as String?;
 
     final icon = _getIconFromName(iconName);
     final colors = _getColorsForInsightType(type, theme);
@@ -1237,6 +1251,49 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       height: 1.4,
                     ),
                   ),
+                  // Add CTA button if action and ctaLabel are provided
+                  if (action != null && ctaLabel != null) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => _handleInsightAction(action, habitId),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _getActionIcon(action),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              ctaLabel,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -2014,5 +2071,503 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         ),
       ),
     );
+  }
+
+  /// Build Volatility Analysis Section
+  Widget _buildVolatilityAnalysisSection(List<Habit> habits, ThemeData theme) {
+    final activeHabits = habits.where((h) => h.isActive).toList();
+    final volatilityData = _generateVolatilityData(activeHabits);
+
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.show_chart,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Habit Volatility Analysis',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Week-to-week variance in habit completions',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            if (volatilityData.isNotEmpty) ...[
+              SizedBox(
+                height: 250,
+                child: _buildVolatilityChart(volatilityData, theme),
+              ),
+            ] else ...[
+              Center(
+                child: Text(
+                  'Not enough data for volatility analysis',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build Time-of-Day Patterns Section
+  Widget _buildTimeOfDayPatternsSection(List<Habit> habits, ThemeData theme) {
+    final activeHabits = habits.where((h) => h.isActive).toList();
+    final timePatternData = _generateTimeOfDayPatternData(activeHabits);
+
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.secondaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.access_time,
+                    color: theme.colorScheme.onSecondaryContainer,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Time-of-Day Patterns',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'When you complete habits throughout the day',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            if (timePatternData.isNotEmpty) ...[
+              SizedBox(
+                height: 200,
+                child: _buildTimeOfDayHeatmap(timePatternData, theme),
+              ),
+            ] else ...[
+              Center(
+                child: Text(
+                  'Not enough completion data for time analysis',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Generate volatility data for charts
+  List<Map<String, dynamic>> _generateVolatilityData(List<Habit> habits) {
+    final data = <Map<String, dynamic>>[];
+
+    for (final habit in habits) {
+      if (habit.completions.length < 14) {
+        continue; // Need at least 2 weeks of data
+      }
+
+      // Calculate weekly completion counts over last 8 weeks
+      final now = DateTime.now();
+      final weeklyData = <double>[];
+
+      for (int i = 7; i >= 0; i--) {
+        final weekStart = now.subtract(Duration(days: i * 7 + now.weekday - 1));
+        final weekEnd = weekStart.add(const Duration(days: 6));
+
+        final weekCompletions = habit.completions
+            .where((c) =>
+                c.isAfter(weekStart.subtract(const Duration(days: 1))) &&
+                c.isBefore(weekEnd.add(const Duration(days: 1))))
+            .length
+            .toDouble();
+
+        weeklyData.add(weekCompletions);
+      }
+
+      if (weeklyData.length >= 4) {
+        // Calculate variance
+        final mean = weeklyData.reduce((a, b) => a + b) / weeklyData.length;
+        final variance = weeklyData
+                .map((v) => (v - mean) * (v - mean))
+                .reduce((a, b) => a + b) /
+            weeklyData.length;
+
+        data.add({
+          'habitName': habit.name,
+          'variance': variance,
+          'mean': mean,
+          'weeklyData': weeklyData,
+        });
+      }
+    }
+
+    // Sort by variance (highest first)
+    data.sort(
+        (a, b) => (b['variance'] as double).compareTo(a['variance'] as double));
+    return data.take(5).toList(); // Show top 5 most volatile habits
+  }
+
+  /// Generate time-of-day pattern data
+  List<Map<String, dynamic>> _generateTimeOfDayPatternData(List<Habit> habits) {
+    final hourlyCompletions = List.filled(24, 0);
+    int totalCompletions = 0;
+
+    for (final habit in habits) {
+      for (final completion in habit.completions) {
+        hourlyCompletions[completion.hour]++;
+        totalCompletions++;
+      }
+    }
+
+    if (totalCompletions == 0) return [];
+
+    final data = <Map<String, dynamic>>[];
+    for (int hour = 0; hour < 24; hour++) {
+      final percentage = (hourlyCompletions[hour] / totalCompletions) * 100;
+      data.add({
+        'hour': hour,
+        'completions': hourlyCompletions[hour],
+        'percentage': percentage,
+      });
+    }
+
+    return data;
+  }
+
+  /// Build volatility chart
+  Widget _buildVolatilityChart(
+      List<Map<String, dynamic>> data, ThemeData theme) {
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: data.isNotEmpty
+            ? data
+                    .map((d) => d['variance'] as double)
+                    .reduce((a, b) => a > b ? a : b) *
+                1.2
+            : 1.0,
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, meta) {
+                if (value.toInt() < data.length) {
+                  final habitName = data[value.toInt()]['habitName'] as String;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      habitName.length > 8
+                          ? '${habitName.substring(0, 8)}...'
+                          : habitName,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  );
+                }
+                return const Text('');
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 40,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toStringAsFixed(1),
+                  style: theme.textTheme.bodySmall,
+                );
+              },
+            ),
+          ),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        barGroups: data.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: item['variance'] as double,
+                color: theme.colorScheme.primary,
+                width: 16,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
+          );
+        }).toList(),
+        gridData: FlGridData(
+          show: true,
+          horizontalInterval: 1,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2),
+              strokeWidth: 1,
+            );
+          },
+        ),
+        borderData: FlBorderData(show: false),
+      ),
+    );
+  }
+
+  /// Build time-of-day heatmap
+  Widget _buildTimeOfDayHeatmap(
+      List<Map<String, dynamic>> data, ThemeData theme) {
+    final maxPercentage = data.isNotEmpty
+        ? data
+            .map((d) => d['percentage'] as double)
+            .reduce((a, b) => a > b ? a : b)
+        : 1.0;
+
+    return Column(
+      children: [
+        // Hour labels
+        SizedBox(
+          height: 30,
+          child: Row(
+            children: List.generate(24, (hour) {
+              final shouldShowLabel = hour % 3 == 0; // Show every 3rd hour
+              return Expanded(
+                child: Center(
+                  child: shouldShowLabel
+                      ? Text(
+                          '${hour.toString().padLeft(2, '0')}:00',
+                          style: theme.textTheme.bodySmall,
+                        )
+                      : const SizedBox(),
+                ),
+              );
+            }),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // Heatmap bars
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: data.map((item) {
+              final percentage = item['percentage'] as double;
+              final intensity =
+                  maxPercentage > 0 ? percentage / maxPercentage : 0.0;
+
+              return Expanded(
+                child: Container(
+                  height: 120 * intensity,
+                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(
+                      alpha: 0.3 + (intensity * 0.7),
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child:
+                      percentage > 5 // Only show tooltip for significant hours
+                          ? Tooltip(
+                              message:
+                                  '${item['hour']}:00 - ${percentage.toStringAsFixed(1)}%',
+                              child: const SizedBox.expand(),
+                            )
+                          : null,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // Legend
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Low activity',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 40,
+              height: 8,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary.withValues(alpha: 0.3),
+                    theme.colorScheme.primary,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'High activity',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Handle actions when CTA buttons are pressed
+  void _handleInsightAction(String action, String? habitId) async {
+    if (habitId == null) return;
+
+    try {
+      // Get the habit service and find the habit by ID
+      final habitServiceAsync = ref.read(habitServiceProvider);
+
+      // Handle the AsyncValue properly
+      await habitServiceAsync.when(
+        data: (habitService) async {
+          final habit = await habitService.getHabitById(habitId);
+
+          if (habit == null) {
+            // Show error message if habit not found
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Habit not found'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+
+          switch (action) {
+            case 'open_habit':
+              _navigateToHabitDetail(habit);
+              break;
+            case 'adjust_reminder':
+              _navigateToHabitDetail(
+                  habit); // Edit screen also handles reminders
+              break;
+            default:
+              // Unknown action, do nothing
+              break;
+          }
+        },
+        loading: () {
+          // Show loading indicator
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Loading...'),
+              ),
+            );
+          }
+        },
+        error: (error, stackTrace) {
+          // Show error message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error loading habit service: $error'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      // Show error message if something goes wrong
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Navigate to habit detail screen for editing
+  void _navigateToHabitDetail(Habit habit) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditHabitScreen(habit: habit),
+      ),
+    );
+  }
+
+  /// Get appropriate icon for the action type
+  IconData _getActionIcon(String action) {
+    switch (action) {
+      case 'open_habit':
+        return Icons.edit;
+      case 'adjust_reminder':
+        return Icons.schedule;
+      default:
+        return Icons.touch_app;
+    }
   }
 }

@@ -244,15 +244,13 @@ class NotificationActionService {
       AppLogger.info('Waiting for habit service to be ready for snooze...');
       final habitService = await _container!.read(habitServiceProvider.future);
 
+      String habitName = 'Your habit'; // Default fallback
       try {
         // Get the habit for better notification content
         final habit = await habitService.getHabitById(habitId);
         if (habit != null) {
+          habitName = habit.name;
           AppLogger.info('Found habit for snooze: ${habit.name}');
-          // The actual snooze scheduling is handled in the notification service
-          // For snooze, we don't need to do anything else since we don't want to open the app
-          AppLogger.info(
-              '✅ Snooze action acknowledged for habit: ${habit.name}');
         } else {
           AppLogger.warning('Habit not found for snooze: $habitId');
         }
@@ -261,7 +259,11 @@ class NotificationActionService {
         AppLogger.error('Stack trace: $stackTrace');
       }
 
-      AppLogger.info('✅ Snooze action processed for habit: $habitId');
+      // Call the enhanced snooze action with habit details
+      await NotificationService.handleSnoozeActionWithName(habitId, habitName);
+
+      AppLogger.info(
+          '✅ Snooze action processed for habit: $habitName ($habitId)');
     } catch (e, stackTrace) {
       AppLogger.error('Error in _handleSnoozeAction for habit $habitId', e);
       AppLogger.error('Stack trace: $stackTrace');
