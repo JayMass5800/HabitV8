@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
@@ -37,6 +38,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   bool _aiInsightsRequested = false;
   Future<List<Map<String, dynamic>>>? _aiInsightsFuture;
 
+  // AI Status state for conditional visibility
+  bool _isAIEnabled = false;
+  bool _isAIAvailable = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,7 +72,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       }
     });
 
-    // Start animations
+    // Initialize AI status and start animations
+    _initializeAIStatus();
     _fadeController.forward();
     _slideController.forward();
 
@@ -80,6 +86,38 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         }
       });
     });
+  }
+
+  /// Initialize and monitor AI status
+  Future<void> _initializeAIStatus() async {
+    await _updateAIStatus();
+  }
+
+  /// Update AI status from settings
+  Future<void> _updateAIStatus() async {
+    try {
+      final isAIAvailable = await _enhancedInsightsService.isAIAvailableAsync;
+
+      // Check if AI is enabled in settings
+      const secureStorage = FlutterSecureStorage();
+      final enableAI =
+          await secureStorage.read(key: 'enable_ai_insights') == 'true';
+
+      if (mounted) {
+        setState(() {
+          _isAIEnabled = enableAI;
+          _isAIAvailable = isAIAvailable;
+        });
+      }
+    } catch (e) {
+      // If there's an error, default to disabled
+      if (mounted) {
+        setState(() {
+          _isAIEnabled = false;
+          _isAIAvailable = false;
+        });
+      }
+    }
   }
 
   /// Load AI insights only when requested (lazy loading)
@@ -126,12 +164,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.of(context).push(
+            onPressed: () async {
+              final result = await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const AISettingsScreen(),
                 ),
               );
+              // Update AI status when returning from settings
+              if (result != null || mounted) {
+                await _updateAIStatus();
+              }
             },
             tooltip: 'AI Settings',
           ),
@@ -165,6 +207,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     onRefresh: () async {
                       ref.invalidate(habitServiceProvider);
                       _resetAIInsights(); // Reset AI insights on refresh
+                      await _updateAIStatus(); // Update AI status on refresh
                     },
                     child: TabBarView(
                       controller: _tabController,
@@ -225,15 +268,18 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           // Performance Deep Dive Section
           _buildPerformanceDeepDive(habits, theme),
 
-          const SizedBox(height: 32),
+          // AI-powered sections - only show when AI is enabled and available
+          if (_isAIEnabled && _isAIAvailable) ...[
+            const SizedBox(height: 32),
 
-          // Volatility Analysis Section
-          _buildVolatilityAnalysisSection(habits, theme),
+            // Volatility Analysis Section
+            _buildVolatilityAnalysisSection(habits, theme),
 
-          const SizedBox(height: 32),
+            const SizedBox(height: 32),
 
-          // Time-of-Day Patterns Section
-          _buildTimeOfDayPatternsSection(habits, theme),
+            // Time-of-Day Patterns Section
+            _buildTimeOfDayPatternsSection(habits, theme),
+          ],
 
           const SizedBox(height: 24),
         ],
@@ -261,10 +307,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               completionCount: totalCompletions,
             ),
 
-            // AI Insights content
+            // Show AI insights if enabled and available, otherwise show backup analysis
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildAIInsights(habits, theme),
+              child: _isAIEnabled && _isAIAvailable
+                  ? _buildAIInsights(habits, theme)
+                  : _buildBackupAnalysis(habits, theme),
             ),
 
             // Debug panel (only in debug mode)
@@ -2569,5 +2617,105 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       default:
         return Icons.touch_app;
     }
+  }
+
+  /// Build backup analysis when AI is not available
+  Widget _buildBackupAnalysis(List<Habit> habits, ThemeData theme) {
+    // Use rule-based insights from the insights service
+    final ruleBasedInsights = _insightsService.generateAIInsights(habits);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header showing this is backup analysis
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.insights,
+                color: theme.colorScheme.secondary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Smart Insights',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Pattern-based insights and recommendations',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        // Show rule-based insights
+        if (ruleBasedInsights.isNotEmpty) ...[
+          ...ruleBasedInsights.asMap().entries.map((entry) {
+            final index = entry.key;
+            final insight = entry.value;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                  bottom: index < ruleBasedInsights.length - 1 ? 16 : 0),
+              child: SmoothTransitions.slideTransition(
+                show: true,
+                duration: Duration(milliseconds: 600 + (index * 200)),
+                child: _buildInsightCard(insight, theme),
+              ),
+            );
+          }),
+        ] else ...[
+          // Empty state for rule-based insights
+          Container(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.insights_outlined,
+                  size: 64,
+                  color: theme.colorScheme.secondary.withValues(alpha: 0.5),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Build more habits to unlock insights',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.secondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Start tracking habits consistently to discover patterns and receive personalized recommendations',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
