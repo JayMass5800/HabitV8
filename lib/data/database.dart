@@ -13,6 +13,8 @@ import '../services/notification_service.dart';
 import '../services/logging_service.dart';
 import '../services/calendar_service.dart';
 import '../services/achievements_service.dart';
+import '../services/alarm_manager_service.dart';
+import '../services/alarm_service.dart';
 
 // Provider for the Habit database box with error recovery
 final databaseProvider = FutureProvider<Box<Habit>>((ref) async {
@@ -656,8 +658,29 @@ class HabitService {
       }
 
       // Cancel all notifications for this habit before deletion
-      final habitIdHash = NotificationService.generateSafeId(habit.id);
-      await NotificationService.cancelHabitNotifications(habitIdHash);
+      // FIX: Use the new method that properly handles the original habit ID
+      await NotificationService.cancelHabitNotificationsByHabitId(habit.id);
+
+      // FIX: ALSO cancel alarms (this was completely missing!)
+      try {
+        await AlarmManagerService.cancelHabitAlarms(habit.id);
+        AppLogger.info(
+            'Cancelled all AlarmManagerService alarms for habit: ${habit.name}');
+      } catch (e) {
+        AppLogger.error(
+            'Failed to cancel AlarmManagerService alarms for habit: ${habit.name}',
+            e);
+      }
+
+      // Also cancel any alarms from the legacy AlarmService
+      try {
+        await AlarmService.cancelHabitAlarms(habit.id);
+        AppLogger.info(
+            'Cancelled all AlarmService alarms for habit: ${habit.name}');
+      } catch (e) {
+        AppLogger.error(
+            'Failed to cancel AlarmService alarms for habit: ${habit.name}', e);
+      }
 
       // Remove from calendar before deletion
       try {
@@ -681,7 +704,7 @@ class HabitService {
       await habit.delete();
 
       AppLogger.info(
-        'Successfully deleted habit: ${habit.name} and cancelled all associated notifications',
+        'Successfully deleted habit: ${habit.name} and cancelled all associated notifications and alarms',
       );
     } catch (e) {
       AppLogger.error('Error deleting habit ${habit.name}', e);
