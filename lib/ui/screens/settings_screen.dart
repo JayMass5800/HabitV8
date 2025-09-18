@@ -133,14 +133,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               } else {
                                 // Disable notifications - no direct method available,
                                 // so we'll show a message
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'Notifications disabled. You can re-enable them in device settings.'),
-                                  ),
-                                );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Notifications disabled. You can re-enable them in device settings.'),
+                                    ),
+                                  );
+                                }
                               }
-                              setState(() {}); // Refresh the UI
+                              if (mounted) {
+                                setState(() {}); // Refresh the UI
+                              }
                             },
                           ),
                         );
@@ -1650,11 +1654,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _restorePurchases() async {
     try {
       // Show loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Restoring purchases...'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Restoring purchases...'),
+          ),
+        );
+      }
 
       // For now, just refresh the subscription status
       // In a real app, this would query the app store/play store
@@ -1662,21 +1668,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await subscriptionService.initialize();
 
       // Refresh the UI
-      setState(() {});
+      if (mounted) {
+        setState(() {});
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Purchases restored successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Purchases restored successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error restoring purchases: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error restoring purchases: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

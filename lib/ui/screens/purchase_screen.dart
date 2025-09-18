@@ -833,12 +833,14 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
           errorMessage = 'Purchase failed: ${error.message}';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -1273,24 +1275,26 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
         // Check if we have any active subscriptions after restore
         final status = await SubscriptionService().getSubscriptionStatus();
 
-        if (status == SubscriptionStatus.premium) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Purchases restored successfully!'),
-            ),
-          );
-          // Navigate back with fallback
-          if (Navigator.canPop(context)) {
-            Navigator.pop(context);
+        if (mounted) {
+          if (status == SubscriptionStatus.premium) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Purchases restored successfully!'),
+              ),
+            );
+            // Navigate back with fallback
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/settings');
+            }
           } else {
-            context.go('/settings');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No previous purchases found'),
+              ),
+            );
           }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No previous purchases found'),
-            ),
-          );
         }
       }
     } catch (e) {
