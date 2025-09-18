@@ -290,6 +290,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               );
                             },
                           ),
+                        // Debug option - will be removed after testing
+                        if (status == SubscriptionStatus.trial)
+                          SettingsTile(
+                            title: 'Debug Trial Info',
+                            subtitle: 'Tap to see detailed trial debug info',
+                            trailing: const Icon(Icons.bug_report),
+                            onTap: () => _showTrialDebugInfo(),
+                          ),
                         if (status != SubscriptionStatus.premium)
                           SettingsTile(
                             title: 'Purchase Premium',
@@ -1669,6 +1677,63 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  /// Debug method to show trial information (remove after testing)
+  Future<void> _showTrialDebugInfo() async {
+    try {
+      final subscriptionService = SubscriptionService();
+      final debugInfo = await subscriptionService.getTrialDebugInfo();
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('🐛 Trial Debug Info'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Trial Started: ${debugInfo['trialStarted']}'),
+                  if (debugInfo['trialStarted']) ...[
+                    const SizedBox(height: 8),
+                    Text('Start Date: ${debugInfo['trialStartDate']}'),
+                    Text('Current Date: ${debugInfo['currentDate']}'),
+                    Text('Days Since Start: ${debugInfo['daysSinceStart']}'),
+                    Text(
+                        'Trial Duration: ${debugInfo['trialDurationDays']} days'),
+                    Text('Remaining Days: ${debugInfo['remainingDays']}'),
+                    Text(
+                        'Clamped Remaining: ${debugInfo['clampedRemainingDays']}'),
+                    Text('Status: ${debugInfo['subscriptionStatus']}'),
+                    Text('Is Active: ${debugInfo['isTrialActive']}'),
+                    Text('Will Expire: ${debugInfo['willExpireOn']}'),
+                  ] else ...[
+                    Text(debugInfo['message'] ?? 'Unknown error'),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error getting debug info: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

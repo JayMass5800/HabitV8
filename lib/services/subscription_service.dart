@@ -44,9 +44,18 @@ class SubscriptionService {
 
     if (trialStartDate == null) {
       // First time user - start trial
-      final now = DateTime.now().toIso8601String();
-      await prefs.setString(_trialStartDateKey, now);
-      AppLogger.info('🎉 Trial period started for new user');
+      final now = DateTime.now();
+      final nowString = now.toIso8601String();
+      await prefs.setString(_trialStartDateKey, nowString);
+      AppLogger.info('🎉 Trial period started for new user at: $now');
+      AppLogger.info(
+          '🎉 Trial will expire after $_trialDurationDays days on: ${now.add(Duration(days: _trialDurationDays))}');
+    } else {
+      // Existing user - log current trial status
+      final startDate = DateTime.parse(trialStartDate);
+      final daysSince = DateTime.now().difference(startDate).inDays;
+      AppLogger.info(
+          '📅 Existing user - Trial started: $startDate, Days since: $daysSince');
     }
   }
 
@@ -72,7 +81,7 @@ class SubscriptionService {
     final now = DateTime.now();
     final daysSinceTrialStart = now.difference(trialStartDate).inDays;
 
-    if (daysSinceTrialStart <= _trialDurationDays) {
+    if (daysSinceTrialStart < _trialDurationDays) {
       return SubscriptionStatus.trial;
     } else {
       return SubscriptionStatus.trialExpired;
@@ -121,6 +130,11 @@ class SubscriptionService {
     final daysSinceTrialStart = now.difference(trialStartDate).inDays;
 
     final remainingDays = _trialDurationDays - daysSinceTrialStart;
+
+    // Debug logging to track trial calculation
+    AppLogger.info(
+        '🔍 Trial Debug: Start Date=$trialStartDate, Now=$now, DaysSince=$daysSinceTrialStart, Remaining=$remainingDays');
+
     return remainingDays > 0 ? remainingDays : 0;
   }
 
@@ -289,6 +303,40 @@ class SubscriptionService {
     await prefs.remove(_userNotifiedKey);
     await _secureStorage.delete(key: 'purchase_token');
     AppLogger.info('🔄 Trial period reset for debugging');
+  }
+
+  /// For debugging: Get detailed trial information
+  Future<Map<String, dynamic>> getTrialDebugInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final trialStartDateStr = prefs.getString(_trialStartDateKey);
+    final now = DateTime.now();
+
+    if (trialStartDateStr == null) {
+      return {
+        'trialStarted': false,
+        'message': 'Trial has not been initialized yet',
+      };
+    }
+
+    final trialStartDate = DateTime.parse(trialStartDateStr);
+    final daysSinceTrialStart = now.difference(trialStartDate).inDays;
+    final remainingDays = _trialDurationDays - daysSinceTrialStart;
+    final status = await getSubscriptionStatus();
+
+    return {
+      'trialStarted': true,
+      'trialStartDate': trialStartDate.toIso8601String(),
+      'currentDate': now.toIso8601String(),
+      'daysSinceStart': daysSinceTrialStart,
+      'trialDurationDays': _trialDurationDays,
+      'remainingDays': remainingDays,
+      'clampedRemainingDays': remainingDays > 0 ? remainingDays : 0,
+      'subscriptionStatus': status.toString(),
+      'isTrialActive': status == SubscriptionStatus.trial,
+      'willExpireOn': trialStartDate
+          .add(Duration(days: _trialDurationDays))
+          .toIso8601String(),
+    };
   }
 
   /// Get subscription status display text
