@@ -1,6 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <application>
+        <!-- Remove main widget providers for debug builds -->
+        <receiver android:name="com.habittracker.habitv8.HabitTimelineWidgetProvider"
+            tools:remove="true" />
+        <receiver android:name="com.habittracker.habitv8.HabitCompactWidgetProvider" 
+            tools:remove="true" />
+            
+        <!-- Debug Widget Providers (using .debug package) -->
         <receiver android:name="com.habittracker.habitv8.debug.HabitTimelineWidgetProvider"
             android:exported="true"
             android:label="Habit Timeline Widget">
