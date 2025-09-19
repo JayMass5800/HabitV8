@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/habit_item_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:background="@drawable/widget_habit_item_background"
-    android:padding="16dp"
-    android:layout_marginBottom="8dp"
+    android:padding="12dp"
+    android:layout_marginBottom="6dp"
     android:elevation="2dp"
     android:gravity="center_vertical">
 
@@ -23,7 +24,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:layout_marginEnd="16dp">
+        android:layout_marginEnd="12dp">
 
         <!-- Habit Name and Time Row -->
         <LinearLayout
@@ -31,7 +32,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginBottom="4dp">
+            android:layout_marginBottom="2dp">
 
             <TextView
                 android:id="@+id/habit_name"
@@ -39,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Drink Water"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
                 android:textColor="@color/widget_text_primary"
                 android:maxLines="1"
@@ -50,12 +51,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="10:30"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_primary_color"
+                android:textSize="11sp"
+                android:textStyle="normal"
+                android:textColor="@color/widget_text_secondary"
                 android:background="@drawable/widget_time_background"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
                 android:visibility="gone" />
 
         </LinearLayout>
@@ -65,7 +66,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:gravity="center_vertical">
 
             <TextView
@@ -73,21 +74,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Due"
-                android:textSize="12sp"
+                android:textSize="11sp"
                 android:textStyle="bold"
-                android:textColor="@color/widget_status_due"
+                android:textColor="@android:color/white"
                 android:background="@drawable/widget_status_background"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp" />
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp" />
 
             <TextView
                 android:id="@+id/habit_category"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Health"
-                android:textSize="12sp"
+                android:textSize="11sp"
                 android:textColor="@color/widget_text_secondary"
-                android:layout_marginStart="12dp" />
+                android:layout_marginStart="8dp" />
 
         </LinearLayout>
 
@@ -100,27 +101,27 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <!-- Complete Button (Larger, more accessible) -->
+        <!-- Complete Button (Optimized size) -->
         <ImageView
             android:id="@+id/complete_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:src="@drawable/ic_check"
             android:background="@drawable/widget_complete_button_background"
-            android:padding="12dp"
-            android:layout_marginEnd="8dp"
+            android:padding="10dp"
+            android:layout_marginEnd="6dp"
             android:clickable="true"
             android:contentDescription="Mark habit complete"
             android:visibility="gone" />
 
-        <!-- Edit Button (Larger, more accessible) -->
+        <!-- Edit Button (Optimized size) -->
         <ImageView
             android:id="@+id/edit_button"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:src="@drawable/ic_edit"
             android:background="@drawable/widget_edit_button_background"
-            android:padding="12dp"
+            android:padding="10dp"
             android:clickable="true"
             android:contentDescription="Edit habit" />
 

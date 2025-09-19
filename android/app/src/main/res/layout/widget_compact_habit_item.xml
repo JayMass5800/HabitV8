@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/compact_habit_item_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:background="@drawable/widget_habit_item_background"
-    android:padding="12dp"
-    android:layout_marginBottom="8dp"
+    android:padding="10dp"
+    android:layout_marginBottom="4dp"
     android:elevation="1dp">
 
     <!-- Habit Color Indicator (Enhanced) -->
@@ -31,7 +32,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Drink Water"
-            android:textSize="15sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="@color/widget_text_primary"
             android:maxLines="1"
@@ -43,19 +44,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="10:30"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_primary_color"
-            android:layout_marginTop="2dp"
+            android:textSize="11sp"
+            android:textStyle="normal"
+            android:textColor="@color/widget_text_secondary"
+            android:layout_marginTop="1dp"
             android:visibility="gone" />
 
     </LinearLayout>
 
-    <!-- Complete Button (Larger and more accessible) -->
+    <!-- Complete Button (Optimized for compact) -->
     <ImageView
         android:id="@+id/compact_complete_button"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
         android:src="@drawable/ic_check"
         android:background="@drawable/widget_compact_complete_background"
         android:padding="8dp"

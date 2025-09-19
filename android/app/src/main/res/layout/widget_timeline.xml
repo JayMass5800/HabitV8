@@ -6,7 +6,7 @@
     android:padding="16dp"
     android:background="@drawable/widget_background">
 
-    <!-- Header with enhanced styling -->
+    <!-- Minimal Header with focus on content -->
     <LinearLayout
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
@@ -14,52 +14,29 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="@drawable/widget_header_background"
-        android:padding="20dp"
-        android:layout_marginBottom="16dp"
-        android:elevation="4dp">
+        android:padding="8dp"
+        android:layout_marginBottom="8dp"
+        android:elevation="2dp">
 
-        <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@drawable/ic_timeline"
-            android:id="@+id/timeline_icon"
-            android:layout_marginEnd="16dp"
-            android:tint="@android:color/white" />
-
-        <LinearLayout
+        <TextView
+            android:id="@+id/header_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/header_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Habit Timeline"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/white" />
-
-            <TextView
-                android:id="@+id/header_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Today"
-                android:textSize="14sp"
-                android:textColor="@android:color/white"
-                android:alpha="0.9" />
-
-        </LinearLayout>
+            android:text="HabitV8"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:gravity="start|center_vertical" />
 
         <ImageView
             android:id="@+id/refresh_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:src="@drawable/ic_refresh"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:clickable="true"
-            android:padding="4dp"
+            android:padding="2dp"
             android:tint="@android:color/white"
             android:alpha="0.9"
             android:contentDescription="Refresh widget" />
@@ -168,7 +145,7 @@
 
         </LinearLayout>
 
-        <!-- Habits List (Non-scrollable for widget compatibility) -->
+        <!-- Habits List -->
         <LinearLayout
             android:id="@+id/habits_list"
             android:layout_width="match_parent"

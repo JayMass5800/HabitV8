@@ -6,7 +6,7 @@
     android:padding="12dp"
     android:background="@drawable/widget_background">
 
-    <!-- Enhanced Header -->
+    <!-- Minimal Header -->
     <LinearLayout
         android:id="@+id/header_layout"
         android:layout_width="match_parent"
@@ -14,34 +14,28 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="@drawable/widget_header_background"
-        android:padding="16dp"
-        android:layout_marginBottom="12dp"
-        android:elevation="3dp">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_timeline"
-            android:layout_marginEnd="12dp"
-            android:tint="@android:color/white" />
+        android:padding="6dp"
+        android:layout_marginBottom="8dp"
+        android:elevation="1dp">
 
         <TextView
+            android:id="@+id/compact_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Habits"
-            android:textSize="16sp"
+            android:text="HabitV8"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="@android:color/white" />
 
         <ImageView
             android:id="@+id/open_app_button"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:src="@drawable/ic_open_in_new"
             android:clickable="true"
             android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:padding="4dp"
+            android:padding="2dp"
             android:tint="@android:color/white"
             android:alpha="0.9"
             android:contentDescription="Open app" />
