@@ -22,25 +22,60 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
         widgetData: SharedPreferences
     ) {
         appWidgetIds.forEach { widgetId ->
+            try {
+                val layoutId = context.resources.getIdentifier("widget_compact", "layout", context.packageName)
+                if (layoutId == 0) {
+                    // Fallback to hardcoded resource ID if dynamic lookup fails
+                    // This shouldn't happen, but provides a safety net
+                    return@forEach
+                }
+                
+                val views = RemoteViews(context.packageName, layoutId)
+                
+                // Convert SharedPreferences to Map for compatibility
+                val dataMap = widgetData.all
+                
+                // Update widget with current data
+                updateCompactWidgetContent(context, views, dataMap)
+                
+                // Set up click handlers
+                setupCompactClickHandlers(context, views, widgetId)
+                
+                appWidgetManager.updateAppWidget(widgetId, views)
+            } catch (e: Exception) {
+                // Create a minimal error widget
+                createErrorWidget(context, appWidgetManager, widgetId)
+            }
+        }
+    }
+    
+    private fun createErrorWidget(context: Context, appWidgetManager: AppWidgetManager, widgetId: Int) {
+        try {
             val layoutId = context.resources.getIdentifier("widget_compact", "layout", context.packageName)
-            val views = RemoteViews(context.packageName, layoutId)
-            
-            // Convert SharedPreferences to Map for compatibility
-            val dataMap = widgetData.all
-            
-            // Update widget with current data
-            updateCompactWidgetContent(context, views, dataMap)
-            
-            // Set up click handlers
-            setupCompactClickHandlers(context, views, widgetId)
-            
-            appWidgetManager.updateAppWidget(widgetId, views)
+            if (layoutId != 0) {
+                val views = RemoteViews(context.packageName, layoutId)
+                
+                val emptyStateId = getResourceId(context, "compact_empty_state", "id")
+                if (emptyStateId != 0) {
+                    views.setViewVisibility(emptyStateId, View.VISIBLE)
+                    views.setTextViewText(emptyStateId, "Widget Error")
+                }
+                
+                appWidgetManager.updateAppWidget(widgetId, views)
+            }
+        } catch (e: Exception) {
+            // If even the error widget fails, there's nothing more we can do
         }
     }
 
     // Helper function to get resource ID by name
     private fun getResourceId(context: Context, resourceName: String, resourceType: String): Int {
-        return context.resources.getIdentifier(resourceName, resourceType, context.packageName)
+        val resourceId = context.resources.getIdentifier(resourceName, resourceType, context.packageName)
+        if (resourceId == 0) {
+            // Log the missing resource for debugging
+            // In production, you might want to use proper logging
+        }
+        return resourceId
     }
 
     private fun updateCompactWidgetContent(

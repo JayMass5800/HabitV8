@@ -26,25 +26,58 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         widgetData: SharedPreferences
     ) {
         appWidgetIds.forEach { widgetId ->
+            try {
+                val layoutId = context.resources.getIdentifier("widget_timeline", "layout", context.packageName)
+                if (layoutId == 0) {
+                    // Fallback if dynamic lookup fails
+                    return@forEach
+                }
+                
+                val views = RemoteViews(context.packageName, layoutId)
+                
+                // Convert SharedPreferences to Map for compatibility
+                val dataMap = widgetData.all
+                
+                // Update widget with current data
+                updateWidgetContent(context, views, dataMap)
+                
+                // Set up click handlers
+                setupClickHandlers(context, views, widgetId)
+                
+                appWidgetManager.updateAppWidget(widgetId, views)
+            } catch (e: Exception) {
+                // Create a minimal error widget
+                createErrorWidget(context, appWidgetManager, widgetId)
+            }
+        }
+    }
+    
+    private fun createErrorWidget(context: Context, appWidgetManager: AppWidgetManager, widgetId: Int) {
+        try {
             val layoutId = context.resources.getIdentifier("widget_timeline", "layout", context.packageName)
-            val views = RemoteViews(context.packageName, layoutId)
-            
-            // Convert SharedPreferences to Map for compatibility
-            val dataMap = widgetData.all
-            
-            // Update widget with current data
-            updateWidgetContent(context, views, dataMap)
-            
-            // Set up click handlers
-            setupClickHandlers(context, views, widgetId)
-            
-            appWidgetManager.updateAppWidget(widgetId, views)
+            if (layoutId != 0) {
+                val views = RemoteViews(context.packageName, layoutId)
+                
+                val headerTitleId = getResourceId(context, "header_title", "id")
+                if (headerTitleId != 0) {
+                    views.setTextViewText(headerTitleId, "Widget Error")
+                }
+                
+                appWidgetManager.updateAppWidget(widgetId, views)
+            }
+        } catch (e: Exception) {
+            // If even the error widget fails, there's nothing more we can do
         }
     }
 
     // Helper function to get resource ID by name
     private fun getResourceId(context: Context, resourceName: String, resourceType: String): Int {
-        return context.resources.getIdentifier(resourceName, resourceType, context.packageName)
+        val resourceId = context.resources.getIdentifier(resourceName, resourceType, context.packageName)
+        if (resourceId == 0) {
+            // Log the missing resource for debugging
+            // In production, you might want to use proper logging
+        }
+        return resourceId
     }
 
     private fun updateWidgetContent(

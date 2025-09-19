@@ -145,20 +145,26 @@
         
         <!-- Home Widget Providers -->
         <receiver android:name=".HabitTimelineWidgetProvider"
-            android:exported="false"
+            android:exported="true"
             android:label="Habit Timeline Widget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/habit_timeline_widget_info" />
         </receiver>
         
         <receiver android:name=".HabitCompactWidgetProvider"
-            android:exported="false"
+            android:exported="true"
             android:label="Habit Compact Widget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/habit_compact_widget_info" />
