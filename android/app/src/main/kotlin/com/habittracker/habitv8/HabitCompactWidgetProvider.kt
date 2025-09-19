@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
@@ -90,16 +91,16 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
         try {
             // Update theme colors
             val themeMode = widgetData["themeMode"] as? String ?: "light"
-            val primaryColorValue = widgetData["primaryColor"] as? Int ?: 0x6366F1
+            val primaryColorValue = widgetData["primaryColor"] as? Int ?: 0xFF6366F1.toInt()
             applyCompactThemeColors(views, themeMode, primaryColorValue)
             
             // Update habits list
             val habitsJson = widgetData["habits"] as? String
             
-            if (habitsJson != null) {
+            if (habitsJson != null && habitsJson.isNotEmpty() && habitsJson != "[]") {
                 updateCompactHabitsList(context, views, habitsJson, themeMode, primaryColorValue)
             } else {
-                showCompactEmptyState(context, views)
+                showCompactEmptyState(context, views, "No habits yet")
             }
             
         } catch (e: Exception) {
@@ -117,9 +118,13 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
         try {
             val habitsArray = JSONArray(habitsJson)
             
-            // Clear existing habit items
+            // DO NOT clear children yet - get habits list ID first
             val habitsListId = getResourceId(context, "compact_habits_list", "id")
-            views.removeAllViews(habitsListId)
+            if (habitsListId == 0) {
+                Log.e("HabitCompactWidget", "Failed to get habits list resource ID")
+                showCompactEmptyState(context, views, "Widget error")
+                return
+            }
             
             // Filter to only due habits and limit to 3
             val dueHabits = mutableListOf<JSONObject>()
@@ -135,12 +140,19 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
             }
             
             if (dueHabits.isEmpty()) {
-                showCompactEmptyState(context, views)
+                // Check if there were any habits at all
+                if (habitsArray.length() == 0) {
+                    showCompactEmptyState(context, views, "No habits yet")
+                } else {
+                    // There are habits but all are completed
+                    showCompactEmptyState(context, views, "All habits completed!")
+                }
             } else {
                 val emptyStateId = getResourceId(context, "compact_empty_state", "id")
                 views.setViewVisibility(emptyStateId, View.GONE)
                 
-                // Add compact habit items
+                // Now clear and add items
+                views.removeAllViews(habitsListId)
                 dueHabits.forEach { habit ->
                     addCompactHabitItem(context, views, habit, themeMode, primaryColor)
                 }
@@ -157,6 +169,7 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
             }
             
         } catch (e: Exception) {
+            // Error in updateCompactHabitsList - show error state
             showCompactErrorState(context, views)
         }
     }
@@ -169,20 +182,37 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
         primaryColor: Int
     ) {
         val habitItemLayoutId = getResourceId(context, "widget_compact_habit_item", "layout")
+        if (habitItemLayoutId == 0) {
+            Log.e("HabitCompactWidget", "Failed to get habit item layout resource")
+            return
+        }
+        
         val habitItemViews = RemoteViews(context.packageName, habitItemLayoutId)
         
         try {
-            // Set habit details
-            val habitName = habit.getString("name")
+            // Set habit details with defensive access
+            val habitName = habit.optString("name", "Unnamed Habit")
             val habitColor = habit.optInt("colorValue", primaryColor)
-            val habitId = habit.getString("id")
+            val habitId = habit.optString("id", "unknown")
             val timeDisplay = habit.optString("timeDisplay", "")
+            
+            // Validate essential data
+            if (habitName.isEmpty() || habitId == "unknown") {
+                Log.w("HabitCompactWidget", "Skipping habit with missing essential data")
+                return // Skip this habit if essential data is missing
+            }
             
             // Update compact habit item views
             val habitNameId = getResourceId(context, "compact_habit_name", "id")
             val habitColorId = getResourceId(context, "compact_habit_color_indicator", "id")
             val habitTimeId = getResourceId(context, "compact_habit_time", "id")
             val completeButtonId = getResourceId(context, "compact_complete_button", "id")
+            
+            // Validate all resource IDs before using them
+            if (habitNameId == 0 || habitColorId == 0 || habitTimeId == 0 || completeButtonId == 0) {
+                Log.e("HabitCompactWidget", "Failed to get required resource IDs")
+                return
+            }
             
             habitItemViews.setTextViewText(habitNameId, habitName)
             
@@ -213,10 +243,11 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
         }
     }
 
-    private fun showCompactEmptyState(context: Context, views: RemoteViews) {
+    private fun showCompactEmptyState(context: Context, views: RemoteViews, message: String = "All habits completed!") {
         val emptyStateId = getResourceId(context, "compact_empty_state", "id")
         val moreHabitsId = getResourceId(context, "more_habits_indicator", "id")
         views.setViewVisibility(emptyStateId, View.VISIBLE)
+        views.setTextViewText(emptyStateId, message)
         views.setViewVisibility(moreHabitsId, View.GONE)
     }
 

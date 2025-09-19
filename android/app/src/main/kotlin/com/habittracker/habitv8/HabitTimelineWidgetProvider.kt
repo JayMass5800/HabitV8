@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetBackgroundIntent
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
@@ -66,6 +67,7 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         return when (resourceType) {
             "id" -> when (resourceName) {
                 "header_date" -> R.id.header_date
+                "header_title" -> R.id.header_title
                 "habits_list" -> R.id.habits_list
                 "next_habit_section" -> R.id.next_habit_section
                 "empty_state" -> R.id.empty_state
@@ -79,6 +81,10 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 "edit_button" -> R.id.edit_button
                 "next_habit_name" -> R.id.next_habit_name
                 "next_habit_time" -> R.id.next_habit_time
+                "refresh_button" -> R.id.refresh_button
+                "timeline_icon" -> R.id.timeline_icon
+                "habits_container" -> R.id.habits_container
+                "add_habit_button" -> R.id.add_habit_button
                 else -> 0
             }
             "layout" -> when (resourceName) {
@@ -103,17 +109,17 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             
             // Update theme colors
             val themeMode = widgetData["themeMode"] as? String ?: "light"
-            val primaryColorValue = widgetData["primaryColor"] as? Int ?: 0x6366F1
+            val primaryColorValue = widgetData["primaryColor"] as? Int ?: 0xFF6366F1.toInt()
             applyThemeColors(context, views, themeMode, primaryColorValue)
             
             // Update habits list
             val habitsJson = widgetData["habits"] as? String
             val nextHabitJson = widgetData["nextHabit"] as? String
             
-            if (habitsJson != null) {
+            if (habitsJson != null && habitsJson.isNotEmpty() && habitsJson != "[]") {
                 updateHabitsList(context, views, habitsJson, nextHabitJson, themeMode, primaryColorValue)
             } else {
-                showEmptyState(context, views)
+                showEmptyState(context, views, "No habits yet")
             }
             
         } catch (e: Exception) {
@@ -135,6 +141,11 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             
             // Clear existing habit items
             val habitsListId = getResourceId(context, "habits_list", "id")
+            if (habitsListId == 0) {
+                Log.e("HabitTimelineWidget", "Failed to get habits list resource ID")
+                showEmptyState(context, views, "Widget error")
+                return
+            }
             views.removeAllViews(habitsListId)
             
             // Show next habit if available
@@ -148,7 +159,7 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             
             // Show habits or empty state
             if (habitsArray.length() == 0) {
-                showEmptyState(context, views)
+                showEmptyState(context, views, "All habits completed!")
             } else {
                 val emptyStateId = getResourceId(context, "empty_state", "id")
                 val habitsScrollId = getResourceId(context, "habits_scroll", "id")
@@ -176,17 +187,28 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         primaryColor: Int
     ) {
         val habitItemLayoutId = getResourceId(context, "widget_habit_item", "layout")
+        if (habitItemLayoutId == 0) {
+            Log.e("HabitTimelineWidget", "Failed to get habit item layout resource")
+            return
+        }
+        
         val habitItemViews = RemoteViews(context.packageName, habitItemLayoutId)
         
         try {
-            // Set habit details
-            val habitName = habit.getString("name")
+            // Set habit details with defensive access
+            val habitName = habit.optString("name", "Unnamed Habit")
             val habitCategory = habit.optString("category", "")
             val habitColor = habit.optInt("colorValue", primaryColor)
-            val habitId = habit.getString("id")
+            val habitId = habit.optString("id", "unknown")
             val isCompleted = habit.optBoolean("isCompleted", false)
             val status = habit.optString("status", "Due")
             val timeDisplay = habit.optString("timeDisplay", "")
+            
+            // Validate essential data
+            if (habitName.isEmpty() || habitId == "unknown") {
+                Log.w("HabitTimelineWidget", "Skipping habit with missing essential data")
+                return // Skip this habit if essential data is missing
+            }
             
             // Update habit item views
             val habitNameId = getResourceId(context, "habit_name", "id")
@@ -196,6 +218,13 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             val habitTimeId = getResourceId(context, "habit_time", "id")
             val completeButtonId = getResourceId(context, "complete_button", "id")
             val editButtonId = getResourceId(context, "edit_button", "id")
+            
+            // Validate all resource IDs before using them
+            if (habitNameId == 0 || habitCategoryId == 0 || habitStatusId == 0 || 
+                habitColorIndicatorId == 0 || habitTimeId == 0 || completeButtonId == 0 || editButtonId == 0) {
+                Log.e("HabitTimelineWidget", "Failed to get required resource IDs")
+                return
+            }
             
             habitItemViews.setTextViewText(habitNameId, habitName)
             habitItemViews.setTextViewText(habitCategoryId, habitCategory)
@@ -286,11 +315,12 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         }
     }
 
-    private fun showEmptyState(context: Context, views: RemoteViews) {
+    private fun showEmptyState(context: Context, views: RemoteViews, message: String = "All habits completed!") {
         val emptyStateId = getResourceId(context, "empty_state", "id")
         val habitsScrollId = getResourceId(context, "habits_scroll", "id")
         views.setViewVisibility(emptyStateId, View.VISIBLE)
         views.setViewVisibility(habitsScrollId, View.GONE)
+        // Note: Timeline widget uses fixed text in layout - message parameter is for consistency
     }
 
     private fun showErrorState(context: Context, views: RemoteViews) {
