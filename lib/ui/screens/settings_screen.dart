@@ -14,6 +14,7 @@ import '../../services/logging_service.dart';
 import '../../services/data_export_import_service.dart';
 import '../../services/subscription_service.dart';
 import '../../data/database.dart';
+import '../../screens/widget_configuration_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -230,6 +231,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                       ],
                     );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Widget Settings Section
+          Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.widgets,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Widget Settings',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SettingsTile(
+                  title: 'Configure Widget',
+                  subtitle:
+                      'Customize home screen widget appearance and behavior',
+                  leading: const Icon(Icons.home_outlined),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const WidgetConfigurationScreen(),
+                      ),
+                    );
+                  },
+                ),
+                SettingsTile(
+                  title: 'Add Widget to Home Screen',
+                  subtitle: 'Instructions for adding the widget',
+                  leading: const Icon(Icons.add_to_home_screen),
+                  trailing: const Icon(Icons.help_outline),
+                  onTap: () {
+                    _showAddWidgetDialog();
                   },
                 ),
               ],
@@ -1745,5 +1798,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
     }
+  }
+
+  void _showAddWidgetDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Widget to Home Screen'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'To add the HabitV8 widget to your home screen:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 12),
+              Text('1. Long press on an empty area of your home screen'),
+              SizedBox(height: 8),
+              Text('2. Tap "Widgets" from the menu that appears'),
+              SizedBox(height: 8),
+              Text('3. Look for "HabitV8" in the widget list'),
+              SizedBox(height: 8),
+              Text('4. Drag the widget to your desired location'),
+              SizedBox(height: 8),
+              Text('5. The widget will automatically show your habits'),
+              SizedBox(height: 16),
+              Text(
+                'Note: Widget features may vary by device manufacturer and Android version.',
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -15,6 +15,7 @@ import '../services/calendar_service.dart';
 import '../services/achievements_service.dart';
 import '../services/alarm_manager_service.dart';
 import '../services/alarm_service.dart';
+import '../services/widget_integration_service.dart';
 
 // Provider for the Habit database box with error recovery
 final databaseProvider = FutureProvider<Box<Habit>>((ref) async {
@@ -571,6 +572,14 @@ class HabitService {
       } catch (e) {
         AppLogger.error('Failed to sync new habit to calendar', e);
       }
+
+      // Update widgets with new habit data
+      try {
+        await WidgetIntegrationService.instance.onHabitsChanged();
+      } catch (e) {
+        AppLogger.error('Failed to update widgets after adding habit', e);
+        // Don't block the operation if widget update fails
+      }
     } catch (e) {
       AppLogger.error('Error in addHabit: $e');
 
@@ -634,6 +643,14 @@ class HabitService {
         }
       } catch (e) {
         AppLogger.error('Failed to sync updated habit to calendar', e);
+      }
+
+      // Update widgets with modified habit data
+      try {
+        await WidgetIntegrationService.instance.onHabitsChanged();
+      } catch (e) {
+        AppLogger.error('Failed to update widgets after updating habit', e);
+        // Don't block the operation if widget update fails
       }
     } catch (e) {
       AppLogger.error('Error in updateHabit: $e');
@@ -706,6 +723,14 @@ class HabitService {
       AppLogger.info(
         'Successfully deleted habit: ${habit.name} and cancelled all associated notifications and alarms',
       );
+
+      // Update widgets after deleting habit
+      try {
+        await WidgetIntegrationService.instance.onHabitsChanged();
+      } catch (e) {
+        AppLogger.error('Failed to update widgets after deleting habit', e);
+        // Don't block the operation if widget update fails
+      }
     } catch (e) {
       AppLogger.error('Error deleting habit ${habit.name}', e);
 
@@ -896,6 +921,14 @@ class HabitService {
       } catch (e) {
         AppLogger.error(
             'Failed to check for achievements after habit completion', e);
+      }
+
+      // Update widgets with new completion data
+      try {
+        await WidgetIntegrationService.instance.onHabitCompleted();
+      } catch (e) {
+        AppLogger.error('Failed to update widgets after habit completion', e);
+        // Don't block the completion if widget update fails
       }
 
       // Sync completion to calendar if enabled

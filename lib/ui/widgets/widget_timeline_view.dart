@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/model/habit.dart';
-import '../../services/widget_service.dart';
 
 /// Widget UI component that represents a habit timeline suitable for home screen widgets
 class WidgetTimelineView extends StatelessWidget {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'widget_integration_service.dart';
 
 class ThemeService {
   static const String _themeModeKey = 'theme_mode';
@@ -72,11 +73,25 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
   Future<void> setThemeMode(ThemeMode themeMode) async {
     await ThemeService.setThemeMode(themeMode);
     state = ThemeState(themeMode, state.primaryColor);
+
+    // Update widgets with new theme
+    try {
+      await WidgetIntegrationService.instance.onThemeChanged();
+    } catch (e) {
+      // Don't block theme change if widget update fails
+    }
   }
 
   Future<void> setPrimaryColor(Color color) async {
     await ThemeService.setPrimaryColor(color);
     state = ThemeState(state.themeMode, color);
+
+    // Update widgets with new color
+    try {
+      await WidgetIntegrationService.instance.onThemeChanged();
+    } catch (e) {
+      // Don't block color change if widget update fails
+    }
   }
 }
 

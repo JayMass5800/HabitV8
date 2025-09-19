@@ -17,6 +17,8 @@ import 'services/onboarding_service.dart';
 import 'services/midnight_habit_reset_service.dart';
 import 'services/app_lifecycle_service.dart';
 import 'services/subscription_service.dart';
+import 'services/widget_integration_service.dart';
+import 'services/widget_launch_handler.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/all_habits_screen.dart';
 import 'ui/screens/calendar_screen.dart';
@@ -101,6 +103,9 @@ void main() async {
   // This replaces the old calendar renewal and habit continuation systems
   _initializeMidnightReset();
 
+  // Initialize widget integration service (non-blocking)
+  _initializeWidgetService();
+
   // Check for Android 15+ boot completion flag and handle notification rescheduling
   _handleBootCompletionIfNeeded();
 
@@ -177,6 +182,19 @@ void _initializeMidnightReset() async {
   } catch (e) {
     AppLogger.error('Error initializing midnight habit reset service', e);
     // Don't block app startup if midnight reset fails
+  }
+}
+
+/// Initialize widget integration service (non-blocking)
+void _initializeWidgetService() async {
+  try {
+    // Small delay to let the app finish initializing
+    await Future.delayed(const Duration(seconds: 2));
+    await WidgetIntegrationService.instance.initialize();
+    AppLogger.info('✅ Widget integration service initialized successfully');
+  } catch (e) {
+    AppLogger.error('Error initializing widget integration service', e);
+    // Don't block app startup if widget service fails
   }
 }
 
@@ -614,6 +632,15 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   void initState() {
     super.initState();
     _loadDefaultScreen();
+
+    // Handle widget launch after a delay to ensure app is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) {
+          WidgetLaunchHandler.handleWidgetLaunch(context);
+        }
+      });
+    });
   }
 
   Future<void> _loadDefaultScreen() async {

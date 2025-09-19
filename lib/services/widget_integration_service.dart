@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import '../domain/model/habit.dart';
@@ -21,7 +20,7 @@ class WidgetIntegrationService {
   Future<void> initialize() async {
     try {
       // Register background callback for widget interactions
-      await HomeWidget.registerBackgroundCallback(_backgroundCallback);
+      await HomeWidget.registerInteractivityCallback(_backgroundCallback);
 
       // Set initial widget data
       await updateAllWidgets();
