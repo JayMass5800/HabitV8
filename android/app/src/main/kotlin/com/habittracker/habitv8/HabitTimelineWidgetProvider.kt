@@ -285,6 +285,13 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         themeMode: String,
         primaryColor: Int
     ) {
+        // Calculate theme colors for comprehensive theming
+        val isDarkMode = themeMode == "dark"
+        val surfaceColor = if (isDarkMode) 0xFF1A1A1A.toInt() else 0xFFFFFFFF.toInt()
+        val textPrimaryColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xDE000000.toInt()
+        val textSecondaryColor = if (isDarkMode) 0xB3FFFFFF.toInt() else 0x8A000000.toInt()
+        val buttonBackgroundColor = if (isDarkMode) 0xFF2A2A2A.toInt() else 0xFFF5F5F5.toInt()
+        val buttonIconColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xFF666666.toInt()
         val habitItemLayoutId = getResourceId(context, "widget_habit_item", "layout")
         if (habitItemLayoutId == 0) {
             Log.e("HabitTimelineWidget", "Failed to get habit item layout resource")
@@ -329,25 +336,43 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             habitItemViews.setTextViewText(habitCategoryId, habitCategory)
             habitItemViews.setTextViewText(habitStatusId, status)
             
+            // Apply theme colors to all text elements
+            habitItemViews.setTextColor(habitNameId, textPrimaryColor)
+            habitItemViews.setTextColor(habitCategoryId, textSecondaryColor)
+            habitItemViews.setTextColor(habitStatusId, textSecondaryColor)
+            
+            // Set habit item background with theme-appropriate surface color
+            val habitItemId = getResourceId(context, "habit_item_container", "id")
+            if (habitItemId != 0) {
+                habitItemViews.setInt(habitItemId, "setBackgroundColor", surfaceColor)
+            }
+            
             // Set habit color
             habitItemViews.setInt(habitColorIndicatorId, "setBackgroundColor", habitColor)
             
-            // Show/hide time if available
+            // Show/hide time if available with theme-appropriate color
             if (timeDisplay.isNotEmpty()) {
                 habitItemViews.setTextViewText(habitTimeId, timeDisplay)
+                habitItemViews.setTextColor(habitTimeId, textSecondaryColor)
                 habitItemViews.setViewVisibility(habitTimeId, View.VISIBLE)
             } else {
                 habitItemViews.setViewVisibility(habitTimeId, View.GONE)
             }
             
-            // Set status color
+            // Set status color - keep status background but ensure text is visible
             val statusColor = getStatusColor(status)
             habitItemViews.setInt(habitStatusId, "setBackgroundColor", statusColor)
+            // Override status text color to white for better contrast against colored background
+            habitItemViews.setTextColor(habitStatusId, 0xFFFFFFFF.toInt())
             
-            // Show/hide complete button based on status
+            // Show/hide complete button based on status with theme styling
             val canComplete = status == "Due" && !isCompleted
             if (canComplete) {
                 habitItemViews.setViewVisibility(completeButtonId, View.VISIBLE)
+                
+                // Apply theme-appropriate button styling
+                habitItemViews.setInt(completeButtonId, "setBackgroundColor", buttonBackgroundColor)
+                habitItemViews.setInt(completeButtonId, "setColorFilter", buttonIconColor)
                 
                 // Set up complete action
                 val completeIntent = HomeWidgetBackgroundIntent.getBroadcast(
@@ -358,6 +383,10 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             } else {
                 habitItemViews.setViewVisibility(completeButtonId, View.GONE)
             }
+            
+            // Apply theme styling to edit button
+            habitItemViews.setInt(editButtonId, "setBackgroundColor", buttonBackgroundColor)
+            habitItemViews.setInt(editButtonId, "setColorFilter", buttonIconColor)
             
             // Set up edit action
             try {
@@ -373,10 +402,13 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 // Ignore if MainActivity can't be found
             }
             
-            // Apply strikethrough if completed
+            // Apply strikethrough if completed with theme-appropriate styling
             if (isCompleted) {
                 habitItemViews.setInt(habitNameId, "setPaintFlags", 
                     android.graphics.Paint.STRIKE_THRU_TEXT_FLAG)
+                // Slightly fade completed habit text for better visual hierarchy
+                val fadedTextColor = if (isDarkMode) 0x80FFFFFF.toInt() else 0x80000000.toInt()
+                habitItemViews.setTextColor(habitNameId, fadedTextColor)
             }
             
             // Add the habit item to the list

@@ -273,6 +273,13 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         themeMode: String,
         primaryColor: Int
     ) {
+        // Calculate theme colors for comprehensive theming
+        val isDarkMode = themeMode == "dark"
+        val surfaceColor = if (isDarkMode) 0xFF1A1A1A.toInt() else 0xFFFFFFFF.toInt()
+        val textPrimaryColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xDE000000.toInt()
+        val textSecondaryColor = if (isDarkMode) 0xB3FFFFFF.toInt() else 0x8A000000.toInt()
+        val buttonBackgroundColor = if (isDarkMode) 0xFF2A2A2A.toInt() else 0xFFF5F5F5.toInt()
+        val buttonIconColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xFF666666.toInt()
         val habitItemLayoutId = getResourceId(context, "widget_compact_habit_item", "layout")
         if (habitItemLayoutId == 0) {
             Log.e("HabitCompactWidget", "Failed to get habit item layout resource")
@@ -308,16 +315,30 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             
             habitItemViews.setTextViewText(habitNameId, habitName)
             
+            // Apply theme colors to text elements
+            habitItemViews.setTextColor(habitNameId, textPrimaryColor)
+            
+            // Set habit item background with theme-appropriate surface color
+            val habitItemContainerId = getResourceId(context, "compact_habit_item_container", "id")
+            if (habitItemContainerId != 0) {
+                habitItemViews.setInt(habitItemContainerId, "setBackgroundColor", surfaceColor)
+            }
+            
             // Set habit color
             habitItemViews.setInt(habitColorId, "setBackgroundColor", habitColor)
             
-            // Show/hide time if available
+            // Show/hide time if available with theme-appropriate color
             if (timeDisplay.isNotEmpty()) {
                 habitItemViews.setTextViewText(habitTimeId, timeDisplay)
+                habitItemViews.setTextColor(habitTimeId, textSecondaryColor)
                 habitItemViews.setViewVisibility(habitTimeId, View.VISIBLE)
             } else {
                 habitItemViews.setViewVisibility(habitTimeId, View.GONE)
             }
+            
+            // Apply theme styling to complete button
+            habitItemViews.setInt(completeButtonId, "setBackgroundColor", buttonBackgroundColor)
+            habitItemViews.setInt(completeButtonId, "setColorFilter", buttonIconColor)
             
             // Set up complete action
             val completeIntent = HomeWidgetBackgroundIntent.getBroadcast(
@@ -382,18 +403,33 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         try {
             val isDarkMode = themeMode == "dark"
             
-            // Apply theme to header layout 
+            // Modern theme colors with better contrast - matching timeline widget
+            val backgroundColor = if (isDarkMode) 0xFF0F0F0F.toInt() else 0xFFFAFAFA.toInt()
+            val surfaceColor = if (isDarkMode) 0xFF1A1A1A.toInt() else 0xFFFFFFFF.toInt()
+            val textPrimaryColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xDE000000.toInt()
+            val textSecondaryColor = if (isDarkMode) 0xB3FFFFFF.toInt() else 0x8A000000.toInt()
+            
+            // Apply dynamic primary color to header background
             val headerLayoutId = getResourceId(context, "header_layout", "id")
             if (headerLayoutId != 0) {
                 views.setInt(headerLayoutId, "setBackgroundColor", primaryColor)
             }
             
-            // Apply widget background colors
-            val backgroundColor = if (isDarkMode) 0xFF1A1A1A.toInt() else 0xFFFFFFFF.toInt()
+            // Header elements use white text for contrast against colored background
+            val compactTitleId = getResourceId(context, "compact_title", "id")
+            val compactIconId = getResourceId(context, "compact_icon", "id")
+            if (compactTitleId != 0) views.setTextColor(compactTitleId, 0xFFFFFFFF.toInt())
+            if (compactIconId != 0) views.setInt(compactIconId, "setColorFilter", 0xFFFFFFFF.toInt())
             
-            android.util.Log.d("HabitCompactWidget", "Applied theme colors - isDark: $isDarkMode, primary: ${Integer.toHexString(primaryColor)}")
+            // Apply theme-appropriate background to main content areas
+            val compactContainerId = getResourceId(context, "compact_habits_container", "id")
+            if (compactContainerId != 0) {
+                views.setInt(compactContainerId, "setBackgroundColor", backgroundColor)
+            }
+            
+            android.util.Log.d("HabitCompactWidget", "Enhanced theme colors applied - isDark: $isDarkMode, primary: ${Integer.toHexString(primaryColor)}")
         } catch (e: Exception) {
-            android.util.Log.e("HabitCompactWidget", "Error applying theme colors", e)
+            android.util.Log.e("HabitCompactWidget", "Error applying enhanced theme colors", e)
         }
     }
 }
