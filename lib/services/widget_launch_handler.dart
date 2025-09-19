@@ -46,7 +46,7 @@ class WidgetLaunchHandler {
         final habitId = route.substring('/edit-habit/'.length);
         context.go('/habits/edit/$habitId');
       } else if (route == '/create-habit') {
-        context.go('/habits/create');
+        context.go('/create-habit');
       } else if (route == '/timeline') {
         context.go('/');
       } else {

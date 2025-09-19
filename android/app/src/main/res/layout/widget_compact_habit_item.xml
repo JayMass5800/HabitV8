@@ -4,49 +4,62 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:layout_marginBottom="4dp">
+    android:background="@drawable/widget_habit_item_background"
+    android:padding="12dp"
+    android:layout_marginBottom="8dp"
+    android:elevation="1dp">
 
-    <!-- Habit Color Indicator -->
-    <View
-        android:id="@+id/compact_habit_color_indicator"
-        android:layout_width="2dp"
-        android:layout_height="16dp"
-        android:background="@color/widget_primary_color"
-        android:layout_marginEnd="6dp" />
-
-    <!-- Habit Name -->
+    <!-- Habit Color Indicator (Enhanced) -->
     <TextView
-        android:id="@+id/compact_habit_name"
+        android:id="@+id/compact_habit_color_indicator"
+        android:layout_width="4dp"
+        android:layout_height="32dp"
+        android:background="@color/widget_primary_color"
+        android:layout_marginEnd="16dp" />
+
+    <!-- Habit Info Container -->
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:text="Drink Water"
-        android:textSize="11sp"
-        android:textStyle="bold"
-        android:textColor="@color/widget_text_primary"
-        android:maxLines="1"
-        android:ellipsize="end" />
+        android:orientation="vertical"
+        android:layout_marginEnd="12dp">
 
-    <!-- Habit Time -->
-    <TextView
-        android:id="@+id/compact_habit_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="10:30"
-        android:textSize="10sp"
-        android:textStyle="bold"
-        android:textColor="@color/widget_primary_color"
-        android:layout_marginEnd="4dp"
-        android:visibility="gone" />
+        <!-- Habit Name -->
+        <TextView
+            android:id="@+id/compact_habit_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Drink Water"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_primary"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-    <!-- Complete Button -->
+        <!-- Habit Time -->
+        <TextView
+            android:id="@+id/compact_habit_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10:30"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_primary_color"
+            android:layout_marginTop="2dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <!-- Complete Button (Larger and more accessible) -->
     <ImageView
         android:id="@+id/compact_complete_button"
-        android:layout_width="16dp"
-        android:layout_height="16dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:src="@drawable/ic_check"
         android:background="@drawable/widget_compact_complete_background"
-        android:padding="2dp"
-        android:clickable="true" />
+        android:padding="8dp"
+        android:clickable="true"
+        android:contentDescription="Mark habit complete" />
 
 </LinearLayout>

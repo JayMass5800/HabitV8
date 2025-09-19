@@ -12,6 +12,7 @@ class HabitTimelineWidgetProvider : MainHabitTimelineWidgetProvider() {
         appWidgetIds: IntArray,
         widgetData: SharedPreferences
     ) {
+        android.util.Log.d("DebugHabitTimelineWidget", "Debug wrapper onUpdate called with ${appWidgetIds.size} widgets")
         super.onUpdate(context, appWidgetManager, appWidgetIds, widgetData)
     }
 }

@@ -22,13 +22,18 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         appWidgetIds: IntArray,
         widgetData: SharedPreferences
     ) {
+        android.util.Log.d("HabitCompactWidget", "onUpdate called with ${appWidgetIds.size} widget IDs: ${appWidgetIds.contentToString()}")
+        android.util.Log.d("HabitCompactWidget", "SharedPreferences keys: ${widgetData.all.keys}")
+        
         appWidgetIds.forEach { widgetId ->
+            android.util.Log.d("HabitCompactWidget", "Processing widget ID: $widgetId")
             try {
                 // Use direct R reference instead of getIdentifier for release builds
                 val views = RemoteViews(context.packageName, R.layout.widget_compact)
                 
                 // Convert SharedPreferences to Map for compatibility
                 val dataMap = widgetData.all
+                android.util.Log.d("HabitCompactWidget", "Data map has ${dataMap.size} entries for widget $widgetId")
                 
                 // Update widget with current data
                 updateCompactWidgetContent(context, views, dataMap)
@@ -36,8 +41,11 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
                 // Set up click handlers
                 setupCompactClickHandlers(context, views, widgetId)
                 
+                android.util.Log.d("HabitCompactWidget", "Calling appWidgetManager.updateAppWidget for ID: $widgetId")
                 appWidgetManager.updateAppWidget(widgetId, views)
+                android.util.Log.d("HabitCompactWidget", "Compact widget update completed for ID: $widgetId")
             } catch (e: Exception) {
+                android.util.Log.e("HabitCompactWidget", "Exception updating widget $widgetId", e)
                 // Create a minimal error widget
                 createErrorWidget(context, appWidgetManager, widgetId)
             }
@@ -89,22 +97,106 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         widgetData: Map<String, Any?>
     ) {
         try {
-            // Update theme colors
-            val themeMode = widgetData["themeMode"] as? String ?: "light"
-            val primaryColorValue = widgetData["primaryColor"] as? Int ?: 0xFF6366F1.toInt()
-            applyCompactThemeColors(views, themeMode, primaryColorValue)
+            android.util.Log.d("HabitCompactWidget", "Starting compact widget content update")
+            android.util.Log.d("HabitCompactWidget", "Widget data keys: ${widgetData.keys}")
             
-            // Update habits list
-            val habitsJson = widgetData["habits"] as? String
+            // Read individual keys as stored by Flutter - use HomeWidgetPreferences
+            val sharedPreferences = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val habitsJson = sharedPreferences.getString("habits", null) ?: "[]"
+            val themeMode = sharedPreferences.getString("themeMode", "light") ?: "light"
+            val primaryColor = sharedPreferences.getLong("primaryColor", 0x6366F1L).toInt()
             
-            if (habitsJson != null && habitsJson.isNotEmpty() && habitsJson != "[]") {
-                updateCompactHabitsList(context, views, habitsJson, themeMode, primaryColorValue)
+            android.util.Log.d("HabitCompactWidget", "Habits JSON: $habitsJson")
+            android.util.Log.d("HabitCompactWidget", "Theme mode: $themeMode")
+            android.util.Log.d("HabitCompactWidget", "Primary color: $primaryColor")
+            
+            // Apply theme colors
+            applyCompactThemeColors(context, views, themeMode, primaryColor)
+            
+            // Parse habits array
+            val habitsArray = JSONArray(habitsJson)
+            android.util.Log.d("HabitCompactWidget", "Habits array length: ${habitsArray.length()}")
+            
+            if (habitsArray.length() > 0) {
+                android.util.Log.d("HabitCompactWidget", "Updating habits list with ${habitsArray.length()} habits")
+                updateCompactHabitsListFromArray(context, views, habitsArray, themeMode, primaryColor)
             } else {
+                android.util.Log.d("HabitCompactWidget", "Showing empty state - no habits in array")
                 showCompactEmptyState(context, views, "No habits yet")
             }
             
         } catch (e: Exception) {
-            showCompactErrorState(context, views)
+            android.util.Log.e("HabitCompactWidget", "Exception in updateCompactWidgetContent", e)
+            showCompactEmptyState(context, views, "Error loading habits")
+        }
+    }
+
+    private fun updateCompactHabitsListFromArray(
+        context: Context,
+        views: RemoteViews,
+        habitsArray: JSONArray,
+        themeMode: String,
+        primaryColor: Int
+    ) {
+        try {
+            android.util.Log.d("HabitCompactWidget", "Processing ${habitsArray.length()} habits from array")
+            
+            // Get habits list ID first
+            val habitsListId = getResourceId(context, "compact_habits_list", "id")
+            if (habitsListId == 0) {
+                android.util.Log.e("HabitCompactWidget", "Failed to get habits list resource ID")
+                showCompactEmptyState(context, views, "Widget error")
+                return
+            }
+            
+            // Filter to only due habits and limit to 3
+            val dueHabits = mutableListOf<JSONObject>()
+            for (i in 0 until habitsArray.length()) {
+                val habit = habitsArray.getJSONObject(i)
+                val status = habit.optString("status", "Due")
+                val isCompleted = habit.optBoolean("isCompleted", false)
+                
+                if (status == "Due" && !isCompleted) {
+                    dueHabits.add(habit)
+                    if (dueHabits.size >= 3) break
+                }
+            }
+            android.util.Log.d("HabitCompactWidget", "Found ${dueHabits.size} due habits")
+            
+            if (dueHabits.isEmpty()) {
+                // Check if there were any habits at all
+                if (habitsArray.length() == 0) {
+                    showCompactEmptyState(context, views, "No habits yet")
+                } else {
+                    // There are habits but all are completed
+                    showCompactEmptyState(context, views, "All habits completed!")
+                }
+            } else {
+                val emptyStateId = getResourceId(context, "compact_empty_state", "id")
+                views.setViewVisibility(emptyStateId, View.GONE)
+                
+                // Now clear and add items
+                views.removeAllViews(habitsListId)
+                dueHabits.forEach { habit ->
+                    android.util.Log.d("HabitCompactWidget", "Adding compact habit: ${habit.optString("name", "Unknown")}")
+                    addCompactHabitItem(context, views, habit, themeMode, primaryColor)
+                }
+                
+                // Show "more habits" indicator if there are additional habits
+                val remainingHabits = habitsArray.length() - dueHabits.size
+                val moreHabitsId = getResourceId(context, "more_habits_indicator", "id")
+                if (remainingHabits > 0) {
+                    views.setTextViewText(moreHabitsId, "+$remainingHabits more habits")
+                    views.setViewVisibility(moreHabitsId, View.VISIBLE)
+                } else {
+                    views.setViewVisibility(moreHabitsId, View.GONE)
+                }
+            }
+            android.util.Log.d("HabitCompactWidget", "updateCompactHabitsListFromArray completed successfully")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("HabitCompactWidget", "Exception in updateCompactHabitsListFromArray", e)
+            showCompactEmptyState(context, views, "Error loading habits")
         }
     }
 
@@ -266,7 +358,7 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
     ) {
         try {
             // Open app button - Use a simple intent approach
-            val intent = Intent(context, Class.forName("${context.packageName}.MainActivity"))
+            val intent = Intent(context, MainActivity::class.java)
             val pendingIntent = PendingIntent.getActivity(
                 context, 
                 0, 
@@ -286,14 +378,22 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         }
     }
 
-    private fun applyCompactThemeColors(views: RemoteViews, themeMode: String, primaryColor: Int) {
-        val isDarkMode = themeMode == "dark"
-        
-        // Set text colors
-        val textPrimaryColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xDD000000.toInt()
-        val textSecondaryColor = if (isDarkMode) 0xB3FFFFFF.toInt() else 0x99000000.toInt()
-        
-        // Apply theme colors would go here if we had the specific view IDs
-        // For now, we'll skip this to avoid more R. references
+    private fun applyCompactThemeColors(context: Context, views: RemoteViews, themeMode: String, primaryColor: Int) {
+        try {
+            val isDarkMode = themeMode == "dark"
+            
+            // Apply theme to header layout 
+            val headerLayoutId = getResourceId(context, "header_layout", "id")
+            if (headerLayoutId != 0) {
+                views.setInt(headerLayoutId, "setBackgroundColor", primaryColor)
+            }
+            
+            // Apply widget background colors
+            val backgroundColor = if (isDarkMode) 0xFF1A1A1A.toInt() else 0xFFFFFFFF.toInt()
+            
+            android.util.Log.d("HabitCompactWidget", "Applied theme colors - isDark: $isDarkMode, primary: ${Integer.toHexString(primaryColor)}")
+        } catch (e: Exception) {
+            android.util.Log.e("HabitCompactWidget", "Error applying theme colors", e)
+        }
     }
 }

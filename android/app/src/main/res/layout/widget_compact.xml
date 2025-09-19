@@ -6,35 +6,45 @@
     android:padding="12dp"
     android:background="@drawable/widget_background">
 
-    <!-- Header -->
+    <!-- Enhanced Header -->
     <LinearLayout
+        android:id="@+id/header_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:background="@drawable/widget_header_background"
+        android:padding="16dp"
+        android:layout_marginBottom="12dp"
+        android:elevation="3dp">
 
         <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:src="@drawable/ic_timeline"
-            android:layout_marginEnd="6dp" />
+            android:layout_marginEnd="12dp"
+            android:tint="@android:color/white" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Habits"
-            android:textSize="12sp"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@color/widget_text_primary" />
+            android:textColor="@android:color/white" />
 
         <ImageView
             android:id="@+id/open_app_button"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
             android:src="@drawable/ic_open_in_new"
-            android:clickable="true" />
+            android:clickable="true"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            android:tint="@android:color/white"
+            android:alpha="0.9"
+            android:contentDescription="Open app" />
 
     </LinearLayout>
 

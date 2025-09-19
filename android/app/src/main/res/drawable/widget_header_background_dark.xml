@@ -5,6 +5,6 @@
     <corners 
         android:topLeftRadius="20dp"
         android:topRightRadius="20dp" />
-    <!-- Add subtle gradient effect -->
+    <!-- Darker variant for dark theme -->
     <stroke android:width="0dp" android:color="@color/transparent" />
 </shape>

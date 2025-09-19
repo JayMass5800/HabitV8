@@ -26,13 +26,18 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         appWidgetIds: IntArray,
         widgetData: SharedPreferences
     ) {
+        android.util.Log.d("HabitTimelineWidget", "onUpdate called with ${appWidgetIds.size} widget IDs: ${appWidgetIds.contentToString()}")
+        android.util.Log.d("HabitTimelineWidget", "SharedPreferences keys: ${widgetData.all.keys}")
+        
         appWidgetIds.forEach { widgetId ->
+            android.util.Log.d("HabitTimelineWidget", "Processing widget ID: $widgetId")
             try {
                 // Use direct R reference instead of getIdentifier for release builds
                 val views = RemoteViews(context.packageName, R.layout.widget_timeline)
                 
                 // Convert SharedPreferences to Map for compatibility
                 val dataMap = widgetData.all
+                android.util.Log.d("HabitTimelineWidget", "Data map has ${dataMap.size} entries for widget $widgetId")
                 
                 // Update widget with current data
                 updateWidgetContent(context, views, dataMap)
@@ -40,8 +45,11 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 // Set up click handlers
                 setupClickHandlers(context, views, widgetId)
                 
+                android.util.Log.d("HabitTimelineWidget", "Calling appWidgetManager.updateAppWidget for ID: $widgetId")
                 appWidgetManager.updateAppWidget(widgetId, views)
+                android.util.Log.d("HabitTimelineWidget", "Widget update completed for ID: $widgetId")
             } catch (e: Exception) {
+                android.util.Log.e("HabitTimelineWidget", "Exception updating widget $widgetId", e)
                 // Create a minimal error widget
                 createErrorWidget(context, appWidgetManager, widgetId)
             }
@@ -71,7 +79,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 "habits_list" -> R.id.habits_list
                 "next_habit_section" -> R.id.next_habit_section
                 "empty_state" -> R.id.empty_state
-                "habits_scroll" -> R.id.habits_scroll
+                "habits_list" -> R.id.habits_list
                 "habit_name" -> R.id.habit_name
                 "habit_category" -> R.id.habit_category
                 "habit_status" -> R.id.habit_status
@@ -101,29 +109,109 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         widgetData: Map<String, Any?>
     ) {
         try {
-            // Update header
-            val currentDate = widgetData["selectedDate"] as? String ?: getCurrentDateString()
-            val formattedDate = formatDateForDisplay(currentDate)
+            android.util.Log.d("HabitTimelineWidget", "Starting widget content update")
+            android.util.Log.d("HabitTimelineWidget", "Widget data keys: ${widgetData.keys}")
+            
+            // Read individual keys as stored by Flutter - use HomeWidgetPreferences
+            val sharedPreferences = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val habitsJson = sharedPreferences.getString("habits", null) ?: "[]"
+            val nextHabitJson = sharedPreferences.getString("nextHabit", null)
+            val selectedDate = sharedPreferences.getString("selectedDate", "") ?: ""
+            val themeMode = sharedPreferences.getString("themeMode", "light") ?: "light"
+            val primaryColor = sharedPreferences.getLong("primaryColor", 0x6366F1L).toInt()
+            
+            android.util.Log.d("HabitTimelineWidget", "Habits JSON: $habitsJson")
+            android.util.Log.d("HabitTimelineWidget", "Selected date: $selectedDate")
+            android.util.Log.d("HabitTimelineWidget", "Theme mode: $themeMode")
+            android.util.Log.d("HabitTimelineWidget", "Primary color: $primaryColor")
+            
+            // Format and display date
+            val formattedDate = formatDateForDisplay(selectedDate)
             val headerDateId = getResourceId(context, "header_date", "id")
+            android.util.Log.d("HabitTimelineWidget", "Formatted date: $formattedDate, headerDateId: $headerDateId")
             views.setTextViewText(headerDateId, formattedDate)
             
-            // Update theme colors
-            val themeMode = widgetData["themeMode"] as? String ?: "light"
-            val primaryColorValue = widgetData["primaryColor"] as? Int ?: 0xFF6366F1.toInt()
-            applyThemeColors(context, views, themeMode, primaryColorValue)
+            // Apply theme colors
+            android.util.Log.d("HabitTimelineWidget", "Applying theme colors")
+            applyThemeColors(context, views, themeMode, primaryColor)
             
-            // Update habits list
-            val habitsJson = widgetData["habits"] as? String
-            val nextHabitJson = widgetData["nextHabit"] as? String
+            // Parse habits array and next habit
+            val habitsArray = JSONArray(habitsJson)
+            val nextHabitObject = if (nextHabitJson != null) JSONObject(nextHabitJson) else null
             
-            if (habitsJson != null && habitsJson.isNotEmpty() && habitsJson != "[]") {
-                updateHabitsList(context, views, habitsJson, nextHabitJson, themeMode, primaryColorValue)
+            android.util.Log.d("HabitTimelineWidget", "Habits array length: ${habitsArray.length()}")
+            android.util.Log.d("HabitTimelineWidget", "Has next habit: ${nextHabitObject != null}")
+            
+            if (habitsArray.length() > 0) {
+                android.util.Log.d("HabitTimelineWidget", "Updating habits list with ${habitsArray.length()} habits")
+                updateHabitsListFromArray(context, views, habitsArray, nextHabitObject, themeMode, primaryColor)
             } else {
+                android.util.Log.d("HabitTimelineWidget", "Showing empty state - no habits in array")
                 showEmptyState(context, views, "No habits yet")
             }
             
         } catch (e: Exception) {
+            android.util.Log.e("HabitTimelineWidget", "Exception in updateWidgetContent", e)
             // Log error and show fallback state
+            showErrorState(context, views)
+        }
+    }
+
+    private fun updateHabitsListFromArray(
+        context: Context,
+        views: RemoteViews,
+        habitsArray: JSONArray,
+        nextHabitObject: JSONObject?,
+        themeMode: String,
+        primaryColor: Int
+    ) {
+        try {
+            android.util.Log.d("HabitTimelineWidget", "Processing ${habitsArray.length()} habits from array")
+            
+            // Clear existing habit items
+            val habitsListId = getResourceId(context, "habits_list", "id")
+            if (habitsListId == 0) {
+                android.util.Log.e("HabitTimelineWidget", "Failed to get habits list resource ID")
+                showEmptyState(context, views, "Widget error")
+                return
+            }
+            android.util.Log.d("HabitTimelineWidget", "Clearing existing habits from list ID: $habitsListId")
+            views.removeAllViews(habitsListId)
+            
+            // Show next habit if available
+            if (nextHabitObject != null) {
+                android.util.Log.d("HabitTimelineWidget", "Showing next habit: ${nextHabitObject.optString("name", "Unknown")}")
+                showNextHabit(context, views, nextHabitObject, primaryColor)
+            } else {
+                android.util.Log.d("HabitTimelineWidget", "No next habit to show")
+                val nextHabitSectionId = getResourceId(context, "next_habit_section", "id")
+                views.setViewVisibility(nextHabitSectionId, View.GONE)
+            }
+            
+            // Show habits or empty state
+            if (habitsArray.length() == 0) {
+                android.util.Log.d("HabitTimelineWidget", "No habits in array, showing completion message")
+                showEmptyState(context, views, "All habits completed!")
+            } else {
+                android.util.Log.d("HabitTimelineWidget", "Processing ${habitsArray.length()} habits")
+                val emptyStateId = getResourceId(context, "empty_state", "id")
+                val habitsScrollId = getResourceId(context, "habits_list", "id")
+                views.setViewVisibility(emptyStateId, View.GONE)
+                views.setViewVisibility(habitsScrollId, View.VISIBLE)
+                
+                // Add habit items (limit to prevent performance issues)
+                val maxHabits = Math.min(habitsArray.length(), 10)
+                android.util.Log.d("HabitTimelineWidget", "Adding $maxHabits habit items to widget")
+                for (i in 0 until maxHabits) {
+                    val habit = habitsArray.getJSONObject(i)
+                    android.util.Log.d("HabitTimelineWidget", "Adding habit $i: ${habit.optString("name", "Unknown")}")
+                    addHabitItem(context, views, habit, themeMode, primaryColor)
+                }
+            }
+            android.util.Log.d("HabitTimelineWidget", "updateHabitsListFromArray completed successfully")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("HabitTimelineWidget", "Exception in updateHabitsListFromArray", e)
             showErrorState(context, views)
         }
     }
@@ -137,44 +225,55 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         primaryColor: Int
     ) {
         try {
+            android.util.Log.d("HabitTimelineWidget", "Parsing habits JSON: $habitsJson")
             val habitsArray = JSONArray(habitsJson)
+            android.util.Log.d("HabitTimelineWidget", "Parsed ${habitsArray.length()} habits")
             
             // Clear existing habit items
             val habitsListId = getResourceId(context, "habits_list", "id")
             if (habitsListId == 0) {
-                Log.e("HabitTimelineWidget", "Failed to get habits list resource ID")
+                android.util.Log.e("HabitTimelineWidget", "Failed to get habits list resource ID")
                 showEmptyState(context, views, "Widget error")
                 return
             }
+            android.util.Log.d("HabitTimelineWidget", "Clearing existing habits from list ID: $habitsListId")
             views.removeAllViews(habitsListId)
             
             // Show next habit if available
             if (nextHabitJson != null) {
+                android.util.Log.d("HabitTimelineWidget", "Showing next habit: $nextHabitJson")
                 val nextHabit = JSONObject(nextHabitJson)
                 showNextHabit(context, views, nextHabit, primaryColor)
             } else {
+                android.util.Log.d("HabitTimelineWidget", "No next habit to show")
                 val nextHabitSectionId = getResourceId(context, "next_habit_section", "id")
                 views.setViewVisibility(nextHabitSectionId, View.GONE)
             }
             
             // Show habits or empty state
             if (habitsArray.length() == 0) {
+                android.util.Log.d("HabitTimelineWidget", "No habits in array, showing completion message")
                 showEmptyState(context, views, "All habits completed!")
             } else {
+                android.util.Log.d("HabitTimelineWidget", "Processing ${habitsArray.length()} habits")
                 val emptyStateId = getResourceId(context, "empty_state", "id")
-                val habitsScrollId = getResourceId(context, "habits_scroll", "id")
+                val habitsScrollId = getResourceId(context, "habits_list", "id")
                 views.setViewVisibility(emptyStateId, View.GONE)
                 views.setViewVisibility(habitsScrollId, View.VISIBLE)
                 
                 // Add habit items (limit to prevent performance issues)
                 val maxHabits = Math.min(habitsArray.length(), 10)
+                android.util.Log.d("HabitTimelineWidget", "Adding $maxHabits habit items to widget")
                 for (i in 0 until maxHabits) {
                     val habit = habitsArray.getJSONObject(i)
+                    android.util.Log.d("HabitTimelineWidget", "Adding habit $i: ${habit.optString("name", "Unknown")}")
                     addHabitItem(context, views, habit, themeMode, primaryColor)
                 }
             }
+            android.util.Log.d("HabitTimelineWidget", "updateHabitsList completed successfully")
             
         } catch (e: Exception) {
+            android.util.Log.e("HabitTimelineWidget", "Exception in updateHabitsList", e)
             showErrorState(context, views)
         }
     }
@@ -262,7 +361,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             
             // Set up edit action
             try {
-                val intent = Intent(context, Class.forName("${context.packageName}.MainActivity"))
+                val intent = Intent(context, MainActivity::class.java)
                 val editIntent = PendingIntent.getActivity(
                     context, 
                     habitId.hashCode(), 
@@ -317,7 +416,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
 
     private fun showEmptyState(context: Context, views: RemoteViews, message: String = "All habits completed!") {
         val emptyStateId = getResourceId(context, "empty_state", "id")
-        val habitsScrollId = getResourceId(context, "habits_scroll", "id")
+        val habitsScrollId = getResourceId(context, "habits_list", "id")
         views.setViewVisibility(emptyStateId, View.VISIBLE)
         views.setViewVisibility(habitsScrollId, View.GONE)
         // Note: Timeline widget uses fixed text in layout - message parameter is for consistency
@@ -325,7 +424,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
 
     private fun showErrorState(context: Context, views: RemoteViews) {
         val emptyStateId = getResourceId(context, "empty_state", "id")
-        val habitsScrollId = getResourceId(context, "habits_scroll", "id")
+        val habitsScrollId = getResourceId(context, "habits_list", "id")
         val headerTitleId = getResourceId(context, "header_title", "id")
         
         views.setViewVisibility(emptyStateId, View.VISIBLE)
@@ -347,19 +446,20 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             val refreshButtonId = getResourceId(context, "refresh_button", "id")
             views.setOnClickPendingIntent(refreshButtonId, refreshIntent)
             
-            // Add habit button (in empty state)
-            val addIntent = Intent(context, Class.forName("${context.packageName}.MainActivity"))
-            val addHabitIntent = PendingIntent.getActivity(
+            // Add habit button (in empty state) - navigate to create habit page
+            val addIntent = Intent(context, MainActivity::class.java)
+            addIntent.putExtra("widget_action", "create_habit")
+            val addHabitPendingIntent = PendingIntent.getActivity(
                 context, 
                 1, 
                 addIntent, 
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val addHabitButtonId = getResourceId(context, "add_habit_button", "id")
-            views.setOnClickPendingIntent(addHabitButtonId, addHabitIntent)
+            views.setOnClickPendingIntent(addHabitButtonId, addHabitPendingIntent)
             
             // Header click to open timeline
-            val timelineIntent = Intent(context, Class.forName("${context.packageName}.MainActivity"))
+            val timelineIntent = Intent(context, MainActivity::class.java)
             val timelinePendingIntent = PendingIntent.getActivity(
                 context, 
                 2, 
@@ -374,25 +474,43 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun applyThemeColors(context: Context, views: RemoteViews, themeMode: String, primaryColor: Int) {
-        val isDarkMode = themeMode == "dark"
-        
-        // Set background colors
-        val backgroundColor = if (isDarkMode) 0xFF121212.toInt() else 0xFFFFFFFF.toInt()
-        val surfaceColor = if (isDarkMode) 0xFF1E1E1E.toInt() else 0xFFF5F5F5.toInt()
-        val textPrimaryColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xDD000000.toInt()
-        val textSecondaryColor = if (isDarkMode) 0xB3FFFFFF.toInt() else 0x99000000.toInt()
-        
         try {
-            // Apply theme colors (would be better to use dynamic color resources)
+            val isDarkMode = themeMode == "dark"
+            
+            // Modern theme colors with better contrast
+            val backgroundColor = if (isDarkMode) 0xFF0F0F0F.toInt() else 0xFFFAFAFA.toInt()
+            val surfaceColor = if (isDarkMode) 0xFF1A1A1A.toInt() else 0xFFFFFFFF.toInt()
+            val textPrimaryColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xDE000000.toInt()
+            val textSecondaryColor = if (isDarkMode) 0xB3FFFFFF.toInt() else 0x8A000000.toInt()
+            
+            // Apply theme colors with comprehensive coverage
             val timelineIconId = getResourceId(context, "timeline_icon", "id")
             val headerTitleId = getResourceId(context, "header_title", "id")
             val headerDateId = getResourceId(context, "header_date", "id")
+            val refreshButtonId = getResourceId(context, "refresh_button", "id")
+            val headerLayoutId = getResourceId(context, "header_layout", "id")
+            val habitsContainerId = getResourceId(context, "habits_container", "id")
             
-            views.setInt(timelineIconId, "setColorFilter", primaryColor)
-            views.setTextColor(headerTitleId, textPrimaryColor)
-            views.setTextColor(headerDateId, textSecondaryColor)
+            // Apply dynamic primary color to header background - this makes the biggest visual impact
+            if (headerLayoutId != 0) {
+                views.setInt(headerLayoutId, "setBackgroundColor", primaryColor)
+            }
+            
+            // Header elements use white text for contrast against colored background
+            if (timelineIconId != 0) views.setInt(timelineIconId, "setColorFilter", 0xFFFFFFFF.toInt())
+            if (headerTitleId != 0) views.setTextColor(headerTitleId, 0xFFFFFFFF.toInt())
+            if (headerDateId != 0) views.setTextColor(headerDateId, 0xFFFFFFFF.toInt())
+            if (refreshButtonId != 0) views.setInt(refreshButtonId, "setColorFilter", 0xFFFFFFFF.toInt())
+            
+            // Apply theme-appropriate background to main content areas
+            if (habitsContainerId != 0) {
+                views.setInt(habitsContainerId, "setBackgroundColor", backgroundColor)
+            }
+            
+            android.util.Log.d("HabitTimelineWidget", "Enhanced theme colors applied - isDark: $isDarkMode, primaryColor: ${Integer.toHexString(primaryColor)}")
+            
         } catch (e: Exception) {
-            // Ignore theme application errors
+            android.util.Log.e("HabitTimelineWidget", "Error applying enhanced theme colors", e)
         }
     }
 
