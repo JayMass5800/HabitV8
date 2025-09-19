@@ -144,7 +144,7 @@
         </activity>
         
         <!-- Home Widget Providers -->
-        <receiver android:name="com.example.habitv8.HabitTimelineWidgetProvider"
+        <receiver android:name=".HabitTimelineWidgetProvider"
             android:exported="true"
             android:label="Habit Timeline Widget">
             <intent-filter>
@@ -157,7 +157,7 @@
                 android:resource="@xml/habit_timeline_widget_info" />
         </receiver>
         
-        <receiver android:name="com.example.habitv8.HabitCompactWidgetProvider"
+        <receiver android:name=".HabitCompactWidgetProvider"
             android:exported="true"
             android:label="Habit Compact Widget">
             <intent-filter>
