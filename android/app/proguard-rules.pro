@@ -104,3 +104,34 @@
 -keep class android.content.Intent { *; }
 -keep class android.os.Build$VERSION { *; }
 -keep class android.os.Build$VERSION_CODES { *; }
+
+# ===== Widget Provider Keep Rules =====
+# Keep all widget provider classes to prevent R8/ProGuard from obfuscating them
+-keep class com.habittracker.habitv8.HabitTimelineWidgetProvider { *; }
+-keep class com.habittracker.habitv8.HabitCompactWidgetProvider { *; }
+
+# Keep debug wrapper widget provider classes
+-keep class com.habittracker.habitv8.debug.HabitTimelineWidgetProvider { *; }
+-keep class com.habittracker.habitv8.debug.HabitCompactWidgetProvider { *; }
+
+# Keep HomeWidget related classes
+-keep class es.antonborri.home_widget.** { *; }
+-keep class es.antonborri.home_widget.HomeWidgetProvider { *; }
+-keep class es.antonborri.home_widget.HomeWidgetBackgroundIntent { *; }
+-keep class es.antonborri.home_widget.HomeWidgetLaunchIntent { *; }
+
+# Keep Android AppWidget related classes
+-keep class android.appwidget.AppWidgetProvider { *; }
+-keep class android.widget.RemoteViews { *; }
+
+# Keep all methods in widget providers that might be called by reflection
+-keepclassmembers class com.habittracker.habitv8.** extends android.appwidget.AppWidgetProvider {
+    public *;
+    protected *;
+}
+
+# Keep all methods in HomeWidgetProvider subclasses
+-keepclassmembers class * extends es.antonborri.home_widget.HomeWidgetProvider {
+    public *;
+    protected *;
+}

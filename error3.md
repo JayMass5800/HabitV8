@@ -1,393 +1,514 @@
-Resource: OneTimeProduct
-A single one-time product for an app.
-
-JSON representation
-
-{
-  "packageName": string,
-  "productId": string,
-  "listings": [
-    {
-      object (OneTimeProductListing)
-    }
-  ],
-  "taxAndComplianceSettings": {
-    object (OneTimeProductTaxAndComplianceSettings)
-  },
-  "purchaseOptions": [
-    {
-      object (OneTimeProductPurchaseOption)
-    }
-  ],
-  "restrictedPaymentCountries": {
-    object (RestrictedPaymentCountries)
-  },
-  "offerTags": [
-    {
-      object (OfferTag)
-    }
-  ],
-  "regionsVersion": {
-    object (RegionsVersion)
-  }
-}
-Fields
-packageName	
-string
-
-Required. Immutable. Package name of the parent app.
-
-productId	
-string
-
-Required. Immutable. Unique product ID of the product. Unique within the parent app. Product IDs must start with a number or lowercase letter, and can contain numbers (0-9), lowercase letters (a-z), underscores (_), and periods (.).
-
-listings[]	
-object (OneTimeProductListing)
-
-Required. Set of localized title and description data. Must not have duplicate entries with the same languageCode.
-
-taxAndComplianceSettings	
-object (OneTimeProductTaxAndComplianceSettings)
-
-Details about taxes and legal compliance.
-
-purchaseOptions[]	
-object (OneTimeProductPurchaseOption)
-
-Required. The set of purchase options for this one-time product.
-
-restrictedPaymentCountries	
-object (RestrictedPaymentCountries)
-
-Optional. Countries where the purchase of this one-time product is restricted to payment methods registered in the same country. If empty, no payment location restrictions are imposed.
-
-offerTags[]	
-object (OfferTag)
-
-Optional. List of up to 20 custom tags specified for this one-time product, and returned to the app through the billing library. Purchase options and offers for this product will also receive these tags in the billing library.
-
-regionsVersion	
-object (RegionsVersion)
-
-Output only. The version of the regions configuration that was used to generate the one-time product.
-
-OneTimeProductListing
-Regional store listing for a one-time product.
-
-JSON representation
-
-{
-  "languageCode": string,
-  "title": string,
-  "description": string
-}
-Fields
-languageCode	
-string
-
-Required. The language of this listing, as defined by BCP-47, e.g., "en-US".
-
-title	
-string
-
-Required. The title of this product in the language of this listing. The maximum length is 55 characters.
-
-description	
-string
-
-Required. The description of this product in the language of this listing. The maximum length is 200 characters.
-
-OneTimeProductTaxAndComplianceSettings
-Details about taxation, Google Play policy and legal compliance for one-time products.
-
-JSON representation
-
-{
-  "regionalTaxConfigs": [
-    {
-      object (RegionalTaxConfig)
-    }
-  ],
-  "isTokenizedDigitalAsset": boolean
-}
-Fields
-regionalTaxConfigs[]	
-object (RegionalTaxConfig)
-
-Regional tax configuration.
-
-isTokenizedDigitalAsset	
-boolean
-
-Whether this one-time product is declared as a product representing a tokenized digital asset.
-
-RegionalTaxConfig
-Details about taxation in a given geographical region.
-
-JSON representation
-
-{
-  "regionCode": string,
-  "taxTier": enum (TaxTier),
-  "eligibleForStreamingServiceTaxRate": boolean,
-  "streamingTaxType": enum (StreamingTaxType)
-}
-Fields
-regionCode	
-string
-
-Required. Region code this configuration applies to, as defined by ISO 3166-2, e.g. "US".
-
-taxTier	
-enum (TaxTier)
-
-Tax tier to specify reduced tax rate. Developers who sell digital news, magazines, newspapers, books, or audiobooks in various regions may be eligible for reduced tax rates.
-
-Learn more.
-
-eligibleForStreamingServiceTaxRate	
-boolean
-
-You must tell us if your app contains streaming products to correctly charge US state and local sales tax. Field only supported in the United States.
-
-streamingTaxType	
-enum (StreamingTaxType)
-
-To collect communications or amusement taxes in the United States, choose the appropriate tax category.
-
-Learn more.
-
-OneTimeProductPurchaseOption
-A single purchase option for a one-time product.
-
-JSON representation
-
-{
-  "purchaseOptionId": string,
-  "state": enum (State),
-  "regionalPricingAndAvailabilityConfigs": [
-    {
-      object (RegionalPricingAndAvailabilityConfig)
-    }
-  ],
-  "newRegionsConfig": {
-    object (OneTimeProductPurchaseOptionNewRegionsConfig)
-  },
-  "offerTags": [
-    {
-      object (OfferTag)
-    }
-  ],
-  "taxAndComplianceSettings": {
-    object (PurchaseOptionTaxAndComplianceSettings)
-  },
-
-  // Union field purchase_option_type can be only one of the following:
-  "buyOption": {
-    object (OneTimeProductBuyPurchaseOption)
-  },
-  "rentOption": {
-    object (OneTimeProductRentPurchaseOption)
-  }
-  // End of list of possible types for union field purchase_option_type.
-}
-Fields
-purchaseOptionId	
-string
-
-Required. Immutable. The unique identifier of this purchase option. Must be unique within the one-time product. It must start with a number or lower-case letter, and can only contain lower-case letters (a-z), numbers (0-9), and hyphens (-). The maximum length is 63 characters.
-
-state	
-enum (State)
-
-Output only. The state of the purchase option, i.e., whether it's active. This field cannot be changed by updating the resource. Use the dedicated endpoints instead.
-
-regionalPricingAndAvailabilityConfigs[]	
-object (RegionalPricingAndAvailabilityConfig)
-
-Regional pricing and availability information for this purchase option.
-
-newRegionsConfig	
-object (OneTimeProductPurchaseOptionNewRegionsConfig)
-
-Pricing information for any new locations Play may launch in the future. If omitted, the purchase option will not be automatically available in any new locations Play may launch in the future.
-
-offerTags[]	
-object (OfferTag)
-
-Optional. List of up to 20 custom tags specified for this purchase option, and returned to the app through the billing library. Offers for this purchase option will also receive these tags in the billing library.
-
-taxAndComplianceSettings	
-object (PurchaseOptionTaxAndComplianceSettings)
-
-Optional. Details about taxes and legal compliance.
-
-Union field purchase_option_type. The type of this purchase option. Exactly one must be set. purchase_option_type can be only one of the following:
-buyOption	
-object (OneTimeProductBuyPurchaseOption)
-
-A purchase option that can be bought.
-
-rentOption	
-object (OneTimeProductRentPurchaseOption)
-
-A purchase option that can be rented.
-
-State
-The current state of the purchase option.
-
-Enums
-STATE_UNSPECIFIED	Default value, should never be used.
-DRAFT	The purchase option is not and has never been available to users.
-ACTIVE	The purchase option is available to users.
-INACTIVE	The purchase option is not available to users anymore.
-INACTIVE_PUBLISHED	The purchase option is not available for purchase anymore, but we continue to expose its offer via the Play Billing Library for backwards compatibility. Only automatically migrated purchase options can be in this state.
-OneTimeProductBuyPurchaseOption
-A purchase option that can be bought.
-
-JSON representation
-
-{
-  "legacyCompatible": boolean,
-  "multiQuantityEnabled": boolean
-}
-Fields
-legacyCompatible	
-boolean
-
-Optional. Whether this purchase option will be available in legacy PBL flows that do not support one-time products model.
-
-Up to one "buy" purchase option can be marked as backwards compatible.
-
-multiQuantityEnabled	
-boolean
-
-Optional. Whether this purchase option allows multi-quantity. Multi-quantity allows buyer to purchase more than one item in a single checkout.
-
-OneTimeProductRentPurchaseOption
-A purchase option that can be rented.
-
-JSON representation
-
-{
-  "rentalPeriod": string,
-  "expirationPeriod": string
-}
-Fields
-rentalPeriod	
-string
-
-Required. The amount of time a user has the entitlement for. Starts at purchase flow completion. Specified in ISO 8601 format.
-
-expirationPeriod	
-string
-
-Optional. The amount of time the user has after starting consuming the entitlement before it is revoked. Specified in ISO 8601 format.
-
-RegionalPricingAndAvailabilityConfig
-Regional pricing and availability configuration for a purchase option.
-
-JSON representation
-
-{
-  "regionCode": string,
-  "price": {
-    object (Money)
-  },
-  "availability": enum (Availability)
-}
-Fields
-regionCode	
-string
-
-Required. Region code this configuration applies to, as defined by ISO 3166-2, e.g., "US".
-
-price	
-object (Money)
-
-The price of the purchase option in the specified region. Must be set in the currency that is linked to the specified region.
-
-availability	
-enum (Availability)
-
-The availability of the purchase option.
-
-Availability
-The availability of the purchase option.
-
-Enums
-AVAILABILITY_UNSPECIFIED	Unspecified availability. Must not be used.
-AVAILABLE	The purchase option is available to users.
-NO_LONGER_AVAILABLE	The purchase option is no longer available to users. This value can only be used if the availability was previously set as AVAILABLE.
-AVAILABLE_IF_RELEASED	The purchase option is initially unavailable, but made available via a released pre-order offer.
-OneTimeProductPurchaseOptionNewRegionsConfig
-Pricing information for any new regions Play may launch in the future.
-
-JSON representation
-
-{
-  "usdPrice": {
-    object (Money)
-  },
-  "eurPrice": {
-    object (Money)
-  },
-  "availability": enum (Availability)
-}
-Fields
-usdPrice	
-object (Money)
-
-Required. Price in USD to use for any new regions Play may launch in.
-
-eurPrice	
-object (Money)
-
-Required. Price in EUR to use for any new regions Play may launch in.
-
-availability	
-enum (Availability)
-
-Required. The regional availability for the new regions config. When set to AVAILABLE, the pricing information will be used for any new regions Play may launch in the future.
-
-Availability
-The availability of the new regions config.
-
-Enums
-AVAILABILITY_UNSPECIFIED	Unspecified availability. Must not be used.
-AVAILABLE	The config will be used for any new regions Play may launch in the future.
-NO_LONGER_AVAILABLE	The config is not available anymore and will not be used for any new regions Play may launch in the future. This value can only be used if the availability was previously set as AVAILABLE.
-PurchaseOptionTaxAndComplianceSettings
-Details about taxation, Google Play policy and legal compliance for one-time product purchase options.
-
-JSON representation
-
-{
-  "withdrawalRightType": enum (WithdrawalRightType)
-}
-Fields
-withdrawalRightType	
-enum (WithdrawalRightType)
-
-Optional. Digital content or service classification for products distributed to users in eligible regions.
-
-If unset, it defaults to WITHDRAWAL_RIGHT_DIGITAL_CONTENT.
-
-Refer to the Help Center article for more information.
-
-Methods
-batchDelete
-Deletes one or more one-time products.
-batchGet
-Reads one or more one-time products.
-batchUpdate
-Creates or updates one or more one-time products.
-delete
-Deletes a one-time product.
-get
-Reads a single one-time product.
-list
-Lists all one-time products under a given app.
-patch
-Creates or updates a one-time product.
+9-19 07:53:20.918 32107 32107 E AndroidRuntime: java.lang.RuntimeException: Unable to instantiate receiver com.habittracker.habitv8.HabitTimelineWidgetProvider
+09-19 07:53:20.918 32107 32107 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.habittracker.habitv8.HabitTimelineWidgetProvider" on path: DexPathList[[zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/base.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.arm64_v8a.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.en.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.es.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.xxhdpi.apk"],nativeLibraryDirectories=[/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/lib/arm64, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/base.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.arm64_v8a.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.en.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.es.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.xxhdpi.apk!/lib/arm64-v8a, /system/lib64, /system_ext/lib64]]
+09-19 07:53:20.918 32107 32107 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.arm64_v8a.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:53:20.919 32107 32107 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.en.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:53:20.919 32107 32107 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.es.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:53:20.922 32107 32107 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.xxhdpi.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:53:29.345 32592 32592 E AndroidRuntime: Process: com.habittracker.habitv8, PID: 32592
+09-19 07:53:29.345 32592 32592 E AndroidRuntime: java.lang.RuntimeException: Unable to instantiate receiver com.habittracker.habitv8.HabitTimelineWidgetProvider
+09-19 07:53:29.345 32592 32592 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.habittracker.habitv8.HabitTimelineWidgetProvider" on path: DexPathList[[zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/base.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.arm64_v8a.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.en.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.es.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.xxhdpi.apk"],nativeLibraryDirectories=[/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/lib/arm64, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/base.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.arm64_v8a.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.en.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.es.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.xxhdpi.apk!/lib/arm64-v8a, /system/lib64, /system_ext/lib64]]
+09-19 07:53:29.345 32592 32592 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.arm64_v8a.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:53:29.346 32592 32592 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.en.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:53:29.346 32592 32592 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.es.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:53:29.346 32592 32592 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.xxhdpi.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:57:38.888   693   693 E AndroidRuntime: Process: com.habittracker.habitv8, PID: 693
+09-19 07:57:38.888   693   693 E AndroidRuntime: java.lang.RuntimeException: Unable to instantiate receiver com.habittracker.habitv8.HabitCompactWidgetProvider
+09-19 07:57:38.888   693   693 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.habittracker.habitv8.HabitCompactWidgetProvider" on path: DexPathList[[zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/base.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.arm64_v8a.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.en.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.es.apk", zip file "/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.xxhdpi.apk"],nativeLibraryDirectories=[/data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/lib/arm64, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/base.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.arm64_v8a.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.en.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.es.apk!/lib/arm64-v8a, /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.xxhdpi.apk!/lib/arm64-v8a, /system/lib64, /system_ext/lib64]]
+09-19 07:57:38.888   693   693 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.arm64_v8a.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:57:38.889   693   693 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.en.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:57:38.889   693   693 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.es.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 07:57:38.889   693   693 E AndroidRuntime:        Suppressed: java.io.IOException: Failed to open dex files from /data/app/~~LLRHvEScPsGNnmpqZ8-_hw==/com.habittracker.habitv8-Ltc3j_ad9vkgGd9-ABCSfg==/split_config.xxhdpi.apk because: Failed to find entry 'classes.dex': Entry not found
+09-19 12:59:25.964  4955  4955 E AndroidRuntime: Process: com.habittracker.habitv8.debug, PID: 4955
+09-19 12:59:25.964  4955  4955 E AndroidRuntime: java.lang.RuntimeException: Unable to instantiate receiver com.habittracker.habitv8.HabitTimelineWidgetProvider
+09-19 12:59:25.964  4955  4955 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.habittracker.habitv8.HabitTimelineWidgetProvider" on path: DexPathList[[zip file "/data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/base.apk"],nativeLibraryDirectories=[/data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/lib/arm64, /data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/base.apk!/lib/arm64-v8a, /system/lib64, /system_ext/lib64]]
+09-19 12:59:36.439  6123  6123 E AndroidRuntime: Process: com.habittracker.habitv8.debug, PID: 6123
+09-19 12:59:36.439  6123  6123 E AndroidRuntime: java.lang.RuntimeException: Unable to instantiate receiver com.habittracker.habitv8.HabitTimelineWidgetProvider
+09-19 12:59:36.439  6123  6123 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.habittracker.habitv8.HabitTimelineWidgetProvider" on path: DexPathList[[zip file "/data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/base.apk"],nativeLibraryDirectories=[/data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/lib/arm64, /data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/base.apk!/lib/arm64-v8a, /system/lib64, /system_ext/lib64]]
+09-19 13:02:28.993  6218  6218 E AndroidRuntime: Process: com.habittracker.habitv8.debug, PID: 6218
+09-19 13:02:28.993  6218  6218 E AndroidRuntime: java.lang.RuntimeException: Unable to instantiate receiver com.habittracker.habitv8.HabitCompactWidgetProvider
+09-19 13:02:28.993  6218  6218 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.habittracker.habitv8.HabitCompactWidgetProvider" on path: DexPathList[[zip file "/data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/base.apk"],nativeLibraryDirectories=[/data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/lib/arm64, /data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/base.apk!/lib/arm64-v8a, /system/lib64, /system_ext/lib64]]
+09-19 13:02:46.892  6719  6719 E AndroidRuntime: Process: com.habittracker.habitv8.debug, PID: 6719
+09-19 13:02:46.892  6719  6719 E AndroidRuntime: java.lang.RuntimeException: Unable to instantiate receiver com.habittracker.habitv8.HabitCompactWidgetProvider
+09-19 13:02:46.892  6719  6719 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.habittracker.habitv8.HabitCompactWidgetProvider" on path: DexPathList[[zip file "/data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/base.apk"],nativeLibraryDirectories=[/data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/lib/arm64, /data/app/~~1xeDFBq6VTg9F2rkox_fWQ==/com.habittracker.habitv8.debug-3Y0w8J-8H4L7o8q2gSNnqQ==/base.apk!/lib/arm64-v8a, /system/lib64, /system_ext/lib64]]
+09-19 13:05:21.546  7425  7425 E AndroidRuntime: Process: com.habittracker.habitv8.debug, PID: 7425
+09-19 13:05:21.546  7425  7425 E AndroidRuntime: java.lang.RuntimeException: Unable to instantiate receiver com.habittracker.habitv8.HabitCompactWidgetProvider
+09-19 13:05:21.546  7425  7425 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.habittracker.habitv8.HabitCompactWidgetProvider" on path: DexPathList[[zip file "/data/app/~~yVzOAcQZsbiOmiKztLR71A==/com.habittracker.habitv8.debug-DfUvFbx_9-XuDprDiGLXrA==/base.apk"],nativeLibraryDirectories=[/data/app/~~yVzOAcQZsbiOmiKztLR71A==/com.habittracker.habitv8.debug-DfUvFbx_9-XuDprDiGLXrA==/lib/arm64, /data/app/~~yVzOAcQZsbiOmiKztLR71A==/com.habittracker.habitv8.debug-DfUvFbx_9-XuDprDiGLXrA==/base.apk!/lib/arm64-v8a, /system/lib64, /system_ext/lib64]]
+09-19 13:05:57.383  7629  7629 E AndroidRuntime: Process: com.habittracker.habitv8.debug, PID: 7629
+09-19 13:05:57.383  7629  7629 E AndroidRuntime: java.lang.RuntimeException: Unable to instantiate receiver com.habittracker.habitv8.HabitCompactWidgetProvider
+09-19 13:05:57.383  7629  7629 E AndroidRuntime: Caused by: java.lang.ClassNotFoundException: Didn't find class "com.habittracker.habitv8.HabitCompactWidgetProvider" on path: DexPathList[[zip file "/data/app/~~yVzOAcQZsbiOmiKztLR71A==/com.habittracker.habitv8.debug-DfUvFbx_9-XuDprDiGLXrA==/base.apk"],nativeLibraryDirectories=[/data/app/~~yVzOAcQZsbiOmiKztLR71A==/com.habittracker.habitv8.debug-DfUvFbx_9-XuDprDiGLXrA==/lib/arm64, /data/app/~~yVzOAcQZsbiOmiKztLR71A==/com.habittracker.habitv8.debug-DfUvFbx_9-XuDprDiGLXrA==/base.apk!/lib/arm64-v8a, /system/lib64, /system_ext/lib64]]
+09-19 13:59:24.963  1733  1888 I ActivityManager: Force stopping com.habittracker.habitv8 appid=10519 user=-1: deletePackageX
+09-19 13:59:24.964  1733  1963 I AppsFilter: interaction: PackageSetting{c7698cb com.google.android.microdroid.empty_payload/10294} -> PackageSetting{8c81d84 com.habittracker.habitv8/10519} BLOCKED
+09-19 13:59:24.964  1733  1963 I AppsFilter: interaction: PackageSetting{dae848a com.example.health_dashboard/10484} -> PackageSetting{8c81d84 com.habittracker.habitv8/10519} BLOCKED
+09-19 13:59:24.966  1733  1888 I ActivityManager: Killing 20984:com.habittracker.habitv8/u0a519 (adj 0): stop com.habittracker.habitv8 due to deletePackageX
+09-19 13:59:24.974  1733  1888 W ActivityTaskManager: Force removing ActivityRecord{199804931 u0 com.habittracker.habitv8/.MainActivity t2235 f}}: app died, no saved state
+09-19 13:59:24.975  1733  2349 W UsageStatsService: Unexpected activity event reported! (com.habittracker.habitv8/com.habittracker.habitv8.MainActivity event : 23 instanceId : 109964729)
+09-19 13:59:25.069  1733  2600 D BackgroundInstallControlService: handlePackageRemove: removing com.habittracker.habitv8 from 0
+09-19 13:59:25.086  1733  1963 I ActivityManager: Force stopping com.habittracker.habitv8 appid=10519 user=0: pkg removed
+09-19 13:59:25.113  1733  2392 V StorageManagerService: Package com.habittracker.habitv8 does not have legacy storage
+09-19 13:59:25.160  1733  2597 D ShortcutService: removing package: com.habittracker.habitv8 userId=0
+09-19 13:59:25.183  1733  2355 I RollbackManager: broadcast=ACTION_PACKAGE_FULLY_REMOVED pkg=com.habittracker.habitv8
+09-19 13:59:25.284  1733  1733 I Telecom : CarModeTracker: Package com.habittracker.habitv8 is not tracked.: SSH.oR@fm0
+09-19 13:59:25.581  1733  2967 V ActivityManager: Got obituary of 20984:com.habittracker.habitv8
+09-19 13:59:25.759  1733  1733 I ConditionProviders: Disallowing condition provider com.habittracker.habitv8 (userSet: true)
+09-19 13:59:26.232  1733  1886 D LauncherAppsService: onPackageRemoved: Skipping - appId not allowed for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 13:59:26.232  1733  1886 D LauncherAppsService: onPackageRemoved: triggering onPackageRemoved for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 13:59:26.233  1733  1886 D LauncherAppsService: onPackageRemoved: triggering onPackageRemoved for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 13:59:26.252  1733  1886 D LauncherAppsService: onPackageRemoved: triggering onPackageRemoved for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 13:59:27.850 27742 22003 W PackageParsing: Ignoring duplicate uses-permissions/uses-permissions-sdk-m: android.permission.USE_FULL_SCREEN_INTENT in package: com.habittracker.habitv8 at: Binary XML file line #29
+09-19 13:59:28.947  1733  2319 D InstallDependencyHelper: No missing dependency for com.habittracker.habitv8
+09-19 13:59:29.381  1733  1963 W PackageParsing: Ignoring duplicate uses-permissions/uses-permissions-sdk-m: android.permission.USE_FULL_SCREEN_INTENT in package: com.habittracker.habitv8 at: Binary XML file line #29
+09-19 13:59:30.040  1733  1963 D BackupManagerService: [UserID:0] restoreAtInstall pkg=com.habittracker.habitv8 token=61 restoreSet=0
+09-19 13:59:30.043  1733  1963 I PackageManager: installation completed for package:com.habittracker.habitv8. Final code path: /data/app/~~wxPKszC-do5wLuLkbxQmew==/com.habittracker.habitv8-mBqU8rJjgYPdIWOhz9X9qA==
+09-19 13:59:30.044  1733  1963 I AppsFilter: interaction: PackageSetting{5edfae9 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{1fb2e1 com.habittracker.habitv8/10520} BLOCKED
+09-19 13:59:30.044  1733  1963 I AppsFilter: interaction: PackageSetting{4da2a0f com.example.health_dashboard/10484} -> PackageSetting{1fb2e1 com.habittracker.habitv8/10520} BLOCKED
+09-19 13:59:30.084  1733  1733 D AS.AudioService: received android.intent.action.PACKAGE_ADDED replacing: false archival: false for package com.habittracker.habitv8 with uid 10520
+09-19 13:59:30.089  1733  2597 D ShortcutService: adding package: com.habittracker.habitv8 userId=0
+09-19 13:59:30.160  1733  1733 I AppsFilter: interaction: PackageSetting{6d766b7 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{38cae24 com.habittracker.habitv8/10520} BLOCKED
+09-19 13:59:30.160  1733  1733 I AppsFilter: interaction: PackageSetting{3cd4d8d com.example.health_dashboard/10484} -> PackageSetting{38cae24 com.habittracker.habitv8/10520} BLOCKED
+09-19 13:59:30.165  1733  1886 D LauncherAppsService: onPackageAdded: Skipping - package filtered for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 13:59:30.165  1733  1886 D LauncherAppsService: onPackageAdded: triggering onPackageAdded for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 13:59:30.166  1733  1886 D LauncherAppsService: onPackageAdded: triggering onPackageAdded for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 13:59:30.166  1733  1886 D LauncherAppsService: onPackageAdded: triggering onPackageAdded for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 13:59:30.171  1733  2597 D ShortcutService: changing package: com.habittracker.habitv8 userId=0
+09-19 14:00:08.086  1733  6745 V WindowManager: DesktopModeLaunchParamsModifier: phase= 0 task=null activity=ActivityRecord{175033975 u0 com.habittracker.habitv8/.MainActivity display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 task null, skipping
+09-19 14:00:08.086  1733  6745 V WindowManager: TaskLaunchParamsModifier:phase=0 task=null activity=ActivityRecord{175033975 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100
+09-19 14:00:08.086  1733  6745 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=null activity=ActivityRecord{175033975 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 task null, skipping
+09-19 14:00:08.086  1733  6745 V WindowManager: TaskLaunchParamsModifier:phase=3 task=null activity=ActivityRecord{175033975 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:00:08.089  1733  6745 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{175033975 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 not entering desktop mode, skipping
+09-19 14:00:08.089  1733  6745 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{175033975 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:00:08.092  1733  6745 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 xflg=0x4 cmp=com.habittracker.habitv8/.MainActivity bnds=[598,385][789,598]} with LAUNCH_SINGLE_TOP from uid 10263 (com.google.android.apps.nexuslauncher) (sr=234118602) (BAL_ALLOW_VISIBLE_WINDOW) result code=0
+09-19 14:00:08.092  2720  2770 V WindowManagerShell: Transition requested (#3374): android.os.BinderProxy@badf31f TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2236 effectiveUid=10520 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=419136598 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.os.BinderProxy@21e266c} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{a137435 com.habittracker.habitv8.MainActivity} launchCookies=[android.os.BinderProxy@daed0ca] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@d48a23b, appThread = android.app.IApplicationThread$Stub$Proxy@dfd3d58, debugName = QuickstepLaunch }, displayChange = null, flags = 0, debugId = 3374 }
+09-19 14:00:08.095  1733  1947 I AppsFilter: interaction: PackageSetting{6d766b7 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{6fa4367 com.habittracker.habitv8/10520} BLOCKED
+09-19 14:00:08.095  1733  1947 I AppsFilter: interaction: PackageSetting{3cd4d8d com.example.health_dashboard/10484} -> PackageSetting{6fa4367 com.habittracker.habitv8/10520} BLOCKED
+09-19 14:00:08.113  1733  1889 I ActivityManager: Start proc 22255:com.habittracker.habitv8/u0a520 for next-top-activity {com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}
+09-19 14:00:08.119  1733  1854 V WindowManager: Sent Transition (#3374) createdAt=09-19 14:00:08.085 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2236 effectiveUid=10520 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=419136598 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{c6d486 Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{f0d8147 com.habittracker.habitv8.MainActivity} launchCookies=[android.os.BinderProxy@a0ddd74] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@d18d29d, appThread = android.app.IApplicationThread$Stub$Proxy@62bb312, debugName = QuickstepLaunch }, displayChange = null, flags = 0, debugId = 3374 }
+09-19 14:00:08.120  1733  1854 V WindowManager:         {WCT{RemoteToken{c6d486 Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity}}} m=OPEN f=NONE leash=Surface(name=Task=2236)/@0x5bf06ba sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+09-19 14:00:08.340  1733  6734 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@c2c0c22, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:00:08.925  1733  6745 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2b0e45d, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:00:08.939  1733  3719 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+09-19 14:00:08.969  1733  3719 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1197c64, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:00:08.980  1733  3242 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@5189ecd, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:00:09.154  1733  1963 I AppsFilter: interaction: PackageSetting{6d766b7 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{2368a93 com.habittracker.habitv8/10520} BLOCKED
+09-19 14:00:09.154  1733  1963 I AppsFilter: interaction: PackageSetting{3cd4d8d com.example.health_dashboard/10484} -> PackageSetting{2368a93 com.habittracker.habitv8/10520} BLOCKED
+09-19 14:00:09.163  1733  2597 D ShortcutService: changing package: com.habittracker.habitv8 userId=0
+09-19 14:00:09.236  1733  3242 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b83bff2, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:00:10.612  1733  2340 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1844cf9, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:00:10.613  1733  3621 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@65ed43e, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:00:13.044  1733  3719 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@23a79a1, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:00:13.910  1733  3719 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+09-19 14:00:13.956  1733  3242 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4e6e0e4, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:00:16.795  1733  3242 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b0ca144, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:00:20.912  1733  3621 D CoreBackPreview: startBackNavigation currentTask=Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity}, topRunningActivity=ActivityRecord{175033975 u0 com.habittracker.habitv8/.MainActivity t2236}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b0ca144, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}, currentFocus=Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}
+09-19 14:00:21.406  1733  3621 D CoreBackPreview: startBackNavigation currentTask=Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity}, topRunningActivity=ActivityRecord{175033975 u0 com.habittracker.habitv8/.MainActivity t2236}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b0ca144, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}, currentFocus=Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}
+09-19 14:00:21.462  1733  3621 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{44630286 u0 com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity t-1} display-area-from-source=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 not entering desktop mode, skipping
+09-19 14:00:21.462  1733  3621 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{44630286 u0 com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity t-1} display-area-from-source=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:00:21.463  1733  3621 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{44630286 u0 com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity t-1} display-area-from-source=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 not entering desktop mode, skipping
+09-19 14:00:21.463  1733  3621 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{44630286 u0 com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity t-1} display-area-from-source=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:00:21.467  1733  3621 I ActivityTaskManager: START u0 {act=android.content.pm.action.REQUEST_PERMISSIONS xflg=0x4 pkg=com.google.android.permissioncontroller cmp=com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity (has extras)} with LAUNCH_MULTIPLE from uid 10520 (com.habittracker.habitv8) (rr=175033975) (BAL_ALLOW_VISIBLE_WINDOW) result code=0
+09-19 14:00:21.468  2720  2770 V WindowManagerShell: Transition requested (#3375): android.os.BinderProxy@a7c662e TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2236 effectiveUid=10520 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=2 lastActiveTime=419149973 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.os.BinderProxy@21e266c} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 0 - 0, 0) topActivityInfo=ActivityInfo{3adb5cf com.android.permissioncontroller.permission.ui.GrantPermissionsActivity} launchCookies=[android.os.BinderProxy@daed0ca] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=true isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 3375 }
+09-19 14:00:21.530  1733  1854 V WindowManager: Sent Transition (#3375) createdAt=09-19 14:00:21.462 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2236 effectiveUid=10520 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=2 lastActiveTime=419149973 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{c6d486 Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 0 - 0, 0) topActivityInfo=ActivityInfo{270bd9c com.android.permissioncontroller.permission.ui.GrantPermissionsActivity} launchCookies=[android.os.BinderProxy@a0ddd74] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=true isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 3375 }
+09-19 14:00:22.468  1733  2340 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+09-19 14:00:23.116  1733  6734 D CoreBackPreview: Window{75b6c u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@dc6f639, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:00:23.741  1733  1854 V WindowManager:         {WCT{RemoteToken{c6d486 Task{b205ae4 #2236 type=standard I=com.habittracker.habitv8/.MainActivity}}} m=TO_BACK f=NONE leash=Surface(name=Task=2236)/@0x5bf06ba sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+09-19 14:00:30.741  1733  6734 I AppWidgetServiceImpl: Bound widget 24 to provider ProviderId{user:0, app:10520, cmp:ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.HabitCompactWidgetProvider}}
+09-19 14:00:30.769  1733  2579 D AppWidgetServiceImpl: Trying to notify widget update for package com.habittracker.habitv8 with widget id: 24
+09-19 14:00:42.407  1733  2350 W JobServiceContext: Sending onNetworkChanged for a job that isn't started. JobStatus{47967ab #u0a520/-325376341 com.habittracker.habitv8/com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService u=0 s=10520 TIME=-791ms:none NET READY}
+09-19 14:00:43.780  1733  1888 I ActivityManager: Force stopping com.habittracker.habitv8 appid=10520 user=0: deletePackageX
+09-19 14:00:43.785  1733  1963 I AppsFilter: interaction: PackageSetting{c7698cb com.google.android.microdroid.empty_payload/10294} -> PackageSetting{65db377 com.habittracker.habitv8/10520} BLOCKED
+09-19 14:00:43.786  1733  1963 I AppsFilter: interaction: PackageSetting{dae848a com.example.health_dashboard/10484} -> PackageSetting{65db377 com.habittracker.habitv8/10520} BLOCKED
+09-19 14:00:43.811  1733  1888 I ActivityManager: Killing 22255:com.habittracker.habitv8/u0a520 (adj 700): stop com.habittracker.habitv8 due to deletePackageX
+09-19 14:00:43.836  1733  1888 W ActivityTaskManager: Force removing ActivityRecord{175033975 u0 com.habittracker.habitv8/.MainActivity t2236 f}}: app died, no saved state
+09-19 14:00:43.852  1733  2349 W UsageStatsService: Unexpected activity event reported! (com.habittracker.habitv8/com.habittracker.habitv8.MainActivity event : 23 instanceId : 147872589)
+09-19 14:00:43.901  1733  2600 D BackgroundInstallControlService: handlePackageRemove: removing com.habittracker.habitv8 from 0
+09-19 14:00:43.917  1733  1963 I ActivityManager: Force stopping com.habittracker.habitv8 appid=10520 user=0: pkg removed
+09-19 14:00:43.942  1733  2392 V StorageManagerService: Package com.habittracker.habitv8 does not have legacy storage
+09-19 14:00:43.942  1733  6744 V ActivityManager: Got obituary of 22255:com.habittracker.habitv8
+09-19 14:00:43.957  1733  2597 D ShortcutService: removing package: com.habittracker.habitv8 userId=0
+09-19 14:00:43.984  1733  2355 I RollbackManager: broadcast=ACTION_PACKAGE_FULLY_REMOVED pkg=com.habittracker.habitv8
+09-19 14:00:44.027  1733  1733 I Telecom : CarModeTracker: Package com.habittracker.habitv8 is not tracked.: SSH.oR@fos
+09-19 14:00:44.043  1733  1733 I ConditionProviders: Disallowing condition provider com.habittracker.habitv8 (userSet: true)
+09-19 14:00:44.468  1733  1886 D LauncherAppsService: onPackageRemoved: Skipping - appId not allowed for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 14:00:44.468  1733  1886 D LauncherAppsService: onPackageRemoved: triggering onPackageRemoved for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 14:00:44.469  1733  1886 D LauncherAppsService: onPackageRemoved: triggering onPackageRemoved for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 14:00:44.469  1733  1886 D LauncherAppsService: onPackageRemoved: triggering onPackageRemoved for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 14:01:13.702  1733  3219 W ActivityManager: Invalid packageName: com.habittracker.habitv8.debug
+09-19 14:01:20.409 27742 22461 W PackageParsing: Ignoring duplicate uses-permissions/uses-permissions-sdk-m: android.permission.USE_FULL_SCREEN_INTENT in package: com.habittracker.habitv8.debug at: Binary XML file line #41
+09-19 14:01:22.640  1733  2319 D InstallDependencyHelper: No missing dependency for com.habittracker.habitv8.debug
+09-19 14:01:23.324  1733  1963 W PackageParsing: Ignoring duplicate uses-permissions/uses-permissions-sdk-m: android.permission.USE_FULL_SCREEN_INTENT in package: com.habittracker.habitv8.debug at: Binary XML file line #41
+09-19 14:01:23.455  1733  1963 D BackupManagerService: [UserID:0] restoreAtInstall pkg=com.habittracker.habitv8.debug token=62 restoreSet=0
+09-19 14:01:23.460  1733  1963 I PackageManager: installation completed for package:com.habittracker.habitv8.debug. Final code path: /data/app/~~-NH1A_aUeno6GFxiS_e_9Q==/com.habittracker.habitv8.debug-MDAl_xNc5saj0TnJQ6e1JA==
+09-19 14:01:23.461  1733  1963 I AppsFilter: interaction: PackageSetting{6d766b7 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{cdde6d7 com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:01:23.461  1733  1963 I AppsFilter: interaction: PackageSetting{3cd4d8d com.example.health_dashboard/10484} -> PackageSetting{cdde6d7 com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:01:23.477  1733  2597 D ShortcutService: adding package: com.habittracker.habitv8.debug userId=0
+09-19 14:01:23.583  1733  1733 D AS.AudioService: received android.intent.action.PACKAGE_ADDED replacing: false archival: false for package com.habittracker.habitv8.debug with uid 10521
+09-19 14:01:23.635  1733  1733 I AppsFilter: interaction: PackageSetting{8719e22 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{6dae0b3 com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:01:23.635  1733  1733 I AppsFilter: interaction: PackageSetting{91a6670 com.example.health_dashboard/10484} -> PackageSetting{6dae0b3 com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:01:23.646  1733  2597 D ShortcutService: changing package: com.habittracker.habitv8.debug userId=0
+09-19 14:01:23.826  1733  2758 V WindowManager: DesktopModeLaunchParamsModifier: phase= 0 task=null activity=ActivityRecord{33592958 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 task null, skipping
+09-19 14:01:23.826  1733  2758 V WindowManager: TaskLaunchParamsModifier:phase=0 task=null activity=ActivityRecord{33592958 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t-1} display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100
+09-19 14:01:23.827  1733  2758 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=null activity=ActivityRecord{33592958 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t-1} display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 task null, skipping
+09-19 14:01:23.827  1733  2758 V WindowManager: TaskLaunchParamsModifier:phase=3 task=null activity=ActivityRecord{33592958 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t-1} display-area-from-current-params=null display-area-from-default-fallback=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:01:23.829  1733  2758 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{b8ea7df #2238 type=standard I=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} activity=ActivityRecord{33592958 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t-1} display-from-task=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 not entering desktop mode, skipping
+09-19 14:01:23.829  1733  2758 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{b8ea7df #2238 type=standard I=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} activity=ActivityRecord{33592958 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t-1} display-from-task=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 inherit-from-task=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:01:23.831  1733  2758 I AppsFilter: interaction: PackageSetting{8719e22 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{b7916f5 com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:01:23.831  1733  2758 I AppsFilter: interaction: PackageSetting{91a6670 com.example.health_dashboard/10484} -> PackageSetting{b7916f5 com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:01:23.831  1733  2758 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x30000000 xflg=0x4 cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity (has extras)} with LAUNCH_SINGLE_TOP from uid 2000 (com.android.shell) (BAL_ALLOW_PERMISSION) result code=0
+09-19 14:01:23.832  2720  2770 V WindowManagerShell: Transition requested (#3381): android.os.BinderProxy@47b97c TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2238 effectiveUid=10521 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x30000000 cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=419212337 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.os.BinderProxy@af5f205} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{f53c25a com.habittracker.habitv8.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=true locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 3381 }
+09-19 14:01:23.847  1733  1889 I ActivityManager: Start proc 22672:com.habittracker.habitv8.debug/u0a521 for top-activity {com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}
+09-19 14:01:23.900  1733  1886 D LauncherAppsService: onPackageAdded: Skipping - package filtered for user=UserHandle{0}, packageName=com.habittracker.habitv8.debug
+09-19 14:01:23.900  1733  1886 D LauncherAppsService: onPackageAdded: triggering onPackageAdded for user=UserHandle{0}, packageName=com.habittracker.habitv8.debug
+09-19 14:01:23.900  1733  1886 D LauncherAppsService: onPackageAdded: triggering onPackageAdded for user=UserHandle{0}, packageName=com.habittracker.habitv8.debug
+09-19 14:01:23.900  1733  1886 D LauncherAppsService: onPackageAdded: triggering onPackageAdded for user=UserHandle{0}, packageName=com.habittracker.habitv8.debug
+09-19 14:01:24.697  1733  1859 W ActivityTaskManager: Activity top resumed state loss timeout for ActivityRecord{33592958 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t2238}
+09-19 14:01:24.697  1733  1859 W ActivityTaskManager: Activity pause timeout for ActivityRecord{33592958 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t2238}
+09-19 14:01:25.156  1733  1963 I AppsFilter: interaction: PackageSetting{8719e22 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{7dc8c7f com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:01:25.156  1733  1963 I AppsFilter: interaction: PackageSetting{91a6670 com.example.health_dashboard/10484} -> PackageSetting{7dc8c7f com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:01:25.160  1733  2597 D ShortcutService: changing package: com.habittracker.habitv8.debug userId=0
+09-19 14:01:26.430  1733  2758 D CoreBackPreview: Window{3632893 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@fd26e72, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:01:26.507  1733  1854 V WindowManager: Sent Transition (#3381) createdAt=09-19 14:01:23.826 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2238 effectiveUid=10521 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x30000000 cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=419212337 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{d90f81f Task{b8ea7df #2238 type=standard I=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{94d476c com.habittracker.habitv8.MainActivity} launchCookies=[] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=true locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 3381 }
+09-19 14:02:24.868  1733  2350 W JobServiceContext: Sending onNetworkChanged for a job that isn't started. JobStatus{68b5bdf #u0a521/-530896672 com.habittracker.habitv8.debug/com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService u=0 s=10521 TIME=-17s480ms:none NET READY}
+09-19 14:02:52.903  1733  2758 D CoreBackPreview: Window{3632893 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@abfb208, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:02:52.927  1733  1854 V WindowManager:         {WCT{RemoteToken{d90f81f Task{b8ea7df #2238 type=standard I=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}}} m=TO_FRONT f=NONE p=WCT{RemoteToken{f9de2ec DefaultTaskDisplayArea@252233100}} leash=Surface(name=Task=2238)/@0x5afad9e sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+09-19 14:02:53.093  1733  2340 D CoreBackPreview: Window{3632893 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@316eb50, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:02:53.372  1733  4977 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+09-19 14:02:53.934 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:53.934 22672 22672 I flutter : │ #1   NotificationService.processPendingActionsManually (package:habitv8/services/notification_service.dart:1228:15)
+09-19 14:02:53.935 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:53.935 22672 22672 I flutter : │ #1   NotificationService.processPendingActionsManually (package:habitv8/services/notification_service.dart:1232:17)
+09-19 14:02:53.936 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:53.936 22672 22672 I flutter : │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:796:17)
+09-19 14:02:53.936 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:53.936 22672 22672 I flutter : │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:803:17)
+09-19 14:02:53.937 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:53.937 22672 22672 I flutter : │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:804:17)
+09-19 14:02:53.940 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:53.940 22672 22672 I flutter : │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:808:17)
+09-19 14:02:53.942 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:53.942 22672 22672 I flutter : │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:815:19)
+09-19 14:02:53.946 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:53.946 22672 22672 I flutter : │ #1   NotificationService._loadActionsFromFile (package:habitv8/services/notification_service.dart:888:17)
+09-19 14:02:53.946 22672 22672 I flutter : │ 🐛 🔍 File: Checking for actions at path: /data/user/0/com.habittracker.habitv8.debug/app_flutter/pending_notification_actions.json
+09-19 14:02:53.948 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:53.948 22672 22672 I flutter : │ #1   NotificationService._loadActionsFromFile (package:habitv8/services/notification_service.dart:891:19)
+09-19 14:02:53.948 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:53.948 22672 22672 I flutter : │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:841:19)
+09-19 14:02:53.948 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:53.948 22672 22672 I flutter : │ #1   AppLifecycleService._processPendingActionsWithRetry.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:205:19)
+09-19 14:02:55.772 24250 24250 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=2238 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+09-19 14:02:55.773 24250 24250 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=2238 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+09-19 14:02:55.817  1733  1854 V WindowManager:         {WCT{RemoteToken{d90f81f Task{b8ea7df #2238 type=standard I=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}}} m=TO_BACK f=NONE leash=Surface(name=Task=2238)/@0x5afad9e sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+09-19 14:02:55.827  1733  6305 I InputDispatcher: Channel [Gesture Monitor] swipe-up is stealing input gesture for device 3 from [3632893 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity, [Gesture Monitor] edge-swipe]
+09-19 14:02:55.827 24250 24250 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=2238 winMode=fullscreen visReq=false vis=false excluded=false baseIntent=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+09-19 14:02:55.827 24250 24250 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=2238 winMode=fullscreen visReq=false vis=false excluded=false baseIntent=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+09-19 14:02:55.861 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:55.861 22672 22672 I flutter : │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:61:15)
+09-19 14:02:55.862 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:55.862 22672 22672 I flutter : │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:80:19)
+09-19 14:02:57.240 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.240 22672 22672 I flutter : │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:61:15)
+09-19 14:02:57.244 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.244 22672 22672 I flutter : │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:83:19)
+09-19 14:02:57.248 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.248 22672 22672 I flutter : │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:61:15)
+09-19 14:02:57.252 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.252 22672 22672 I flutter : │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:71:19)
+09-19 14:02:57.255 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:57.255 22672 22672 I flutter : │ #1   AppLifecycleService._performBackgroundCleanup (package:habitv8/services/app_lifecycle_service.dart:227:17)
+09-19 14:02:57.260 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:57.261 22672 22672 I flutter : │ #1   AppLifecycleService._performBackgroundCleanup (package:habitv8/services/app_lifecycle_service.dart:232:17)
+09-19 14:02:57.270  1733  6785 D CoreBackPreview: Window{3632893 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity}: Setting back callback null
+09-19 14:02:57.307 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.307 22672 22672 I flutter : │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:61:15)
+09-19 14:02:57.313 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.314 22672 22672 I flutter : │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:66:19)
+09-19 14:02:57.328 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.328 22672 22672 I flutter : │ #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:90:15)
+09-19 14:02:57.330 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.330 22672 22672 I flutter : │ #1   BackgroundTaskService.dispose (package:habitv8/services/background_task_service.dart:250:15)
+09-19 14:02:57.334 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.334 22672 22672 I flutter : │ #1   BackgroundTaskService.dispose (package:habitv8/services/background_task_service.dart:271:15)
+09-19 14:02:57.336 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.336 22672 22672 I flutter : │ #1   NotificationQueueProcessor.dispose (package:habitv8/services/notification_queue_processor.dart:139:15)
+09-19 14:02:57.338 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.338 22672 22672 I flutter : │ #1   NotificationQueueProcessor.dispose (package:habitv8/services/notification_queue_processor.dart:158:15)
+09-19 14:02:57.340 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.340 22672 22672 I flutter : │ #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:108:17)
+09-19 14:02:57.345 22672 22672 I flutter : │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+09-19 14:02:57.345 22672 22672 I flutter : │ #1   DatabaseService.closeDatabase (package:habitv8/data/database.dart:364:19)
+09-19 14:02:57.350 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.350 22672 22672 I flutter : │ #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:115:15)
+09-19 14:02:57.352 22672 22672 I flutter : │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
+09-19 14:02:57.352 22672 22672 I flutter : │ #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:117:15)
+09-19 14:02:57.475  1733  1859 I ActivityManager: Killing 22672:com.habittracker.habitv8.debug/u0a521 (adj 905): remove task
+09-19 14:03:00.549 24250 24250 W WellbeingModel: getShortcutForApp [com.habittracker.habitv8.debug]: action: 'Pause app'
+09-19 14:03:02.234 24250 24250 D SecondaryDropTarget: start uninstall activity from drop target com.habittracker.habitv8.debug
+09-19 14:03:03.224  3923  3923 I UninstallerActivity: Uninstalling extras=Bundle[{com.android.packageinstaller.extra.IS_CLONE_APP=false, com.android.packageinstaller.extra.APP_LABEL=HabitV8, com.android.packageinstaller.applicationInfo=ApplicationInfo{e54894f com.habittracker.habitv8.debug}, android.intent.extra.UNINSTALL_ALL_USERS=false, com.android.packageinstaller.extra.UNINSTALL_ID=-2147483634}]
+09-19 14:03:03.227  1733  1888 I ActivityManager: Force stopping com.habittracker.habitv8.debug appid=10521 user=0: deletePackageX
+09-19 14:03:03.228  1733  1963 I AppsFilter: interaction: PackageSetting{c7698cb com.google.android.microdroid.empty_payload/10294} -> PackageSetting{1445f98 com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:03:03.228  1733  1963 I AppsFilter: interaction: PackageSetting{dae848a com.example.health_dashboard/10484} -> PackageSetting{1445f98 com.habittracker.habitv8.debug/10521} BLOCKED
+09-19 14:03:03.349  1733  2600 D BackgroundInstallControlService: handlePackageRemove: removing com.habittracker.habitv8.debug from 0
+09-19 14:03:03.366  3923  3923 I UninstallFinish: Uninstall finished extras=Bundle[{android.content.pm.extra.STATUS=0, com.android.packageinstaller.extra.IS_CLONE_APP=false, android.content.pm.extra.PACKAGE_NAME=com.habittracker.habitv8.debug, com.android.packageinstaller.extra.APP_LABEL=HabitV8, com.android.packageinstaller.applicationInfo=Supplier{VAL_PARCELABLE@556+2368}, android.intent.extra.UNINSTALL_ALL_USERS=false, android.content.pm.extra.LEGACY_STATUS=1, com.android.packageinstaller.extra.UNINSTALL_ID=-2147483634, android.content.pm.extra.STATUS_MESSAGE=DELETE_SUCCEEDED}]
+09-19 14:03:03.366  1733  1963 I ActivityManager: Force stopping com.habittracker.habitv8.debug appid=10521 user=0: pkg removed
+09-19 14:03:03.382  1733  2392 V StorageManagerService: Package com.habittracker.habitv8.debug does not have legacy storage
+09-19 14:03:03.385  1733  2597 D ShortcutService: removing package: com.habittracker.habitv8.debug userId=0
+09-19 14:03:03.387  1733  2543 W WifiService: Couldn't get PackageInfo for package:com.habittracker.habitv8.debug
+09-19 14:03:03.387  1733  2543 D WifiService: Remove settings for package:com.habittracker.habitv8.debug
+09-19 14:03:03.387  1733  2543 D WifiConfigManager: Remove all networks for app ApplicationInfo{b9bbf89 com.habittracker.habitv8.debug}
+09-19 14:03:03.388  2990  2990 D CarrierSvcBindHelper: onPackageRemoved: com.habittracker.habitv8.debug
+09-19 14:03:03.389  2990  3390 I SatelliteAppTracker: onPackageRemoved : com.habittracker.habitv8.debug
+09-19 14:03:03.391  1733  2543 I PasspointManager: No app ops listener found for com.habittracker.habitv8.debug
+09-19 14:03:03.402  1733  2355 I RollbackManager: broadcast=ACTION_PACKAGE_FULLY_REMOVED pkg=com.habittracker.habitv8.debug
+09-19 14:03:03.406  1733  2543 W WifiService: Couldn't get PackageInfo for package:com.habittracker.habitv8.debug
+09-19 14:03:03.406  1733  2543 D WifiService: Remove settings for package:com.habittracker.habitv8.debug
+09-19 14:03:03.406  1733  2543 D WifiConfigManager: Remove all networks for app ApplicationInfo{f278620 com.habittracker.habitv8.debug}
+09-19 14:03:03.406  1733  2543 I PasspointManager: No app ops listener found for com.habittracker.habitv8.debug
+09-19 14:03:03.407  2943  2943 D NfcRegisteredServicesCache: onReceive: action=android.intent.action.PACKAGE_REMOVED, pkg=com.habittracker.habitv8.debug
+09-19 14:03:03.467  1733  1733 I Telecom : CarModeTracker: Package com.habittracker.habitv8.debug is not tracked.: SSH.oR@frY
+09-19 14:03:03.479 27742 27742 I Finsky  : [2] AIM: AppInfoCacheUpdater -> invalidating apps: [com.habittracker.habitv8.debug]
+09-19 14:03:03.484 27742 27792 I Finsky  : [519] AIM: AppInfoManager-Perf > OnDeviceAppInfo > cacheHitCount=0, cacheMissCount=1. Missed  in cache (limit 10) : [com.habittracker.habitv8.debug]
+09-19 14:03:03.494 27742 27829 W ziparchive: Unable to open '/data/app/~~-NH1A_aUeno6GFxiS_e_9Q==/com.habittracker.habitv8.debug-MDAl_xNc5saj0TnJQ6e1JA==/base.apk': No such file or directory
+09-19 14:03:03.494 27742 27829 E android.vending: Failed to open APK '/data/app/~~-NH1A_aUeno6GFxiS_e_9Q==/com.habittracker.habitv8.debug-MDAl_xNc5saj0TnJQ6e1JA==/base.apk': I/O error
+09-19 14:03:03.544 27742 27829 W ResourcesManager: failed to preload asset path '/data/app/~~-NH1A_aUeno6GFxiS_e_9Q==/com.habittracker.habitv8.debug-MDAl_xNc5saj0TnJQ6e1JA==/base.apk'
+09-19 14:03:03.544 27742 27829 W ResourcesManager: java.io.IOException: Failed to load asset path /data/app/~~-NH1A_aUeno6GFxiS_e_9Q==/com.habittracker.habitv8.debug-MDAl_xNc5saj0TnJQ6e1JA==/base.apk
+09-19 14:03:03.545 27742 27829 W ziparchive: Unable to open '/data/app/~~-NH1A_aUeno6GFxiS_e_9Q==/com.habittracker.habitv8.debug-MDAl_xNc5saj0TnJQ6e1JA==/base.apk': No such file or directory
+09-19 14:03:03.545 27742 27829 E android.vending: Failed to open APK '/data/app/~~-NH1A_aUeno6GFxiS_e_9Q==/com.habittracker.habitv8.debug-MDAl_xNc5saj0TnJQ6e1JA==/base.apk': I/O error
+09-19 14:03:03.545 27742 27829 E ResourcesManager: failed to add asset path '/data/app/~~-NH1A_aUeno6GFxiS_e_9Q==/com.habittracker.habitv8.debug-MDAl_xNc5saj0TnJQ6e1JA==/base.apk'
+09-19 14:03:03.545 27742 27829 E ResourcesManager: java.io.IOException: Failed to load asset path /data/app/~~-NH1A_aUeno6GFxiS_e_9Q==/com.habittracker.habitv8.debug-MDAl_xNc5saj0TnJQ6e1JA==/base.apk
+09-19 14:03:03.546 27742 27829 W PackageManager: Failure retrieving resources for com.habittracker.habitv8.debug
+09-19 14:03:03.566 27742 27805 I Finsky  : [523] AIM: AppInfoManager-Perf > OnDeviceAppInfo > cacheHitCount=0, cacheMissCount=1. Missed  in cache (limit 10) : [com.habittracker.habitv8.debug]
+09-19 14:03:03.577 27742 23393 I Finsky  : [861] Asset module storage cleared for package com.habittracker.habitv8.debug.
+09-19 14:03:03.586 27742 27742 W Finsky  : [2] STU: Failed to get storage stats for package 'com.habittracker.habitv8.debug' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-19 14:03:03.614  1733  1733 I ConditionProviders: Disallowing condition provider com.habittracker.habitv8.debug (userSet: true)
+09-19 14:03:03.647  4357  4357 E PackageChangedReceiver: com.google.android.libraries.mediahome.providers.video.broadcastreceivers.PackageChangedReceiver.onReceive:58 Error: package com.habittracker.habitv8.debug not found
+09-19 14:03:03.647  4357  4357 E PackageChangedReceiver: android.content.pm.PackageManager$NameNotFoundException: com.habittracker.habitv8.debug
+09-19 14:03:03.651  4357 20740 E PackageAddedReceiver: com.google.android.libraries.mediahome.providers.video.broadcastreceivers.PackageAddedReceiver$1.doInBackground:64 Package not found com.habittracker.habitv8.debug
+09-19 14:03:03.651  4357 20740 E PackageAddedReceiver: android.content.pm.PackageManager$NameNotFoundException: com.habittracker.habitv8.debug
+09-19 14:03:03.678 31651 31651 I Finsky:background: [2] Package no longer installed: com.habittracker.habitv8.debug
+09-19 14:03:03.682  4357  4357 E PackageChangedReceiver: com.google.android.libraries.mediahome.providers.video.broadcastreceivers.PackageChangedReceiver.onReceive:58 Error: package com.habittracker.habitv8.debug not found
+09-19 14:03:03.682  4357  4357 E PackageChangedReceiver: android.content.pm.PackageManager$NameNotFoundException: com.habittracker.habitv8.debug
+09-19 14:03:03.691 31651 31651 I Finsky:background: [2] IQ: onPackageRemoved com.habittracker.habitv8.debug, replacing=false, uninstallingFromPlay=false
+09-19 14:03:03.692 31651 31651 I Finsky:background: [2] Package no longer installed: com.habittracker.habitv8.debug
+09-19 14:03:03.707 31441 23413 I ProximityAuth: [RecentAppsMediator] Package removed: (user=UserHandle{0}) com.habittracker.habitv8.debug
+09-19 14:03:03.713 31651 31651 I Finsky:background: [2] Package no longer installed: com.habittracker.habitv8.debug
+09-19 14:03:03.724  6665 23404 W RWIPackageIntentOps: Registries cleared for package: com.habittracker.habitv8.debug
+09-19 14:03:03.731  5233  6052 D MediaProvider: Deleted 0 Android/media items belonging to com.habittracker.habitv8.debug on /data/user/0/com.google.android.providers.media.module/databases/external.db
+09-19 14:03:03.742  6665 11695 I Icing   : doRemovePackageData com.habittracker.habitv8.debug
+09-19 14:03:03.757  5233  6052 I FuseDaemon: Successfully deleted rows in leveldb for owner_id:  and ownerPackageIdentifier: com.habittracker.habitv8.debug::0
+09-19 14:03:03.759  5233  6052 D MediaGrants: Removed 0 media_grants for 0 user for [com.habittracker.habitv8.debug]. Reason: Package orphaned
+09-19 14:03:03.784  6665 23402 W SQLiteLog: (28) double-quoted string literal: "com.habittracker.habitv8.debug"
+09-19 14:03:03.826  4210 23430 I bgt     : Ignoring deleted package: com.habittracker.habitv8.debug
+09-19 14:03:03.933 27742 27742 I Finsky  : [2] Received an install/uninstall event for package com.habittracker.habitv8.debug
+09-19 14:03:03.964  1733  1886 D LauncherAppsService: onPackageRemoved: Skipping - appId not allowed for user=UserHandle{0}, packageName=com.habittracker.habitv8.debug
+09-19 14:03:03.965  1733  1886 D LauncherAppsService: onPackageRemoved: triggering onPackageRemoved for user=UserHandle{0}, packageName=com.habittracker.habitv8.debug
+09-19 14:03:03.965  1733  1886 D LauncherAppsService: onPackageRemoved: triggering onPackageRemoved for user=UserHandle{0}, packageName=com.habittracker.habitv8.debug
+09-19 14:03:03.965  1733  1886 D LauncherAppsService: onPackageRemoved: triggering onPackageRemoved for user=UserHandle{0}, packageName=com.habittracker.habitv8.debug
+09-19 14:03:03.965 24250 24273 D LauncherAppsCallbackImpl: onPackageRemoved triggered for packageName=com.habittracker.habitv8.debug, user=UserHandle{0}
+09-19 14:03:03.966 24250 24273 D PackageUpdatedTask: Package updated: mOp=REMOVE packages=[com.habittracker.habitv8.debug], user=UserHandle{0}
+09-19 14:03:03.970 24250 24273 D PackageUpdatedTask: REMOVE: removing package=com.habittracker.habitv8.debug
+09-19 14:03:03.970 24250 24273 D PackageUpdatedTask: OP_REMOVE: removing packages=[com.habittracker.habitv8.debug]
+09-19 14:03:03.970 24250 24273 D ModelWriter: removing items from db . Reason: [removed because the corresponding package or component is removed. mOp=3 removedPackages=[com.habittracker.habitv8.debug] removedComponents=[]]
+09-19 14:03:04.167  2727  2727 D PersistedStoragePackageUninstalledReceiver: Received android.intent.action.PACKAGE_FULLY_REMOVED for com.habittracker.habitv8.debug for u0
+09-19 14:03:24.463 27742 27742 I Finsky  : [2] VerifyApps: Install-time verification requested for package com.habittracker.habitv8, PackageManager id = 93, Verifier id = 4bd6d1f4-688d-4ceb-bd75-d367477a6c1a
+09-19 14:03:24.516 27742 23399 W PackageParsing: Ignoring duplicate uses-permissions/uses-permissions-sdk-m: android.permission.USE_FULL_SCREEN_INTENT in package: com.habittracker.habitv8 at: Binary XML file line #29
+09-19 14:03:24.788 27742 23399 I Finsky  : [866] VerifyApps: Anti-malware verification task started for package=com.habittracker.habitv8
+09-19 14:03:25.328 27742 27792 I Finsky  : [519] VerifyApps: Starting APK Analysis scan for com.habittracker.habitv8.
+09-19 14:03:25.329 27742 27792 I Finsky  : [519] Scanning package com.habittracker.habitv8 contents with client side protections. File: [bryGMUDXf0qfaEI7k1llrWBckp6jRSGn7-8oKuc7Dpc]
+09-19 14:03:25.330 27742 27792 I Finsky  : [519] VerifyApps: APK Analysis scan finished for com.habittracker.habitv8. Verdict: SAFE
+09-19 14:03:25.473 27742 23475 I Finsky  : [871] VerifyApps: Verification package=com.habittracker.habitv8, id=93, response=0, upload_requested=false, enable_ecm=false
+09-19 14:03:25.481 27742 23475 I Finsky  : [871] VerifyApps: PAM result saving to datastore delayed for package: com.habittracker.habitv8
+09-19 14:03:25.506 27742 27742 I Finsky  : [2] VerifyApps: Install-time verification complete: id=93, package_name=com.habittracker.habitv8
+09-19 14:03:25.511  1733  2319 D InstallDependencyHelper: No missing dependency for com.habittracker.habitv8
+09-19 14:03:25.969  1733  1963 W PackageParsing: Ignoring duplicate uses-permissions/uses-permissions-sdk-m: android.permission.USE_FULL_SCREEN_INTENT in package: com.habittracker.habitv8 at: Binary XML file line #29
+09-19 14:03:26.018  1733  2627 I ArtService: Adjusting the compiler filter for 'com.habittracker.habitv8' from 'speed-profile' to 'verify' because there is no valid profile
+09-19 14:03:26.103 22411 22413 I artd    : GetBestInfo: /data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk has no usable artifacts
+09-19 14:03:26.151 22411 22413 I artd    : Running dex2oat: /apex/com.android.art/bin/art_exec --drop-capabilities --set-task-profile=Dex2OatBootComplete --set-priority=background --keep-fds=6:7:8:9:10:11 -- /apex/com.android.art/bin/dex2oat64 --zip-fd=6 --zip-location=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk --oat-fd=7 --oat-location=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/oat/arm64/base.odex --output-vdex-fd=8 --swap-fd=9 --class-loader-context-fds=10:11 --class-loader-context=PCL[]{PCL[/system_ext/framework/androidx.window.extensions.jar]#PCL[/system_ext/framework/androidx.window.sidecar.jar]} --classpath-dir=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg== --instruction-set=arm64 --instruction-set-features=default --instruction-set-variant=cortex-a55 --compiler-filter=verify --compilation-reason=install --max-image-block-size=524288 --resolve-startup-const-strings=true --generate-mini-debug-info --runtime-arg -Xtarget-sdk-version:36 --runtime-arg -Xhidden-api-policy:enabled --cpu-set=0,1,2,3,4,5,6,7 -j8 --runtime-arg -Xms64m --runtime-arg -Xmx512m --comments=app-name:com.habittracker.habitv8,app-version-name:8.2.9,app-version-code:22,art-version:360729160
+09-19 14:03:26.151 22411 22413 I artd    : Opened FDs: 6:/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk 7:/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/oat/arm64/base.odex.fECqwI.tmp 8:/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/oat/arm64/base.vdex.jq1GVK.tmp 9:/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/oat/arm64/base.odex.swap.RSwK4X.tmp 10:/system_ext/framework/androidx.window.sidecar.jar 11:/system_ext/framework/androidx.window.extensions.jar
+09-19 14:03:26.281 23477 23477 W dex2oat64: /apex/com.android.art/bin/dex2oat64 --zip-fd=6 --zip-location=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk --oat-fd=7 --oat-location=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/oat/arm64/base.odex --output-vdex-fd=8 --swap-fd=9 --class-loader-context-fds=10:11 --class-loader-context=PCL[]{PCL[/system_ext/framework/androidx.window.extensions.jar]#PCL[/system_ext/framework/androidx.window.sidecar.jar]} --classpath-dir=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg== --instruction-set=arm64 --instruction-set-features=default --instruction-set-variant=cortex-a55 --compiler-filter=verify --compilation-reason=install --max-image-block-size=524288 --resolve-startup-const-strings=true --generate-mini-debug-info --runtime-arg -Xtarget-sdk-version:36 --runtime-arg -Xhidden-api-policy:enabled --cpu-set=0,1,2,3,4,5,6,7 -j8 --runtime-arg -Xms64m --runtime-arg -Xmx512m --comments=app-name:com.habittracker.habitv8,app-version-name:8.2.9,app-version-code:22,art-version:360729160
+09-19 14:03:26.282 23477 23477 I dex2oat64: /apex/com.android.art/bin/dex2oat64 --output-vdex-fd=8 --class-loader-context-fds=10:11 --class-loader-context=PCL[]{PCL[/system_ext/framework/androidx.window.extensions.jar]#PCL[/system_ext/framework/androidx.window.sidecar.jar]} --classpath-dir=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg== --compiler-filter=verify --compilation-reason=install --max-image-block-size=524288 --resolve-startup-const-strings=true --generate-mini-debug-info --cpu-set=0,1,2,3,4,5,6,7 -j8 --comments=app-name:com.habittracker.habitv8,app-version-name:8.2.9,app-version-code:22,art-version:360729160
+09-19 14:03:26.692 23477 23480 E dex2oat64: hiddenapi: Accessing hidden method Ljava/lang/ClassLoader;->getDefinedPackage(Ljava/lang/String;)Ljava/lang/Package; (runtime_flags=0, domain=core-platform, api=blocked) from /data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk (domain=app) using linking: denied
+09-19 14:03:26.845  1733  2627 I ArtService: Dexopt result: [packageName = com.habittracker.habitv8] DexContainerFileDexoptResult{dexContainerFile=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk, primaryAbi=true, abi=arm64-v8a, actualCompilerFilter=verify, status=PERFORMED, dex2oatWallTimeMillis=663, dex2oatCpuTimeMillis=1280, sizeBytes=4464332, sizeBeforeBytes=0, extendedStatusFlags=[]}
+09-19 14:03:27.038  5233  7295 D MediaGrants: Removed 0 media_grants for 0 user for [com.habittracker.habitv8]. Reason: Mode changed: android:read_external_storage
+09-19 14:03:27.045  1733  1963 D BackupManagerService: [UserID:0] restoreAtInstall pkg=com.habittracker.habitv8 token=63 restoreSet=0
+09-19 14:03:27.052  1733  1963 I PackageManager: installation completed for package:com.habittracker.habitv8. Final code path: /data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==
+09-19 14:03:27.053  1733  1963 I AppsFilter: interaction: PackageSetting{8719e22 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{a6bc8be com.habittracker.habitv8/10522} BLOCKED
+09-19 14:03:27.053  1733  1963 I AppsFilter: interaction: PackageSetting{91a6670 com.example.health_dashboard/10484} -> PackageSetting{a6bc8be com.habittracker.habitv8/10522} BLOCKED
+09-19 14:03:27.071  1733  2597 D ShortcutService: adding package: com.habittracker.habitv8 userId=0
+09-19 14:03:27.073  2990  2990 D CarrierSvcBindHelper: onPackageAdded: com.habittracker.habitv8
+09-19 14:03:27.075  1733  2606 I SdkSandboxManager: No SDKs used. Skipping SDK data reconcilation for CallingInfo{mUid=10522, mPackageName='com.habittracker.habitv8, mAppProcessToken='null'}
+09-19 14:03:27.082  2990  3390 I SatelliteAppTracker: onPackageAdded : com.habittracker.habitv8
+09-19 14:03:27.069 24250 24273 D SessionCommitReceiver: Removing unneeded PromiseIcon for package: com.habittracker.habitv8, install reason: 0, alreadyAddedPromiseIcon: false
+09-19 14:03:27.100 24250 24355 I WellbeingModel: updateActionsWithRetry(); retryCount: 0, package: com.habittracker.habitv8
+09-19 14:03:27.100 24250 24355 D WellbeingModel: retrieveActions() called with: packageNames = [com.habittracker.habitv8]
+09-19 14:03:27.111  1733  1733 D AS.AudioService: received android.intent.action.PACKAGE_ADDED replacing: false archival: false for package com.habittracker.habitv8 with uid 10522
+09-19 14:03:27.136  1733  1886 D LauncherAppsService: onPackageAdded: Skipping - package filtered for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 14:03:27.137  1733  1886 D LauncherAppsService: onPackageAdded: triggering onPackageAdded for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 14:03:27.137  1733  1886 D LauncherAppsService: onPackageAdded: triggering onPackageAdded for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 14:03:27.137  1733  1886 D LauncherAppsService: onPackageAdded: triggering onPackageAdded for user=UserHandle{0}, packageName=com.habittracker.habitv8
+09-19 14:03:27.153  1417  3145 D NativePermissionController: updatePackagesForUid, UidPackageState{uid: 10522, packageNames: [com.habittracker.habitv8]}
+09-19 14:03:27.174  1733  1733 I AppsFilter: interaction: PackageSetting{807339e com.google.android.microdroid.empty_payload/10294} -> PackageSetting{6ff4e7f com.habittracker.habitv8/10522} BLOCKED
+09-19 14:03:27.174  1733  1733 I AppsFilter: interaction: PackageSetting{9d94e4c com.example.health_dashboard/10484} -> PackageSetting{6ff4e7f com.habittracker.habitv8/10522} BLOCKED
+09-19 14:03:27.197  2990  3390 I SatelliteAppTracker: onPackageModified : com.habittracker.habitv8
+09-19 14:03:27.201  1733  2597 D ShortcutService: changing package: com.habittracker.habitv8 userId=0
+09-19 14:03:27.229  2990  3387 D ImsResolver: maybeAddedImsService, packageName: com.habittracker.habitv8
+09-19 14:03:27.229  2990  3387 V ImsResolver: searchForImsServices: package=com.habittracker.habitv8, users=[UserHandle{0}]
+09-19 14:03:27.234  2727  2727 I SafetyLabelChangedBroadcastReceiver: received broadcast packageName: com.habittracker.habitv8, current user: UserHandle{0}, packageChangeEvent: NEW_INSTALL, intent user: UserHandle{0}
+09-19 14:03:27.234 27742 27742 I Finsky  : [2] AIM: AppInfoCacheUpdater -> invalidating apps: [com.habittracker.habitv8]
+09-19 14:03:27.238  2990  2990 W VvmPkgInstalledRcvr: carrierVvmPkgAdded: carrier vvm packages doesn't contain com.habittracker.habitv8
+09-19 14:03:27.241  2990  3387 V ImsResolver: searchForImsServices: package=com.habittracker.habitv8, users=[UserHandle{0}]
+09-19 14:03:27.243 27742 27829 I Finsky  : [527] AIM: AppInfoManager-Perf > OnDeviceAppInfo > cacheHitCount=0, cacheMissCount=1. Missed  in cache (limit 10) : [com.habittracker.habitv8]
+09-19 14:03:27.257  2990  2990 D CarrierSvcBindHelper: onPackageModified: com.habittracker.habitv8
+09-19 14:03:27.280 31441 23517 I ProximityAuth: [RecentAppsMediator] Package added: (user=UserHandle{0}) com.habittracker.habitv8
+09-19 14:03:27.296 31441 23515 W PackageHelper: Could not get resources package for package "com.habittracker.habitv8". Falling back to app package name.
+09-19 14:03:27.323 24250 24273 D LauncherAppsCallbackImpl: onPackageAdded triggered for packageName=com.habittracker.habitv8, user=UserHandle{0}
+09-19 14:03:27.323  2990  3387 D ImsResolver: maybeAddedImsService, packageName: com.habittracker.habitv8
+09-19 14:03:27.323  2990  3387 V ImsResolver: searchForImsServices: package=com.habittracker.habitv8, users=[UserHandle{0}]
+09-19 14:03:27.323 24250 24273 D PackageUpdatedTask: Package updated: mOp=ADD packages=[com.habittracker.habitv8], user=UserHandle{0}
+09-19 14:03:27.324  2990  3387 V ImsResolver: searchForImsServices: package=com.habittracker.habitv8, users=[UserHandle{0}]
+09-19 14:03:27.327  2990  2990 D SatelliteController: packageStateChanged: package:com.habittracker.habitv8 DefaultSmsPackageName:com.google.android.apps.messaging
+09-19 14:03:27.345 31441 23526 W PackageHelper: Could not get resources package for package "com.habittracker.habitv8". Falling back to app package name.
+09-19 14:03:27.361 24250 24273 D PackageUpdatedTask: Package updated: mOp=UPDATE packages=[com.habittracker.habitv8], user=UserHandle{0}
+09-19 14:03:27.367 31441 23529 W PackageHelper: Could not get resources package for package "com.habittracker.habitv8". Falling back to app package name.
+09-19 14:03:27.391 27742 27805 I Finsky  : [523] A library licensing entry already exists for com.habittracker.habitv8.
+09-19 14:03:27.396 27742 27742 I Finsky  : [2] AIM: AppInfoCacheUpdater -> invalidating apps: [com.habittracker.habitv8]
+09-19 14:03:27.446 27742 27792 I Finsky  : [519] AIM: AppInfoManager-Perf > OnDeviceAppInfo > cacheHitCount=0, cacheMissCount=1. Missed  in cache (limit 10) : [com.habittracker.habitv8]
+09-19 14:03:27.610  4210 23430 I bgt     : Handling installed or updated package: com.habittracker.habitv8
+09-19 14:03:27.610  4210 23430 I bwd     : Attempting to classify package: com.habittracker.habitv8 using model: bll_1
+09-19 14:03:27.618  4210 23430 I bwd     : Skipping package: com.habittracker.habitv8, it was already classified as: NOT_HARMFUL, and rescan was disabled
+09-19 14:03:27.663 27742 27742 I Finsky  : [2] Received an install/uninstall event for package com.habittracker.habitv8
+09-19 14:03:27.894 24250 24355 D WellbeingModel: ....actionId: pause, packages: com.habittracker.habitv8
+09-19 14:03:27.988 27742 27792 I Finsky  : [519] Installer package name of package com.habittracker.habitv8 is
+09-19 14:03:34.156  1733  3219 V WindowManager: DesktopModeLaunchParamsModifier: phase= 0 task=null activity=ActivityRecord{66760398 u0 com.habittracker.habitv8/.MainActivity display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 task null, skipping
+09-19 14:03:34.156  1733  3219 V WindowManager: TaskLaunchParamsModifier:phase=0 task=null activity=ActivityRecord{66760398 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100
+09-19 14:03:34.157  1733  3219 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=null activity=ActivityRecord{66760398 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 task null, skipping
+09-19 14:03:34.157  1733  3219 V WindowManager: TaskLaunchParamsModifier:phase=3 task=null activity=ActivityRecord{66760398 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:03:34.159  1733  3219 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{66760398 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 not entering desktop mode, skipping
+09-19 14:03:34.159  1733  3219 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{66760398 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:03:34.162  1733  3219 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 xflg=0x4 cmp=com.habittracker.habitv8/.MainActivity bnds=[598,385][789,598]} with LAUNCH_SINGLE_TOP from uid 10263 (com.google.android.apps.nexuslauncher) (sr=234118602) (BAL_ALLOW_VISIBLE_WINDOW) result code=0
+09-19 14:03:34.163  2720  2770 V WindowManagerShell: Transition requested (#3386): android.os.BinderProxy@29d475d TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2240 effectiveUid=10522 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=419342668 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.os.BinderProxy@7a3e8d2} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{6264da3 com.habittracker.habitv8.MainActivity} launchCookies=[android.os.BinderProxy@908e8a0] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@b6bfc59, appThread = android.app.IApplicationThread$Stub$Proxy@9b3c01e, debugName = QuickstepLaunch }, displayChange = null, flags = 0, debugId = 3386 }
+09-19 14:03:34.175  1733  3219 I AppsFilter: interaction: PackageSetting{807339e com.google.android.microdroid.empty_payload/10294} -> PackageSetting{c5a50d7 com.habittracker.habitv8/10522} BLOCKED
+09-19 14:03:34.175  1733  3219 I AppsFilter: interaction: PackageSetting{9d94e4c com.example.health_dashboard/10484} -> PackageSetting{c5a50d7 com.habittracker.habitv8/10522} BLOCKED
+09-19 14:03:34.177  1733  1889 I ActivityManager: Start proc 23558:com.habittracker.habitv8/u0a522 for next-top-activity {com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}
+09-19 14:03:34.185 23558 23558 I Zygote  : Process 23558 crated for com.habittracker.habitv8
+09-19 14:03:34.185 23558 23558 I tracker.habitv8: Using CollectorTypeCMC GC.
+09-19 14:03:34.189  1733  1854 V WindowManager: Sent Transition (#3386) createdAt=09-19 14:03:34.156 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2240 effectiveUid=10522 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=419342668 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{333031d Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{d195992 com.habittracker.habitv8.MainActivity} launchCookies=[android.os.BinderProxy@601cf63] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@587a760, appThread = android.app.IApplicationThread$Stub$Proxy@401b419, debugName = QuickstepLaunch }, displayChange = null, flags = 0, debugId = 3386 }
+09-19 14:03:34.189 23558 23558 E tracker.habitv8: Not starting debugger since process cannot load the jdwp agent.
+09-19 14:03:34.191  1733  1854 V WindowManager:         {WCT{RemoteToken{333031d Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity}}} m=OPEN f=NONE leash=Surface(name=Task=2240)/@0x7d6a9e1 sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+09-19 14:03:34.203 23558 23558 D nativeloader: Configuring clns-9 for other apk /data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/lib/arm64:/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.habittracker.habitv8
+09-19 14:03:34.206 23558 23558 V GraphicsEnvironment: com.habittracker.habitv8 is not listed in per-application setting
+09-19 14:03:34.206 23558 23558 V GraphicsEnvironment: com.habittracker.habitv8 is not listed in ANGLE allowlist or settings, returning default
+09-19 14:03:34.223 23558 23576 D vulkan  : searching for layers in '/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/lib/arm64'
+09-19 14:03:34.223 23558 23576 D vulkan  : searching for layers in '/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk!/lib/arm64-v8a'
+09-19 14:03:34.248 23558 23598 D nativeloader: Load /data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk!/lib/arm64-v8a/libflutter.so using class loader ns clns-9 (caller=/data/app/~~_0TXvUM2U1x7_Jpw30jF7g==/com.habittracker.habitv8-ef_7Ez6DvHK2quIsfF-9rg==/base.apk): ok
+09-19 14:03:34.269 23558 23558 W tracker.habitv8: type=1400 audit(0.0:47827): avc:  denied  { read } for  name="max_map_count" dev="proc" ino=19768722 scontext=u:r:untrusted_app:s0:c10,c258,c512,c768 tcontext=u:object_r:proc_max_map_count:s0 tclass=file permissive=0 app=com.habittracker.habitv8
+09-19 14:03:34.395  1733  5436 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@74dc625, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:03:34.432 23558 23558 D WindowLayoutComponentImpl: Register WindowLayoutInfoListener on Context=com.habittracker.habitv8.MainActivity@ce0a906, of which baseContext=android.app.ContextImpl@8be0e90
+09-19 14:03:34.963  1733  1854 I ActivityTaskManager: Displayed com.habittracker.habitv8/.MainActivity for user 0: +812ms
+09-19 14:03:34.983  1733  2387 I ImeTracker: com.habittracker.habitv8:e46cc987: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+09-19 14:03:34.986  1733  3242 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@2358295, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:03:34.991 23558 23558 I ImeTracker: com.habittracker.habitv8:e46cc987: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+09-19 14:03:34.998 10572 10572 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1346 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+09-19 14:03:34.998  1733  3219 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+09-19 14:03:34.999 10572 10572 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():1439 onStartInputView(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+09-19 14:03:35.005 10572 10572 I AndroidIME: AbstractIme.onActivate():96 PasswordIme.onActivate() : EditorInfo = EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+09-19 14:03:35.025 10572 23260 I KeyboardEventHandler: KeyboardEventHandler.handleFieldChangedEvent():457 Handling FieldChangedEvent: fgPkg=com.habittracker.habitv8, fieldType=0, interactionType=FIELD_CHANGE [SD]
+09-19 14:03:35.026  1733  3242 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@b53c44e, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:03:35.041  1733  4977 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ace896f, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:03:35.216  1733  1963 I AppsFilter: interaction: PackageSetting{807339e com.google.android.microdroid.empty_payload/10294} -> PackageSetting{77d3b05 com.habittracker.habitv8/10522} BLOCKED
+09-19 14:03:35.216  1733  1963 I AppsFilter: interaction: PackageSetting{9d94e4c com.example.health_dashboard/10484} -> PackageSetting{77d3b05 com.habittracker.habitv8/10522} BLOCKED
+09-19 14:03:35.225  2990  2990 D CarrierSvcBindHelper: onPackageModified: com.habittracker.habitv8
+09-19 14:03:35.236  2990  3390 I SatelliteAppTracker: onPackageModified : com.habittracker.habitv8
+09-19 14:03:35.239  1733  2597 D ShortcutService: changing package: com.habittracker.habitv8 userId=0
+09-19 14:03:35.260  2990  3387 D ImsResolver: maybeAddedImsService, packageName: com.habittracker.habitv8
+09-19 14:03:35.260  2990  3387 V ImsResolver: searchForImsServices: package=com.habittracker.habitv8, users=[UserHandle{0}]
+09-19 14:03:35.261  2990  3387 V ImsResolver: searchForImsServices: package=com.habittracker.habitv8, users=[UserHandle{0}]
+09-19 14:03:35.265  2990  2990 D SatelliteController: packageStateChanged: package:com.habittracker.habitv8 DefaultSmsPackageName:com.google.android.apps.messaging
+09-19 14:03:35.282  1733  6461 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1d591ca, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:03:35.459 24250 24273 D PackageUpdatedTask: Package updated: mOp=UPDATE packages=[com.habittracker.habitv8], user=UserHandle{0}
+09-19 14:03:36.839  1733  6461 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@ca60bc, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:03:36.839  1733  6461 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d0ca845, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:03:37.793 27742  7965 I Finsky  : [664] com.habittracker.habitv8: Account from first account - [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+09-19 14:03:37.794 27742  7965 I Finsky  : [664] Billing preferred account via installer for com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+09-19 14:03:37.803 27742  7965 I Finsky  : [664] com.habittracker.habitv8: Account from first account - [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+09-19 14:03:37.803 27742  7965 I Finsky  : [664] Billing preferred account via installer for com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+09-19 14:03:37.825 27742  7965 I Finsky  : [664] com.habittracker.habitv8: Account from first account - [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+09-19 14:03:37.825 27742  7965 I Finsky  : [664] Billing preferred account via installer for com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+09-19 14:03:37.827 27742 27754 I Finsky  : [502] com.habittracker.habitv8: Account from first account - [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+09-19 14:03:37.827 27742 27754 I Finsky  : [502] Billing preferred account via installer for com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+09-19 14:03:38.508  1733  6461 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d0ad8d9, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:03:39.283 23558 23558 I ImeTracker: com.habittracker.habitv8:f8925c41: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+09-19 14:03:39.297 10572 10572 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1346 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=null, hintLocales=[]}}, false)
+09-19 14:03:39.300  1733  6462 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+09-19 14:03:39.302 10572 10572 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():1439 onStartInputView(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}}, false)
+09-19 14:03:39.311 10572 10572 I AndroidIME: AbstractIme.onActivate():96 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+09-19 14:03:39.340  1733  5448 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@fe581e4, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:03:39.350 10572 21721 I KeyboardEventHandler: KeyboardEventHandler.handleFieldChangedEvent():457 Handling FieldChangedEvent: fgPkg=com.habittracker.habitv8, fieldType=3.3e+04, interactionType=FIELD_CHANGE [SD]
+09-19 14:03:39.372 23558 23558 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.habittracker.habitv8
+09-19 14:03:39.670 23558 23558 I ImeTracker: com.habittracker.habitv8:f8925c41: onShown
+09-19 14:03:40.107 23558 23670 D ProfileInstaller: Installing profile for com.habittracker.habitv8
+09-19 14:03:43.861 23558 23558 I ImeTracker: com.habittracker.habitv8:1684e122: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+09-19 14:03:43.862  1733  6744 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@546a205, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:03:46.822  1733  3242 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{218964870 u0 com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity t-1} display-area-from-source=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 not entering desktop mode, skipping
+09-19 14:03:46.822  1733  3242 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{218964870 u0 com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity t-1} display-area-from-source=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:03:46.822  1733  3242 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{218964870 u0 com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity t-1} display-area-from-source=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 not entering desktop mode, skipping
+09-19 14:03:46.822  1733  3242 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{218964870 u0 com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity t-1} display-area-from-source=DefaultTaskDisplayArea@252233100 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@252233100 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@252233100 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+09-19 14:03:46.826  1733  3242 I ActivityTaskManager: START u0 {act=android.content.pm.action.REQUEST_PERMISSIONS xflg=0x4 pkg=com.google.android.permissioncontroller cmp=com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity (has extras)} with LAUNCH_MULTIPLE from uid 10522 (com.habittracker.habitv8) (rr=66760398) (BAL_ALLOW_VISIBLE_WINDOW) result code=0
+09-19 14:03:46.827  2720  2770 V WindowManagerShell: Transition requested (#3387): android.os.BinderProxy@96c32c TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2240 effectiveUid=10522 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=2 lastActiveTime=419355331 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.os.BinderProxy@7a3e8d2} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 0 - 0, 0) topActivityInfo=ActivityInfo{fb0b1f5 com.android.permissioncontroller.permission.ui.GrantPermissionsActivity} launchCookies=[android.os.BinderProxy@908e8a0] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=true isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 3387 }
+09-19 14:03:46.902  1733  1854 V WindowManager: Sent Transition (#3387) createdAt=09-19 14:03:46.821 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=2240 effectiveUid=10522 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.google.android.permissioncontroller/com.android.permissioncontroller.permission.ui.GrantPermissionsActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=2 lastActiveTime=419355331 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{333031d Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 0 - 0, 0) topActivityInfo=ActivityInfo{5a369f1 com.android.permissioncontroller.permission.ui.GrantPermissionsActivity} launchCookies=[android.os.BinderProxy@601cf63] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=true isVisible=true isVisibleRequested=true isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=true isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = null, displayChange = null, flags = 0, debugId = 3387 }
+09-19 14:03:47.784  2727  2727 I GrantPermissionsViewModel: Logged buttons presented and clicked permissionGroupName=android.permission-group.NOTIFICATIONS uid=10522 selectedPrecision=0 package=com.habittracker.habitv8 presentedButtons=9 clickedButton=1 isPermissionRationaleShown=false sessionId=451964873905071258 targetSdk=36
+09-19 14:03:47.789  2727  2727 I GrantPermissionsViewModel: Permission grant result requestId=451964873905071258 callingUid=10522 callingPackage=com.habittracker.habitv8 permission=android.permission.POST_NOTIFICATIONS isImplicit=false result=4 isPermissionRationaleShown=falseisPackageRestrictedByEnhancedConfirmation=false
+09-19 14:03:47.817  1733  6744 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
+09-19 14:03:47.834  1733  2387 I ImeTracker: com.habittracker.habitv8:4b6e9ca9: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+09-19 14:03:47.840 10572 10572 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1346 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+09-19 14:03:47.840 23558 23558 I ImeTracker: com.habittracker.habitv8:4b6e9ca9: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+09-19 14:03:47.841  1733  2967 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+09-19 14:03:48.274  1733  5448 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
+09-19 14:03:48.305  1733  5436 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
+09-19 14:03:48.623  1733  5436 W TelephonyPermissions: reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
+09-19 14:03:48.639  1733  3242 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3740788, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:03:52.618  1733  3242 D CoreBackPreview: startBackNavigation currentTask=Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity}, topRunningActivity=ActivityRecord{66760398 u0 com.habittracker.habitv8/.MainActivity t2240}, callbackInfo=OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@3740788, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}, currentFocus=Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}
+09-19 14:03:52.619  1733  3242 D CoreBackPreview: Previous Destination is Activity:ComponentInfo{com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity} Task:Task=1 removedContainer:Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity}, backType=TYPE_RETURN_TO_HOME
+09-19 14:03:52.662  1733  1854 V WindowManager:         {WCT{RemoteToken{333031d Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity}}} m=CHANGE f=FLAG_BACK_GESTURE_ANIMATED leash=Surface(name=Task=2240)/@0x7d6a9e1 sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+09-19 14:03:52.684  1733  1860 D CoreBackPreview: onTransactionReady, opening: [], closing: [Task{133705c #1 type=home}], animating: AnimationTargets{ openTarget= {Task{133705c #1 type=home}} closeTarget= Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity} mSwitchType= 1 mComposed= true mWaitTransition= false}, match: false
+09-19 14:03:52.692  1733  5436 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4a9e9e8, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:03:52.988  1733  6461 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@5417732, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:03:53.862  1733  2387 I ImeTracker: com.habittracker.habitv8:1684e122: setFinished at PHASE_CLIENT_ANIMATION_CANCEL with STATUS_TIMEOUT
+09-19 14:03:55.103  1733  5448 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@1dd2c83, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+09-19 14:04:04.822 24250 24250 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=2240 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+09-19 14:04:04.823 24250 24250 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=2240 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+09-19 14:04:04.872  1733  1854 V WindowManager:         {WCT{RemoteToken{333031d Task{45361ef #2240 type=standard I=com.habittracker.habitv8/.MainActivity}}} m=TO_BACK f=NONE leash=Surface(name=Task=2240)/@0x7d6a9e1 sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+09-19 14:04:04.878 24250 24250 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=2240 winMode=fullscreen visReq=false vis=false excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+09-19 14:04:04.878 24250 24250 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=2240 winMode=fullscreen visReq=false vis=false excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+09-19 14:04:04.878  1733  6461 I InputDispatcher: Channel [Gesture Monitor] swipe-up is stealing input gesture for device 3 from [ab82c97 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity, [Gesture Monitor] edge-swipe]
+09-19 14:04:05.595  1733  6691 D CoreBackPreview: Window{ab82c97 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@6df8067, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+09-19 14:04:12.484 24250 24250 W AppWidgetHostView: Error inflating AppWidget AppWidgetProviderInfo(UserHandle{0}/ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.HabitTimelineWidgetProvider})
+09-19 14:04:12.484 24250 24250 W AppWidgetHostView: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Error inflating class android.widget.ScrollView
+09-19 14:04:12.484 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Error inflating class android.widget.ScrollView
+09-19 14:04:12.484 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Class not allowed to be inflated android.widget.ScrollView
+09-19 14:04:12.633  1733  2350 W JobServiceContext: Sending onNetworkChanged for a job that isn't started. JobStatus{99f6720 #u0a522/-325376341 com.habittracker.habitv8/com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService u=0 s=10522 TIME=-4s810ms:none NET READY}
+09-19 14:04:13.752  1733  6744 I AppWidgetServiceImpl: Bound widget 25 to provider ProviderId{user:0, app:10522, cmp:ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.HabitCompactWidgetProvider}}
+09-19 14:04:13.781  1733  2579 D AppWidgetServiceImpl: Trying to notify widget update for package com.habittracker.habitv8 with widget id: 25
+09-19 14:04:13.803 24250 24250 W AppWidgetHostView: android.widget.RemoteViews$ActionException: android.view.InflateException: Binary XML file line #15 in com.habittracker.habitv8:layout/widget_compact_habit_item: Binary XML file line #15 in com.habittracker.habitv8:layout/widget_compact_habit_item: Error inflating class android.view.View
+09-19 14:04:13.803 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #15 in com.habittracker.habitv8:layout/widget_compact_habit_item: Binary XML file line #15 in com.habittracker.habitv8:layout/widget_compact_habit_item: Error inflating class android.view.View
+09-19 14:04:13.803 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #15 in com.habittracker.habitv8:layout/widget_compact_habit_item: Error inflating class android.view.View
+09-19 14:04:13.803 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #15 in com.habittracker.habitv8:layout/widget_compact_habit_item: Class not allowed to be inflated android.view.View
+09-19 14:04:14.256 12370 12370 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
+09-19 14:04:14.257 12370 12370 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
+09-19 14:04:14.258 12370 12370 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
+09-19 14:04:14.259 12370 12370 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
+09-19 14:04:14.259 12370 12370 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
+09-19 14:04:14.260 12370 12370 D ActivityThread: Package [com.habittracker.habitv8.debug] reported as REPLACED, but missing application info. Assuming REMOVED.
+09-19 14:04:45.945 11925 15482 W Turbo.AppStandbyBucketManager: java.lang.IllegalArgumentException: Cannot set standby bucket for non existent package (com.habittracker.habitv8.debug)
+09-19 14:04:49.829 24250 24250 D ModelWriter: removing items from db com.habittracker.habitv8. Reason: [removed by accessibility drop]
+09-19 14:04:54.083 24250 24250 W AppWidgetHostView: Error inflating AppWidget AppWidgetProviderInfo(UserHandle{0}/ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.HabitTimelineWidgetProvider})
+09-19 14:04:54.083 24250 24250 W AppWidgetHostView: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Error inflating class android.widget.ScrollView
+09-19 14:04:54.083 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Error inflating class android.widget.ScrollView
+09-19 14:04:54.083 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Class not allowed to be inflated android.widget.ScrollView
+09-19 14:04:55.816  1733  2340 I AppWidgetServiceImpl: Bound widget 26 to provider ProviderId{user:0, app:10522, cmp:ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.HabitTimelineWidgetProvider}}
+09-19 14:04:55.824 24250 24250 W AppWidgetHostView: Error inflating AppWidget AppWidgetProviderInfo(UserHandle{0}/ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.HabitTimelineWidgetProvider})
+09-19 14:04:55.824 24250 24250 W AppWidgetHostView: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Error inflating class android.widget.ScrollView
+09-19 14:04:55.824 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Error inflating class android.widget.ScrollView
+09-19 14:04:55.824 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Class not allowed to be inflated android.widget.ScrollView
+09-19 14:04:55.840  1733  2579 D AppWidgetServiceImpl: Trying to notify widget update for package com.habittracker.habitv8 with widget id: 26
+09-19 14:04:55.850 24250 24250 W AppWidgetHostView: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Error inflating class android.widget.ScrollView
+09-19 14:04:55.850 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Error inflating class android.widget.ScrollView
+09-19 14:04:55.850 24250 24250 W AppWidgetHostView: Caused by: android.view.InflateException: Binary XML file line #159 in com.habittracker.habitv8:layout/widget_timeline: Class not allowed to be inflated android.widget.ScrollView

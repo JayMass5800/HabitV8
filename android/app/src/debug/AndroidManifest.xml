@@ -1,0 +1,219 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"<manifest xmlns:android="http://schemas.android.com/apk/res/android"><manifest xmlns:android="http://schemas.android.com/apk/res/android"><manifest xmlns:android="http://schemas.android.com/apk/res/android"><manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    xmlns:tools="http://schemas.android.com/tools">
+
+
+
+    <!-- The INTERNET permission is required for development. Specifically,
+
+         the Flutter tool needs it to communicate with the running application    <!-- The INTERNET permission is required for development. Specifically,    <!-- The INTERNET permission is required for development. Specifically,
+
+         to allow setting breakpoints, to provide hot reload, etc.
+
+    -->         the Flutter tool needs it to communicate with the running application
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+         to allow setting breakpoints, to provide hot reload, etc.         the Flutter tool needs it to communicate with the running application    <!-- The INTERNET permission is required for development. Specifically,    <!-- The INTERNET permission is required for development. Specifically,
+
+    <application>
+
+        <!-- Debug Widget Providers (using .debug package) -->    -->
+
+        <receiver android:name="com.habittracker.habitv8.debug.HabitTimelineWidgetProvider"
+
+            android:exported="true"    <uses-permission android:name="android.permission.INTERNET"/>         to allow setting breakpoints, to provide hot reload, etc.
+
+            android:label="Habit Timeline Widget">
+
+            <intent-filter>
+
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />    <!-- Removed all health/motion/activity permissions for debug builds -->    -->         the Flutter tool needs it to communicate with the running application         the Flutter tool needs it to communicate with the running application
+
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
+
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+
+            </intent-filter>
+
+            <meta-data android:name="android.appwidget.provider"    <!-- This mask must match the Android Gradle Plugin mask when it generates     <uses-permission android:name="android.permission.INTERNET"/>
+
+                android:resource="@xml/habit_timeline_widget_info" />
+
+        </receiver>         the final manifest.
+
+        
+
+        <receiver android:name="com.habittracker.habitv8.debug.HabitCompactWidgetProvider"    -->             to allow setting breakpoints, to provide hot reload, etc.         to allow setting breakpoints, to provide hot reload, etc.
+
+            android:exported="true"
+
+            android:label="Habit Compact Widget">    <application
+
+            <intent-filter>
+
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />        android:label="HabitV8"    <!-- Removed all health/motion/activity permissions for debug builds -->
+
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+
+                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />        android:name="${applicationName}"
+
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+
+            </intent-filter>        android:icon="@mipmap/ic_launcher">    <!-- Exact alarm permission for precise notifications (Android 12+) -->    -->    -->
+
+            <meta-data android:name="android.appwidget.provider"
+
+                android:resource="@xml/habit_compact_widget_info" />
+
+        </receiver>
+
+    </application>        <activity    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARMS" />
+
+</manifest>
+            android:name=".MainActivity"
+
+            android:exported="true"        <uses-permission android:name="android.permission.INTERNET"/>    <uses-permission android:name="android.permission.INTERNET"/>
+
+            android:launchMode="singleTop"
+
+            android:taskAffinity=""    <application>
+
+            android:theme="@style/LaunchTheme"
+
+            android:windowSoftInputMode="adjustResize">        <!-- Widget Provider for Habit Timeline Widget (Debug) -->        
+
+
+
+            <!-- Specifies an Android theme to apply to this Activity as soon as        <receiver
+
+                 the Android process has started. This theme is visible to the user
+
+                 while the Flutter UI initializes. After that, this theme continues            android:name="com.habittracker.habitv8.debug.HabitTimelineWidgetProvider"    <!-- Removed all health/motion/activity permissions for debug builds -->    <!-- Removed all health/motion/activity permissions for debug builds -->
+
+                 to determine the Window background behind the Flutter UI. -->
+
+            <meta-data            android:exported="true">
+
+              android:name="io.flutter.embedding.android.NormalTheme"
+
+              android:resource="@style/NormalTheme"            <intent-filter>    <!-- Exact alarm permission for precise notifications (Android 12+) -->    <!-- Exact alarm permission for precise notifications (Android 12+) -->
+
+              />
+
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+
+            <intent-filter android:autoVerify="true">
+
+                <action android:name="android.intent.action.MAIN"/>            </intent-filter>    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARMS" />    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARMS" />
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+
+            </intent-filter>            <meta-data
+
+
+
+        </activity>                android:name="android.appwidget.provider"        
+
+
+
+        <!-- Don't delete the meta-data below.                android:resource="@xml/habit_timeline_widget_info" />
+
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+
+        <meta-data        </receiver>    <application>    <application>
+
+            android:name="flutterEmbedding"
+
+            android:value="2" />
+
+
+
+        <!-- Debug widget providers (delegating to main package) -->        <!-- Widget Provider for Habit Compact Widget (Debug) -->        <!-- Widget Provider for Habit Timeline Widget (Debug) -->        <!-- Widget Provider for Habit Timeline Widget (Debug) -->
+
+        <receiver
+
+            android:name="com.habittracker.habitv8.debug.HabitTimelineWidgetProvider"        <receiver
+
+            android:exported="false">
+
+            <intent-filter>            android:name="com.habittracker.habitv8.debug.HabitCompactWidgetProvider"        <receiver        <receiver
+
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+
+            </intent-filter>            android:exported="true">
+
+            <meta-data
+
+                android:name="android.appwidget.provider"            <intent-filter>            android:name=".HabitTimelineWidgetProvider"            android:name="com.habittracker.habitv8.debug.HabitTimelineWidgetProvider"
+
+                android:resource="@xml/habit_timeline_widget_info" />
+
+        </receiver>                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+
+
+
+        <receiver            </intent-filter>            android:exported="true">            android:exported="true">
+
+            android:name="com.habittracker.habitv8.debug.HabitCompactWidgetProvider"
+
+            android:exported="false">            <meta-data
+
+            <intent-filter>
+
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />                android:name="android.appwidget.provider"            <intent-filter>            <intent-filter>
+
+            </intent-filter>
+
+            <meta-data                android:resource="@xml/habit_compact_widget_info" />
+
+                android:name="android.appwidget.provider"
+
+                android:resource="@xml/habit_compact_widget_info" />        </receiver>                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+
+        </receiver>
+
+    </application>
+
+    </application>
+
+</manifest>            </intent-filter>            </intent-filter>
+
+</manifest>
+            <meta-data            <meta-data
+
+                android:name="android.appwidget.provider"                android:name="android.appwidget.provider"
+
+                android:resource="@xml/habit_timeline_widget_info" />                android:resource="@xml/habit_timeline_widget_info" />
+
+        </receiver>        </receiver>
+
+
+
+        <!-- Widget Provider for Habit Compact Widget (Debug) -->        <!-- Widget Provider for Habit Compact Widget (Debug) -->
+
+        <receiver        <receiver
+
+            android:name=".HabitCompactWidgetProvider"            android:name="com.habittracker.habitv8.debug.HabitCompactWidgetProvider"
+
+            android:exported="true">            android:exported="true">
+
+            <intent-filter>            <intent-filter>
+
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+
+            </intent-filter>            </intent-filter>
+
+            <meta-data            <meta-data
+
+                android:name="android.appwidget.provider"                android:name="android.appwidget.provider"
+
+                android:resource="@xml/habit_compact_widget_info" />                android:resource="@xml/habit_compact_widget_info" />
+
+        </receiver>        </receiver>
+
+    </application>    </application>
+
+</manifest></manifest>
