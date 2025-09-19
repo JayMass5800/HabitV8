@@ -14,7 +14,7 @@ import es.antonborri.home_widget.HomeWidgetProvider
 import org.json.JSONArray
 import org.json.JSONObject
 
-class HabitCompactWidgetProvider : HomeWidgetProvider() {
+open class HabitCompactWidgetProvider : HomeWidgetProvider() {
 
     override fun onUpdate(
         context: Context,

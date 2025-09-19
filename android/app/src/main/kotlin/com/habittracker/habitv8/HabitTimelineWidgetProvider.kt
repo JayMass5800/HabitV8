@@ -18,7 +18,7 @@ import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 
-class HabitTimelineWidgetProvider : HomeWidgetProvider() {
+open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
 
     override fun onUpdate(
         context: Context,
