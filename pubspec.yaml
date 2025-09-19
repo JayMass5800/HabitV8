@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 8.2.9+20
+version: 8.2.9+21
 
 environment:
   sdk: ^3.4.0
@@ -71,7 +71,7 @@ dependencies:
   in_app_purchase: ^3.1.13 # For handling subscriptions and purchases
   
   # Home Screen Widget dependencies
-  home_widget: ^0.4.1 # For creating home screen widgets
+  home_widget: ^0.8.0 # Latest version for Flutter 3.24+ compatibility
   
 
 flutter_icons:
