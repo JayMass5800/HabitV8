@@ -1,4 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+    
+    <!-- Widget Background Colors -->
+    <color name="widget_background_light">#FFFFFF</color>
+    <color name="widget_background_dark">#121212</color>
+    <color name="widget_surface_light">#F5F5F5</color>
+    <color name="widget_surface_dark">#1E1E1E</color>
+    
+    <!-- Widget Text Colors -->
+    <color name="widget_text_primary_light">#DD000000</color>
+    <color name="widget_text_primary_dark">#FFFFFF</color>
+    <color name="widget_text_secondary_light">#99000000</color>
+    <color name="widget_text_secondary_dark">#B3FFFFFF</color>
+    
+    <!-- Widget Theme Colors (will be dynamically set) -->
+    <color name="widget_primary_color">#6366F1</color>
+    <color name="widget_text_primary">@color/widget_text_primary_light</color>
+    <color name="widget_text_secondary">@color/widget_text_secondary_light</color>
+    <color name="widget_background">@color/widget_background_light</color>
+    <color name="widget_surface">@color/widget_surface_light</color>
+    
+    <!-- Status Colors -->
+    <color name="widget_status_completed">#4CAF50</color>
+    <color name="widget_status_due">#FF9800</color>
+    <color name="widget_status_missed">#F44336</color>
+    <color name="widget_status_upcoming">#2196F3</color>
+    
+    <!-- Action Button Colors -->
+    <color name="widget_complete_button">#4CAF50</color>
+    <color name="widget_complete_button_background">#1A4CAF50</color>
+    <color name="widget_edit_button_background">#1A6366F1</color>
+    
+    <!-- Transparent Colors -->
+    <color name="transparent">#00000000</color>
+    <color name="semi_transparent_black">#80000000</color>
+    <color name="semi_transparent_white">#80FFFFFF</color>
 </resources>

@@ -70,6 +70,9 @@ dependencies:
   # In-App Purchase dependencies
   in_app_purchase: ^3.1.13 # For handling subscriptions and purchases
   
+  # Home Screen Widget dependencies
+  home_widget: ^0.4.1 # For creating home screen widgets
+  
 
 flutter_icons:
   android: true
