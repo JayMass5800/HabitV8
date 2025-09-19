@@ -23,14 +23,8 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
     ) {
         appWidgetIds.forEach { widgetId ->
             try {
-                val layoutId = context.resources.getIdentifier("widget_compact", "layout", context.packageName)
-                if (layoutId == 0) {
-                    // Fallback to hardcoded resource ID if dynamic lookup fails
-                    // This shouldn't happen, but provides a safety net
-                    return@forEach
-                }
-                
-                val views = RemoteViews(context.packageName, layoutId)
+                // Use direct R reference instead of getIdentifier for release builds
+                val views = RemoteViews(context.packageName, R.layout.widget_compact)
                 
                 // Convert SharedPreferences to Map for compatibility
                 val dataMap = widgetData.all
@@ -51,18 +45,15 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
     
     private fun createErrorWidget(context: Context, appWidgetManager: AppWidgetManager, widgetId: Int) {
         try {
-            val layoutId = context.resources.getIdentifier("widget_compact", "layout", context.packageName)
-            if (layoutId != 0) {
-                val views = RemoteViews(context.packageName, layoutId)
-                
-                val emptyStateId = getResourceId(context, "compact_empty_state", "id")
-                if (emptyStateId != 0) {
-                    views.setViewVisibility(emptyStateId, View.VISIBLE)
-                    views.setTextViewText(emptyStateId, "Widget Error")
-                }
-                
-                appWidgetManager.updateAppWidget(widgetId, views)
+            val views = RemoteViews(context.packageName, R.layout.widget_compact)
+            
+            val emptyStateId = getResourceId(context, "compact_empty_state", "id")
+            if (emptyStateId != 0) {
+                views.setViewVisibility(emptyStateId, View.VISIBLE)
+                views.setTextViewText(emptyStateId, "Widget Error")
             }
+            
+            appWidgetManager.updateAppWidget(widgetId, views)
         } catch (e: Exception) {
             // If even the error widget fails, there's nothing more we can do
         }
@@ -70,12 +61,25 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
 
     // Helper function to get resource ID by name
     private fun getResourceId(context: Context, resourceName: String, resourceType: String): Int {
-        val resourceId = context.resources.getIdentifier(resourceName, resourceType, context.packageName)
-        if (resourceId == 0) {
-            // Log the missing resource for debugging
-            // In production, you might want to use proper logging
+        // Use direct R class references instead of getIdentifier for release builds
+        return when (resourceType) {
+            "id" -> when (resourceName) {
+                "compact_empty_state" -> R.id.compact_empty_state
+                "compact_habits_list" -> R.id.compact_habits_list
+                "more_habits_indicator" -> R.id.more_habits_indicator
+                "compact_habit_name" -> R.id.compact_habit_name
+                "compact_habit_color_indicator" -> R.id.compact_habit_color_indicator
+                "compact_habit_time" -> R.id.compact_habit_time
+                "compact_complete_button" -> R.id.compact_complete_button
+                "open_app_button" -> R.id.open_app_button
+                else -> 0
+            }
+            "layout" -> when (resourceName) {
+                "widget_compact_habit_item" -> R.layout.widget_compact_habit_item
+                else -> 0
+            }
+            else -> 0
         }
-        return resourceId
     }
 
     private fun updateCompactWidgetContent(

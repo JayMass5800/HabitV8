@@ -1,4 +1,4 @@
-package com.example.habitv8
+package com.habittracker.habitv8.debug
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -13,6 +13,10 @@ import es.antonborri.home_widget.HomeWidgetProvider
 import org.json.JSONArray
 import org.json.JSONObject
 
+/**
+ * Debug-specific widget provider for compact widget
+ * This class is identical to the main provider but resides in the debug package namespace
+ */
 class HabitCompactWidgetProvider : HomeWidgetProvider() {
 
     override fun onUpdate(
@@ -55,7 +59,8 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
             if (layoutId != 0) {
                 val views = RemoteViews(context.packageName, layoutId)
                 
-                val emptyStateId = getResourceId(context, "compact_empty_state", "id")
+                // Show error state
+                val emptyStateId = context.resources.getIdentifier("compact_empty_state", "id", context.packageName)
                 if (emptyStateId != 0) {
                     views.setViewVisibility(emptyStateId, View.VISIBLE)
                     views.setTextViewText(emptyStateId, "Widget Error")
@@ -64,79 +69,48 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
                 appWidgetManager.updateAppWidget(widgetId, views)
             }
         } catch (e: Exception) {
-            // If even the error widget fails, there's nothing more we can do
+            // Last resort: minimal widget
         }
     }
-
-    // Helper function to get resource ID by name
-    private fun getResourceId(context: Context, resourceName: String, resourceType: String): Int {
-        val resourceId = context.resources.getIdentifier(resourceName, resourceType, context.packageName)
-        if (resourceId == 0) {
-            // Log the missing resource for debugging
-            // In production, you might want to use proper logging
-        }
-        return resourceId
-    }
-
-    private fun updateCompactWidgetContent(
-        context: Context,
-        views: RemoteViews,
-        widgetData: Map<String, Any?>
-    ) {
+    
+    private fun updateCompactWidgetContent(context: Context, views: RemoteViews, dataMap: Map<String, *>) {
         try {
-            // Update theme colors
-            val themeMode = widgetData["themeMode"] as? String ?: "light"
-            val primaryColorValue = widgetData["primaryColor"] as? Int ?: 0x6366F1
-            applyCompactThemeColors(views, themeMode, primaryColorValue)
+            // Get theme data
+            val themeMode = dataMap["themeMode"] as? String ?: "system"
+            val primaryColorString = dataMap["primaryColor"] as? String ?: "#2196F3"
+            val primaryColor = android.graphics.Color.parseColor(primaryColorString)
             
-            // Update habits list
-            val habitsJson = widgetData["habits"] as? String
-            
-            if (habitsJson != null) {
-                updateCompactHabitsList(context, views, habitsJson, themeMode, primaryColorValue)
-            } else {
-                showCompactEmptyState(context, views)
-            }
-            
-        } catch (e: Exception) {
-            showCompactErrorState(context, views)
-        }
-    }
-
-    private fun updateCompactHabitsList(
-        context: Context,
-        views: RemoteViews,
-        habitsJson: String,
-        themeMode: String,
-        primaryColor: Int
-    ) {
-        try {
+            // Get habits data
+            val habitsJson = dataMap["habits"] as? String ?: "[]"
             val habitsArray = JSONArray(habitsJson)
             
-            // Clear existing habit items
-            val habitsListId = getResourceId(context, "compact_habits_list", "id")
-            views.removeAllViews(habitsListId)
-            
-            // Filter to only due habits and limit to 3
-            val dueHabits = mutableListOf<JSONObject>()
-            for (i in 0 until habitsArray.length()) {
-                val habit = habitsArray.getJSONObject(i)
-                val status = habit.optString("status", "Due")
-                val isCompleted = habit.optBoolean("isCompleted", false)
-                
-                if (status == "Due" && !isCompleted) {
-                    dueHabits.add(habit)
-                    if (dueHabits.size >= 3) break
-                }
-            }
-            
-            if (dueHabits.isEmpty()) {
+            // Show habits or empty state
+            if (habitsArray.length() == 0) {
                 showCompactEmptyState(context, views)
             } else {
                 val emptyStateId = getResourceId(context, "compact_empty_state", "id")
-                views.setViewVisibility(emptyStateId, View.GONE)
+                val habitsListId = getResourceId(context, "compact_habits_list", "id")
                 
-                // Add compact habit items
+                views.setViewVisibility(emptyStateId, View.GONE)
+                views.setViewVisibility(habitsListId, View.VISIBLE)
+                
+                // Clear existing habit items
+                views.removeAllViews(habitsListId)
+                
+                // Get due habits (limited to 3 for compact widget)
+                val dueHabits = mutableListOf<JSONObject>()
+                for (i in 0 until habitsArray.length()) {
+                    val habit = habitsArray.getJSONObject(i)
+                    val status = habit.optString("status", "Due")
+                    val isCompleted = habit.optBoolean("isCompleted", false)
+                    
+                    if (!isCompleted && (status == "Due" || status == "Missed")) {
+                        dueHabits.add(habit)
+                        if (dueHabits.size >= 3) break
+                    }
+                }
+                
+                // Add habit items
                 dueHabits.forEach { habit ->
                     addCompactHabitItem(context, views, habit, themeMode, primaryColor)
                 }
@@ -208,57 +182,51 @@ class HabitCompactWidgetProvider : HomeWidgetProvider() {
             // Skip this habit item if there's an error
         }
     }
-
+    
     private fun showCompactEmptyState(context: Context, views: RemoteViews) {
         val emptyStateId = getResourceId(context, "compact_empty_state", "id")
-        val moreHabitsId = getResourceId(context, "more_habits_indicator", "id")
+        val habitsListId = getResourceId(context, "compact_habits_list", "id")
+        
         views.setViewVisibility(emptyStateId, View.VISIBLE)
-        views.setViewVisibility(moreHabitsId, View.GONE)
+        views.setViewVisibility(habitsListId, View.GONE)
+        views.setTextViewText(emptyStateId, "No due habits")
     }
-
+    
     private fun showCompactErrorState(context: Context, views: RemoteViews) {
         val emptyStateId = getResourceId(context, "compact_empty_state", "id")
-        val moreHabitsId = getResourceId(context, "more_habits_indicator", "id")
+        val habitsListId = getResourceId(context, "compact_habits_list", "id")
+        
         views.setViewVisibility(emptyStateId, View.VISIBLE)
+        views.setViewVisibility(habitsListId, View.GONE)
         views.setTextViewText(emptyStateId, "Error loading habits")
-        views.setViewVisibility(moreHabitsId, View.GONE)
     }
-
-    private fun setupCompactClickHandlers(
-        context: Context,
-        views: RemoteViews,
-        widgetId: Int
-    ) {
+    
+    private fun setupCompactClickHandlers(context: Context, views: RemoteViews, widgetId: Int) {
         try {
-            // Open app button - Use a simple intent approach
-            val intent = Intent(context, Class.forName("${context.packageName}.MainActivity"))
-            val pendingIntent = PendingIntent.getActivity(
-                context, 
-                0, 
-                intent, 
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            // Set up add habit button
+            val addHabitButtonId = getResourceId(context, "add_habit_button", "id")
+            val addHabitIntent = HomeWidgetLaunchIntent.getActivity(
+                context,
+                Class.forName("com.habittracker.habitv8.MainActivity"),
+                android.net.Uri.parse("add_habit")
+            )
+            views.setOnClickPendingIntent(addHabitButtonId, addHabitIntent)
+            
+            // Main widget click to open app
+            val openAppIntent = HomeWidgetLaunchIntent.getActivity(
+                context,
+                Class.forName("com.habittracker.habitv8.MainActivity")
             )
             
-            val openAppButtonId = getResourceId(context, "open_app_button", "id")
-            val habitsListId = getResourceId(context, "compact_habits_list", "id")
+            // Set click handler for the entire widget background
+            views.setOnClickPendingIntent(android.R.id.background, openAppIntent)
             
-            views.setOnClickPendingIntent(openAppButtonId, pendingIntent)
-            
-            // Header click to open timeline
-            views.setOnClickPendingIntent(habitsListId, pendingIntent)
         } catch (e: Exception) {
-            // Ignore click handler setup errors
+            // Continue without click handlers
         }
     }
-
-    private fun applyCompactThemeColors(views: RemoteViews, themeMode: String, primaryColor: Int) {
-        val isDarkMode = themeMode == "dark"
-        
-        // Set text colors
-        val textPrimaryColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xDD000000.toInt()
-        val textSecondaryColor = if (isDarkMode) 0xB3FFFFFF.toInt() else 0x99000000.toInt()
-        
-        // Apply theme colors would go here if we had the specific view IDs
-        // For now, we'll skip this to avoid more R. references
+    
+    private fun getResourceId(context: Context, name: String, type: String): Int {
+        return context.resources.getIdentifier(name, type, context.packageName)
     }
 }

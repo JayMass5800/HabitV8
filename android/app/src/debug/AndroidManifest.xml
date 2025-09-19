@@ -8,4 +8,30 @@
     <!-- Removed all health/motion/activity permissions for debug builds -->
     <!-- Exact alarm permission for precise notifications (Android 12+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARMS" />
+    
+    <application>
+        <!-- Widget Provider for Habit Timeline Widget (Debug) -->
+        <receiver
+            android:name="com.habittracker.habitv8.debug.HabitTimelineWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_timeline_widget_info" />
+        </receiver>
+
+        <!-- Widget Provider for Habit Compact Widget (Debug) -->
+        <receiver
+            android:name="com.habittracker.habitv8.debug.HabitCompactWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_compact_widget_info" />
+        </receiver>
+    </application>
 </manifest>

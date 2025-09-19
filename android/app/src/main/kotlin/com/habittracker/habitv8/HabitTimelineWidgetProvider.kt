@@ -27,13 +27,8 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
     ) {
         appWidgetIds.forEach { widgetId ->
             try {
-                val layoutId = context.resources.getIdentifier("widget_timeline", "layout", context.packageName)
-                if (layoutId == 0) {
-                    // Fallback if dynamic lookup fails
-                    return@forEach
-                }
-                
-                val views = RemoteViews(context.packageName, layoutId)
+                // Use direct R reference instead of getIdentifier for release builds
+                val views = RemoteViews(context.packageName, R.layout.widget_timeline)
                 
                 // Convert SharedPreferences to Map for compatibility
                 val dataMap = widgetData.all
@@ -54,17 +49,12 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
     
     private fun createErrorWidget(context: Context, appWidgetManager: AppWidgetManager, widgetId: Int) {
         try {
-            val layoutId = context.resources.getIdentifier("widget_timeline", "layout", context.packageName)
-            if (layoutId != 0) {
-                val views = RemoteViews(context.packageName, layoutId)
-                
-                val headerTitleId = getResourceId(context, "header_title", "id")
-                if (headerTitleId != 0) {
-                    views.setTextViewText(headerTitleId, "Widget Error")
-                }
-                
-                appWidgetManager.updateAppWidget(widgetId, views)
-            }
+            val views = RemoteViews(context.packageName, R.layout.widget_timeline)
+            
+            val headerTitleId = R.id.header_title
+            views.setTextViewText(headerTitleId, "Widget Error")
+            
+            appWidgetManager.updateAppWidget(widgetId, views)
         } catch (e: Exception) {
             // If even the error widget fails, there's nothing more we can do
         }
@@ -72,12 +62,31 @@ class HabitTimelineWidgetProvider : HomeWidgetProvider() {
 
     // Helper function to get resource ID by name
     private fun getResourceId(context: Context, resourceName: String, resourceType: String): Int {
-        val resourceId = context.resources.getIdentifier(resourceName, resourceType, context.packageName)
-        if (resourceId == 0) {
-            // Log the missing resource for debugging
-            // In production, you might want to use proper logging
+        // Use direct R class references instead of getIdentifier for release builds
+        return when (resourceType) {
+            "id" -> when (resourceName) {
+                "header_date" -> R.id.header_date
+                "habits_list" -> R.id.habits_list
+                "next_habit_section" -> R.id.next_habit_section
+                "empty_state" -> R.id.empty_state
+                "habits_scroll" -> R.id.habits_scroll
+                "habit_name" -> R.id.habit_name
+                "habit_category" -> R.id.habit_category
+                "habit_status" -> R.id.habit_status
+                "habit_color_indicator" -> R.id.habit_color_indicator
+                "habit_time" -> R.id.habit_time
+                "complete_button" -> R.id.complete_button
+                "edit_button" -> R.id.edit_button
+                "next_habit_name" -> R.id.next_habit_name
+                "next_habit_time" -> R.id.next_habit_time
+                else -> 0
+            }
+            "layout" -> when (resourceName) {
+                "widget_habit_item" -> R.layout.widget_habit_item
+                else -> 0
+            }
+            else -> 0
         }
-        return resourceId
     }
 
     private fun updateWidgetContent(
