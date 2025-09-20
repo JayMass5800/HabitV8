@@ -62,6 +62,9 @@ class WidgetIntegrationService {
             'Saved ${entry.key}: ${entry.value.toString().length > 100 ? entry.value.toString().substring(0, 100) + "..." : entry.value}');
       }
 
+      // Small delay to ensure data is written to SharedPreferences
+      await Future.delayed(const Duration(milliseconds: 100));
+
       // Update the widget
       await HomeWidget.updateWidget(
         name: widgetName,

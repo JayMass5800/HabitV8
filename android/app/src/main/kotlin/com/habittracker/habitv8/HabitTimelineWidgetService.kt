@@ -151,14 +151,17 @@ class HabitTimelineRemoteViewsFactory(
 
     private fun loadHabitData() {
         try {
-            // Load habit data from SharedPreferences (same as home_widget plugin uses)
-            val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            val habitsJson = prefs.getString("flutter.habits", null)
+            // Load habit data from the SAME SharedPreferences that the widget provider uses
+            // The widget provider gets data from home_widget plugin, not FlutterSharedPreferences
+            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val habitsJson = prefs.getString("habits", null)
             
-            Log.d("HabitTimelineService", "Looking for habits data with key: flutter.habits")
+            Log.d("HabitTimelineService", "Looking for habits data with key: habits in HomeWidgetPreferences")
             
             if (habitsJson != null) {
                 Log.d("HabitTimelineService", "Found habits JSON: ${habitsJson.take(200)}...")
+                Log.d("HabitTimelineService", "Full JSON length: ${habitsJson.length}")
+                
                 // Parse JSON data using reflection
                 val gson = com.google.gson.Gson()
                 val type = com.google.gson.reflect.TypeToken.getParameterized(
@@ -166,11 +169,25 @@ class HabitTimelineRemoteViewsFactory(
                     Map::class.java
                 ).type
                 habits = gson.fromJson(habitsJson, type) ?: emptyList()
-                Log.d("HabitTimelineService", "Loaded ${habits.size} habits from SharedPreferences")
+                Log.d("HabitTimelineService", "Loaded ${habits.size} habits from HomeWidgetPreferences")
+                
+                // Debug first habit if available
+                if (habits.isNotEmpty()) {
+                    val firstHabit = habits[0]
+                    Log.d("HabitTimelineService", "First habit keys: ${firstHabit.keys}")
+                    Log.d("HabitTimelineService", "First habit name: ${firstHabit["name"]}")
+                    Log.d("HabitTimelineService", "First habit isCompleted: ${firstHabit["isCompleted"]}")
+                }
             } else {
                 // Debug: Let's see what keys are actually available
                 val allKeys = prefs.all.keys
-                Log.d("HabitTimelineService", "No habit data found. Available keys: $allKeys")
+                Log.d("HabitTimelineService", "No habit data found in HomeWidgetPreferences. Available keys: $allKeys")
+                
+                // Also check the theme data in the correct store
+                val themeMode = prefs.getString("themeMode", null)
+                val primaryColor = prefs.getInt("primaryColor", -1)
+                Log.d("HabitTimelineService", "HomeWidget theme mode: $themeMode, Primary color: $primaryColor")
+                
                 habits = emptyList()
             }
         } catch (e: Exception) {

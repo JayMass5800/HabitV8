@@ -140,16 +140,43 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
 
     private fun applyThemeColors(context: Context, views: RemoteViews, widgetData: SharedPreferences) {
         try {
-            val themeMode = widgetData.getString("flutter.themeMode", "light") ?: "light"
-            val primaryColor = widgetData.getInt("flutter.primaryColor", 0xFF6200EE.toInt())
+            // Debug all available keys
+            val allKeys = widgetData.all.keys
+            Log.d("HabitTimelineWidget", "Available SharedPreferences keys: $allKeys")
             
-            Log.d("HabitTimelineWidget", "Loading theme - mode: $themeMode, primary: ${Integer.toHexString(primaryColor)}")
+            // Try different possible keys for theme mode
+            val themeMode1 = widgetData.getString("themeMode", null)
+            val themeMode2 = widgetData.getString("home_widget.double.themeMode", null)
+            val themeMode3 = widgetData.getString("flutter.themeMode", null)
+            
+            // Try different possible keys for primary color
+            val primaryColor1 = widgetData.getInt("primaryColor", -1)
+            val primaryColor2 = if (widgetData.contains("home_widget.double.primaryColor")) {
+                widgetData.getFloat("home_widget.double.primaryColor", -1f).toInt()
+            } else -1
+            val primaryColor3 = widgetData.getInt("flutter.primaryColor", -1)
+            
+            Log.d("HabitTimelineWidget", "Theme modes - themeMode: '$themeMode1', double: '$themeMode2', flutter: '$themeMode3'")
+            Log.d("HabitTimelineWidget", "Primary colors - primaryColor: $primaryColor1, double: $primaryColor2, flutter: $primaryColor3")
+            
+            // Use the first valid theme mode found
+            val themeMode = themeMode1 ?: themeMode2 ?: themeMode3 ?: "light"
+            val primaryColor = when {
+                primaryColor1 != -1 -> primaryColor1
+                primaryColor2 != -1 -> primaryColor2
+                primaryColor3 != -1 -> primaryColor3
+                else -> 0xFF6200EE.toInt()
+            }
+            
+            Log.d("HabitTimelineWidget", "Using theme - mode: '$themeMode', primary: ${Integer.toHexString(primaryColor)}")
             
             val isDarkMode = themeMode == "dark"
             
             // Modern theme colors with better contrast
             val backgroundColor = if (isDarkMode) 0xFF0F0F0F.toInt() else 0xFFFAFAFA.toInt()
             val surfaceColor = if (isDarkMode) 0xFF1A1A1A.toInt() else 0xFFFFFFFF.toInt()
+            
+            Log.d("HabitTimelineWidget", "Calculated colors - isDark: $isDarkMode, bg: ${Integer.toHexString(backgroundColor)}")
             
             // Apply dynamic primary color to header background
             views.setInt(R.id.header_layout, "setBackgroundColor", primaryColor)
@@ -161,7 +188,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             // Apply background color to widget root to eliminate white borders
             views.setInt(R.id.widget_root, "setBackgroundColor", backgroundColor)
             
-            Log.d("HabitTimelineWidget", "Theme colors applied - isDark: $isDarkMode, primary: ${Integer.toHexString(primaryColor)}")
+            Log.d("HabitTimelineWidget", "Theme colors applied successfully - widget should show background: ${Integer.toHexString(backgroundColor)}")
         } catch (e: Exception) {
             Log.e("HabitTimelineWidget", "Error applying theme colors", e)
         }

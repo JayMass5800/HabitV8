@@ -147,11 +147,12 @@ class HabitCompactRemoteViewsFactory(
 
     private fun loadHabitData() {
         try {
-            // Load habit data from SharedPreferences (same as home_widget plugin uses)
-            val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            val habitsJson = prefs.getString("flutter.habits", null)
+            // Load habit data from the SAME SharedPreferences that the widget provider uses
+            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val habitsJson = prefs.getString("habits", null)
             
             if (habitsJson != null) {
+                Log.d("HabitCompactService", "Found habits JSON: ${habitsJson.take(200)}...")
                 // Parse JSON data using reflection
                 val gson = com.google.gson.Gson()
                 val type = com.google.gson.reflect.TypeToken.getParameterized(
@@ -159,10 +160,14 @@ class HabitCompactRemoteViewsFactory(
                     Map::class.java
                 ).type
                 habits = gson.fromJson(habitsJson, type) ?: emptyList()
-                Log.d("HabitCompactService", "Loaded ${habits.size} habits from SharedPreferences")
+                Log.d("HabitCompactService", "Loaded ${habits.size} habits from HomeWidgetPreferences")
             } else {
                 habits = emptyList()
-                Log.d("HabitCompactService", "No habit data found in SharedPreferences")
+                Log.d("HabitCompactService", "No habit data found in HomeWidgetPreferences")
+                
+                // Debug available keys
+                val allKeys = prefs.all.keys
+                Log.d("HabitCompactService", "Available keys: $allKeys")
             }
         } catch (e: Exception) {
             Log.e("HabitCompactService", "Error loading habit data", e)

@@ -158,8 +158,27 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
 
     private fun applyCompactThemeColors(context: Context, views: RemoteViews, widgetData: SharedPreferences) {
         try {
-            val themeMode = widgetData.getString("flutter.themeMode", "light") ?: "light"
-            val primaryColor = widgetData.getInt("flutter.primaryColor", 0xFF6200EE.toInt())
+            // Try different possible keys for theme mode and primary color
+            val themeMode1 = widgetData.getString("themeMode", null)
+            val themeMode2 = widgetData.getString("home_widget.double.themeMode", null)
+            val themeMode3 = widgetData.getString("flutter.themeMode", null)
+            
+            val primaryColor1 = widgetData.getInt("primaryColor", -1)
+            val primaryColor2 = if (widgetData.contains("home_widget.double.primaryColor")) {
+                widgetData.getFloat("home_widget.double.primaryColor", -1f).toInt()
+            } else -1
+            val primaryColor3 = widgetData.getInt("flutter.primaryColor", -1)
+            
+            // Use the first valid values found
+            val themeMode = themeMode1 ?: themeMode2 ?: themeMode3 ?: "light"
+            val primaryColor = when {
+                primaryColor1 != -1 -> primaryColor1
+                primaryColor2 != -1 -> primaryColor2
+                primaryColor3 != -1 -> primaryColor3
+                else -> 0xFF6200EE.toInt()
+            }
+            
+            Log.d("HabitCompactWidget", "Using theme - mode: '$themeMode', primary: ${Integer.toHexString(primaryColor)}")
             
             val isDarkMode = themeMode == "dark"
             
@@ -179,7 +198,7 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             
             Log.d("HabitCompactWidget", "Enhanced theme colors applied - isDark: $isDarkMode, primary: ${Integer.toHexString(primaryColor)}")
         } catch (e: Exception) {
-            Log.e("HabitCompactWidget", "Error applying enhanced theme colors", e)
+            Log.e("HabitCompactWidget", "Error applying compact theme colors", e)
         }
     }
 
