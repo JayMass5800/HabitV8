@@ -439,15 +439,17 @@ class _WidgetConfigurationScreenState extends State<WidgetConfigurationScreen> {
                 // Show loading
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Refreshing widgets and checking debug info...'),
+                    content:
+                        Text('Refreshing widgets and checking debug info...'),
                     duration: Duration(seconds: 2),
                   ),
                 );
-                
+
                 // Get debug info
-                final debugData = await WidgetIntegrationService.instance.testPrepareData();
+                final debugData =
+                    await WidgetIntegrationService.instance.testPrepareData();
                 await WidgetIntegrationService.instance.updateAllWidgets();
-                
+
                 if (mounted) {
                   // Show debug dialog
                   showDialog(
@@ -459,7 +461,8 @@ class _WidgetConfigurationScreenState extends State<WidgetConfigurationScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('Habits JSON length: ${debugData['habits']?.toString().length ?? 0}'),
+                            Text(
+                                'Habits JSON length: ${debugData['habits']?.toString().length ?? 0}'),
                             Text('Theme mode: ${debugData['themeMode']}'),
                             Text('Primary color: ${debugData['primaryColor']}'),
                             Text('Selected date: ${debugData['selectedDate']}'),
@@ -470,9 +473,17 @@ class _WidgetConfigurationScreenState extends State<WidgetConfigurationScreen> {
                               padding: const EdgeInsets.all(8),
                               color: Colors.grey[100],
                               child: Text(
-                                debugData['habits']?.toString().substring(0, 
-                                  math.min(200, debugData['habits']?.toString().length ?? 0)) ?? 'null',
-                                style: const TextStyle(fontFamily: 'monospace', fontSize: 10),
+                                debugData['habits']?.toString().substring(
+                                        0,
+                                        math.min(
+                                            200,
+                                            debugData['habits']
+                                                    ?.toString()
+                                                    .length ??
+                                                0)) ??
+                                    'null',
+                                style: const TextStyle(
+                                    fontFamily: 'monospace', fontSize: 10),
                               ),
                             ),
                           ],
@@ -486,7 +497,7 @@ class _WidgetConfigurationScreenState extends State<WidgetConfigurationScreen> {
                       ],
                     ),
                   );
-                  
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Widgets refreshed - see debug info above'),

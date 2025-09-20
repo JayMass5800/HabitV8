@@ -52,12 +52,14 @@ class WidgetIntegrationService {
   Future<void> _updateWidget(
       String widgetName, Map<String, dynamic> data) async {
     try {
-      debugPrint('Updating widget $widgetName with data keys: ${data.keys.toList()}');
-      
+      debugPrint(
+          'Updating widget $widgetName with data keys: ${data.keys.toList()}');
+
       // Set widget data
       for (final entry in data.entries) {
         await HomeWidget.saveWidgetData(entry.key, entry.value);
-        debugPrint('Saved ${entry.key}: ${entry.value.toString().length > 100 ? entry.value.toString().substring(0, 100) + "..." : entry.value}');
+        debugPrint(
+            'Saved ${entry.key}: ${entry.value.toString().length > 100 ? entry.value.toString().substring(0, 100) + "..." : entry.value}');
       }
 
       // Update the widget
@@ -65,7 +67,7 @@ class WidgetIntegrationService {
         name: widgetName,
         androidName: widgetName,
       );
-      
+
       debugPrint('Widget $widgetName update completed');
     } catch (e) {
       debugPrint('Error updating widget $widgetName: $e');
@@ -84,7 +86,8 @@ class WidgetIntegrationService {
       final habits = _filterHabitsForDate(allHabits, selectedDate);
       final nextHabit = _findNextHabit(allHabits);
 
-      debugPrint('Widget data preparation: Found ${allHabits.length} total habits, ${habits.length} for today');
+      debugPrint(
+          'Widget data preparation: Found ${allHabits.length} total habits, ${habits.length} for today');
 
       // Get theme data
       final themeData = await _getThemeData();
@@ -98,7 +101,8 @@ class WidgetIntegrationService {
           ? jsonEncode(_habitToJson(nextHabit, selectedDate))
           : null;
 
-      debugPrint('Widget data: habits JSON length: ${habitsJson.length}, theme: ${themeData['themeMode']}, primary: ${themeData['primaryColor']}');
+      debugPrint(
+          'Widget data: habits JSON length: ${habitsJson.length}, theme: ${themeData['themeMode']}, primary: ${themeData['primaryColor']}');
 
       return {
         'habits': habitsJson,
@@ -320,17 +324,18 @@ class WidgetIntegrationService {
 
   /// Filter habits for a specific date
   List<Habit> _filterHabitsForDate(List<Habit> habits, DateTime date) {
-    final filtered = habits
-        .where((habit) => _isHabitScheduledForDate(habit, date))
-        .toList();
-    
-    debugPrint('Filtering ${habits.length} habits for date ${_formatDateForWidget(date)}:');
+    final filtered =
+        habits.where((habit) => _isHabitScheduledForDate(habit, date)).toList();
+
+    debugPrint(
+        'Filtering ${habits.length} habits for date ${_formatDateForWidget(date)}:');
     for (var habit in habits) {
       final isScheduled = _isHabitScheduledForDate(habit, date);
-      debugPrint('  - ${habit.name}: ${habit.frequency.toString()} -> ${isScheduled ? "INCLUDED" : "EXCLUDED"}');
+      debugPrint(
+          '  - ${habit.name}: ${habit.frequency.toString()} -> ${isScheduled ? "INCLUDED" : "EXCLUDED"}');
     }
     debugPrint('Result: ${filtered.length} habits for today');
-    
+
     return filtered;
   }
 

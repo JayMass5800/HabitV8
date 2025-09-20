@@ -24,16 +24,17 @@ class _WidgetDebugScreenState extends State<WidgetDebugScreen> {
       final habitBox = await DatabaseService.getInstance();
       final habitService = HabitService(habitBox);
       final allHabits = await habitService.getAllHabits();
-      
+
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      
+
       String debugText = '';
       debugText += 'Database Status:\n';
       debugText += '- Total habits: ${allHabits.length}\n';
       debugText += '- Date: ${today.toString().split(' ')[0]}\n';
-      debugText += '- Weekday: ${today.weekday} (${_getWeekdayName(today.weekday)})\n\n';
-      
+      debugText +=
+          '- Weekday: ${today.weekday} (${_getWeekdayName(today.weekday)})\n\n';
+
       debugText += 'Habits:\n';
       for (var habit in allHabits) {
         debugText += '- ${habit.name}\n';
@@ -42,16 +43,19 @@ class _WidgetDebugScreenState extends State<WidgetDebugScreen> {
           debugText += '  Weekdays: ${habit.selectedWeekdays}\n';
         }
         debugText += '  Active: ${habit.isActive}\n';
-        debugText += '  Scheduled for today: ${_isScheduledForToday(habit, today)}\n\n';
+        debugText +=
+            '  Scheduled for today: ${_isScheduledForToday(habit, today)}\n\n';
       }
-      
+
       // Test widget data preparation
-      final widgetData = await WidgetIntegrationService.instance.testPrepareData();
+      final widgetData =
+          await WidgetIntegrationService.instance.testPrepareData();
       debugText += 'Widget Data:\n';
-      debugText += '- habits JSON length: ${widgetData['habits']?.toString().length ?? 0}\n';
+      debugText +=
+          '- habits JSON length: ${widgetData['habits']?.toString().length ?? 0}\n';
       debugText += '- theme: ${widgetData['themeMode']}\n';
       debugText += '- primaryColor: ${widgetData['primaryColor']}\n';
-      
+
       setState(() {
         _debugInfo = debugText;
       });
