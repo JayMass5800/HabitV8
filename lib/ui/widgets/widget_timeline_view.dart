@@ -96,7 +96,8 @@ class WidgetTimelineView extends StatelessWidget {
                 GestureDetector(
                   onTap: () => onNavigate!('/create-habit'),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: primaryColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
@@ -126,7 +127,8 @@ class WidgetTimelineView extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (onNavigate != null && onRefresh != null) const SizedBox(width: 8),
+              if (onNavigate != null && onRefresh != null)
+                const SizedBox(width: 8),
               if (onRefresh != null)
                 GestureDetector(
                   onTap: onRefresh,
@@ -281,12 +283,10 @@ class WidgetTimelineView extends StatelessWidget {
             width: 4,
             height: 28,
             decoration: BoxDecoration(
-              color: isCompleted 
-                ? statusColor 
-                : Color(habit.colorValue),
+              color: isCompleted ? statusColor : Color(habit.colorValue),
               borderRadius: BorderRadius.circular(2),
             ),
-            child: isCompleted 
+            child: isCompleted
                 ? Center(
                     child: Icon(
                       Icons.check,
@@ -563,7 +563,8 @@ class WidgetTimelineView extends StatelessWidget {
 
       default:
         if (habit.notificationTime != null) {
-          return habit.notificationTime!.hour * 60 + habit.notificationTime!.minute;
+          return habit.notificationTime!.hour * 60 +
+              habit.notificationTime!.minute;
         }
         return 0;
     }
@@ -599,13 +600,10 @@ class CompactWidgetTimelineView extends StatelessWidget {
     final backgroundColor = isDarkMode ? const Color(0xFF121212) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
-    final dueHabits = habits
-        .where((habit) {
-          final status = _getHabitStatus(habit, selectedDate);
-          return status == 'Due' &&
-              !_isHabitCompletedOnDate(habit, selectedDate);
-        })
-        .toList();
+    final dueHabits = habits.where((habit) {
+      final status = _getHabitStatus(habit, selectedDate);
+      return status == 'Due' && !_isHabitCompletedOnDate(habit, selectedDate);
+    }).toList();
 
     // Sort due habits chronologically by time
     dueHabits.sort((a, b) {
@@ -646,7 +644,8 @@ class CompactWidgetTimelineView extends StatelessWidget {
                     GestureDetector(
                       onTap: () => onNavigate!('/create-habit'),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: primaryColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(6),
@@ -732,16 +731,16 @@ class CompactWidgetTimelineView extends StatelessWidget {
             width: 16,
             height: 16,
             decoration: BoxDecoration(
-              color: isCompleted 
-                ? statusColor 
-                : statusColor.withValues(alpha: 0.2),
+              color: isCompleted
+                  ? statusColor
+                  : statusColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: statusColor,
                 width: 1,
               ),
             ),
-            child: isCompleted 
+            child: isCompleted
                 ? Icon(
                     Icons.check,
                     color: Colors.white,
@@ -854,18 +853,28 @@ class CompactWidgetTimelineView extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     final isDarkMode = themeMode == 'dark';
-    
+
     switch (status) {
       case 'Completed':
-        return isDarkMode ? const Color(0xFF4CAF50) : const Color(0xFF2E7D32); // Darker green for better contrast
+        return isDarkMode
+            ? const Color(0xFF4CAF50)
+            : const Color(0xFF2E7D32); // Darker green for better contrast
       case 'Missed':
-        return isDarkMode ? const Color(0xFFE57373) : const Color(0xFFC62828); // Darker red for better contrast
+        return isDarkMode
+            ? const Color(0xFFE57373)
+            : const Color(0xFFC62828); // Darker red for better contrast
       case 'Due':
-        return isDarkMode ? const Color(0xFFFFB74D) : const Color(0xFFE65100); // Darker orange for better contrast
+        return isDarkMode
+            ? const Color(0xFFFFB74D)
+            : const Color(0xFFE65100); // Darker orange for better contrast
       case 'Upcoming':
-        return isDarkMode ? const Color(0xFF64B5F6) : const Color(0xFF1565C0); // Darker blue for better contrast
+        return isDarkMode
+            ? const Color(0xFF64B5F6)
+            : const Color(0xFF1565C0); // Darker blue for better contrast
       default:
-        return isDarkMode ? const Color(0xFF9E9E9E) : const Color(0xFF424242); // Darker grey for better contrast
+        return isDarkMode
+            ? const Color(0xFF9E9E9E)
+            : const Color(0xFF424242); // Darker grey for better contrast
     }
   }
 
@@ -886,7 +895,8 @@ class CompactWidgetTimelineView extends StatelessWidget {
 
       default:
         if (habit.notificationTime != null) {
-          return habit.notificationTime!.hour * 60 + habit.notificationTime!.minute;
+          return habit.notificationTime!.hour * 60 +
+              habit.notificationTime!.minute;
         }
         return 0;
     }
