@@ -674,17 +674,29 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   }
 
   Color _getStatusColor(String status) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     switch (status) {
       case 'Completed':
-        return Colors.green;
+        return isDarkMode
+            ? const Color(0xFF4CAF50)
+            : const Color(0xFF2E7D32); // Darker green for better contrast
       case 'Missed':
-        return Colors.red;
+        return isDarkMode
+            ? const Color(0xFFE57373)
+            : const Color(0xFFC62828); // Darker red for better contrast
       case 'Due':
-        return Colors.orange;
+        return isDarkMode
+            ? const Color(0xFFFFB74D)
+            : const Color(0xFFE65100); // Darker orange for better contrast
       case 'Upcoming':
-        return Colors.blue;
+        return isDarkMode
+            ? const Color(0xFF64B5F6)
+            : const Color(0xFF1565C0); // Darker blue for better contrast
       default:
-        return Colors.grey;
+        return isDarkMode
+            ? const Color(0xFF9E9E9E)
+            : const Color(0xFF424242); // Darker grey for better contrast
     }
   }
 

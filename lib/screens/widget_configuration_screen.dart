@@ -87,23 +87,117 @@ class _WidgetConfigurationScreenState extends State<WidgetConfigurationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Widget Preview
-            _buildPreviewSection(theme),
+            // Essential Settings Only
+            _buildEssentialSettings(theme),
             const SizedBox(height: 24),
 
-            // Display Settings
-            _buildDisplaySettings(theme),
+            // Widget Removal Instructions
+            _buildRemovalInstructions(theme),
             const SizedBox(height: 24),
 
-            // Behavior Settings
-            _buildBehaviorSettings(theme),
-            const SizedBox(height: 24),
+            // Action buttons
+            _buildActionButtons(theme),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Advanced Settings
-            _buildAdvancedSettings(theme),
-            const SizedBox(height: 32),
+  Widget _buildEssentialSettings(ThemeData theme) {
+    return _buildSettingsSection(
+      theme: theme,
+      title: 'Widget Settings',
+      icon: Icons.settings,
+      children: [
+        _buildSwitchSetting(
+          theme: theme,
+          title: 'Auto Refresh',
+          subtitle: 'Automatically update widget content',
+          value: _autoRefresh,
+          onChanged: (value) {
+            setState(() {
+              _autoRefresh = value;
+            });
+          },
+        ),
+        if (_autoRefresh)
+          _buildSliderSetting(
+            theme: theme,
+            title: 'Refresh Interval',
+            subtitle: 'How often to update widget (minutes)',
+            value: _refreshInterval.toDouble(),
+            min: 5,
+            max: 60,
+            divisions: 11,
+            onChanged: (value) {
+              setState(() {
+                _refreshInterval = value.round();
+              });
+            },
+            displayValue: '$_refreshInterval min',
+          ),
+      ],
+    );
+  }
 
-            // Action Buttons
+  Widget _buildRemovalInstructions(ThemeData theme) {
+    return _buildSettingsSection(
+      theme: theme,
+      title: 'Widget Management',
+      icon: Icons.info,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Widget Removal Instructions',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'To remove widgets from your home screen:',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '1. Long press on the widget\n'
+                '2. Select "Remove" or drag to "Remove" area\n'
+                '3. Confirm removal when prompted',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+            // Action buttons
             _buildActionButtons(theme),
           ],
         ),
