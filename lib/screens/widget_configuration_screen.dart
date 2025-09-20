@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import '../services/widget_integration_service.dart';
 
 class WidgetConfigurationScreen extends StatefulWidget {
@@ -434,17 +435,78 @@ class _WidgetConfigurationScreenState extends State<WidgetConfigurationScreen> {
         Expanded(
           child: OutlinedButton.icon(
             onPressed: () async {
-              await WidgetIntegrationService.instance.updateAllWidgets();
-              if (mounted) {
+              try {
+                // Show loading
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Widgets refreshed'),
+                    content: Text('Refreshing widgets and checking debug info...'),
+                    duration: Duration(seconds: 2),
                   ),
                 );
+                
+                // Get debug info
+                final debugData = await WidgetIntegrationService.instance.testPrepareData();
+                await WidgetIntegrationService.instance.updateAllWidgets();
+                
+                if (mounted) {
+                  // Show debug dialog
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Widget Debug Info'),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Habits JSON length: ${debugData['habits']?.toString().length ?? 0}'),
+                            Text('Theme mode: ${debugData['themeMode']}'),
+                            Text('Primary color: ${debugData['primaryColor']}'),
+                            Text('Selected date: ${debugData['selectedDate']}'),
+                            Text('Last update: ${debugData['lastUpdate']}'),
+                            const SizedBox(height: 8),
+                            const Text('Habits JSON preview:'),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              color: Colors.grey[100],
+                              child: Text(
+                                debugData['habits']?.toString().substring(0, 
+                                  math.min(200, debugData['habits']?.toString().length ?? 0)) ?? 'null',
+                                style: const TextStyle(fontFamily: 'monospace', fontSize: 10),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  );
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Widgets refreshed - see debug info above'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
-            icon: const Icon(Icons.refresh),
-            label: const Text('Refresh Widget'),
+            icon: const Icon(Icons.bug_report),
+            label: const Text('Debug Refresh'),
             style: OutlinedButton.styleFrom(
               foregroundColor: theme.colorScheme.primary,
               padding: const EdgeInsets.symmetric(vertical: 12),

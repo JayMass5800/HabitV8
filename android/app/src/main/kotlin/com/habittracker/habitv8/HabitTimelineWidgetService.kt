@@ -9,6 +9,7 @@ import com.habittracker.habitv8.R
 
 class HabitTimelineWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
+        android.util.Log.d("HabitTimelineService", "onGetViewFactory called - creating new factory")
         return HabitTimelineRemoteViewsFactory(this.applicationContext, intent)
     }
 }
