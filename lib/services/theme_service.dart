@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:home_widget/home_widget.dart';
 import 'widget_integration_service.dart';
 
 class ThemeService {
@@ -35,6 +36,11 @@ class ThemeService {
         break;
     }
     await prefs.setString(_themeModeKey, themeModeString);
+
+    // Write canonical keys for widgets via HomeWidget
+    try {
+      await HomeWidget.saveWidgetData('themeMode', themeModeString);
+    } catch (_) {}
   }
 
   static Future<Color> getPrimaryColor() async {
@@ -56,6 +62,11 @@ class ThemeService {
       colorValue = color.value;
     }
     await prefs.setInt(_primaryColorKey, colorValue);
+
+    // Write canonical key for widgets via HomeWidget
+    try {
+      await HomeWidget.saveWidgetData('primaryColor', colorValue);
+    } catch (_) {}
   }
 }
 
@@ -74,9 +85,10 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
     await ThemeService.setThemeMode(themeMode);
     state = ThemeState(themeMode, state.primaryColor);
 
-    // Update widgets with new theme
+    // Update widgets with new theme (ensure prefs flushed before update)
     try {
-      await WidgetIntegrationService.instance.onThemeChanged();
+      await Future.delayed(const Duration(milliseconds: 150));
+      await WidgetIntegrationService.instance.updateAllWidgets();
     } catch (e) {
       // Don't block theme change if widget update fails
     }
@@ -86,9 +98,10 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
     await ThemeService.setPrimaryColor(color);
     state = ThemeState(state.themeMode, color);
 
-    // Update widgets with new color
+    // Update widgets with new color (ensure prefs flushed before update)
     try {
-      await WidgetIntegrationService.instance.onThemeChanged();
+      await Future.delayed(const Duration(milliseconds: 150));
+      await WidgetIntegrationService.instance.updateAllWidgets();
     } catch (e) {
       // Don't block color change if widget update fails
     }
