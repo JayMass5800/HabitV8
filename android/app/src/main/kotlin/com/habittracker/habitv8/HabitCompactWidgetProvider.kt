@@ -73,14 +73,17 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         // Use direct R class references instead of getIdentifier for release builds
         return when (resourceType) {
             "id" -> when (resourceName) {
-                "compact_empty_state" -> R.id.compact_empty_state
+                "compact_widget_root" -> R.id.compact_widget_root
+                "header_layout" -> R.id.header_layout
+                "compact_title" -> R.id.compact_title
+                "open_app_button" -> R.id.open_app_button
                 "compact_habits_list" -> R.id.compact_habits_list
+                "compact_empty_state" -> R.id.compact_empty_state
                 "more_habits_indicator" -> R.id.more_habits_indicator
                 "compact_habit_name" -> R.id.compact_habit_name
                 "compact_habit_color_indicator" -> R.id.compact_habit_color_indicator
                 "compact_habit_time" -> R.id.compact_habit_time
                 "compact_complete_button" -> R.id.compact_complete_button
-                "open_app_button" -> R.id.open_app_button
                 else -> 0
             }
             "layout" -> when (resourceName) {
@@ -417,14 +420,21 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             
             // Header elements use white text for contrast against colored background
             val compactTitleId = getResourceId(context, "compact_title", "id")
-            val compactIconId = getResourceId(context, "compact_icon", "id")
+            val openAppButtonId = getResourceId(context, "open_app_button", "id")
             if (compactTitleId != 0) views.setTextColor(compactTitleId, 0xFFFFFFFF.toInt())
-            if (compactIconId != 0) views.setInt(compactIconId, "setColorFilter", 0xFFFFFFFF.toInt())
+            if (openAppButtonId != 0) views.setInt(openAppButtonId, "setColorFilter", 0xFFFFFFFF.toInt())
             
             // Apply theme-appropriate background to main content areas
-            val compactContainerId = getResourceId(context, "compact_habits_container", "id")
-            if (compactContainerId != 0) {
-                views.setInt(compactContainerId, "setBackgroundColor", backgroundColor)
+            val compactHabitsListId = getResourceId(context, "compact_habits_list", "id")
+            if (compactHabitsListId != 0) {
+                views.setInt(compactHabitsListId, "setBackgroundColor", backgroundColor)
+            }
+            
+            // Apply background color to widget root to eliminate white borders
+            val compactWidgetRootId = getResourceId(context, "compact_widget_root", "id")
+            if (compactWidgetRootId != 0) {
+                views.setInt(compactWidgetRootId, "setBackgroundColor", backgroundColor)
+                android.util.Log.d("HabitCompactWidget", "Applied background color to compact widget root")
             }
             
             android.util.Log.d("HabitCompactWidget", "Enhanced theme colors applied - isDark: $isDarkMode, primary: ${Integer.toHexString(primaryColor)}")

@@ -1,38 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
-    <application>
-        <!-- Completely remove main widget providers for debug builds -->
-        <receiver android:name=".HabitTimelineWidgetProvider"
-            tools:node="remove" />
-        <receiver android:name=".HabitCompactWidgetProvider" 
-            tools:node="remove" />
-            
-        <!-- Debug Widget Providers (using .debug package) -->
-        <receiver android:name="com.habittracker.habitv8.debug.HabitTimelineWidgetProvider"
-            android:exported="true"
-            android:label="Habit Timeline">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
-                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
-                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider"
-                android:resource="@xml/habit_timeline_widget_info" />
-        </receiver>
-        
-        <receiver android:name="com.habittracker.habitv8.debug.HabitCompactWidgetProvider"
-            android:exported="true"
-            android:label="Habit Compact">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
-                <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
-                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider"
-                android:resource="@xml/habit_compact_widget_info" />
-        </receiver>
-    </application>
+    <!-- Debug builds use the same widget providers as release builds -->
 </manifest>

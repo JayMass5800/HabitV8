@@ -92,6 +92,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 "habits_container" -> R.id.habits_container
                 "add_habit_button" -> R.id.add_habit_button
                 "habit_item_container" -> R.id.habit_item_container
+                "widget_root" -> R.id.widget_root
                 else -> 0
             }
             "layout" -> when (resourceName) {
@@ -540,6 +541,12 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             val refreshButtonId = getResourceId(context, "refresh_button", "id")
             val headerLayoutId = getResourceId(context, "header_layout", "id")
             val habitsContainerId = getResourceId(context, "habits_container", "id")
+            val widgetRootId = getResourceId(context, "widget_root", "id")
+            
+            // Apply theme background to widget root to eliminate white borders
+            if (widgetRootId != 0) {
+                views.setInt(widgetRootId, "setBackgroundColor", backgroundColor)
+            }
             
             // Apply dynamic primary color to header background - this makes the biggest visual impact
             if (headerLayoutId != 0) {
