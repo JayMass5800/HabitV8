@@ -104,10 +104,10 @@ class HabitCompactRemoteViewsFactory(
             remoteViews.setOnClickFillInIntent(R.id.compact_habit_name, detailIntent)
             
         } catch (e: Exception) {
-            Log.e("HabitCompactWidget", "Error creating view for habit: $habitName", e)
+            Log.e("HabitCompactWidget", "Error creating view for habit at position $position", e)
         }
 
-        Log.d("HabitCompactWidget", "Created view for habit: $habitName")
+        Log.d("HabitCompactWidget", "Created view for habit at position $position")
         return remoteViews
     }
 
