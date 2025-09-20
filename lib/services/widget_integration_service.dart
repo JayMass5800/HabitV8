@@ -4,6 +4,7 @@ import '../domain/model/habit.dart';
 import '../data/database.dart';
 import '../services/theme_service.dart';
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 /// Service to manage widget integration and updates
 class WidgetIntegrationService {
@@ -159,8 +160,20 @@ class WidgetIntegrationService {
       final themeMode = await ThemeService.getThemeMode();
       final primaryColor = await ThemeService.getPrimaryColor();
 
+      // Properly handle system theme mode by checking platform brightness
+      String actualThemeMode;
+      if (themeMode == ThemeMode.dark) {
+        actualThemeMode = 'dark';
+      } else if (themeMode == ThemeMode.light) {
+        actualThemeMode = 'light';
+      } else {
+        // ThemeMode.system - check system brightness
+        final brightness = ui.PlatformDispatcher.instance.platformBrightness;
+        actualThemeMode = brightness == Brightness.dark ? 'dark' : 'light';
+      }
+
       return {
-        'themeMode': themeMode == ThemeMode.dark ? 'dark' : 'light',
+        'themeMode': actualThemeMode,
         'primaryColor': primaryColor.value,
       };
     } catch (e) {

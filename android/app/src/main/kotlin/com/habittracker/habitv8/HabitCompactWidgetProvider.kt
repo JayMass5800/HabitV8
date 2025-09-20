@@ -158,47 +158,68 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
 
     private fun applyCompactThemeColors(context: Context, views: RemoteViews, widgetData: SharedPreferences) {
         try {
-            // Try different possible keys for theme mode and primary color
-            val themeMode1 = widgetData.getString("themeMode", null)
-            val themeMode2 = widgetData.getString("home_widget.double.themeMode", null)
-            val themeMode3 = widgetData.getString("flutter.themeMode", null)
+            // Try different possible keys for theme mode
+            var themeMode = widgetData.getString("themeMode", null) 
+                ?: widgetData.getString("home_widget.double.themeMode", null)
+                ?: widgetData.getString("flutter.themeMode", null)
             
-            val primaryColor1 = widgetData.getInt("primaryColor", -1)
-            val primaryColor2 = if (widgetData.contains("home_widget.double.primaryColor")) {
-                widgetData.getFloat("home_widget.double.primaryColor", -1f).toInt()
-            } else -1
-            val primaryColor3 = widgetData.getInt("flutter.primaryColor", -1)
+            // If no explicit theme mode is found, check system theme
+            if (themeMode == null) {
+                val systemNightMode = context.resources.configuration.uiMode and 
+                    android.content.res.Configuration.UI_MODE_NIGHT_MASK
+                themeMode = when (systemNightMode) {
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES -> "dark"
+                    android.content.res.Configuration.UI_MODE_NIGHT_NO -> "light"
+                    else -> "light"
+                }
+                Log.d("HabitCompactWidget", "No saved theme found, using system theme: $themeMode")
+            }
             
-            // Use the first valid values found
-            val themeMode = themeMode1 ?: themeMode2 ?: themeMode3 ?: "light"
+            Log.d("HabitCompactWidget", "Detected theme mode: '$themeMode'")
+            
+            // Try different possible keys for primary color
             val primaryColor = when {
-                primaryColor1 != -1 -> primaryColor1
-                primaryColor2 != -1 -> primaryColor2
-                primaryColor3 != -1 -> primaryColor3
+                widgetData.contains("primaryColor") -> widgetData.getInt("primaryColor", 0xFF6200EE.toInt())
+                widgetData.contains("home_widget.double.primaryColor") -> {
+                    try {
+                        widgetData.getFloat("home_widget.double.primaryColor", 0xFF6200EE.toFloat()).toInt()
+                    } catch (e: Exception) {
+                        0xFF6200EE.toInt()
+                    }
+                }
+                widgetData.contains("flutter.primaryColor") -> widgetData.getInt("flutter.primaryColor", 0xFF6200EE.toInt())
                 else -> 0xFF6200EE.toInt()
             }
             
             Log.d("HabitCompactWidget", "Using theme - mode: '$themeMode', primary: ${Integer.toHexString(primaryColor)}")
             
-            val isDarkMode = themeMode == "dark"
+            val isDarkMode = themeMode.equals("dark", ignoreCase = true)
             
-            // Modern theme colors with better contrast - matching timeline widget
-            val backgroundColor = if (isDarkMode) 0xFF0F0F0F.toInt() else 0xFFFAFAFA.toInt()
-            val surfaceColor = if (isDarkMode) 0xFF1A1A1A.toInt() else 0xFFFFFFFF.toInt()
+            // 40% opacity backgrounds (60% transparency) - 0x66 = 102/255 ≈ 40%
+            val backgroundColor = if (isDarkMode) 0x660F0F0F.toInt() else 0x66FAFAFA.toInt()
             
-            // Apply dynamic primary color to header background
-            views.setInt(R.id.header_layout, "setBackgroundColor", primaryColor)
+            // Apply semi-transparent colors with error handling
+            try {
+                views.setInt(R.id.compact_widget_root, "setBackgroundColor", backgroundColor)
+                views.setInt(R.id.header_layout, "setBackgroundColor", primaryColor) // Keep header fully opaque
+                views.setTextColor(R.id.compact_title, 0xFFFFFFFF.toInt())
+                views.setInt(R.id.open_app_button, "setColorFilter", 0xFFFFFFFF.toInt())
+            } catch (e: Exception) {
+                Log.e("HabitCompactWidget", "Error applying specific colors, using fallbacks", e)
+                // Fallback to ensure widget has some background
+                views.setInt(R.id.compact_widget_root, "setBackgroundColor", 0x66FAFAFA.toInt())
+            }
             
-            // Header elements use white text for contrast against colored background
-            views.setTextColor(R.id.compact_title, 0xFFFFFFFF.toInt())
-            views.setInt(R.id.open_app_button, "setColorFilter", 0xFFFFFFFF.toInt())
-            
-            // Apply background color to widget root to eliminate white borders
-            views.setInt(R.id.compact_widget_root, "setBackgroundColor", backgroundColor)
-            
-            Log.d("HabitCompactWidget", "Enhanced theme colors applied - isDark: $isDarkMode, primary: ${Integer.toHexString(primaryColor)}")
+            Log.d("HabitCompactWidget", "Semi-transparent theme applied - isDark: $isDarkMode, bg: ${Integer.toHexString(backgroundColor)}")
         } catch (e: Exception) {
-            Log.e("HabitCompactWidget", "Error applying compact theme colors", e)
+            Log.e("HabitCompactWidget", "Error applying compact theme colors, using fallback", e)
+            // Emergency fallback with transparency
+            try {
+                views.setInt(R.id.compact_widget_root, "setBackgroundColor", 0x66FAFAFA.toInt())
+                views.setInt(R.id.header_layout, "setBackgroundColor", 0xFF6200EE.toInt())
+            } catch (fallbackError: Exception) {
+                Log.e("HabitCompactWidget", "Even fallback failed", fallbackError)
+            }
         }
     }
 
