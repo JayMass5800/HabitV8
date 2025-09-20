@@ -170,6 +170,15 @@
                 android:resource="@xml/habit_compact_widget_info" />
         </receiver>
         
+        <!-- Widget RemoteViewsServices for ListView scrolling -->
+        <service android:name=".HabitTimelineWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+        
+        <service android:name=".HabitCompactWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+        
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
