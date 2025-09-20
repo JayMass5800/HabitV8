@@ -43,33 +43,38 @@
 
     </LinearLayout>
 
-    <!-- Habits List -->
-    <LinearLayout
+    <!-- Scrollable Habits List -->
+    <ListView
         android:id="@+id/compact_habits_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:scrollbars="vertical"
+        android:fadingEdge="vertical"
+        android:fadingEdgeLength="6dp"
+        android:clipToPadding="false"
+        android:paddingBottom="2dp" />
 
-        <!-- Empty State -->
-        <TextView
-            android:id="@+id/compact_empty_state"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="All habits completed!"
-            android:textSize="11sp"
-            android:textColor="@color/widget_text_secondary"
-            android:gravity="center"
-            android:visibility="gone" />
+    <!-- Empty State -->
+    <TextView
+        android:id="@+id/compact_empty_state"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="All habits completed!"
+        android:textSize="11sp"
+        android:textColor="@color/widget_text_secondary"
+        android:gravity="center"
+        android:visibility="gone" />
 
-    </LinearLayout>
-
-    <!-- More Habits Indicator -->
+    <!-- More Habits Indicator (now shows scroll hint) -->
     <TextView
         android:id="@+id/more_habits_indicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="+2 more habits"
+        android:text="Scroll for more habits"
         android:textSize="10sp"
         android:textColor="@color/widget_text_secondary"
         android:layout_marginTop="4dp"

@@ -91,67 +91,65 @@
 
     </LinearLayout>
 
-    <!-- Habits List Container -->
-    <LinearLayout
-        android:id="@+id/habits_container"
+    <!-- Habits List Container with Scrolling Support -->
+    <ListView
+        android:id="@+id/habits_list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:scrollbars="vertical"
+        android:fadingEdge="vertical"
+        android:fadingEdgeLength="8dp"
+        android:clipToPadding="false"
+        android:paddingBottom="4dp" />
 
-        <!-- Optimized Empty State for better button visibility -->
-        <LinearLayout
-            android:id="@+id/empty_state"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="16dp"
-            android:visibility="gone">
+    <!-- Empty State -->
+    <LinearLayout
+        android:id="@+id/empty_state"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="16dp"
+        android:visibility="gone">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="No habits for today"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_text_secondary"
-                android:layout_marginBottom="6dp"
-                android:gravity="center" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No habits for today"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_secondary"
+            android:layout_marginBottom="6dp"
+            android:gravity="center" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Great work! All done."
-                android:textSize="14sp"
-                android:textColor="@color/widget_text_secondary"
-                android:alpha="0.8"
-                android:layout_marginBottom="16dp"
-                android:gravity="center" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Great work! All done."
+            android:textSize="14sp"
+            android:textColor="@color/widget_text_secondary"
+            android:alpha="0.8"
+            android:layout_marginBottom="16dp"
+            android:gravity="center" />
 
-            <TextView
-                android:id="@+id/add_habit_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="+ Add New Habit"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/white"
-                android:background="@drawable/widget_add_button_background"
-                android:paddingHorizontal="20dp"
-                android:paddingVertical="12dp"
-                android:clickable="true"
-                android:contentDescription="Add new habit"
-                android:elevation="2dp" />
-
-        </LinearLayout>
-
-        <!-- Habits List -->
-        <LinearLayout
-            android:id="@+id/habits_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical" />
+        <TextView
+            android:id="@+id/add_habit_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+ Add New Habit"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:background="@drawable/widget_add_button_background"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="12dp"
+            android:clickable="true"
+            android:contentDescription="Add new habit"
+            android:elevation="2dp" />
 
     </LinearLayout>
 
