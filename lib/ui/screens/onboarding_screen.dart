@@ -160,136 +160,140 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildWelcomePage(ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // App icon/logo
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primary,
-                  colorScheme.secondary,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const SizedBox(
+                height: 40), // Add top spacing for better visual balance
+            // App icon/logo
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary,
+                    colorScheme.secondary,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
-            ),
-            child: const Icon(
-              Icons.track_changes,
-              size: 60,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 40),
-
-          // Welcome text
-          Text(
-            'Welcome to HabitV8',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-
-          Text(
-            'Your intelligent habit tracking companion with AI-powered insights from OpenAI and Gemini, plus gamification to keep you motivated.',
-            style: TextStyle(
-              fontSize: 18,
-              color: colorScheme.onSurface.withValues(alpha: 0.7),
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-
-          // Trial period banner
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primary.withValues(alpha: 0.1),
-                  colorScheme.secondary.withValues(alpha: 0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colorScheme.primary.withValues(alpha: 0.3),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.workspace_premium,
-                  color: colorScheme.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '30-Day Free Trial',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Start with full access to all premium features',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: colorScheme.onSurface.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: const Icon(
+                Icons.track_changes,
+                size: 60,
+                color: Colors.white,
+              ),
             ),
-          ),
-          const SizedBox(height: 40),
+            const SizedBox(height: 40),
 
-          // Feature highlights
-          _buildFeatureHighlight(
-            icon: Icons.auto_awesome,
-            title: 'AI-Powered Insights (Premium)',
-            description:
-                'OpenAI and Gemini integration - free during your 30-day trial',
-            colorScheme: colorScheme,
-          ),
-          const SizedBox(height: 16),
-          _buildFeatureHighlight(
-            icon: Icons.sports_esports,
-            title: 'Gamification System',
-            description: 'Level up, earn achievements, and build streaks',
-            colorScheme: colorScheme,
-          ),
-          const SizedBox(height: 16),
-          _buildFeatureHighlight(
-            icon: Icons.analytics,
-            title: 'Smart Analytics',
-            description: 'Detailed progress tracking and pattern recognition',
-            colorScheme: colorScheme,
-          ),
-        ],
+            // Welcome text
+            Text(
+              'Welcome to HabitV8',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Your intelligent habit tracking companion with AI-powered insights from OpenAI and Gemini, plus gamification to keep you motivated.',
+              style: TextStyle(
+                fontSize: 18,
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+
+            // Trial period banner
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary.withValues(alpha: 0.1),
+                    colorScheme.secondary.withValues(alpha: 0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.workspace_premium,
+                    color: colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '30-Day Free Trial',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Start with full access to all premium features',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+
+            // Feature highlights
+            _buildFeatureHighlight(
+              icon: Icons.auto_awesome,
+              title: 'AI-Powered Insights (Premium)',
+              description:
+                  'OpenAI and Gemini integration - free during your 30-day trial',
+              colorScheme: colorScheme,
+            ),
+            const SizedBox(height: 16),
+            _buildFeatureHighlight(
+              icon: Icons.sports_esports,
+              title: 'Gamification System',
+              description: 'Level up, earn achievements, and build streaks',
+              colorScheme: colorScheme,
+            ),
+            const SizedBox(height: 16),
+            _buildFeatureHighlight(
+              icon: Icons.analytics,
+              title: 'Smart Analytics',
+              description: 'Detailed progress tracking and pattern recognition',
+              colorScheme: colorScheme,
+            ),
+          ],
+        ),
       ),
     );
   }

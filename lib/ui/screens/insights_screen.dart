@@ -73,6 +73,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     });
 
     // Initialize AI status and start animations
+    // IMPORTANT: Initialize AI status synchronously to prevent race conditions
     _initializeAIStatus();
     _fadeController.forward();
     _slideController.forward();
@@ -2622,7 +2623,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   /// Build backup analysis when AI is not available
   Widget _buildBackupAnalysis(List<Habit> habits, ThemeData theme) {
     // Use rule-based insights from the insights service
-    final ruleBasedInsights = _insightsService.generateAIInsights(habits);
+    final allInsights = _insightsService.generateAIInsights(habits);
+
+    // Filter out insights with CTA actions when AI is disabled
+    // Only show basic pattern insights without actionable recommendations
+    final ruleBasedInsights = allInsights.where((insight) {
+      final action = insight['action'] as String?;
+      final ctaLabel = insight['ctaLabel'] as String?;
+      // Only include insights that don't have actionable CTAs
+      return action == null && ctaLabel == null;
+    }).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2667,7 +2677,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
         const SizedBox(height: 24),
 
-        // Show rule-based insights
+        // Show rule-based insights (without CTA actions)
         if (ruleBasedInsights.isNotEmpty) ...[
           ...ruleBasedInsights.asMap().entries.map((entry) {
             final index = entry.key;

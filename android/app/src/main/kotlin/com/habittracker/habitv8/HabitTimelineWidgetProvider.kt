@@ -118,13 +118,13 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         views.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent)
         
         // Title click to open app
-        val openAppIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
-        views.setOnClickPendingIntent(R.id.header_title, openAppIntent)
+        val openAppPendingIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
+        views.setOnClickPendingIntent(R.id.header_title, openAppPendingIntent)
     }
 
     private fun setupEmptyStateClickHandler(context: Context, views: RemoteViews, appWidgetId: Int) {
-        val openAppIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
-        views.setOnClickPendingIntent(R.id.add_habit_button, openAppIntent)
+        val openAppPendingIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
+        views.setOnClickPendingIntent(R.id.add_habit_button, openAppPendingIntent)
     }
 
     private fun checkForHabits(context: Context): Boolean {
@@ -142,6 +142,8 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         try {
             val themeMode = widgetData.getString("flutter.themeMode", "light") ?: "light"
             val primaryColor = widgetData.getInt("flutter.primaryColor", 0xFF6200EE.toInt())
+            
+            Log.d("HabitTimelineWidget", "Loading theme - mode: $themeMode, primary: ${Integer.toHexString(primaryColor)}")
             
             val isDarkMode = themeMode == "dark"
             
@@ -183,11 +185,15 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         Log.d("HabitTimelineWidget", "Habit completion requested for ID: $habitId")
         
         // Send the completion action to Flutter via home_widget
-        val backgroundIntent = HomeWidgetBackgroundIntent.getBroadcast(
+        val backgroundPendingIntent = HomeWidgetBackgroundIntent.getBroadcast(
             context,
             Uri.parse("habitv8://habit/complete?id=$habitId")
         )
-        context.sendBroadcast(backgroundIntent)
+        try {
+            backgroundPendingIntent.send()
+        } catch (e: Exception) {
+            Log.e("HabitTimelineWidget", "Error sending background intent", e)
+        }
         
         // Refresh the widget after a short delay
         val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
@@ -201,12 +207,21 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         val habitId = intent.getStringExtra(EXTRA_HABIT_ID)
         Log.d("HabitTimelineWidget", "Opening habit details for ID: $habitId")
         
-        // Open the app with the specific habit
-        val openAppIntent = HomeWidgetLaunchIntent.getActivity(
+        // Open the app with the specific habit  
+        val openAppPendingIntent = HomeWidgetLaunchIntent.getActivity(
             context, 
             MainActivity::class.java,
             Uri.parse("habitv8://habit/details?id=$habitId")
         )
-        context.startActivity(openAppIntent)
+        
+        // Convert PendingIntent to Intent and start activity
+        try {
+            openAppPendingIntent.send()
+        } catch (e: Exception) {
+            Log.e("HabitTimelineWidget", "Error opening habit details", e)
+            // Fallback to just opening the app
+            val fallbackIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
+            fallbackIntent.send()
+        }
     }
 }

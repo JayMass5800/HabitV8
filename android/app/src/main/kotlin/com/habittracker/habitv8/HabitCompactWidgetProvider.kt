@@ -114,14 +114,14 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
 
     private fun setupHeaderClickHandlers(context: Context, views: RemoteViews, appWidgetId: Int) {
         // Title and icon click to open app
-        val openAppIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
-        views.setOnClickPendingIntent(R.id.compact_title, openAppIntent)
-        views.setOnClickPendingIntent(R.id.open_app_button, openAppIntent)
+        val openAppPendingIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
+        views.setOnClickPendingIntent(R.id.compact_title, openAppPendingIntent)
+        views.setOnClickPendingIntent(R.id.open_app_button, openAppPendingIntent)
     }
 
     private fun setupEmptyStateClickHandler(context: Context, views: RemoteViews, appWidgetId: Int) {
-        val openAppIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
-        views.setOnClickPendingIntent(R.id.compact_empty_state, openAppIntent)
+        val openAppPendingIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
+        views.setOnClickPendingIntent(R.id.compact_empty_state, openAppPendingIntent)
     }
 
     private fun checkForHabits(context: Context): Boolean {
@@ -141,8 +141,12 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             val habitsJson = prefs.getString("flutter.habits_data", null)
             if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
                 val gson = com.google.gson.Gson()
-                val habitsList = gson.fromJson(habitsJson, Array<Map<String, Any>>::class.java)
-                habitsList?.size ?: 0
+                val type = com.google.gson.reflect.TypeToken.getParameterized(
+                    java.util.List::class.java,
+                    Map::class.java
+                ).type
+                val habitsList: List<Map<String, Any>> = gson.fromJson(habitsJson, type) ?: emptyList()
+                habitsList.size
             } else {
                 0
             }
@@ -197,11 +201,15 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         Log.d("HabitCompactWidget", "Habit completion requested for ID: $habitId")
         
         // Send the completion action to Flutter via home_widget
-        val backgroundIntent = HomeWidgetBackgroundIntent.getBroadcast(
+        val backgroundPendingIntent = HomeWidgetBackgroundIntent.getBroadcast(
             context,
             Uri.parse("habitv8://habit/complete?id=$habitId")
         )
-        context.sendBroadcast(backgroundIntent)
+        try {
+            backgroundPendingIntent.send()
+        } catch (e: Exception) {
+            Log.e("HabitCompactWidget", "Error sending background intent", e)
+        }
         
         // Refresh the widget after a short delay
         val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
@@ -216,11 +224,20 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         Log.d("HabitCompactWidget", "Opening habit details for ID: $habitId")
         
         // Open the app with the specific habit
-        val openAppIntent = HomeWidgetLaunchIntent.getActivity(
+        val openAppPendingIntent = HomeWidgetLaunchIntent.getActivity(
             context, 
             MainActivity::class.java,
             Uri.parse("habitv8://habit/details?id=$habitId")
         )
-        context.startActivity(openAppIntent)
+        
+        // Convert PendingIntent to Intent and start activity
+        try {
+            openAppPendingIntent.send()
+        } catch (e: Exception) {
+            Log.e("HabitCompactWidget", "Error opening habit details", e)
+            // Fallback to just opening the app
+            val fallbackIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
+            fallbackIntent.send()
+        }
     }
 }

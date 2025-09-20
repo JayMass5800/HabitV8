@@ -45,11 +45,11 @@ class HabitTimelineRemoteViewsFactory(
         
         if (position >= habits.size) {
             Log.w("HabitTimelineService", "Position $position out of bounds for ${habits.size} habits")
-            return getLoadingView() ?: RemoteViews(context.packageName, R.layout.widget_timeline_habit_item)
+            return getLoadingView() ?: RemoteViews(context.packageName, R.layout.widget_habit_item)
         }
 
         val habit = habits[position]
-        val remoteViews = RemoteViews(context.packageName, R.layout.widget_timeline_habit_item)
+        val remoteViews = RemoteViews(context.packageName, R.layout.widget_habit_item)
 
         try {
             // Set habit data
@@ -81,7 +81,7 @@ class HabitTimelineRemoteViewsFactory(
 
             // Set completion button state
             if (isCompleted) {
-                remoteViews.setImageViewResource(R.id.complete_button, R.drawable.ic_check_circle)
+                remoteViews.setImageViewResource(R.id.complete_button, R.drawable.ic_check)
                 remoteViews.setInt(R.id.complete_button, "setColorFilter", habitColor)
                 remoteViews.setFloat(R.id.habit_name, "setAlpha", 0.7f)
                 remoteViews.setFloat(R.id.habit_time, "setAlpha", 0.7f)
@@ -121,7 +121,7 @@ class HabitTimelineRemoteViewsFactory(
 
     override fun getLoadingView(): RemoteViews? {
         // Return a loading view or null to use default
-        val remoteViews = RemoteViews(context.packageName, R.layout.widget_timeline_habit_item)
+        val remoteViews = RemoteViews(context.packageName, R.layout.widget_habit_item)
         remoteViews.setTextViewText(R.id.habit_name, "Loading...")
         remoteViews.setViewVisibility(R.id.habit_time, android.view.View.GONE)
         remoteViews.setViewVisibility(R.id.complete_button, android.view.View.GONE)
@@ -152,17 +152,25 @@ class HabitTimelineRemoteViewsFactory(
         try {
             // Load habit data from SharedPreferences (same as home_widget plugin uses)
             val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            val habitsJson = prefs.getString("flutter.habits_data", null)
+            val habitsJson = prefs.getString("flutter.habits", null)
+            
+            Log.d("HabitTimelineService", "Looking for habits data with key: flutter.habits")
             
             if (habitsJson != null) {
-                // Parse JSON data
+                Log.d("HabitTimelineService", "Found habits JSON: ${habitsJson.take(200)}...")
+                // Parse JSON data using reflection
                 val gson = com.google.gson.Gson()
-                val habitsList = gson.fromJson(habitsJson, Array<Map<String, Any>>::class.java)
-                habits = habitsList?.toList() ?: emptyList()
+                val type = com.google.gson.reflect.TypeToken.getParameterized(
+                    java.util.List::class.java,
+                    Map::class.java
+                ).type
+                habits = gson.fromJson(habitsJson, type) ?: emptyList()
                 Log.d("HabitTimelineService", "Loaded ${habits.size} habits from SharedPreferences")
             } else {
+                // Debug: Let's see what keys are actually available
+                val allKeys = prefs.all.keys
+                Log.d("HabitTimelineService", "No habit data found. Available keys: $allKeys")
                 habits = emptyList()
-                Log.d("HabitTimelineService", "No habit data found in SharedPreferences")
             }
         } catch (e: Exception) {
             Log.e("HabitTimelineService", "Error loading habit data", e)

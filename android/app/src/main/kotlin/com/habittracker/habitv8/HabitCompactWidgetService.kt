@@ -82,7 +82,7 @@ class HabitCompactRemoteViewsFactory(
 
             // Set completion button state
             if (isCompleted) {
-                remoteViews.setImageViewResource(R.id.compact_complete_button, R.drawable.ic_check_circle)
+                remoteViews.setImageViewResource(R.id.compact_complete_button, R.drawable.ic_check)
                 remoteViews.setInt(R.id.compact_complete_button, "setColorFilter", habitColor)
                 remoteViews.setFloat(R.id.compact_habit_name, "setAlpha", 0.7f)
                 remoteViews.setFloat(R.id.compact_habit_time, "setAlpha", 0.7f)
@@ -149,13 +149,16 @@ class HabitCompactRemoteViewsFactory(
         try {
             // Load habit data from SharedPreferences (same as home_widget plugin uses)
             val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            val habitsJson = prefs.getString("flutter.habits_data", null)
+            val habitsJson = prefs.getString("flutter.habits", null)
             
             if (habitsJson != null) {
-                // Parse JSON data
+                // Parse JSON data using reflection
                 val gson = com.google.gson.Gson()
-                val habitsList = gson.fromJson(habitsJson, Array<Map<String, Any>>::class.java)
-                habits = habitsList?.toList() ?: emptyList()
+                val type = com.google.gson.reflect.TypeToken.getParameterized(
+                    java.util.List::class.java,
+                    Map::class.java
+                ).type
+                habits = gson.fromJson(habitsJson, type) ?: emptyList()
                 Log.d("HabitCompactService", "Loaded ${habits.size} habits from SharedPreferences")
             } else {
                 habits = emptyList()
