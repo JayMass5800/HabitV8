@@ -177,8 +177,8 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             
             val isDarkMode = themeMode.equals("dark", ignoreCase = true)
             
-            // 40% opacity backgrounds (60% transparency) - 0x66 = 102/255 ≈ 40%
-            val backgroundColor = if (isDarkMode) 0x660F0F0F.toInt() else 0x66FAFAFA.toInt()
+            // 50% opacity backgrounds (50% transparency) - 0x80 = 128/255 = 50%
+            val backgroundColor = if (isDarkMode) 0x800F0F0F.toInt() else 0x80FAFAFA.toInt()
             
             // Apply semi-transparent colors with error handling
             try {
@@ -197,7 +197,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             Log.e("HabitTimelineWidget", "Error applying theme colors, using fallback", e)
             // Emergency fallback with transparency
             try {
-                views.setInt(R.id.widget_root, "setBackgroundColor", 0x66FAFAFA.toInt())
+                views.setInt(R.id.widget_root, "setBackgroundColor", 0x80FAFAFA.toInt())
                 views.setInt(R.id.header_layout, "setBackgroundColor", 0xFF6200EE.toInt())
             } catch (fallbackError: Exception) {
                 Log.e("HabitTimelineWidget", "Even fallback failed", fallbackError)

@@ -195,8 +195,8 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             
             val isDarkMode = themeMode.equals("dark", ignoreCase = true)
             
-            // 40% opacity backgrounds (60% transparency) - 0x66 = 102/255 ≈ 40%
-            val backgroundColor = if (isDarkMode) 0x660F0F0F.toInt() else 0x66FAFAFA.toInt()
+            // 50% opacity backgrounds (50% transparency) - 0x80 = 128/255 = 50%
+            val backgroundColor = if (isDarkMode) 0x800F0F0F.toInt() else 0x80FAFAFA.toInt()
             
             // Apply semi-transparent colors with error handling
             try {
@@ -207,7 +207,7 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             } catch (e: Exception) {
                 Log.e("HabitCompactWidget", "Error applying specific colors, using fallbacks", e)
                 // Fallback to ensure widget has some background
-                views.setInt(R.id.compact_widget_root, "setBackgroundColor", 0x66FAFAFA.toInt())
+                views.setInt(R.id.compact_widget_root, "setBackgroundColor", 0x80FAFAFA.toInt())
             }
             
             Log.d("HabitCompactWidget", "Semi-transparent theme applied - isDark: $isDarkMode, bg: ${Integer.toHexString(backgroundColor)}")
@@ -215,7 +215,7 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             Log.e("HabitCompactWidget", "Error applying compact theme colors, using fallback", e)
             // Emergency fallback with transparency
             try {
-                views.setInt(R.id.compact_widget_root, "setBackgroundColor", 0x66FAFAFA.toInt())
+                views.setInt(R.id.compact_widget_root, "setBackgroundColor", 0x80FAFAFA.toInt())
                 views.setInt(R.id.header_layout, "setBackgroundColor", 0xFF6200EE.toInt())
             } catch (fallbackError: Exception) {
                 Log.e("HabitCompactWidget", "Even fallback failed", fallbackError)
