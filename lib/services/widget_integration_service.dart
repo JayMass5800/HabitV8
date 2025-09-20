@@ -353,7 +353,8 @@ class WidgetIntegrationService {
     debugPrint('Result: ${filtered.length} habits for today');
 
     // Sort habits chronologically by time
-    filtered.sort((a, b) => _getHabitSortTime(a).compareTo(_getHabitSortTime(b)));
+    filtered
+        .sort((a, b) => _getHabitSortTime(a).compareTo(_getHabitSortTime(b)));
 
     return filtered;
   }
@@ -364,7 +365,19 @@ class WidgetIntegrationService {
     if (habit.singleDateTime != null) {
       return habit.singleDateTime!;
     }
-    
+
+    // Handle hourly habits with multiple times
+    if (habit.frequency == HabitFrequency.hourly && habit.hourlyTimes.isNotEmpty) {
+      // Use the earliest time from hourly times for sorting
+      final earliestTime = habit.hourlyTimes.first;
+      final timeParts = earliestTime.split(':');
+      final hour = int.parse(timeParts[0]);
+      final minute = int.parse(timeParts[1]);
+      
+      final now = DateTime.now();
+      return DateTime(now.year, now.month, now.day, hour, minute);
+    }
+
     // Handle recurring habits with notification time
     if (habit.notificationTime != null) {
       // Create a DateTime with today's date and the habit's notification time
@@ -377,7 +390,7 @@ class WidgetIntegrationService {
         habit.notificationTime!.minute,
       );
     }
-    
+
     // If no time is set, put it at the end of the day
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day, 23, 59);
@@ -507,10 +520,37 @@ class WidgetIntegrationService {
     switch (habit.frequency) {
       case HabitFrequency.hourly:
         if (habit.hourlyTimes.isNotEmpty) {
-          if (habit.hourlyTimes.length == 1) {
-            return habit.hourlyTimes.first;
+          // For hourly habits, show the next upcoming time or current time
+          final now = DateTime.now();
+          
+          // Find the next time that hasn't passed yet
+          String? nextTime;
+          for (final timeStr in habit.hourlyTimes) {
+            final timeParts = timeStr.split(':');
+            final habitHour = int.parse(timeParts[0]);
+            final habitMinute = int.parse(timeParts[1]);
+            final habitDateTime = DateTime(now.year, now.month, now.day, habitHour, habitMinute);
+            
+            if (habitDateTime.isAfter(now) || habitDateTime.isAtSameMomentAs(DateTime(now.year, now.month, now.day, now.hour, now.minute))) {
+              nextTime = timeStr;
+              break;
+            }
+          }
+          
+          if (nextTime != null) {
+            // Show next time with indicator of additional times
+            if (habit.hourlyTimes.length == 1) {
+              return nextTime;
+            } else {
+              return '$nextTime (+${habit.hourlyTimes.length - 1})';
+            }
           } else {
-            return '${habit.hourlyTimes.first} +${habit.hourlyTimes.length - 1}';
+            // All times have passed, show first time for tomorrow
+            if (habit.hourlyTimes.length == 1) {
+              return '${habit.hourlyTimes.first} (tomorrow)';
+            } else {
+              return '${habit.hourlyTimes.first} (+${habit.hourlyTimes.length - 1})';
+            }
           }
         }
         return 'Hourly';
