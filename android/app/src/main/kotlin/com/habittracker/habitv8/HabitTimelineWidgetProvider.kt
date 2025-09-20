@@ -117,6 +117,19 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         )
         views.setOnClickPendingIntent(R.id.refresh_button, refreshPendingIntent)
         
+        // Add Habit button - open app to create habit screen
+        val addHabitIntent = Intent(context, MainActivity::class.java).apply {
+            putExtra("screen", "create_habit")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val addHabitPendingIntent = PendingIntent.getActivity(
+            context,
+            appWidgetId + 1000, // Unique request code
+            addHabitIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.add_habit_button, addHabitPendingIntent)
+        
         // Title click to open app
         val openAppPendingIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
         views.setOnClickPendingIntent(R.id.header_title, openAppPendingIntent)

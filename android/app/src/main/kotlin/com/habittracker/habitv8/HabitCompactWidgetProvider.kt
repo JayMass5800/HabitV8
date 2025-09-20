@@ -113,6 +113,19 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun setupHeaderClickHandlers(context: Context, views: RemoteViews, appWidgetId: Int) {
+        // Add Habit button - open app to create habit screen
+        val addHabitIntent = Intent(context, MainActivity::class.java).apply {
+            putExtra("screen", "create_habit")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val addHabitPendingIntent = PendingIntent.getActivity(
+            context,
+            appWidgetId + 2000, // Unique request code for compact widget
+            addHabitIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.compact_add_habit_button, addHabitPendingIntent)
+        
         // Title and icon click to open app
         val openAppPendingIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
         views.setOnClickPendingIntent(R.id.compact_title, openAppPendingIntent)

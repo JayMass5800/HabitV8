@@ -58,6 +58,7 @@ class HabitTimelineRemoteViewsFactory(
             val scheduledTime = habit["scheduledTime"] as? String ?: ""
             val isCompleted = habit["isCompleted"] as? Boolean ?: false
             val colorHex = habit["colorHex"] as? String ?: "#4CAF50"
+            val habitStatus = habit["status"] as? String ?: "Due"
             
             // Parse color safely
             val habitColor = try {
@@ -80,17 +81,37 @@ class HabitTimelineRemoteViewsFactory(
             // Set color indicator
             remoteViews.setInt(R.id.habit_color_indicator, "setBackgroundColor", habitColor)
 
-            // Set completion button state
+            // Set completion button state and visual indicators
             if (isCompleted) {
+                // Show completed state with checkmark
                 remoteViews.setImageViewResource(R.id.complete_button, R.drawable.ic_check)
-                remoteViews.setInt(R.id.complete_button, "setColorFilter", habitColor)
+                remoteViews.setInt(R.id.complete_button, "setColorFilter", android.graphics.Color.parseColor("#4CAF50"))
+                
+                // Add visual completion indicators
                 remoteViews.setFloat(R.id.habit_name, "setAlpha", 0.7f)
                 remoteViews.setFloat(R.id.habit_time, "setAlpha", 0.7f)
+                
+                // Add border to indicate completion
+                remoteViews.setInt(R.id.habit_item_container, "setBackgroundResource", R.drawable.widget_habit_item_completed_background)
+                
+                // Update status text
+                remoteViews.setTextViewText(R.id.habit_status, "Completed")
+                remoteViews.setInt(R.id.habit_status, "setBackgroundColor", android.graphics.Color.parseColor("#4CAF50"))
             } else {
+                // Show pending state with outline
                 remoteViews.setImageViewResource(R.id.complete_button, R.drawable.ic_check_circle_outline)
                 remoteViews.setInt(R.id.complete_button, "setColorFilter", habitColor)
+                
+                // Normal opacity for pending habits
                 remoteViews.setFloat(R.id.habit_name, "setAlpha", 1.0f)
                 remoteViews.setFloat(R.id.habit_time, "setAlpha", 1.0f)
+                
+                // Normal background
+                remoteViews.setInt(R.id.habit_item_container, "setBackgroundResource", R.drawable.widget_habit_item_background)
+                
+                // Update status based on time
+                remoteViews.setTextViewText(R.id.habit_status, habitStatus)
+                remoteViews.setInt(R.id.habit_status, "setBackgroundResource", R.drawable.widget_status_background)
             }
 
             // Set up click intent for completion toggle
@@ -108,6 +129,14 @@ class HabitTimelineRemoteViewsFactory(
                 putExtra("position", position)
             }
             remoteViews.setOnClickFillInIntent(R.id.habit_name, habitDetailIntent)
+
+            // Set up click intent for edit button
+            val editHabitIntent = Intent().apply {
+                putExtra("habit_id", habit["id"] as? String ?: "")
+                putExtra("action", "edit_habit")
+                putExtra("position", position)
+            }
+            remoteViews.setOnClickFillInIntent(R.id.edit_button, editHabitIntent)
 
             Log.d("HabitTimelineService", "Created view for habit: $habitName at position $position")
 

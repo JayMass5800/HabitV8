@@ -352,7 +352,35 @@ class WidgetIntegrationService {
     }
     debugPrint('Result: ${filtered.length} habits for today');
 
+    // Sort habits chronologically by time
+    filtered.sort((a, b) => _getHabitSortTime(a).compareTo(_getHabitSortTime(b)));
+
     return filtered;
+  }
+
+  /// Get habit sort time for chronological ordering
+  DateTime _getHabitSortTime(Habit habit) {
+    // Handle single habits with specific date/time
+    if (habit.singleDateTime != null) {
+      return habit.singleDateTime!;
+    }
+    
+    // Handle recurring habits with notification time
+    if (habit.notificationTime != null) {
+      // Create a DateTime with today's date and the habit's notification time
+      final now = DateTime.now();
+      return DateTime(
+        now.year,
+        now.month,
+        now.day,
+        habit.notificationTime!.hour,
+        habit.notificationTime!.minute,
+      );
+    }
+    
+    // If no time is set, put it at the end of the day
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, 23, 59);
   }
 
   /// Check if habit is scheduled for a specific date

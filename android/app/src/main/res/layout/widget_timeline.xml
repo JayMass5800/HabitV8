@@ -30,6 +30,20 @@
             android:textColor="@android:color/white"
             android:gravity="start|center_vertical" />
 
+        <!-- Add Habit Button -->
+        <ImageView
+            android:id="@+id/add_habit_button"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_add"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:padding="2dp"
+            android:tint="@android:color/white"
+            android:alpha="0.9"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="Add new habit" />
+
         <ImageView
             android:id="@+id/refresh_button"
             android:layout_width="24dp"
