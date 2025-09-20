@@ -60,7 +60,7 @@ class WidgetIntegrationService {
       for (final entry in data.entries) {
         await HomeWidget.saveWidgetData(entry.key, entry.value);
         debugPrint(
-            'Saved ${entry.key}: ${entry.value.toString().length > 100 ? entry.value.toString().substring(0, 100) + "..." : entry.value}');
+            'Saved ${entry.key}: ${entry.value.toString().length > 100 ? "${entry.value.toString().substring(0, 100)}..." : entry.value}');
       }
 
       // Small delay to ensure data is written to SharedPreferences
