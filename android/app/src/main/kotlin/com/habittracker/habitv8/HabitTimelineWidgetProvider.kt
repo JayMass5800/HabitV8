@@ -140,57 +140,55 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
 
     private fun applyThemeColors(context: Context, views: RemoteViews, widgetData: SharedPreferences) {
         try {
-            // Debug all available keys
-            val allKeys = widgetData.all.keys
-            Log.d("HabitTimelineWidget", "Available SharedPreferences keys: $allKeys")
-            
             // Try different possible keys for theme mode
-            val themeMode1 = widgetData.getString("themeMode", null)
-            val themeMode2 = widgetData.getString("home_widget.double.themeMode", null)
-            val themeMode3 = widgetData.getString("flutter.themeMode", null)
+            val themeMode = widgetData.getString("themeMode", null) 
+                ?: widgetData.getString("home_widget.double.themeMode", null)
+                ?: widgetData.getString("flutter.themeMode", null)
+                ?: "light"
             
             // Try different possible keys for primary color
-            val primaryColor1 = widgetData.getInt("primaryColor", -1)
-            val primaryColor2 = if (widgetData.contains("home_widget.double.primaryColor")) {
-                widgetData.getFloat("home_widget.double.primaryColor", -1f).toInt()
-            } else -1
-            val primaryColor3 = widgetData.getInt("flutter.primaryColor", -1)
-            
-            Log.d("HabitTimelineWidget", "Theme modes - themeMode: '$themeMode1', double: '$themeMode2', flutter: '$themeMode3'")
-            Log.d("HabitTimelineWidget", "Primary colors - primaryColor: $primaryColor1, double: $primaryColor2, flutter: $primaryColor3")
-            
-            // Use the first valid theme mode found
-            val themeMode = themeMode1 ?: themeMode2 ?: themeMode3 ?: "light"
             val primaryColor = when {
-                primaryColor1 != -1 -> primaryColor1
-                primaryColor2 != -1 -> primaryColor2
-                primaryColor3 != -1 -> primaryColor3
+                widgetData.contains("primaryColor") -> widgetData.getInt("primaryColor", 0xFF6200EE.toInt())
+                widgetData.contains("home_widget.double.primaryColor") -> {
+                    try {
+                        widgetData.getFloat("home_widget.double.primaryColor", 0xFF6200EE.toFloat()).toInt()
+                    } catch (e: Exception) {
+                        0xFF6200EE.toInt()
+                    }
+                }
+                widgetData.contains("flutter.primaryColor") -> widgetData.getInt("flutter.primaryColor", 0xFF6200EE.toInt())
                 else -> 0xFF6200EE.toInt()
             }
             
             Log.d("HabitTimelineWidget", "Using theme - mode: '$themeMode', primary: ${Integer.toHexString(primaryColor)}")
             
-            val isDarkMode = themeMode == "dark"
+            val isDarkMode = themeMode.equals("dark", ignoreCase = true)
             
-            // Modern theme colors with better contrast
+            // Always apply background colors to prevent transparency
             val backgroundColor = if (isDarkMode) 0xFF0F0F0F.toInt() else 0xFFFAFAFA.toInt()
-            val surfaceColor = if (isDarkMode) 0xFF1A1A1A.toInt() else 0xFFFFFFFF.toInt()
             
-            Log.d("HabitTimelineWidget", "Calculated colors - isDark: $isDarkMode, bg: ${Integer.toHexString(backgroundColor)}")
+            // Apply colors with error handling
+            try {
+                views.setInt(R.id.widget_root, "setBackgroundColor", backgroundColor)
+                views.setInt(R.id.header_layout, "setBackgroundColor", primaryColor)
+                views.setTextColor(R.id.header_title, 0xFFFFFFFF.toInt())
+                views.setInt(R.id.refresh_button, "setColorFilter", 0xFFFFFFFF.toInt())
+            } catch (e: Exception) {
+                Log.e("HabitTimelineWidget", "Error applying specific colors, using fallbacks", e)
+                // Fallback to ensure widget is not transparent
+                views.setInt(R.id.widget_root, "setBackgroundColor", 0xFFFAFAFA.toInt())
+            }
             
-            // Apply dynamic primary color to header background
-            views.setInt(R.id.header_layout, "setBackgroundColor", primaryColor)
-            
-            // Header elements use white text for contrast against colored background
-            views.setTextColor(R.id.header_title, 0xFFFFFFFF.toInt())
-            views.setInt(R.id.refresh_button, "setColorFilter", 0xFFFFFFFF.toInt())
-            
-            // Apply background color to widget root to eliminate white borders
-            views.setInt(R.id.widget_root, "setBackgroundColor", backgroundColor)
-            
-            Log.d("HabitTimelineWidget", "Theme colors applied successfully - widget should show background: ${Integer.toHexString(backgroundColor)}")
+            Log.d("HabitTimelineWidget", "Theme colors applied - isDark: $isDarkMode, bg: ${Integer.toHexString(backgroundColor)}")
         } catch (e: Exception) {
-            Log.e("HabitTimelineWidget", "Error applying theme colors", e)
+            Log.e("HabitTimelineWidget", "Error applying theme colors, using fallback", e)
+            // Emergency fallback to prevent transparent widget
+            try {
+                views.setInt(R.id.widget_root, "setBackgroundColor", 0xFFFAFAFA.toInt())
+                views.setInt(R.id.header_layout, "setBackgroundColor", 0xFF6200EE.toInt())
+            } catch (fallbackError: Exception) {
+                Log.e("HabitTimelineWidget", "Even fallback failed", fallbackError)
+            }
         }
     }
 
