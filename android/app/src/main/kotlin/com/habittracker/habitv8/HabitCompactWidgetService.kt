@@ -27,7 +27,12 @@ class HabitCompactRemoteViewsFactory(
     private var textColor = 0
     private var backgroundColor = 0
     private var isDarkMode = false
-    private val appWidgetId = intent.getIntExtra("appWidgetId", 0)
+    private val appWidgetId = intent.getIntExtra(
+        android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID,
+        android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID
+    )
+    private val themeModeExtra: String? = intent.getStringExtra("themeMode")
+    private val primaryColorExtra: Int = intent.getIntExtra("primaryColor", -1)
 
     override fun onCreate() {
         Log.d("HabitCompactWidget", "HabitCompactRemoteViewsFactory onCreate called")
@@ -53,54 +58,66 @@ class HabitCompactRemoteViewsFactory(
         val remoteViews = RemoteViews(context.packageName, R.layout.widget_compact_habit_item)
 
         try {
-            // Extract habit data
+            // Extract habit data (align keys with Dart payload)
+            val habitId = (habit["id"] as? String) ?: (habit["habit_id"] as? String) ?: ""
             val habitName = habit["name"] as? String ?: "Unknown Habit"
-            val scheduledTime = habit["scheduledTime"] as? String ?: ""
-            val isCompleted = habit["isCompleted"] as? Boolean ?: false
-            val colorHex = habit["color"] as? String ?: "#4CAF50"
+            val scheduledTime = habit["timeDisplay"] as? String
+                ?: habit["scheduledTime"] as? String ?: ""
+            val isCompleted = (habit["isCompleted"] as? Boolean) ?: false
+            val colorValue = (habit["colorValue"] as? Number)?.toInt()
+            val colorHex = habit["colorHex"] as? String ?: habit["color"] as? String
             val habitStatus = habit["status"] as? String ?: ""
 
-            // Parse color
-            val color = try {
-                android.graphics.Color.parseColor(colorHex)
-            } catch (e: Exception) {
-                android.graphics.Color.parseColor("#4CAF50")
+            // Resolve color from value or hex
+            val color = when {
+                colorValue != null -> colorValue
+                !colorHex.isNullOrBlank() -> try { android.graphics.Color.parseColor(colorHex) } catch (_: Exception) { 0xFF4CAF50.toInt() }
+                else -> 0xFF4CAF50.toInt()
             }
 
             // Set habit name
             remoteViews.setTextViewText(R.id.compact_habit_name, habitName)
             remoteViews.setTextColor(R.id.compact_habit_name, textColor)
 
-            // Set time text 
-            remoteViews.setTextViewText(R.id.compact_habit_time, scheduledTime)
-            remoteViews.setTextColor(R.id.compact_habit_time, textColor)
+            // Set time text (hide if empty)
+            if (scheduledTime.isNotEmpty()) {
+                remoteViews.setTextViewText(R.id.compact_habit_time, scheduledTime)
+                remoteViews.setTextColor(R.id.compact_habit_time, textColor)
+                remoteViews.setViewVisibility(R.id.compact_habit_time, android.view.View.VISIBLE)
+            } else {
+                remoteViews.setViewVisibility(R.id.compact_habit_time, android.view.View.GONE)
+            }
 
             // Set color indicator
             remoteViews.setInt(R.id.compact_habit_color_indicator, "setBackgroundColor", color)
 
-            // Set completion button appearance
+            // Set completion button appearance (ImageView drawable + tint)
             if (isCompleted) {
-                remoteViews.setTextViewText(R.id.compact_complete_button, "✓")
-                remoteViews.setTextColor(R.id.compact_complete_button, color)
+                remoteViews.setImageViewResource(R.id.compact_complete_button, R.drawable.ic_check)
+                remoteViews.setInt(R.id.compact_complete_button, "setColorFilter", color)
             } else {
-                remoteViews.setTextViewText(R.id.compact_complete_button, "○")
-                remoteViews.setTextColor(R.id.compact_complete_button, textColor)
+                remoteViews.setImageViewResource(R.id.compact_complete_button, R.drawable.ic_check_circle_outline)
+                remoteViews.setInt(R.id.compact_complete_button, "setColorFilter", textColor)
             }
 
-            // Set background color
-            remoteViews.setInt(R.id.compact_habit_item_container, "setBackgroundColor", backgroundColor)
+            // Set rounded, semi-transparent background based on theme
+            val bgRes = if (isDarkMode) R.drawable.widget_compact_habit_item_bg_dark else R.drawable.widget_compact_habit_item_bg_light
+            remoteViews.setInt(R.id.compact_habit_item_container, "setBackgroundResource", bgRes)
 
             // Set click intent for completion toggle
-            val completionIntent = Intent()
-            completionIntent.putExtra("habitId", habit["id"] as? String ?: "")
-            completionIntent.putExtra("action", "toggle_completion")
-            completionIntent.putExtra("widgetId", appWidgetId)
-            
+            val completionIntent = Intent().apply {
+                putExtra("habit_id", habitId)
+                putExtra("action", "toggle_completion")
+                putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }
             remoteViews.setOnClickFillInIntent(R.id.compact_complete_button, completionIntent)
 
             // Set habit name click intent for details
-            val detailIntent = Intent()
-            detailIntent.putExtra("habitId", habit["id"] as? String ?: "")
+            val detailIntent = Intent().apply {
+                putExtra("habit_id", habitId)
+                putExtra("action", "open_habit")
+                putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }
             remoteViews.setOnClickFillInIntent(R.id.compact_habit_name, detailIntent)
             
         } catch (e: Exception) {
@@ -135,47 +152,37 @@ class HabitCompactRemoteViewsFactory(
     private fun loadHabitData() {
         try {
             val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-            val habitsJson = prefs.getString("habits", "[]")
-            
-            if (habitsJson != null) {
-                Log.d("HabitCompactWidget", "Raw habits JSON: $habitsJson")
-                
-                if (habitsJson == "[]") {
-                    Log.d("HabitCompactWidget", "No habits data found, JSON is empty array")
-                    habits = mutableListOf()
-                    return
-                }
+            // HomeWidget writes string values; habits is JSON string or may be absent
+            val habitsJson = prefs.getString("habits", null)
 
-                val habitsArray = JSONArray(habitsJson)
-                Log.d("HabitCompactWidget", "Parsed habits array with ${habitsArray.length()} items")
-
+            if (habitsJson.isNullOrBlank() || habitsJson == "[]") {
+                Log.d("HabitCompactWidget", "No habits data found or empty array. Available keys: ${prefs.all.keys}")
                 habits = mutableListOf()
-                
-                for (i in 0 until habitsArray.length()) {
-                    try {
-                        val habitObj = habitsArray.getJSONObject(i)
-                        Log.d("HabitCompactWidget", "Processing habit $i: ${habitObj.toString()}")
-                        
-                        val habitMap = mutableMapOf<String, Any>()
-                        val habitKeys = habitObj.keys()
-                        
-                        while (habitKeys.hasNext()) {
-                            val key = habitKeys.next()
-                            val value = habitObj.get(key)
-                            habitMap[key] = value
-                        }
-                        
-                        habits.add(habitMap)
-                    } catch (e: Exception) {
-                        Log.e("HabitCompactWidget", "Error processing habit at index $i", e)
-                    }
-                }
-                
-                Log.d("HabitCompactWidget", "Final habits list size: ${habits.size}")
-                
-            } else {
-                habits = mutableListOf()
+                return
             }
+
+            Log.d("HabitCompactWidget", "Raw habits JSON length: ${habitsJson.length}")
+            val habitsArray = JSONArray(habitsJson)
+            Log.d("HabitCompactWidget", "Parsed habits array with ${habitsArray.length()} items")
+
+            val temp = mutableListOf<Map<String, Any>>()
+            for (i in 0 until habitsArray.length()) {
+                try {
+                    val habitObj = habitsArray.getJSONObject(i)
+                    val habitMap = mutableMapOf<String, Any>()
+                    val habitKeys = habitObj.keys()
+                    while (habitKeys.hasNext()) {
+                        val key = habitKeys.next()
+                        val value = habitObj.get(key)
+                        habitMap[key] = value
+                    }
+                    temp.add(habitMap)
+                } catch (e: Exception) {
+                    Log.e("HabitCompactWidget", "Error processing habit at index $i", e)
+                }
+            }
+            habits = temp
+            Log.d("HabitCompactWidget", "Final habits list size: ${habits.size}")
         } catch (e: Exception) {
             Log.e("HabitCompactWidget", "Error loading habit data", e)
             habits = mutableListOf()
@@ -187,65 +194,50 @@ class HabitCompactRemoteViewsFactory(
         
         try {
             val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-            
-            themeMode = prefs.getString("theme_mode", "system") ?: "system"
-            
-            if (themeMode == "system") {
-                val systemNightMode = context.resources.configuration.uiMode and 
-                    android.content.res.Configuration.UI_MODE_NIGHT_MASK
-                
-                when (systemNightMode) {
-                    android.content.res.Configuration.UI_MODE_NIGHT_YES -> themeMode = "dark"
-                    android.content.res.Configuration.UI_MODE_NIGHT_NO -> themeMode = "light"
-                    else -> themeMode = "light"
+            val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+
+            // Read theme mode with robust fallbacks (prefer extras from provider → HomeWidget → Flutter prefs → system)
+            var mode = themeModeExtra
+                ?: prefs.getString("themeMode", null)
+                ?: prefs.getString("home_widget.double.themeMode", null)
+                ?: flutterPrefs.getString("flutter.theme_mode", null)
+                ?: flutterPrefs.getString("theme_mode", null)
+
+            if (mode == null || mode == "system") {
+                val systemNight = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+                mode = when (systemNight) {
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES -> "dark"
+                    android.content.res.Configuration.UI_MODE_NIGHT_NO -> "light"
+                    else -> "light"
                 }
             }
-            
-            Log.d("HabitCompactWidget", "Resolved theme mode: $themeMode")
-            
-            isDarkMode = themeMode == "dark"
-            
-            // Load colors based on theme
-            try {
-                primaryColor = when (isDarkMode) {
-                    true -> {
-                        val primaryHex = prefs.getString("primary_color_dark", "#BB86FC") ?: "#BB86FC"
-                        android.graphics.Color.parseColor(primaryHex)
-                    }
-                    false -> {
-                        val primaryHex = prefs.getString("primary_color_light", "#6200EE") ?: "#6200EE"
-                        android.graphics.Color.parseColor(primaryHex)
-                    }
+            themeMode = mode
+            isDarkMode = themeMode.equals("dark", true)
+
+            // Primary color with integer/float fallbacks; prefer extras from provider
+            primaryColor = when {
+                primaryColorExtra != -1 -> primaryColorExtra
+                prefs.contains("primaryColor") -> prefs.getInt("primaryColor", 0xFF2196F3.toInt())
+                prefs.contains("home_widget.double.primaryColor") -> {
+                    try { prefs.getFloat("home_widget.double.primaryColor", 0xFF2196F3.toFloat()).toInt() } catch (_: Exception) { 0xFF2196F3.toInt() }
                 }
-            } catch (e: Exception) {
-                Log.e("HabitCompactWidget", "Error loading primary color", e)
-                primaryColor = if (isDarkMode) {
-                    android.graphics.Color.parseColor("#BB86FC")
-                } else {
-                    android.graphics.Color.parseColor("#6200EE")
-                }
+                flutterPrefs.contains("flutter.primary_color") -> flutterPrefs.getInt("flutter.primary_color", 0xFF2196F3.toInt())
+                flutterPrefs.contains("primary_color") -> flutterPrefs.getInt("primary_color", 0xFF2196F3.toInt())
+                prefs.contains("flutter.primary_color") -> prefs.getInt("flutter.primary_color", 0xFF2196F3.toInt())
+                prefs.contains("flutter.primaryColor") -> prefs.getInt("flutter.primaryColor", 0xFF2196F3.toInt())
+                else -> 0xFF2196F3.toInt()
             }
-            
-            textColor = if (isDarkMode) {
-                android.graphics.Color.parseColor("#FFFFFF")
-            } else {
-                android.graphics.Color.parseColor("#000000")
-            }
-            
-            backgroundColor = if (isDarkMode) {
-                android.graphics.Color.parseColor("#121212")
-            } else {
-                android.graphics.Color.parseColor("#FFFFFF")
-            }
-            
-            Log.d("HabitCompactWidget", "Theme loaded - isDark: $isDarkMode, textColor: $textColor, primaryColor: $primaryColor")
-            
+
+            textColor = if (isDarkMode) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()
+            backgroundColor = if (isDarkMode) 0xFF121212.toInt() else 0xFFFFFFFF.toInt()
+
+            Log.d("HabitCompactWidget", "Theme loaded - mode: $themeMode, text: ${Integer.toHexString(textColor)}, bg: ${Integer.toHexString(backgroundColor)}, primary: ${Integer.toHexString(primaryColor)}")
         } catch (e: Exception) {
             Log.e("HabitCompactWidget", "Error loading theme data", e)
             isDarkMode = false
-            textColor = android.graphics.Color.parseColor("#000000")
-            backgroundColor = android.graphics.Color.parseColor("#FFFFFF") 
-            primaryColor = android.graphics.Color.parseColor("#6200EE")
+            textColor = 0xFF000000.toInt()
+            backgroundColor = 0xFFFFFFFF.toInt()
+            primaryColor = 0xFF2196F3.toInt()
         }
     }
 }

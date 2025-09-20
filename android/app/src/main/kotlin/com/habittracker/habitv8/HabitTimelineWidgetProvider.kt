@@ -67,9 +67,24 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun setupListView(context: Context, views: RemoteViews, appWidgetId: Int) {
+        // Resolve theme extras to pass into the service for reliability
+        val widgetData = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+        val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        val themeModeExtra = widgetData.getString("themeMode", null)
+            ?: flutterPrefs.getString("flutter.theme_mode", null)
+            ?: flutterPrefs.getString("theme_mode", null)
+        val primaryColorExtra = when {
+            widgetData.contains("primaryColor") -> widgetData.getInt("primaryColor", 0xFF6200EE.toInt())
+            flutterPrefs.contains("flutter.primary_color") -> flutterPrefs.getInt("flutter.primary_color", 0xFF6200EE.toInt())
+            flutterPrefs.contains("primary_color") -> flutterPrefs.getInt("primary_color", 0xFF6200EE.toInt())
+            else -> 0xFF6200EE.toInt()
+        }
+
         // Create intent for the RemoteViewsService
         val serviceIntent = Intent(context, HabitTimelineWidgetService::class.java).apply {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            putExtra("themeMode", themeModeExtra)
+            putExtra("primaryColor", primaryColorExtra)
             data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
         }
         
@@ -82,7 +97,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         // Set up pending intent template for list items
         setupListItemClickTemplate(context, views, appWidgetId)
         
-        Log.d("HabitTimelineWidget", "ListView setup completed for widget $appWidgetId")
+        Log.d("HabitTimelineWidget", "ListView setup completed for widget $appWidgetId with theme extras: mode=$themeModeExtra, primary=${Integer.toHexString(primaryColorExtra)}")
     }
 
     private fun setupListItemClickTemplate(context: Context, views: RemoteViews, appWidgetId: Int) {
@@ -153,14 +168,14 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
 
     private fun applyThemeColors(context: Context, views: RemoteViews, widgetData: SharedPreferences) {
         try {
-            // Try different possible keys for theme mode
-            var themeMode = widgetData.getString("themeMode", null) 
+            // Read theme mode from widget data first, then from app prefs, else fall back to system
+            var themeMode = widgetData.getString("themeMode", null)
                 ?: widgetData.getString("home_widget.double.themeMode", null)
-                ?: widgetData.getString("flutter.themeMode", null)
-            
-            // If no explicit theme mode is found, check system theme
+                ?: widgetData.getString("flutter.theme_mode", null) // from ThemeService via shared_preferences
+                ?: widgetData.getString("flutter.themeMode", null) // legacy/camelCase fallback
+
             if (themeMode == null) {
-                val systemNightMode = context.resources.configuration.uiMode and 
+                val systemNightMode = context.resources.configuration.uiMode and
                     android.content.res.Configuration.UI_MODE_NIGHT_MASK
                 themeMode = when (systemNightMode) {
                     android.content.res.Configuration.UI_MODE_NIGHT_YES -> "dark"
@@ -169,31 +184,32 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 }
                 Log.d("HabitTimelineWidget", "No saved theme found, using system theme: $themeMode")
             }
-            
+
             Log.d("HabitTimelineWidget", "Detected theme mode: '$themeMode'")
-            
-            // Try different possible keys for primary color
+
+            // Read primary color from widget data first, then from app prefs; default to app's default blue
             val primaryColor = when {
-                widgetData.contains("primaryColor") -> widgetData.getInt("primaryColor", 0xFF6200EE.toInt())
+                widgetData.contains("primaryColor") -> widgetData.getInt("primaryColor", 0xFF2196F3.toInt())
                 widgetData.contains("home_widget.double.primaryColor") -> {
                     try {
-                        widgetData.getFloat("home_widget.double.primaryColor", 0xFF6200EE.toFloat()).toInt()
+                        widgetData.getFloat("home_widget.double.primaryColor", 0xFF2196F3.toFloat()).toInt()
                     } catch (e: Exception) {
-                        0xFF6200EE.toInt()
+                        0xFF2196F3.toInt()
                     }
                 }
-                widgetData.contains("flutter.primaryColor") -> widgetData.getInt("flutter.primaryColor", 0xFF6200EE.toInt())
-                else -> 0xFF6200EE.toInt()
+                widgetData.contains("flutter.primary_color") -> widgetData.getInt("flutter.primary_color", 0xFF2196F3.toInt())
+                widgetData.contains("flutter.primaryColor") -> widgetData.getInt("flutter.primaryColor", 0xFF2196F3.toInt())
+                else -> 0xFF2196F3.toInt()
             }
-            
+
             Log.d("HabitTimelineWidget", "Using theme - mode: '$themeMode', primary: ${Integer.toHexString(primaryColor)}")
-            
+
             val isDarkMode = themeMode.equals("dark", ignoreCase = true)
-            
-            // 50% opacity backgrounds (50% transparency) - 0x80 = 128/255 = 50%
+
+            // 50% opacity backgrounds (50% transparency)
             val backgroundColor = if (isDarkMode) 0x800F0F0F.toInt() else 0x80FAFAFA.toInt()
-            
-            // Apply semi-transparent colors with error handling
+
+            // Apply colors with error handling
             try {
                 views.setInt(R.id.widget_root, "setBackgroundColor", backgroundColor)
                 views.setInt(R.id.header_layout, "setBackgroundColor", primaryColor) // Keep header fully opaque
@@ -204,14 +220,14 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 // Fallback to ensure widget has some background
                 views.setInt(R.id.widget_root, "setBackgroundColor", 0x99FAFAFA.toInt())
             }
-            
+
             Log.d("HabitTimelineWidget", "Semi-transparent theme applied - isDark: $isDarkMode, bg: ${Integer.toHexString(backgroundColor)}")
         } catch (e: Exception) {
             Log.e("HabitTimelineWidget", "Error applying theme colors, using fallback", e)
             // Emergency fallback with transparency
             try {
                 views.setInt(R.id.widget_root, "setBackgroundColor", 0x80FAFAFA.toInt())
-                views.setInt(R.id.header_layout, "setBackgroundColor", 0xFF6200EE.toInt())
+                views.setInt(R.id.header_layout, "setBackgroundColor", 0xFF2196F3.toInt())
             } catch (fallbackError: Exception) {
                 Log.e("HabitTimelineWidget", "Even fallback failed", fallbackError)
             }

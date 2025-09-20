@@ -28,6 +28,8 @@ class HabitTimelineRemoteViewsFactory(
         android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID,
         android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID
     )
+    private val themeModeExtra: String? = intent.getStringExtra("themeMode")
+    private val primaryColorExtra: Int = intent.getIntExtra("primaryColor", -1)
 
     override fun onCreate() {
         // Initialize the factory - this is called once when the factory is created
@@ -238,14 +240,17 @@ class HabitTimelineRemoteViewsFactory(
     private fun loadThemeData() {
         try {
             val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
             
-            // Load theme mode with fallbacks
-            var themeMode = prefs.getString("themeMode", null) 
+            // Load theme mode with robust fallbacks (prefer extras from provider → HomeWidget → Flutter prefs → system)
+            var themeMode = themeModeExtra
+                ?: prefs.getString("themeMode", null) 
                 ?: prefs.getString("home_widget.double.themeMode", null)
-                ?: prefs.getString("flutter.themeMode", null)
+                ?: flutterPrefs.getString("flutter.theme_mode", null)
+                ?: flutterPrefs.getString("theme_mode", null)
             
             // If no explicit theme mode is found, check system theme
-            if (themeMode == null) {
+            if (themeMode == null || themeMode == "system") {
                 val systemNightMode = context.resources.configuration.uiMode and 
                     android.content.res.Configuration.UI_MODE_NIGHT_MASK
                 themeMode = when (systemNightMode) {
@@ -258,8 +263,9 @@ class HabitTimelineRemoteViewsFactory(
             
             Log.d("HabitTimelineService", "Detected theme mode: '$themeMode'")
             
-            // Load primary color with fallbacks
+            // Load primary color with fallbacks; prefer extras from provider
             primaryColor = when {
+                primaryColorExtra != -1 -> primaryColorExtra
                 prefs.contains("primaryColor") -> prefs.getInt("primaryColor", 0xFF6200EE.toInt())
                 prefs.contains("home_widget.double.primaryColor") -> {
                     try {
@@ -268,6 +274,8 @@ class HabitTimelineRemoteViewsFactory(
                         0xFF6200EE.toInt()
                     }
                 }
+                flutterPrefs.contains("flutter.primary_color") -> flutterPrefs.getInt("flutter.primary_color", 0xFF6200EE.toInt())
+                flutterPrefs.contains("primary_color") -> flutterPrefs.getInt("primary_color", 0xFF6200EE.toInt())
                 prefs.contains("flutter.primaryColor") -> prefs.getInt("flutter.primaryColor", 0xFF6200EE.toInt())
                 else -> 0xFF6200EE.toInt()
             }
