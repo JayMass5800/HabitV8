@@ -1083,6 +1083,12 @@ class NotificationService {
             '✅ Notification cancelled for complete action for habit: $habitId',
           );
 
+          // Also cancel any snooze notifications for this habit since it's now completed
+          await _cancelSnoozeNotificationsForHabit(habitId);
+          AppLogger.debug(
+            '🗑️ Cancelled any snooze notifications for completed habit: $habitId',
+          );
+
           // Call the callback if set
           if (onNotificationAction != null) {
             AppLogger.debug('📞 DEBUG: Calling notification action callback');
@@ -1447,10 +1453,9 @@ class NotificationService {
             'Time to complete your snoozed habit! Don\'t forget to stay consistent.';
 
         // Cancel any existing snooze notifications for this habit to prevent duplicates
-        final existingSnoozeId = _generateSnoozeNotificationId(habitId);
-        await cancelNotification(existingSnoozeId);
+        await _cancelSnoozeNotificationsForHabit(habitId);
         AppLogger.debug(
-            'Cancelled any existing snooze notification for habit: $habitId');
+            'Cancelled any existing snooze notifications for habit: $habitId');
 
         // Attempt to schedule the notification with the unique snooze ID
         await scheduleHabitNotification(
@@ -1544,10 +1549,9 @@ class NotificationService {
             'Time to complete "$habitName"! Don\'t break your streak.';
 
         // Cancel any existing snooze notifications for this habit to prevent duplicates
-        final existingSnoozeId = _generateSnoozeNotificationId(habitId);
-        await cancelNotification(existingSnoozeId);
+        await _cancelSnoozeNotificationsForHabit(habitId);
         AppLogger.debug(
-            'Cancelled any existing snooze notification for habit: $habitName');
+            'Cancelled any existing snooze notifications for habit: $habitName');
 
         // Attempt to schedule the notification with the unique snooze ID
         await scheduleHabitNotification(
@@ -1585,16 +1589,18 @@ class NotificationService {
 
   /// Generate a unique notification ID for snooze notifications
   static int _generateSnoozeNotificationId(String habitId) {
-    // Simplified approach - use habitId hash + a fixed offset for snooze
-    // This is more predictable and less likely to cause conflicts
+    // Enhanced approach - use habitId hash + current timestamp + fixed offset for snooze
+    // This makes snooze notifications truly unique and prevents conflicts
     final baseId = habitId.hashCode.abs();
+    final timestamp = DateTime.now().millisecondsSinceEpoch %
+        1000; // Last 3 digits of timestamp
     final snoozeOffset = 2000000; // Fixed offset for snooze notifications
 
-    // Keep within safe integer range (avoid 32-bit overflow)
-    final snoozeId = (baseId % 1000000) + snoozeOffset;
+    // Combine base ID with timestamp to ensure uniqueness even for same habit
+    final snoozeId = (baseId % 900000) + snoozeOffset + timestamp;
 
     AppLogger.debug(
-        'Generated snooze notification ID: $snoozeId for habit: $habitId');
+        'Generated snooze notification ID: $snoozeId for habit: $habitId (base: $baseId, timestamp: $timestamp)');
     return snoozeId;
   }
 
@@ -1625,18 +1631,33 @@ class NotificationService {
       AppLogger.info(
           '🔄 Attempting fallback snooze scheduling for habit: $habitId');
 
-      // Try scheduling as an alarm instead of a notification
+      // Try to get habit name for better notification content
+      String habitName = 'Your habit'; // Default fallback
+      try {
+        // Attempt to retrieve habit name from database for more specific notification
+        final habitBox = await DatabaseService.getInstance();
+        final habitService = HabitService(habitBox);
+        final habit = await habitService.getHabitById(habitId);
+        if (habit != null) {
+          habitName = habit.name;
+          AppLogger.info('Retrieved habit name for fallback: $habitName');
+        }
+      } catch (e) {
+        AppLogger.debug('Could not retrieve habit name for fallback: $e');
+      }
+
+      // Try scheduling as an alarm instead of a notification with personalized content
       await scheduleHabitAlarm(
         id: notificationId,
         habitId: habitId,
-        title: 'Habit Reminder (Snoozed)',
-        body: 'Time to complete your habit!',
+        title: '⏰ $habitName (Snoozed)',
+        body: 'Time to complete "$habitName"! Don\'t break your streak.',
         scheduledTime: snoozeTime,
         snoozeDelayMinutes: 10,
       );
 
       AppLogger.info(
-          '✅ Fallback alarm scheduling successful for habit: $habitId');
+          '✅ Fallback alarm scheduling successful for habit: $habitName');
     } catch (fallbackError) {
       AppLogger.error('❌ Fallback scheduling also failed for habit: $habitId',
           fallbackError);
@@ -1649,12 +1670,26 @@ class NotificationService {
       AppLogger.info(
           '🚨 Triggering emergency snooze notification for habit: $habitId');
 
+      // Try to get habit name for better notification content
+      String habitName = 'your habit'; // Default fallback
+      try {
+        final habitBox = await DatabaseService.getInstance();
+        final habitService = HabitService(habitBox);
+        final habit = await habitService.getHabitById(habitId);
+        if (habit != null) {
+          habitName = habit.name;
+        }
+      } catch (e) {
+        AppLogger.debug(
+            'Could not retrieve habit name for emergency notification: $e');
+      }
+
       // Show an immediate notification telling user to check manually
       await showNotification(
         id: DateTime.now().millisecondsSinceEpoch,
-        title: 'Snooze Error',
+        title: '⚠️ Snooze Notification Failed',
         body:
-            'Snooze failed to schedule. Please check your habit manually in 30 minutes.',
+            'Snooze failed for "$habitName". Please check your habit manually in 30 minutes.',
         payload: jsonEncode({'habitId': habitId, 'type': 'snooze_error'}),
       );
     } catch (e) {
@@ -1945,6 +1980,89 @@ class NotificationService {
     await _notificationsPlugin.cancelAll();
   }
 
+  /// Cancel all notifications except active snooze notifications
+  /// This prevents snooze notifications from being cancelled when scheduling new habit notifications
+  static Future<void> _cancelAllNonSnoozeNotifications() async {
+    if (!_isInitialized) await initialize();
+
+    try {
+      AppLogger.info('🧹 Cancelling all non-snooze notifications...');
+
+      // Get all pending notifications
+      final pendingNotifications = await getPendingNotifications();
+      AppLogger.info(
+          '📋 Found ${pendingNotifications.length} pending notifications');
+
+      int cancelledCount = 0;
+      int preservedSnoozeCount = 0;
+
+      for (final notification in pendingNotifications) {
+        // Check if this is a snooze notification (ID in snooze range)
+        // Snooze notifications have IDs in range 2000000-2999999
+        if (notification.id >= 2000000 && notification.id <= 2999999) {
+          AppLogger.info(
+              '🔒 Preserving snooze notification ID: ${notification.id}');
+          preservedSnoozeCount++;
+        } else {
+          await _notificationsPlugin.cancel(notification.id);
+          AppLogger.debug('❌ Cancelled notification ID: ${notification.id}');
+          cancelledCount++;
+        }
+      }
+
+      AppLogger.info(
+          '✅ Cancelled $cancelledCount notifications, preserved $preservedSnoozeCount snooze notifications');
+    } catch (e) {
+      AppLogger.error('Error in selective notification cancellation', e);
+      // Fallback to cancel all if there's an error
+      AppLogger.warning('Falling back to cancel all notifications');
+      await cancelAllNotifications();
+    }
+  }
+
+  /// Cancel snooze notifications for a specific habit
+  /// This prevents old snooze notifications from interfering with new notifications
+  static Future<void> _cancelSnoozeNotificationsForHabit(String habitId) async {
+    try {
+      AppLogger.debug(
+          '🧹 Checking for snooze notifications to cancel for habit: $habitId');
+
+      // Get all pending notifications
+      final pendingNotifications = await getPendingNotifications();
+      int cancelledSnoozeCount = 0;
+
+      for (final notification in pendingNotifications) {
+        // Check if this is a snooze notification for this specific habit
+        if (notification.id >= 2000000 && notification.id <= 2999999) {
+          // For snooze notifications, we need to check if the payload contains this habitId
+          // Since we can't directly access payload here, we'll cancel based on ID pattern
+          // Snooze IDs are generated from habitId hash, so we can reverse-engineer
+          final baseId = habitId.hashCode.abs();
+          final expectedSnoozeRange = (baseId % 900000) + 2000000;
+
+          // Check if this notification ID could belong to this habit (within reasonable range)
+          if (notification.id >= expectedSnoozeRange &&
+              notification.id <= expectedSnoozeRange + 1000) {
+            await _notificationsPlugin.cancel(notification.id);
+            AppLogger.debug(
+                '❌ Cancelled snooze notification ID: ${notification.id} for habit: $habitId');
+            cancelledSnoozeCount++;
+          }
+        }
+      }
+
+      if (cancelledSnoozeCount > 0) {
+        AppLogger.info(
+            '🧹 Cancelled $cancelledSnoozeCount snooze notification(s) for habit: $habitId');
+      } else {
+        AppLogger.debug('No snooze notifications found for habit: $habitId');
+      }
+    } catch (e) {
+      AppLogger.error(
+          'Error cancelling snooze notifications for habit $habitId', e);
+    }
+  }
+
   /// Cancel all notifications for a specific habit
   static Future<void> cancelHabitNotifications(int habitId) async {
     if (!_isInitialized) await initialize();
@@ -2181,6 +2299,13 @@ class NotificationService {
       ); // Use safe ID generation
       AppLogger.debug(
         'Cancelled existing notifications for habit ID: ${habit.id}',
+      );
+
+      // Also cancel any existing snooze notifications for this habit
+      // to prevent old snooze notifications from interfering with new schedules
+      await _cancelSnoozeNotificationsForHabit(habit.id);
+      AppLogger.debug(
+        'Cancelled existing snooze notifications for habit ID: ${habit.id}',
       );
 
       final frequency = habit.frequency.toString().split('.').last;
@@ -3757,9 +3882,10 @@ class NotificationService {
       AppLogger.info('🔄 Starting queue-based notification scheduling...');
 
       // First, cancel all existing notifications to prevent duplicates
+      // BUT preserve active snooze notifications (identified by snooze offset range)
       await BackgroundTaskService.executeLightweightTask(
-        'cancelAllNotifications',
-        () => cancelAllNotifications(),
+        'cancelNonSnoozeNotifications',
+        () => _cancelAllNonSnoozeNotifications(),
       );
 
       // Get all habits from the database
