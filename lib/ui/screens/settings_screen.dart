@@ -1638,10 +1638,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       AppLogger.info('🔔 Starting notification refresh after import');
 
-      // Schedule all habit notifications and alarms
-      await NotificationService.scheduleAllHabitNotifications();
+      // Get all habits from the database
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+      final habits = await habitService.getAllHabits();
+      final activeHabits = habits.where((habit) => habit.isActive).toList();
 
-      AppLogger.info('✅ Notification refresh completed after import');
+      AppLogger.info(
+          '📋 Found ${activeHabits.length} active habits to refresh');
+
+      // Schedule notifications for each habit individually (same as midnight reset)
+      // This preserves individual habit timings and settings
+      int successCount = 0;
+      int errorCount = 0;
+
+      for (final habit in activeHabits) {
+        try {
+          if (habit.notificationsEnabled) {
+            await NotificationService.scheduleHabitNotificationsOnly(habit);
+            successCount++;
+            AppLogger.debug('✅ Refreshed notifications for: ${habit.name}');
+          }
+        } catch (e) {
+          errorCount++;
+          AppLogger.error(
+              '❌ Error refreshing notifications for habit: ${habit.name}', e);
+        }
+      }
+
+      AppLogger.info(
+          '✅ Notification refresh completed after import: $successCount success, $errorCount errors');
 
       // Remove loading overlay
       loadingOverlay?.remove();
