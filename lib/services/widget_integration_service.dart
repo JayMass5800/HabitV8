@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +17,8 @@ class WidgetIntegrationService {
   static WidgetIntegrationService get instance =>
       _instance ??= WidgetIntegrationService._();
 
+  Timer? _periodicUpdateTimer;
+
   WidgetIntegrationService._();
 
   /// Initialize widget integration and set up background handlers
@@ -26,6 +29,9 @@ class WidgetIntegrationService {
 
       // Set initial widget data
       await updateAllWidgets();
+
+      // Start periodic updates to ensure widgets stay fresh
+      startPeriodicUpdates();
 
       debugPrint('Widget integration initialized successfully');
     } catch (e) {
@@ -270,22 +276,43 @@ class WidgetIntegrationService {
     }
   }
 
-  /// Schedule periodic widget updates
-  Future<void> schedulePeriodicUpdates() async {
+  /// Start periodic widget updates (every 30 minutes)
+  void startPeriodicUpdates() {
     try {
-      // Update widgets every 30 minutes
-      await HomeWidget.updateWidget(
-        name: _timelineWidgetName,
-        androidName: _timelineWidgetName,
-      );
+      // Cancel existing timer if any
+      _periodicUpdateTimer?.cancel();
 
-      await HomeWidget.updateWidget(
-        name: _compactWidgetName,
-        androidName: _compactWidgetName,
-      );
+      // Update widgets every 30 minutes to ensure they stay fresh
+      _periodicUpdateTimer =
+          Timer.periodic(const Duration(minutes: 30), (timer) async {
+        try {
+          debugPrint('Performing periodic widget update');
+          await updateAllWidgets();
+        } catch (e) {
+          debugPrint('Error during periodic widget update: $e');
+        }
+      });
+
+      debugPrint('Periodic widget updates started (every 30 minutes)');
     } catch (e) {
-      debugPrint('Error scheduling periodic updates: $e');
+      debugPrint('Error starting periodic widget updates: $e');
     }
+  }
+
+  /// Stop periodic widget updates
+  void stopPeriodicUpdates() {
+    try {
+      _periodicUpdateTimer?.cancel();
+      _periodicUpdateTimer = null;
+      debugPrint('Periodic widget updates stopped');
+    } catch (e) {
+      debugPrint('Error stopping periodic widget updates: $e');
+    }
+  }
+
+  /// Schedule periodic widget updates (legacy method - now calls startPeriodicUpdates)
+  Future<void> schedulePeriodicUpdates() async {
+    startPeriodicUpdates();
   }
 
   /// Check if the app was launched from a widget

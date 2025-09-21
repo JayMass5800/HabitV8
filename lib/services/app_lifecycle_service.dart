@@ -7,6 +7,7 @@ import 'notification_queue_processor.dart';
 // Old renewal services removed - now using midnight_habit_reset_service.dart
 import 'notification_action_service.dart';
 import 'notification_service.dart';
+import 'widget_integration_service.dart';
 import 'logging_service.dart';
 import '../data/database.dart';
 
@@ -133,6 +134,9 @@ class AppLifecycleService with WidgetsBindingObserver {
       // Use longer delay and retry mechanism to ensure providers are fully initialized
       _processPendingActionsWithRetry();
 
+      // Refresh widgets to ensure they show current day data
+      _refreshWidgetsOnResume();
+
       AppLogger.info('✅ App resume handling completed');
     } catch (e) {
       AppLogger.error('Error handling app resume', e);
@@ -218,6 +222,26 @@ class AppLifecycleService with WidgetsBindingObserver {
         }
       }
     });
+  }
+
+  /// Refresh widgets when app resumes to ensure current day data is shown
+  static void _refreshWidgetsOnResume() {
+    try {
+      AppLogger.debug('🔄 Refreshing widgets on app resume...');
+
+      // Add delay to ensure app is fully resumed and services are ready
+      Future.delayed(const Duration(milliseconds: 1500), () async {
+        try {
+          await WidgetIntegrationService.instance.updateAllWidgets();
+          AppLogger.debug('✅ Widgets refreshed successfully on app resume');
+        } catch (e) {
+          AppLogger.error('❌ Error refreshing widgets on app resume', e);
+          // Don't block app resume if widget refresh fails
+        }
+      });
+    } catch (e) {
+      AppLogger.error('Error scheduling widget refresh on resume', e);
+    }
   }
 
   /// Perform background cleanup when app is paused

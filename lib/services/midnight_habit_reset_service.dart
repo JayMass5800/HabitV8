@@ -3,10 +3,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'notification_service.dart';
+import 'widget_integration_service.dart';
 import 'logging_service.dart';
 
 /// Service responsible for resetting habits at midnight based on their frequency
 /// This replaces the complex renewal system with a simple, predictable midnight reset
+/// Also handles widget refresh at midnight to ensure widgets show current day data
 class MidnightHabitResetService {
   static Timer? _midnightTimer;
   static bool _isInitialized = false;
@@ -115,6 +117,16 @@ class MidnightHabitResetService {
         }
       }
 
+      // Update widgets with fresh data for the new day
+      try {
+        AppLogger.info('🔄 Updating widgets with fresh data for new day...');
+        await WidgetIntegrationService.instance.updateAllWidgets();
+        AppLogger.info('✅ Widgets updated successfully');
+      } catch (e) {
+        AppLogger.error('❌ Error updating widgets during midnight reset', e);
+        // Don't fail the entire reset if widget update fails
+      }
+
       // Update last reset timestamp
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_lastResetKey, now.toIso8601String());
@@ -201,6 +213,18 @@ class MidnightHabitResetService {
   static Future<void> forceReset() async {
     AppLogger.info('🔄 Force reset requested');
     await _performMidnightReset();
+  }
+
+  /// Force widget refresh (can be called independently)
+  static Future<void> refreshWidgets() async {
+    try {
+      AppLogger.info('🔄 Manual widget refresh requested');
+      await WidgetIntegrationService.instance.updateAllWidgets();
+      AppLogger.info('✅ Manual widget refresh completed');
+    } catch (e) {
+      AppLogger.error('❌ Error during manual widget refresh', e);
+      rethrow;
+    }
   }
 
   /// Get service status
