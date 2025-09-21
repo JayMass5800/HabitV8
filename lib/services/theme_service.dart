@@ -37,9 +37,12 @@ class ThemeService {
     }
     await prefs.setString(_themeModeKey, themeModeString);
 
-    // Write canonical keys for widgets via HomeWidget
+    // Only push theme changes to widgets if widget setting is set to follow the app
     try {
-      await HomeWidget.saveWidgetData('themeMode', themeModeString);
+      final widgetMode = prefs.getString('widget_theme_mode') ?? 'follow_app';
+      if (widgetMode == 'follow_app') {
+        await HomeWidget.saveWidgetData('themeMode', themeModeString);
+      }
     } catch (_) {}
   }
 
@@ -63,9 +66,12 @@ class ThemeService {
     }
     await prefs.setInt(_primaryColorKey, colorValue);
 
-    // Write canonical key for widgets via HomeWidget
+    // Only push color changes to widgets if widget setting is set to follow the app
     try {
-      await HomeWidget.saveWidgetData('primaryColor', colorValue);
+      final widgetMode = prefs.getString('widget_theme_mode') ?? 'follow_app';
+      if (widgetMode == 'follow_app') {
+        await HomeWidget.saveWidgetData('primaryColor', colorValue);
+      }
     } catch (_) {}
   }
 }
@@ -87,7 +93,7 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
 
     // Update widgets with new theme (ensure prefs flushed before update)
     try {
-      await Future.delayed(const Duration(milliseconds: 150));
+      await Future.delayed(const Duration(milliseconds: 250));
       await WidgetIntegrationService.instance.updateAllWidgets();
     } catch (e) {
       // Don't block theme change if widget update fails
@@ -100,7 +106,7 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
 
     // Update widgets with new color (ensure prefs flushed before update)
     try {
-      await Future.delayed(const Duration(milliseconds: 150));
+      await Future.delayed(const Duration(milliseconds: 250));
       await WidgetIntegrationService.instance.updateAllWidgets();
     } catch (e) {
       // Don't block color change if widget update fails

@@ -62,16 +62,18 @@ class HabitTimelineRemoteViewsFactory(
         try {
             // Set habit data
             val habitName = habit["name"] as? String ?: "Unknown Habit"
-            val scheduledTime = habit["scheduledTime"] as? String ?: ""
+            val scheduledTime = (habit["timeDisplay"] as? String)
+                ?: (habit["scheduledTime"] as? String) ?: ""
             val isCompleted = habit["isCompleted"] as? Boolean ?: false
-            val colorHex = habit["colorHex"] as? String ?: "#4CAF50"
             val habitStatus = habit["status"] as? String ?: "Due"
-            
-            // Parse color safely
-            val habitColor = try {
-                android.graphics.Color.parseColor(colorHex)
-            } catch (e: Exception) {
-                android.graphics.Color.parseColor("#4CAF50") // Fallback green
+
+            // Resolve color from ARGB int or hex string
+            val colorInt = (habit["colorValue"] as? Number)?.toInt()
+            val colorHex = habit["colorHex"] as? String
+            val habitColor = when {
+                colorInt != null -> colorInt
+                !colorHex.isNullOrBlank() -> try { android.graphics.Color.parseColor(colorHex) } catch (_: Exception) { android.graphics.Color.parseColor("#4CAF50") }
+                else -> android.graphics.Color.parseColor("#4CAF50")
             }
 
             // Set habit name with theme-aware text color
@@ -192,44 +194,64 @@ class HabitTimelineRemoteViewsFactory(
 
     private fun loadHabitData() {
         try {
-            // Load habit data from the SAME SharedPreferences that the widget provider uses
-            // The widget provider gets data from home_widget plugin, not FlutterSharedPreferences
-            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-            val habitsJson = prefs.getString("habits", null)
-            
-            Log.d("HabitTimelineService", "Looking for habits data with key: habits in HomeWidgetPreferences")
-            
-            if (habitsJson != null) {
-                Log.d("HabitTimelineService", "Found habits JSON: ${habitsJson.take(200)}...")
-                Log.d("HabitTimelineService", "Full JSON length: ${habitsJson.length}")
-                
-                // Parse JSON data using reflection
-                val gson = com.google.gson.Gson()
-                val type = com.google.gson.reflect.TypeToken.getParameterized(
-                    java.util.List::class.java,
-                    Map::class.java
-                ).type
-                habits = gson.fromJson(habitsJson, type) ?: emptyList()
-                Log.d("HabitTimelineService", "Loaded ${habits.size} habits from HomeWidgetPreferences")
-                
-                // Debug first habit if available
-                if (habits.isNotEmpty()) {
-                    val firstHabit = habits[0]
-                    Log.d("HabitTimelineService", "First habit keys: ${firstHabit.keys}")
-                    Log.d("HabitTimelineService", "First habit name: ${firstHabit["name"]}")
-                    Log.d("HabitTimelineService", "First habit isCompleted: ${firstHabit["isCompleted"]}")
-                }
-            } else {
-                // Debug: Let's see what keys are actually available
-                val allKeys = prefs.all.keys
-                Log.d("HabitTimelineService", "No habit data found in HomeWidgetPreferences. Available keys: $allKeys")
-                
-                // Also check the theme data in the correct store
-                val themeMode = prefs.getString("themeMode", null)
-                val primaryColor = prefs.getInt("primaryColor", -1)
-                Log.d("HabitTimelineService", "HomeWidget theme mode: $themeMode, Primary color: $primaryColor")
-                
+            // Prefer HomeWidgetPreferences (plugin store), with robust fallbacks
+            val hwPrefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            val raw = hwPrefs.getString("habits", null)
+                ?: hwPrefs.getString("home_widget.string.habits", null)
+                ?: hwPrefs.getString("habits_data", null)
+                ?: flutterPrefs.getString("flutter.habits_data", null)
+
+            Log.d("HabitTimelineService", "Attempting to load habits. Raw length: ${raw?.length ?: 0}")
+
+            if (raw.isNullOrBlank()) {
+                val allKeys = hwPrefs.all.keys
+                Log.d("HabitTimelineService", "No habit data found. HomeWidget keys: $allKeys")
                 habits = emptyList()
+                return
+            }
+
+            // If the payload is an object, extract the 'habits' array field
+            val payload = raw.trim()
+            val habitsArrayString = if (payload.startsWith("{")) {
+                try {
+                    val obj = org.json.JSONObject(payload)
+                    val habitsField = obj.opt("habits")
+                    when (habitsField) {
+                        is org.json.JSONArray -> habitsField.toString()
+                        is org.json.JSONObject -> habitsField.toString()
+                        is String -> habitsField
+                        else -> null
+                    }
+                } catch (e: Exception) {
+                    Log.w("HabitTimelineService", "Failed to parse object payload, falling back to raw", e)
+                    null
+                }
+            } else payload
+
+            if (habitsArrayString.isNullOrBlank()) {
+                Log.d("HabitTimelineService", "Habits array not found in payload")
+                habits = emptyList()
+                return
+            }
+
+            // Parse JSON array to list of maps
+            val gson = com.google.gson.Gson()
+            val type = com.google.gson.reflect.TypeToken.getParameterized(
+                java.util.List::class.java,
+                Map::class.java
+            ).type
+            habits = try {
+                gson.fromJson(habitsArrayString, type) ?: emptyList()
+            } catch (e: Exception) {
+                Log.e("HabitTimelineService", "Failed to parse habits JSON array", e)
+                emptyList()
+            }
+
+            Log.d("HabitTimelineService", "Loaded ${habits.size} habits for timeline widget")
+            if (habits.isNotEmpty()) {
+                val firstHabit = habits[0]
+                Log.d("HabitTimelineService", "First habit keys: ${firstHabit.keys}")
             }
         } catch (e: Exception) {
             Log.e("HabitTimelineService", "Error loading habit data", e)
@@ -264,9 +286,21 @@ class HabitTimelineRemoteViewsFactory(
             Log.d("HabitTimelineService", "Detected theme mode: '$themeMode'")
             
             // Load primary color with fallbacks; prefer extras from provider
+            fun getIntCompat(sp: android.content.SharedPreferences, key: String, def: Int): Int {
+                return try {
+                    when (val v = sp.all[key]) {
+                        is Int -> v
+                        is Long -> v.toInt()
+                        is Float -> v.toInt()
+                        is Double -> v.toInt()
+                        is String -> v.toLongOrNull()?.toInt() ?: v.toIntOrNull() ?: def
+                        else -> def
+                    }
+                } catch (_: Exception) { def }
+            }
             primaryColor = when {
                 primaryColorExtra != -1 -> primaryColorExtra
-                prefs.contains("primaryColor") -> prefs.getInt("primaryColor", 0xFF6200EE.toInt())
+                prefs.contains("primaryColor") -> getIntCompat(prefs, "primaryColor", 0xFF6200EE.toInt())
                 prefs.contains("home_widget.double.primaryColor") -> {
                     try {
                         prefs.getFloat("home_widget.double.primaryColor", 0xFF6200EE.toFloat()).toInt()
@@ -274,9 +308,9 @@ class HabitTimelineRemoteViewsFactory(
                         0xFF6200EE.toInt()
                     }
                 }
-                flutterPrefs.contains("flutter.primary_color") -> flutterPrefs.getInt("flutter.primary_color", 0xFF6200EE.toInt())
-                flutterPrefs.contains("primary_color") -> flutterPrefs.getInt("primary_color", 0xFF6200EE.toInt())
-                prefs.contains("flutter.primaryColor") -> prefs.getInt("flutter.primaryColor", 0xFF6200EE.toInt())
+                flutterPrefs.contains("flutter.primary_color") -> getIntCompat(flutterPrefs, "flutter.primary_color", 0xFF6200EE.toInt())
+                flutterPrefs.contains("primary_color") -> getIntCompat(flutterPrefs, "primary_color", 0xFF6200EE.toInt())
+                prefs.contains("flutter.primaryColor") -> getIntCompat(prefs, "flutter.primaryColor", 0xFF6200EE.toInt())
                 else -> 0xFF6200EE.toInt()
             }
             

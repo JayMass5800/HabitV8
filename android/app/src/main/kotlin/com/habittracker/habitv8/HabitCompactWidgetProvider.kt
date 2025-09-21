@@ -20,6 +20,22 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         const val EXTRA_HABIT_ID = "habit_id"
     }
 
+    // Safely read Int even if stored as Long/Float/String
+    private fun getIntCompat(prefs: SharedPreferences, key: String, default: Int): Int {
+        return try {
+            when (val v = prefs.all[key]) {
+                is Int -> v
+                is Long -> v.toInt()
+                is Float -> v.toInt()
+                is Double -> v.toInt()
+                is String -> v.toLongOrNull()?.toInt() ?: v.toIntOrNull() ?: default
+                else -> default
+            }
+        } catch (e: Exception) {
+            default
+        }
+    }
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -81,11 +97,12 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         val themeModeExtra = widgetData.getString("themeMode", null)
             ?: flutterPrefs.getString("flutter.theme_mode", null)
             ?: flutterPrefs.getString("theme_mode", null)
+        val defaultPrimary = 0xFF2196F3.toInt()
         val primaryColorExtra = when {
-            widgetData.contains("primaryColor") -> widgetData.getInt("primaryColor", 0xFF2196F3.toInt())
-            flutterPrefs.contains("flutter.primary_color") -> flutterPrefs.getInt("flutter.primary_color", 0xFF2196F3.toInt())
-            flutterPrefs.contains("primary_color") -> flutterPrefs.getInt("primary_color", 0xFF2196F3.toInt())
-            else -> 0xFF2196F3.toInt()
+            widgetData.contains("primaryColor") -> getIntCompat(widgetData, "primaryColor", defaultPrimary)
+            flutterPrefs.contains("flutter.primary_color") -> getIntCompat(flutterPrefs, "flutter.primary_color", defaultPrimary)
+            flutterPrefs.contains("primary_color") -> getIntCompat(flutterPrefs, "primary_color", defaultPrimary)
+            else -> defaultPrimary
         }
 
         // Create intent for the RemoteViewsService
@@ -153,8 +170,10 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
 
     private fun checkForHabits(context: Context): Boolean {
         return try {
-            val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            val habitsJson = prefs.getString("flutter.habits_data", null)
+            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val habitsJson = prefs.getString("habits", null)
+                ?: prefs.getString("home_widget.string.habits", null)
+                ?: prefs.getString("habits_data", null)
             !habitsJson.isNullOrEmpty() && habitsJson != "[]"
         } catch (e: Exception) {
             Log.e("HabitCompactWidget", "Error checking for habits", e)

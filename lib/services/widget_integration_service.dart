@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/model/habit.dart';
 import '../data/database.dart';
 import '../services/theme_service.dart';
@@ -36,6 +37,17 @@ class WidgetIntegrationService {
   Future<void> updateAllWidgets() async {
     try {
       final widgetData = await _prepareWidgetData();
+
+      // If widget is set to follow app, ensure latest theme/color is written; otherwise do not overwrite
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final widgetMode = prefs.getString('widget_theme_mode') ?? 'follow_app';
+        if (widgetMode == 'follow_app') {
+          await HomeWidget.saveWidgetData('themeMode', widgetData['themeMode']);
+          await HomeWidget.saveWidgetData(
+              'primaryColor', widgetData['primaryColor']);
+        }
+      } catch (_) {}
 
       // Update timeline widget
       await _updateWidget(_timelineWidgetName, widgetData);
