@@ -300,23 +300,44 @@ class DataExportImportService {
       int duplicateCount = 0;
       int importedCount = 0;
 
-      for (final habit in importedHabits) {
-        final existingHabits = await habitService.getAllHabits();
-        final isDuplicate = existingHabits.any((existing) =>
-            existing.name == habit.name && existing.category == habit.category);
+      // Get existing habits once to avoid repeated database calls
+      final existingHabits = await habitService.getAllHabits();
 
-        if (isDuplicate) {
-          duplicateCount++;
-        } else {
-          // Generate new ID to avoid conflicts
-          habit.id = '${DateTime.now().millisecondsSinceEpoch}_$importedCount';
-          await habitService.addHabit(habit);
-          importedCount++;
+      AppLogger.info(
+          'Starting bulk JSON import of ${importedHabits.length} habits...');
+
+      // Mark bulk import in progress to reduce race conditions
+      HabitsNotifier.markBulkImportInProgress();
+
+      try {
+        for (final habit in importedHabits) {
+          final isDuplicate = existingHabits.any((existing) =>
+              existing.name == habit.name &&
+              existing.category == habit.category);
+
+          if (isDuplicate) {
+            duplicateCount++;
+          } else {
+            // Generate new ID to avoid conflicts
+            habit.id =
+                '${DateTime.now().millisecondsSinceEpoch}_$importedCount';
+            await habitService.addHabit(habit);
+            importedCount++;
+
+            // Add a small delay between imports to reduce race conditions
+            if (importedCount % 5 == 0) {
+              await Future.delayed(const Duration(milliseconds: 100));
+              AppLogger.debug('Imported $importedCount habits so far...');
+            }
+          }
         }
+      } finally {
+        // Always mark bulk import as complete
+        HabitsNotifier.markBulkImportComplete();
       }
 
       AppLogger.info(
-          'Import completed: $importedCount imported, $duplicateCount duplicates skipped');
+          'JSON import completed: $importedCount imported, $duplicateCount duplicates skipped');
 
       return ImportResult(
         success: true,
@@ -405,19 +426,40 @@ class DataExportImportService {
       int duplicateCount = 0;
       int importedCount = 0;
 
-      for (final habit in importedHabits) {
-        final existingHabits = await habitService.getAllHabits();
-        final isDuplicate = existingHabits.any((existing) =>
-            existing.name == habit.name && existing.category == habit.category);
+      // Get existing habits once to avoid repeated database calls
+      final existingHabits = await habitService.getAllHabits();
 
-        if (isDuplicate) {
-          duplicateCount++;
-        } else {
-          // Generate new ID to avoid conflicts
-          habit.id = '${DateTime.now().millisecondsSinceEpoch}_$importedCount';
-          await habitService.addHabit(habit);
-          importedCount++;
+      AppLogger.info(
+          'Starting bulk CSV import of ${importedHabits.length} habits...');
+
+      // Mark bulk import in progress to reduce race conditions
+      HabitsNotifier.markBulkImportInProgress();
+
+      try {
+        for (final habit in importedHabits) {
+          final isDuplicate = existingHabits.any((existing) =>
+              existing.name == habit.name &&
+              existing.category == habit.category);
+
+          if (isDuplicate) {
+            duplicateCount++;
+          } else {
+            // Generate new ID to avoid conflicts
+            habit.id =
+                '${DateTime.now().millisecondsSinceEpoch}_$importedCount';
+            await habitService.addHabit(habit);
+            importedCount++;
+
+            // Add a small delay between imports to reduce race conditions
+            if (importedCount % 5 == 0) {
+              await Future.delayed(const Duration(milliseconds: 100));
+              AppLogger.debug('Imported $importedCount habits so far...');
+            }
+          }
         }
+      } finally {
+        // Always mark bulk import as complete
+        HabitsNotifier.markBulkImportComplete();
       }
 
       AppLogger.info(

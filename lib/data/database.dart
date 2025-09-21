@@ -105,6 +105,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
   Timer? _refreshTimer;
   final Map<String, int> _habitCompletionsCount = {};
   static bool _databaseResetInProgress = false; // Track database reset state
+  static bool _bulkImportInProgress = false; // Track bulk import state
 
   HabitsNotifier(this._habitService)
       : super(HabitsState(
@@ -118,15 +119,38 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   Future<void> _loadHabits() async {
     try {
+      // Check if the notifier is still mounted before updating state
+      if (!mounted) {
+        AppLogger.debug('HabitsNotifier is not mounted, skipping _loadHabits');
+        return;
+      }
+
+      // Update state to show loading
       state = state.copyWith(isLoading: true, error: null);
+
       final habits = await _habitService.getAllHabits();
       _updateCompletionsCount(habits);
+
+      // Check again if still mounted before final state update
+      if (!mounted) {
+        AppLogger.debug(
+            'HabitsNotifier unmounted during _loadHabits, skipping final update');
+        return;
+      }
+
       state = state.copyWith(
         habits: habits,
         isLoading: false,
         lastUpdated: DateTime.now(),
       );
     } catch (e) {
+      // Check if still mounted before updating error state
+      if (!mounted) {
+        AppLogger.debug(
+            'HabitsNotifier unmounted during _loadHabits error handling');
+        return;
+      }
+
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -150,17 +174,39 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
     });
   }
 
+  /// Pause periodic refresh during bulk operations to reduce race conditions
+  void pausePeriodicRefresh() {
+    AppLogger.debug('Pausing periodic refresh for bulk operations');
+    _refreshTimer?.cancel();
+  }
+
+  /// Resume periodic refresh after bulk operations
+  void resumePeriodicRefresh() {
+    AppLogger.debug('Resuming periodic refresh after bulk operations');
+    if (mounted) {
+      _startPeriodicRefresh();
+    }
+  }
+
   Future<void> _checkForUpdates() async {
-    // Skip check if database reset is in progress
-    if (_databaseResetInProgress) {
+    // Skip check if database reset or bulk import is in progress, or notifier is not mounted
+    if (_databaseResetInProgress || _bulkImportInProgress || !mounted) {
       return;
     }
 
     try {
       final habits = await _habitService.getAllHabits();
+
+      // Check if still mounted before updating state
+      if (!mounted) {
+        AppLogger.debug('HabitsNotifier unmounted during _checkForUpdates');
+        return;
+      }
+
       // Only update if habits have actually changed
       if (_habitsChanged(habits)) {
         _updateCompletionsCount(habits);
+
         state = state.copyWith(
           habits: habits,
           lastUpdated: DateTime.now(),
@@ -220,9 +266,10 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   /// Force immediate refresh for critical updates (like notification completions)
   Future<void> forceImmediateRefresh() async {
-    // Skip refresh if database reset is in progress
-    if (_databaseResetInProgress) {
-      AppLogger.debug('Skipping force refresh - database reset in progress');
+    // Skip refresh if database reset is in progress or notifier is not mounted
+    if (_databaseResetInProgress || !mounted) {
+      AppLogger.debug(
+          'Skipping force refresh - database reset in progress or notifier unmounted');
       return;
     }
 
@@ -234,14 +281,18 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       // Force immediate reload
       await _loadHabits();
 
-      // Restart periodic refresh
-      _startPeriodicRefresh();
+      // Restart periodic refresh only if still mounted
+      if (mounted) {
+        _startPeriodicRefresh();
+      }
 
       AppLogger.info('✅ Force immediate habits refresh completed');
     } catch (e) {
       AppLogger.error('❌ Error in force immediate refresh', e);
-      // Ensure periodic refresh is restarted even on error
-      _startPeriodicRefresh();
+      // Ensure periodic refresh is restarted even on error, but only if still mounted
+      if (mounted) {
+        _startPeriodicRefresh();
+      }
       rethrow;
     }
   }
@@ -252,7 +303,10 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       // Immediately refresh to show changes
       await _loadHabits();
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      // Update error state if still mounted
+      if (mounted) {
+        state = state.copyWith(error: e.toString());
+      }
       rethrow;
     }
   }
@@ -264,6 +318,15 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   static void markDatabaseResetComplete() {
     _databaseResetInProgress = false;
+  }
+
+  // Static methods to control bulk import state
+  static void markBulkImportInProgress() {
+    _bulkImportInProgress = true;
+  }
+
+  static void markBulkImportComplete() {
+    _bulkImportInProgress = false;
   }
 
   @override
