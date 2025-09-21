@@ -66,7 +66,7 @@ class WidgetService {
         'nextHabit':
             nextHabit != null ? _habitToWidgetMap(nextHabit, date) : null,
         'themeMode': themeMode.name,
-        'primaryColor': primaryColor.value,
+        'primaryColor': primaryColor.toARGB32(),
         'lastUpdate': DateTime.now().millisecondsSinceEpoch,
       };
 

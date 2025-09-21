@@ -199,7 +199,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                                 subtitle: const Text(
                                     'Most reliable, costs per token'),
                                 value: 'OpenAI',
+                                // ignore: deprecated_member_use
                                 groupValue: _preferredProvider,
+                                // ignore: deprecated_member_use
                                 onChanged: (value) {
                                   setState(() => _preferredProvider = value!);
                                 },
@@ -209,7 +211,9 @@ class _AISettingsScreenState extends State<AISettingsScreen> {
                                 subtitle: const Text(
                                     'Fast and efficient, generous free tier'),
                                 value: 'Gemini',
+                                // ignore: deprecated_member_use
                                 groupValue: _preferredProvider,
+                                // ignore: deprecated_member_use
                                 onChanged: (value) {
                                   setState(() => _preferredProvider = value!);
                                 },

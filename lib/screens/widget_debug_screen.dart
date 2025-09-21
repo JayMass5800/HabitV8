@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/widget_integration_service.dart';
 import '../data/database.dart';
-import '../services/habit_service.dart';
 
 class WidgetDebugScreen extends StatefulWidget {
   const WidgetDebugScreen({super.key});
@@ -95,9 +94,11 @@ class _WidgetDebugScreenState extends State<WidgetDebugScreen> {
             icon: const Icon(Icons.update),
             onPressed: () async {
               await WidgetIntegrationService.instance.updateAllWidgets();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Widgets updated')),
-              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Widgets updated')),
+                );
+              }
             },
           ),
         ],

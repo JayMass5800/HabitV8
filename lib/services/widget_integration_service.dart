@@ -186,7 +186,7 @@ class WidgetIntegrationService {
 
       return {
         'themeMode': actualThemeMode,
-        'primaryColor': primaryColor.value,
+        'primaryColor': primaryColor.toARGB32(),
       };
     } catch (e) {
       debugPrint('Error getting theme data: $e');

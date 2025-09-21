@@ -166,53 +166,57 @@ class _WidgetConfigurationScreenState
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     const SizedBox(height: 8),
-                    Row(
+                    Column(
                       children: [
-                        Expanded(
-                          child: RadioListTile<String>(
-                            title: const Text('Follow App'),
-                            value: 'follow_app',
-                            groupValue: _widgetThemeMode,
-                            onChanged: (value) {
-                              setState(() {
-                                _widgetThemeMode = value!;
-                              });
-                            },
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
+                        RadioListTile<String>(
+                          title: const Text('Follow App'),
+                          value: 'follow_app',
+                          // ignore: deprecated_member_use
+                          groupValue: _widgetThemeMode,
+                          // ignore: deprecated_member_use
+                          onChanged: (value) {
+                            setState(() {
+                              _widgetThemeMode = value!;
+                            });
+                          },
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
                         ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: RadioListTile<String>(
-                            title: const Text('Light'),
-                            value: 'light',
-                            groupValue: _widgetThemeMode,
-                            onChanged: (value) {
-                              setState(() {
-                                _widgetThemeMode = value!;
-                              });
-                            },
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
-                        Expanded(
-                          child: RadioListTile<String>(
-                            title: const Text('Dark'),
-                            value: 'dark',
-                            groupValue: _widgetThemeMode,
-                            onChanged: (value) {
-                              setState(() {
-                                _widgetThemeMode = value!;
-                              });
-                            },
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: RadioListTile<String>(
+                                title: const Text('Light'),
+                                value: 'light',
+                                // ignore: deprecated_member_use
+                                groupValue: _widgetThemeMode,
+                                // ignore: deprecated_member_use
+                                onChanged: (value) {
+                                  setState(() {
+                                    _widgetThemeMode = value!;
+                                  });
+                                },
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                            Expanded(
+                              child: RadioListTile<String>(
+                                title: const Text('Dark'),
+                                value: 'dark',
+                                // ignore: deprecated_member_use
+                                groupValue: _widgetThemeMode,
+                                // ignore: deprecated_member_use
+                                onChanged: (value) {
+                                  setState(() {
+                                    _widgetThemeMode = value!;
+                                  });
+                                },
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

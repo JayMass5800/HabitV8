@@ -1033,7 +1033,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: Text(screen),
                     leading: Radio<String>(
                       value: screen,
+                      // ignore: deprecated_member_use
                       groupValue: _defaultScreen,
+                      // ignore: deprecated_member_use
                       onChanged: (value) async {
                         if (value != null) {
                           final navigator = Navigator.of(context);
