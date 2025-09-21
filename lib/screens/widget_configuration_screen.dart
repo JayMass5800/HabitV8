@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:home_widget/home_widget.dart';
-import '../services/theme_service.dart';
+import '../services/widget_integration_service.dart';
 
 class WidgetConfigurationScreen extends ConsumerStatefulWidget {
   const WidgetConfigurationScreen({super.key});
@@ -53,44 +52,23 @@ class _WidgetConfigurationScreenState
     }
     await prefs.setInt('widget_primary_color', colorValue);
 
-    // Persist canonical keys for the Android widgets (read by Kotlin via HomeWidgetPreferences)
+    // Update widgets with new settings using the widget integration service
     try {
-      await HomeWidget.saveWidgetData(
-          'themeMode', _resolveWidgetThemeForStorage(_widgetThemeMode));
-      await HomeWidget.saveWidgetData('primaryColor', colorValue);
-      // small delay to ensure prefs are flushed
+      // Small delay to ensure preferences are saved
       await Future.delayed(const Duration(milliseconds: 250));
-      await HomeWidget.updateWidget(
-          name: 'HabitTimelineWidgetProvider',
-          androidName: 'HabitTimelineWidgetProvider');
-      await HomeWidget.updateWidget(
-          name: 'HabitCompactWidgetProvider',
-          androidName: 'HabitCompactWidgetProvider');
-    } catch (_) {}
+
+      // Use the widget integration service to properly update all widgets
+      await WidgetIntegrationService.instance.updateAllWidgets();
+
+      debugPrint('Widget settings applied successfully');
+    } catch (e) {
+      debugPrint('Error applying widget settings: $e');
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Widget settings saved successfully')),
       );
-    }
-  }
-
-  // Map the UI radio selection to what the widgets expect
-  String _resolveWidgetThemeForStorage(String mode) {
-    switch (mode) {
-      case 'light':
-        return 'light';
-      case 'dark':
-        return 'dark';
-      case 'follow_app':
-      default:
-        // Mirror the app's current effective theme (resolve system brightness if needed)
-        final appMode = ref.read(themeProvider).themeMode;
-        if (appMode == ThemeMode.dark) return 'dark';
-        if (appMode == ThemeMode.light) return 'light';
-        final brightness =
-            WidgetsBinding.instance.platformDispatcher.platformBrightness;
-        return brightness == Brightness.dark ? 'dark' : 'light';
     }
   }
 
@@ -331,7 +309,20 @@ class _WidgetConfigurationScreenState
   }
 
   Widget _widgetColorOption(String name, Color color, Color currentColor) {
-    final isSelected = currentColor.toARGB32 == color.toARGB32;
+    // Use value comparison for better compatibility
+    int currentColorValue;
+    int colorValue;
+    try {
+      currentColorValue = currentColor.toARGB32();
+      colorValue = color.toARGB32();
+    } catch (e) {
+      // Fallback to deprecated .value property if toARGB32 is not available
+      // ignore: deprecated_member_use
+      currentColorValue = currentColor.value;
+      // ignore: deprecated_member_use
+      colorValue = color.value;
+    }
+    final isSelected = currentColorValue == colorValue;
 
     return ListTile(
       title: Text(name),

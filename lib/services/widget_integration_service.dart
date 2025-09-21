@@ -44,16 +44,16 @@ class WidgetIntegrationService {
     try {
       final widgetData = await _prepareWidgetData();
 
-      // If widget is set to follow app, ensure latest theme/color is written; otherwise do not overwrite
+      // Always save theme and color data since _getThemeData() already handles widget preferences
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final widgetMode = prefs.getString('widget_theme_mode') ?? 'follow_app';
-        if (widgetMode == 'follow_app') {
-          await HomeWidget.saveWidgetData('themeMode', widgetData['themeMode']);
-          await HomeWidget.saveWidgetData(
-              'primaryColor', widgetData['primaryColor']);
-        }
-      } catch (_) {}
+        await HomeWidget.saveWidgetData('themeMode', widgetData['themeMode']);
+        await HomeWidget.saveWidgetData(
+            'primaryColor', widgetData['primaryColor']);
+        debugPrint(
+            'Saved widget theme data: ${widgetData['themeMode']}, color: ${widgetData['primaryColor']}');
+      } catch (e) {
+        debugPrint('Error saving widget theme data: $e');
+      }
 
       // Update timeline widget
       await _updateWidget(_timelineWidgetName, widgetData);
@@ -172,33 +172,60 @@ class WidgetIntegrationService {
     };
   }
 
-  /// Get current theme data
+  /// Get current theme data (respects widget-specific settings)
   Future<Map<String, dynamic>> _getThemeData() async {
     try {
-      final themeMode = await ThemeService.getThemeMode();
-      final primaryColor = await ThemeService.getPrimaryColor();
+      final prefs = await SharedPreferences.getInstance();
 
-      // Properly handle system theme mode by checking platform brightness
+      // Get widget theme mode preference (defaults to follow_app)
+      final widgetThemeMode =
+          prefs.getString('widget_theme_mode') ?? 'follow_app';
+
+      // Get widget primary color preference (defaults to app color)
+      final widgetColorValue = prefs.getInt('widget_primary_color');
+
+      // Determine actual theme mode
       String actualThemeMode;
-      if (themeMode == ThemeMode.dark) {
-        actualThemeMode = 'dark';
-      } else if (themeMode == ThemeMode.light) {
+      if (widgetThemeMode == 'light') {
         actualThemeMode = 'light';
+      } else if (widgetThemeMode == 'dark') {
+        actualThemeMode = 'dark';
       } else {
-        // ThemeMode.system - check system brightness
-        final brightness = ui.PlatformDispatcher.instance.platformBrightness;
-        actualThemeMode = brightness == Brightness.dark ? 'dark' : 'light';
+        // follow_app mode - use app's theme
+        final appThemeMode = await ThemeService.getThemeMode();
+        if (appThemeMode == ThemeMode.dark) {
+          actualThemeMode = 'dark';
+        } else if (appThemeMode == ThemeMode.light) {
+          actualThemeMode = 'light';
+        } else {
+          // ThemeMode.system - check system brightness
+          final brightness = ui.PlatformDispatcher.instance.platformBrightness;
+          actualThemeMode = brightness == Brightness.dark ? 'dark' : 'light';
+        }
+      }
+
+      // Determine primary color
+      int primaryColorValue;
+      if (widgetColorValue != null) {
+        // Use widget-specific color
+        primaryColorValue = widgetColorValue;
+        debugPrint('Using widget-specific color: $widgetColorValue');
+      } else {
+        // Fallback to app color
+        final appPrimaryColor = await ThemeService.getPrimaryColor();
+        primaryColorValue = appPrimaryColor.toARGB32();
+        debugPrint('Using app color as fallback: $primaryColorValue');
       }
 
       return {
         'themeMode': actualThemeMode,
-        'primaryColor': primaryColor.toARGB32(),
+        'primaryColor': primaryColorValue,
       };
     } catch (e) {
       debugPrint('Error getting theme data: $e');
       return {
         'themeMode': 'light',
-        'primaryColor': 0x6366F1,
+        'primaryColor': 0xFF2196F3, // Default blue color
       };
     }
   }
