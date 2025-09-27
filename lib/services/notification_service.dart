@@ -3295,7 +3295,7 @@ class NotificationService {
       channelDescription: 'High-priority alarm notifications for habits',
       importance: Importance.max,
       priority: Priority.max,
-      fullScreenIntent: true,
+      fullScreenIntent: false,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
       // Use system alarm sound for maximum compatibility with Android 16

@@ -18,7 +18,6 @@
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     
     <!-- Exact alarm permissions for Android 16+ (automatically granted) -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
@@ -29,7 +28,6 @@
     <!-- Android Alarm Manager Plus permissions -->
     <!-- SYSTEM_ALERT_WINDOW removed - causes app crashes on Android 16 when denied -->
     <!-- <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> -->
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
     <!-- Calendar permissions -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
