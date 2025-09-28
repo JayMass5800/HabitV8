@@ -14,6 +14,8 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -23,6 +25,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val SYSTEM_SOUND_CHANNEL = "com.habittracker.habitv8/system_sound"
     private val NATIVE_ALARM_CHANNEL = "com.habittracker.habitv8/native_alarm"
     private val ANDROID_RESOURCES_CHANNEL = "habitv8/android_resources"
+    private val WIDGET_UPDATE_CHANNEL = "com.habittracker.habitv8/widget_update"
     private val RINGTONE_PICKER_REQUEST_CODE = 1
 
     private var previewRingtone: Ringtone? = null
@@ -283,6 +286,32 @@ class MainActivity : FlutterFragmentActivity() {
                     } catch (e: Exception) {
                         result.error("ALARM_ERROR", "Failed to cancel native alarm: ${e.message}", null)
                         android.util.Log.e("MainActivity", "Failed to cancel native alarm", e)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+        
+        // Widget update channel for triggering WorkManager updates
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_UPDATE_CHANNEL).setMethodCallHandler { call, result ->
+            // Check if activity is still valid before processing method calls
+            if (isFinishing || isDestroyed) {
+                result.error("ACTIVITY_INVALID", "Activity is no longer valid", null)
+                return@setMethodCallHandler
+            }
+
+            when (call.method) {
+                "triggerWidgetUpdate" -> {
+                    try {
+                        // Trigger immediate widget update via WorkManager
+                        val updateRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
+                        WorkManager.getInstance(this).enqueue(updateRequest)
+                        
+                        result.success(true)
+                        android.util.Log.i("MainActivity", "Widget update triggered via WorkManager")
+                    } catch (e: Exception) {
+                        result.error("WIDGET_UPDATE_ERROR", "Failed to trigger widget update: ${e.message}", null)
+                        android.util.Log.e("MainActivity", "Failed to trigger widget update", e)
                     }
                 }
                 else -> result.notImplemented()

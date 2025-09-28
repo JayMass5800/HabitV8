@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/model/habit.dart';
@@ -32,6 +33,9 @@ class WidgetIntegrationService {
 
       // Start periodic updates to ensure widgets stay fresh
       startPeriodicUpdates();
+
+      // Schedule Android WorkManager updates for independent widget updates
+      await _scheduleAndroidWidgetUpdates();
 
       debugPrint('Widget integration initialized successfully');
     } catch (e) {
@@ -387,11 +391,37 @@ class WidgetIntegrationService {
   /// Update widgets when habits change
   Future<void> onHabitsChanged() async {
     await updateAllWidgets();
+    // Also trigger immediate Android widget update
+    await _triggerAndroidWidgetUpdate();
   }
 
   /// Update widgets when theme changes
   Future<void> onThemeChanged() async {
     await updateAllWidgets();
+    // Also trigger immediate Android widget update
+    await _triggerAndroidWidgetUpdate();
+  }
+
+  /// Schedule Android WorkManager updates for independent widget functionality
+  Future<void> _scheduleAndroidWidgetUpdates() async {
+    try {
+      const platform = MethodChannel('com.habittracker.habitv8/widget_updates');
+      await platform.invokeMethod('schedulePeriodicUpdates');
+      debugPrint('Android WorkManager widget updates scheduled');
+    } catch (e) {
+      debugPrint('Error scheduling Android widget updates: $e');
+    }
+  }
+
+  /// Trigger immediate Android widget update
+  Future<void> _triggerAndroidWidgetUpdate() async {
+    try {
+      const platform = MethodChannel('com.habittracker.habitv8/widget_updates');
+      await platform.invokeMethod('triggerImmediateUpdate');
+      debugPrint('Android widget immediate update triggered');
+    } catch (e) {
+      debugPrint('Error triggering Android widget update: $e');
+    }
   }
 
   /// Test method to expose data preparation for debugging

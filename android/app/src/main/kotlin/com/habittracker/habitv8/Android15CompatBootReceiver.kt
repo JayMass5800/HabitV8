@@ -103,6 +103,9 @@ class BootCompletionWorker(
             
             Log.i(TAG, "✅ Boot completion flag set for Flutter app")
             
+            // Schedule periodic widget updates
+            WidgetUpdateWorker.schedulePeriodicUpdates(applicationContext)
+            
             // Optionally trigger the Flutter app to start if needed
             // This is safer than starting foreground services directly
             try {

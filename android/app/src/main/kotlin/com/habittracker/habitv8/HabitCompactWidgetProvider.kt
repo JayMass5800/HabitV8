@@ -271,6 +271,18 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         }
     }
 
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        Log.d("HabitCompactWidget", "Widget enabled - scheduling periodic updates")
+        WidgetUpdateWorker.schedulePeriodicUpdates(context)
+    }
+    
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        Log.d("HabitCompactWidget", "All widgets disabled")
+        // Note: We don't cancel WorkManager here as timeline widgets might still be active
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         
