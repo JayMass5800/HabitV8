@@ -4,7 +4,7 @@ This document explains how to test the in-app purchase cutoff behavior in HabitV
 
 ## Overview
 
-The app has a 30-day trial period where users can access premium features. After the trial expires, premium features are locked until the user purchases the premium version. This testing guide helps you verify this behavior works correctly.
+The app has a 30-day trial period where users can access all features. After the trial expires, **the entire app is locked** and users must purchase the premium version to continue using the app. This testing guide helps you verify this behavior works correctly.
 
 ## Debug Utilities Added
 
@@ -43,22 +43,24 @@ I've added several debug options to the Settings screen under the "Premium Versi
 1. Go to Settings → Premium Version
 2. Tap "Simulate Trial Expiry (Debug)"
 3. Confirm the action
-4. Restart the app
+4. Restart the app or navigate to any main screen
 5. Verify that:
-   - Status shows "Trial Expired - Upgrade to Premium"
-   - Premium features are locked/disabled
-   - User is prompted to purchase when accessing premium features
+   - **Entire app is locked** with a lock screen
+   - Lock screen shows "Trial Period Ended" message
+   - Only "Upgrade to Premium" and "Restore Purchases" buttons are available
+   - Cannot access any app features until purchase
 
 ### Scenario 3: Test Premium Access
 1. From expired trial state (Scenario 2)
-2. Go to Settings → Premium Version
-3. Tap "Simulate Premium Purchase (Debug)"
-4. Confirm the action
-5. Restart the app
+2. Tap "Upgrade to Premium" on the lock screen
+3. In the purchase screen, go back to Settings → Premium Version
+4. Tap "Simulate Premium Purchase (Debug)"
+5. Confirm the action
 6. Verify that:
+   - **App lock is removed** and full access is restored
    - Status shows "Premium Active"
-   - All premium features are unlocked
-   - No trial limitations apply
+   - All features are now accessible
+   - No restrictions on app usage
 
 ### Scenario 4: Test Trial Reset
 1. From any state (trial, expired, or premium)
@@ -71,25 +73,35 @@ I've added several debug options to the Settings screen under the "Premium Versi
    - Premium features are accessible again
    - Fresh 30-day trial period started
 
-## Premium Features to Test
+## App Access Behavior
 
-When testing cutoff behavior, verify these premium features are properly locked/unlocked:
+When testing cutoff behavior, verify the following access patterns:
 
-1. **AI Insights** - Advanced habit analysis and recommendations
-2. **Unlimited Habits** - Create more than the free tier limit
-3. **Advanced Analytics** - Detailed statistics and trends
-4. **Data Export** - Export habit data to CSV/other formats
-5. **Custom Categories** - Create custom habit categories
-6. **Cloud Sync** - Sync data across devices (premium only)
-7. **Priority Support** - Access to premium support (premium only)
+### During Trial (30 days)
+- ✅ **Full app access** - All features available
+- ✅ AI Insights
+- ✅ Unlimited Habits
+- ✅ Advanced Analytics
+- ✅ Data Export
+- ✅ Custom Categories
 
-## Feature Access Logic
+### After Trial Expires
+- ❌ **ENTIRE APP LOCKED** - Complete lockout
+- ❌ Cannot access any screens except purchase
+- ❌ Shows lock screen with upgrade options
+- ✅ Can purchase premium access
+- ✅ Can restore previous purchases
 
-The app uses `SubscriptionService.isFeatureAvailable(PremiumFeature feature)` to check access:
+### Premium Access
+- ✅ **Full app access** - All features permanently available
 
-- **Trial users**: Have access to most features (AI insights, unlimited habits, analytics, export, custom categories)
-- **Expired trial users**: Have no access to premium features
-- **Premium users**: Have access to all features
+## App Lock Logic
+
+The app uses `AppLockWrapper` to control access:
+
+- **Trial users**: Have full app access with all features
+- **Expired trial users**: App is completely locked with lock screen
+- **Premium users**: Have full app access permanently
 
 ## Important Notes
 
@@ -101,13 +113,14 @@ The app uses `SubscriptionService.isFeatureAvailable(PremiumFeature feature)` to
 ## Verification Checklist
 
 - [ ] Fresh trial shows 30 days remaining
-- [ ] Trial expiry locks premium features
-- [ ] Premium purchase unlocks all features
+- [ ] Trial expiry completely locks the app
+- [ ] Lock screen appears when trial expires
+- [ ] Premium purchase unlocks full app access
 - [ ] Trial reset restarts 30-day period
 - [ ] Status display updates correctly
-- [ ] Feature access follows subscription rules
-- [ ] UI shows appropriate prompts for expired users
-- [ ] Purchase flow is accessible from expired state
+- [ ] App lock follows subscription rules
+- [ ] Purchase flow is accessible from lock screen
+- [ ] Restore purchases works from lock screen
 
 ## Troubleshooting
 

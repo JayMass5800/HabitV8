@@ -125,12 +125,14 @@ class _AppLockWrapperState extends State<AppLockWrapper> {
                 decoration: BoxDecoration(
                   color: Theme.of(context)
                       .colorScheme
-                      .surfaceVariant
-                      .withOpacity(0.3),
+                      .surfaceContainerHighest
+                      .withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color:
-                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.2),
                   ),
                 ),
                 child: Column(
@@ -212,6 +214,10 @@ class _AppLockWrapperState extends State<AppLockWrapper> {
               // Restore purchases button
               TextButton(
                 onPressed: () async {
+                  // Capture context before async operations
+                  final navigator = Navigator.of(context);
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+
                   try {
                     // Show loading
                     showDialog(
@@ -233,7 +239,9 @@ class _AppLockWrapperState extends State<AppLockWrapper> {
                         await SubscriptionService().restorePurchases();
 
                     // Close loading dialog
-                    if (mounted) Navigator.of(context).pop();
+                    if (mounted) {
+                      navigator.pop();
+                    }
 
                     if (success) {
                       // Refresh status to check if purchase was restored
@@ -242,16 +250,18 @@ class _AppLockWrapperState extends State<AppLockWrapper> {
                       if (mounted &&
                           _subscriptionStatus != SubscriptionStatus.premium) {
                         // No purchases found
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('No previous purchases found'),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
+                        if (mounted) {
+                          scaffoldMessenger.showSnackBar(
+                            const SnackBar(
+                              content: Text('No previous purchases found'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
                       }
                     } else {
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        scaffoldMessenger.showSnackBar(
                           const SnackBar(
                             content: Text('Failed to restore purchases'),
                             backgroundColor: Colors.red,
@@ -261,10 +271,12 @@ class _AppLockWrapperState extends State<AppLockWrapper> {
                     }
                   } catch (e) {
                     // Close loading dialog if still open
-                    if (mounted) Navigator.of(context).pop();
+                    if (mounted) {
+                      navigator.pop();
+                    }
 
                     if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      scaffoldMessenger.showSnackBar(
                         SnackBar(
                           content: Text(
                               'Error restoring purchases: ${e.toString()}'),
