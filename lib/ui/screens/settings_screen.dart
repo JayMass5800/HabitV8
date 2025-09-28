@@ -347,7 +347,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               );
                             },
                           ),
-                        // Debug option - will be removed after testing
+                        // Debug options - will be removed after testing
                         if (status == SubscriptionStatus.trial)
                           SettingsTile(
                             title: 'Debug Trial Info',
@@ -355,6 +355,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             trailing: const Icon(Icons.bug_report),
                             onTap: () => _showTrialDebugInfo(),
                           ),
+                        // Reset trial option for testing cutoff functionality
+                        SettingsTile(
+                          title: 'Reset Trial (Debug)',
+                          subtitle:
+                              'Reset trial period to test cutoff behavior',
+                          trailing: const Icon(Icons.refresh_outlined),
+                          onTap: () => _resetTrialForTesting(),
+                        ),
+                        // Simulate trial expiry for testing
+                        SettingsTile(
+                          title: 'Simulate Trial Expiry (Debug)',
+                          subtitle:
+                              'Force trial to expire to test premium cutoff',
+                          trailing: const Icon(Icons.timer_off_outlined),
+                          onTap: () => _simulateTrialExpiry(),
+                        ),
+                        // Simulate premium purchase for testing
+                        SettingsTile(
+                          title: 'Simulate Premium Purchase (Debug)',
+                          subtitle:
+                              'Grant premium access to test unlocked features',
+                          trailing:
+                              const Icon(Icons.workspace_premium_outlined),
+                          onTap: () => _simulatePremiumPurchase(),
+                        ),
                         if (status != SubscriptionStatus.premium)
                           SettingsTile(
                             title: 'Purchase Premium',
@@ -1821,6 +1846,172 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error getting debug info: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _resetTrialForTesting() async {
+    try {
+      // Show confirmation dialog first
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('⚠️ Reset Trial Period'),
+          content: const Text(
+            'This will reset your trial period back to 30 days and clear any premium purchase data. '
+            'This is for testing purposes only.\n\n'
+            'Are you sure you want to continue?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Reset Trial'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true && mounted) {
+        final subscriptionService = SubscriptionService();
+        await subscriptionService.resetTrialPeriod();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  '✅ Trial period reset successfully! Restart the app to see changes.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 4),
+            ),
+          );
+
+          // Refresh the UI to show updated status
+          setState(() {});
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error resetting trial: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _simulateTrialExpiry() async {
+    try {
+      // Show confirmation dialog first
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('⏰ Simulate Trial Expiry'),
+          content: const Text(
+            'This will force your trial to expire immediately by setting the start date to 31 days ago. '
+            'This allows you to test the premium cutoff behavior.\n\n'
+            'Are you sure you want to continue?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Expire Trial'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true && mounted) {
+        final subscriptionService = SubscriptionService();
+        await subscriptionService.simulateTrialExpiry();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  '⏰ Trial expired! Premium features are now locked. Restart the app to see changes.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+            ),
+          );
+
+          // Refresh the UI to show updated status
+          setState(() {});
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error simulating trial expiry: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _simulatePremiumPurchase() async {
+    try {
+      // Show confirmation dialog first
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('💎 Simulate Premium Purchase'),
+          content: const Text(
+            'This will grant you premium access without going through the actual purchase flow. '
+            'This allows you to test premium features and their behavior.\n\n'
+            'Are you sure you want to continue?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Grant Premium'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true && mounted) {
+        final subscriptionService = SubscriptionService();
+        await subscriptionService.simulatePremiumPurchase();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  '💎 Premium access granted! All features are now unlocked. Restart the app to see changes.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 4),
+            ),
+          );
+
+          // Refresh the UI to show updated status
+          setState(() {});
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('❌ Error simulating premium purchase: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );

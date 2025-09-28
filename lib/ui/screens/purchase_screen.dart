@@ -892,9 +892,10 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Close dialog
-                  // Navigate back with fallback
+                  // Navigate back with success result
                   if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
+                    Navigator.pop(context,
+                        true); // Return true to indicate successful purchase
                   } else {
                     context.go('/settings');
                   }

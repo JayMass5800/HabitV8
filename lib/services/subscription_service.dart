@@ -147,12 +147,12 @@ class SubscriptionService {
       return true;
     }
 
-    // Trial expired users have no access to premium features
+    // Trial expired users have no access to any features (entire app is locked)
     if (status == SubscriptionStatus.trialExpired) {
       return false;
     }
 
-    // Trial users have limited access to some features
+    // Trial users have access to all features during trial period
     if (status == SubscriptionStatus.trial) {
       switch (feature) {
         case PremiumFeature.aiInsights:
@@ -165,14 +165,16 @@ class SubscriptionService {
           return true; // Allow data export during trial
         case PremiumFeature.customCategories:
           return true; // Allow custom categories during trial for full immersion
-        case PremiumFeature.cloudSync:
-          return false; // Cloud sync only for premium
-        case PremiumFeature.prioritySupport:
-          return false; // Priority support only for premium
       }
     }
 
     return false;
+  }
+
+  /// Check if the entire app should be accessible (not locked)
+  Future<bool> isAppAccessible() async {
+    final status = await getSubscriptionStatus();
+    return status != SubscriptionStatus.trialExpired;
   }
 
   /// Mark user as having premium access (called after successful one-time purchase)
@@ -305,6 +307,30 @@ class SubscriptionService {
     AppLogger.info('🔄 Trial period reset for debugging');
   }
 
+  /// For debugging: Simulate trial expiry by setting start date to 31 days ago
+  Future<void> simulateTrialExpiry() async {
+    final prefs = await SharedPreferences.getInstance();
+    final expiredStartDate =
+        DateTime.now().subtract(Duration(days: _trialDurationDays + 1));
+    await prefs.setString(
+        _trialStartDateKey, expiredStartDate.toIso8601String());
+    await prefs.remove(_subscriptionStatusKey);
+    await prefs.remove(_lastTrialCheckKey);
+    await prefs.remove(_userNotifiedKey);
+    await _secureStorage.delete(key: 'purchase_token');
+    AppLogger.info(
+        '🔄 Trial expiry simulated for debugging - start date set to: $expiredStartDate');
+  }
+
+  /// For debugging: Simulate premium purchase
+  Future<void> simulatePremiumPurchase() async {
+    final debugToken =
+        'debug_premium_token_${DateTime.now().millisecondsSinceEpoch}';
+    await activatePremiumSubscription(debugToken);
+    AppLogger.info(
+        '🔄 Premium purchase simulated for debugging with token: $debugToken');
+  }
+
   /// For debugging: Get detailed trial information
   Future<Map<String, dynamic>> getTrialDebugInfo() async {
     final prefs = await SharedPreferences.getInstance();
@@ -363,8 +389,6 @@ enum PremiumFeature {
   advancedAnalytics,
   dataExport,
   customCategories,
-  cloudSync,
-  prioritySupport,
 }
 
 /// Extension to get user-friendly feature names
@@ -381,10 +405,6 @@ extension PremiumFeatureExtension on PremiumFeature {
         return 'Data Export/Import';
       case PremiumFeature.customCategories:
         return 'Custom Categories';
-      case PremiumFeature.cloudSync:
-        return 'Cloud Sync';
-      case PremiumFeature.prioritySupport:
-        return 'Priority Support';
     }
   }
 
@@ -400,10 +420,6 @@ extension PremiumFeatureExtension on PremiumFeature {
         return 'Export your data and import from other habit trackers';
       case PremiumFeature.customCategories:
         return 'Create and customize your own habit categories';
-      case PremiumFeature.cloudSync:
-        return 'Sync your data across multiple devices';
-      case PremiumFeature.prioritySupport:
-        return 'Get priority customer support and feature requests';
     }
   }
 }

@@ -28,6 +28,7 @@ import 'ui/screens/settings_screen.dart';
 import 'ui/screens/create_habit_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/purchase_screen.dart';
+import 'ui/widgets/app_lock_wrapper.dart';
 import 'widgets/alarm_test_widget.dart';
 
 void main() async {
@@ -516,7 +517,9 @@ final GoRouter _router = GoRouter(
     // Main app shell with navigation
     ShellRoute(
       builder: (context, state, child) {
-        return MainNavigationShell(child: child);
+        return AppLockWrapper(
+          child: MainNavigationShell(child: child),
+        );
       },
       routes: [
         GoRoute(
