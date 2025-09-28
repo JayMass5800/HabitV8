@@ -177,87 +177,91 @@ class WidgetUpdateWorker(
         val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(today.time)
         
         return habitsList.filter { habit ->
-            try {
-                // Check if habit is active and should be shown today
-                val isActive = habit["isActive"] as? Boolean ?: true
-                if (!isActive) return@filter false
-                
-                // Check frequency and scheduling
-                val frequency = habit["frequency"] as? String ?: "daily"
-                
-                when (frequency.lowercase()) {
-                    "daily" -> true
-                    "weekly" -> {
-                        // Check if today matches the weekly schedule
-                        val selectedWeekdays = habit["selectedWeekdays"] as? List<*>
-                        val todayOfWeek = today.get(Calendar.DAY_OF_WEEK) - 1 // 0 = Sunday
-                        selectedWeekdays?.contains(todayOfWeek) ?: true
-                    }
-                    "monthly" -> {
-                        // Check if today matches the monthly schedule
-                        val selectedMonthDays = habit["selectedMonthDays"] as? List<*>
-                        val todayOfMonth = today.get(Calendar.DAY_OF_MONTH)
-                        selectedMonthDays?.contains(todayOfMonth) ?: true
-                    }
-                    "yearly" -> {
-                        // Check if today matches the yearly schedule
-                        val selectedYearlyDates = habit["selectedYearlyDates"] as? List<*>
-                        if (selectedYearlyDates.isNullOrEmpty()) {
-                            // If no specific dates selected, show by default
-                            true
-                        } else {
-                            // Check if today's date (MM-dd format) matches any selected yearly dates
-                            selectedYearlyDates.any { dateStr ->
-                                try {
-                                    val yearlyDate = dateStr.toString()
-                                    // Extract MM-dd from yyyy-MM-dd format
-                                    if (yearlyDate.length >= 10) {
-                                        val monthDay = yearlyDate.substring(5) // Get MM-dd part
-                                        val todayMonthDay = String.format("%02d-%02d", 
-                                            today.get(Calendar.MONTH) + 1, 
-                                            today.get(Calendar.DAY_OF_MONTH))
-                                        monthDay == todayMonthDay
-                                    } else {
-                                        false
-                                    }
-                                } catch (e: Exception) {
-                                    Log.w(TAG, "Error parsing yearly date: $dateStr", e)
-                                    false
-                                }
-                            }
-                        }
-                    }
-                    "hourly" -> {
-                        // Hourly habits should show if they have times scheduled for today
-                        val hourlyTimes = habit["hourlyTimes"] as? List<*>
-                        !hourlyTimes.isNullOrEmpty()
-                    }
-                    "single" -> {
-                        // Single habits should show if their scheduled date is today
-                        val singleDateTime = habit["singleDateTime"] as? String
-                        if (singleDateTime != null) {
+            shouldShowHabitToday(habit, today, todayDateString)
+        }
+    }
+    
+    private fun shouldShowHabitToday(habit: Map<String, Any>, today: Calendar, todayDateString: String): Boolean {
+        try {
+            // Check if habit is active and should be shown today
+            val isActive = habit["isActive"] as? Boolean ?: true
+            if (!isActive) return false
+            
+            // Check frequency and scheduling
+            val frequency = habit["frequency"] as? String ?: "daily"
+            
+            return when (frequency.lowercase()) {
+                "daily" -> true
+                "weekly" -> {
+                    // Check if today matches the weekly schedule
+                    val selectedWeekdays = habit["selectedWeekdays"] as? List<*>
+                    val todayOfWeek = today.get(Calendar.DAY_OF_WEEK) - 1 // 0 = Sunday
+                    selectedWeekdays?.contains(todayOfWeek) ?: true
+                }
+                "monthly" -> {
+                    // Check if today matches the monthly schedule
+                    val selectedMonthDays = habit["selectedMonthDays"] as? List<*>
+                    val todayOfMonth = today.get(Calendar.DAY_OF_MONTH)
+                    selectedMonthDays?.contains(todayOfMonth) ?: true
+                }
+                "yearly" -> {
+                    // Check if today matches the yearly schedule
+                    val selectedYearlyDates = habit["selectedYearlyDates"] as? List<*>
+                    if (selectedYearlyDates.isNullOrEmpty()) {
+                        // If no specific dates selected, show by default
+                        true
+                    } else {
+                        // Check if today's date (MM-dd format) matches any selected yearly dates
+                        selectedYearlyDates.any { dateStr ->
                             try {
-                                val singleDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(singleDateTime)
-                                if (singleDate != null) {
-                                    val singleDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(singleDate)
-                                    singleDateString == todayDateString
+                                val yearlyDate = dateStr.toString()
+                                // Extract MM-dd from yyyy-MM-dd format
+                                if (yearlyDate.length >= 10) {
+                                    val monthDay = yearlyDate.substring(5) // Get MM-dd part
+                                    val todayMonthDay = String.format("%02d-%02d", 
+                                        today.get(Calendar.MONTH) + 1, 
+                                        today.get(Calendar.DAY_OF_MONTH))
+                                    monthDay == todayMonthDay
                                 } else {
                                     false
                                 }
                             } catch (e: Exception) {
-                                Log.w(TAG, "Error parsing single date: $singleDateTime", e)
+                                Log.w(TAG, "Error parsing yearly date: $dateStr", e)
                                 false
                             }
-                        } else {
-                            false
                         }
                     }
-                    else -> true // Show other frequencies by default
                 }
-            } catch (e: Exception) {
-                Log.w(TAG, "Error filtering habit for today: ${habit["name"]}", e)
-                true // Show by default if there's an error
+                "hourly" -> {
+                    // Hourly habits should show if they have times scheduled for today
+                    val hourlyTimes = habit["hourlyTimes"] as? List<*>
+                    hourlyTimes?.isNotEmpty() == true
+                }
+                "single" -> {
+                    // Single habits should show if their scheduled date is today
+                    val singleDateTime = habit["singleDateTime"] as? String
+                    if (singleDateTime != null) {
+                        try {
+                            val singleDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(singleDateTime)
+                            if (singleDate != null) {
+                                val singleDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(singleDate)
+                                singleDateString == todayDateString
+                            } else {
+                                false
+                            }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Error parsing single date: $singleDateTime", e)
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                }
+                else -> true // Show other frequencies by default
             }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error filtering habit for today: ${habit["name"]}", e)
+            return true // Show by default if there's an error
         }
     }
     
