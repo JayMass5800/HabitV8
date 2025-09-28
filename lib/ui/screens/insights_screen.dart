@@ -269,18 +269,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           // Performance Deep Dive Section
           _buildPerformanceDeepDive(habits, theme),
 
-          // AI-powered sections - only show when AI is enabled and available
-          if (_isAIEnabled && _isAIAvailable) ...[
-            const SizedBox(height: 32),
-
-            // Volatility Analysis Section
-            _buildVolatilityAnalysisSection(habits, theme),
-
-            const SizedBox(height: 32),
-
-            // Time-of-Day Patterns Section
-            _buildTimeOfDayPatternsSection(habits, theme),
-          ],
+          // Note: Volatility and Time-of-Day charts moved to AI Insights tab
 
           const SizedBox(height: 24),
         ],
@@ -1083,6 +1072,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       ],
                     ),
                   ),
+
+                // Advanced Analytics Charts Section
+                _buildAdvancedAnalyticsSection(habits, theme),
+                const SizedBox(height: 24),
+
                 ...insights.asMap().entries.map((entry) {
                   final index = entry.key;
                   final insight = entry.value;
@@ -2122,6 +2116,70 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
+  /// Build Advanced Analytics Section for AI Insights Tab
+  Widget _buildAdvancedAnalyticsSection(List<Habit> habits, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primaryContainer,
+                theme.colorScheme.primaryContainer.withValues(alpha: 0.7),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.analytics,
+                color: theme.colorScheme.onPrimaryContainer,
+                size: 28,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Advanced Analytics',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Deep insights into your habit patterns and consistency',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer
+                            .withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Volatility Analysis
+        _buildVolatilityAnalysisSection(habits, theme),
+
+        const SizedBox(height: 24),
+
+        // Time-of-Day Patterns
+        _buildTimeOfDayPatternsSection(habits, theme),
+      ],
+    );
+  }
+
   /// Build Volatility Analysis Section
   Widget _buildVolatilityAnalysisSection(List<Habit> habits, ThemeData theme) {
     final activeHabits = habits.where((h) => h.isActive).toList();
@@ -2154,14 +2212,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Habit Volatility Analysis',
+                        'Habit Consistency Analysis',
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Week-to-week variance in habit completions',
+                        'Measures how consistent you are with each habit over time',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface
                               .withValues(alpha: 0.7),
@@ -2172,19 +2230,101 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+
+            // Explanatory text
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 20,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Understanding Consistency Scores',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Higher values indicate more inconsistent patterns (more volatile). Lower values show steady, consistent habit performance. This helps identify which habits need more attention to build consistency.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
             if (volatilityData.isNotEmpty) ...[
-              SizedBox(
-                height: 250,
-                child: _buildVolatilityChart(volatilityData, theme),
+              Row(
+                children: [
+                  // Y-axis label
+                  RotatedBox(
+                    quarterTurns: 3,
+                    child: Text(
+                      'Consistency Score',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SizedBox(
+                      height: 280,
+                      child: _buildVolatilityChart(volatilityData, theme),
+                    ),
+                  ),
+                ],
               ),
             ] else ...[
               Center(
-                child: Text(
-                  'Not enough data for volatility analysis',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.timeline_outlined,
+                      size: 48,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Not enough data for consistency analysis',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Complete habits for at least 2 weeks to see this analysis',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -2226,14 +2366,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Time-of-Day Patterns',
+                        'Daily Activity Patterns',
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'When you complete habits throughout the day',
+                        'Discover your most productive hours for habit completion',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface
                               .withValues(alpha: 0.7),
@@ -2244,19 +2384,82 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 ),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+
+            // Explanatory text
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest
+                    .withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        size: 20,
+                        color: theme.colorScheme.secondary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Your Peak Performance Hours',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This heatmap shows when you\'re most likely to complete habits. Taller bars indicate higher activity. Use this to schedule new habits during your most productive hours.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
             if (timePatternData.isNotEmpty) ...[
               SizedBox(
-                height: 200,
+                height: 240,
                 child: _buildTimeOfDayHeatmap(timePatternData, theme),
               ),
             ] else ...[
               Center(
-                child: Text(
-                  'Not enough completion data for time analysis',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.access_time_outlined,
+                      size: 48,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Not enough completion data for time analysis',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Complete more habits to see your daily activity patterns',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -2313,7 +2516,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     // Sort by variance (highest first)
     data.sort(
         (a, b) => (b['variance'] as double).compareTo(a['variance'] as double));
-    return data.take(5).toList(); // Show top 5 most volatile habits
+    return data.take(10).toList(); // Show up to 10 habits for better overview
   }
 
   /// Generate time-of-day pattern data
@@ -2380,11 +2583,25 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 40,
+              reservedSize: 50,
               getTitlesWidget: (value, meta) {
+                // Show cleaner labels with context
+                if (value == 0) {
+                  return Text('0', style: theme.textTheme.bodySmall);
+                }
+                if (value < 1) {
+                  return Text(
+                    value.toStringAsFixed(2),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  );
+                }
                 return Text(
                   value.toStringAsFixed(1),
-                  style: theme.textTheme.bodySmall,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
                 );
               },
             ),
@@ -2435,18 +2652,39 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
     return Column(
       children: [
-        // Hour labels
-        SizedBox(
-          height: 30,
+        // Hour labels with improved styling
+        Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: List.generate(24, (hour) {
-              final shouldShowLabel = hour % 3 == 0; // Show every 3rd hour
+              final shouldShowLabel =
+                  hour % 4 == 0; // Show every 4th hour for cleaner look
               return Expanded(
                 child: Center(
                   child: shouldShowLabel
-                      ? Text(
-                          '${hour.toString().padLeft(2, '0')}:00',
-                          style: theme.textTheme.bodySmall,
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            hour == 0
+                                ? '12 AM'
+                                : hour < 12
+                                    ? '$hour AM'
+                                    : hour == 12
+                                        ? '12 PM'
+                                        : '${hour - 12} PM',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.8),
+                            ),
+                          ),
                         )
                       : const SizedBox(),
                 ),
@@ -2457,69 +2695,115 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
         const SizedBox(height: 8),
 
-        // Heatmap bars
+        // Heatmap bars with improved styling
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: data.map((item) {
-              final percentage = item['percentage'] as double;
-              final intensity =
-                  maxPercentage > 0 ? percentage / maxPercentage : 0.0;
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: data.map((item) {
+                final percentage = item['percentage'] as double;
+                final intensity =
+                    maxPercentage > 0 ? percentage / maxPercentage : 0.0;
+                final hour = item['hour'] as int;
 
-              return Expanded(
-                child: Container(
-                  height: 120 * intensity,
-                  margin: const EdgeInsets.symmetric(horizontal: 1),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(
-                      alpha: 0.3 + (intensity * 0.7),
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  child:
-                      percentage > 5 // Only show tooltip for significant hours
-                          ? Tooltip(
-                              message:
-                                  '${item['hour']}:00 - ${percentage.toStringAsFixed(1)}%',
-                              child: const SizedBox.expand(),
-                            )
+                return Expanded(
+                  child: Container(
+                    height: 140 * intensity,
+                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          theme.colorScheme.primary.withValues(alpha: 0.8),
+                          theme.colorScheme.primary
+                              .withValues(alpha: 0.4 + (intensity * 0.4)),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                      boxShadow: intensity > 0.3
+                          ? [
+                              BoxShadow(
+                                color: theme.colorScheme.primary
+                                    .withValues(alpha: 0.2),
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
+                              ),
+                            ]
                           : null,
-                ),
-              );
-            }).toList(),
+                    ),
+                    child: percentage >
+                            3 // Show tooltip for hours with >3% activity
+                        ? Tooltip(
+                            message:
+                                '${hour == 0 ? '12 AM' : hour < 12 ? '$hour AM' : hour == 12 ? '12 PM' : '${hour - 12} PM'}\n${percentage.toStringAsFixed(1)}% of completions',
+                            child: const SizedBox.expand(),
+                          )
+                        : null,
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ),
 
         const SizedBox(height: 8),
 
-        // Legend
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Low activity',
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(width: 8),
-            Container(
-              width: 40,
-              height: 8,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary.withValues(alpha: 0.3),
-                    theme.colorScheme.primary,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(4),
+        // Enhanced Legend
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.trending_down,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'High activity',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                'Low',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 60,
+                height: 10,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.primary.withValues(alpha: 0.3),
+                      theme.colorScheme.primary.withValues(alpha: 0.9),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'High',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.trending_up,
+                size: 16,
+                color: theme.colorScheme.primary,
+              ),
+            ],
+          ),
         ),
       ],
     );
