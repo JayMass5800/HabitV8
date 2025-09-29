@@ -78,15 +78,28 @@ class WidgetIntegrationService {
       debugPrint(
           'Updating widget $widgetName with data keys: ${data.keys.toList()}');
 
-      // Set widget data
+      // Set widget data with retry logic
       for (final entry in data.entries) {
-        await HomeWidget.saveWidgetData(entry.key, entry.value);
-        debugPrint(
-            'Saved ${entry.key}: ${entry.value.toString().length > 100 ? "${entry.value.toString().substring(0, 100)}..." : entry.value}');
+        bool saved = false;
+        int retries = 0;
+        while (!saved && retries < 3) {
+          try {
+            await HomeWidget.saveWidgetData(entry.key, entry.value);
+            saved = true;
+            debugPrint(
+                'Saved ${entry.key}: ${entry.value.toString().length > 100 ? "${entry.value.toString().substring(0, 100)}..." : entry.value}');
+          } catch (e) {
+            retries++;
+            debugPrint('Error saving ${entry.key} (attempt $retries): $e');
+            if (retries < 3) {
+              await Future.delayed(Duration(milliseconds: 100 * retries));
+            }
+          }
+        }
       }
 
-      // Small delay to ensure data is written to SharedPreferences
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Longer delay to ensure data is written to SharedPreferences
+      await Future.delayed(const Duration(milliseconds: 200));
 
       // Update the widget
       await HomeWidget.updateWidget(
@@ -313,9 +326,9 @@ class WidgetIntegrationService {
       // Cancel existing timer if any
       _periodicUpdateTimer?.cancel();
 
-      // Update widgets every 30 minutes to ensure they stay fresh
+      // Update widgets every 15 minutes to ensure they stay fresh
       _periodicUpdateTimer =
-          Timer.periodic(const Duration(minutes: 30), (timer) async {
+          Timer.periodic(const Duration(minutes: 15), (timer) async {
         try {
           debugPrint('Performing periodic widget update');
           await updateAllWidgets();
@@ -324,7 +337,7 @@ class WidgetIntegrationService {
         }
       });
 
-      debugPrint('Periodic widget updates started (every 30 minutes)');
+      debugPrint('Periodic widget updates started (every 15 minutes)');
     } catch (e) {
       debugPrint('Error starting periodic widget updates: $e');
     }
@@ -400,6 +413,21 @@ class WidgetIntegrationService {
     await updateAllWidgets();
     // Also trigger immediate Android widget update
     await _triggerAndroidWidgetUpdate();
+  }
+
+  /// Force immediate widget update (useful when app becomes active)
+  Future<void> forceWidgetUpdate() async {
+    try {
+      debugPrint('Forcing immediate widget update');
+      await updateAllWidgets();
+      await _triggerAndroidWidgetUpdate();
+
+      // Also notify Android widgets to refresh their data
+      const platform = MethodChannel('com.habittracker.habitv8/widget_updates');
+      await platform.invokeMethod('forceWidgetRefresh');
+    } catch (e) {
+      debugPrint('Error forcing widget update: $e');
+    }
   }
 
   /// Schedule Android WorkManager updates for independent widget functionality

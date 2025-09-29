@@ -100,9 +100,9 @@ class HabitCompactRemoteViewsFactory(
                 remoteViews.setInt(R.id.compact_complete_button, "setColorFilter", textColor)
             }
 
-            // Set rounded, semi-transparent background based on theme
-            val bgRes = if (isDarkMode) R.drawable.widget_compact_habit_item_bg_dark else R.drawable.widget_compact_habit_item_bg_light
-            remoteViews.setInt(R.id.compact_habit_item_container, "setBackgroundResource", bgRes)
+            // Set background color based on theme (avoid setBackgroundResource in RemoteViews)
+            val bgColor = if (isDarkMode) 0x99121212 else 0x99FFFFFF
+            remoteViews.setInt(R.id.compact_habit_item_container, "setBackgroundColor", bgColor.toInt())
 
             // Set click intent for completion toggle
             val completionIntent = Intent().apply {

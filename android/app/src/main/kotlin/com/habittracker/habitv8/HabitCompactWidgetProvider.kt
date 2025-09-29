@@ -44,22 +44,16 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
     ) {
         Log.d("HabitCompactWidget", "onUpdate called with ${appWidgetIds.size} widget IDs")
         
-        // Check if widget data is stale and try to refresh it
+        // Check if widget data is stale and try to refresh it (but don't clear existing data)
         val lastUpdate = widgetData.getLong("last_update", 0)
         val currentTime = System.currentTimeMillis()
         val dataAge = currentTime - lastUpdate
-        val maxDataAge = 30 * 60 * 1000L // 30 minutes
+        val maxDataAge = 2 * 60 * 60 * 1000L // 2 hours (less aggressive)
         
         if (dataAge > maxDataAge) {
-            Log.w("HabitCompactWidget", "Widget data is stale (${dataAge / 1000}s old), attempting refresh")
-            // Try to refresh data from Flutter preferences as fallback
-            refreshWidgetDataFromFlutter(context, widgetData)
-            // Also trigger WorkManager update
+            Log.w("HabitCompactWidget", "Widget data is stale (${dataAge / 1000}s old), triggering background refresh")
+            // Trigger background refresh but don't wait for it
             WidgetUpdateWorker.triggerImmediateUpdate(context)
-            // Force refresh all widgets after fallback data update
-            appWidgetIds.forEach { appWidgetId ->
-                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.compact_habits_list)
-            }
         }
         
         appWidgetIds.forEach { appWidgetId ->
