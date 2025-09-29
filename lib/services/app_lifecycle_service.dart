@@ -227,20 +227,22 @@ class AppLifecycleService with WidgetsBindingObserver {
   /// Refresh widgets when app resumes to ensure current day data is shown
   static void _refreshWidgetsOnResume() {
     try {
-      AppLogger.debug('🔄 Refreshing widgets on app resume...');
+      AppLogger.debug('🔄 Force refreshing widgets on app resume...');
 
       // Add delay to ensure app is fully resumed and services are ready
       Future.delayed(const Duration(milliseconds: 1500), () async {
         try {
-          await WidgetIntegrationService.instance.updateAllWidgets();
-          AppLogger.debug('✅ Widgets refreshed successfully on app resume');
+          // Use force update to ensure widgets are immediately refreshed
+          await WidgetIntegrationService.instance.forceWidgetUpdate();
+          AppLogger.debug(
+              '✅ Widgets force refreshed successfully on app resume');
         } catch (e) {
-          AppLogger.error('❌ Error refreshing widgets on app resume', e);
+          AppLogger.error('❌ Error force refreshing widgets on app resume', e);
           // Don't block app resume if widget refresh fails
         }
       });
     } catch (e) {
-      AppLogger.error('Error scheduling widget refresh on resume', e);
+      AppLogger.error('Error scheduling widget force refresh on resume', e);
     }
   }
 
