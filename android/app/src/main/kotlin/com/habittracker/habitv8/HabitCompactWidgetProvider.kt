@@ -232,7 +232,6 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         try {
             // Read theme mode from widget data first, then from app prefs, else fall back to system
             var themeMode = widgetData.getString("themeMode", null)
-                ?: widgetData.getString("home_widget.double.themeMode", null)
                 ?: widgetData.getString("flutter.theme_mode", null) // from ThemeService via shared_preferences
                 ?: widgetData.getString("flutter.themeMode", null) // legacy/camelCase fallback
 

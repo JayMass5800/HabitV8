@@ -336,8 +336,16 @@ class WidgetUpdateWorker(
                 widgetEditor.putString("themeMode", themeMode)
             }
             
-            // Copy primary color
-            val primaryColor = flutterPrefs.getInt("flutter.primary_color", -1)
+            // Copy primary color (Flutter stores integers as Long on Android)
+            val primaryColor = try {
+                flutterPrefs.getLong("flutter.primary_color", -1L).toInt()
+            } catch (e: Exception) {
+                try {
+                    flutterPrefs.getInt("flutter.primary_color", -1)
+                } catch (e2: Exception) {
+                    -1
+                }
+            }
             if (primaryColor != -1) {
                 widgetEditor.putInt("primaryColor", primaryColor)
             }

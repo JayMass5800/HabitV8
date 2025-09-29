@@ -225,7 +225,6 @@ class HabitCompactRemoteViewsFactory(
             // Read theme mode with robust fallbacks (prefer extras from provider → HomeWidget → Flutter prefs → system)
             var mode = themeModeExtra
                 ?: prefs.getString("themeMode", null)
-                ?: prefs.getString("home_widget.double.themeMode", null)
                 ?: flutterPrefs.getString("flutter.theme_mode", null)
                 ?: flutterPrefs.getString("theme_mode", null)
 
@@ -240,6 +239,19 @@ class HabitCompactRemoteViewsFactory(
             themeMode = mode
             isDarkMode = themeMode.equals("dark", true)
 
+            // Helper to read int/long from SharedPreferences (Flutter stores as Long on Android)
+            fun getIntOrLong(sp: android.content.SharedPreferences, key: String, def: Int): Int {
+                return try {
+                    sp.getLong(key, def.toLong()).toInt()
+                } catch (e: Exception) {
+                    try {
+                        sp.getInt(key, def)
+                    } catch (e2: Exception) {
+                        def
+                    }
+                }
+            }
+            
             // Primary color with integer/float fallbacks; prefer extras from provider
             primaryColor = when {
                 primaryColorExtra != -1 -> primaryColorExtra
@@ -247,10 +259,10 @@ class HabitCompactRemoteViewsFactory(
                 prefs.contains("home_widget.double.primaryColor") -> {
                     try { prefs.getFloat("home_widget.double.primaryColor", 0xFF2196F3.toFloat()).toInt() } catch (_: Exception) { 0xFF2196F3.toInt() }
                 }
-                flutterPrefs.contains("flutter.primary_color") -> flutterPrefs.getInt("flutter.primary_color", 0xFF2196F3.toInt())
-                flutterPrefs.contains("primary_color") -> flutterPrefs.getInt("primary_color", 0xFF2196F3.toInt())
-                prefs.contains("flutter.primary_color") -> prefs.getInt("flutter.primary_color", 0xFF2196F3.toInt())
-                prefs.contains("flutter.primaryColor") -> prefs.getInt("flutter.primaryColor", 0xFF2196F3.toInt())
+                flutterPrefs.contains("flutter.primary_color") -> getIntOrLong(flutterPrefs, "flutter.primary_color", 0xFF2196F3.toInt())
+                flutterPrefs.contains("primary_color") -> getIntOrLong(flutterPrefs, "primary_color", 0xFF2196F3.toInt())
+                prefs.contains("flutter.primary_color") -> getIntOrLong(prefs, "flutter.primary_color", 0xFF2196F3.toInt())
+                prefs.contains("flutter.primaryColor") -> getIntOrLong(prefs, "flutter.primaryColor", 0xFF2196F3.toInt())
                 else -> 0xFF2196F3.toInt()
             }
 

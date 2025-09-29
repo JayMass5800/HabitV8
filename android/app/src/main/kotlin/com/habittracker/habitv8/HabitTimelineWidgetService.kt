@@ -291,13 +291,12 @@ class HabitTimelineRemoteViewsFactory(
             Log.d("HabitTimelineService", "🎨 Checking theme sources:")
             Log.d("HabitTimelineService", "  - themeModeExtra: $themeModeExtra")
             Log.d("HabitTimelineService", "  - HomeWidget['themeMode']: ${prefs.getString("themeMode", null)}")
-            Log.d("HabitTimelineService", "  - HomeWidget['home_widget.double.themeMode']: ${prefs.getString("home_widget.double.themeMode", null)}")
+            Log.d("HabitTimelineService", "  - HomeWidget contains 'home_widget.double.themeMode': ${prefs.contains("home_widget.double.themeMode")}")
             Log.d("HabitTimelineService", "  - Flutter['flutter.theme_mode']: ${flutterPrefs.getString("flutter.theme_mode", null)}")
-            Log.d("HabitTimelineService", "  - Flutter['theme_mode']: ${flutterPrefs.getString("theme_mode", null)}")
+            Log.d("HabitTimelineService", "  - Flutter contains 'theme_mode': ${flutterPrefs.contains("theme_mode")}")
             
             var themeMode = themeModeExtra
                 ?: prefs.getString("themeMode", null) 
-                ?: prefs.getString("home_widget.double.themeMode", null)
                 ?: flutterPrefs.getString("flutter.theme_mode", null)
                 ?: flutterPrefs.getString("theme_mode", null)
             
