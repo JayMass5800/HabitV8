@@ -30,11 +30,13 @@ class WidgetUpdateWorker(
          */
         fun schedulePeriodicUpdates(context: Context) {
             try {
+                // More lenient constraints to survive battery optimization
                 val constraints = Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
                     .setRequiresBatteryNotLow(false)
                     .setRequiresCharging(false)
                     .setRequiresDeviceIdle(false)
+                    .setRequiresStorageNotLow(false)
                     .build()
 
                 val periodicWorkRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
@@ -43,22 +45,62 @@ class WidgetUpdateWorker(
                     .setConstraints(constraints)
                     .addTag("widget_updates")
                     .setBackoffCriteria(
-                        BackoffPolicy.LINEAR,
-                        10000L, // 10 seconds minimum backoff
+                        BackoffPolicy.EXPONENTIAL,
+                        30000L, // 30 seconds minimum backoff
+                        TimeUnit.MILLISECONDS
+                    )
+                    .setInitialDelay(1, TimeUnit.MINUTES) // Start after 1 minute
+                    .build()
+
+                WorkManager.getInstance(context)
+                    .enqueueUniquePeriodicWork(
+                        WORK_NAME,
+                        ExistingPeriodicWorkPolicy.UPDATE, // Use UPDATE instead of KEEP
+                        periodicWorkRequest
+                    )
+
+                Log.i(TAG, "✅ Periodic widget updates scheduled (every 15 minutes)")
+                
+                // Also schedule a more frequent fallback update
+                scheduleFallbackUpdates(context)
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error scheduling periodic widget updates", e)
+            }
+        }
+        
+        /**
+         * Schedule more frequent fallback updates to handle battery optimization
+         */
+        private fun scheduleFallbackUpdates(context: Context) {
+            try {
+                // Very lenient constraints for fallback updates
+                val fallbackConstraints = Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                    .build()
+
+                val fallbackWorkRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
+                    1, TimeUnit.HOURS // Fallback every hour
+                )
+                    .setConstraints(fallbackConstraints)
+                    .addTag("widget_fallback_updates")
+                    .setBackoffCriteria(
+                        BackoffPolicy.EXPONENTIAL,
+                        60000L, // 1 minute minimum backoff
                         TimeUnit.MILLISECONDS
                     )
                     .build()
 
                 WorkManager.getInstance(context)
                     .enqueueUniquePeriodicWork(
-                        WORK_NAME,
-                        ExistingPeriodicWorkPolicy.KEEP,
-                        periodicWorkRequest
+                        "widget_fallback_work",
+                        ExistingPeriodicWorkPolicy.UPDATE,
+                        fallbackWorkRequest
                     )
 
-                Log.i(TAG, "✅ Periodic widget updates scheduled (every 15 minutes)")
+                Log.i(TAG, "✅ Fallback widget updates scheduled (every hour)")
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error scheduling periodic widget updates", e)
+                Log.e(TAG, "❌ Error scheduling fallback widget updates", e)
             }
         }
         

@@ -29,11 +29,26 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
                 }
                 Intent.ACTION_SCREEN_ON -> {
                     Log.d(TAG, "Screen turned on, scheduling widget update")
-                    // Trigger update when user turns on screen (but not too frequently)
+                    // Trigger immediate update and reschedule periodic updates
                     WidgetUpdateWorker.triggerImmediateUpdate(context)
+                    // Also reschedule periodic updates in case they were killed
+                    WidgetUpdateWorker.schedulePeriodicUpdates(context)
                 }
                 Intent.ACTION_USER_PRESENT -> {
                     Log.d(TAG, "User unlocked device, triggering widget update")
+                    // Trigger immediate update and reschedule periodic updates
+                    WidgetUpdateWorker.triggerImmediateUpdate(context)
+                    // Also reschedule periodic updates in case they were killed
+                    WidgetUpdateWorker.schedulePeriodicUpdates(context)
+                }
+                Intent.ACTION_DREAMING_STOPPED -> {
+                    Log.d(TAG, "Device stopped dreaming (screensaver), triggering widget update")
+                    WidgetUpdateWorker.triggerImmediateUpdate(context)
+                    WidgetUpdateWorker.schedulePeriodicUpdates(context)
+                }
+                Intent.ACTION_POWER_CONNECTED,
+                Intent.ACTION_POWER_DISCONNECTED -> {
+                    Log.d(TAG, "Power state changed, triggering widget update")
                     WidgetUpdateWorker.triggerImmediateUpdate(context)
                 }
                 "com.habittracker.habitv8.UPDATE_WIDGETS" -> {

@@ -44,6 +44,20 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
     ) {
         Log.d("HabitCompactWidget", "onUpdate called with ${appWidgetIds.size} widget IDs")
         
+        // Check if widget data is stale and try to refresh it
+        val lastUpdate = widgetData.getLong("last_update", 0)
+        val currentTime = System.currentTimeMillis()
+        val dataAge = currentTime - lastUpdate
+        val maxDataAge = 30 * 60 * 1000L // 30 minutes
+        
+        if (dataAge > maxDataAge) {
+            Log.w("HabitCompactWidget", "Widget data is stale (${dataAge / 1000}s old), attempting refresh")
+            // Try to refresh data from Flutter preferences as fallback
+            refreshWidgetDataFromFlutter(context, widgetData)
+            // Also trigger WorkManager update
+            WidgetUpdateWorker.triggerImmediateUpdate(context)
+        }
+        
         appWidgetIds.forEach { appWidgetId ->
             try {
                 val views = RemoteViews(context.packageName, R.layout.widget_compact)
@@ -338,6 +352,54 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             // Fallback to just opening the app
             val fallbackIntent = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
             fallbackIntent.send()
+        }
+    }
+    
+    /**
+     * Fallback method to refresh widget data directly from Flutter preferences
+     * when WorkManager updates fail or are delayed
+     */
+    private fun refreshWidgetDataFromFlutter(context: Context, widgetData: SharedPreferences) {
+        try {
+            Log.d("HabitCompactWidget", "Attempting fallback data refresh from Flutter preferences")
+            
+            // Read current habit data from Flutter shared preferences
+            val flutterPrefs = context.getSharedPreferences(
+                "FlutterSharedPreferences", 
+                Context.MODE_PRIVATE
+            )
+            
+            // Get habits data
+            val habitsJson = flutterPrefs.getString("flutter.habits_data", null)
+                ?: flutterPrefs.getString("flutter.habits", null)
+            
+            if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
+                // Update widget preferences with fresh data
+                val editor = widgetData.edit()
+                editor.putString("habits", habitsJson)
+                editor.putString("habits_data", habitsJson)
+                editor.putLong("last_update", System.currentTimeMillis())
+                
+                // Copy theme settings
+                val themeMode = flutterPrefs.getString("flutter.theme_mode", null)
+                    ?: flutterPrefs.getString("flutter.themeMode", null)
+                if (themeMode != null) {
+                    editor.putString("themeMode", themeMode)
+                }
+                
+                val primaryColor = flutterPrefs.getInt("flutter.primary_color", -1)
+                if (primaryColor != -1) {
+                    editor.putInt("primaryColor", primaryColor)
+                }
+                
+                editor.apply()
+                
+                Log.d("HabitCompactWidget", "✅ Fallback data refresh successful")
+            } else {
+                Log.w("HabitCompactWidget", "No habit data found in Flutter preferences for fallback")
+            }
+        } catch (e: Exception) {
+            Log.e("HabitCompactWidget", "❌ Error during fallback data refresh", e)
         }
     }
 }
