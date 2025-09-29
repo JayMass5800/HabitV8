@@ -423,7 +423,7 @@ class WidgetIntegrationService {
       await _triggerAndroidWidgetUpdate();
 
       // Also notify Android widgets to refresh their data
-      const platform = MethodChannel('com.habittracker.habitv8/widget_updates');
+      const platform = MethodChannel('com.habittracker.habitv8/widget_update');
       await platform.invokeMethod('forceWidgetRefresh');
     } catch (e) {
       debugPrint('Error forcing widget update: $e');
