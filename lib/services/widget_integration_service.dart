@@ -207,6 +207,7 @@ class WidgetIntegrationService {
       // Get widget theme mode preference (defaults to follow_app)
       final widgetThemeMode =
           prefs.getString('widget_theme_mode') ?? 'follow_app';
+      debugPrint('🎨 Widget theme preference: $widgetThemeMode');
 
       // Get widget primary color preference (defaults to app color)
       final widgetColorValue = prefs.getInt('widget_primary_color');
@@ -215,21 +216,30 @@ class WidgetIntegrationService {
       String actualThemeMode;
       if (widgetThemeMode == 'light') {
         actualThemeMode = 'light';
+        debugPrint('🎨 Using explicit LIGHT theme for widgets');
       } else if (widgetThemeMode == 'dark') {
         actualThemeMode = 'dark';
+        debugPrint('🎨 Using explicit DARK theme for widgets');
       } else {
         // follow_app mode - use app's theme
         final appThemeMode = await ThemeService.getThemeMode();
+        debugPrint('🎨 Following app theme: $appThemeMode');
         if (appThemeMode == ThemeMode.dark) {
           actualThemeMode = 'dark';
+          debugPrint('🎨 App is in DARK mode');
         } else if (appThemeMode == ThemeMode.light) {
           actualThemeMode = 'light';
+          debugPrint('🎨 App is in LIGHT mode');
         } else {
           // ThemeMode.system - check system brightness
           final brightness = ui.PlatformDispatcher.instance.platformBrightness;
           actualThemeMode = brightness == Brightness.dark ? 'dark' : 'light';
+          debugPrint(
+              '🎨 App is in SYSTEM mode, device brightness: $brightness → $actualThemeMode');
         }
       }
+
+      debugPrint('🎨 Final theme mode to send to widgets: $actualThemeMode');
 
       // Determine primary color
       int primaryColorValue;

@@ -288,6 +288,13 @@ class HabitTimelineRemoteViewsFactory(
             val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
             
             // Load theme mode with robust fallbacks (prefer extras from provider → HomeWidget → Flutter prefs → system)
+            Log.d("HabitTimelineService", "🎨 Checking theme sources:")
+            Log.d("HabitTimelineService", "  - themeModeExtra: $themeModeExtra")
+            Log.d("HabitTimelineService", "  - HomeWidget['themeMode']: ${prefs.getString("themeMode", null)}")
+            Log.d("HabitTimelineService", "  - HomeWidget['home_widget.double.themeMode']: ${prefs.getString("home_widget.double.themeMode", null)}")
+            Log.d("HabitTimelineService", "  - Flutter['flutter.theme_mode']: ${flutterPrefs.getString("flutter.theme_mode", null)}")
+            Log.d("HabitTimelineService", "  - Flutter['theme_mode']: ${flutterPrefs.getString("theme_mode", null)}")
+            
             var themeMode = themeModeExtra
                 ?: prefs.getString("themeMode", null) 
                 ?: prefs.getString("home_widget.double.themeMode", null)
@@ -303,10 +310,10 @@ class HabitTimelineRemoteViewsFactory(
                     android.content.res.Configuration.UI_MODE_NIGHT_NO -> "light"
                     else -> "light"
                 }
-                Log.d("HabitTimelineService", "No saved theme found, using system theme: $themeMode")
+                Log.d("HabitTimelineService", "🎨 No saved theme or system mode detected, using system theme: $themeMode")
             }
             
-            Log.d("HabitTimelineService", "Detected theme mode: '$themeMode'")
+            Log.d("HabitTimelineService", "🎨 Final detected theme mode: '$themeMode'")
             
             // Load primary color with fallbacks; prefer extras from provider
             fun getIntCompat(sp: android.content.SharedPreferences, key: String, def: Int): Int {
