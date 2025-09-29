@@ -147,16 +147,30 @@ class WidgetUpdateWorker(
     
     private fun updateWidgetData() {
         try {
-            // Read current habit data from Flutter shared preferences
+            // Read from HomeWidget preferences first (where Flutter saves data via home_widget plugin)
+            val widgetPrefs = applicationContext.getSharedPreferences(
+                "HomeWidgetPreferences", 
+                Context.MODE_PRIVATE
+            )
+            
             val flutterPrefs = applicationContext.getSharedPreferences(
                 "FlutterSharedPreferences", 
                 Context.MODE_PRIVATE
             )
             
-            // Get habits data
-            val habitsJson = flutterPrefs.getString("flutter.habits_data", null)
-                ?: flutterPrefs.getString("flutter.habits", null)
-                ?: "[]"
+            // Try to get habits data from HomeWidgetPreferences first (Flutter's home_widget plugin saves here)
+            var habitsJson = widgetPrefs.getString("habits", null)
+                ?: widgetPrefs.getString("today_habits", null)
+                ?: widgetPrefs.getString("habits_data", null)
+            
+            // If not found in HomeWidget prefs, try FlutterSharedPreferences as fallback
+            if (habitsJson.isNullOrBlank() || habitsJson == "[]") {
+                habitsJson = flutterPrefs.getString("flutter.habits_data", null)
+                    ?: flutterPrefs.getString("flutter.habits", null)
+                    ?: "[]"
+            }
+            
+            Log.d(TAG, "Widget data loaded: ${habitsJson.length} characters")
             
             // Process and update widget-specific data
             processHabitDataForWidgets(habitsJson, flutterPrefs)
@@ -176,9 +190,15 @@ class WidgetUpdateWorker(
             
             val editor = widgetPrefs.edit()
             
-            // Store the raw habits data
-            editor.putString("habits", habitsJson)
-            editor.putString("habits_data", habitsJson)
+            // Only update habits data if we have actual data (don't overwrite with empty data)
+            if (habitsJson.isNotEmpty() && habitsJson != "[]") {
+                editor.putString("habits", habitsJson)
+                editor.putString("habits_data", habitsJson)
+                Log.d(TAG, "Updating habits data: ${habitsJson.length} characters")
+            } else {
+                // Don't overwrite - keep existing data
+                Log.d(TAG, "Skipping habits update - no new data to write (would be empty array)")
+            }
             
             // Process habits for today's display
             if (habitsJson.isNotEmpty() && habitsJson != "[]") {

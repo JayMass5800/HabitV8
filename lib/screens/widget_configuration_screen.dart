@@ -16,7 +16,7 @@ class _WidgetConfigurationScreenState
   bool _autoRefresh = true;
   double _refreshInterval = 15.0;
   String _widgetThemeMode = 'follow_app'; // follow_app, light, dark
-  Color _widgetPrimaryColor = Colors.blue;
+  Color _widgetPrimaryColor = const Color(0xFF2196F3); // Default blue color
 
   @override
   void initState() {
