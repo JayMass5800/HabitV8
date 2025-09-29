@@ -56,6 +56,10 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             refreshWidgetDataFromFlutter(context, widgetData)
             // Also trigger WorkManager update
             WidgetUpdateWorker.triggerImmediateUpdate(context)
+            // Force refresh all widgets after fallback data update
+            appWidgetIds.forEach { appWidgetId ->
+                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.compact_habits_list)
+            }
         }
         
         appWidgetIds.forEach { appWidgetId ->
@@ -71,8 +75,8 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
                 // Set up header click handlers
                 setupHeaderClickHandlers(context, views, appWidgetId)
                 
-                // Check if we have habits to show
-                val hasHabits = checkForHabits(context)
+                // Check if we have habits to show (pass widgetData to check fallback data too)
+                val hasHabits = checkForHabits(context, widgetData)
                 val habitCount = getHabitCount(context)
                 
                 if (hasHabits) {
@@ -182,13 +186,27 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         views.setOnClickPendingIntent(R.id.compact_empty_state, openAppPendingIntent)
     }
 
-    private fun checkForHabits(context: Context): Boolean {
+    private fun checkForHabits(context: Context, widgetData: SharedPreferences? = null): Boolean {
         return try {
+            // First try to check from the provided widgetData (used after fallback refresh)
+            if (widgetData != null) {
+                val habitsJson = widgetData.getString("habits", null)
+                    ?: widgetData.getString("habits_data", null)
+                if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
+                    Log.d("HabitCompactWidget", "Found habits in widgetData")
+                    return true
+                }
+            }
+            
+            // Fallback to HomeWidgetPreferences
             val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
             val habitsJson = prefs.getString("habits", null)
                 ?: prefs.getString("home_widget.string.habits", null)
                 ?: prefs.getString("habits_data", null)
-            !habitsJson.isNullOrEmpty() && habitsJson != "[]"
+            val hasHabits = !habitsJson.isNullOrEmpty() && habitsJson != "[]"
+            
+            Log.d("HabitCompactWidget", "checkForHabits result: $hasHabits (from ${if (widgetData != null) "widgetData + " else ""}HomeWidgetPreferences)")
+            hasHabits
         } catch (e: Exception) {
             Log.e("HabitCompactWidget", "Error checking for habits", e)
             false
@@ -374,27 +392,41 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
                 ?: flutterPrefs.getString("flutter.habits", null)
             
             if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
-                // Update widget preferences with fresh data
-                val editor = widgetData.edit()
-                editor.putString("habits", habitsJson)
-                editor.putString("habits_data", habitsJson)
-                editor.putLong("last_update", System.currentTimeMillis())
+                // Update BOTH widget preferences and HomeWidgetPreferences with fresh data
+                // This ensures both the widget provider and ListView services have the data
                 
-                // Copy theme settings
+                // Update the passed widgetData
+                val widgetEditor = widgetData.edit()
+                widgetEditor.putString("habits", habitsJson)
+                widgetEditor.putString("habits_data", habitsJson)
+                widgetEditor.putLong("last_update", System.currentTimeMillis())
+                
+                // Also update HomeWidgetPreferences (used by ListView services)
+                val homeWidgetPrefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+                val homeEditor = homeWidgetPrefs.edit()
+                homeEditor.putString("habits", habitsJson)
+                homeEditor.putString("habits_data", habitsJson)
+                homeEditor.putLong("last_update", System.currentTimeMillis())
+                
+                // Copy theme settings to both
                 val themeMode = flutterPrefs.getString("flutter.theme_mode", null)
                     ?: flutterPrefs.getString("flutter.themeMode", null)
                 if (themeMode != null) {
-                    editor.putString("themeMode", themeMode)
+                    widgetEditor.putString("themeMode", themeMode)
+                    homeEditor.putString("themeMode", themeMode)
                 }
                 
                 val primaryColor = flutterPrefs.getInt("flutter.primary_color", -1)
                 if (primaryColor != -1) {
-                    editor.putInt("primaryColor", primaryColor)
+                    widgetEditor.putInt("primaryColor", primaryColor)
+                    homeEditor.putInt("primaryColor", primaryColor)
                 }
                 
-                editor.apply()
+                // Apply both updates
+                widgetEditor.apply()
+                homeEditor.apply()
                 
-                Log.d("HabitCompactWidget", "✅ Fallback data refresh successful")
+                Log.d("HabitCompactWidget", "✅ Fallback data refresh successful (updated both widgetData and HomeWidgetPreferences)")
             } else {
                 Log.w("HabitCompactWidget", "No habit data found in Flutter preferences for fallback")
             }
