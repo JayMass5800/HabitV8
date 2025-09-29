@@ -252,16 +252,10 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
             
             // Read primary color from widget data first, then from app prefs; default to app's default blue
             val primaryColor = when {
-                widgetData.contains("primaryColor") -> widgetData.getInt("primaryColor", 0xFF2196F3.toInt())
-                widgetData.contains("home_widget.double.primaryColor") -> {
-                    try {
-                        widgetData.getFloat("home_widget.double.primaryColor", 0xFF2196F3.toFloat()).toInt()
-                    } catch (e: Exception) {
-                        0xFF2196F3.toInt()
-                    }
-                }
-                widgetData.contains("flutter.primary_color") -> widgetData.getInt("flutter.primary_color", 0xFF2196F3.toInt())
-                widgetData.contains("flutter.primaryColor") -> widgetData.getInt("flutter.primaryColor", 0xFF2196F3.toInt())
+                widgetData.contains("primaryColor") -> getIntCompat(widgetData, "primaryColor", 0xFF2196F3.toInt())
+                widgetData.contains("home_widget.double.primaryColor") -> getIntCompat(widgetData, "home_widget.double.primaryColor", 0xFF2196F3.toInt())
+                widgetData.contains("flutter.primary_color") -> getIntCompat(widgetData, "flutter.primary_color", 0xFF2196F3.toInt())
+                widgetData.contains("flutter.primaryColor") -> getIntCompat(widgetData, "flutter.primaryColor", 0xFF2196F3.toInt())
                 else -> 0xFF2196F3.toInt()
             }
             

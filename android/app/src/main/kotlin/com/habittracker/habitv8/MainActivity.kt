@@ -15,7 +15,12 @@ import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.ExistingPeriodicWorkPolicy
+import java.util.concurrent.TimeUnit
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -330,6 +335,42 @@ class MainActivity : FlutterFragmentActivity() {
                     } catch (e: Exception) {
                         result.error("WIDGET_REFRESH_ERROR", "Failed to force widget refresh: ${e.message}", null)
                         android.util.Log.e("MainActivity", "Failed to force widget refresh", e)
+                    }
+                }
+                "schedulePeriodicUpdates" -> {
+                    try {
+                        // Schedule periodic widget updates via WorkManager
+                        val updateRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(15, TimeUnit.MINUTES)
+                            .setConstraints(
+                                Constraints.Builder()
+                                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                                    .build()
+                            )
+                            .build()
+                        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                            "widget_periodic_update",
+                            ExistingPeriodicWorkPolicy.REPLACE,
+                            updateRequest
+                        )
+                        
+                        result.success(true)
+                        android.util.Log.i("MainActivity", "Periodic widget updates scheduled")
+                    } catch (e: Exception) {
+                        result.error("SCHEDULE_ERROR", "Failed to schedule periodic updates: ${e.message}", null)
+                        android.util.Log.e("MainActivity", "Failed to schedule periodic updates", e)
+                    }
+                }
+                "triggerImmediateUpdate" -> {
+                    try {
+                        // Trigger immediate widget update
+                        val updateRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
+                        WorkManager.getInstance(this).enqueue(updateRequest)
+                        
+                        result.success(true)
+                        android.util.Log.i("MainActivity", "Immediate widget update triggered")
+                    } catch (e: Exception) {
+                        result.error("UPDATE_ERROR", "Failed to trigger immediate update: ${e.message}", null)
+                        android.util.Log.e("MainActivity", "Failed to trigger immediate update", e)
                     }
                 }
                 else -> result.notImplemented()

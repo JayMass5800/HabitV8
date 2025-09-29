@@ -401,6 +401,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         completions: completionData,
       );
     } catch (e) {
+      debugPrint('Error getting gamification data: $e');
       return {
         'level': 1,
         'xp': 0,
@@ -886,19 +887,26 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               showTitles: true,
               interval: 2,
               getTitlesWidget: (value, meta) {
-                final index = value.toInt();
-                if (index >= 0 && index < trendData.length) {
-                  final weekStart = trendData[index]['weekStart'] as DateTime;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      '${weekStart.month}/${weekStart.day}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  );
+                try {
+                  final index = value.toInt();
+                  if (index >= 0 && index < trendData.length) {
+                    final weekStart =
+                        trendData[index]['weekStart'] as DateTime?;
+                    if (weekStart != null) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          '${weekStart.month}/${weekStart.day}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  debugPrint('Error formatting date label: $e');
                 }
                 return const Text('');
               },
@@ -1415,11 +1423,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   // Gamification Tab Widgets
 
   Widget _buildPlayerLevelCard(Map<String, dynamic> data, ThemeData theme) {
-    final level = data['level'] ?? 1;
-    final xp = data['xp'] ?? 0;
-    final nextLevelXP = data['nextLevelXP'] ?? 100;
-    final progress = data['levelProgress'] ?? 0.0;
-    final rank = data['rank'] ?? 'Novice';
+    final level = (data['level'] as int?) ?? 1;
+    final xp = (data['xp'] as int?) ?? 0;
+    final nextLevelXP = (data['nextLevelXP'] as int?) ?? 100;
+    final progress = (data['levelProgress'] as num?)?.toDouble() ?? 0.0;
+    final rank = (data['rank'] as String?) ?? 'Novice';
 
     return SlideTransition(
       position: Tween<Offset>(
@@ -1537,8 +1545,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildAchievementsSection(Map<String, dynamic> data, ThemeData theme) {
-    final unlockedCount = data['achievementsUnlocked'] ?? 0;
-    final totalCount = data['totalAchievements'] ?? 0;
+    final unlockedCount = (data['achievementsUnlocked'] as int?) ?? 0;
+    final totalCount = (data['totalAchievements'] as int?) ?? 0;
 
     return SlideTransition(
       position: Tween<Offset>(
@@ -1588,6 +1596,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           FutureBuilder<List<Achievement>>(
             future: AchievementsService.getUnlockedAchievements(),
             builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                debugPrint('Error loading achievements: ${snapshot.error}');
+              }
               final achievements = snapshot.data ?? [];
               final allAchievements = AchievementsService.getAllAchievements();
 
@@ -1819,6 +1830,21 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           return const Padding(
             padding: EdgeInsets.all(16),
             child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          debugPrint('Error loading achievements progress: ${snapshot.error}');
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: Text(
+                'Error loading progress',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              ),
+            ),
           );
         }
 

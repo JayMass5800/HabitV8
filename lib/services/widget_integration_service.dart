@@ -433,7 +433,7 @@ class WidgetIntegrationService {
   /// Schedule Android WorkManager updates for independent widget functionality
   Future<void> _scheduleAndroidWidgetUpdates() async {
     try {
-      const platform = MethodChannel('com.habittracker.habitv8/widget_updates');
+      const platform = MethodChannel('com.habittracker.habitv8/widget_update');
       await platform.invokeMethod('schedulePeriodicUpdates');
       debugPrint('Android WorkManager widget updates scheduled');
     } catch (e) {
@@ -444,7 +444,7 @@ class WidgetIntegrationService {
   /// Trigger immediate Android widget update
   Future<void> _triggerAndroidWidgetUpdate() async {
     try {
-      const platform = MethodChannel('com.habittracker.habitv8/widget_updates');
+      const platform = MethodChannel('com.habittracker.habitv8/widget_update');
       await platform.invokeMethod('triggerImmediateUpdate');
       debugPrint('Android widget immediate update triggered');
     } catch (e) {
