@@ -160,19 +160,24 @@ class HabitCompactRemoteViewsFactory(
             
             val keysToTry = listOf(
                 "habits" to hwPrefs,
+                "today_habits" to hwPrefs,
                 "home_widget.string.habits" to hwPrefs,
+                "home_widget.string.today_habits" to hwPrefs,
                 "habits_data" to hwPrefs,
                 "flutter.habits_data" to flutterPrefs,
-                "flutter.habits" to flutterPrefs
+                "flutter.habits" to flutterPrefs,
+                "flutter.today_habits" to flutterPrefs
             )
             
             for ((key, prefs) in keysToTry) {
                 val value = prefs.getString(key, null)
-                if (!value.isNullOrBlank()) {
+                if (!value.isNullOrBlank() && value != "[]") {
                     habitsJson = value
                     sourceKey = key
-                    Log.d("HabitCompactWidget", "Found habits data at key '$key', length: ${value.length}, preview: ${value.take(100)}")
+                    Log.d("HabitCompactWidget", "✅ Found habits data at key '$key', length: ${value.length}, preview: ${value.take(100)}")
                     break
+                } else if (value != null) {
+                    Log.d("HabitCompactWidget", "⏭️ Skipping key '$key': ${if (value.isBlank()) "blank" else "empty array"}")
                 }
             }
 
