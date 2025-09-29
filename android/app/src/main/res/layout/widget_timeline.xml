@@ -162,8 +162,7 @@
             android:paddingHorizontal="20dp"
             android:paddingVertical="12dp"
             android:clickable="true"
-            android:contentDescription="Add new habit"
-            android:elevation="2dp" />
+            android:contentDescription="Add new habit" />
 
     </LinearLayout>
 

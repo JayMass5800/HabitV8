@@ -468,99 +468,108 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildOverallCompletionCard(List<Habit> habits, ThemeData theme) {
-    final data = _insightsService.calculateOverallCompletionRate(habits);
-    final rate = ((data['rate'] as double) * 100).round();
-    final sparklineData = data['sparkline'] as List<double>;
+    final stats = _insightsService.calculateOverallCompletionRate(habits);
+    final completionRate = stats['rate'] as double? ?? 0.0;
+    final trendText = stats['trendText'] as String? ?? '';
 
     return _buildPerformanceCard(
       title: 'Overall Completion',
-      value: '$rate%',
-      subtitle: data['trendText'] as String,
-      icon: Icons.analytics_rounded,
-      gradient: const LinearGradient(
+      value: '${(completionRate * 100).toStringAsFixed(0)}%',
+      subtitle: trendText,
+      icon: Icons.check_circle,
+      gradient: LinearGradient(
+        colors: [
+          theme.colorScheme.primary,
+          theme.colorScheme.primary.withValues(alpha: 0.7),
+        ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF4CAF50),
-          Color(0xFF8BC34A),
-        ],
       ),
-      sparkline: sparklineData,
       theme: theme,
+      sparkline: stats['sparkline'] as List<double>?,
     );
   }
 
   Widget _buildCurrentStreakCard(List<Habit> habits, ThemeData theme) {
-    final data = _insightsService.calculateCurrentStreak(habits);
-    final days = data['days'] as int;
-    final habitName = data['habitName'] as String;
-    final comparison = data['comparison'] as String;
+    final stats = _insightsService.calculateCurrentStreak(habits);
+    final currentStreak = stats['days'] as int? ?? 0;
+    final comparison = stats['comparison'] as String? ?? '';
 
     return _buildPerformanceCard(
       title: 'Current Streak',
-      value: '$days Days',
-      subtitle: habitName.length > 20
-          ? '${habitName.substring(0, 17)}...'
-          : habitName,
-      additionalInfo: comparison,
-      icon: Icons.local_fire_department_rounded,
-      gradient: const LinearGradient(
+      value: '$currentStreak days',
+      subtitle: comparison,
+      icon: Icons.local_fire_department,
+      gradient: LinearGradient(
+        colors: [
+          Colors.orange.shade600,
+          Colors.deepOrange.shade400,
+        ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          Color(0xFFFF9800),
-          Color(0xFFFFB74D),
-        ],
       ),
       theme: theme,
     );
   }
 
   Widget _buildConsistencyScoreCard(List<Habit> habits, ThemeData theme) {
-    final data = _insightsService.calculateConsistencyScore(habits);
-    final score = data['score'] as int;
-    final label = data['label'] as String;
+    final stats = _insightsService.calculateConsistencyScore(habits);
+    final consistencyScore = stats['score'] as int? ?? 0;
+    final label = stats['label'] as String? ?? '';
 
     return _buildPerformanceCard(
       title: 'Consistency Score',
-      value: '$score',
+      value: '$consistencyScore',
       subtitle: label,
-      icon: Icons.insights_rounded,
-      gradient: const LinearGradient(
+      icon: Icons.trending_up,
+      gradient: LinearGradient(
+        colors: [
+          Colors.green.shade600,
+          Colors.teal.shade400,
+        ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF2196F3),
-          Color(0xFF64B5F6),
-        ],
       ),
       theme: theme,
       showProgressIndicator: true,
-      progressValue: score / 100,
+      progressValue: consistencyScore / 100.0,
     );
   }
 
   Widget _buildMostPowerfulDayCard(List<Habit> habits, ThemeData theme) {
-    final data = _insightsService.calculateMostPowerfulDay(habits);
-    final day = data['day'] as String;
-    final percentage = data['percentage'] as int;
-    final insight = data['insight'] as String;
+    // Calculate most powerful day from completion data
+    final dayCompletions = <int, int>{};
+    for (final habit in habits) {
+      for (final completion in habit.completions) {
+        final dayOfWeek = completion.weekday;
+        dayCompletions[dayOfWeek] = (dayCompletions[dayOfWeek] ?? 0) + 1;
+      }
+    }
+
+    int bestDay = 1;
+    int bestDayCount = 0;
+    dayCompletions.forEach((day, count) {
+      if (count > bestDayCount) {
+        bestDay = day;
+        bestDayCount = count;
+      }
+    });
+
+    final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final bestDayName = dayCompletions.isEmpty ? 'N/A' : dayNames[bestDay - 1];
 
     return _buildPerformanceCard(
       title: 'Most Powerful Day',
-      value: day.length > 10 ? day.substring(0, 7) : day,
-      subtitle:
-          percentage > 0 ? '+$percentage% boost' : 'Consistent performance',
-      additionalInfo:
-          insight.length > 50 ? '${insight.substring(0, 47)}...' : insight,
-      icon: Icons.star_rounded,
-      gradient: const LinearGradient(
+      value: bestDayName,
+      subtitle: '$bestDayCount completions',
+      icon: Icons.calendar_today,
+      gradient: LinearGradient(
+        colors: [
+          Colors.purple.shade600,
+          Colors.deepPurple.shade400,
+        ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF9C27B0),
-          Color(0xFFBA68C8),
-        ],
       ),
       theme: theme,
     );

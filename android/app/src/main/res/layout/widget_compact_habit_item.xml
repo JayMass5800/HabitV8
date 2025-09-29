@@ -7,17 +7,15 @@
     android:gravity="center_vertical"
     android:background="@drawable/widget_habit_item_background"
     android:padding="10dp"
-    android:layout_marginBottom="4dp"
-    android:elevation="1dp">
+    android:layout_marginBottom="4dp">
 
-    <!-- Habit Color Indicator (Enhanced) -->
-    <ImageView
+    <!-- Habit Color Indicator (Changed to FrameLayout for RemoteViews compatibility) -->
+    <FrameLayout
         android:id="@+id/compact_habit_color_indicator"
         android:layout_width="4dp"
         android:layout_height="32dp"
         android:background="#FF4CAF50"
-        android:layout_marginEnd="16dp"
-        android:contentDescription="Habit color indicator" />
+        android:layout_marginEnd="16dp" />
 
     <!-- Habit Info Container -->
     <LinearLayout

@@ -197,12 +197,30 @@ class HabitTimelineRemoteViewsFactory(
             // Prefer HomeWidgetPreferences (plugin store), with robust fallbacks
             val hwPrefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
             val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            val raw = hwPrefs.getString("habits", null)
-                ?: hwPrefs.getString("home_widget.string.habits", null)
-                ?: hwPrefs.getString("habits_data", null)
-                ?: flutterPrefs.getString("flutter.habits_data", null)
+            
+            // Try each key and log which one works
+            var raw: String? = null
+            var sourceKey: String? = null
+            
+            val keysToTry = listOf(
+                "habits" to hwPrefs,
+                "home_widget.string.habits" to hwPrefs,
+                "habits_data" to hwPrefs,
+                "flutter.habits_data" to flutterPrefs,
+                "flutter.habits" to flutterPrefs
+            )
+            
+            for ((key, prefs) in keysToTry) {
+                val value = prefs.getString(key, null)
+                if (!value.isNullOrBlank()) {
+                    raw = value
+                    sourceKey = key
+                    Log.d("HabitTimelineService", "Found habits data at key '$key', length: ${value.length}, preview: ${value.take(100)}")
+                    break
+                }
+            }
 
-            Log.d("HabitTimelineService", "Attempting to load habits. Raw length: ${raw?.length ?: 0}")
+            Log.d("HabitTimelineService", "Attempting to load habits from key: $sourceKey, Raw length: ${raw?.length ?: 0}")
 
             if (raw.isNullOrBlank()) {
                 val allKeys = hwPrefs.all.keys

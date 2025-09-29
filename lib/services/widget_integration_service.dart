@@ -86,11 +86,16 @@ class WidgetIntegrationService {
           try {
             await HomeWidget.saveWidgetData(entry.key, entry.value);
             saved = true;
-            debugPrint(
-                'Saved ${entry.key}: ${entry.value.toString().length > 100 ? "${entry.value.toString().substring(0, 100)}..." : entry.value}');
+            if (entry.key == 'habits') {
+              debugPrint(
+                  '✅ Saved ${entry.key}: length=${entry.value.toString().length}, preview=${entry.value.toString().length > 150 ? "${entry.value.toString().substring(0, 150)}..." : entry.value}');
+            } else {
+              debugPrint(
+                  '✅ Saved ${entry.key}: ${entry.value.toString().length > 100 ? "${entry.value.toString().substring(0, 100)}..." : entry.value}');
+            }
           } catch (e) {
             retries++;
-            debugPrint('Error saving ${entry.key} (attempt $retries): $e');
+            debugPrint('❌ Error saving ${entry.key} (attempt $retries): $e');
             if (retries < 3) {
               await Future.delayed(Duration(milliseconds: 100 * retries));
             }
@@ -134,14 +139,19 @@ class WidgetIntegrationService {
       // Convert habits to JSON for widget consumption
       final habitsWithStatus =
           await _enrichHabitsWithStatus(habits, selectedDate);
-      final habitsJson = jsonEncode(
-          habitsWithStatus.map((h) => _habitToJson(h, selectedDate)).toList());
+      final habitsList =
+          habitsWithStatus.map((h) => _habitToJson(h, selectedDate)).toList();
+      final habitsJson = jsonEncode(habitsList);
       final nextHabitJson = nextHabit != null
           ? jsonEncode(_habitToJson(nextHabit, selectedDate))
           : null;
 
       debugPrint(
-          'Widget data: habits JSON length: ${habitsJson.length}, theme: ${themeData['themeMode']}, primary: ${themeData['primaryColor']}');
+          '🎯 Widget data prepared: ${habitsList.length} habits in list, JSON length: ${habitsJson.length}');
+      debugPrint(
+          '🎯 First 200 chars of habits JSON: ${habitsJson.length > 200 ? habitsJson.substring(0, 200) : habitsJson}');
+      debugPrint(
+          '🎯 Theme data: ${themeData['themeMode']}, primary: ${themeData['primaryColor']}');
 
       return {
         'habits': habitsJson,

@@ -151,12 +151,33 @@ class HabitCompactRemoteViewsFactory(
 
     private fun loadHabitData() {
         try {
-            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-            // HomeWidget writes string values; habits is JSON string or may be absent
-            val habitsJson = prefs.getString("habits", null)
+            val hwPrefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            
+            // Try each key and log which one works
+            var habitsJson: String? = null
+            var sourceKey: String? = null
+            
+            val keysToTry = listOf(
+                "habits" to hwPrefs,
+                "home_widget.string.habits" to hwPrefs,
+                "habits_data" to hwPrefs,
+                "flutter.habits_data" to flutterPrefs,
+                "flutter.habits" to flutterPrefs
+            )
+            
+            for ((key, prefs) in keysToTry) {
+                val value = prefs.getString(key, null)
+                if (!value.isNullOrBlank()) {
+                    habitsJson = value
+                    sourceKey = key
+                    Log.d("HabitCompactWidget", "Found habits data at key '$key', length: ${value.length}, preview: ${value.take(100)}")
+                    break
+                }
+            }
 
             if (habitsJson.isNullOrBlank() || habitsJson == "[]") {
-                Log.d("HabitCompactWidget", "No habits data found or empty array. Available keys: ${prefs.all.keys}")
+                Log.d("HabitCompactWidget", "No habits data found or empty array (from key: $sourceKey). Available keys: ${hwPrefs.all.keys}")
                 habits = mutableListOf()
                 return
             }
