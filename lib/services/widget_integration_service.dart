@@ -63,6 +63,33 @@ class WidgetIntegrationService {
     }
   }
 
+  /// Force immediate widget update (for testing)
+  Future<void> forceWidgetUpdate() async {
+    try {
+      debugPrint('🧪 FORCE UPDATE: Starting immediate widget update...');
+
+      // Update data
+      await updateAllWidgets();
+
+      // Force explicit widget refresh
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      await HomeWidget.updateWidget(
+        name: _timelineWidgetName,
+        androidName: _timelineWidgetName,
+      );
+
+      await HomeWidget.updateWidget(
+        name: _compactWidgetName,
+        androidName: _compactWidgetName,
+      );
+
+      debugPrint('🧪 FORCE UPDATE: Completed successfully');
+    } catch (e) {
+      debugPrint('🧪 FORCE UPDATE: Failed - $e');
+    }
+  }
+
   /// Update all widgets with current habit data
   Future<void> updateAllWidgets() async {
     try {
@@ -266,61 +293,107 @@ class WidgetIntegrationService {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
+  /// Public method to handle widget interactions (called from main.dart)
+  static Future<void> handleWidgetInteraction(Uri? uri) async {
+    await _backgroundCallback(uri);
+  }
+
   /// Handle widget interactions from background
+  @pragma('vm:entry-point')
   static Future<void> _backgroundCallback(Uri? uri) async {
     try {
       if (uri == null) return;
 
-      debugPrint('Widget background callback: $uri');
+      debugPrint('🔧 Widget background callback received: $uri');
+
+      // **CRITICAL: Initialize HomeWidget in background context**
+      // This ensures the platform channel is properly initialized for background execution
+      try {
+        // Use the same group ID as the main widget service for consistency
+        await HomeWidget.setAppGroupId('group.com.habittracker.habitv8.widget');
+        debugPrint('✅ HomeWidget initialized in background context');
+      } catch (e) {
+        debugPrint(
+            '⚠️ HomeWidget initialization warning (may be already initialized): $e');
+      }
 
       final action = uri.host;
       final params = uri.queryParameters;
+
+      debugPrint('🎯 Processing widget action: $action with params: $params');
 
       switch (action) {
         case 'complete_habit':
           final habitId = params['habitId'];
           if (habitId != null) {
+            debugPrint('🔄 Handling habit completion from widget: $habitId');
             await _handleCompleteHabit(habitId);
           }
           break;
 
         case 'refresh_widget':
+          debugPrint('🔄 Handling widget refresh request');
           await _handleRefreshWidget();
           break;
 
         default:
-          debugPrint('Unknown widget action: $action');
+          debugPrint('❓ Unknown widget action: $action');
       }
     } catch (e) {
-      debugPrint('Error handling widget callback: $e');
+      debugPrint('❌ Error handling widget callback: $e');
     }
   }
 
   /// Handle habit completion from widget
   static Future<void> _handleCompleteHabit(String habitId) async {
     try {
-      debugPrint('Completing habit from widget: $habitId');
+      debugPrint('🎯 Starting habit completion from widget: $habitId');
 
-      // Get database service
+      // **1. DATABASE UPDATE:**
+      // Get database service and update habit data
       final habitBox = await DatabaseService.getInstance();
       final habitService = HabitService(habitBox);
 
       // Load habit
       final habit = await habitService.getHabitById(habitId);
       if (habit == null) {
-        debugPrint('Habit not found: $habitId');
+        debugPrint('❌ Habit not found: $habitId');
         return;
       }
 
+      debugPrint('✅ Found habit: ${habit.name}');
+
       // Add completion using the habit service
       await habitService.markHabitComplete(habitId, DateTime.now());
+      debugPrint('✅ Habit marked as complete in database');
 
-      // Update widgets with new data
+      // **2. EXPLICIT WIDGET REFRESH (THE KEY STEP):**
+      // Following the example pattern - update widgets with new data
       await instance.updateAllWidgets();
+      debugPrint('✅ Widget data updated');
 
-      debugPrint('Habit completed successfully from widget');
+      // **3. FORCE WIDGET UI REFRESH:**
+      // Explicitly tell the OS to refresh the widget UI
+      try {
+        await HomeWidget.updateWidget(
+          name: _timelineWidgetName,
+          androidName: _timelineWidgetName,
+        );
+        debugPrint('✅ Timeline widget UI refresh triggered');
+
+        await HomeWidget.updateWidget(
+          name: _compactWidgetName,
+          androidName: _compactWidgetName,
+        );
+        debugPrint('✅ Compact widget UI refresh triggered');
+      } catch (e) {
+        debugPrint('⚠️ Widget UI refresh warning: $e');
+      }
+
+      debugPrint(
+          '🎉 Habit completion from widget completed successfully: ${habit.name}');
     } catch (e) {
-      debugPrint('Error completing habit from widget: $e');
+      debugPrint('❌ Error completing habit from widget: $e');
     }
   }
 
@@ -427,21 +500,6 @@ class WidgetIntegrationService {
     await updateAllWidgets();
     // Also trigger immediate Android widget update
     await _triggerAndroidWidgetUpdate();
-  }
-
-  /// Force immediate widget update (useful when app becomes active)
-  Future<void> forceWidgetUpdate() async {
-    try {
-      debugPrint('Forcing immediate widget update');
-      await updateAllWidgets();
-      await _triggerAndroidWidgetUpdate();
-
-      // Also notify Android widgets to refresh their data
-      const platform = MethodChannel('com.habittracker.habitv8/widget_update');
-      await platform.invokeMethod('forceWidgetRefresh');
-    } catch (e) {
-      debugPrint('Error forcing widget update: $e');
-    }
   }
 
   /// Schedule Android WorkManager updates for independent widget functionality

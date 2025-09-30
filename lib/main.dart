@@ -19,6 +19,7 @@ import 'services/app_lifecycle_service.dart';
 import 'services/subscription_service.dart';
 import 'services/widget_integration_service.dart';
 import 'services/widget_launch_handler.dart';
+import 'package:home_widget/home_widget.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/all_habits_screen.dart';
 import 'ui/screens/calendar_screen.dart';
@@ -33,6 +34,16 @@ import 'widgets/alarm_test_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // **CRITICAL: Register widget callback early in main() following example pattern**
+  // This ensures the background handler is registered before any widget interactions
+  try {
+    HomeWidget.widgetClicked
+        .listen(WidgetIntegrationService.handleWidgetInteraction);
+    AppLogger.info('✅ Widget interaction callback registered in main()');
+  } catch (e) {
+    AppLogger.error('❌ Failed to register widget callback in main()', e);
+  }
 
   // Edge-to-edge design - Updated for Android 15+ compatibility
   // The native MainActivity now handles edge-to-edge setup

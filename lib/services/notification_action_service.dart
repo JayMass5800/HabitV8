@@ -5,6 +5,7 @@ import '../domain/model/habit.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
 import 'alarm_manager_service.dart';
+import 'widget_integration_service.dart';
 
 /// Service to handle notification actions and connect them to habit management
 class NotificationActionService {
@@ -207,6 +208,30 @@ class NotificationActionService {
 
           // Trigger immediate UI updates for faster feedback
           await _triggerImmediateUIUpdate();
+
+          // **CRITICAL: Update widgets after habit completion from notification**
+          try {
+            AppLogger.info(
+                '🔄 Updating widgets after notification completion...');
+
+            // Use force update to ensure widgets refresh immediately
+            await WidgetIntegrationService.instance.forceWidgetUpdate();
+
+            AppLogger.info(
+                '✅ Widgets force-updated successfully after notification completion');
+          } catch (e) {
+            AppLogger.error(
+                '❌ Failed to update widgets after notification completion', e);
+
+            // Fallback to regular update
+            try {
+              await WidgetIntegrationService.instance.updateAllWidgets();
+              AppLogger.info('✅ Fallback widget update completed');
+            } catch (fallbackError) {
+              AppLogger.error(
+                  '❌ Fallback widget update also failed', fallbackError);
+            }
+          }
 
           // Force a complete provider refresh to ensure UI updates
           try {
