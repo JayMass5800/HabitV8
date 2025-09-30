@@ -45,12 +45,26 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         Log.d("HabitCompactWidget", "onUpdate called with ${appWidgetIds.size} widget IDs")
         
         // Let the widget integration service handle updates properly
-        // Only trigger refresh if there's no habit data at all
+        // Only trigger refresh if there's no habit data at all AND we haven't recently tried to refresh
         val hasHabitsData = widgetData.getString("habits", null)?.let { it.isNotEmpty() && it != "[]" } ?: false
         
         if (!hasHabitsData) {
-            Log.w("HabitCompactWidget", "No habit data found, triggering refresh")
-            WidgetUpdateWorker.triggerImmediateUpdate(context)
+            // Check if we've recently attempted a refresh to prevent infinite loops
+            val lastRefreshAttempt = widgetData.getLong("last_refresh_attempt", 0)
+            val currentTime = System.currentTimeMillis()
+            val timeSinceLastRefresh = currentTime - lastRefreshAttempt
+            val minRefreshInterval = 30000L // 30 seconds minimum between refresh attempts
+            
+            if (timeSinceLastRefresh > minRefreshInterval) {
+                Log.w("HabitCompactWidget", "No habit data found, triggering refresh (last attempt was ${timeSinceLastRefresh}ms ago)")
+                
+                // Record this refresh attempt to prevent immediate re-triggering
+                widgetData.edit().putLong("last_refresh_attempt", currentTime).apply()
+                
+                WidgetUpdateWorker.triggerImmediateUpdate(context)
+            } else {
+                Log.d("HabitCompactWidget", "Skipping refresh - too soon since last attempt (${timeSinceLastRefresh}ms ago, need ${minRefreshInterval}ms)")
+            }
         }
         
         appWidgetIds.forEach { appWidgetId ->

@@ -1,1037 +1,764 @@
-I/flutter (25340):   - Blood Pressure Med: HabitFrequency.daily -> INCLUDED
-I/flutter (25340):   - Cholesterol Med: HabitFrequency.daily -> INCLUDED
-I/flutter (25340):   - Put the bins out: HabitFrequency.monthly -> EXCLUDED
-I/flutter (25340):   - Put the bins out!: HabitFrequency.monthly -> EXCLUDED
-I/flutter (25340):   - Vibration Plate: HabitFrequency.weekly -> INCLUDED
-I/flutter (25340):   - Shower you animal!: HabitFrequency.weekly -> EXCLUDED
-I/flutter (25340):   - 10am late Drop Off: HabitFrequency.weekly -> INCLUDED
-I/flutter (25340):   - Drink water: HabitFrequency.hourly -> INCLUDED
-I/flutter (25340):   - open My News app: HabitFrequency.daily -> INCLUDED
-I/flutter (25340): Result: 6 habits for today
-I/flutter (25340): Widget data preparation: Found 9 total habits, 6 for today
-I/flutter (25340): 🎨 Getting app theme: ThemeMode.dark
-I/flutter (25340): 🎨 App is in DARK mode
-I/flutter (25340): 🎨 Final theme mode to send to widgets: dark
-I/flutter (25340): 🎨 Using app primary color: 4278238420
-I/flutter (25340): 🎯 Widget data prepared: 6 habits in list, JSON length: 1148
-I/flutter (25340): 🎯 First 200 chars of habits JSON: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay":"08:30","frequency":"HabitFrequency.daily"},{"id"
-I/flutter (25340): 🎯 Theme data: dark, primary: 4278238420
-I/flutter (25340): Saved widget theme data: dark, color: 4278238420
-I/flutter (25340): Updating widget HabitTimelineWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (25340): ✅ Saved habits: length=1148, preview=[{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay"...
-I/flutter (25340): ✅ Saved nextHabit: {"id":"1759182223595_1","name":"Cholesterol Med","category":"Health","colorValue":4278228616,"isComp...
-I/flutter (25340): ✅ Saved selectedDate: 2025-09-29
-I/flutter (25340): ✅ Saved themeMode: dark
-I/flutter (25340): ✅ Saved primaryColor: 4278238420
-I/flutter (25340): ✅ Saved lastUpdate: 1759192154350
-I/flutter (25340): Widget HabitTimelineWidgetProvider update completed
-I/flutter (25340): Updating widget HabitCompactWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (25340): ✅ Saved habits: length=1148, preview=[{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay"...
-I/flutter (25340): ✅ Saved nextHabit: {"id":"1759182223595_1","name":"Cholesterol Med","category":"Health","colorValue":4278228616,"isComp...
-I/flutter (25340): ✅ Saved selectedDate: 2025-09-29
-I/flutter (25340): ✅ Saved themeMode: dark
-I/flutter (25340): ✅ Saved primaryColor: 4278238420
-I/flutter (25340): ✅ Saved lastUpdate: 1759192154350
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   _SettingsScreenState._loadDefaultScreen (package:habitv8/ui/screens/settings_screen.dart:43:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 Loading default screen setting: All Habits
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/WindowOnBackDispatcher(25340): setTopOnBackInvokedCallback (unwrapped): androidx.activity.OnBackPressedDispatcher$Api34Impl$createOnBackAnimationCallback$1@a89732a
-I/flutter (25340): Widget HabitCompactWidgetProvider update completed
-I/flutter (25340): All widgets updated successfully
-I/MainActivity(25340): Immediate widget update triggered
-I/flutter (25340): Android widget immediate update triggered
-I/MainActivity(25340): Widget force refresh triggered
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   AppLifecycleService._refreshWidgetsOnResume.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:237:21)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 ✅ Widgets force refreshed successfully on app resume
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-W/JobInfo (25340): Requested important-while-foreground flag for job189 is ignored and takes no effect
-D/WM-SystemJobScheduler(25340): Scheduling work ID f0eeeddc-49ac-4933-8839-076ff732f943Job ID 189
-D/WM-GreedyScheduler(25340): Starting work for f0eeeddc-49ac-4933-8839-076ff732f943
-W/JobInfo (25340): Requested important-while-foreground flag for job190 is ignored and takes no effect
-D/WM-SystemJobScheduler(25340): Scheduling work ID 6d73cb1e-2b79-420a-aab3-eb4a671f24c0Job ID 190
-D/WM-GreedyScheduler(25340): Starting work for 6d73cb1e-2b79-420a-aab3-eb4a671f24c0
-D/WM-Processor(25340): Processor: processing WorkGenerationalId(workSpecId=f0eeeddc-49ac-4933-8839-076ff732f943, generation=0)
-D/WM-Processor(25340): Processor: processing WorkGenerationalId(workSpecId=6d73cb1e-2b79-420a-aab3-eb4a671f24c0, generation=0)
-D/WM-WorkerWrapper(25340): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
-D/WM-WorkerWrapper(25340): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
-I/WidgetUpdateWorker(25340): Starting widget update work
-D/WM-SystemJobService(25340): onStartJob for WorkGenerationalId(workSpecId=6d73cb1e-2b79-420a-aab3-eb4a671f24c0, generation=0)
-D/WidgetUpdateWorker(25340): Widget data loaded: 1148 characters
-D/WidgetUpdateWorker(25340): Updating habits data: 1148 characters
-D/WM-Processor(25340): Work WorkGenerationalId(workSpecId=6d73cb1e-2b79-420a-aab3-eb4a671f24c0, generation=0) is already enqueued for processing
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   SubscriptionService.getRemainingTrialDays (package:habitv8/services/subscription_service.dart:135:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔍 Trial Debug: Start Date=2025-09-29 14:43:28.951611, Now=2025-09-29 17:29:14.957601, DaysSince=0, Remaining=30
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/WM-SystemJobService(25340): onStartJob for WorkGenerationalId(workSpecId=f0eeeddc-49ac-4933-8839-076ff732f943, generation=0)
-I/WidgetUpdateWorker(25340): Starting widget update work
-D/WidgetUpdateWorker(25340): Widget data loaded: 1148 characters
-D/WidgetUpdateWorker(25340): Updating habits data: 1148 characters
-D/WidgetUpdateWorker(25340): Processed 6 total habits, 6 for today
-D/WidgetUpdateWorker(25340): Theme settings copied: mode=dark, color=ff00bcd4
-D/WidgetUpdateWorker(25340): Processed 6 total habits, 6 for today
-D/WidgetUpdateWorker(25340): Theme settings copied: mode=dark, color=ff00bcd4
-D/WidgetUpdateWorker(25340): Widget data updated from Flutter preferences
-D/WidgetUpdateWorker(25340): Widget data updated from Flutter preferences
-D/WidgetUpdateWorker(25340): Updated 1 timeline widgets
-D/WidgetUpdateWorker(25340): Updated 1 compact widgets
-D/HabitTimelineWidget(25340): onUpdate called with 1 widget IDs
-D/HabitTimelineWidget(25340): ListView setup completed for widget 116 with theme extras: mode=dark, primary=ff00bcd4
-D/HabitTimelineWidget(25340): Detected theme mode: 'dark'
-D/HabitTimelineWidget(25340): Using theme - mode: 'dark', primary: ff00bcd4
-D/HabitTimelineWidget(25340): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/HabitTimelineWidget(25340): Found habits in widgetData
-D/HabitTimelineWidget(25340): Widget update completed for ID: 116
-D/HabitCompactWidget(25340): onUpdate called with 1 widget IDs
-D/HabitCompactWidget(25340): ListView setup completed for widget 118 with theme extras: mode=dark, primary=ff00bcd4
-D/HabitCompactWidget(25340): Detected theme mode: 'dark'
-D/HabitCompactWidget(25340): Using theme - mode: 'dark', primary: ff00bcd4
-D/HabitCompactWidget(25340): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/WM-Processor(25340): Work WorkGenerationalId(workSpecId=f0eeeddc-49ac-4933-8839-076ff732f943, generation=0) is already enqueued for processing
-D/HabitCompactWidget(25340): Found habits in widgetData
-D/HabitCompactWidget(25340): Widget update completed for ID: 118
-I/WidgetUpdateWorker(25340): ✅ Widget update work completed successfully
-I/WM-WorkerWrapper(25340): Worker result SUCCESS for Work [ id=f0eeeddc-49ac-4933-8839-076ff732f943, tags={ com.habittracker.habitv8.WidgetUpdateWorker } ]
-D/WidgetUpdateWorker(25340): Updated 1 timeline widgets
-D/WM-Processor(25340): Processor f0eeeddc-49ac-4933-8839-076ff732f943 executed; reschedule = false
-D/WM-SystemJobService(25340): f0eeeddc-49ac-4933-8839-076ff732f943 executed on JobScheduler
-D/WidgetUpdateWorker(25340): Updated 1 compact widgets
-D/HabitTimelineWidget(25340): onUpdate called with 1 widget IDs
-D/HabitTimelineWidget(25340): ListView setup completed for widget 116 with theme extras: mode=dark, primary=ff00bcd4
-D/HabitTimelineWidget(25340): Detected theme mode: 'dark'
-D/HabitTimelineWidget(25340): Using theme - mode: 'dark', primary: ff00bcd4
-D/HabitTimelineWidget(25340): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/HabitCompactWidget(25340): onDataSetChanged called
-D/HabitCompactWidget(25340): Loading theme data
-D/HabitCompactWidget(25340): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff00bcd4
-D/HabitCompactWidget(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitCompactWidget(25340): Raw habits JSON length: 1148
-D/HabitCompactWidget(25340): Parsed habits array with 6 items
-D/HabitCompactWidget(25340): Final habits list size: 6
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/WM-GreedyScheduler(25340): Cancelling work ID f0eeeddc-49ac-4933-8839-076ff732f943
-D/HabitTimelineWidget(25340): Found habits in widgetData
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitTimelineService(25340): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(25340): 🎨 Checking theme sources:
-D/HabitTimelineService(25340):   - themeModeExtra: dark
-D/HabitTimelineService(25340):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(25340):   - HomeWidget contains 'home_widget.double.themeMode': true
-D/HabitTimelineService(25340):   - Flutter['flutter.theme_mode']: dark
-D/HabitTimelineService(25340):   - Flutter contains 'theme_mode': false
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitTimelineService(25340): 🎨 Final detected theme mode: 'dark'
-D/HabitTimelineService(25340): Theme applied - isDark: true, textColor: ffffffff, primary: ff00bcd4
-D/HabitTimelineService(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitTimelineService(25340): Attempting to load habits from key: habits, Raw length: 1148
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitTimelineWidget(25340): Widget update completed for ID: 116
-D/HabitCompactWidget(25340): onUpdate called with 1 widget IDs
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitCompactWidget(25340): ListView setup completed for widget 118 with theme extras: mode=dark, primary=ff00bcd4
-D/HabitCompactWidget(25340): Detected theme mode: 'dark'
-D/HabitCompactWidget(25340): Using theme - mode: 'dark', primary: ff00bcd4
-D/HabitCompactWidget(25340): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/HabitTimelineService(25340): Loaded 6 habits for timeline widget
-D/HabitTimelineService(25340): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitCompactWidget(25340): Found habits in widgetData
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitCompactWidget(25340): Widget update completed for ID: 118
-I/WidgetUpdateWorker(25340): ✅ Widget update work completed successfully
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitCompactWidget(25340): onDataSetChanged called
-D/HabitCompactWidget(25340): Loading theme data
-I/WM-WorkerWrapper(25340): Worker result SUCCESS for Work [ id=6d73cb1e-2b79-420a-aab3-eb4a671f24c0, tags={ com.habittracker.habitv8.WidgetUpdateWorker } ]
-D/HabitCompactWidget(25340): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff00bcd4
-D/HabitCompactWidget(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitCompactWidget(25340): Raw habits JSON length: 1148
-D/HabitCompactWidget(25340): Parsed habits array with 6 items
-D/HabitCompactWidget(25340): Final habits list size: 6
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitTimelineService(25340): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(25340): 🎨 Checking theme sources:
-D/HabitTimelineService(25340):   - themeModeExtra: dark
-D/HabitTimelineService(25340):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(25340):   - HomeWidget contains 'home_widget.double.themeMode': true
-D/HabitTimelineService(25340):   - Flutter['flutter.theme_mode']: dark
-D/HabitTimelineService(25340):   - Flutter contains 'theme_mode': false
-D/HabitTimelineService(25340): 🎨 Final detected theme mode: 'dark'
-D/HabitTimelineService(25340): Theme applied - isDark: true, textColor: ffffffff, primary: ff00bcd4
-D/HabitTimelineService(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitTimelineService(25340): Attempting to load habits from key: habits, Raw length: 1148
-D/HabitTimelineService(25340): Loaded 6 habits for timeline widget
-D/HabitTimelineService(25340): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitCompactWidget(25340): onDataSetChanged called
-D/HabitCompactWidget(25340): Loading theme data
-D/HabitCompactWidget(25340): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff00bcd4
-D/HabitCompactWidget(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitCompactWidget(25340): Raw habits JSON length: 1148
-D/HabitTimelineService(25340): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(25340): 🎨 Checking theme sources:
-D/HabitTimelineService(25340):   - themeModeExtra: dark
-D/HabitTimelineService(25340):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(25340):   - HomeWidget contains 'home_widget.double.themeMode': true
-D/HabitTimelineService(25340):   - Flutter['flutter.theme_mode']: dark
-D/HabitTimelineService(25340):   - Flutter contains 'theme_mode': false
-D/HabitTimelineService(25340): 🎨 Final detected theme mode: 'dark'
-D/HabitTimelineService(25340): Theme applied - isDark: true, textColor: ffffffff, primary: ff00bcd4
-D/HabitTimelineService(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitTimelineService(25340): Attempting to load habits from key: habits, Raw length: 1148
-D/HabitCompactWidget(25340): Parsed habits array with 6 items
-D/HabitCompactWidget(25340): Final habits list size: 6
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitTimelineService(25340): Loaded 6 habits for timeline widget
-D/HabitTimelineService(25340): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/WM-Processor(25340): Processor 6d73cb1e-2b79-420a-aab3-eb4a671f24c0 executed; reschedule = false
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/WM-SystemJobService(25340): 6d73cb1e-2b79-420a-aab3-eb4a671f24c0 executed on JobScheduler
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/WM-GreedyScheduler(25340): Cancelling work ID 6d73cb1e-2b79-420a-aab3-eb4a671f24c0
-D/HabitCompactWidget(25340): onDataSetChanged called
-D/HabitCompactWidget(25340): Loading theme data
-D/HabitCompactWidget(25340): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff00bcd4
-D/HabitCompactWidget(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitCompactWidget(25340): Raw habits JSON length: 1148
-D/HabitCompactWidget(25340): Parsed habits array with 6 items
-D/HabitCompactWidget(25340): Final habits list size: 6
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitTimelineService(25340): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(25340): 🎨 Checking theme sources:
-D/HabitTimelineService(25340):   - themeModeExtra: dark
-D/HabitTimelineService(25340):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(25340):   - HomeWidget contains 'home_widget.double.themeMode': true
-D/HabitTimelineService(25340):   - Flutter['flutter.theme_mode']: dark
-D/HabitTimelineService(25340):   - Flutter contains 'theme_mode': false
-D/HabitTimelineService(25340): 🎨 Final detected theme mode: 'dark'
-D/HabitTimelineService(25340): Theme applied - isDark: true, textColor: ffffffff, primary: ff00bcd4
-D/HabitTimelineService(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitTimelineService(25340): Attempting to load habits from key: habits, Raw length: 1148
-D/HabitTimelineService(25340): Loaded 6 habits for timeline widget
-D/HabitTimelineService(25340): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/WindowOnBackDispatcher(25340): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@f788e54
-I/flutter (25340): Filtering 9 habits for date 2025-09-29:
-I/flutter (25340):   - Blood Pressure Med: HabitFrequency.daily -> INCLUDED
-I/flutter (25340):   - Cholesterol Med: HabitFrequency.daily -> INCLUDED
-I/flutter (25340):   - Put the bins out: HabitFrequency.monthly -> EXCLUDED
-I/flutter (25340):   - Put the bins out!: HabitFrequency.monthly -> EXCLUDED
-I/flutter (25340):   - Vibration Plate: HabitFrequency.weekly -> INCLUDED
-I/flutter (25340):   - Shower you animal!: HabitFrequency.weekly -> EXCLUDED
-I/flutter (25340):   - 10am late Drop Off: HabitFrequency.weekly -> INCLUDED
-I/flutter (25340):   - Drink water: HabitFrequency.hourly -> INCLUDED
-I/flutter (25340):   - open My News app: HabitFrequency.daily -> INCLUDED
-I/flutter (25340): Result: 6 habits for today
-I/flutter (25340): Widget data preparation: Found 9 total habits, 6 for today
-I/flutter (25340): 🎨 Getting app theme: ThemeMode.light
-I/flutter (25340): 🎨 App is in LIGHT mode
-I/flutter (25340): 🎨 Final theme mode to send to widgets: light
-I/flutter (25340): 🎨 Using app primary color: 4278238420
-I/flutter (25340): 🎯 Widget data prepared: 6 habits in list, JSON length: 1148
-I/flutter (25340): 🎯 First 200 chars of habits JSON: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay":"08:30","frequency":"HabitFrequency.daily"},{"id"
-I/flutter (25340): 🎯 Theme data: light, primary: 4278238420
-I/flutter (25340): Saved widget theme data: light, color: 4278238420
-I/flutter (25340): Updating widget HabitTimelineWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (25340): ✅ Saved habits: length=1148, preview=[{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay"...
-I/flutter (25340): ✅ Saved nextHabit: {"id":"1759182223595_1","name":"Cholesterol Med","category":"Health","colorValue":4278228616,"isComp...
-I/flutter (25340): ✅ Saved selectedDate: 2025-09-29
-I/flutter (25340): ✅ Saved themeMode: light
-I/flutter (25340): ✅ Saved primaryColor: 4278238420
-I/flutter (25340): ✅ Saved lastUpdate: 1759192156830
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   SubscriptionService.getRemainingTrialDays (package:habitv8/services/subscription_service.dart:135:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔍 Trial Debug: Start Date=2025-09-29 14:43:28.951611, Now=2025-09-29 17:29:16.869023, DaysSince=0, Remaining=30
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): Widget HabitTimelineWidgetProvider update completed
-I/flutter (25340): Updating widget HabitCompactWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (25340): ✅ Saved habits: length=1148, preview=[{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay"...
-I/flutter (25340): ✅ Saved nextHabit: {"id":"1759182223595_1","name":"Cholesterol Med","category":"Health","colorValue":4278228616,"isComp...
-I/flutter (25340): ✅ Saved selectedDate: 2025-09-29
-I/flutter (25340): ✅ Saved themeMode: light
-I/flutter (25340): ✅ Saved primaryColor: 4278238420
-I/flutter (25340): ✅ Saved lastUpdate: 1759192156830
-I/flutter (25340): Widget HabitCompactWidgetProvider update completed
-I/flutter (25340): All widgets updated successfully
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:62:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.inactive
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:81:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ⏹️ App inactive
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/MainActivity(25340): onPause: Preserving alarm sound if playing
-D/VRI[MainActivity](25340): visibilityChanged oldVisibility=true newVisibility=false
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:62:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.hidden
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:84:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 👁️ App hidden
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:62:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.paused
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:72:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ⏸️ App paused - performing background cleanup...
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   AppLifecycleService._performBackgroundCleanup (package:habitv8/services/app_lifecycle_service.dart:253:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🧹 Performing background cleanup...
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   AppLifecycleService._performBackgroundCleanup (package:habitv8/services/app_lifecycle_service.dart:258:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 ✅ Background cleanup completed
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/Choreographer(25340): Skipped 68 frames!  The application may be doing too much work on its main thread.
-D/ImeBackDispatcher(25340): Clear (mImeCallbacks.size=0)
-D/ImeBackDispatcher(25340): switch root view (mImeCallbacks.size=0)
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:42:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔍 Checking notification callback registration...
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:43:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📦 Container available: true
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:44:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔗 Callback currently set: true
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:55:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ✅ Notification action callback is properly registered
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/MainActivity(25340): onRestart: Preserving alarm sound if playing
-D/MainActivity(25340): onNewIntent called with action: android.intent.action.MAIN
-I/MainActivity(25340): onResume: Preserving alarm sound state
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:62:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.hidden
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:84:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 👁️ App hidden
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:62:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.inactive
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:81:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ⏹️ App inactive
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/ImeBackDispatcher(25340): switch root view (mImeCallbacks.size=0)
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:62:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.resumed
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:77:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ▶️ App resumed
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:124:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔄 Handling app resume - re-registering notification callbacks...
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   AppLifecycleService._ensureDatabaseConnection (package:habitv8/services/app_lifecycle_service.dart:150:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🔗 Ensuring database connection is valid...
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:42:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔍 Checking notification callback registration...
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:43:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📦 Container available: true
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:44:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔗 Callback currently set: true
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:55:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ✅ Notification action callback is properly registered
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService._processPendingActionsWithRetry (package:habitv8/services/app_lifecycle_service.dart:203:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔄 Scheduling pending action processing attempt 1/5 with 1000ms delay
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   AppLifecycleService._refreshWidgetsOnResume (package:habitv8/services/app_lifecycle_service.dart:230:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🔄 Force refreshing widgets on app resume...
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:140:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ✅ App resume handling completed
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/InsetsController(25340): hide(ime())
-I/ImeTracker(25340): com.habittracker.habitv8.debug:58e91af0: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
-I/ImeTracker(25340): system_server:99fa862a: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
-D/ImeBackDispatcher(25340): Register received callback id=244282150 priority=0
-D/WindowOnBackDispatcher(25340): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@3b3ad66
-D/ImeBackDispatcher(25340): Unregister received callback id=244282150
-D/WindowOnBackDispatcher(25340): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@f788e54
-I/ImeTracker(25340): system_server:72f547ed: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   SubscriptionService.getRemainingTrialDays (package:habitv8/services/subscription_service.dart:135:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔍 Trial Debug: Start Date=2025-09-29 14:43:28.951611, Now=2025-09-29 17:29:34.287841, DaysSince=0, Remaining=30
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   AppLifecycleService._ensureDatabaseConnection.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:161:23)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 ✅ Database connection is healthy
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationService.processPendingActionsManually (package:habitv8/services/notification_service.dart:1234:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔄 Manually processing pending actions
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   NotificationService.processPendingActionsManually (package:habitv8/services/notification_service.dart:1238:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ✅ Using callback to process pending actions
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:796:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🔍 All SharedPreferences keys: [onboarding_completed, alarm_manager_data_306804, primary_color, trial_start_date, theme_mode, subscription_status, user_achievements, user_xp, last_midnight_reset, last_trial_check]
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:803:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🔍 Method 1 (getStringList): null
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:804:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🔍 Method 2 (get): null
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:808:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🔍 Found 0 pending actions in SharedPreferences
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:815:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 No pending notification actions to process in SharedPreferences
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   NotificationService._loadActionsFromFile (package:habitv8/services/notification_service.dart:888:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🔍 File: Checking for actions at path: /data/user/0/com.habittracker.habitv8.debug/app_flutter/pending_notification_actions.json
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   NotificationService._loadActionsFromFile (package:habitv8/services/notification_service.dart:891:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🔍 File: File does not exist
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   NotificationService.processPendingActions (package:habitv8/services/notification_service.dart:841:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 No pending actions found in any storage method
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService._processPendingActionsWithRetry.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:209:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ✅ Pending actions processed successfully on attempt 1
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): Filtering 9 habits for date 2025-09-29:
-I/flutter (25340):   - Blood Pressure Med: HabitFrequency.daily -> INCLUDED
-I/flutter (25340):   - Cholesterol Med: HabitFrequency.daily -> INCLUDED
-I/flutter (25340):   - Put the bins out: HabitFrequency.monthly -> EXCLUDED
-I/flutter (25340):   - Put the bins out!: HabitFrequency.monthly -> EXCLUDED
-I/flutter (25340):   - Vibration Plate: HabitFrequency.weekly -> INCLUDED
-I/flutter (25340):   - Shower you animal!: HabitFrequency.weekly -> EXCLUDED
-I/flutter (25340):   - 10am late Drop Off: HabitFrequency.weekly -> INCLUDED
-I/flutter (25340):   - Drink water: HabitFrequency.hourly -> INCLUDED
-I/flutter (25340):   - open My News app: HabitFrequency.daily -> INCLUDED
-I/flutter (25340): Result: 6 habits for today
-I/flutter (25340): Widget data preparation: Found 9 total habits, 6 for today
-I/flutter (25340): 🎨 Getting app theme: ThemeMode.dark
-I/flutter (25340): 🎨 App is in DARK mode
-I/flutter (25340): 🎨 Final theme mode to send to widgets: dark
-I/flutter (25340): 🎨 Using app primary color: 4278238420
-I/flutter (25340): 🎯 Widget data prepared: 6 habits in list, JSON length: 1148
-I/flutter (25340): 🎯 First 200 chars of habits JSON: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay":"08:30","frequency":"HabitFrequency.daily"},{"id"
-I/flutter (25340): 🎯 Theme data: dark, primary: 4278238420
-I/flutter (25340): Saved widget theme data: dark, color: 4278238420
-I/flutter (25340): Updating widget HabitTimelineWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (25340): ✅ Saved habits: length=1148, preview=[{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay"...
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   SubscriptionService.getRemainingTrialDays (package:habitv8/services/subscription_service.dart:135:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 🔍 Trial Debug: Start Date=2025-09-29 14:43:28.951611, Now=2025-09-29 17:29:35.550038, DaysSince=0, Remaining=30
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ✅ Saved nextHabit: {"id":"1759182223595_1","name":"Cholesterol Med","category":"Health","colorValue":4278228616,"isComp...
-I/flutter (25340): ✅ Saved selectedDate: 2025-09-29
-I/flutter (25340): ✅ Saved themeMode: dark
-I/flutter (25340): ✅ Saved primaryColor: 4278238420
-I/flutter (25340): ✅ Saved lastUpdate: 1759192175525
-I/flutter (25340): Forcing immediate widget update
-I/flutter (25340): Filtering 9 habits for date 2025-09-29:
-I/flutter (25340):   - Blood Pressure Med: HabitFrequency.daily -> INCLUDED
-I/flutter (25340):   - Cholesterol Med: HabitFrequency.daily -> INCLUDED
-I/flutter (25340):   - Put the bins out: HabitFrequency.monthly -> EXCLUDED
-I/flutter (25340):   - Put the bins out!: HabitFrequency.monthly -> EXCLUDED
-I/flutter (25340):   - Vibration Plate: HabitFrequency.weekly -> INCLUDED
-I/flutter (25340):   - Shower you animal!: HabitFrequency.weekly -> EXCLUDED
-I/flutter (25340):   - 10am late Drop Off: HabitFrequency.weekly -> INCLUDED
-I/flutter (25340):   - Drink water: HabitFrequency.hourly -> INCLUDED
-I/flutter (25340):   - open My News app: HabitFrequency.daily -> INCLUDED
-I/flutter (25340): Result: 6 habits for today
-I/flutter (25340): Widget data preparation: Found 9 total habits, 6 for today
-I/flutter (25340): 🎨 Getting app theme: ThemeMode.dark
-I/flutter (25340): 🎨 App is in DARK mode
-I/flutter (25340): 🎨 Final theme mode to send to widgets: dark
-I/flutter (25340): 🎨 Using app primary color: 4278238420
-I/flutter (25340): 🎯 Widget data prepared: 6 habits in list, JSON length: 1148
-I/flutter (25340): 🎯 First 200 chars of habits JSON: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay":"08:30","frequency":"HabitFrequency.daily"},{"id"
-I/flutter (25340): 🎯 Theme data: dark, primary: 4278238420
-I/flutter (25340): Saved widget theme data: dark, color: 4278238420
-I/flutter (25340): Updating widget HabitTimelineWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (25340): ✅ Saved habits: length=1148, preview=[{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay"...
-I/flutter (25340): ✅ Saved nextHabit: {"id":"1759182223595_1","name":"Cholesterol Med","category":"Health","colorValue":4278228616,"isComp...
-I/flutter (25340): ✅ Saved selectedDate: 2025-09-29
-I/flutter (25340): ✅ Saved themeMode: dark
-I/flutter (25340): ✅ Saved primaryColor: 4278238420
-I/flutter (25340): ✅ Saved lastUpdate: 1759192175718
-I/flutter (25340): Widget HabitTimelineWidgetProvider update completed
-I/flutter (25340): Updating widget HabitCompactWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (25340): ✅ Saved habits: length=1148, preview=[{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay"...
-I/flutter (25340): ✅ Saved nextHabit: {"id":"1759182223595_1","name":"Cholesterol Med","category":"Health","colorValue":4278228616,"isComp...
-I/flutter (25340): ✅ Saved selectedDate: 2025-09-29
-I/flutter (25340): ✅ Saved themeMode: dark
-I/flutter (25340): ✅ Saved primaryColor: 4278238420
-I/flutter (25340): ✅ Saved lastUpdate: 1759192175525
-I/flutter (25340): Widget HabitTimelineWidgetProvider update completed
-I/flutter (25340): Updating widget HabitCompactWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (25340): ✅ Saved habits: length=1148, preview=[{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"isCompleted":true,"status":"Completed","timeDisplay"...
-I/flutter (25340): ✅ Saved nextHabit: {"id":"1759182223595_1","name":"Cholesterol Med","category":"Health","colorValue":4278228616,"isComp...
-I/flutter (25340): ✅ Saved selectedDate: 2025-09-29
-I/flutter (25340): ✅ Saved themeMode: dark
-I/flutter (25340): ✅ Saved primaryColor: 4278238420
-I/flutter (25340): ✅ Saved lastUpdate: 1759192175718
-I/flutter (25340): Widget HabitCompactWidgetProvider update completed
-I/flutter (25340): All widgets updated successfully
-I/flutter (25340): Widget HabitCompactWidgetProvider update completed
-I/flutter (25340): All widgets updated successfully
-I/MainActivity(25340): Immediate widget update triggered
-I/flutter (25340): Android widget immediate update triggered
-I/MainActivity(25340): Widget force refresh triggered
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   AppLifecycleService._refreshWidgetsOnResume.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:237:21)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 ✅ Widgets force refreshed successfully on app resume
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-W/JobInfo (25340): Requested important-while-foreground flag for job191 is ignored and takes no effect
-D/WM-SystemJobScheduler(25340): Scheduling work ID 6c729ff1-79ce-425f-a87e-9685987eec60Job ID 191
-D/WM-GreedyScheduler(25340): Starting work for 6c729ff1-79ce-425f-a87e-9685987eec60
-D/WM-SystemJobService(25340): onStartJob for WorkGenerationalId(workSpecId=6c729ff1-79ce-425f-a87e-9685987eec60, generation=0)
-W/JobInfo (25340): Requested important-while-foreground flag for job192 is ignored and takes no effect
-D/WM-SystemJobScheduler(25340): Scheduling work ID f9758feb-7cd7-48c8-b811-7e887c337d03Job ID 192
-D/WM-GreedyScheduler(25340): Starting work for f9758feb-7cd7-48c8-b811-7e887c337d03
-D/WM-Processor(25340): Processor: processing WorkGenerationalId(workSpecId=6c729ff1-79ce-425f-a87e-9685987eec60, generation=0)
-D/WM-Processor(25340): Work WorkGenerationalId(workSpecId=6c729ff1-79ce-425f-a87e-9685987eec60, generation=0) is already enqueued for processing
-D/WM-Processor(25340): Processor: processing WorkGenerationalId(workSpecId=f9758feb-7cd7-48c8-b811-7e887c337d03, generation=0)
-D/WM-SystemJobService(25340): onStartJob for WorkGenerationalId(workSpecId=f9758feb-7cd7-48c8-b811-7e887c337d03, generation=0)
-D/WM-WorkerWrapper(25340): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
-I/WidgetUpdateWorker(25340): Starting widget update work
-D/WidgetUpdateWorker(25340): Widget data loaded: 1148 characters
-D/WidgetUpdateWorker(25340): Updating habits data: 1148 characters
-D/WM-WorkerWrapper(25340): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
-I/WidgetUpdateWorker(25340): Starting widget update work
-D/WidgetUpdateWorker(25340): Widget data loaded: 1148 characters
-D/WidgetUpdateWorker(25340): Updating habits data: 1148 characters
-D/WM-Processor(25340): Work WorkGenerationalId(workSpecId=f9758feb-7cd7-48c8-b811-7e887c337d03, generation=0) is already enqueued for processing
-D/WidgetUpdateWorker(25340): Processed 6 total habits, 6 for today
-D/WidgetUpdateWorker(25340): Theme settings copied: mode=dark, color=ff00bcd4
-D/WidgetUpdateWorker(25340): Widget data updated from Flutter preferences
-D/WidgetUpdateWorker(25340): Processed 6 total habits, 6 for today
-D/WidgetUpdateWorker(25340): Theme settings copied: mode=dark, color=ff00bcd4
-D/WidgetUpdateWorker(25340): Widget data updated from Flutter preferences
-D/WidgetUpdateWorker(25340): Updated 1 timeline widgets
-D/WidgetUpdateWorker(25340): Updated 1 compact widgets
-D/HabitTimelineWidget(25340): onUpdate called with 1 widget IDs
-D/WidgetUpdateWorker(25340): Updated 1 timeline widgets
-D/HabitTimelineWidget(25340): ListView setup completed for widget 116 with theme extras: mode=dark, primary=ff00bcd4
-D/HabitTimelineWidget(25340): Detected theme mode: 'dark'
-D/HabitTimelineWidget(25340): Using theme - mode: 'dark', primary: ff00bcd4
-D/HabitTimelineWidget(25340): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/HabitTimelineWidget(25340): Found habits in widgetData
-D/HabitTimelineWidget(25340): Widget update completed for ID: 116
-D/HabitCompactWidget(25340): onUpdate called with 1 widget IDs
-D/HabitCompactWidget(25340): ListView setup completed for widget 118 with theme extras: mode=dark, primary=ff00bcd4
-D/HabitCompactWidget(25340): Detected theme mode: 'dark'
-D/HabitCompactWidget(25340): Using theme - mode: 'dark', primary: ff00bcd4
-D/HabitCompactWidget(25340): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/HabitCompactWidget(25340): Found habits in widgetData
-D/WidgetUpdateWorker(25340): Updated 1 compact widgets
-D/HabitTimelineWidget(25340): onUpdate called with 1 widget IDs
-D/HabitCompactWidget(25340): Widget update completed for ID: 118
-I/WidgetUpdateWorker(25340): ✅ Widget update work completed successfully
-D/HabitTimelineWidget(25340): ListView setup completed for widget 116 with theme extras: mode=dark, primary=ff00bcd4
-D/HabitTimelineWidget(25340): Detected theme mode: 'dark'
-D/HabitTimelineWidget(25340): Using theme - mode: 'dark', primary: ff00bcd4
-D/HabitTimelineWidget(25340): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/HabitTimelineWidget(25340): Found habits in widgetData
-I/WM-WorkerWrapper(25340): Worker result SUCCESS for Work [ id=6c729ff1-79ce-425f-a87e-9685987eec60, tags={ com.habittracker.habitv8.WidgetUpdateWorker } ]
-D/HabitTimelineWidget(25340): Widget update completed for ID: 116
-D/HabitCompactWidget(25340): onUpdate called with 1 widget IDs
-D/HabitTimelineService(25340): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(25340): 🎨 Checking theme sources:
-D/HabitTimelineService(25340):   - themeModeExtra: dark
-D/HabitTimelineService(25340):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(25340):   - HomeWidget contains 'home_widget.double.themeMode': true
-D/HabitTimelineService(25340):   - Flutter['flutter.theme_mode']: dark
-D/HabitTimelineService(25340):   - Flutter contains 'theme_mode': false
-D/HabitTimelineService(25340): 🎨 Final detected theme mode: 'dark'
-D/HabitTimelineService(25340): Theme applied - isDark: true, textColor: ffffffff, primary: ff00bcd4
-D/HabitTimelineService(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitTimelineService(25340): Attempting to load habits from key: habits, Raw length: 1148
-D/WM-Processor(25340): Processor 6c729ff1-79ce-425f-a87e-9685987eec60 executed; reschedule = false
-D/WM-SystemJobService(25340): 6c729ff1-79ce-425f-a87e-9685987eec60 executed on JobScheduler
-D/HabitCompactWidget(25340): ListView setup completed for widget 118 with theme extras: mode=dark, primary=ff00bcd4
-D/HabitCompactWidget(25340): Detected theme mode: 'dark'
-D/HabitCompactWidget(25340): Using theme - mode: 'dark', primary: ff00bcd4
-D/HabitCompactWidget(25340): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/HabitCompactWidget(25340): Found habits in widgetData
-D/WM-GreedyScheduler(25340): Cancelling work ID 6c729ff1-79ce-425f-a87e-9685987eec60
-D/HabitCompactWidget(25340): onDataSetChanged called
-D/HabitCompactWidget(25340): Loading theme data
-D/HabitCompactWidget(25340): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff00bcd4
-D/HabitCompactWidget(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitCompactWidget(25340): Raw habits JSON length: 1148
-D/HabitCompactWidget(25340): Parsed habits array with 6 items
-D/HabitCompactWidget(25340): Final habits list size: 6
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitCompactWidget(25340): Widget update completed for ID: 118
-I/WidgetUpdateWorker(25340): ✅ Widget update work completed successfully
-I/WM-WorkerWrapper(25340): Worker result SUCCESS for Work [ id=f9758feb-7cd7-48c8-b811-7e887c337d03, tags={ com.habittracker.habitv8.WidgetUpdateWorker } ]
-D/HabitTimelineService(25340): Loaded 6 habits for timeline widget
-D/HabitTimelineService(25340): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitCompactWidget(25340): onDataSetChanged called
-D/HabitCompactWidget(25340): Loading theme data
-D/HabitTimelineService(25340): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(25340): 🎨 Checking theme sources:
-D/HabitTimelineService(25340):   - themeModeExtra: dark
-D/HabitTimelineService(25340):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(25340):   - HomeWidget contains 'home_widget.double.themeMode': true
-D/HabitTimelineService(25340):   - Flutter['flutter.theme_mode']: dark
-D/HabitTimelineService(25340):   - Flutter contains 'theme_mode': false
-D/WM-Processor(25340): Processor f9758feb-7cd7-48c8-b811-7e887c337d03 executed; reschedule = false
-D/HabitTimelineService(25340): 🎨 Final detected theme mode: 'dark'
-D/HabitCompactWidget(25340): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff00bcd4
-D/WM-SystemJobService(25340): f9758feb-7cd7-48c8-b811-7e887c337d03 executed on JobScheduler
-D/HabitTimelineService(25340): Theme applied - isDark: true, textColor: ffffffff, primary: ff00bcd4
-D/HabitTimelineService(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitTimelineService(25340): Attempting to load habits from key: habits, Raw length: 1148
-D/HabitCompactWidget(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitCompactWidget(25340): Raw habits JSON length: 1148
-D/HabitCompactWidget(25340): Parsed habits array with 6 items
-D/HabitCompactWidget(25340): Final habits list size: 6
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/WM-GreedyScheduler(25340): Cancelling work ID f9758feb-7cd7-48c8-b811-7e887c337d03
-D/HabitCompactWidget(25340): onDataSetChanged called
-D/HabitCompactWidget(25340): Loading theme data
-D/HabitCompactWidget(25340): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff00bcd4
-D/HabitCompactWidget(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitCompactWidget(25340): Raw habits JSON length: 1148
-D/HabitCompactWidget(25340): Parsed habits array with 6 items
-D/HabitCompactWidget(25340): Final habits list size: 6
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitTimelineService(25340): Loaded 6 habits for timeline widget
-D/HabitTimelineService(25340): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitCompactWidget(25340): onDataSetChanged called
-D/HabitCompactWidget(25340): Loading theme data
-D/HabitCompactWidget(25340): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff00bcd4
-D/HabitCompactWidget(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitCompactWidget(25340): Raw habits JSON length: 1148
-D/HabitCompactWidget(25340): Parsed habits array with 6 items
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitCompactWidget(25340): Final habits list size: 6
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitCompactWidget(25340): getCount called, returning: 3
-D/HabitCompactWidget(25340): getViewAt called for position: 0
-D/HabitCompactWidget(25340): Created view for habit at position 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitCompactWidget(25340): getViewAt called for position: 1
-D/HabitCompactWidget(25340): Created view for habit at position 1
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitCompactWidget(25340): getViewAt called for position: 2
-D/HabitCompactWidget(25340): Created view for habit at position 2
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitTimelineService(25340): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(25340): 🎨 Checking theme sources:
-D/HabitTimelineService(25340):   - themeModeExtra: dark
-D/HabitTimelineService(25340):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(25340):   - HomeWidget contains 'home_widget.double.themeMode': true
-D/HabitTimelineService(25340):   - Flutter['flutter.theme_mode']: dark
-D/HabitTimelineService(25340):   - Flutter contains 'theme_mode': false
-D/HabitTimelineService(25340): 🎨 Final detected theme mode: 'dark'
-D/HabitTimelineService(25340): Theme applied - isDark: true, textColor: ffffffff, primary: ff00bcd4
-D/HabitTimelineService(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitTimelineService(25340): Attempting to load habits from key: habits, Raw length: 1148
-D/HabitTimelineService(25340): Loaded 6 habits for timeline widget
-D/HabitTimelineService(25340): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-D/HabitTimelineService(25340): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(25340): 🎨 Checking theme sources:
-D/HabitTimelineService(25340):   - themeModeExtra: dark
-D/HabitTimelineService(25340):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(25340):   - HomeWidget contains 'home_widget.double.themeMode': true
-D/HabitTimelineService(25340):   - Flutter['flutter.theme_mode']: dark
-D/HabitTimelineService(25340):   - Flutter contains 'theme_mode': false
-D/HabitTimelineService(25340): 🎨 Final detected theme mode: 'dark'
-D/HabitTimelineService(25340): Theme applied - isDark: true, textColor: ffffffff, primary: ff00bcd4
-D/HabitTimelineService(25340): ✅ Found habits data at key 'habits', length: 1148, preview: [{"id":"1759182221835_0","name":"Blood Pressure Med","category":"Health","colorValue":4283215696,"is
-D/HabitTimelineService(25340): Attempting to load habits from key: habits, Raw length: 1148
-D/HabitTimelineService(25340): Loaded 6 habits for timeline widget
-D/HabitTimelineService(25340): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(25340): getCount returning: 6 habits
-D/HabitTimelineService(25340): getViewAt position: 0
-D/HabitTimelineService(25340): Created view for habit: Blood Pressure Med at position 0
-D/HabitTimelineService(25340): getViewAt position: 1
-D/HabitTimelineService(25340): Created view for habit: Drink water at position 1
-D/HabitTimelineService(25340): getViewAt position: 2
-D/HabitTimelineService(25340): Created view for habit: Vibration Plate at position 2
-D/HabitTimelineService(25340): getViewAt position: 3
-D/HabitTimelineService(25340): Created view for habit: 10am late Drop Off at position 3
-D/HabitTimelineService(25340): getViewAt position: 4
-D/HabitTimelineService(25340): Created view for habit: open My News app at position 4
-D/HabitTimelineService(25340): getViewAt position: 5
-D/HabitTimelineService(25340): Created view for habit: Cholesterol Med at position 5
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:62:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.inactive
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:81:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ⏹️ App inactive
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/MainActivity(25340): onPause: Preserving alarm sound if playing
-D/VRI[MainActivity](25340): visibilityChanged oldVisibility=true newVisibility=false
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:62:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.hidden
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:84:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 👁️ App hidden
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:62:15)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 📱 App lifecycle state changed to: AppLifecycleState.paused
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (25340): │ #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:72:19)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 💡 ⏸️ App paused - performing background cleanup...
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   AppLifecycleService._performBackgroundCleanup (package:habitv8/services/app_lifecycle_service.dart:253:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 🧹 Performing background cleanup...
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (25340): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (25340): │ #1   AppLifecycleService._performBackgroundCleanup (package:habitv8/services/app_lifecycle_service.dart:258:17)
-I/flutter (25340): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (25340): │ 🐛 ✅ Background cleanup completed
-I/flutter (25340): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-D/ImeBackDispatcher(25340): Clear (mImeCallbacks.size=0)
-D/ImeBackDispatcher(25340): switch root view (mImeCallbacks.size=0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-WorkerWrapper( 9191): Status for d13a47d4-9a36-4c59-8978-200847fd3e1c is null ; not doing any work
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=159b6522-1764-4df1-8833-4dc31b84ec07, generation=0)
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for d13a47d4-9a36-4c59-8978-200847fd3e1c; Processor.stopWork = false
+D/WM-Processor( 9191): Processor d13a47d4-9a36-4c59-8978-200847fd3e1c executed; reschedule = false
+D/WM-SystemJobService( 9191): d13a47d4-9a36-4c59-8978-200847fd3e1c executed on JobScheduler
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for d13a47d4-9a36-4c59-8978-200847fd3e1c; Processor.stopWork = false
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=159b6522-1764-4df1-8833-4dc31b84ec07, generation=0)
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=159b6522-1764-4df1-8833-4dc31b84ec07, generation=0) is already enqueued for processing
+D/WM-GreedyScheduler( 9191): Cancelling work ID d13a47d4-9a36-4c59-8978-200847fd3e1c
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/WM-Processor( 9191): Processor cancelling 159b6522-1764-4df1-8833-4dc31b84ec07
+D/WM-Processor( 9191): WorkerWrapper interrupted for 159b6522-1764-4df1-8833-4dc31b84ec07
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/WM-GreedyScheduler( 9191): Cancelling work ID 159b6522-1764-4df1-8833-4dc31b84ec07
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=159b6522-1764-4df1-8833-4dc31b84ec07, generation=0)
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+W/JobInfo ( 9191): Requested important-while-foreground flag for job309 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID 1db93f20-0cdb-444f-aa9e-5442997722f4Job ID 309
+D/WM-GreedyScheduler( 9191): Starting work for 1db93f20-0cdb-444f-aa9e-5442997722f4
+I/WM-WorkerWrapper( 9191): Work [ id=159b6522-1764-4df1-8833-4dc31b84ec07, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=1db93f20-0cdb-444f-aa9e-5442997722f4, generation=0)
+D/WM-WorkerWrapper( 9191): Status for 159b6522-1764-4df1-8833-4dc31b84ec07 is null ; not doing any work
+D/WM-Processor( 9191): Processor 159b6522-1764-4df1-8833-4dc31b84ec07 executed; reschedule = false
+D/WM-SystemJobService( 9191): 159b6522-1764-4df1-8833-4dc31b84ec07 executed on JobScheduler
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 159b6522-1764-4df1-8833-4dc31b84ec07; Processor.stopWork = false
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 159b6522-1764-4df1-8833-4dc31b84ec07; Processor.stopWork = false
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=1db93f20-0cdb-444f-aa9e-5442997722f4, generation=0)
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=1db93f20-0cdb-444f-aa9e-5442997722f4, generation=0) is already enqueued for processing
+D/WM-GreedyScheduler( 9191): Cancelling work ID 159b6522-1764-4df1-8833-4dc31b84ec07
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/WM-Processor( 9191): Processor cancelling 1db93f20-0cdb-444f-aa9e-5442997722f4
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/WM-Processor( 9191): WorkerWrapper interrupted for 1db93f20-0cdb-444f-aa9e-5442997722f4
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/WM-GreedyScheduler( 9191): Cancelling work ID 1db93f20-0cdb-444f-aa9e-5442997722f4
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=1db93f20-0cdb-444f-aa9e-5442997722f4, generation=0)
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+W/JobInfo ( 9191): Requested important-while-foreground flag for job310 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID b976ca76-faa5-4dad-be30-61cc96ea1b4aJob ID 310
+D/WM-GreedyScheduler( 9191): Starting work for b976ca76-faa5-4dad-be30-61cc96ea1b4a
+I/WM-WorkerWrapper( 9191): Work [ id=1db93f20-0cdb-444f-aa9e-5442997722f4, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-WorkerWrapper( 9191): Status for 1db93f20-0cdb-444f-aa9e-5442997722f4 is null ; not doing any work
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 1db93f20-0cdb-444f-aa9e-5442997722f4; Processor.stopWork = false
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 1db93f20-0cdb-444f-aa9e-5442997722f4; Processor.stopWork = false
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=b976ca76-faa5-4dad-be30-61cc96ea1b4a, generation=0)
+D/WM-Processor( 9191): Processor 1db93f20-0cdb-444f-aa9e-5442997722f4 executed; reschedule = false
+D/WM-SystemJobService( 9191): 1db93f20-0cdb-444f-aa9e-5442997722f4 executed on JobScheduler
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=b976ca76-faa5-4dad-be30-61cc96ea1b4a, generation=0)
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/WM-GreedyScheduler( 9191): Cancelling work ID 1db93f20-0cdb-444f-aa9e-5442997722f4
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=b976ca76-faa5-4dad-be30-61cc96ea1b4a, generation=0) is already enqueued for processing
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/WM-Processor( 9191): Processor cancelling b976ca76-faa5-4dad-be30-61cc96ea1b4a
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/WM-Processor( 9191): WorkerWrapper interrupted for b976ca76-faa5-4dad-be30-61cc96ea1b4a
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/WM-GreedyScheduler( 9191): Cancelling work ID b976ca76-faa5-4dad-be30-61cc96ea1b4a
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=b976ca76-faa5-4dad-be30-61cc96ea1b4a, generation=0)
+W/JobInfo ( 9191): Requested important-while-foreground flag for job311 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID c37b7146-5c5f-4112-b4c3-b46caa2a2f40Job ID 311
+D/WM-GreedyScheduler( 9191): Starting work for c37b7146-5c5f-4112-b4c3-b46caa2a2f40
+I/WM-WorkerWrapper( 9191): Work [ id=b976ca76-faa5-4dad-be30-61cc96ea1b4a, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-WorkerWrapper( 9191): Status for b976ca76-faa5-4dad-be30-61cc96ea1b4a is null ; not doing any work
+D/WM-Processor( 9191): Processor b976ca76-faa5-4dad-be30-61cc96ea1b4a executed; reschedule = false
+D/WM-SystemJobService( 9191): b976ca76-faa5-4dad-be30-61cc96ea1b4a executed on JobScheduler
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=c37b7146-5c5f-4112-b4c3-b46caa2a2f40, generation=0)
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for b976ca76-faa5-4dad-be30-61cc96ea1b4a; Processor.stopWork = false
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for b976ca76-faa5-4dad-be30-61cc96ea1b4a; Processor.stopWork = false
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=c37b7146-5c5f-4112-b4c3-b46caa2a2f40, generation=0)
+D/WM-GreedyScheduler( 9191): Cancelling work ID b976ca76-faa5-4dad-be30-61cc96ea1b4a
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=c37b7146-5c5f-4112-b4c3-b46caa2a2f40, generation=0) is already enqueued for processing
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/WM-Processor( 9191): Processor cancelling c37b7146-5c5f-4112-b4c3-b46caa2a2f40
+D/WM-Processor( 9191): WorkerWrapper interrupted for c37b7146-5c5f-4112-b4c3-b46caa2a2f40
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/WM-GreedyScheduler( 9191): Cancelling work ID c37b7146-5c5f-4112-b4c3-b46caa2a2f40
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=c37b7146-5c5f-4112-b4c3-b46caa2a2f40, generation=0)
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+W/JobInfo ( 9191): Requested important-while-foreground flag for job312 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID f5e77c09-0214-45fa-b9fd-2206a0cf5192Job ID 312
+D/WM-GreedyScheduler( 9191): Starting work for f5e77c09-0214-45fa-b9fd-2206a0cf5192
+I/WM-WorkerWrapper( 9191): Work [ id=c37b7146-5c5f-4112-b4c3-b46caa2a2f40, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-WorkerWrapper( 9191): Status for c37b7146-5c5f-4112-b4c3-b46caa2a2f40 is null ; not doing any work
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for c37b7146-5c5f-4112-b4c3-b46caa2a2f40; Processor.stopWork = false
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for c37b7146-5c5f-4112-b4c3-b46caa2a2f40; Processor.stopWork = false
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=f5e77c09-0214-45fa-b9fd-2206a0cf5192, generation=0)
+D/WM-Processor( 9191): Processor c37b7146-5c5f-4112-b4c3-b46caa2a2f40 executed; reschedule = false
+D/WM-SystemJobService( 9191): c37b7146-5c5f-4112-b4c3-b46caa2a2f40 executed on JobScheduler
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=f5e77c09-0214-45fa-b9fd-2206a0cf5192, generation=0)
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=f5e77c09-0214-45fa-b9fd-2206a0cf5192, generation=0) is already enqueued for processing
+D/WM-GreedyScheduler( 9191): Cancelling work ID c37b7146-5c5f-4112-b4c3-b46caa2a2f40
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/WM-Processor( 9191): Processor cancelling f5e77c09-0214-45fa-b9fd-2206a0cf5192
+D/WM-Processor( 9191): WorkerWrapper interrupted for f5e77c09-0214-45fa-b9fd-2206a0cf5192
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=f5e77c09-0214-45fa-b9fd-2206a0cf5192, generation=0)
+D/WM-GreedyScheduler( 9191): Cancelling work ID f5e77c09-0214-45fa-b9fd-2206a0cf5192
+W/JobInfo ( 9191): Requested important-while-foreground flag for job313 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID 542851fe-ad81-4759-9ccb-ddc36300cd64Job ID 313
+D/WM-GreedyScheduler( 9191): Starting work for 542851fe-ad81-4759-9ccb-ddc36300cd64
+I/WM-WorkerWrapper( 9191): Work [ id=f5e77c09-0214-45fa-b9fd-2206a0cf5192, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=542851fe-ad81-4759-9ccb-ddc36300cd64, generation=0)
+D/WM-WorkerWrapper( 9191): Status for f5e77c09-0214-45fa-b9fd-2206a0cf5192 is null ; not doing any work
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for f5e77c09-0214-45fa-b9fd-2206a0cf5192; Processor.stopWork = false
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for f5e77c09-0214-45fa-b9fd-2206a0cf5192; Processor.stopWork = false
+D/WM-Processor( 9191): Processor f5e77c09-0214-45fa-b9fd-2206a0cf5192 executed; reschedule = false
+D/WM-SystemJobService( 9191): f5e77c09-0214-45fa-b9fd-2206a0cf5192 executed on JobScheduler
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=542851fe-ad81-4759-9ccb-ddc36300cd64, generation=0)
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=542851fe-ad81-4759-9ccb-ddc36300cd64, generation=0) is already enqueued for processing
+D/WM-GreedyScheduler( 9191): Cancelling work ID f5e77c09-0214-45fa-b9fd-2206a0cf5192
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/WM-Processor( 9191): Processor cancelling 542851fe-ad81-4759-9ccb-ddc36300cd64
+D/WM-Processor( 9191): WorkerWrapper interrupted for 542851fe-ad81-4759-9ccb-ddc36300cd64
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/WM-GreedyScheduler( 9191): Cancelling work ID 542851fe-ad81-4759-9ccb-ddc36300cd64
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=542851fe-ad81-4759-9ccb-ddc36300cd64, generation=0)
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+W/JobInfo ( 9191): Requested important-while-foreground flag for job314 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID cd81dc2b-816e-401c-9bf8-805d440b7f7bJob ID 314
+D/WM-GreedyScheduler( 9191): Starting work for cd81dc2b-816e-401c-9bf8-805d440b7f7b
+I/WM-WorkerWrapper( 9191): Work [ id=542851fe-ad81-4759-9ccb-ddc36300cd64, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-WorkerWrapper( 9191): Status for 542851fe-ad81-4759-9ccb-ddc36300cd64 is null ; not doing any work
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 542851fe-ad81-4759-9ccb-ddc36300cd64; Processor.stopWork = false
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 542851fe-ad81-4759-9ccb-ddc36300cd64; Processor.stopWork = false
+D/WM-Processor( 9191): Processor 542851fe-ad81-4759-9ccb-ddc36300cd64 executed; reschedule = false
+D/WM-SystemJobService( 9191): 542851fe-ad81-4759-9ccb-ddc36300cd64 executed on JobScheduler
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=cd81dc2b-816e-401c-9bf8-805d440b7f7b, generation=0)
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=cd81dc2b-816e-401c-9bf8-805d440b7f7b, generation=0)
+D/WM-GreedyScheduler( 9191): Cancelling work ID 542851fe-ad81-4759-9ccb-ddc36300cd64
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=cd81dc2b-816e-401c-9bf8-805d440b7f7b, generation=0) is already enqueued for processing
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/WM-Processor( 9191): Processor cancelling cd81dc2b-816e-401c-9bf8-805d440b7f7b
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/WM-Processor( 9191): WorkerWrapper interrupted for cd81dc2b-816e-401c-9bf8-805d440b7f7b
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/WM-GreedyScheduler( 9191): Cancelling work ID cd81dc2b-816e-401c-9bf8-805d440b7f7b
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=cd81dc2b-816e-401c-9bf8-805d440b7f7b, generation=0)
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+W/JobInfo ( 9191): Requested important-while-foreground flag for job315 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID d08a116e-77ee-4aa8-860f-d4f61f246619Job ID 315
+D/WM-GreedyScheduler( 9191): Starting work for d08a116e-77ee-4aa8-860f-d4f61f246619
+I/WM-WorkerWrapper( 9191): Work [ id=cd81dc2b-816e-401c-9bf8-805d440b7f7b, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=d08a116e-77ee-4aa8-860f-d4f61f246619, generation=0)
+D/WM-WorkerWrapper( 9191): Status for cd81dc2b-816e-401c-9bf8-805d440b7f7b is null ; not doing any work
+D/WM-Processor( 9191): Processor cd81dc2b-816e-401c-9bf8-805d440b7f7b executed; reschedule = false
+D/WM-SystemJobService( 9191): cd81dc2b-816e-401c-9bf8-805d440b7f7b executed on JobScheduler
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for cd81dc2b-816e-401c-9bf8-805d440b7f7b; Processor.stopWork = false
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for cd81dc2b-816e-401c-9bf8-805d440b7f7b; Processor.stopWork = false
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=d08a116e-77ee-4aa8-860f-d4f61f246619, generation=0)
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=d08a116e-77ee-4aa8-860f-d4f61f246619, generation=0) is already enqueued for processing
+D/WM-GreedyScheduler( 9191): Cancelling work ID cd81dc2b-816e-401c-9bf8-805d440b7f7b
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/WM-Processor( 9191): Processor cancelling d08a116e-77ee-4aa8-860f-d4f61f246619
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/WM-Processor( 9191): WorkerWrapper interrupted for d08a116e-77ee-4aa8-860f-d4f61f246619
+D/WM-GreedyScheduler( 9191): Cancelling work ID d08a116e-77ee-4aa8-860f-d4f61f246619
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=d08a116e-77ee-4aa8-860f-d4f61f246619, generation=0)
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+W/JobInfo ( 9191): Requested important-while-foreground flag for job316 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fcJob ID 316
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/WM-GreedyScheduler( 9191): Starting work for 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc
+I/WM-WorkerWrapper( 9191): Work [ id=d08a116e-77ee-4aa8-860f-d4f61f246619, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-WorkerWrapper( 9191): Status for d08a116e-77ee-4aa8-860f-d4f61f246619 is null ; not doing any work
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for d08a116e-77ee-4aa8-860f-d4f61f246619; Processor.stopWork = false
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for d08a116e-77ee-4aa8-860f-d4f61f246619; Processor.stopWork = false
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc, generation=0)
+D/WM-Processor( 9191): Processor d08a116e-77ee-4aa8-860f-d4f61f246619 executed; reschedule = false
+D/WM-SystemJobService( 9191): d08a116e-77ee-4aa8-860f-d4f61f246619 executed on JobScheduler
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc, generation=0)
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc, generation=0) is already enqueued for processing
+D/WM-GreedyScheduler( 9191): Cancelling work ID d08a116e-77ee-4aa8-860f-d4f61f246619
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/WM-Processor( 9191): Processor cancelling 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc
+D/WM-Processor( 9191): WorkerWrapper interrupted for 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/WM-GreedyScheduler( 9191): Cancelling work ID 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc, generation=0)
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+W/JobInfo ( 9191): Requested important-while-foreground flag for job317 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID 24d341b3-1e65-4e2c-9571-e4790fc24d18Job ID 317
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=24d341b3-1e65-4e2c-9571-e4790fc24d18, generation=0)
+D/WM-GreedyScheduler( 9191): Starting work for 24d341b3-1e65-4e2c-9571-e4790fc24d18
+I/WM-WorkerWrapper( 9191): Work [ id=9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-WorkerWrapper( 9191): Status for 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc is null ; not doing any work
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc; Processor.stopWork = false
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc; Processor.stopWork = false
+D/WM-Processor( 9191): Processor 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc executed; reschedule = false
+D/WM-SystemJobService( 9191): 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc executed on JobScheduler
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=24d341b3-1e65-4e2c-9571-e4790fc24d18, generation=0)
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=24d341b3-1e65-4e2c-9571-e4790fc24d18, generation=0) is already enqueued for processing
+D/WM-GreedyScheduler( 9191): Cancelling work ID 9bdbbd94-9dc7-4a3c-9d81-2e62c03cd4fc
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
+D/WidgetUpdateWorker( 9191): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker( 9191): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker( 9191): Widget data updated from Flutter preferences
+D/WidgetUpdateWorker( 9191): Updated 1 compact widgets
+D/HabitCompactWidget( 9191): onUpdate called with 1 widget IDs
+W/HabitCompactWidget( 9191): No habit data found, triggering refresh
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+I/WidgetUpdateWorker( 9191): ✅ Immediate widget update triggered
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): ListView setup completed for widget 124 with theme extras: mode=dark, primary=ff2196f3
+D/HabitCompactWidget( 9191): Detected theme mode: 'dark'
+D/HabitCompactWidget( 9191): Using theme - mode: 'dark', primary: ff2196f3
+D/HabitCompactWidget( 9191): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
+D/WM-Processor( 9191): Processor cancelling 24d341b3-1e65-4e2c-9571-e4790fc24d18
+D/HabitCompactWidget( 9191): checkForHabits result: false (from widgetData + HomeWidgetPreferences)
+D/WM-Processor( 9191): WorkerWrapper interrupted for 24d341b3-1e65-4e2c-9571-e4790fc24d18
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+D/HabitCompactWidget( 9191): Widget update completed for ID: 124
+I/WidgetUpdateWorker( 9191): ✅ Widget update work completed successfully
+D/WM-GreedyScheduler( 9191): Cancelling work ID 24d341b3-1e65-4e2c-9571-e4790fc24d18
+D/WM-SystemJobService( 9191): onStopJob for WorkGenerationalId(workSpecId=24d341b3-1e65-4e2c-9571-e4790fc24d18, generation=0)
+D/HabitCompactWidget( 9191): onDataSetChanged called
+D/HabitCompactWidget( 9191): Loading theme data
+D/HabitCompactWidget( 9191): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'habits': empty array
+D/HabitCompactWidget( 9191): ⏭️ Skipping key 'today_habits': empty array
+D/HabitCompactWidget( 9191): No habits data found or empty array (from key: null). Available keys: [habits, home_widget.double.selectedDate, habit_count, home_widget.double.primaryColor, primaryColor, themeMode, selectedDate, home_widget.double.habits, today_habit_count, lastUpdate, last_update, home_widget.double.themeMode, home_widget.double.lastUpdate, today_habits]
+D/HabitCompactWidget( 9191): getCount called, returning: 0
+W/JobInfo ( 9191): Requested important-while-foreground flag for job318 is ignored and takes no effect
+D/WM-SystemJobScheduler( 9191): Scheduling work ID 06c5cff6-1659-47ea-b20f-fe0d848e9fc6Job ID 318
+D/WM-GreedyScheduler( 9191): Starting work for 06c5cff6-1659-47ea-b20f-fe0d848e9fc6
+I/WM-WorkerWrapper( 9191): Work [ id=24d341b3-1e65-4e2c-9571-e4790fc24d18, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ] was cancelled
+I/WM-WorkerWrapper( 9191): androidx.work.impl.WorkerStoppedException
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkerWrapper.interrupt(WorkerWrapper.kt:348)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.interrupt(Processor.java:439)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.Processor.stopAndCancelWork(Processor.java:280)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.cancel(CancelWorkRunnable.kt:33)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline$lambda$0(CancelWorkRunnable.kt:127)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.$r8$lambda$gmz-7SyxTGDd6CwHjvOsJ11-hcc(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.room.RoomDatabase.runInTransaction(RoomDatabase.kt:585)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.CancelWorkRunnable.forNameInline(CancelWorkRunnable.kt:123)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueWorkWithPrerequisites(EnqueueRunnable.java:249)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueueContinuation(EnqueueRunnable.java:136)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.processContinuation(EnqueueRunnable.java:129)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.addToDatabase(EnqueueRunnable.java:93)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.EnqueueRunnable.enqueue(EnqueueRunnable.java:74)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl.lambda$enqueue$0$androidx-work-impl-WorkContinuationImpl(WorkContinuationImpl.java:201)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.WorkContinuationImpl$$ExternalSyntheticLambda0.invoke(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.launchOperation$lambda$2$lambda$1(Operation.kt:50)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt.$r8$lambda$XKAkIiEN7OgIvwuLUZRQpJhjmyE(Unknown Source:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.OperationKt$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+I/WM-WorkerWrapper( 9191):      at androidx.work.impl.utils.SerialExecutorImpl$Task.run(SerialExecutorImpl.java:96)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+I/WM-WorkerWrapper( 9191):      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+I/WM-WorkerWrapper( 9191):      at java.lang.Thread.run(Thread.java:1119)
+D/WM-WorkerWrapper( 9191): Status for 24d341b3-1e65-4e2c-9571-e4790fc24d18 is null ; not doing any work
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 24d341b3-1e65-4e2c-9571-e4790fc24d18; Processor.stopWork = false
+D/WM-Processor( 9191): Processor 24d341b3-1e65-4e2c-9571-e4790fc24d18 executed; reschedule = false
+D/WM-SystemJobService( 9191): 24d341b3-1e65-4e2c-9571-e4790fc24d18 executed on JobScheduler
+D/WM-StopWorkRunnable( 9191): StopWorkRunnable for 24d341b3-1e65-4e2c-9571-e4790fc24d18; Processor.stopWork = false
+D/WM-SystemJobService( 9191): onStartJob for WorkGenerationalId(workSpecId=06c5cff6-1659-47ea-b20f-fe0d848e9fc6, generation=0)
+D/WM-Processor( 9191): Processor: processing WorkGenerationalId(workSpecId=06c5cff6-1659-47ea-b20f-fe0d848e9fc6, generation=0)
+D/WM-GreedyScheduler( 9191): Cancelling work ID 24d341b3-1e65-4e2c-9571-e4790fc24d18
+D/WM-Processor( 9191): Work WorkGenerationalId(workSpecId=06c5cff6-1659-47ea-b20f-fe0d848e9fc6, generation=0) is already enqueued for processing
+D/WM-WorkerWrapper( 9191): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker( 9191): Starting widget update work
+D/WidgetUpdateWorker( 9191): Widget data loaded: 2 characters
