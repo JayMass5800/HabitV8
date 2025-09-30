@@ -28,6 +28,9 @@ class WidgetIntegrationService {
       // Register background callback for widget interactions
       await HomeWidget.registerInteractivityCallback(_backgroundCallback);
 
+      // Clean up old widget-specific preferences since we now follow app theme
+      await _cleanupOldWidgetPreferences();
+
       // Set initial widget data
       await updateAllWidgets();
 
@@ -40,6 +43,23 @@ class WidgetIntegrationService {
       debugPrint('Widget integration initialized successfully');
     } catch (e) {
       debugPrint('Error initializing widget integration: $e');
+    }
+  }
+
+  /// Clean up old widget-specific preferences since widgets now follow app theme
+  Future<void> _cleanupOldWidgetPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Remove old widget-specific theme and color preferences
+      await prefs.remove('widget_theme_mode');
+      await prefs.remove('widget_primary_color');
+      await prefs.remove('widget_auto_refresh');
+      await prefs.remove('widget_refresh_interval');
+
+      debugPrint('Old widget preferences cleaned up');
+    } catch (e) {
+      debugPrint('Error cleaning up old widget preferences: $e');
     }
   }
 
@@ -199,60 +219,34 @@ class WidgetIntegrationService {
     };
   }
 
-  /// Get current theme data (respects widget-specific settings)
+  /// Get current theme data (always follows app theme)
   Future<Map<String, dynamic>> _getThemeData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      // Always follow app theme - no widget-specific overrides
+      final appThemeMode = await ThemeService.getThemeMode();
+      debugPrint('🎨 Getting app theme: $appThemeMode');
 
-      // Get widget theme mode preference (defaults to follow_app)
-      final widgetThemeMode =
-          prefs.getString('widget_theme_mode') ?? 'follow_app';
-      debugPrint('🎨 Widget theme preference: $widgetThemeMode');
-
-      // Get widget primary color preference (defaults to app color)
-      final widgetColorValue = prefs.getInt('widget_primary_color');
-
-      // Determine actual theme mode
       String actualThemeMode;
-      if (widgetThemeMode == 'light') {
-        actualThemeMode = 'light';
-        debugPrint('🎨 Using explicit LIGHT theme for widgets');
-      } else if (widgetThemeMode == 'dark') {
+      if (appThemeMode == ThemeMode.dark) {
         actualThemeMode = 'dark';
-        debugPrint('🎨 Using explicit DARK theme for widgets');
+        debugPrint('🎨 App is in DARK mode');
+      } else if (appThemeMode == ThemeMode.light) {
+        actualThemeMode = 'light';
+        debugPrint('🎨 App is in LIGHT mode');
       } else {
-        // follow_app mode - use app's theme
-        final appThemeMode = await ThemeService.getThemeMode();
-        debugPrint('🎨 Following app theme: $appThemeMode');
-        if (appThemeMode == ThemeMode.dark) {
-          actualThemeMode = 'dark';
-          debugPrint('🎨 App is in DARK mode');
-        } else if (appThemeMode == ThemeMode.light) {
-          actualThemeMode = 'light';
-          debugPrint('🎨 App is in LIGHT mode');
-        } else {
-          // ThemeMode.system - check system brightness
-          final brightness = ui.PlatformDispatcher.instance.platformBrightness;
-          actualThemeMode = brightness == Brightness.dark ? 'dark' : 'light';
-          debugPrint(
-              '🎨 App is in SYSTEM mode, device brightness: $brightness → $actualThemeMode');
-        }
+        // ThemeMode.system - check system brightness
+        final brightness = ui.PlatformDispatcher.instance.platformBrightness;
+        actualThemeMode = brightness == Brightness.dark ? 'dark' : 'light';
+        debugPrint(
+            '🎨 App is in SYSTEM mode, device brightness: $brightness → $actualThemeMode');
       }
 
       debugPrint('🎨 Final theme mode to send to widgets: $actualThemeMode');
 
-      // Determine primary color
-      int primaryColorValue;
-      if (widgetColorValue != null) {
-        // Use widget-specific color
-        primaryColorValue = widgetColorValue;
-        debugPrint('Using widget-specific color: $widgetColorValue');
-      } else {
-        // Fallback to app color
-        final appPrimaryColor = await ThemeService.getPrimaryColor();
-        primaryColorValue = appPrimaryColor.toARGB32();
-        debugPrint('Using app color as fallback: $primaryColorValue');
-      }
+      // Always use app primary color
+      final appPrimaryColor = await ThemeService.getPrimaryColor();
+      final primaryColorValue = appPrimaryColor.toARGB32();
+      debugPrint('🎨 Using app primary color: $primaryColorValue');
 
       return {
         'themeMode': actualThemeMode,
@@ -346,9 +340,9 @@ class WidgetIntegrationService {
       // Cancel existing timer if any
       _periodicUpdateTimer?.cancel();
 
-      // Update widgets every 15 minutes to ensure they stay fresh
+      // Update widgets every 30 minutes to ensure they stay fresh
       _periodicUpdateTimer =
-          Timer.periodic(const Duration(minutes: 15), (timer) async {
+          Timer.periodic(const Duration(minutes: 30), (timer) async {
         try {
           debugPrint('Performing periodic widget update');
           await updateAllWidgets();

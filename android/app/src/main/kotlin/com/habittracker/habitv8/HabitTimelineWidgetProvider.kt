@@ -390,36 +390,21 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 homeEditor.putString("habits_data", habitsJson)
                 homeEditor.putLong("last_update", System.currentTimeMillis())
                 
-                // Copy theme settings to both - check for widget-specific settings first
-                // Check for widget-specific theme mode preference
-                val widgetThemeMode = flutterPrefs.getString("flutter.widget_theme_mode", null)
-                val finalThemeMode = if (widgetThemeMode != null && widgetThemeMode != "follow_app") {
-                    // Use explicit widget theme preference (light/dark)
-                    widgetThemeMode
-                } else {
-                    // Follow app theme - get the app's current theme
-                    flutterPrefs.getString("flutter.theme_mode", null)
-                        ?: flutterPrefs.getString("flutter.themeMode", null)
+                // Copy theme settings to both - always follow app theme, no widget-specific overrides
+                val appThemeMode = flutterPrefs.getString("flutter.theme_mode", null)
+                    ?: flutterPrefs.getString("flutter.themeMode", null)
+                
+                if (appThemeMode != null) {
+                    widgetEditor.putString("themeMode", appThemeMode)
+                    homeEditor.putString("themeMode", appThemeMode)
                 }
                 
-                if (finalThemeMode != null) {
-                    widgetEditor.putString("themeMode", finalThemeMode)
-                    homeEditor.putString("themeMode", finalThemeMode)
-                }
+                // Always use app primary color, no widget-specific color
+                val appPrimaryColor = flutterPrefs.getInt("flutter.primary_color", -1)
                 
-                // Check for widget-specific primary color
-                val widgetPrimaryColor = flutterPrefs.getInt("flutter.widget_primary_color", -1)
-                val finalPrimaryColor = if (widgetPrimaryColor != -1) {
-                    // Use widget-specific color
-                    widgetPrimaryColor
-                } else {
-                    // Fallback to app color
-                    flutterPrefs.getInt("flutter.primary_color", -1)
-                }
-                
-                if (finalPrimaryColor != -1) {
-                    widgetEditor.putInt("primaryColor", finalPrimaryColor)
-                    homeEditor.putInt("primaryColor", finalPrimaryColor)
+                if (appPrimaryColor != -1) {
+                    widgetEditor.putInt("primaryColor", appPrimaryColor)
+                    homeEditor.putInt("primaryColor", appPrimaryColor)
                 }
                 
                 // Apply both updates

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/widget_integration_service.dart';
 
@@ -13,62 +12,26 @@ class WidgetConfigurationScreen extends ConsumerStatefulWidget {
 
 class _WidgetConfigurationScreenState
     extends ConsumerState<WidgetConfigurationScreen> {
-  bool _autoRefresh = true;
-  double _refreshInterval = 15.0;
-  String _widgetThemeMode = 'follow_app'; // follow_app, light, dark
-  Color _widgetPrimaryColor = const Color(0xFF2196F3); // Default blue color
-
   @override
   void initState() {
     super.initState();
-    _loadSettings();
   }
 
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _autoRefresh = prefs.getBool('widget_auto_refresh') ?? true;
-      _refreshInterval = prefs.getDouble('widget_refresh_interval') ?? 15.0;
-      _widgetThemeMode = prefs.getString('widget_theme_mode') ?? 'follow_app';
-      final colorValue = prefs.getInt('widget_primary_color') ?? 0xFF2196F3;
-      _widgetPrimaryColor = Color(colorValue);
-    });
-  }
-
-  Future<void> _saveSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('widget_auto_refresh', _autoRefresh);
-    await prefs.setDouble('widget_refresh_interval', _refreshInterval);
-    await prefs.setString('widget_theme_mode', _widgetThemeMode);
-
-    // Convert color to ARGB32 format
-    int colorValue;
+  Future<void> _forceRefresh() async {
     try {
-      colorValue = _widgetPrimaryColor.toARGB32();
-    } catch (e) {
-      // Fallback to deprecated .value property if toARGB32 is not available
-      // ignore: deprecated_member_use
-      colorValue = _widgetPrimaryColor.value;
-    }
-    await prefs.setInt('widget_primary_color', colorValue);
-
-    // Update widgets with new settings using the widget integration service
-    try {
-      // Small delay to ensure preferences are saved
-      await Future.delayed(const Duration(milliseconds: 250));
-
-      // Use the widget integration service to properly update all widgets
       await WidgetIntegrationService.instance.updateAllWidgets();
 
-      debugPrint('Widget settings applied successfully');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Widgets updated successfully')),
+        );
+      }
     } catch (e) {
-      debugPrint('Error applying widget settings: $e');
-    }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Widget settings saved successfully')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating widgets: $e')),
+        );
+      }
     }
   }
 
@@ -83,37 +46,6 @@ class _WidgetConfigurationScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SwitchListTile(
-              title: const Text('Auto Refresh'),
-              subtitle: const Text('Automatically refresh widget data'),
-              value: _autoRefresh,
-              onChanged: (value) {
-                setState(() {
-                  _autoRefresh = value;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-
-            Text(
-              'Refresh Interval: ${_refreshInterval.toInt()} minutes',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Slider(
-              value: _refreshInterval,
-              min: 1.0,
-              max: 60.0,
-              divisions: 59,
-              label: '${_refreshInterval.toInt()} min',
-              onChanged: (value) {
-                setState(() {
-                  _refreshInterval = value;
-                });
-              },
-            ),
-            const SizedBox(height: 32),
-
-            // Widget Theme Section
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -123,12 +55,12 @@ class _WidgetConfigurationScreenState
                     Row(
                       children: [
                         Icon(
-                          Icons.palette,
+                          Icons.auto_mode,
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Widget Appearance',
+                          'Automatic Updates',
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
@@ -137,232 +69,102 @@ class _WidgetConfigurationScreenState
                       ],
                     ),
                     const SizedBox(height: 16),
-
-                    // Theme Mode Selection
-                    Text(
-                      'Theme Mode',
-                      style: Theme.of(context).textTheme.titleSmall,
+                    const Text(
+                      'Your widgets are automatically configured to:\n\n'
+                      '• Follow your app\'s theme and colors\n'
+                      '• Update every 30 minutes\n'
+                      '• Refresh immediately when habits change\n'
+                      '• Sync when you open the app',
+                      style: TextStyle(height: 1.4),
                     ),
-                    const SizedBox(height: 8),
-                    Column(
-                      children: [
-                        RadioListTile<String>(
-                          title: const Text('Follow App'),
-                          value: 'follow_app',
-                          // ignore: deprecated_member_use
-                          groupValue: _widgetThemeMode,
-                          // ignore: deprecated_member_use
-                          onChanged: (value) {
-                            setState(() {
-                              _widgetThemeMode = value!;
-                            });
-                          },
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('Light'),
-                                value: 'light',
-                                // ignore: deprecated_member_use
-                                groupValue: _widgetThemeMode,
-                                // ignore: deprecated_member_use
-                                onChanged: (value) {
-                                  setState(() {
-                                    _widgetThemeMode = value!;
-                                  });
-                                },
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('Dark'),
-                                value: 'dark',
-                                // ignore: deprecated_member_use
-                                groupValue: _widgetThemeMode,
-                                // ignore: deprecated_member_use
-                                onChanged: (value) {
-                                  setState(() {
-                                    _widgetThemeMode = value!;
-                                  });
-                                },
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
                     const SizedBox(height: 16),
-
-                    // Color Selection
-                    ListTile(
-                      title: const Text('Widget Color Theme'),
-                      subtitle:
-                          const Text('Choose color scheme for the widget'),
-                      leading: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: _widgetPrimaryColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.grey.shade300),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _forceRefresh,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Refresh Now'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _showWidgetColorPicker(context),
-                      contentPadding: EdgeInsets.zero,
                     ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
-
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Widget Removal Instructions',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.widgets,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Available Widgets',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     const Text(
-                      'To remove the widget from your home screen:\n\n'
+                      '• Compact Widget: Shows 3-5 habits in a small space\n'
+                      '• Timeline Widget: Shows full habit list with details',
+                      style: TextStyle(height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.help_outline,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Widget Management',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'To remove widgets from your home screen:\n\n'
                       '1. Long press on the widget\n'
                       '2. Select "Remove" or drag to the trash icon\n'
                       '3. Confirm removal when prompted',
+                      style: TextStyle(height: 1.4),
                     ),
                   ],
                 ),
               ),
             ),
             const Spacer(),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _saveSettings,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Save Settings'),
-              ),
-            ),
           ],
         ),
       ),
-    );
-  }
-
-  void _showWidgetColorPicker(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Widget Color Theme'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _widgetColorOption('Blue', Colors.blue, _widgetPrimaryColor),
-              _widgetColorOption('Red', Colors.red, _widgetPrimaryColor),
-              _widgetColorOption('Green', Colors.green, _widgetPrimaryColor),
-              _widgetColorOption('Purple', Colors.purple, _widgetPrimaryColor),
-              _widgetColorOption('Orange', Colors.orange, _widgetPrimaryColor),
-              _widgetColorOption('Teal', Colors.teal, _widgetPrimaryColor),
-              _widgetColorOption('Pink', Colors.pink, _widgetPrimaryColor),
-              _widgetColorOption('Indigo', Colors.indigo, _widgetPrimaryColor),
-              _widgetColorOption('Amber', Colors.amber, _widgetPrimaryColor),
-              _widgetColorOption(
-                  'Deep Orange', Colors.deepOrange, _widgetPrimaryColor),
-              _widgetColorOption(
-                  'Light Blue', Colors.lightBlue, _widgetPrimaryColor),
-              _widgetColorOption('Lime', Colors.lime, _widgetPrimaryColor),
-              _widgetColorOption('Cyan', Colors.cyan, _widgetPrimaryColor),
-              _widgetColorOption('Brown', Colors.brown, _widgetPrimaryColor),
-              _widgetColorOption(
-                  'Blue Grey', Colors.blueGrey, _widgetPrimaryColor),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _widgetColorOption(String name, Color color, Color currentColor) {
-    // Use value comparison for better compatibility
-    int currentColorValue;
-    int colorValue;
-    try {
-      currentColorValue = currentColor.toARGB32();
-      colorValue = color.toARGB32();
-    } catch (e) {
-      // Fallback to deprecated .value property if toARGB32 is not available
-      // ignore: deprecated_member_use
-      currentColorValue = currentColor.value;
-      // ignore: deprecated_member_use
-      colorValue = color.value;
-    }
-    final isSelected = currentColorValue == colorValue;
-
-    return ListTile(
-      title: Text(name),
-      leading: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
-        ),
-        child: isSelected
-            ? const Icon(
-                Icons.check,
-                color: Colors.white,
-                size: 16,
-              )
-            : null,
-      ),
-      onTap: () async {
-        // Update the widget color
-        setState(() {
-          _widgetPrimaryColor = color;
-        });
-
-        // Safely dismiss the dialog
-        if (mounted && Navigator.canPop(context)) {
-          Navigator.pop(context);
-        }
-
-        // Show confirmation
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$name widget theme selected'),
-              backgroundColor: color,
-            ),
-          );
-        }
-      },
     );
   }
 }
