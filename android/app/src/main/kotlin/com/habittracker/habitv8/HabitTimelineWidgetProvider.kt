@@ -46,22 +46,14 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
     ) {
         Log.d("HabitTimelineWidget", "onUpdate called with ${appWidgetIds.size} widget IDs")
         
-        // Check if widget data is stale and try to refresh it
-        val lastUpdate = widgetData.getLong("last_update", 0)
-        val currentTime = System.currentTimeMillis()
-        val dataAge = currentTime - lastUpdate
-        val maxDataAge = 30 * 60 * 1000L // 30 minutes
+        // Let the widget integration service handle updates properly
+        // Only use fallback if there's no habit data at all
+        val hasHabitsData = widgetData.getString("habits", null)?.let { it.isNotEmpty() && it != "[]" } ?: false
         
-        if (dataAge > maxDataAge) {
-            Log.w("HabitTimelineWidget", "Widget data is stale (${dataAge / 1000}s old), attempting refresh")
-            // Try to refresh data from Flutter preferences as fallback
+        if (!hasHabitsData) {
+            Log.w("HabitTimelineWidget", "No habit data found, attempting fallback refresh")
             refreshWidgetDataFromFlutter(context, widgetData)
-            // Also trigger WorkManager update
             WidgetUpdateWorker.triggerImmediateUpdate(context)
-            // Force refresh all widgets after fallback data update
-            appWidgetIds.forEach { appWidgetId ->
-                appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.habits_list)
-            }
         }
         
         appWidgetIds.forEach { appWidgetId ->
@@ -390,28 +382,15 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 homeEditor.putString("habits_data", habitsJson)
                 homeEditor.putLong("last_update", System.currentTimeMillis())
                 
-                // Copy theme settings to both - always follow app theme, no widget-specific overrides
-                val appThemeMode = flutterPrefs.getString("flutter.theme_mode", null)
-                    ?: flutterPrefs.getString("flutter.themeMode", null)
+                // DON'T override theme data in fallback - let the proper widget integration service handle theme
+                // This prevents the fallback from overriding correct theme data with stale or incorrect theme data
+                Log.d("HabitTimelineWidget", "Skipping theme data in fallback refresh - letting widget integration service handle theme")
                 
-                if (appThemeMode != null) {
-                    widgetEditor.putString("themeMode", appThemeMode)
-                    homeEditor.putString("themeMode", appThemeMode)
-                }
-                
-                // Always use app primary color, no widget-specific color
-                val appPrimaryColor = flutterPrefs.getInt("flutter.primary_color", -1)
-                
-                if (appPrimaryColor != -1) {
-                    widgetEditor.putInt("primaryColor", appPrimaryColor)
-                    homeEditor.putInt("primaryColor", appPrimaryColor)
-                }
-                
-                // Apply both updates
+                // Apply both updates (only habit data, not theme)
                 widgetEditor.apply()
                 homeEditor.apply()
                 
-                Log.d("HabitTimelineWidget", "✅ Fallback data refresh successful (updated both widgetData and HomeWidgetPreferences)")
+                Log.d("HabitTimelineWidget", "✅ Fallback data refresh successful (updated habit data only, preserved theme data)")
             } else {
                 Log.w("HabitTimelineWidget", "No habit data found in Flutter preferences for fallback")
             }

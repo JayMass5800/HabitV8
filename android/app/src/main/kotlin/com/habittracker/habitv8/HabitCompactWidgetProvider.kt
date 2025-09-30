@@ -44,15 +44,12 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
     ) {
         Log.d("HabitCompactWidget", "onUpdate called with ${appWidgetIds.size} widget IDs")
         
-        // Check if widget data is stale and try to refresh it (but don't clear existing data)
-        val lastUpdate = widgetData.getLong("last_update", 0)
-        val currentTime = System.currentTimeMillis()
-        val dataAge = currentTime - lastUpdate
-        val maxDataAge = 2 * 60 * 60 * 1000L // 2 hours (less aggressive)
+        // Let the widget integration service handle updates properly
+        // Only trigger refresh if there's no habit data at all
+        val hasHabitsData = widgetData.getString("habits", null)?.let { it.isNotEmpty() && it != "[]" } ?: false
         
-        if (dataAge > maxDataAge) {
-            Log.w("HabitCompactWidget", "Widget data is stale (${dataAge / 1000}s old), triggering background refresh")
-            // Trigger background refresh but don't wait for it
+        if (!hasHabitsData) {
+            Log.w("HabitCompactWidget", "No habit data found, triggering refresh")
             WidgetUpdateWorker.triggerImmediateUpdate(context)
         }
         
@@ -395,25 +392,15 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
                 homeEditor.putString("habits_data", habitsJson)
                 homeEditor.putLong("last_update", System.currentTimeMillis())
                 
-                // Copy theme settings to both
-                val themeMode = flutterPrefs.getString("flutter.theme_mode", null)
-                    ?: flutterPrefs.getString("flutter.themeMode", null)
-                if (themeMode != null) {
-                    widgetEditor.putString("themeMode", themeMode)
-                    homeEditor.putString("themeMode", themeMode)
-                }
+                // DON'T override theme data in fallback - let the proper widget integration service handle theme
+                // This prevents the fallback from overriding correct theme data with stale or incorrect theme data
+                Log.d("HabitCompactWidget", "Skipping theme data in fallback refresh - letting widget integration service handle theme")
                 
-                val primaryColor = flutterPrefs.getInt("flutter.primary_color", -1)
-                if (primaryColor != -1) {
-                    widgetEditor.putInt("primaryColor", primaryColor)
-                    homeEditor.putInt("primaryColor", primaryColor)
-                }
-                
-                // Apply both updates
+                // Apply both updates (only habit data, not theme)
                 widgetEditor.apply()
                 homeEditor.apply()
                 
-                Log.d("HabitCompactWidget", "✅ Fallback data refresh successful (updated both widgetData and HomeWidgetPreferences)")
+                Log.d("HabitCompactWidget", "✅ Fallback data refresh successful (updated habit data only, preserved theme data)")
             } else {
                 Log.w("HabitCompactWidget", "No habit data found in Flutter preferences for fallback")
             }
