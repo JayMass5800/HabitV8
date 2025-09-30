@@ -21,7 +21,7 @@ class HabitTimelineRemoteViewsFactory(
 
     private var habits: List<Map<String, Any>> = emptyList()
     private var isDarkMode: Boolean = false
-    private var primaryColor: Int = 0xFF6200EE.toInt()
+    private var primaryColor: Int = 0xFF2196F3.toInt() // Match compact widget default
     private var textColor: Int = 0xFF000000.toInt()
     private var backgroundColor: Int = 0xFFFFFFFF.toInt()
     private val appWidgetId: Int = intent.getIntExtra(
@@ -329,18 +329,18 @@ class HabitTimelineRemoteViewsFactory(
             }
             primaryColor = when {
                 primaryColorExtra != -1 -> primaryColorExtra
-                prefs.contains("primaryColor") -> getIntCompat(prefs, "primaryColor", 0xFF6200EE.toInt())
+                prefs.contains("primaryColor") -> getIntCompat(prefs, "primaryColor", 0xFF2196F3.toInt())
                 prefs.contains("home_widget.double.primaryColor") -> {
                     try {
-                        prefs.getFloat("home_widget.double.primaryColor", 0xFF6200EE.toFloat()).toInt()
+                        prefs.getFloat("home_widget.double.primaryColor", 0xFF2196F3.toFloat()).toInt()
                     } catch (e: Exception) {
-                        0xFF6200EE.toInt()
+                        0xFF2196F3.toInt()
                     }
                 }
-                flutterPrefs.contains("flutter.primary_color") -> getIntCompat(flutterPrefs, "flutter.primary_color", 0xFF6200EE.toInt())
-                flutterPrefs.contains("primary_color") -> getIntCompat(flutterPrefs, "primary_color", 0xFF6200EE.toInt())
-                prefs.contains("flutter.primaryColor") -> getIntCompat(prefs, "flutter.primaryColor", 0xFF6200EE.toInt())
-                else -> 0xFF6200EE.toInt()
+                flutterPrefs.contains("flutter.primary_color") -> getIntCompat(flutterPrefs, "flutter.primary_color", 0xFF2196F3.toInt())
+                flutterPrefs.contains("primary_color") -> getIntCompat(flutterPrefs, "primary_color", 0xFF2196F3.toInt())
+                prefs.contains("flutter.primaryColor") -> getIntCompat(prefs, "flutter.primaryColor", 0xFF2196F3.toInt())
+                else -> 0xFF2196F3.toInt()
             }
             
             // Set theme-based colors
