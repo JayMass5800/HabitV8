@@ -321,17 +321,21 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "forceWidgetRefresh" -> {
                     try {
-                        // Force immediate widget refresh by directly updating the widget provider
-                        val intent = Intent(this, HabitCompactWidgetProvider::class.java)
-                        intent.action = "android.appwidget.action.APPWIDGET_UPDATE"
-                        sendBroadcast(intent)
+                        // Force immediate widget refresh by directly updating both widget providers
+                        val compactIntent = Intent(this, HabitCompactWidgetProvider::class.java)
+                        compactIntent.action = "android.appwidget.action.APPWIDGET_UPDATE"
+                        sendBroadcast(compactIntent)
+                        
+                        val timelineIntent = Intent(this, HabitTimelineWidgetProvider::class.java)
+                        timelineIntent.action = "android.appwidget.action.APPWIDGET_UPDATE"
+                        sendBroadcast(timelineIntent)
                         
                         // Also trigger WorkManager update for good measure
                         val updateRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
                         WorkManager.getInstance(this).enqueue(updateRequest)
                         
                         result.success(true)
-                        android.util.Log.i("MainActivity", "Widget force refresh triggered")
+                        android.util.Log.i("MainActivity", "Widget force refresh triggered for both compact and timeline widgets")
                     } catch (e: Exception) {
                         result.error("WIDGET_REFRESH_ERROR", "Failed to force widget refresh: ${e.message}", null)
                         android.util.Log.e("MainActivity", "Failed to force widget refresh", e)

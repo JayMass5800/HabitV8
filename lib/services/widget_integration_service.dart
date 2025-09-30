@@ -13,6 +13,8 @@ import 'dart:ui' as ui;
 class WidgetIntegrationService {
   static const String _timelineWidgetName = 'HabitTimelineWidgetProvider';
   static const String _compactWidgetName = 'HabitCompactWidgetProvider';
+  static const MethodChannel _widgetUpdateChannel =
+      MethodChannel('com.habittracker.habitv8/widget_update');
 
   static WidgetIntegrationService? _instance;
   static WidgetIntegrationService get instance =>
@@ -68,21 +70,31 @@ class WidgetIntegrationService {
     try {
       debugPrint('🧪 FORCE UPDATE: Starting immediate widget update...');
 
-      // Update data
+      // Update data first
       await updateAllWidgets();
 
-      // Force explicit widget refresh
+      // Force explicit widget refresh using method channel to trigger onUpdate
       await Future.delayed(const Duration(milliseconds: 300));
 
-      await HomeWidget.updateWidget(
-        name: _timelineWidgetName,
-        androidName: _timelineWidgetName,
-      );
+      try {
+        await _widgetUpdateChannel.invokeMethod('forceWidgetRefresh');
+        debugPrint(
+            '🧪 FORCE UPDATE: Successfully triggered widget refresh via method channel');
+      } catch (e) {
+        debugPrint(
+            '🧪 FORCE UPDATE: Method channel failed, falling back to HomeWidget.updateWidget - $e');
 
-      await HomeWidget.updateWidget(
-        name: _compactWidgetName,
-        androidName: _compactWidgetName,
-      );
+        // Fallback to HomeWidget.updateWidget if method channel fails
+        await HomeWidget.updateWidget(
+          name: _timelineWidgetName,
+          androidName: _timelineWidgetName,
+        );
+
+        await HomeWidget.updateWidget(
+          name: _compactWidgetName,
+          androidName: _compactWidgetName,
+        );
+      }
 
       debugPrint('🧪 FORCE UPDATE: Completed successfully');
     } catch (e) {
