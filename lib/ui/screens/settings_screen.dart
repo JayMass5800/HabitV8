@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -347,39 +348,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               );
                             },
                           ),
-                        // Debug options - will be removed after testing
-                        if (status == SubscriptionStatus.trial)
+                        // Debug options - only available in debug builds
+                        if (kDebugMode) ...[
+                          if (status == SubscriptionStatus.trial)
+                            SettingsTile(
+                              title: 'Debug Trial Info',
+                              subtitle: 'Tap to see detailed trial debug info',
+                              trailing: const Icon(Icons.bug_report),
+                              onTap: () => _showTrialDebugInfo(),
+                            ),
+                          // Reset trial option for testing cutoff functionality
                           SettingsTile(
-                            title: 'Debug Trial Info',
-                            subtitle: 'Tap to see detailed trial debug info',
-                            trailing: const Icon(Icons.bug_report),
-                            onTap: () => _showTrialDebugInfo(),
+                            title: 'Reset Trial (Debug)',
+                            subtitle:
+                                'Reset trial period to test cutoff behavior',
+                            trailing: const Icon(Icons.refresh_outlined),
+                            onTap: () => _resetTrialForTesting(),
                           ),
-                        // Reset trial option for testing cutoff functionality
-                        SettingsTile(
-                          title: 'Reset Trial (Debug)',
-                          subtitle:
-                              'Reset trial period to test cutoff behavior',
-                          trailing: const Icon(Icons.refresh_outlined),
-                          onTap: () => _resetTrialForTesting(),
-                        ),
-                        // Simulate trial expiry for testing
-                        SettingsTile(
-                          title: 'Simulate Trial Expiry (Debug)',
-                          subtitle:
-                              'Force trial to expire to test premium cutoff',
-                          trailing: const Icon(Icons.timer_off_outlined),
-                          onTap: () => _simulateTrialExpiry(),
-                        ),
-                        // Simulate premium purchase for testing
-                        SettingsTile(
-                          title: 'Simulate Premium Purchase (Debug)',
-                          subtitle:
-                              'Grant premium access to test unlocked features',
-                          trailing:
-                              const Icon(Icons.workspace_premium_outlined),
-                          onTap: () => _simulatePremiumPurchase(),
-                        ),
+                          // Simulate trial expiry for testing
+                          SettingsTile(
+                            title: 'Simulate Trial Expiry (Debug)',
+                            subtitle:
+                                'Force trial to expire to test premium cutoff',
+                            trailing: const Icon(Icons.timer_off_outlined),
+                            onTap: () => _simulateTrialExpiry(),
+                          ),
+                          // Simulate premium purchase for testing
+                          SettingsTile(
+                            title: 'Simulate Premium Purchase (Debug)',
+                            subtitle:
+                                'Grant premium access to test unlocked features',
+                            trailing:
+                                const Icon(Icons.workspace_premium_outlined),
+                            onTap: () => _simulatePremiumPurchase(),
+                          ),
+                        ],
                         if (status != SubscriptionStatus.premium)
                           SettingsTile(
                             title: 'Purchase Premium',

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'logging_service.dart';
@@ -298,6 +299,11 @@ class SubscriptionService {
 
   /// For debugging: Reset trial period
   Future<void> resetTrialPeriod() async {
+    if (!kDebugMode) {
+      AppLogger.warning('resetTrialPeriod called in release mode - ignoring');
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_trialStartDateKey);
     await prefs.remove(_subscriptionStatusKey);
@@ -309,6 +315,12 @@ class SubscriptionService {
 
   /// For debugging: Simulate trial expiry by setting start date to 31 days ago
   Future<void> simulateTrialExpiry() async {
+    if (!kDebugMode) {
+      AppLogger.warning(
+          'simulateTrialExpiry called in release mode - ignoring');
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final expiredStartDate =
         DateTime.now().subtract(Duration(days: _trialDurationDays + 1));
@@ -324,6 +336,12 @@ class SubscriptionService {
 
   /// For debugging: Simulate premium purchase
   Future<void> simulatePremiumPurchase() async {
+    if (!kDebugMode) {
+      AppLogger.warning(
+          'simulatePremiumPurchase called in release mode - ignoring');
+      return;
+    }
+
     final debugToken =
         'debug_premium_token_${DateTime.now().millisecondsSinceEpoch}';
     await activatePremiumSubscription(debugToken);
@@ -333,6 +351,15 @@ class SubscriptionService {
 
   /// For debugging: Get detailed trial information
   Future<Map<String, dynamic>> getTrialDebugInfo() async {
+    if (!kDebugMode) {
+      AppLogger.warning(
+          'getTrialDebugInfo called in release mode - returning empty data');
+      return {
+        'trialStarted': false,
+        'message': 'Debug info not available in release mode',
+      };
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final trialStartDateStr = prefs.getString(_trialStartDateKey);
     final now = DateTime.now();
