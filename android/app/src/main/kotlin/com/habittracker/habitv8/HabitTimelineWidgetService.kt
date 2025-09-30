@@ -28,8 +28,7 @@ class HabitTimelineRemoteViewsFactory(
         android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID,
         android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID
     )
-    private val themeModeExtra: String? = intent.getStringExtra("themeMode")
-    private val primaryColorExtra: Int = intent.getIntExtra("primaryColor", -1)
+    // Remove reliance on stale theme extras - always read fresh theme data
 
     override fun onCreate() {
         // Initialize the factory - this is called once when the factory is created
@@ -287,16 +286,12 @@ class HabitTimelineRemoteViewsFactory(
             val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
             val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
             
-            // Load theme mode with robust fallbacks (prefer extras from provider → HomeWidget → Flutter prefs → system)
-            Log.d("HabitTimelineService", "🎨 Checking theme sources:")
-            Log.d("HabitTimelineService", "  - themeModeExtra: $themeModeExtra")
+            // Always read fresh theme data - don't rely on stale extras from intent
+            Log.d("HabitTimelineService", "🎨 Loading fresh theme data from preferences:")
             Log.d("HabitTimelineService", "  - HomeWidget['themeMode']: ${prefs.getString("themeMode", null)}")
-            Log.d("HabitTimelineService", "  - HomeWidget contains 'home_widget.double.themeMode': ${prefs.contains("home_widget.double.themeMode")}")
             Log.d("HabitTimelineService", "  - Flutter['flutter.theme_mode']: ${flutterPrefs.getString("flutter.theme_mode", null)}")
-            Log.d("HabitTimelineService", "  - Flutter contains 'theme_mode': ${flutterPrefs.contains("theme_mode")}")
             
-            var themeMode = themeModeExtra
-                ?: prefs.getString("themeMode", null) 
+            var themeMode = prefs.getString("themeMode", null) 
                 ?: flutterPrefs.getString("flutter.theme_mode", null)
                 ?: flutterPrefs.getString("theme_mode", null)
             
@@ -314,7 +309,7 @@ class HabitTimelineRemoteViewsFactory(
             
             Log.d("HabitTimelineService", "🎨 Final detected theme mode: '$themeMode'")
             
-            // Load primary color with fallbacks; prefer extras from provider
+            // Load primary color with fallbacks - prefer HomeWidget data from widget integration service
             fun getIntCompat(sp: android.content.SharedPreferences, key: String, def: Int): Int {
                 return try {
                     when (val v = sp.all[key]) {
@@ -328,7 +323,6 @@ class HabitTimelineRemoteViewsFactory(
                 } catch (_: Exception) { def }
             }
             primaryColor = when {
-                primaryColorExtra != -1 -> primaryColorExtra
                 prefs.contains("primaryColor") -> getIntCompat(prefs, "primaryColor", 0xFF2196F3.toInt())
                 prefs.contains("home_widget.double.primaryColor") -> {
                     try {

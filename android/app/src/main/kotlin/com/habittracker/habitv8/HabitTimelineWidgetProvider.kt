@@ -93,25 +93,13 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun setupListView(context: Context, views: RemoteViews, appWidgetId: Int) {
-        // Resolve theme extras to pass into the service for reliability
-        val widgetData = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-        val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-        val themeModeExtra = widgetData.getString("themeMode", null)
-            ?: flutterPrefs.getString("flutter.theme_mode", null)
-            ?: flutterPrefs.getString("theme_mode", null)
-        val defaultPrimary = 0xFF2196F3.toInt() // Use same default as compact widget
-        val primaryColorExtra = when {
-            widgetData.contains("primaryColor") -> getIntCompat(widgetData, "primaryColor", defaultPrimary)
-            flutterPrefs.contains("flutter.primary_color") -> getIntCompat(flutterPrefs, "flutter.primary_color", defaultPrimary)
-            flutterPrefs.contains("primary_color") -> getIntCompat(flutterPrefs, "primary_color", defaultPrimary)
-            else -> defaultPrimary
-        }
+        // Don't pass theme data as extras - let the service read fresh theme data each time
+        // This ensures theme changes are picked up immediately without stale data
 
         // Create intent for the RemoteViewsService
         val serviceIntent = Intent(context, HabitTimelineWidgetService::class.java).apply {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            putExtra("themeMode", themeModeExtra)
-            putExtra("primaryColor", primaryColorExtra)
+            // Remove theme extras to force service to read fresh theme data
             data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
         }
         
@@ -124,7 +112,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         // Set up pending intent template for list items
         setupListItemClickTemplate(context, views, appWidgetId)
         
-        Log.d("HabitTimelineWidget", "ListView setup completed for widget $appWidgetId with theme extras: mode=$themeModeExtra, primary=${Integer.toHexString(primaryColorExtra)}")
+        Log.d("HabitTimelineWidget", "ListView setup completed for widget $appWidgetId (service will read fresh theme data)")
     }
 
     private fun setupListItemClickTemplate(context: Context, views: RemoteViews, appWidgetId: Int) {
