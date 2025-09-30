@@ -8,6 +8,7 @@ import 'notification_queue_processor.dart';
 import 'notification_action_service.dart';
 import 'notification_service.dart';
 import 'widget_integration_service.dart';
+import 'midnight_habit_reset_service.dart';
 import 'logging_service.dart';
 import '../data/database.dart';
 
@@ -137,6 +138,9 @@ class AppLifecycleService with WidgetsBindingObserver {
       // Refresh widgets to ensure they show current day data
       _refreshWidgetsOnResume();
 
+      // Check for missed midnight resets (more efficient than hourly checks)
+      _checkMissedResetOnResume();
+
       AppLogger.info('✅ App resume handling completed');
     } catch (e) {
       AppLogger.error('Error handling app resume', e);
@@ -243,6 +247,28 @@ class AppLifecycleService with WidgetsBindingObserver {
       });
     } catch (e) {
       AppLogger.error('Error scheduling widget force refresh on resume', e);
+    }
+  }
+
+  /// Check for missed midnight resets when app resumes (battery-efficient approach)
+  static void _checkMissedResetOnResume() {
+    try {
+      AppLogger.debug(
+          '🔍 Checking for missed midnight resets on app resume...');
+
+      // Add delay to ensure app is fully resumed and services are ready
+      Future.delayed(const Duration(milliseconds: 2000), () async {
+        try {
+          await MidnightHabitResetService.checkForMissedResetOnAppActive();
+          AppLogger.debug('✅ Missed reset check completed on app resume');
+        } catch (e) {
+          AppLogger.error(
+              '❌ Error checking for missed resets on app resume', e);
+          // Don't block app resume if missed reset check fails
+        }
+      });
+    } catch (e) {
+      AppLogger.error('Error scheduling missed reset check on resume', e);
     }
   }
 

@@ -69,11 +69,18 @@ class MidnightHabitResetService {
 
       if (lastResetStr != null) {
         final lastReset = DateTime.parse(lastResetStr);
-        final daysSinceReset = now.difference(lastReset).inDays;
 
-        if (daysSinceReset >= 1) {
-          AppLogger.info('📅 Missed reset detected, performing catch-up reset');
+        // Check if we've crossed midnight since the last reset
+        final lastResetDate =
+            DateTime(lastReset.year, lastReset.month, lastReset.day);
+        final currentDate = DateTime(now.year, now.month, now.day);
+
+        if (currentDate.isAfter(lastResetDate)) {
+          AppLogger.info(
+              '📅 Missed reset detected (last: ${lastResetDate.toIso8601String()}, current: ${currentDate.toIso8601String()}), performing catch-up reset');
           await _performMidnightReset();
+        } else {
+          AppLogger.debug('✅ No missed reset - last reset was today');
         }
       } else {
         // First time running, perform initial reset
@@ -122,9 +129,28 @@ class MidnightHabitResetService {
         AppLogger.info('🔄 Updating widgets with fresh data for new day...');
         await WidgetIntegrationService.instance.updateAllWidgets();
         AppLogger.info('✅ Widgets updated successfully');
+
+        // Also trigger Android WorkManager update as backup
+        try {
+          await WidgetIntegrationService.instance.forceWidgetUpdate();
+          AppLogger.info('✅ Android WorkManager widget update triggered');
+        } catch (e) {
+          AppLogger.warning(
+              '⚠️ Android WorkManager widget update failed (non-critical): $e');
+        }
       } catch (e) {
         AppLogger.error('❌ Error updating widgets during midnight reset', e);
-        // Don't fail the entire reset if widget update fails
+
+        // Retry widget update once after a short delay
+        try {
+          AppLogger.info('🔄 Retrying widget update after error...');
+          await Future.delayed(const Duration(seconds: 2));
+          await WidgetIntegrationService.instance.updateAllWidgets();
+          AppLogger.info('✅ Widget update retry successful');
+        } catch (retryError) {
+          AppLogger.error('❌ Widget update retry also failed', retryError);
+          // Don't fail the entire reset if widget update fails
+        }
       }
 
       // Update last reset timestamp
@@ -224,6 +250,17 @@ class MidnightHabitResetService {
     } catch (e) {
       AppLogger.error('❌ Error during manual widget refresh', e);
       rethrow;
+    }
+  }
+
+  /// Check for missed resets when app becomes active (more efficient than hourly checks)
+  static Future<void> checkForMissedResetOnAppActive() async {
+    try {
+      AppLogger.debug('🔍 Checking for missed resets on app activation');
+      await _checkMissedReset();
+    } catch (e) {
+      AppLogger.error(
+          '❌ Error checking for missed resets on app activation', e);
     }
   }
 

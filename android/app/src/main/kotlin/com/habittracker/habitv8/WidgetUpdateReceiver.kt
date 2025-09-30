@@ -24,8 +24,10 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
                 Intent.ACTION_DATE_CHANGED,
                 Intent.ACTION_TIMEZONE_CHANGED,
                 "android.intent.action.TIME_SET" -> {
-                    Log.i(TAG, "Time/date changed, triggering widget update")
+                    Log.i(TAG, "Time/date changed, triggering widget update and rescheduling periodic updates")
                     WidgetUpdateWorker.triggerImmediateUpdate(context)
+                    // Also reschedule periodic updates as the time change might affect scheduling
+                    WidgetUpdateWorker.schedulePeriodicUpdates(context)
                 }
                 Intent.ACTION_SCREEN_ON -> {
                     Log.d(TAG, "Screen turned on, scheduling widget update")

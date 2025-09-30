@@ -339,22 +339,11 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "schedulePeriodicUpdates" -> {
                     try {
-                        // Schedule periodic widget updates via WorkManager
-                        val updateRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(15, TimeUnit.MINUTES)
-                            .setConstraints(
-                                Constraints.Builder()
-                                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
-                                    .build()
-                            )
-                            .build()
-                        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                            "widget_periodic_update",
-                            ExistingPeriodicWorkPolicy.REPLACE,
-                            updateRequest
-                        )
+                        // Use the centralized scheduling method from WidgetUpdateWorker
+                        WidgetUpdateWorker.schedulePeriodicUpdates(this)
                         
                         result.success(true)
-                        android.util.Log.i("MainActivity", "Periodic widget updates scheduled")
+                        android.util.Log.i("MainActivity", "Periodic widget updates scheduled via WidgetUpdateWorker")
                     } catch (e: Exception) {
                         result.error("SCHEDULE_ERROR", "Failed to schedule periodic updates: ${e.message}", null)
                         android.util.Log.e("MainActivity", "Failed to schedule periodic updates", e)
@@ -362,12 +351,11 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "triggerImmediateUpdate" -> {
                     try {
-                        // Trigger immediate widget update
-                        val updateRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
-                        WorkManager.getInstance(this).enqueue(updateRequest)
+                        // Use the centralized method from WidgetUpdateWorker
+                        WidgetUpdateWorker.triggerImmediateUpdate(this)
                         
                         result.success(true)
-                        android.util.Log.i("MainActivity", "Immediate widget update triggered")
+                        android.util.Log.i("MainActivity", "Immediate widget update triggered via WidgetUpdateWorker")
                     } catch (e: Exception) {
                         result.error("UPDATE_ERROR", "Failed to trigger immediate update: ${e.message}", null)
                         android.util.Log.e("MainActivity", "Failed to trigger immediate update", e)
