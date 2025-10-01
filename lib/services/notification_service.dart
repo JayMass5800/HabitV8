@@ -35,9 +35,6 @@ class NotificationService {
   // Queue for storing pending actions when callback is not available
   static final List<Map<String, String>> _pendingActions = [];
 
-  // Timer for periodic cleanup
-  static Timer? _cleanupTimer;
-
   /// Initialize the notification service
   @pragma('vm:entry-point')
   static Future<void> initialize() async {
@@ -1014,7 +1011,7 @@ class NotificationService {
       switch (normalizedAction) {
         case 'complete':
           // Mark habit as complete using the stored action time
-          await _completeHabitFromNotification(habitId, actionTime);
+          await _completeHabitFromNotification(habitId);
           break;
         case 'snooze':
           // Reschedule notification for later
@@ -1978,46 +1975,6 @@ class NotificationService {
     await _notificationsPlugin.cancelAll();
   }
 
-  /// Cancel all notifications except active snooze notifications
-  /// This prevents snooze notifications from being cancelled when scheduling new habit notifications
-  static Future<void> _cancelAllNonSnoozeNotifications() async {
-    if (!_isInitialized) await initialize();
-
-    try {
-      AppLogger.info('🧹 Cancelling all non-snooze notifications...');
-
-      // Get all pending notifications
-      final pendingNotifications = await getPendingNotifications();
-      AppLogger.info(
-          '📋 Found ${pendingNotifications.length} pending notifications');
-
-      int cancelledCount = 0;
-      int preservedSnoozeCount = 0;
-
-      for (final notification in pendingNotifications) {
-        // Check if this is a snooze notification (ID in snooze range)
-        // Snooze notifications have IDs in range 2000000-2999999
-        if (notification.id >= 2000000 && notification.id <= 2999999) {
-          AppLogger.info(
-              '🔒 Preserving snooze notification ID: ${notification.id}');
-          preservedSnoozeCount++;
-        } else {
-          await _notificationsPlugin.cancel(notification.id);
-          AppLogger.debug('❌ Cancelled notification ID: ${notification.id}');
-          cancelledCount++;
-        }
-      }
-
-      AppLogger.info(
-          '✅ Cancelled $cancelledCount notifications, preserved $preservedSnoozeCount snooze notifications');
-    } catch (e) {
-      AppLogger.error('Error in selective notification cancellation', e);
-      // Fallback to cancel all if there's an error
-      AppLogger.warning('Falling back to cancel all notifications');
-      await cancelAllNotifications();
-    }
-  }
-
   /// Cancel snooze notifications for a specific habit
   /// This prevents old snooze notifications from interfering with new notifications
   static Future<void> _cancelSnoozeNotificationsForHabit(String habitId) async {
@@ -2435,7 +2392,7 @@ class NotificationService {
 
         case 'hourly':
           AppLogger.debug('Scheduling hourly alarms');
-          await _scheduleHourlyHabitAlarmsNew(habit);
+          await _scheduleHourlyHabitAlarmsNew(habit, hour, minute);
           break;
 
         default:
@@ -2762,7 +2719,9 @@ class NotificationService {
 
     if (habit.selectedWeekdays != null && habit.selectedWeekdays.isNotEmpty) {
       for (int weekday in habit.selectedWeekdays) {
-        DateTime nextAlarm = _getNextWeekdayDateTime(weekday, hour, minute);
+        tz.TZDateTime baseTime = tz.TZDateTime.now(tz.local);
+        tz.TZDateTime nextAlarm =
+            _getNextWeekdayDateTime(baseTime, weekday, hour, minute);
 
         try {
           // Use the real alarm service instead of notification-based alarms
