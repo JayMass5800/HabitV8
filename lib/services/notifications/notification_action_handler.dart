@@ -10,6 +10,7 @@ import 'notification_scheduler.dart';
 
 /// Handles notification action processing and callbacks
 /// Manages background/foreground notification responses, completion, and snooze actions
+@pragma('vm:entry-point')
 class NotificationActionHandler {
   static NotificationActionHandler? _instance;
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
