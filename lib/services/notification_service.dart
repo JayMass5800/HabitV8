@@ -7,10 +7,12 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'logging_service.dart';
 import 'permission_service.dart';
 import 'notification_queue_processor.dart';
 import 'alarm_manager_service.dart';
+import 'widget_integration_service.dart';
 import '../data/database.dart';
 import '../domain/model/habit.dart';
 
@@ -357,9 +359,9 @@ class NotificationService {
   /// Handle background notification responses (when app is not in foreground)
   /// This method is called when the app is not running or in background
   @pragma('vm:entry-point')
-  static void onBackgroundNotificationResponse(
+  static Future<void> onBackgroundNotificationResponse(
     NotificationResponse notificationResponse,
-  ) {
+  ) async {
     AppLogger.info('🌙🌙🌙 BACKGROUND NOTIFICATION HANDLER CALLED! 🌙🌙🌙');
     AppLogger.info('=== BACKGROUND NOTIFICATION RESPONSE ===');
     AppLogger.info('Background notification ID: ${notificationResponse.id}');
@@ -373,8 +375,7 @@ class NotificationService {
     // Log the raw response object for debugging
     AppLogger.info('Raw background response: $notificationResponse');
 
-    // For background processing, we need to store the action for later processing
-    // when the app is opened, since we don't have full app context here
+    // Process notification actions directly in background
     final String? payload = notificationResponse.payload;
     if (payload != null) {
       try {
@@ -384,49 +385,218 @@ class NotificationService {
 
         if (habitId != null && action != null && action.isNotEmpty) {
           AppLogger.info(
-            'Storing background action for later processing: $action for habit: $habitId',
+            'Processing background action: $action for habit: $habitId',
           );
 
-          // Store the action for processing when app is opened
+          // Store the action for fallback processing when app is opened
           _storeActionForLaterProcessing(habitId, action);
 
-          // Try to process immediately using direct completion handler if available
-          // This bypasses the callback system which may not be available in background
-          if (action.toLowerCase() == 'complete' &&
-              directCompletionHandler != null) {
-            AppLogger.info(
-                'Attempting direct completion in background for habit: $habitId');
-            try {
-              // Use a Future to handle async operations in background
-              Future.microtask(() async {
-                try {
-                  await directCompletionHandler!(habitId);
-                  AppLogger.info(
-                      '✅ Background direct completion successful for habit: $habitId');
-
-                  // Remove the stored action since we processed it successfully
-                  await _removeStoredAction(habitId, action);
-                } catch (e) {
-                  AppLogger.error(
-                      '❌ Background direct completion failed for habit: $habitId',
-                      e);
-                  // Keep the stored action for later processing
-                }
-              });
-            } catch (e) {
-              AppLogger.error(
-                  'Error initiating background completion for habit: $habitId',
-                  e);
+          // Process the action directly in background
+          try {
+            if (action.toLowerCase() == 'complete') {
+              AppLogger.info('Completing habit in background: $habitId');
+              await _completeHabitInBackground(habitId);
+              AppLogger.info('✅ Background completion successful for habit: $habitId');
+              
+              // Remove the stored action since we processed it successfully
+              await _removeStoredAction(habitId, action);
+            } else if (action.toLowerCase().contains('snooze')) {
+              AppLogger.info('Snoozing habit in background: $habitId');
+              await handleSnoozeActionWithName(habitId, 'Your habit');
+              AppLogger.info('✅ Background snooze successful for habit: $habitId');
+              
+              // Remove the stored action since we processed it successfully
+              await _removeStoredAction(habitId, action);
             }
-          } else {
-            AppLogger.info(
-                'Direct completion handler not available or action is not complete, action will be processed when app resumes');
+          } catch (e) {
+            AppLogger.error(
+                '❌ Background action processing failed for habit: $habitId',
+                e);
+            // Keep the stored action for later processing
           }
         }
       } catch (e) {
         AppLogger.error('Error parsing background notification payload', e);
       }
     }
+  }
+
+  /// Complete habit directly in background without app context
+  /// This method initializes Hive independently and updates the habit directly
+  @pragma('vm:entry-point')
+  static Future<void> _completeHabitInBackground(String habitId) async {
+    try {
+      AppLogger.info('🔧 Starting background habit completion for: $habitId');
+      
+      // Initialize Hive if not already initialized
+      try {
+        if (!Hive.isBoxOpen('habits')) {
+          AppLogger.info('📦 Initializing Hive for background operation');
+          await Hive.initFlutter();
+          
+          // Register adapters if not already registered
+          if (!Hive.isAdapterRegistered(0)) {
+            Hive.registerAdapter(HabitAdapter());
+            AppLogger.info('✅ Registered HabitAdapter (typeId: 0)');
+          }
+          if (!Hive.isAdapterRegistered(1)) {
+            Hive.registerAdapter(HabitFrequencyAdapter());
+            AppLogger.info('✅ Registered HabitFrequencyAdapter (typeId: 1)');
+          }
+          if (!Hive.isAdapterRegistered(2)) {
+            Hive.registerAdapter(HabitDifficultyAdapter());
+            AppLogger.info('✅ Registered HabitDifficultyAdapter (typeId: 2)');
+          }
+        }
+      } catch (e) {
+        AppLogger.warning('Hive already initialized or adapter already registered: $e');
+      }
+
+      // Open habits box
+      Box<Habit> habitsBox;
+      try {
+        if (Hive.isBoxOpen('habits')) {
+          habitsBox = Hive.box<Habit>('habits');
+          AppLogger.info('📦 Using already open habits box');
+        } else {
+          habitsBox = await Hive.openBox<Habit>('habits');
+          AppLogger.info('📦 Opened habits box');
+        }
+      } catch (e) {
+        AppLogger.error('❌ Failed to open habits box', e);
+        return;
+      }
+
+      // Parse habitId (handle hourly habits with time slots)
+      String actualHabitId = habitId;
+      if (habitId.contains('|')) {
+        actualHabitId = habitId.split('|')[0];
+        AppLogger.info('📝 Parsed hourly habit ID: $actualHabitId from $habitId');
+      }
+
+      // Get the habit
+      final habit = habitsBox.get(actualHabitId);
+      if (habit == null) {
+        AppLogger.error('❌ Habit not found: $actualHabitId');
+        return;
+      }
+
+      AppLogger.info('✅ Found habit: ${habit.name}');
+
+      // Check if already completed for current period
+      final now = DateTime.now();
+      if (_isHabitCompletedForPeriod(habit, now)) {
+        AppLogger.info('ℹ️ Habit already completed for current period');
+        return;
+      }
+
+      // Add completion timestamp
+      habit.completions.add(now);
+      
+      // Update streak
+      habit.currentStreak = _calculateStreak(habit.completions, habit.frequency);
+      if (habit.currentStreak > habit.longestStreak) {
+        habit.longestStreak = habit.currentStreak;
+      }
+
+      // Save to database
+      await habit.save();
+      AppLogger.info('💾 Saved habit completion to database');
+
+      // Update home screen widget
+      try {
+        await WidgetIntegrationService.instance.forceWidgetUpdate();
+        AppLogger.info('🔄 Updated home screen widget');
+      } catch (e) {
+        AppLogger.warning('⚠️ Failed to update widget (may not be supported): $e');
+      }
+
+      AppLogger.info('✅ Background habit completion successful!');
+    } catch (e, stackTrace) {
+      AppLogger.error('❌ Error completing habit in background', e);
+      AppLogger.error('Stack trace: $stackTrace');
+    }
+  }
+
+  /// Check if habit is already completed for the current period
+  static bool _isHabitCompletedForPeriod(Habit habit, DateTime checkTime) {
+    final completions = habit.completions;
+    if (completions.isEmpty) return false;
+
+    final now = checkTime;
+    
+    switch (habit.frequency) {
+      case HabitFrequency.daily:
+        // Check if completed today
+        return completions.any((completion) =>
+            completion.year == now.year &&
+            completion.month == now.month &&
+            completion.day == now.day);
+      
+      case HabitFrequency.weekly:
+        // Check if completed this week
+        final weekStart = now.subtract(Duration(days: now.weekday - 1));
+        return completions.any((completion) =>
+            completion.isAfter(weekStart.subtract(const Duration(days: 1))));
+      
+      case HabitFrequency.monthly:
+        // Check if completed this month
+        return completions.any((completion) =>
+            completion.year == now.year && completion.month == now.month);
+      
+      case HabitFrequency.yearly:
+        // Check if completed this year
+        return completions.any((completion) => completion.year == now.year);
+      
+      case HabitFrequency.single:
+        // Single habits can only be completed once
+        return completions.isNotEmpty;
+      
+      case HabitFrequency.hourly:
+        // For hourly habits, check if completed in the current hour
+        return completions.any((completion) =>
+            completion.year == now.year &&
+            completion.month == now.month &&
+            completion.day == now.day &&
+            completion.hour == now.hour);
+      
+      default:
+        return false;
+    }
+  }
+
+  /// Calculate streak from completion timestamps
+  static int _calculateStreak(List<DateTime> completions, HabitFrequency frequency) {
+    if (completions.isEmpty) return 0;
+
+    // Sort completions in descending order (most recent first)
+    final sortedCompletions = List<DateTime>.from(completions)
+      ..sort((a, b) => b.compareTo(a));
+
+    int streak = 0;
+    final now = DateTime.now();
+
+    switch (frequency) {
+      case HabitFrequency.daily:
+        DateTime checkDate = DateTime(now.year, now.month, now.day);
+        for (final completion in sortedCompletions) {
+          final completionDate = DateTime(completion.year, completion.month, completion.day);
+          if (completionDate.isAtSameMomentAs(checkDate) ||
+              completionDate.isAtSameMomentAs(checkDate.subtract(const Duration(days: 1)))) {
+            streak++;
+            checkDate = checkDate.subtract(const Duration(days: 1));
+          } else {
+            break;
+          }
+        }
+        break;
+
+      default:
+        // For other frequencies, just count completions
+        streak = completions.length;
+    }
+
+    return streak;
   }
 
   /// Handle notification tap and actions
@@ -3051,10 +3221,12 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           'COMPLETE',
+          showsUserInterface: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           'SNOOZE 30MIN',
+          showsUserInterface: false,
         ),
       ],
     );
@@ -3121,10 +3293,12 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           'COMPLETE',
+          showsUserInterface: false,
         ),
         const AndroidNotificationAction(
           'snooze',
           'SNOOZE 30MIN',
+          showsUserInterface: false,
         ),
       ],
     );
@@ -3265,14 +3439,14 @@ class NotificationService {
         const AndroidNotificationAction(
           'complete',
           '✅ COMPLETE',
-          showsUserInterface: true,
+          showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
         AndroidNotificationAction(
           'snooze_alarm',
           snoozeText,
-          showsUserInterface: true,
+          showsUserInterface: false,
           cancelNotification: true,
           allowGeneratedReplies: false,
         ),
@@ -3507,86 +3681,4 @@ class NotificationService {
     }
   }
 
-  /// Debug logging method
-  static void _debugLog(String message) {
-    AppLogger.debug(message);
-  }
-
-  /// Schedule daily habit alarms (new implementation)
-  static Future<void> _scheduleDailyHabitAlarmsNew(
-      Habit habit, int hour, int minute) async {
-    try {
-      AppLogger.debug('Scheduling daily alarms for habit: ${habit.id}');
-      // Implementation for daily scheduling
-    } catch (e) {
-      AppLogger.error('Error scheduling daily habit alarms', e);
-    }
-  }
-
-  /// Schedule weekly habit alarms (new implementation)
-  static Future<void> _scheduleWeeklyHabitAlarmsNew(
-      Habit habit, int hour, int minute) async {
-    try {
-      AppLogger.debug('Scheduling weekly alarms for habit: ${habit.id}');
-      // Implementation for weekly scheduling
-    } catch (e) {
-      AppLogger.error('Error scheduling weekly habit alarms', e);
-    }
-  }
-
-  /// Schedule monthly habit alarms (new implementation)
-  static Future<void> _scheduleMonthlyHabitAlarmsNew(
-      Habit habit, int hour, int minute) async {
-    try {
-      AppLogger.debug('Scheduling monthly alarms for habit: ${habit.id}');
-      // Implementation for monthly scheduling
-    } catch (e) {
-      AppLogger.error('Error scheduling monthly habit alarms', e);
-    }
-  }
-
-  /// Schedule yearly habit alarms (new implementation)
-  static Future<void> _scheduleYearlyHabitAlarmsNew(
-      Habit habit, int hour, int minute) async {
-    try {
-      AppLogger.debug('Scheduling yearly alarms for habit: ${habit.id}');
-      // Implementation for yearly scheduling
-    } catch (e) {
-      AppLogger.error('Error scheduling yearly habit alarms', e);
-    }
-  }
-
-  /// Schedule single habit alarms (new implementation)
-  static Future<void> _scheduleSingleHabitAlarmsNew(
-      Habit habit, int hour, int minute) async {
-    try {
-      AppLogger.debug('Scheduling single alarms for habit: ${habit.id}');
-      // Implementation for single scheduling
-    } catch (e) {
-      AppLogger.error('Error scheduling single habit alarms', e);
-    }
-  }
-
-  /// Schedule hourly habit alarms (new implementation)
-  static Future<void> _scheduleHourlyHabitAlarmsNew(
-      Habit habit, int hour, int minute) async {
-    try {
-      AppLogger.debug('Scheduling hourly alarms for habit: ${habit.id}');
-      // Implementation for hourly scheduling
-    } catch (e) {
-      AppLogger.error('Error scheduling hourly habit alarms', e);
-    }
-  }
-
-  /// Get next weekday datetime
-  static tz.TZDateTime _getNextWeekdayDateTime(
-      tz.TZDateTime baseTime, int weekday, int hour, int minute) {
-    try {
-      // Implementation for getting next weekday
-      return baseTime.add(Duration(days: 1)); // Placeholder implementation
-    } catch (e) {
-      AppLogger.error('Error getting next weekday datetime', e);
-      return baseTime;
-    }
-  }
 }
