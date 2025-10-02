@@ -10,6 +10,7 @@ import 'alarm_manager_service.dart';
 import 'widget_integration_service.dart';
 import 'notifications/notification_storage.dart';
 import 'notifications/notification_core.dart';
+import 'notifications/notification_helpers.dart';
 import '../data/database.dart';
 import '../domain/model/habit.dart';
 
@@ -193,7 +194,7 @@ class NotificationService {
 
       // Check if already completed for current period
       final now = DateTime.now();
-      if (_isHabitCompletedForPeriod(habit, now)) {
+      if (NotificationHelpers.isHabitCompletedForPeriod(habit, now)) {
         AppLogger.info('ℹ️ Habit already completed for current period');
         return;
       }
@@ -202,8 +203,8 @@ class NotificationService {
       habit.completions.add(now);
 
       // Update streak
-      habit.currentStreak =
-          _calculateStreak(habit.completions, habit.frequency);
+      habit.currentStreak = NotificationHelpers.calculateStreak(
+          habit.completions, habit.frequency);
       if (habit.currentStreak > habit.longestStreak) {
         habit.longestStreak = habit.currentStreak;
       }
@@ -228,86 +229,8 @@ class NotificationService {
     }
   }
 
-  /// Check if habit is already completed for the current period
-  static bool _isHabitCompletedForPeriod(Habit habit, DateTime checkTime) {
-    final completions = habit.completions;
-    if (completions.isEmpty) return false;
-
-    final now = checkTime;
-
-    switch (habit.frequency) {
-      case HabitFrequency.daily:
-        // Check if completed today
-        return completions.any((completion) =>
-            completion.year == now.year &&
-            completion.month == now.month &&
-            completion.day == now.day);
-
-      case HabitFrequency.weekly:
-        // Check if completed this week
-        final weekStart = now.subtract(Duration(days: now.weekday - 1));
-        return completions.any((completion) =>
-            completion.isAfter(weekStart.subtract(const Duration(days: 1))));
-
-      case HabitFrequency.monthly:
-        // Check if completed this month
-        return completions.any((completion) =>
-            completion.year == now.year && completion.month == now.month);
-
-      case HabitFrequency.yearly:
-        // Check if completed this year
-        return completions.any((completion) => completion.year == now.year);
-
-      case HabitFrequency.single:
-        // Single habits can only be completed once
-        return completions.isNotEmpty;
-
-      case HabitFrequency.hourly:
-        // For hourly habits, check if completed in the current hour
-        return completions.any((completion) =>
-            completion.year == now.year &&
-            completion.month == now.month &&
-            completion.day == now.day &&
-            completion.hour == now.hour);
-    }
-  }
-
-  /// Calculate streak from completion timestamps
-  static int _calculateStreak(
-      List<DateTime> completions, HabitFrequency frequency) {
-    if (completions.isEmpty) return 0;
-
-    // Sort completions in descending order (most recent first)
-    final sortedCompletions = List<DateTime>.from(completions)
-      ..sort((a, b) => b.compareTo(a));
-
-    int streak = 0;
-    final now = DateTime.now();
-
-    switch (frequency) {
-      case HabitFrequency.daily:
-        DateTime checkDate = DateTime(now.year, now.month, now.day);
-        for (final completion in sortedCompletions) {
-          final completionDate =
-              DateTime(completion.year, completion.month, completion.day);
-          if (completionDate.isAtSameMomentAs(checkDate) ||
-              completionDate.isAtSameMomentAs(
-                  checkDate.subtract(const Duration(days: 1)))) {
-            streak++;
-            checkDate = checkDate.subtract(const Duration(days: 1));
-          } else {
-            break;
-          }
-        }
-        break;
-
-      default:
-        // For other frequencies, just count completions
-        streak = completions.length;
-    }
-
-    return streak;
-  }
+  // Helper methods _isHabitCompletedForPeriod and _calculateStreak
+  // moved to NotificationHelpers module
 
   /// Handle notification tap and actions
   @pragma('vm:entry-point')
@@ -763,7 +686,8 @@ class NotificationService {
   static Future<void> _handleSnoozeAction(String habitId) async {
     try {
       // Generate a unique notification ID for the snooze to prevent conflicts
-      final snoozeId = _generateSnoozeNotificationId(habitId);
+      final snoozeId =
+          NotificationHelpers.generateSnoozeNotificationId(habitId);
       AppLogger.info(
         '🔔 Starting enhanced snooze process for habit: $habitId (snooze ID: $snoozeId)',
       );
@@ -796,7 +720,7 @@ class NotificationService {
         AppLogger.warning(
             '💡 If snooze is still delayed, it\'s likely due to battery optimization');
         // Log battery optimization guidance
-        await checkBatteryOptimizationStatus();
+        await NotificationHelpers.checkBatteryOptimizationStatus();
       } else {
         AppLogger.info(
             '✅ Exact alarm permission available - checking for battery optimization issues');
@@ -831,7 +755,11 @@ class NotificationService {
         );
 
         // Verify the notification was actually scheduled
-        await _verifyNotificationScheduled(snoozeId, habitId);
+        await NotificationHelpers.verifyNotificationScheduled(
+          _notificationsPlugin,
+          snoozeId,
+          habitId,
+        );
 
         AppLogger.info(
           '✅ Snoozed notification scheduled successfully for habit: $habitId at $snoozeTime (ID: $snoozeId)',
@@ -859,7 +787,8 @@ class NotificationService {
       String habitId, String habitName) async {
     try {
       // Generate a unique notification ID for the snooze to prevent conflicts
-      final snoozeId = _generateSnoozeNotificationId(habitId);
+      final snoozeId =
+          NotificationHelpers.generateSnoozeNotificationId(habitId);
       AppLogger.info(
         '🔔 Starting enhanced snooze process for habit: $habitName ($habitId) (snooze ID: $snoozeId)',
       );
@@ -892,7 +821,7 @@ class NotificationService {
         AppLogger.warning(
             '💡 If snooze is still delayed, it\'s likely due to battery optimization');
         // Log battery optimization guidance
-        await checkBatteryOptimizationStatus();
+        await NotificationHelpers.checkBatteryOptimizationStatus();
       } else {
         AppLogger.info(
             '✅ Exact alarm permission available - checking for battery optimization issues');
@@ -927,7 +856,11 @@ class NotificationService {
         );
 
         // Verify the notification was actually scheduled
-        await _verifyNotificationScheduled(snoozeId, habitId);
+        await NotificationHelpers.verifyNotificationScheduled(
+          _notificationsPlugin,
+          snoozeId,
+          habitId,
+        );
 
         AppLogger.info(
           '✅ Snoozed notification scheduled successfully for habit: $habitName at $snoozeTime (ID: $snoozeId)',
@@ -951,42 +884,8 @@ class NotificationService {
     }
   }
 
-  /// Generate a unique notification ID for snooze notifications
-  static int _generateSnoozeNotificationId(String habitId) {
-    // Enhanced approach - use habitId hash + current timestamp + fixed offset for snooze
-    // This makes snooze notifications truly unique and prevents conflicts
-    final baseId = habitId.hashCode.abs();
-    final timestamp = DateTime.now().millisecondsSinceEpoch %
-        1000; // Last 3 digits of timestamp
-    final snoozeOffset = 2000000; // Fixed offset for snooze notifications
-
-    // Combine base ID with timestamp to ensure uniqueness even for same habit
-    final snoozeId = (baseId % 900000) + snoozeOffset + timestamp;
-
-    AppLogger.debug(
-        'Generated snooze notification ID: $snoozeId for habit: $habitId (base: $baseId, timestamp: $timestamp)');
-    return snoozeId;
-  }
-
-  /// Verify that a notification was actually scheduled
-  static Future<void> _verifyNotificationScheduled(
-      int notificationId, String habitId) async {
-    try {
-      final pendingNotifications = await getPendingNotifications();
-      final isScheduled =
-          pendingNotifications.any((n) => n.id == notificationId);
-
-      if (isScheduled) {
-        AppLogger.info(
-            '✅ Verified: Snooze notification is properly scheduled for habit: $habitId');
-      } else {
-        AppLogger.warning(
-            '⚠️ Warning: Snooze notification may not be properly scheduled for habit: $habitId');
-      }
-    } catch (e) {
-      AppLogger.error('Error verifying notification scheduling', e);
-    }
-  }
+  // Helper methods _generateSnoozeNotificationId and _verifyNotificationScheduled
+  // moved to NotificationHelpers module
 
   /// Fallback scheduling method for when primary scheduling fails
   static Future<void> _fallbackSnoozeScheduling(
@@ -1400,14 +1299,14 @@ class NotificationService {
     // For weekly notifications (7 days)
     for (int weekday = 1; weekday <= 7; weekday++) {
       await _notificationsPlugin.cancel(
-        generateSafeId('${habitId}_week_$weekday'),
+        NotificationHelpers.generateSafeId('${habitId}_week_$weekday'),
       );
     }
 
     // For monthly notifications (31 days)
     for (int monthDay = 1; monthDay <= 31; monthDay++) {
       await _notificationsPlugin.cancel(
-        generateSafeId('${habitId}_month_$monthDay'),
+        NotificationHelpers.generateSafeId('${habitId}_month_$monthDay'),
       );
     }
 
@@ -1415,7 +1314,7 @@ class NotificationService {
     for (int month = 1; month <= 12; month++) {
       for (int day = 1; day <= 31; day++) {
         await _notificationsPlugin.cancel(
-          generateSafeId('${habitId}_year_${month}_$day'),
+          NotificationHelpers.generateSafeId('${habitId}_year_${month}_$day'),
         );
       }
     }
@@ -1425,7 +1324,7 @@ class NotificationService {
       for (int minute = 0; minute < 60; minute += 15) {
         // Check every 15 minutes
         await _notificationsPlugin.cancel(
-          generateSafeId('${habitId}_hour_${hour}_$minute'),
+          NotificationHelpers.generateSafeId('${habitId}_hour_${hour}_$minute'),
         );
       }
     }
@@ -1440,14 +1339,15 @@ class NotificationService {
     AppLogger.info('🚫 Starting notification cancellation for habit: $habitId');
 
     // Cancel the main notification using the hashed habit ID
-    final mainNotificationId = generateSafeId(habitId);
+    final mainNotificationId = NotificationHelpers.generateSafeId(habitId);
     await _notificationsPlugin.cancel(mainNotificationId);
     AppLogger.debug('Cancelled main notification ID: $mainNotificationId');
 
     // Cancel related notifications with safe approach - try common patterns
     // For weekly notifications (7 days)
     for (int weekday = 1; weekday <= 7; weekday++) {
-      final weeklyId = generateSafeId('${habitId}_week_$weekday');
+      final weeklyId =
+          NotificationHelpers.generateSafeId('${habitId}_week_$weekday');
       await _notificationsPlugin.cancel(weeklyId);
       AppLogger.debug(
           'Cancelled weekly notification for weekday $weekday: $weeklyId');
@@ -1455,7 +1355,8 @@ class NotificationService {
 
     // For monthly notifications (31 days)
     for (int monthDay = 1; monthDay <= 31; monthDay++) {
-      final monthlyId = generateSafeId('${habitId}_month_$monthDay');
+      final monthlyId =
+          NotificationHelpers.generateSafeId('${habitId}_month_$monthDay');
       await _notificationsPlugin.cancel(monthlyId);
       AppLogger.debug(
           'Cancelled monthly notification for day $monthDay: $monthlyId');
@@ -1464,7 +1365,8 @@ class NotificationService {
     // For yearly notifications (12 months x 31 days)
     for (int month = 1; month <= 12; month++) {
       for (int day = 1; day <= 31; day++) {
-        final yearlyId = generateSafeId('${habitId}_year_${month}_$day');
+        final yearlyId =
+            NotificationHelpers.generateSafeId('${habitId}_year_${month}_$day');
         await _notificationsPlugin.cancel(yearlyId);
       }
     }
@@ -1473,18 +1375,19 @@ class NotificationService {
     for (int hour = 0; hour < 24; hour++) {
       for (int minute = 0; minute < 60; minute += 15) {
         // Check every 15 minutes
-        final hourlyId = generateSafeId('${habitId}_hour_${hour}_$minute');
+        final hourlyId = NotificationHelpers.generateSafeId(
+            '${habitId}_hour_${hour}_$minute');
         await _notificationsPlugin.cancel(hourlyId);
       }
     }
 
     // For single habit notifications
-    final singleId = generateSafeId('${habitId}_single');
+    final singleId = NotificationHelpers.generateSafeId('${habitId}_single');
     await _notificationsPlugin.cancel(singleId);
     AppLogger.debug('Cancelled single notification: $singleId');
 
     // Cancel daily notifications
-    final dailyId = generateSafeId(habitId);
+    final dailyId = NotificationHelpers.generateSafeId(habitId);
     await _notificationsPlugin.cancel(dailyId);
     AppLogger.debug('Cancelled daily notification: $dailyId');
 
@@ -1623,7 +1526,7 @@ class NotificationService {
     try {
       // Cancel any existing notifications for this habit first
       await cancelHabitNotifications(
-        generateSafeId(habit.id),
+        NotificationHelpers.generateSafeId(habit.id),
       ); // Use safe ID generation
       AppLogger.debug(
         'Cancelled existing notifications for habit ID: ${habit.id}',
@@ -1805,7 +1708,8 @@ class NotificationService {
 
     try {
       await scheduleHabitNotification(
-        id: generateSafeId(habit.id), // Use safe ID generation
+        id: NotificationHelpers.generateSafeId(
+            habit.id), // Use safe ID generation
         habitId: habit.id.toString(),
         title: '🎯 ${habit.name}',
         body: 'Time to complete your daily habit! Keep your streak going.',
@@ -1849,7 +1753,7 @@ class NotificationService {
       }
 
       await scheduleHabitNotification(
-        id: generateSafeId(
+        id: NotificationHelpers.generateSafeId(
           habit.id + '_week_$weekday',
         ), // Use string concatenation for uniqueness
         habitId: habit.id.toString(),
@@ -1904,7 +1808,7 @@ class NotificationService {
       }
 
       await scheduleHabitNotification(
-        id: generateSafeId(
+        id: NotificationHelpers.generateSafeId(
           habit.id + '_month_$monthDay',
         ), // Use string concatenation for uniqueness
         habitId: habit.id.toString(),
@@ -1947,7 +1851,7 @@ class NotificationService {
         }
 
         await scheduleHabitNotification(
-          id: generateSafeId(
+          id: NotificationHelpers.generateSafeId(
             habit.id + '_year_${month}_$day',
           ), // Use string concatenation for uniqueness
           habitId: habit.id.toString(),
@@ -1996,7 +1900,7 @@ class NotificationService {
 
     try {
       await scheduleHabitNotification(
-        id: generateSafeId(
+        id: NotificationHelpers.generateSafeId(
           '${habit.id}_single_${singleDateTime.millisecondsSinceEpoch}',
         ), // Use structured ID generation for uniqueness
         habitId: habit.id.toString(),
@@ -2060,7 +1964,7 @@ class NotificationService {
         // Only schedule future notifications
         if (notificationTime.isAfter(now)) {
           await scheduleHabitNotification(
-            id: generateSafeId(
+            id: NotificationHelpers.generateSafeId(
               '${habit.id}_hourly_${date.day}_${timeHour}_$timeMinute',
             ),
             habitId:
@@ -2099,7 +2003,8 @@ class NotificationService {
         try {
           // Use the real alarm service instead of notification-based alarms
           await AlarmManagerService.scheduleExactAlarm(
-            alarmId: generateSafeId('${habit.id}_weekly_$weekday'),
+            alarmId: NotificationHelpers.generateSafeId(
+                '${habit.id}_weekly_$weekday'),
             habitId: habit.id.toString(),
             habitName: habit.name,
             scheduledTime: nextAlarm,
@@ -2144,7 +2049,8 @@ class NotificationService {
         try {
           // Use the real alarm service instead of notification-based alarms
           await AlarmManagerService.scheduleExactAlarm(
-            alarmId: generateSafeId('${habit.id}_monthly_$day'),
+            alarmId:
+                NotificationHelpers.generateSafeId('${habit.id}_monthly_$day'),
             habitId: habit.id.toString(),
             habitName: habit.name,
             scheduledTime: nextAlarm,
@@ -2194,7 +2100,8 @@ class NotificationService {
 
           // Use the real alarm service instead of notification-based alarms
           await AlarmManagerService.scheduleExactAlarm(
-            alarmId: generateSafeId('${habit.id}_yearly_${month}_$day'),
+            alarmId: NotificationHelpers.generateSafeId(
+                '${habit.id}_yearly_${month}_$day'),
             habitId: habit.id.toString(),
             habitName: habit.name,
             scheduledTime: nextAlarm,
@@ -2267,7 +2174,8 @@ class NotificationService {
 
           // Use the real alarm service instead of notification-based alarms
           await AlarmManagerService.scheduleExactAlarm(
-            alarmId: generateSafeId('${habit.id}_hourly_${hour}_$minute'),
+            alarmId: NotificationHelpers.generateSafeId(
+                '${habit.id}_hourly_${hour}_$minute'),
             habitId: '${habit.id}|$hour:${minute.toString().padLeft(2, '0')}',
             habitName: habit.name,
             scheduledTime: nextAlarm,
@@ -2317,7 +2225,8 @@ class NotificationService {
 
         // Use the real alarm service instead of notification-based alarms
         await AlarmManagerService.scheduleExactAlarm(
-          alarmId: generateSafeId('${habit.id}_hourly_$hour'),
+          alarmId:
+              NotificationHelpers.generateSafeId('${habit.id}_hourly_$hour'),
           habitId: '${habit.id}|$hour:00',
           habitName: habit.name,
           scheduledTime: nextAlarm,
@@ -2357,7 +2266,7 @@ class NotificationService {
 
     try {
       await AlarmManagerService.scheduleExactAlarm(
-        alarmId: generateSafeId('${habit.id}_daily'),
+        alarmId: NotificationHelpers.generateSafeId('${habit.id}_daily'),
         habitId: habit.id.toString(),
         habitName: habit.name,
         scheduledTime: nextAlarm,
@@ -2402,7 +2311,7 @@ class NotificationService {
 
     try {
       await AlarmManagerService.scheduleExactAlarm(
-        alarmId: generateSafeId(
+        alarmId: NotificationHelpers.generateSafeId(
           '${habit.id}_single_${singleDateTime.millisecondsSinceEpoch}',
         ),
         habitId: habit.id.toString(),
@@ -2452,22 +2361,13 @@ class NotificationService {
     AppLogger.debug(message);
   }
 
-  /// Generate a safe 32-bit integer ID from a string
-  static int generateSafeId(String habitId) {
-    // Generate a much smaller base hash to leave room for multiplications and additions
-    int hash = 0;
-    for (int i = 0; i < habitId.length; i++) {
-      hash = ((hash << 3) - hash + habitId.codeUnitAt(i)) &
-          0xFFFFFF; // Use 24 bits max
-    }
-    // Ensure we have a reasonable range for the base ID (1-16777215)
-    return (hash % 16777215) + 1;
-  }
+  // generateSafeId method moved to NotificationHelpers module
 
   /// Get pending notifications
   static Future<List<PendingNotificationRequest>>
       getPendingNotifications() async {
-    return await _notificationsPlugin.pendingNotificationRequests();
+    return await NotificationHelpers.getPendingNotifications(
+        _notificationsPlugin);
   }
 
   /// Check if notifications are enabled
@@ -2808,8 +2708,7 @@ class NotificationService {
 
   /// Periodic cleanup for memory management
   static void _startPeriodicCleanup() {
-    // TODO: Implement periodic cleanup logic
-    AppLogger.debug('Periodic cleanup started');
+    NotificationHelpers.startPeriodicCleanup();
   }
 
   /// Complete habit from notification action
@@ -2824,11 +2723,11 @@ class NotificationService {
 
   /// Check if exact alarms can be scheduled
   static Future<bool> canScheduleExactAlarms() async {
-    return await NotificationCore.canScheduleExactAlarms();
+    return await NotificationHelpers.canScheduleExactAlarms();
   }
 
   /// Check battery optimization status
   static Future<void> checkBatteryOptimizationStatus() async {
-    await NotificationCore.checkBatteryOptimizationStatus();
+    await NotificationHelpers.checkBatteryOptimizationStatus();
   }
 }

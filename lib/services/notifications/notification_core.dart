@@ -366,7 +366,7 @@ class NotificationCore {
     try {
       return await PermissionService.hasExactAlarmPermission();
     } catch (e) {
-      AppLogger.warning('Error checking exact alarm capability', e);
+      AppLogger.error('Error checking exact alarm capability', e);
       return false;
     }
   }
