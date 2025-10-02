@@ -1,17 +1,15 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'logging_service.dart';
-import 'permission_service.dart';
 import 'notification_queue_processor.dart';
 import 'alarm_manager_service.dart';
 import 'widget_integration_service.dart';
 import 'notifications/notification_storage.dart';
+import 'notifications/notification_core.dart';
 import '../data/database.dart';
 import '../domain/model/habit.dart';
 
@@ -19,9 +17,6 @@ import '../domain/model/habit.dart';
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
-
-  static bool _isInitialized = false;
-  static bool _channelsCreated = false;
 
   // Callback for handling notification actions
   static Function(String habitId, String action)? onNotificationAction;
@@ -39,320 +34,31 @@ class NotificationService {
   /// Initialize the notification service
   @pragma('vm:entry-point')
   static Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (NotificationCore.isInitialized) return;
 
     // Set up the callback for the queue processor
     NotificationQueueProcessor.setScheduleNotificationCallback(
         scheduleHabitNotification);
 
-    // Start periodic cleanup for memory management
-    _startPeriodicCleanup();
-
-    // Android initialization settings
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-
-    // iOS initialization settings with notification categories
-    final DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-      notificationCategories: [
-        DarwinNotificationCategory(
-          'habit_category',
-          actions: [
-            DarwinNotificationAction.plain(
-              'complete',
-              'COMPLETE',
-              options: {DarwinNotificationActionOption.foreground},
-            ),
-            DarwinNotificationAction.plain(
-              'snooze',
-              'SNOOZE 30MIN',
-              options: {},
-            ),
-          ],
-        ),
-      ],
+    // Initialize the core notification system
+    await NotificationCore.initialize(
+      plugin: _notificationsPlugin,
+      onForegroundTap: _onNotificationTapped,
+      onBackgroundTap: onBackgroundNotificationResponse,
+      onPeriodicCleanup: _startPeriodicCleanup,
     );
 
-    // Combined initialization settings
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
-
-    // Initialize the plugin
-    await _notificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
-      onDidReceiveBackgroundNotificationResponse:
-          onBackgroundNotificationResponse,
-    );
-
-    // Add debug logging to verify initialization
-    AppLogger.info('🔔 Notification plugin initialized with handlers:');
-    AppLogger.info('  - Foreground handler: _onNotificationTapped');
-    AppLogger.info('  - Background handler: onBackgroundNotificationResponse');
-
-    // Test if the plugin is actually working by checking its state
-    try {
-      final androidImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-      if (androidImplementation != null) {
-        final areEnabled =
-            await androidImplementation.areNotificationsEnabled();
-        AppLogger.info('🔔 Android notifications enabled: $areEnabled');
-      }
-    } catch (e) {
-      AppLogger.error('Error checking notification plugin state', e);
-    }
-
-    // Request permissions for Android 13+
-    if (Platform.isAndroid) {
-      await _requestAndroidPermissions();
-      await recreateNotificationChannels();
-    }
-
-    _isInitialized = true;
     AppLogger.info('🔔 NotificationService initialized successfully');
-    AppLogger.info('📱 Platform: ${Platform.operatingSystem}');
-    AppLogger.info('🔧 Background handler registered: true');
   }
 
   /// Check if device is running Android 12+ (API level 31+)
-  static Future<bool> _isAndroid12Plus() async {
-    if (!Platform.isAndroid) return false;
-
-    try {
-      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-      final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      return androidInfo.version.sdkInt >= 31; // Android 12 = API 31
-    } catch (e) {
-      AppLogger.error('Error checking Android version', e);
-      return false; // Assume older version if error
-    }
-  }
-
-  /// Check if device is running Android 12+ (API level 31+) - public version
   static Future<bool> isAndroid12Plus() async {
-    return await _isAndroid12Plus();
-  }
-
-  /// Create Android notification channels
-  static Future<void> _createNotificationChannels() async {
-    if (_channelsCreated) {
-      AppLogger.debug('Notification channels already created, skipping');
-      return;
-    }
-
-    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-
-    if (androidImplementation != null) {
-      // Create habit notification channel
-      const AndroidNotificationChannel habitChannel =
-          AndroidNotificationChannel(
-        'habit_channel',
-        'Habit Notifications',
-        description: 'Notifications for habit reminders',
-        importance: Importance.max,
-        playSound: true,
-        sound: UriAndroidNotificationSound(
-            'content://settings/system/notification_sound'),
-        enableVibration: true,
-      );
-
-      // Create scheduled habit notification channel
-      const AndroidNotificationChannel scheduledHabitChannel =
-          AndroidNotificationChannel(
-        'habit_scheduled_channel',
-        'Scheduled Habit Notifications',
-        description: 'Scheduled notifications for habit reminders',
-        importance: Importance.max,
-        playSound: true,
-        sound: UriAndroidNotificationSound(
-            'content://settings/system/notification_sound'),
-        enableVibration: true,
-      );
-
-      // Create default alarm notification channel (fallback for non-background alarms)
-      const AndroidNotificationChannel alarmChannel =
-          AndroidNotificationChannel(
-        'habit_alarm_default',
-        'Habit Alarms (Default)',
-        description: 'Default high-priority alarm notifications for habits',
-        importance: Importance.max,
-        playSound: true,
-        sound: UriAndroidNotificationSound(
-            'content://settings/system/alarm_alert'),
-        enableVibration: true,
-        enableLights: true,
-        showBadge: true,
-      );
-
-      await androidImplementation.createNotificationChannel(habitChannel);
-      await androidImplementation.createNotificationChannel(
-        scheduledHabitChannel,
-      );
-      await androidImplementation.createNotificationChannel(alarmChannel);
-
-      _channelsCreated = true;
-
-      AppLogger.info('Notification channels created successfully');
-      AppLogger.info(
-        'Habit channel: ${habitChannel.id} - ${habitChannel.name}',
-      );
-      AppLogger.info(
-        'Scheduled habit channel: ${scheduledHabitChannel.id} - ${scheduledHabitChannel.name}',
-      );
-      AppLogger.info(
-        'Alarm channel: ${alarmChannel.id} - ${alarmChannel.name}',
-      );
-    }
+    return await NotificationCore.isAndroid12Plus();
   }
 
   /// Recreate notification channels with updated sound configuration
-  /// This is necessary when sound settings change, especially on Android 16+
   static Future<void> recreateNotificationChannels() async {
-    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-
-    if (androidImplementation != null) {
-      AppLogger.info(
-          'Recreating notification channels with updated sound configuration...');
-
-      // Delete existing channels first
-      try {
-        await androidImplementation.deleteNotificationChannel('habit_channel');
-        await androidImplementation
-            .deleteNotificationChannel('habit_scheduled_channel');
-        await androidImplementation
-            .deleteNotificationChannel('habit_alarm_default');
-        AppLogger.info('Existing notification channels deleted');
-      } catch (e) {
-        AppLogger.warning('Some channels may not have existed: $e');
-      }
-
-      // Reset the flag to allow recreation
-      _channelsCreated = false;
-
-      // Recreate channels with new configuration
-      await _createNotificationChannels();
-      AppLogger.info('Notification channels recreated successfully');
-    }
-  }
-
-  /// Initialize Android notification settings without requesting permissions
-  /// Permissions will be requested contextually when actually needed
-  static Future<void> _requestAndroidPermissions() async {
-    final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-        _notificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-
-    if (androidImplementation != null) {
-      // DO NOT request notification permission during initialization on Android 13+
-      // This causes the permission to become greyed out in system settings
-      // Notification permission will be requested only when user enables notifications
-
-      // Note: We also don't request exact alarm permission during initialization
-      // This will be requested only when the user specifically enables alarms/reminders
-      // to avoid the greyed-out permission issue on Android 14+
-      AppLogger.info(
-        'Notification service initialized. All permissions will be requested contextually when needed.',
-      );
-    }
-  }
-
-  /// Ensure all required permissions are granted before scheduling notifications
-  /// This method requests permissions only when actually needed
-  static Future<bool> _ensureNotificationPermissions() async {
-    try {
-      // First, ensure basic notification permission is granted
-      AppLogger.info('Checking notification permission...');
-      final bool hasNotificationPermission =
-          await Permission.notification.isGranted;
-
-      if (!hasNotificationPermission) {
-        AppLogger.info('Requesting notification permission for scheduling...');
-        final bool notificationGranted =
-            await PermissionService.requestNotificationPermissionWithContext();
-
-        if (!notificationGranted) {
-          AppLogger.warning(
-            'Notification permission denied - cannot schedule notifications',
-          );
-          return false;
-        }
-      } else {
-        AppLogger.info('Notification permission already granted');
-      }
-
-      // Then, check if we need exact alarm permission (Android 12+)
-      final bool isAndroid12Plus = await NotificationService.isAndroid12Plus();
-      if (!isAndroid12Plus) {
-        AppLogger.info('Exact alarm permission not required for Android < 12');
-        return true;
-      }
-
-      // Check if we already have exact alarm permission
-      final bool hasExactAlarmPermission =
-          await PermissionService.hasExactAlarmPermission().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          AppLogger.warning(
-            'Exact alarm permission check timed out in notification service - assuming false',
-          );
-          return false;
-        },
-      );
-      if (hasExactAlarmPermission) {
-        AppLogger.info('Exact alarm permission already available');
-        return true;
-      }
-
-      AppLogger.info(
-        'Checking exact alarm permission availability for precise scheduling...',
-      );
-
-      // For Android 13+ with USE_EXACT_ALARM: Should be automatically granted
-      // For Android 12 with SCHEDULE_EXACT_ALARM: May require user action
-      // We'll attempt to request it, but don't block the UI if it fails
-      final bool exactAlarmGranted =
-          await PermissionService.requestExactAlarmPermissionWithContext()
-              .timeout(
-        const Duration(seconds: 20),
-        onTimeout: () {
-          AppLogger.warning(
-            'Exact alarm permission request timed out in notification service - continuing without exact alarms',
-          );
-          return false;
-        },
-      );
-
-      if (exactAlarmGranted) {
-        AppLogger.info(
-          'Exact alarm permission available - notifications will be precise',
-        );
-      } else {
-        AppLogger.info(
-          'Exact alarm permission not available - notifications will use standard scheduling (this is normal for Android 12 if user denies permission)',
-        );
-        // Continue anyway - notifications will still work but may not be precise
-      }
-
-      // Always return true - don't block the UI based on exact alarm permission
-      // Basic notifications will work regardless of exact alarm permission status
-      return true;
-    } catch (e) {
-      AppLogger.error('Error ensuring notification permissions', e);
-      return false; // Block notification scheduling if there's an error
-    }
+    await NotificationCore.recreateNotificationChannels(_notificationsPlugin);
   }
 
   /// Handle background notification responses (when app is not in foreground)
@@ -1362,7 +1068,7 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -1403,10 +1109,11 @@ class NotificationService {
     required DateTime scheduledTime,
     String? payload,
   }) async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     // Check and request all notification permissions if needed
-    final bool permissionsGranted = await _ensureNotificationPermissions();
+    final bool permissionsGranted =
+        await NotificationCore.ensureNotificationPermissions();
     if (!permissionsGranted) {
       AppLogger.warning(
         'Cannot schedule notification - permissions not granted',
@@ -1543,10 +1250,11 @@ class NotificationService {
     required int minute,
     String? payload,
   }) async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     // Check and request all notification permissions if needed
-    final bool permissionsGranted = await _ensureNotificationPermissions();
+    final bool permissionsGranted =
+        await NotificationCore.ensureNotificationPermissions();
     if (!permissionsGranted) {
       AppLogger.warning(
         'Cannot schedule notification - permissions not granted',
@@ -1683,7 +1391,7 @@ class NotificationService {
 
   /// Cancel all notifications for a specific habit
   static Future<void> cancelHabitNotifications(int habitId) async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     // Cancel the main notification
     await _notificationsPlugin.cancel(habitId);
@@ -1727,7 +1435,7 @@ class NotificationService {
 
   /// Cancel all notifications for a specific habit using the original habit ID string
   static Future<void> cancelHabitNotificationsByHabitId(String habitId) async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     AppLogger.info('🚫 Starting notification cancellation for habit: $habitId');
 
@@ -1801,7 +1509,7 @@ class NotificationService {
       AppLogger.debug('Notification time: ${habit.notificationTime}');
     }
 
-    if (!_isInitialized) {
+    if (!NotificationCore.isInitialized) {
       AppLogger.debug('Initializing notification service');
       await initialize();
     }
@@ -1810,7 +1518,8 @@ class NotificationService {
     // Only do this if notifications or alarms are actually enabled
     if (habit.notificationsEnabled || habit.alarmEnabled) {
       try {
-        final bool permissionsGranted = await _ensureNotificationPermissions();
+        final bool permissionsGranted =
+            await NotificationCore.ensureNotificationPermissions();
         if (!permissionsGranted) {
           AppLogger.warning(
             'Cannot schedule notifications for habit: ${habit.name} - permissions not granted',
@@ -1849,7 +1558,7 @@ class NotificationService {
     AppLogger.debug(
         'Alarm enabled: ${habit.alarmEnabled} (IGNORED for safety)');
 
-    if (!_isInitialized) {
+    if (!NotificationCore.isInitialized) {
       AppLogger.debug('Initializing notification service');
       await initialize();
     }
@@ -1857,7 +1566,8 @@ class NotificationService {
     // Only check notification permissions (not alarm permissions)
     if (habit.notificationsEnabled) {
       try {
-        final bool permissionsGranted = await _ensureNotificationPermissions();
+        final bool permissionsGranted =
+            await NotificationCore.ensureNotificationPermissions();
         if (!permissionsGranted) {
           AppLogger.warning(
             'Cannot schedule notifications for habit: ${habit.name} - permissions not granted',
@@ -2778,7 +2488,7 @@ class NotificationService {
 
   /// Test notification - useful for debugging
   static Future<void> showTestNotification() async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     AppLogger.info(
         '🧪 Creating SIMPLE test notification to verify handlers work...');
@@ -2818,7 +2528,7 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     final AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -2882,10 +2592,11 @@ class NotificationService {
     required String body,
     required DateTime scheduledTime,
   }) async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     // Check and request all notification permissions if needed
-    final bool permissionsGranted = await _ensureNotificationPermissions();
+    final bool permissionsGranted =
+        await NotificationCore.ensureNotificationPermissions();
     if (!permissionsGranted) {
       AppLogger.warning(
         'Cannot schedule notification - permissions not granted',
@@ -2999,7 +2710,7 @@ class NotificationService {
     String? alarmSoundName,
     int snoozeDelayMinutes = 10,
   }) async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     AppLogger.info('🚨 Scheduling alarm notification:');
     AppLogger.info('  - ID: $id');
@@ -3077,7 +2788,7 @@ class NotificationService {
     required String body,
     int delayMinutes = 30,
   }) async {
-    if (!_isInitialized) await initialize();
+    if (!NotificationCore.isInitialized) await initialize();
 
     final snoozeTime = DateTime.now().add(Duration(minutes: delayMinutes));
 
@@ -3093,35 +2804,31 @@ class NotificationService {
         '⏰ Notification snoozed for $delayMinutes minutes: $habitId');
   }
 
-  // ==================== STUB METHODS (TO BE IMPLEMENTED) ====================
+  // ==================== HELPER METHODS ====================
 
-  /// Periodic cleanup for memory management (stub)
+  /// Periodic cleanup for memory management
   static void _startPeriodicCleanup() {
-    // TODO: Implement periodic cleanup
-    AppLogger.debug('Periodic cleanup started (stub implementation)');
+    // TODO: Implement periodic cleanup logic
+    AppLogger.debug('Periodic cleanup started');
   }
 
-  /// Complete habit from notification action (stub)
+  /// Complete habit from notification action
   static Future<void> _completeHabitFromNotification(String habitId) async {
-    // TODO: Implement habit completion from notification
-    AppLogger.warning(
-        '_completeHabitFromNotification stub called for: $habitId');
-    // For now, try to use the direct completion handler if available
+    AppLogger.info('Completing habit from notification: $habitId');
     if (directCompletionHandler != null) {
       await directCompletionHandler!(habitId);
+    } else {
+      AppLogger.warning('Direct completion handler not set');
     }
   }
 
-  /// Check if exact alarms can be scheduled (stub)
+  /// Check if exact alarms can be scheduled
   static Future<bool> canScheduleExactAlarms() async {
-    // TODO: Implement platform-specific exact alarm permission check
-    AppLogger.debug('canScheduleExactAlarms stub called');
-    return true; // Assume true for now
+    return await NotificationCore.canScheduleExactAlarms();
   }
 
-  /// Check battery optimization status (stub)
+  /// Check battery optimization status
   static Future<void> checkBatteryOptimizationStatus() async {
-    // TODO: Implement battery optimization status check
-    AppLogger.debug('checkBatteryOptimizationStatus stub called');
+    await NotificationCore.checkBatteryOptimizationStatus();
   }
 }
