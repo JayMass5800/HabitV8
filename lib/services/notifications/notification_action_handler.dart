@@ -31,6 +31,9 @@ class NotificationActionHandler {
   static int _callbackSetCount = 0;
   static DateTime? _lastCallbackSetTime;
 
+  /// Flag to track if initial pending actions have been processed
+  static bool _hasProcessedInitialActions = false;
+
   NotificationActionHandler._() {
     _scheduler = NotificationScheduler(_notificationsPlugin);
   }
@@ -260,12 +263,9 @@ class NotificationActionHandler {
       AppLogger.info('📭 No pending actions to process');
     }
 
-    // Process persistent actions from SharedPreferences after a short delay
-    // This ensures the provider container is fully initialized
-    Future.delayed(const Duration(milliseconds: 500), () async {
-      AppLogger.info('🔄 Processing persistent pending actions after delay');
-      await processPendingActions();
-    });
+    // Mark that we've processed initial actions
+    _hasProcessedInitialActions = true;
+    AppLogger.info('✅ Initial pending actions processing complete');
   }
 
   /// Process a stored action from notification storage
