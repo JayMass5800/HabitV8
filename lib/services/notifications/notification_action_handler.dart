@@ -195,6 +195,12 @@ class NotificationActionHandler {
 
   /// Process pending actions stored during app initialization
   static Future<void> processPendingActions() async {
+    // Prevent processing if already completed initial processing
+    if (_hasProcessedInitialActions) {
+      AppLogger.info('⏭️  Skipping - initial pending actions already processed');
+      return;
+    }
+
     AppLogger.info('🔄 Processing pending notification actions');
 
     // Load all actions from storage module
