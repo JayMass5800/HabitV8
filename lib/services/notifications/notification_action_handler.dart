@@ -197,7 +197,8 @@ class NotificationActionHandler {
   static Future<void> processPendingActions() async {
     // Prevent processing if already completed initial processing
     if (_hasProcessedInitialActions) {
-      AppLogger.info('⏭️  Skipping - initial pending actions already processed');
+      AppLogger.info(
+          '⏭️  Skipping - initial pending actions already processed');
       return;
     }
 
