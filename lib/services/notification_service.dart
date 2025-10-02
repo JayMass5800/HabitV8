@@ -2,8 +2,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
@@ -13,6 +11,7 @@ import 'permission_service.dart';
 import 'notification_queue_processor.dart';
 import 'alarm_manager_service.dart';
 import 'widget_integration_service.dart';
+import 'notifications/notification_storage.dart';
 import '../data/database.dart';
 import '../domain/model/habit.dart';
 
@@ -389,29 +388,30 @@ class NotificationService {
           );
 
           // Store the action for fallback processing when app is opened
-          _storeActionForLaterProcessing(habitId, action);
+          NotificationStorage.storeAction(habitId, action);
 
           // Process the action directly in background
           try {
             if (action.toLowerCase() == 'complete') {
               AppLogger.info('Completing habit in background: $habitId');
               await _completeHabitInBackground(habitId);
-              AppLogger.info('✅ Background completion successful for habit: $habitId');
-              
+              AppLogger.info(
+                  '✅ Background completion successful for habit: $habitId');
+
               // Remove the stored action since we processed it successfully
-              await _removeStoredAction(habitId, action);
+              await NotificationStorage.removeAction(habitId, action);
             } else if (action.toLowerCase().contains('snooze')) {
               AppLogger.info('Snoozing habit in background: $habitId');
               await handleSnoozeActionWithName(habitId, 'Your habit');
-              AppLogger.info('✅ Background snooze successful for habit: $habitId');
-              
+              AppLogger.info(
+                  '✅ Background snooze successful for habit: $habitId');
+
               // Remove the stored action since we processed it successfully
-              await _removeStoredAction(habitId, action);
+              await NotificationStorage.removeAction(habitId, action);
             }
           } catch (e) {
             AppLogger.error(
-                '❌ Background action processing failed for habit: $habitId',
-                e);
+                '❌ Background action processing failed for habit: $habitId', e);
             // Keep the stored action for later processing
           }
         }
@@ -427,13 +427,13 @@ class NotificationService {
   static Future<void> _completeHabitInBackground(String habitId) async {
     try {
       AppLogger.info('🔧 Starting background habit completion for: $habitId');
-      
+
       // Initialize Hive if not already initialized
       try {
         if (!Hive.isBoxOpen('habits')) {
           AppLogger.info('📦 Initializing Hive for background operation');
           await Hive.initFlutter();
-          
+
           // Register adapters if not already registered
           if (!Hive.isAdapterRegistered(0)) {
             Hive.registerAdapter(HabitAdapter());
@@ -449,7 +449,8 @@ class NotificationService {
           }
         }
       } catch (e) {
-        AppLogger.warning('Hive already initialized or adapter already registered: $e');
+        AppLogger.warning(
+            'Hive already initialized or adapter already registered: $e');
       }
 
       // Open habits box
@@ -471,7 +472,8 @@ class NotificationService {
       String actualHabitId = habitId;
       if (habitId.contains('|')) {
         actualHabitId = habitId.split('|')[0];
-        AppLogger.info('📝 Parsed hourly habit ID: $actualHabitId from $habitId');
+        AppLogger.info(
+            '📝 Parsed hourly habit ID: $actualHabitId from $habitId');
       }
 
       // Get the habit
@@ -492,9 +494,10 @@ class NotificationService {
 
       // Add completion timestamp
       habit.completions.add(now);
-      
+
       // Update streak
-      habit.currentStreak = _calculateStreak(habit.completions, habit.frequency);
+      habit.currentStreak =
+          _calculateStreak(habit.completions, habit.frequency);
       if (habit.currentStreak > habit.longestStreak) {
         habit.longestStreak = habit.currentStreak;
       }
@@ -508,7 +511,8 @@ class NotificationService {
         await WidgetIntegrationService.instance.forceWidgetUpdate();
         AppLogger.info('🔄 Updated home screen widget');
       } catch (e) {
-        AppLogger.warning('⚠️ Failed to update widget (may not be supported): $e');
+        AppLogger.warning(
+            '⚠️ Failed to update widget (may not be supported): $e');
       }
 
       AppLogger.info('✅ Background habit completion successful!');
@@ -524,7 +528,7 @@ class NotificationService {
     if (completions.isEmpty) return false;
 
     final now = checkTime;
-    
+
     switch (habit.frequency) {
       case HabitFrequency.daily:
         // Check if completed today
@@ -532,26 +536,26 @@ class NotificationService {
             completion.year == now.year &&
             completion.month == now.month &&
             completion.day == now.day);
-      
+
       case HabitFrequency.weekly:
         // Check if completed this week
         final weekStart = now.subtract(Duration(days: now.weekday - 1));
         return completions.any((completion) =>
             completion.isAfter(weekStart.subtract(const Duration(days: 1))));
-      
+
       case HabitFrequency.monthly:
         // Check if completed this month
         return completions.any((completion) =>
             completion.year == now.year && completion.month == now.month);
-      
+
       case HabitFrequency.yearly:
         // Check if completed this year
         return completions.any((completion) => completion.year == now.year);
-      
+
       case HabitFrequency.single:
         // Single habits can only be completed once
         return completions.isNotEmpty;
-      
+
       case HabitFrequency.hourly:
         // For hourly habits, check if completed in the current hour
         return completions.any((completion) =>
@@ -559,14 +563,12 @@ class NotificationService {
             completion.month == now.month &&
             completion.day == now.day &&
             completion.hour == now.hour);
-      
-      default:
-        return false;
     }
   }
 
   /// Calculate streak from completion timestamps
-  static int _calculateStreak(List<DateTime> completions, HabitFrequency frequency) {
+  static int _calculateStreak(
+      List<DateTime> completions, HabitFrequency frequency) {
     if (completions.isEmpty) return 0;
 
     // Sort completions in descending order (most recent first)
@@ -580,9 +582,11 @@ class NotificationService {
       case HabitFrequency.daily:
         DateTime checkDate = DateTime(now.year, now.month, now.day);
         for (final completion in sortedCompletions) {
-          final completionDate = DateTime(completion.year, completion.month, completion.day);
+          final completionDate =
+              DateTime(completion.year, completion.month, completion.day);
           if (completionDate.isAtSameMomentAs(checkDate) ||
-              completionDate.isAtSameMomentAs(checkDate.subtract(const Duration(days: 1)))) {
+              completionDate.isAtSameMomentAs(
+                  checkDate.subtract(const Duration(days: 1)))) {
             streak++;
             checkDate = checkDate.subtract(const Duration(days: 1));
           } else {
@@ -696,337 +700,27 @@ class NotificationService {
     AppLogger.debug('✅ _onNotificationTapped completed');
   }
 
-  /// Store notification action for later processing when app is opened
-  static void _storeActionForLaterProcessing(
-      String habitId, String action) async {
-    try {
-      AppLogger.info(
-          'Storing action for later processing: $action for habit $habitId');
-
-      // Create action entry with timestamp
-      final actionEntry = {
-        'habitId': habitId,
-        'action': action,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      };
-
-      // Use both SharedPreferences and file storage for reliability
-      await _storeActionInSharedPreferences(actionEntry);
-      await _storeActionInFile(actionEntry);
-
-      AppLogger.info(
-          'Successfully stored pending action: $action for habit $habitId');
-    } catch (e) {
-      AppLogger.error('Error storing action for later processing', e);
-    }
-  }
-
-  /// Store action in SharedPreferences
-  static Future<void> _storeActionInSharedPreferences(
-      Map<String, dynamic> actionEntry) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Get existing pending actions
-      final existingActions =
-          prefs.getStringList('pending_notification_actions') ?? [];
-
-      // Add new action to the list
-      existingActions.add(jsonEncode(actionEntry));
-
-      // Store updated list
-      await prefs.setStringList(
-          'pending_notification_actions', existingActions);
-
-      // Debug: Verify storage
-      final verifyActions =
-          prefs.getStringList('pending_notification_actions') ?? [];
-      AppLogger.debug(
-          '🔍 SharedPrefs: Verified storage: ${verifyActions.length} actions stored');
-      AppLogger.debug(
-          '🔍 SharedPrefs: All keys after storage: ${prefs.getKeys().toList()}');
-    } catch (e) {
-      AppLogger.error('Error storing action in SharedPreferences', e);
-    }
-  }
-
-  /// Store action in file as backup with file locking to prevent corruption
-  static Future<void> _storeActionInFile(
-      Map<String, dynamic> actionEntry) async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/pending_notification_actions.json';
-      final lockFilePath =
-          '${directory.path}/pending_notification_actions.lock';
-      final file = File(filePath);
-      final lockFile = File(lockFilePath);
-
-      AppLogger.debug('🔍 File: Storing action at path: $filePath');
-
-      // Wait for lock to be available (simple file-based locking)
-      int attempts = 0;
-      while (await lockFile.exists() && attempts < 50) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        attempts++;
-      }
-
-      if (attempts >= 50) {
-        AppLogger.error('🔍 File: Timeout waiting for file lock');
-        return;
-      }
-
-      // Create lock file
-      await lockFile.writeAsString('locked');
-
-      try {
-        List<Map<String, dynamic>> actions = [];
-
-        // Read existing actions if file exists
-        if (await file.exists()) {
-          final content = await file.readAsString();
-          AppLogger.debug(
-              '🔍 File: Existing file content length: ${content.length}');
-          if (content.isNotEmpty) {
-            try {
-              final List<dynamic> jsonList = jsonDecode(content);
-              actions = jsonList.cast<Map<String, dynamic>>();
-              AppLogger.debug(
-                  '🔍 File: Loaded ${actions.length} existing actions');
-            } catch (e) {
-              AppLogger.error(
-                  '🔍 File: Corrupted file detected, starting fresh', e);
-              actions = [];
-            }
-          }
-        } else {
-          AppLogger.debug('🔍 File: Creating new file');
-        }
-
-        // Add new action
-        actions.add(actionEntry);
-
-        // Write to temporary file first (atomic write)
-        final tempFilePath = '$filePath.tmp';
-        final tempFile = File(tempFilePath);
-        final jsonContent = jsonEncode(actions);
-        await tempFile.writeAsString(jsonContent);
-
-        // Verify temp file was written correctly
-        final verifyContent = await tempFile.readAsString();
-        if (verifyContent.length != jsonContent.length) {
-          throw Exception('Temp file write verification failed');
-        }
-
-        // Atomic move from temp to final file
-        await tempFile.rename(filePath);
-
-        AppLogger.debug(
-            '🔍 File: Stored action in file, total: ${actions.length}');
-        AppLogger.debug(
-            '🔍 File: Written content length: ${jsonContent.length}');
-      } finally {
-        // Always remove lock file
-        if (await lockFile.exists()) {
-          await lockFile.delete();
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error storing action in file', e);
-    }
-  }
-
-  /// Remove a specific stored action from both SharedPreferences and file storage
-  static Future<void> _removeStoredAction(String habitId, String action) async {
-    try {
-      AppLogger.info('Removing stored action: $action for habit $habitId');
-
-      // Remove from SharedPreferences
-      await _removeActionFromSharedPreferences(habitId, action);
-
-      // Remove from file storage
-      await _removeActionFromFile(habitId, action);
-
-      AppLogger.info(
-          'Successfully removed stored action: $action for habit $habitId');
-    } catch (e) {
-      AppLogger.error('Error removing stored action', e);
-    }
-  }
-
-  /// Remove action from SharedPreferences
-  static Future<void> _removeActionFromSharedPreferences(
-      String habitId, String action) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final existingActions =
-          prefs.getStringList('pending_notification_actions') ?? [];
-
-      // Filter out the matching action
-      final filteredActions = existingActions.where((actionString) {
-        try {
-          final actionData = jsonDecode(actionString) as Map<String, dynamic>;
-          return !(actionData['habitId'] == habitId &&
-              actionData['action'] == action);
-        } catch (e) {
-          // Keep malformed entries to avoid data loss
-          return true;
-        }
-      }).toList();
-
-      await prefs.setStringList(
-          'pending_notification_actions', filteredActions);
-      AppLogger.debug(
-          'Removed action from SharedPreferences. Remaining: ${filteredActions.length}');
-    } catch (e) {
-      AppLogger.error('Error removing action from SharedPreferences', e);
-    }
-  }
-
-  /// Remove action from file storage
-  static Future<void> _removeActionFromFile(
-      String habitId, String action) async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/pending_notification_actions.json';
-      final lockFilePath =
-          '${directory.path}/pending_notification_actions.lock';
-      final file = File(filePath);
-      final lockFile = File(lockFilePath);
-
-      if (!await file.exists()) {
-        return; // Nothing to remove
-      }
-
-      // Wait for lock to be available
-      int attempts = 0;
-      while (await lockFile.exists() && attempts < 50) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        attempts++;
-      }
-
-      if (attempts >= 50) {
-        AppLogger.error('Timeout waiting for file lock during removal');
-        return;
-      }
-
-      // Create lock file
-      await lockFile.writeAsString('locked');
-
-      try {
-        // Read existing actions
-        final content = await file.readAsString();
-        if (content.isEmpty) {
-          return;
-        }
-
-        List<Map<String, dynamic>> actions = [];
-        try {
-          final List<dynamic> jsonList = jsonDecode(content);
-          actions = jsonList.cast<Map<String, dynamic>>();
-        } catch (e) {
-          AppLogger.error('Corrupted file during removal, keeping as is', e);
-          return;
-        }
-
-        // Filter out the matching action
-        final filteredActions = actions.where((actionEntry) {
-          return !(actionEntry['habitId'] == habitId &&
-              actionEntry['action'] == action);
-        }).toList();
-
-        // Write back the filtered actions
-        final jsonContent = jsonEncode(filteredActions);
-        await file.writeAsString(jsonContent);
-
-        AppLogger.debug(
-            'Removed action from file. Remaining: ${filteredActions.length}');
-      } finally {
-        // Always remove lock file
-        if (await lockFile.exists()) {
-          await lockFile.delete();
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error removing action from file', e);
-    }
-  }
-
   /// Process all pending notification actions stored during background execution
   static Future<void> processPendingActions() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      // Load all pending actions from storage
+      final actions = await NotificationStorage.loadAllActions();
 
-      // Debug: Check all keys in SharedPreferences
-      final allKeys = prefs.getKeys();
-      AppLogger.debug('🔍 All SharedPreferences keys: ${allKeys.toList()}');
-
-      // Try multiple approaches to get the data
-      final pendingActions1 =
-          prefs.getStringList('pending_notification_actions');
-      final pendingActions2 = prefs.get('pending_notification_actions');
-
-      AppLogger.debug('🔍 Method 1 (getStringList): $pendingActions1');
-      AppLogger.debug('🔍 Method 2 (get): $pendingActions2');
-
-      final pendingActions = pendingActions1 ?? [];
-
-      AppLogger.debug(
-          '🔍 Found ${pendingActions.length} pending actions in SharedPreferences');
-      if (pendingActions.isNotEmpty) {
-        AppLogger.debug('🔍 Pending actions: $pendingActions');
-      }
-
-      if (pendingActions.isEmpty) {
-        AppLogger.debug(
-            'No pending notification actions to process in SharedPreferences');
-
-        // Try alternative storage keys in case there's a mismatch
-        final alternativeKeys = [
-          'pending_actions',
-          'notification_actions',
-          'stored_actions'
-        ];
-        for (final key in alternativeKeys) {
-          final altActions = prefs.getStringList(key);
-          if (altActions != null && altActions.isNotEmpty) {
-            AppLogger.debug(
-                '🔍 Found actions under alternative key "$key": $altActions');
-          }
-        }
-
-        // Try file storage as backup
-        final fileActions = await _loadActionsFromFile();
-        if (fileActions.isNotEmpty) {
-          AppLogger.info(
-              '🔍 Found ${fileActions.length} actions in file storage, processing them');
-          await _processActionsFromFile(fileActions);
-          return;
-        }
-
+      if (actions.isEmpty) {
         AppLogger.debug('No pending actions found in any storage method');
         return;
       }
 
       AppLogger.info(
-          'Processing ${pendingActions.length} pending notification actions');
+          'Processing ${actions.length} pending notification actions');
 
-      for (final actionString in pendingActions) {
+      // Process each action
+      for (final actionData in actions) {
         try {
-          final actionData = jsonDecode(actionString) as Map<String, dynamic>;
           final habitId = actionData['habitId'] as String;
           final action = actionData['action'] as String;
           final timestamp = actionData['timestamp'] as int;
-
-          // Check if action is not too old (e.g., within last 24 hours)
           final actionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-          final now = DateTime.now();
-          final timeDifference = now.difference(actionTime);
-
-          if (timeDifference.inHours > 24) {
-            AppLogger.warning(
-                'Skipping old pending action: $action for habit $habitId (${timeDifference.inHours} hours old)');
-            continue;
-          }
 
           // Process the action
           await _processStoredAction(habitId, action, actionTime);
@@ -1035,137 +729,11 @@ class NotificationService {
         }
       }
 
-      // Clear processed actions
-      await prefs.remove('pending_notification_actions');
+      // Clear all processed actions
+      await NotificationStorage.clearAll();
       AppLogger.info('Cleared all processed pending actions');
     } catch (e) {
       AppLogger.error('Error processing pending notification actions', e);
-    }
-  }
-
-  /// Load actions from file storage with corruption handling
-  static Future<List<Map<String, dynamic>>> _loadActionsFromFile() async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/pending_notification_actions.json';
-      final file = File(filePath);
-
-      AppLogger.debug('🔍 File: Checking for actions at path: $filePath');
-
-      if (!await file.exists()) {
-        AppLogger.debug('🔍 File: File does not exist');
-        return [];
-      }
-
-      final content = await file.readAsString();
-      AppLogger.debug('🔍 File: File content length: ${content.length}');
-
-      if (content.isEmpty) {
-        AppLogger.debug('🔍 File: File is empty');
-        return [];
-      }
-
-      try {
-        final List<dynamic> jsonList = jsonDecode(content);
-        final actions = jsonList.cast<Map<String, dynamic>>();
-        AppLogger.debug('🔍 File: Loaded ${actions.length} actions from file');
-        return actions;
-      } catch (e) {
-        AppLogger.error(
-            '🔍 File: JSON parsing failed, file corrupted. Content: $content',
-            e);
-
-        // Delete corrupted file to prevent future issues
-        try {
-          await file.delete();
-          AppLogger.info('🔍 File: Deleted corrupted file');
-        } catch (deleteError) {
-          AppLogger.error(
-              '🔍 File: Failed to delete corrupted file', deleteError);
-        }
-
-        return [];
-      }
-    } catch (e) {
-      AppLogger.error('Error loading actions from file', e);
-      return [];
-    }
-  }
-
-  /// Clear all actions from file storage
-  static Future<void> _clearActionsFromFile() async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/pending_notification_actions.json';
-      final lockFilePath =
-          '${directory.path}/pending_notification_actions.lock';
-      final file = File(filePath);
-      final lockFile = File(lockFilePath);
-
-      // Wait for lock to be available
-      int attempts = 0;
-      while (await lockFile.exists() && attempts < 50) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        attempts++;
-      }
-
-      if (attempts >= 50) {
-        AppLogger.error('Timeout waiting for file lock during clear');
-        return;
-      }
-
-      // Create lock file
-      await lockFile.writeAsString('locked');
-
-      try {
-        if (await file.exists()) {
-          await file.delete();
-          AppLogger.info('✅ Cleared all actions from file storage');
-        }
-      } finally {
-        // Always remove lock file
-        if (await lockFile.exists()) {
-          await lockFile.delete();
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error clearing actions from file', e);
-    }
-  }
-
-  /// Process actions loaded from file
-  static Future<void> _processActionsFromFile(
-      List<Map<String, dynamic>> actions) async {
-    try {
-      for (final actionData in actions) {
-        final habitId = actionData['habitId'] as String;
-        final action = actionData['action'] as String;
-        final timestamp = actionData['timestamp'] as int;
-
-        // Check if action is not too old (e.g., within last 24 hours)
-        final actionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-        final now = DateTime.now();
-        final timeDifference = now.difference(actionTime);
-
-        if (timeDifference.inHours > 24) {
-          AppLogger.warning(
-              'Skipping old pending action from file: $action for habit $habitId (${timeDifference.inHours} hours old)');
-          continue;
-        }
-
-        // Process the action
-        await _processStoredAction(habitId, action, actionTime);
-      }
-
-      // Clear the file after processing
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/pending_notification_actions.json');
-      if (await file.exists()) {
-        await file.delete();
-        AppLogger.info('Cleared processed actions from file');
-      }
-    } catch (e) {
-      AppLogger.error('Error processing actions from file', e);
     }
   }
 
@@ -1218,7 +786,7 @@ class NotificationService {
         // This will be handled by the app lifecycle service when app resumes
         AppLogger.info(
             '📦 Storing action for later processing due to missing callback');
-        _storeActionForLaterProcessing(habitId, action);
+        NotificationStorage.storeAction(habitId, action);
         return;
       } catch (e) {
         AppLogger.error('Failed to handle missing callback', e);
@@ -1275,7 +843,7 @@ class NotificationService {
                 callbackError,
               );
               // Store for later processing if callback fails
-              _storeActionForLaterProcessing(habitId, 'complete');
+              NotificationStorage.storeAction(habitId, 'complete');
             }
           } else {
             AppLogger.debug('❌ DEBUG: No notification action callback set!');
@@ -1288,7 +856,7 @@ class NotificationService {
             AppLogger.warning('🔍 Current time: ${DateTime.now()}');
 
             // Store the action for later processing if callback is not set
-            _storeActionForLaterProcessing(habitId, 'complete');
+            NotificationStorage.storeAction(habitId, 'complete');
 
             // Try to re-register the callback in case it was lost
             ensureCallbackIsSet();
@@ -1308,7 +876,7 @@ class NotificationService {
               snoozeError,
             );
             // Store for later processing if snooze fails
-            _storeActionForLaterProcessing(habitId, 'snooze');
+            NotificationStorage.storeAction(habitId, 'snooze');
           }
           break;
 
@@ -1417,36 +985,18 @@ class NotificationService {
       AppLogger.info(
           '🎯 Processing pending actions with direct completion handler');
 
-      // Load actions from both sources
-      final prefs = await SharedPreferences.getInstance();
-      final sharedPrefsActions =
-          prefs.getStringList('pending_notification_actions') ?? [];
-      final fileActions = await _loadActionsFromFile();
+      // Load all actions from storage module
+      final allActions = await NotificationStorage.loadAllActions();
 
-      AppLogger.info(
-          'Found ${sharedPrefsActions.length} actions in SharedPreferences');
-      AppLogger.info('Found ${fileActions.length} actions in file storage');
+      AppLogger.info('Found ${allActions.length} actions in storage');
 
       int processedCount = 0;
 
-      // Process SharedPreferences actions
-      for (final actionString in sharedPrefsActions) {
+      // Process all actions
+      for (final actionData in allActions) {
         try {
-          final actionData = jsonDecode(actionString) as Map<String, dynamic>;
           final habitId = actionData['habitId'] as String;
           final action = actionData['action'] as String;
-          final timestamp = actionData['timestamp'] as int;
-
-          // Check if action is not too old (e.g., within last 24 hours)
-          final actionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-          final now = DateTime.now();
-          final timeDifference = now.difference(actionTime);
-
-          if (timeDifference.inHours > 24) {
-            AppLogger.warning(
-                'Skipping old pending action: $action for habit $habitId (${timeDifference.inHours} hours old)');
-            continue;
-          }
 
           // Only process complete actions with direct handler
           if (action.toLowerCase() == 'complete' &&
@@ -1457,16 +1007,20 @@ class NotificationService {
               await directCompletionHandler!(habitId);
               processedCount++;
               AppLogger.info('✅ Successfully completed habit: $habitId');
+              // Remove successfully processed action
+              await NotificationStorage.removeAction(habitId, action);
             } catch (e) {
               final errorMessage = e.toString().toLowerCase();
               if (errorMessage.contains('still loading') ||
                   errorMessage.contains('loading')) {
                 AppLogger.warning(
                     '⏳ Habit service still loading for $habitId, will retry later');
-                // Don't count as processed, so the action stays in storage for retry
+                // Don't remove action, so it stays in storage for retry
               } else {
                 AppLogger.error('❌ Failed to complete habit: $habitId', e);
-                processedCount++; // Count as processed even if failed to avoid infinite retry
+                // Remove action even if failed to avoid infinite retry
+                await NotificationStorage.removeAction(habitId, action);
+                processedCount++;
               }
             }
           } else {
@@ -1474,72 +1028,11 @@ class NotificationService {
                 'Skipping non-complete action or missing handler: $action for habit $habitId');
           }
         } catch (e) {
-          AppLogger.error(
-              'Error processing individual pending action from SharedPreferences',
-              e);
+          AppLogger.error('Error processing individual pending action', e);
         }
       }
 
-      // Process file actions
-      for (final actionData in fileActions) {
-        try {
-          final habitId = actionData['habitId'] as String;
-          final action = actionData['action'] as String;
-          final timestamp = actionData['timestamp'] as int;
-
-          // Check if action is not too old
-          final actionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-          final now = DateTime.now();
-          final timeDifference = now.difference(actionTime);
-
-          if (timeDifference.inHours > 24) {
-            AppLogger.warning(
-                'Skipping old file action: $action for habit $habitId (${timeDifference.inHours} hours old)');
-            continue;
-          }
-
-          // Only process complete actions with direct handler
-          if (action.toLowerCase() == 'complete' &&
-              directCompletionHandler != null) {
-            AppLogger.info(
-                'Processing file complete action for habit: $habitId using direct handler');
-            try {
-              await directCompletionHandler!(habitId);
-              processedCount++;
-              AppLogger.info(
-                  '✅ Successfully completed habit from file: $habitId');
-            } catch (e) {
-              final errorMessage = e.toString().toLowerCase();
-              if (errorMessage.contains('still loading') ||
-                  errorMessage.contains('loading')) {
-                AppLogger.warning(
-                    '⏳ Habit service still loading for $habitId (file), will retry later');
-                // Don't count as processed, so the action stays in storage for retry
-              } else {
-                AppLogger.error(
-                    '❌ Failed to complete habit from file: $habitId', e);
-                processedCount++; // Count as processed even if failed to avoid infinite retry
-              }
-            }
-          } else {
-            AppLogger.info(
-                'Skipping non-complete file action or missing handler: $action for habit $habitId');
-          }
-        } catch (e) {
-          AppLogger.error(
-              'Error processing individual pending action from file', e);
-        }
-      }
-
-      // Clear processed actions if we successfully processed any
-      if (processedCount > 0) {
-        await prefs.remove('pending_notification_actions');
-        await _clearActionsFromFile();
-        AppLogger.info(
-            '✅ Cleared all processed actions. Total processed: $processedCount');
-      } else {
-        AppLogger.info('No actions were processed successfully');
-      }
+      AppLogger.info('✅ Processed $processedCount actions with direct handler');
     } catch (e) {
       AppLogger.error('Error in _processPendingActionsWithDirectHandler', e);
     }
@@ -2537,32 +2030,32 @@ class NotificationService {
       switch (frequency) {
         case 'daily':
           AppLogger.debug('Scheduling daily alarms');
-          await _scheduleDailyHabitAlarmsNew(habit, hour, minute);
+          await _scheduleDailyHabitAlarms(habit, hour, minute);
           break;
 
         case 'weekly':
           AppLogger.debug('Scheduling weekly alarms');
-          await _scheduleWeeklyHabitAlarmsNew(habit, hour, minute);
+          await _scheduleWeeklyHabitAlarms(habit, hour, minute);
           break;
 
         case 'monthly':
           AppLogger.debug('Scheduling monthly alarms');
-          await _scheduleMonthlyHabitAlarmsNew(habit, hour, minute);
+          await _scheduleMonthlyHabitAlarms(habit, hour, minute);
           break;
 
         case 'yearly':
           AppLogger.debug('Scheduling yearly alarms');
-          await _scheduleYearlyHabitAlarmsNew(habit, hour, minute);
+          await _scheduleYearlyHabitAlarms(habit, hour, minute);
           break;
 
         case 'single':
           AppLogger.debug('Scheduling single habit alarm');
-          await _scheduleSingleHabitAlarmsNew(habit, hour, minute);
+          await _scheduleSingleHabitAlarms(habit, hour, minute);
           break;
 
         case 'hourly':
           AppLogger.debug('Scheduling hourly alarms');
-          await _scheduleHourlyHabitAlarmsNew(habit, hour, minute);
+          await _scheduleHourlyHabitAlarms(habit);
           break;
 
         default:
@@ -3127,6 +2620,128 @@ class NotificationService {
     }
   }
 
+  /// Schedule daily habit alarms
+  // ignore: unused_element
+  static Future<void> _scheduleDailyHabitAlarms(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    AppLogger.debug('Scheduling daily alarm for ${habit.name}');
+
+    // Calculate next alarm time
+    tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    tz.TZDateTime nextAlarm = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+
+    // If the time has passed today, schedule for tomorrow
+    if (nextAlarm.isBefore(now)) {
+      nextAlarm = nextAlarm.add(const Duration(days: 1));
+    }
+
+    try {
+      await AlarmManagerService.scheduleExactAlarm(
+        alarmId: generateSafeId('${habit.id}_daily'),
+        habitId: habit.id.toString(),
+        habitName: habit.name,
+        scheduledTime: nextAlarm,
+        frequency: 'daily',
+        alarmSoundName: habit.alarmSoundName,
+        alarmSoundUri: habit.alarmSoundUri,
+        snoozeDelayMinutes: 10,
+      );
+
+      AppLogger.debug(
+        'Scheduled daily alarm for ${habit.name} at $nextAlarm',
+      );
+    } catch (e) {
+      AppLogger.error('Error scheduling daily alarm for ${habit.name}', e);
+    }
+  }
+
+  /// Schedule single habit alarm (one-time alarm)
+  // ignore: unused_element
+  static Future<void> _scheduleSingleHabitAlarms(
+    dynamic habit,
+    int hour,
+    int minute,
+  ) async {
+    AppLogger.debug('Scheduling single alarm for ${habit.name}');
+
+    if (habit.singleDateTime == null) {
+      AppLogger.error('Single habit "${habit.name}" requires a date/time');
+      return;
+    }
+
+    final singleDateTime = habit.singleDateTime!;
+    final now = DateTime.now();
+
+    // Check if date/time is in the past
+    if (singleDateTime.isBefore(now)) {
+      AppLogger.error(
+        'Single habit "${habit.name}" date/time is in the past: $singleDateTime',
+      );
+      return;
+    }
+
+    try {
+      await AlarmManagerService.scheduleExactAlarm(
+        alarmId: generateSafeId(
+          '${habit.id}_single_${singleDateTime.millisecondsSinceEpoch}',
+        ),
+        habitId: habit.id.toString(),
+        habitName: habit.name,
+        scheduledTime: singleDateTime,
+        frequency: 'single',
+        alarmSoundName: habit.alarmSoundName,
+        alarmSoundUri: habit.alarmSoundUri,
+        snoozeDelayMinutes: 10,
+      );
+
+      AppLogger.debug(
+        'Scheduled single alarm for ${habit.name} at $singleDateTime',
+      );
+    } catch (e) {
+      AppLogger.error('Error scheduling single alarm for ${habit.name}', e);
+    }
+  }
+
+  /// Helper method to calculate next occurrence of a weekday
+  static tz.TZDateTime _getNextWeekdayDateTime(
+    tz.TZDateTime baseTime,
+    int targetWeekday,
+    int hour,
+    int minute,
+  ) {
+    tz.TZDateTime scheduled = tz.TZDateTime(
+      tz.local,
+      baseTime.year,
+      baseTime.month,
+      baseTime.day,
+      hour,
+      minute,
+    );
+
+    // If today is the target weekday but time has passed, or if it's a different weekday,
+    // find the next occurrence
+    while (scheduled.weekday != targetWeekday || scheduled.isBefore(baseTime)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+
+    return scheduled;
+  }
+
+  /// Debug logging helper
+  static void _debugLog(String message) {
+    AppLogger.debug(message);
+  }
+
   /// Generate a safe 32-bit integer ID from a string
   static int generateSafeId(String habitId) {
     // Generate a much smaller base hash to leave room for multiplications and additions
@@ -3391,95 +3006,55 @@ class NotificationService {
     AppLogger.info('  - Habit ID: $habitId');
     AppLogger.info('  - Title: $title');
     AppLogger.info('  - Scheduled time: $scheduledTime');
-    AppLogger.info(
-      '  - Alarm sound: $alarmSoundName (using default system sound)',
-    );
-    AppLogger.info('  - Snooze delay: ${snoozeDelayMinutes}min');
+    AppLogger.info('  - Alarm sound: ${alarmSoundName ?? "default"}');
+    AppLogger.info('  - Snooze delay: $snoozeDelayMinutes minutes');
 
-    // Check and request all notification permissions if needed
-    final bool permissionsGranted = await _ensureNotificationPermissions();
-    if (!permissionsGranted) {
-      AppLogger.warning(
-        'Cannot schedule notification - permissions not granted',
-      );
-      return; // Don't schedule if permissions are denied
-    }
+    final payload = jsonEncode({
+      'habitId': habitId,
+      'action': 'alarm',
+      'snoozeDelayMinutes': snoozeDelayMinutes,
+    });
 
-    // Create custom snooze text based on delay
-    String snoozeText = '⏰ Snooze ';
-    if (snoozeDelayMinutes < 60) {
-      snoozeText += '${snoozeDelayMinutes}min';
-    } else {
-      final hours = snoozeDelayMinutes ~/ 60;
-      final minutes = snoozeDelayMinutes % 60;
-      if (minutes == 0) {
-        snoozeText += '${hours}h';
-      } else {
-        snoozeText += '${hours}h ${minutes}min';
-      }
-    }
+    final tzScheduledTime = tz.TZDateTime.from(scheduledTime, tz.local);
 
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'habit_alarm_default',
+    final androidDetails = AndroidNotificationDetails(
+      'habit_alarms',
       'Habit Alarms',
-      channelDescription: 'High-priority alarm notifications for habits',
+      channelDescription: 'Wake-device alarms for habit reminders',
       importance: Importance.max,
-      priority: Priority.max,
-      fullScreenIntent: false,
-      category: AndroidNotificationCategory.alarm,
-      visibility: NotificationVisibility.public,
-      // Use system alarm sound for maximum compatibility with Android 16
-      sound:
-          UriAndroidNotificationSound('content://settings/system/alarm_alert'),
+      priority: Priority.high,
       playSound: true,
+      sound: alarmSoundName != null
+          ? RawResourceAndroidNotificationSound(alarmSoundName)
+          : null,
       enableVibration: true,
-      enableLights: true,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
       actions: [
-        const AndroidNotificationAction(
+        AndroidNotificationAction(
           'complete',
-          '✅ COMPLETE',
-          showsUserInterface: false,
-          cancelNotification: true,
-          allowGeneratedReplies: false,
+          'COMPLETE',
+          showsUserInterface: true,
         ),
         AndroidNotificationAction(
-          'snooze_alarm',
-          snoozeText,
-          showsUserInterface: false,
-          cancelNotification: true,
-          allowGeneratedReplies: false,
+          'snooze',
+          'SNOOZE ${snoozeDelayMinutes}MIN',
         ),
       ],
     );
 
-    final DarwinNotificationDetails iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails(
-      categoryIdentifier: 'habit_category',
-      sound: alarmSoundName != null && alarmSoundName != 'default'
-          ? alarmSoundName
-          : 'default',
+    final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      interruptionLevel: InterruptionLevel.critical,
+      sound: alarmSoundName != null ? '$alarmSoundName.mp3' : null,
+      categoryIdentifier: 'habit_category',
     );
 
-    final NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: iOSPlatformChannelSpecifics,
+    final platformChannelSpecifics = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
     );
-
-    final tz.TZDateTime tzScheduledTime = tz.TZDateTime.from(
-      scheduledTime,
-      tz.local,
-    );
-
-    final payload = jsonEncode({
-      'habitId': habitId,
-      'type': 'habit_alarm',
-      'snoozeDelayMinutes': snoozeDelayMinutes,
-    });
 
     await _notificationsPlugin.zonedSchedule(
       id,
@@ -3494,191 +3069,59 @@ class NotificationService {
     );
   }
 
-  /// Snooze a notification for 30 minutes
+  /// Snooze a notification for the specified duration
   static Future<void> snoozeNotification({
     required int id,
     required String habitId,
     required String title,
     required String body,
+    int delayMinutes = 30,
   }) async {
-    AppLogger.info('🔄 Snoozing notification ID: $id for habit: $habitId');
+    if (!_isInitialized) await initialize();
 
-    // Cancel the current notification
-    await _notificationsPlugin.cancel(id);
-    AppLogger.info('❌ Current notification cancelled');
-
-    // Schedule a new one for 30 minutes later
-    final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
-    AppLogger.info('⏰ Scheduling new notification for: $snoozeTime');
+    final snoozeTime = DateTime.now().add(Duration(minutes: delayMinutes));
 
     await scheduleHabitNotification(
       id: id,
       habitId: habitId,
-      title: title,
+      title: '⏰ $title (Snoozed)',
       body: body,
       scheduledTime: snoozeTime,
     );
 
     AppLogger.info(
-      '✅ Notification snoozed for 30 minutes - new notification scheduled',
-    );
+        '⏰ Notification snoozed for $delayMinutes minutes: $habitId');
   }
 
-  /// Snooze an alarm notification with custom delay
-  static Future<void> snoozeAlarm({
-    required int id,
-    required String habitId,
-    required String title,
-    required String body,
-    String? alarmSoundName,
-    int snoozeDelayMinutes = 10,
-  }) async {
-    AppLogger.info(
-      '🔄 Snoozing alarm ID: $id for habit: $habitId for $snoozeDelayMinutes minutes',
-    );
+  // ==================== STUB METHODS (TO BE IMPLEMENTED) ====================
 
-    // Cancel the current alarm
-    await _notificationsPlugin.cancel(id);
-    AppLogger.info('❌ Current alarm cancelled');
-
-    // Schedule a new one for the specified delay
-    final snoozeTime = DateTime.now().add(
-      Duration(minutes: snoozeDelayMinutes),
-    );
-    AppLogger.info('⏰ Scheduling new alarm for: $snoozeTime');
-
-    await scheduleHabitAlarm(
-      id: id,
-      habitId: habitId,
-      title: title,
-      body: body,
-      scheduledTime: snoozeTime,
-      alarmSoundName: alarmSoundName,
-      snoozeDelayMinutes: snoozeDelayMinutes,
-    );
-
-    AppLogger.info(
-      '✅ Alarm snoozed for $snoozeDelayMinutes minutes - new alarm scheduled',
-    );
-  }
-
-  /// Debug method to check exact alarm permissions and timezone
-  static Future<Map<String, dynamic>> getSchedulingDebugInfo() async {
-    final Map<String, dynamic> debugInfo = {};
-
-    if (Platform.isAndroid) {
-      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          _notificationsPlugin.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-
-      if (androidImplementation != null) {
-        debugInfo['notificationsEnabled'] =
-            await androidImplementation.areNotificationsEnabled();
-
-        // Check exact alarm permission status
-        final bool canScheduleExact = await canScheduleExactAlarms();
-        debugInfo['canScheduleExactAlarms'] = canScheduleExact;
-        debugInfo['isAndroid12Plus'] = await _isAndroid12Plus();
-      }
-    }
-
-    // Get device's actual local timezone instead of hardcoded one
-    final now = DateTime.now();
-    final tzNow = tz.TZDateTime.now(tz.local);
-
-    debugInfo['deviceLocalTime'] = now.toString();
-    debugInfo['tzLocalTime'] = tzNow.toString();
-    debugInfo['timezone'] = tz.local.name;
-    debugInfo['timezoneOffset'] = now.timeZoneOffset.inHours;
-    debugInfo['deviceTimezoneOffset'] = now.timeZoneOffset.toString();
-
-    // Test scheduled time (10 seconds from now)
-    final testTime = now.add(const Duration(seconds: 10));
-    debugInfo['testScheduledTime'] = testTime.toString();
-
-    return debugInfo;
-  }
-
-  /// Enhanced test method for scheduled notifications with comprehensive logging
-  static Future<void> testScheduledNotification() async {
-    AppLogger.info('=== Testing Scheduled Notification ===');
-
-    final debugInfo = await getSchedulingDebugInfo();
-    AppLogger.info('Debug Info: $debugInfo');
-
-    // Check if exact alarms are enabled
-    final canScheduleExact = await canScheduleExactAlarms();
-    AppLogger.info('Can schedule exact alarms: $canScheduleExact');
-
-    if (!canScheduleExact) {
-      AppLogger.error('ERROR: Exact alarm permission not granted!');
-      return;
-    }
-
-    final now = tz.TZDateTime.now(tz.local);
-    final scheduledTime = now.add(const Duration(seconds: 10));
-
-    AppLogger.info('Current time: $now');
-    AppLogger.info('Scheduled time: $scheduledTime');
-    AppLogger.info(
-      'Time difference: ${scheduledTime.difference(now).inSeconds} seconds',
-    );
-
-    try {
-      // Cancel any existing test notifications first
-      await cancelNotification(1001);
-      AppLogger.info('Cancelled any existing test notifications');
-
-      await scheduleNotification(
-        id: 1001,
-        title: '🔔 Debug Scheduled Notification',
-        body:
-            'This is a test notification scheduled for ${scheduledTime.toString()}',
-        scheduledTime: scheduledTime,
-      );
-
-      AppLogger.info('✅ Test notification scheduled successfully');
-      AppLogger.info('Notification should appear in 10 seconds');
-    } catch (e) {
-      AppLogger.error('❌ Failed to schedule test notification', e);
-    }
-  }
-
-  /// Start periodic cleanup of old notifications
+  /// Periodic cleanup for memory management (stub)
   static void _startPeriodicCleanup() {
-    AppLogger.debug('Starting periodic notification cleanup');
+    // TODO: Implement periodic cleanup
+    AppLogger.debug('Periodic cleanup started (stub implementation)');
   }
 
-  /// Complete habit from notification action
+  /// Complete habit from notification action (stub)
   static Future<void> _completeHabitFromNotification(String habitId) async {
-    try {
-      AppLogger.info('Completing habit from notification: $habitId');
-      // Implementation would depend on your habit completion logic
-    } catch (e) {
-      AppLogger.error('Error completing habit from notification', e);
+    // TODO: Implement habit completion from notification
+    AppLogger.warning(
+        '_completeHabitFromNotification stub called for: $habitId');
+    // For now, try to use the direct completion handler if available
+    if (directCompletionHandler != null) {
+      await directCompletionHandler!(habitId);
     }
   }
 
-  /// Check if exact alarms can be scheduled
+  /// Check if exact alarms can be scheduled (stub)
   static Future<bool> canScheduleExactAlarms() async {
-    try {
-      // Implementation for checking exact alarm permissions
-      return true; // Placeholder - implement based on your platform requirements
-    } catch (e) {
-      AppLogger.error('Error checking exact alarm permissions', e);
-      return false;
-    }
+    // TODO: Implement platform-specific exact alarm permission check
+    AppLogger.debug('canScheduleExactAlarms stub called');
+    return true; // Assume true for now
   }
 
-  /// Check battery optimization status
-  static Future<bool> checkBatteryOptimizationStatus() async {
-    try {
-      // Implementation for checking battery optimization
-      return true; // Placeholder - implement based on your platform requirements
-    } catch (e) {
-      AppLogger.error('Error checking battery optimization status', e);
-      return false;
-    }
+  /// Check battery optimization status (stub)
+  static Future<void> checkBatteryOptimizationStatus() async {
+    // TODO: Implement battery optimization status check
+    AppLogger.debug('checkBatteryOptimizationStatus stub called');
   }
-
 }
