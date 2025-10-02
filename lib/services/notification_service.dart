@@ -42,6 +42,17 @@ class NotificationService {
     NotificationActionHandler.setDirectCompletionHandler(handler);
   }
 
+  /// Get the current notification action callback
+  static void Function(String habitId, String action)?
+      get onNotificationAction {
+    return NotificationActionHandler.onNotificationAction;
+  }
+
+  /// Get the number of pending actions (for debugging)
+  static int getPendingActionsCount() {
+    return NotificationActionHandler.getPendingActionsCount();
+  }
+
   static Future<void> scheduleHabitNotifications(Habit habit) async {
     await cancelHabitNotificationsByHabitId(habit.id);
     await _scheduler.scheduleHabitNotifications(habit);
@@ -125,6 +136,17 @@ class NotificationService {
     );
   }
 
+  /// Test scheduled notification - schedules a notification for 10 seconds in the future
+  static Future<void> testScheduledNotification() async {
+    final scheduledTime = DateTime.now().add(const Duration(seconds: 10));
+    await scheduleNotification(
+      id: DateTime.now().millisecondsSinceEpoch,
+      title: 'Scheduled Test Notification',
+      body: 'This notification was scheduled 10 seconds ago!',
+      scheduledTime: scheduledTime,
+    );
+  }
+
   static Future<void> cancelNotification(int id) async {
     await _scheduler.cancelNotification(id);
   }
@@ -186,7 +208,7 @@ class NotificationService {
     Habit habit,
     DateTime checkTime,
   ) async {
-    return await NotificationHelpers.isHabitCompletedForPeriod(
+    return NotificationHelpers.isHabitCompletedForPeriod(
       habit,
       checkTime,
     );
