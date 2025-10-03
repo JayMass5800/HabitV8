@@ -113,7 +113,7 @@ class HabitStatsService {
 
     // Expected completions based on frequency
     int expectedCompletions;
-    
+
     // Use RRule if available
     if (habit.usesRRule && habit.rruleString != null) {
       final occurrences = RRuleService.getOccurrences(
