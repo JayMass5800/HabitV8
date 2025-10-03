@@ -769,7 +769,8 @@ class WorkManagerHabitService {
     }
 
     final now = DateTime.now();
-    final endDate = now.add(const Duration(days: 84)); // Schedule 12 weeks ahead
+    final endDate =
+        now.add(const Duration(days: 84)); // Schedule 12 weeks ahead
 
     try {
       // Get all occurrences from RRule
@@ -811,7 +812,8 @@ class WorkManagerHabitService {
       AppLogger.debug(
           '📅 Scheduled $scheduledCount RRule notifications for ${habit.name}');
     } catch (e) {
-      AppLogger.error('Failed to schedule RRule notifications for ${habit.name}: $e');
+      AppLogger.error(
+          'Failed to schedule RRule notifications for ${habit.name}: $e');
     }
   }
 

@@ -711,7 +711,8 @@ class NotificationScheduler {
     }
 
     final now = tz.TZDateTime.now(tz.local);
-    final endDate = now.add(const Duration(days: 84)); // Schedule 12 weeks ahead
+    final endDate =
+        now.add(const Duration(days: 84)); // Schedule 12 weeks ahead
 
     try {
       // Get all occurrences from RRule
