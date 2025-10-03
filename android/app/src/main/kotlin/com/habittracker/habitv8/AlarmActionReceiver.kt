@@ -100,25 +100,41 @@ class AlarmActionReceiver : BroadcastReceiver() {
     }
     
     private fun notifyFlutterComplete(context: Context, habitId: String, habitName: String) {
-        // This will be called via MainActivity's method channel when the app is running
+        Log.i(TAG, "Notifying Flutter about completion for: $habitName")
+        
+        // Try to notify via MainActivity if app is in foreground
         val intent = Intent(context, MainActivity::class.java).apply {
             action = "COMPLETE_ALARM"
             putExtra("habitId", habitId)
             putExtra("habitName", habitName)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
-        context.startActivity(intent)
+        
+        try {
+            context.startActivity(intent)
+            Log.i(TAG, "Started MainActivity with COMPLETE_ALARM intent")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not start MainActivity immediately for complete", e)
+        }
     }
     
     private fun notifyFlutterSnooze(context: Context, habitId: String, habitName: String, soundUri: String?) {
-        // This will be called via MainActivity's method channel when the app is running
+        Log.i(TAG, "Notifying Flutter about snooze for: $habitName")
+        
+        // Try to notify via MainActivity if app is in foreground
         val intent = Intent(context, MainActivity::class.java).apply {
             action = "SNOOZE_ALARM"
             putExtra("habitId", habitId)
             putExtra("habitName", habitName)
             putExtra("soundUri", soundUri)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
-        context.startActivity(intent)
+        
+        try {
+            context.startActivity(intent)
+            Log.i(TAG, "Started MainActivity with SNOOZE_ALARM intent")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not start MainActivity immediately for snooze", e)
+        }
     }
 }
