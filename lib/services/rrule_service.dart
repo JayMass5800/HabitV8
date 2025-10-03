@@ -4,7 +4,7 @@ import 'logging_service.dart';
 
 /// Centralized service for all RRule (Recurrence Rule) operations.
 /// Handles conversion, generation, parsing, and validation of RRule patterns.
-/// 
+///
 /// RRule is an industry-standard way to define repeating events based on
 /// the iCalendar specification (RFC 5545).
 class RRuleService {
@@ -12,7 +12,7 @@ class RRuleService {
   static final Map<String, RecurrenceRule> _rruleCache = {};
 
   /// Convert a legacy Habit to an RRule string
-  /// 
+  ///
   /// Takes the old frequency-based system and converts it to a standardized
   /// RRule string that can represent the same recurrence pattern.
   static String? convertLegacyToRRule(Habit habit) {
@@ -54,7 +54,7 @@ class RRuleService {
   }
 
   /// Convert a weekday index to RRule day code
-  /// 
+  ///
   /// Handles both formats:
   /// - 0=Sunday, 1=Monday, ... 6=Saturday
   /// - 7=Sunday (alternative)
@@ -89,7 +89,7 @@ class RRuleService {
   }
 
   /// Create an RRule string from UI components
-  /// 
+  ///
   /// This is used when creating new habits with the RRule builder UI.
   static String createRRule({
     required Frequency frequency,
@@ -104,11 +104,11 @@ class RRuleService {
       // Build RRule string manually for better control
       final freq = frequency.toString().split('.').last.toUpperCase();
       final parts = <String>['FREQ=$freq'];
-      
+
       if (interval > 1) {
         parts.add('INTERVAL=$interval');
       }
-      
+
       if (byWeekDays != null && byWeekDays.isNotEmpty) {
         final days = byWeekDays.map((day) {
           const dayCodes = {
@@ -124,24 +124,29 @@ class RRuleService {
         }).join(',');
         parts.add('BYDAY=$days');
       }
-      
+
       if (byMonthDays != null && byMonthDays.isNotEmpty) {
         parts.add('BYMONTHDAY=${byMonthDays.join(',')}');
       }
-      
+
       if (bySetPos != null) {
         parts.add('BYSETPOS=$bySetPos');
       }
-      
+
       if (count != null) {
         parts.add('COUNT=$count');
       }
-      
+
       if (until != null) {
-        final formatted = until.toUtc().toIso8601String().replaceAll(RegExp(r'[-:]'), '').split('.')[0] + 'Z';
+        final formatted = until
+                .toUtc()
+                .toIso8601String()
+                .replaceAll(RegExp(r'[-:]'), '')
+                .split('.')[0] +
+            'Z';
         parts.add('UNTIL=$formatted');
       }
-      
+
       return parts.join(';');
     } catch (e) {
       AppLogger.error('Failed to create RRule: $e');
@@ -150,7 +155,7 @@ class RRuleService {
   }
 
   /// Get a parsed RecurrenceRule object (with caching)
-  /// 
+  ///
   /// Parses the RRule string and caches the result for performance.
   /// The cache key includes both the RRule string and start date.
   static RecurrenceRule? parseRRule(String rruleString, DateTime startDate) {
@@ -162,9 +167,8 @@ class RRuleService {
 
     try {
       // The rrule package expects "RRULE:FREQ=..." format
-      final rruleWithPrefix = rruleString.startsWith('RRULE:') 
-          ? rruleString 
-          : 'RRULE:$rruleString';
+      final rruleWithPrefix =
+          rruleString.startsWith('RRULE:') ? rruleString : 'RRULE:$rruleString';
       final rule = RecurrenceRule.fromString(rruleWithPrefix);
       _rruleCache[cacheKey] = rule;
       return rule;
@@ -175,7 +179,7 @@ class RRuleService {
   }
 
   /// Get list of occurrence dates within a range
-  /// 
+  ///
   /// Returns all dates when the habit should occur between rangeStart and rangeEnd.
   static List<DateTime> getOccurrences({
     required String rruleString,
@@ -196,13 +200,14 @@ class RRuleService {
 
       // Get all instances starting from the start date
       final allInstances = rule.getAllInstances(start: start).take(1000);
-      
+
       // Filter to only those in range
       final occurrences = allInstances.where((date) {
-        return (date.isAfter(rangeStart) || date.isAtSameMomentAs(rangeStart)) &&
-               (date.isBefore(rangeEnd) || date.isAtSameMomentAs(rangeEnd));
+        return (date.isAfter(rangeStart) ||
+                date.isAtSameMomentAs(rangeStart)) &&
+            (date.isBefore(rangeEnd) || date.isAtSameMomentAs(rangeEnd));
       }).toList();
-      
+
       return occurrences;
     } catch (e) {
       AppLogger.error('Failed to get occurrences: $e');
@@ -211,7 +216,7 @@ class RRuleService {
   }
 
   /// Check if habit is due on a specific date
-  /// 
+  ///
   /// This is the most commonly used method - checks if a habit should
   /// occur on the given date.
   static bool isDueOnDate({
@@ -239,7 +244,7 @@ class RRuleService {
   }
 
   /// Get a human-readable summary of the RRule
-  /// 
+  ///
   /// Converts the RRule string into a user-friendly description like:
   /// - "Every 2 weeks on Tuesday and Thursday"
   /// - "Every month on the 15th"
@@ -257,7 +262,7 @@ class RRuleService {
       }
       if (rruleString.contains('FREQ=MONTHLY')) return 'Every month';
       if (rruleString.contains('FREQ=YEARLY')) return 'Every year';
-      
+
       return 'Custom schedule';
     } catch (e) {
       AppLogger.error('Failed to get RRule summary: $e');
@@ -266,14 +271,13 @@ class RRuleService {
   }
 
   /// Validate an RRule string
-  /// 
+  ///
   /// Returns true if the RRule string is valid and can be parsed.
   static bool isValidRRule(String rruleString) {
     try {
       // The rrule package expects "RRULE:FREQ=..." format
-      final rruleWithPrefix = rruleString.startsWith('RRULE:') 
-          ? rruleString 
-          : 'RRULE:$rruleString';
+      final rruleWithPrefix =
+          rruleString.startsWith('RRULE:') ? rruleString : 'RRULE:$rruleString';
       RecurrenceRule.fromString(rruleWithPrefix);
       return true;
     } catch (e) {
@@ -282,14 +286,14 @@ class RRuleService {
   }
 
   /// Clear the cache
-  /// 
+  ///
   /// Call this when habits are modified to ensure fresh data.
   static void clearCache() {
     _rruleCache.clear();
   }
 
   /// Get next N occurrences from now
-  /// 
+  ///
   /// Useful for previewing upcoming dates in the UI.
   static List<DateTime> getNextOccurrences({
     required String rruleString,
@@ -303,8 +307,9 @@ class RRuleService {
       // The rrule package requires dates to be in UTC without milliseconds
       final now = DateTime.now();
       final start = DateTime.utc(now.year, now.month, now.day);
-      
-      final occurrences = rule.getAllInstances(start: start).take(count).toList();
+
+      final occurrences =
+          rule.getAllInstances(start: start).take(count).toList();
       return occurrences;
     } catch (e) {
       AppLogger.error('Failed to get next occurrences: $e');

@@ -85,8 +85,10 @@ void main() {
     test('Get RRule summary', () {
       expect(RRuleService.getRRuleSummary('FREQ=DAILY'), equals('Every day'));
       expect(RRuleService.getRRuleSummary('FREQ=WEEKLY'), equals('Every week'));
-      expect(RRuleService.getRRuleSummary('FREQ=WEEKLY;INTERVAL=2'), equals('Every 2 weeks'));
-      expect(RRuleService.getRRuleSummary('FREQ=MONTHLY'), equals('Every month'));
+      expect(RRuleService.getRRuleSummary('FREQ=WEEKLY;INTERVAL=2'),
+          equals('Every 2 weeks'));
+      expect(
+          RRuleService.getRRuleSummary('FREQ=MONTHLY'), equals('Every month'));
     });
 
     test('Get next occurrences', () {
@@ -103,21 +105,22 @@ void main() {
 
     test('Parse and cache RRule', () {
       final startDate = DateTime(2025, 1, 1);
-      
+
       final rule1 = RRuleService.parseRRule('FREQ=DAILY', startDate);
       final rule2 = RRuleService.parseRRule('FREQ=DAILY', startDate);
 
       expect(rule1, isNotNull);
       expect(rule2, isNotNull);
-      expect(identical(rule1, rule2), isTrue, reason: 'Should use cached instance');
+      expect(identical(rule1, rule2), isTrue,
+          reason: 'Should use cached instance');
     });
 
     test('Clear cache', () {
       final startDate = DateTime(2025, 1, 1);
-      
+
       RRuleService.parseRRule('FREQ=DAILY', startDate);
       RRuleService.clearCache();
-      
+
       final rule = RRuleService.parseRRule('FREQ=DAILY', startDate);
       expect(rule, isNotNull);
     });
