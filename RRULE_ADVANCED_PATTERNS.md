@@ -1,4 +1,4 @@
-# 🎯 RRule Advanced Pattern Capabilities
+ 🎯 RRule Advanced Pattern Capabilities
 
 ## Overview
 
