@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'logging_service.dart';
+import 'habit_stats_service.dart';
 
 class DataExportImportService {
   static const String _exportVersion = '1.0.0';
@@ -106,6 +107,7 @@ class DataExportImportService {
         'Total Completions',
         'Last Completion',
         'Completion Rate (%)',
+        'Completions History', // NEW: All completion timestamps
         'Selected Weekdays',
         'Selected Month Days',
         'Hourly Times',
@@ -147,6 +149,8 @@ class DataExportImportService {
               ? ''
               : habit.completions.last.toIso8601String(),
           completionRate.toStringAsFixed(2),
+          // Export all completion timestamps separated by semicolons
+          habit.completions.map((c) => c.toIso8601String()).join(';'),
           habit.selectedWeekdays.join(';'),
           habit.selectedMonthDays.join(';'),
           habit.hourlyTimes.join(';'),
@@ -334,6 +338,10 @@ class DataExportImportService {
       } finally {
         // Always mark bulk import as complete
         HabitsNotifier.markBulkImportComplete();
+
+        // Invalidate all stats cache to ensure imported completion data is used
+        HabitStatsService().invalidateAllStats();
+        AppLogger.info('Stats cache invalidated after import');
       }
 
       AppLogger.info(
@@ -460,6 +468,10 @@ class DataExportImportService {
       } finally {
         // Always mark bulk import as complete
         HabitsNotifier.markBulkImportComplete();
+
+        // Invalidate all stats cache to ensure imported completion data is used
+        HabitStatsService().invalidateAllStats();
+        AppLogger.info('Stats cache invalidated after CSV import');
       }
 
       AppLogger.info(
@@ -676,6 +688,23 @@ class DataExportImportService {
             (diff) => diff.toString().split('.').last == value,
             orElse: () => HabitDifficulty.medium,
           );
+          break;
+        case 'Completions History':
+          // Import all completion timestamps
+          if (value.isNotEmpty) {
+            try {
+              habit.completions = value
+                  .split(';')
+                  .where((s) => s.isNotEmpty)
+                  .map((s) => DateTime.parse(s))
+                  .toList();
+            } catch (e) {
+              AppLogger.error('Error parsing completions history: $value', e);
+              habit.completions = [];
+            }
+          } else {
+            habit.completions = [];
+          }
           break;
         case 'Selected Weekdays':
           habit.selectedWeekdays = value.isEmpty
