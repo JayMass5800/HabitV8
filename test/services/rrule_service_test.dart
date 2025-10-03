@@ -4,6 +4,14 @@ import 'package:rrule/rrule.dart';
 
 void main() {
   group('RRuleService Tests', () {
+    test('Create RRule from components - hourly', () {
+      final rrule = RRuleService.createRRule(
+        frequency: Frequency.hourly,
+      );
+
+      expect(rrule, equals('FREQ=HOURLY'));
+    });
+
     test('Create RRule from components - daily', () {
       final rrule = RRuleService.createRRule(
         frequency: Frequency.daily,
@@ -83,12 +91,15 @@ void main() {
     });
 
     test('Get RRule summary', () {
+      expect(RRuleService.getRRuleSummary('FREQ=HOURLY'), equals('Every hour'));
       expect(RRuleService.getRRuleSummary('FREQ=DAILY'), equals('Every day'));
       expect(RRuleService.getRRuleSummary('FREQ=WEEKLY'), equals('Every week'));
       expect(RRuleService.getRRuleSummary('FREQ=WEEKLY;INTERVAL=2'),
           equals('Every 2 weeks'));
       expect(
           RRuleService.getRRuleSummary('FREQ=MONTHLY'), equals('Every month'));
+      expect(
+          RRuleService.getRRuleSummary('FREQ=YEARLY'), equals('Every year'));
     });
 
     test('Get next occurrences', () {

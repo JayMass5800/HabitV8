@@ -19,6 +19,30 @@ void main() {
         );
       });
 
+      test('isDueOnDate works for hourly RRule', () {
+        // Hourly habits should be due every day (each day has hours)
+        final today = DateTime.now();
+        expect(
+          RRuleService.isDueOnDate(
+            rruleString: 'FREQ=HOURLY',
+            startDate: DateTime(2025, 10, 1),
+            checkDate: today,
+          ),
+          isTrue,
+        );
+        
+        // Tomorrow should also be due
+        final tomorrow = today.add(const Duration(days: 1));
+        expect(
+          RRuleService.isDueOnDate(
+            rruleString: 'FREQ=HOURLY',
+            startDate: DateTime(2025, 10, 1),
+            checkDate: tomorrow,
+          ),
+          isTrue,
+        );
+      });
+
       test('isDueOnDate works for weekly RRule', () {
         // Oct 2, 2025 is Thursday
         final thursday = DateTime(2025, 10, 2);
@@ -169,6 +193,12 @@ void main() {
         // This would need a Habit object, but we can test the RRule service directly
         final rrule = 'FREQ=DAILY';
         expect(RRuleService.isValidRRule(rrule), isTrue);
+      });
+
+      test('Hourly pattern is valid RRule', () {
+        final rrule = 'FREQ=HOURLY';
+        expect(RRuleService.isValidRRule(rrule), isTrue);
+        expect(RRuleService.getRRuleSummary(rrule), equals('Every hour'));
       });
 
       test('Weekly pattern is valid RRule', () {
