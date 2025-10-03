@@ -94,7 +94,7 @@ class Habit extends HiveObject {
   int snoozeDelayMinutes = 10; // Default 10 minutes snooze
 
   // ==================== NEW RRULE FIELDS ====================
-  
+
   /// RRule string defining the recurrence pattern
   /// Example: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"
   /// This replaces the legacy frequency system with a standardized approach
@@ -446,12 +446,12 @@ class Habit extends HiveObject {
         // Import the RRuleService dynamically to avoid circular dependency
         // The actual import will be at the top of the file
         final convertedRRule = _convertToRRule();
-        
+
         if (convertedRRule != null) {
           rruleString = convertedRRule;
           dtStart = dtStart ?? createdAt;
           usesRRule = true;
-          
+
           // Save the updated habit asynchronously
           save().then((_) {
             AppLogger.info('Migrated habit "$name" to RRule: $rruleString');
@@ -497,8 +497,14 @@ class Habit extends HiveObject {
 
   String _weekdayToRRuleDay(int weekday) {
     const days = {
-      0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE',
-      4: 'TH', 5: 'FR', 6: 'SA', 7: 'SU',
+      0: 'SU',
+      1: 'MO',
+      2: 'TU',
+      3: 'WE',
+      4: 'TH',
+      5: 'FR',
+      6: 'SA',
+      7: 'SU',
     };
     return days[weekday] ?? 'MO';
   }
@@ -523,14 +529,14 @@ class Habit extends HiveObject {
 
   String _getSimpleRRuleSummary() {
     if (rruleString == null) return 'Custom schedule';
-    
+
     // Simple parsing for common patterns
     if (rruleString!.contains('FREQ=DAILY')) return 'Every day';
     if (rruleString!.contains('FREQ=WEEKLY')) return 'Weekly';
     if (rruleString!.contains('FREQ=MONTHLY')) return 'Monthly';
     if (rruleString!.contains('FREQ=YEARLY')) return 'Yearly';
     if (rruleString!.contains('FREQ=HOURLY')) return 'Every hour';
-    
+
     return 'Custom schedule';
   }
 

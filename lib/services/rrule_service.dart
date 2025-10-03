@@ -138,12 +138,7 @@ class RRuleService {
       }
 
       if (until != null) {
-        final formatted = until
-                .toUtc()
-                .toIso8601String()
-                .replaceAll(RegExp(r'[-:]'), '')
-                .split('.')[0] +
-            'Z';
+        final formatted = '${until.toUtc().toIso8601String().replaceAll(RegExp(r'[-:]'), '').split('.')[0]}Z';
         parts.add('UNTIL=$formatted');
       }
 
