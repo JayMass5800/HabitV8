@@ -208,6 +208,18 @@ class NotificationScheduler {
       return;
     }
 
+    // Skip hourly habits if alarms are enabled - the alarm system will handle them
+    // This prevents double notifications for hourly habits
+    if (habit.frequency == HabitFrequency.hourly && habit.alarmEnabled) {
+      AppLogger.debug(
+        'Skipping regular notifications for hourly habit - alarm system will handle it',
+      );
+      AppLogger.info(
+        'Hourly habit ${habit.name} will use alarm system instead of regular notifications',
+      );
+      return;
+    }
+
     // Check and request all notification permissions if needed
     try {
       final bool permissionsGranted =
