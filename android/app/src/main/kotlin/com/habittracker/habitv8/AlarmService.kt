@@ -149,15 +149,30 @@ class AlarmService : Service() {
         // Start vibration pattern
         startVibration()
         
-        // Show alarm notification with action buttons
-        showAlarmNotification(alarmId)
+        // Note: We don't need to call showAlarmNotification() separately
+        // The foreground notification already has the action buttons
         
         return START_STICKY
     }
 
+    // DEPRECATED: We now use the foreground service notification with action buttons
+    // instead of creating a separate notification
+    /*
     private fun showAlarmNotification(alarmId: Int) {
         try {
             Log.i(TAG, "Creating alarm notification with action buttons")
+            Log.i(TAG, "Notification details - AlarmId: $alarmId, HabitId: $habitId, HabitName: $habitName")
+            
+            // Check notification permission on Android 13+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                val areNotificationsEnabled = notificationManager.areNotificationsEnabled()
+                Log.i(TAG, "Notifications enabled: $areNotificationsEnabled")
+                
+                if (!areNotificationsEnabled) {
+                    Log.e(TAG, "❌ Notifications are DISABLED! User needs to enable in settings.")
+                }
+            }
             
             // Create notification channel for alarm notifications if needed
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -175,6 +190,7 @@ class AlarmService : Service() {
                 
                 val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.createNotificationChannel(alarmChannel)
+                Log.i(TAG, "Notification channel created/verified")
             }
             
             // Create intent to complete alarm
@@ -225,13 +241,35 @@ class AlarmService : Service() {
             
             // Show the alarm notification with a different ID
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(alarmId + 2000, alarmNotification)
+            val notificationId = alarmId + 2000
+            
+            Log.i(TAG, "Posting notification with ID: $notificationId")
+            notificationManager.notify(notificationId, alarmNotification)
+            
+            // Verify notification was posted
+            val activeNotifications = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                notificationManager.activeNotifications
+            } else {
+                null
+            }
+            
+            if (activeNotifications != null) {
+                val ourNotification = activeNotifications.find { it.id == notificationId }
+                if (ourNotification != null) {
+                    Log.i(TAG, "✅ Alarm notification verified in active notifications")
+                } else {
+                    Log.e(TAG, "❌ Alarm notification NOT found in active notifications!")
+                    Log.e(TAG, "Active notification count: ${activeNotifications.size}")
+                }
+            }
             
             Log.i(TAG, "✅ Alarm notification shown with action buttons")
         } catch (e: Exception) {
             Log.e(TAG, "❌ Failed to show alarm notification", e)
+            e.printStackTrace()
         }
     }
+    */
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -265,19 +303,39 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Create stop action
-        val stopIntent = Intent(this, AlarmService::class.java).apply {
-            action = "STOP_ALARM"
+        // Create intent to complete alarm
+        val completeIntent = Intent(this, AlarmActionReceiver::class.java).apply {
+            action = AlarmActionReceiver.ACTION_COMPLETE
+            putExtra(AlarmActionReceiver.EXTRA_ALARM_ID, alarmId)
+            putExtra(AlarmActionReceiver.EXTRA_HABIT_ID, habitId)
+            putExtra(AlarmActionReceiver.EXTRA_HABIT_NAME, habitName)
+            putExtra(AlarmActionReceiver.EXTRA_SOUND_URI, soundUriString)
         }
         
-        val stopPendingIntent = PendingIntent.getService(
+        val completePendingIntent = PendingIntent.getBroadcast(
             this,
-            1,
-            stopIntent,
+            alarmId + 10000,
+            completeIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Build the notification
+        // Create intent to snooze alarm
+        val snoozeIntent = Intent(this, AlarmActionReceiver::class.java).apply {
+            action = AlarmActionReceiver.ACTION_SNOOZE
+            putExtra(AlarmActionReceiver.EXTRA_ALARM_ID, alarmId)
+            putExtra(AlarmActionReceiver.EXTRA_HABIT_ID, habitId)
+            putExtra(AlarmActionReceiver.EXTRA_HABIT_NAME, habitName)
+            putExtra(AlarmActionReceiver.EXTRA_SOUND_URI, soundUriString)
+        }
+        
+        val snoozePendingIntent = PendingIntent.getBroadcast(
+            this,
+            alarmId + 20000,
+            snoozeIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        // Build the notification with action buttons
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("🔔 $habitName")
             .setContentText("Alarm is ringing - Tap to open app")
@@ -285,10 +343,11 @@ class AlarmService : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOngoing(true) // Cannot be dismissed by swiping
+            .setOngoing(true) // Keep it persistent as a foreground service
             .setAutoCancel(false)
             .setContentIntent(pendingIntent)
-            .addAction(android.R.drawable.ic_delete, "Stop Alarm", stopPendingIntent)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "✅ COMPLETE", completePendingIntent)
+            .addAction(android.R.drawable.ic_menu_recent_history, "⏰ SNOOZE", snoozePendingIntent)
             .build()
     }
 
@@ -484,14 +543,8 @@ class AlarmService : Service() {
         Log.i(TAG, "AlarmService onDestroy")
         isDestroying = true
         
-        // Dismiss the alarm notification
-        try {
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.cancel(alarmId + 2000)
-            Log.i(TAG, "Alarm notification dismissed")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error dismissing alarm notification", e)
-        }
+        // The foreground notification is automatically dismissed when service stops
+        // No need to manually cancel it
         
         // Stop all sounds and vibrations
         stopAlarmSound()
