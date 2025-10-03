@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
+import '../../services/rrule_service.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/smooth_transitions.dart';
@@ -590,6 +591,21 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   }
 
   bool _isHabitDueOnDate(Habit habit, DateTime date) {
+    // Phase 4: Use RRule if available, otherwise fall back to legacy frequency
+    if (habit.usesRRule && habit.rruleString != null) {
+      try {
+        return RRuleService.isDueOnDate(
+          rruleString: habit.rruleString!,
+          startDate: habit.createdAt,
+          checkDate: date,
+        );
+      } catch (e) {
+        debugPrint('⚠️ RRule check failed, falling back to legacy: $e');
+        // Fall through to legacy logic
+      }
+    }
+
+    // Legacy frequency-based logic
     switch (habit.frequency) {
       case HabitFrequency.hourly:
         final weekday = date.weekday;
@@ -789,6 +805,34 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   }
 
   String _getHabitTimeDisplay(Habit habit) {
+    // Phase 4: For RRule habits, show time information
+    // (Summary is shown elsewhere in the UI)
+    if (habit.usesRRule && habit.rruleString != null) {
+      try {
+        // For hourly habits, show times
+        if (habit.frequency == HabitFrequency.hourly &&
+            habit.hourlyTimes.isNotEmpty) {
+          if (habit.hourlyTimes.length == 1) {
+            return habit.hourlyTimes.first;
+          } else if (habit.hourlyTimes.length <= 3) {
+            return habit.hourlyTimes.join(', ');
+          } else {
+            return '${habit.hourlyTimes.first} +${habit.hourlyTimes.length - 1} more';
+          }
+        }
+        // For other frequencies, show notification time if available
+        if (habit.notificationTime != null) {
+          final time = habit.notificationTime!;
+          return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+        }
+        return '';
+      } catch (e) {
+        debugPrint('⚠️ Failed to display RRule habit time: $e');
+        // Fall through to legacy logic
+      }
+    }
+
+    // Legacy frequency-based display
     switch (habit.frequency) {
       case HabitFrequency.hourly:
         if (habit.hourlyTimes.isNotEmpty) {

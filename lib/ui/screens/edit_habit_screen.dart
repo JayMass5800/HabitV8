@@ -1529,6 +1529,22 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       // Save to database
       await widget.habit.save();
 
+      // Phase 4: Auto-generate RRule when editing habits (except single)
+      // This seamlessly upgrades legacy habits to the modern RRule system
+      if (_selectedFrequency != HabitFrequency.single) {
+        try {
+          // Use the habit's built-in conversion method
+          widget.habit
+              .getOrCreateRRule(); // Auto-converts and sets usesRRule flag
+          await widget.habit.save(); // Save again to persist RRule changes
+          debugPrint('✅ Auto-upgraded habit to RRule: ${widget.habit.name}');
+        } catch (e) {
+          debugPrint(
+              '⚠️ Failed to auto-generate RRule for edited habit, using legacy format: $e');
+          // Not critical - habit will work with legacy frequency system
+        }
+      }
+
       // Health mapping is no longer supported
       // Health integration has been removed from the app
 

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/calendar_service.dart';
+import '../../services/rrule_service.dart';
 import '../widgets/day_detail_sheet.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/loading_widget.dart';
@@ -80,6 +81,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     // Don't show habits before they were created
     if (checkDate.isBefore(habitDate)) return false;
 
+    // Phase 4: Use RRule if available, otherwise fall back to legacy frequency
+    if (habit.usesRRule && habit.rruleString != null) {
+      try {
+        return RRuleService.isDueOnDate(
+          rruleString: habit.rruleString!,
+          startDate: habit.createdAt,
+          checkDate: checkDate,
+        );
+      } catch (e) {
+        debugPrint(
+            '⚠️ RRule check failed for calendar, falling back to legacy: $e');
+        // Fall through to legacy logic
+      }
+    }
+
+    // Legacy frequency-based logic
     switch (habit.frequency) {
       case HabitFrequency.daily:
         return true;

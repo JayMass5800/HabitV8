@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/logging_service.dart';
+import '../../services/rrule_service.dart';
 
 import '../widgets/loading_widget.dart';
 import '../widgets/create_habit_fab.dart';
@@ -498,7 +499,8 @@ class _HabitCard extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              _getFrequencyTypeDisplay(habit.frequency),
+                              _getFrequencyTypeDisplay(habit.frequency,
+                                  habit: habit),
                               style: const TextStyle(
                                 color: Colors.purple,
                                 fontSize: 10,
@@ -810,7 +812,20 @@ class _HabitCard extends ConsumerWidget {
     }
   }
 
-  String _getFrequencyTypeDisplay(HabitFrequency frequency) {
+  String _getFrequencyTypeDisplay(HabitFrequency frequency, {Habit? habit}) {
+    // Phase 4: Show RRule summary if available
+    if (habit != null && habit.usesRRule && habit.rruleString != null) {
+      try {
+        final summary = RRuleService.getRRuleSummary(habit.rruleString!);
+        // Make summary more concise for list view
+        return summary.replaceAll('Repeats ', '').replaceAll('every ', '');
+      } catch (e) {
+        debugPrint('⚠️ Failed to get RRule summary: $e');
+        // Fall through to legacy logic
+      }
+    }
+
+    // Legacy frequency display
     switch (frequency) {
       case HabitFrequency.hourly:
         return 'Hourly';
