@@ -187,22 +187,39 @@ class RRuleService {
       final rule = parseRRule(rruleString, startDate);
       if (rule == null) return [];
 
-      // The rrule package requires dates to be in UTC without milliseconds
-      final start = DateTime.utc(
-        rangeStart.year,
-        rangeStart.month,
-        rangeStart.day,
-      );
+      // Convert to UTC as required by rrule package
+      final start = DateTime.utc(startDate.year, startDate.month, startDate.day);
+      final rangeStartUtc = DateTime.utc(rangeStart.year, rangeStart.month, rangeStart.day);
+      final rangeEndUtc = DateTime.utc(rangeEnd.year, rangeEnd.month, rangeEnd.day, 23, 59, 59);
 
-      // Get all instances starting from the start date
-      final allInstances = rule.getAllInstances(start: start).take(1000);
-
-      // Filter to only those in range
-      final occurrences = allInstances.where((date) {
-        return (date.isAfter(rangeStart) ||
-                date.isAtSameMomentAs(rangeStart)) &&
-            (date.isBefore(rangeEnd) || date.isAtSameMomentAs(rangeEnd));
-      }).toList();
+      // Get instances starting from the habit start date
+      final instances = rule.getInstances(start: start);
+      
+      // Manually iterate and collect matches within range
+      final occurrences = <DateTime>[];
+      int checked = 0;
+      const maxCheck = 10000; // Safety limit on iterations
+      
+      for (final date in instances) {
+        checked++;
+        
+        // Stop if we've checked too many
+        if (checked > maxCheck) {
+          AppLogger.error('Hit safety limit of $maxCheck iterations in getOccurrences');
+          break;
+        }
+        
+        // Stop if we've gone past the end of our range
+        if (date.isAfter(rangeEndUtc)) break;
+        
+        // Add if within range
+        if (!date.isBefore(rangeStartUtc)) {
+          occurrences.add(date);
+        }
+        
+        // Stop if we have enough results
+        if (occurrences.length >= 1000) break;
+      }
 
       return occurrences;
     } catch (e) {
@@ -300,12 +317,12 @@ class RRuleService {
       final rule = parseRRule(rruleString, startDate);
       if (rule == null) return [];
 
-      // The rrule package requires dates to be in UTC without milliseconds
+      // Convert to UTC as required by rrule package
       final now = DateTime.now();
       final start = DateTime.utc(now.year, now.month, now.day);
 
-      final occurrences =
-          rule.getAllInstances(start: start).take(count).toList();
+      final occurrences = rule.getInstances(start: start).take(count).toList();
+      
       return occurrences;
     } catch (e) {
       AppLogger.error('Failed to get next occurrences: $e');

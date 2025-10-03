@@ -5,6 +5,7 @@ import 'package:device_calendar/device_calendar.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../domain/model/habit.dart';
 import 'logging_service.dart';
+import 'rrule_service.dart';
 
 /// Calendar service that integrates with table_calendar for consistent habit display
 /// This service manages calendar sync preferences and enhances the existing table_calendar
@@ -188,6 +189,21 @@ class CalendarService {
 
   /// Check if a habit is due on a specific date (matches calendar_screen logic)
   static bool isHabitDueOnDate(Habit habit, DateTime date) {
+    // If habit uses RRule, delegate to RRuleService
+    if (habit.isRRuleBased()) {
+      final rruleString = habit.rruleString;
+      final startDate = habit.dtStart ?? habit.createdAt;
+      
+      if (rruleString != null) {
+        return RRuleService.isDueOnDate(
+          rruleString: rruleString,
+          startDate: startDate,
+          checkDate: date,
+        );
+      }
+    }
+    
+    // Legacy frequency-based logic for backward compatibility
     switch (habit.frequency) {
       case HabitFrequency.hourly:
         final weekday = date.weekday;

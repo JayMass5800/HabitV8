@@ -5,6 +5,7 @@ import '../data/database.dart';
 
 import 'notification_service.dart';
 import 'logging_service.dart';
+import 'rrule_service.dart';
 
 /// Service responsible for ensuring habits continue to work indefinitely
 /// using WorkManager for guaranteed execution on Android

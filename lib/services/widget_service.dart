@@ -6,6 +6,7 @@ import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'theme_service.dart';
 import 'logging_service.dart';
+import 'rrule_service.dart';
 import 'package:intl/intl.dart';
 
 class WidgetService {
@@ -131,6 +132,21 @@ class WidgetService {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
+    // If habit uses RRule, delegate to RRuleService
+    if (habit.isRRuleBased()) {
+      final rruleString = habit.rruleString;
+      final startDate = habit.dtStart ?? habit.createdAt;
+      
+      if (rruleString != null) {
+        return RRuleService.isDueOnDate(
+          rruleString: rruleString,
+          startDate: startDate,
+          checkDate: date,
+        );
+      }
+    }
+
+    // Legacy frequency-based logic
     switch (habit.frequency) {
       case HabitFrequency.daily:
         return true; // Daily habits are always relevant
