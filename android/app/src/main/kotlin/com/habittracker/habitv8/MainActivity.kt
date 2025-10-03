@@ -95,6 +95,50 @@ class MainActivity : FlutterFragmentActivity() {
         try {
             android.util.Log.d("MainActivity", "onNewIntent called with action: ${intent.action}")
 
+            // Handle complete alarm action
+            if ("COMPLETE_ALARM" == intent.action) {
+                val habitId = intent.getStringExtra("habitId")
+                val habitName = intent.getStringExtra("habitName")
+                
+                android.util.Log.i("MainActivity", "Complete alarm action received for: $habitName")
+                
+                // Notify Flutter about the completion via method channel
+                flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+                    val channel = MethodChannel(messenger, "com.habittracker.habitv8/alarm_complete")
+                    channel.invokeMethod("onAlarmComplete", mapOf(
+                        "habitId" to habitId,
+                        "habitName" to habitName
+                    ))
+                }
+                
+                setIntent(intent)
+                super.onNewIntent(intent)
+                return
+            }
+
+            // Handle snooze alarm action
+            if ("SNOOZE_ALARM" == intent.action) {
+                val habitId = intent.getStringExtra("habitId")
+                val habitName = intent.getStringExtra("habitName")
+                val soundUri = intent.getStringExtra("soundUri")
+                
+                android.util.Log.i("MainActivity", "Snooze alarm action received for: $habitName")
+                
+                // Notify Flutter about the snooze via method channel
+                flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+                    val channel = MethodChannel(messenger, "com.habittracker.habitv8/alarm_snooze")
+                    channel.invokeMethod("onAlarmSnooze", mapOf(
+                        "habitId" to habitId,
+                        "habitName" to habitName,
+                        "soundUri" to soundUri
+                    ))
+                }
+                
+                setIntent(intent)
+                super.onNewIntent(intent)
+                return
+            }
+
             // CRITICAL FIX: Don't restart app on notification interactions - preserve alarm service
             if ("SELECT_NOTIFICATION" == intent.action || "SELECT_FOREGROUND_NOTIFICATION" == intent.action) {
                 setIntent(intent)

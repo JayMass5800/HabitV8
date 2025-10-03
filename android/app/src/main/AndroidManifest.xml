@@ -121,6 +121,12 @@
             android:enabled="true"
             android:exported="false" />
         
+        <!-- Alarm action receiver for handling alarm notification actions (Complete/Snooze) -->
+        <receiver
+            android:name=".AlarmActionReceiver"
+            android:enabled="true"
+            android:exported="false" />
+        
         <!-- Widget update receiver for system events -->
         <receiver
             android:name=".WidgetUpdateReceiver"

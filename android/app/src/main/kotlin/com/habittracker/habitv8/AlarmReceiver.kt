@@ -30,14 +30,17 @@ class AlarmReceiver : BroadcastReceiver() {
             
             Log.i(TAG, "Processing alarm for: $habitName (ID: $alarmId)")
             
-            // If no sound URI in intent, try to read from stored alarm data
-            val finalSoundUri = soundUri ?: readStoredAlarmData(context, alarmId)
+            // Read stored alarm data
+            val alarmData = readStoredAlarmData(context, alarmId)
+            val finalSoundUri = soundUri ?: alarmData["soundUri"]
+            val habitId = alarmData["habitId"] ?: ""
             
             // Start the AlarmService directly from the broadcast receiver
             val serviceIntent = Intent(context, AlarmService::class.java).apply {
                 putExtra("soundUri", finalSoundUri)
                 putExtra("habitName", habitName)
                 putExtra("alarmId", alarmId)
+                putExtra("habitId", habitId)
             }
             
             // Start foreground service
@@ -57,7 +60,7 @@ class AlarmReceiver : BroadcastReceiver() {
     /**
      * Try to read stored alarm data if not provided in intent
      */
-    private fun readStoredAlarmData(context: Context, alarmId: Int): String? {
+    private fun readStoredAlarmData(context: Context, alarmId: Int): Map<String, String> {
         return try {
             val filesDir = context.filesDir
             val documentsDir = File(filesDir.parent, "app_flutter")
@@ -65,16 +68,25 @@ class AlarmReceiver : BroadcastReceiver() {
             
             if (alarmFile.exists()) {
                 val content = alarmFile.readText()
-                extractJsonValue(content, "alarmSoundUri") 
-                    ?: extractJsonValue(content, "alarmSoundName")
-                    ?: "content://settings/system/alarm_alert"
+                mapOf(
+                    "soundUri" to (extractJsonValue(content, "alarmSoundUri") 
+                        ?: extractJsonValue(content, "alarmSoundName")
+                        ?: "content://settings/system/alarm_alert"),
+                    "habitId" to (extractJsonValue(content, "habitId") ?: "")
+                )
             } else {
                 Log.w(TAG, "No stored alarm data found for ID: $alarmId")
-                "content://settings/system/alarm_alert" // Default alarm sound
+                mapOf(
+                    "soundUri" to "content://settings/system/alarm_alert",
+                    "habitId" to ""
+                )
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error reading stored alarm data", e)
-            "content://settings/system/alarm_alert" // Default alarm sound
+            mapOf(
+                "soundUri" to "content://settings/system/alarm_alert",
+                "habitId" to ""
+            )
         }
     }
     

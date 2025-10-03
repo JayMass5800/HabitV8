@@ -10,6 +10,8 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'services/notification_service.dart';
 import 'services/notification_action_service.dart';
 import 'services/alarm_manager_service.dart';
+import 'services/alarm_snooze_service.dart';
+import 'services/alarm_complete_service.dart';
 import 'services/permission_service.dart';
 import 'services/theme_service.dart';
 import 'services/logging_service.dart';
@@ -92,6 +94,14 @@ void main() async {
     // Continue with app startup even if alarm service fails
   }
 
+  // Initialize alarm snooze service
+  try {
+    await AlarmSnoozeService.initialize();
+  } catch (e) {
+    AppLogger.error('Error initializing alarm snooze service', e);
+    // Continue with app startup even if snooze service fails
+  }
+
   // Request only essential permissions during startup (non-blocking)
   // Health permissions will be requested when user accesses health features
   _requestEssentialPermissions();
@@ -99,6 +109,14 @@ void main() async {
   // Create provider container and initialize notification action service
   final container = ProviderContainer();
   NotificationActionService.initialize(container);
+
+  // Initialize alarm complete service
+  try {
+    await AlarmCompleteService.initialize(container);
+  } catch (e) {
+    AppLogger.error('Error initializing alarm complete service', e);
+    // Continue with app startup even if complete service fails
+  }
 
   // Implement proper service initialization sequencing to prevent race conditions
   await _ensureServiceInitialization();

@@ -64,7 +64,9 @@ class AlarmService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var vibrator: Vibrator? = null
     private var soundUri: Uri? = null
+    private var soundUriString: String? = null
     private var habitName: String = "Habit Reminder"
+    private var habitId: String = ""
     private var alarmId: Int = 0
     private var volumeHandler: Handler? = null
     private var volumeRunnable: Runnable? = null
@@ -118,8 +120,10 @@ class AlarmService : Service() {
         val soundUriString = intent?.getStringExtra("soundUri")
         alarmId = intent?.getIntExtra("alarmId", 0) ?: 0
         habitName = intent?.getStringExtra("habitName") ?: "Habit Reminder"
+        habitId = intent?.getStringExtra("habitId") ?: ""
+        this.soundUriString = soundUriString
         
-        Log.i(TAG, "Starting alarm service for: $habitName (ID: $alarmId)")
+        Log.i(TAG, "Starting alarm service for: $habitName (ID: $alarmId, Habit ID: $habitId)")
         
         // Create notification channel and start foreground service
         createNotificationChannel()
@@ -173,12 +177,16 @@ class AlarmService : Service() {
                 notificationManager.createNotificationChannel(alarmChannel)
             }
             
-            // Create intent to stop alarm when Complete is tapped
-            val completeIntent = Intent(this, AlarmService::class.java).apply {
-                action = "STOP_ALARM"
+            // Create intent to complete alarm
+            val completeIntent = Intent(this, AlarmActionReceiver::class.java).apply {
+                action = AlarmActionReceiver.ACTION_COMPLETE
+                putExtra(AlarmActionReceiver.EXTRA_ALARM_ID, alarmId)
+                putExtra(AlarmActionReceiver.EXTRA_HABIT_ID, habitId)
+                putExtra(AlarmActionReceiver.EXTRA_HABIT_NAME, habitName)
+                putExtra(AlarmActionReceiver.EXTRA_SOUND_URI, soundUriString)
             }
             
-            val completePendingIntent = PendingIntent.getService(
+            val completePendingIntent = PendingIntent.getBroadcast(
                 this,
                 alarmId + 10000, // Unique request code
                 completeIntent,
@@ -186,11 +194,15 @@ class AlarmService : Service() {
             )
             
             // Create intent to snooze alarm
-            val snoozeIntent = Intent(this, AlarmService::class.java).apply {
-                action = "STOP_ALARM" // For now, both stop the alarm
+            val snoozeIntent = Intent(this, AlarmActionReceiver::class.java).apply {
+                action = AlarmActionReceiver.ACTION_SNOOZE
+                putExtra(AlarmActionReceiver.EXTRA_ALARM_ID, alarmId)
+                putExtra(AlarmActionReceiver.EXTRA_HABIT_ID, habitId)
+                putExtra(AlarmActionReceiver.EXTRA_HABIT_NAME, habitName)
+                putExtra(AlarmActionReceiver.EXTRA_SOUND_URI, soundUriString)
             }
             
-            val snoozePendingIntent = PendingIntent.getService(
+            val snoozePendingIntent = PendingIntent.getBroadcast(
                 this,
                 alarmId + 20000, // Unique request code
                 snoozeIntent,
