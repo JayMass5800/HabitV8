@@ -752,7 +752,8 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
           const SizedBox(height: 8),
           ElevatedButton.icon(
             onPressed: () {
-              final newPd = _PositionDay(_monthlyWeekdayPosition, _monthlyWeekday);
+              final newPd =
+                  _PositionDay(_monthlyWeekdayPosition, _monthlyWeekday);
               if (!_selectedPositionDays.contains(newPd)) {
                 setState(() {
                   _selectedPositionDays.add(newPd);
@@ -1072,7 +1073,9 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   Widget _buildMonthlyCalendarView() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+        border: Border.all(
+            color:
+                Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.all(8),
@@ -1085,7 +1088,10 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                       child: Center(
                         child: Text(
                           day,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
@@ -1125,12 +1131,18 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
                             color: isSelected
                                 ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .outline
+                                    .withValues(alpha: 0.2),
                             width: isSelected ? 2 : 1,
                           ),
                         ),
@@ -1141,7 +1153,9 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                               color: isSelected
                                   ? Theme.of(context).colorScheme.onPrimary
                                   : Theme.of(context).colorScheme.onSurface,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -1189,10 +1203,11 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
 
   String _getMultiplePositionsPreview() {
     if (_selectedPositionDays.isEmpty) return '';
-    final sorted = _selectedPositionDays.toList()..sort((a, b) {
-      if (a.position == b.position) return a.weekday.compareTo(b.weekday);
-      return a.position.compareTo(b.position);
-    });
+    final sorted = _selectedPositionDays.toList()
+      ..sort((a, b) {
+        if (a.position == b.position) return a.weekday.compareTo(b.weekday);
+        return a.position.compareTo(b.position);
+      });
     final text = sorted.map((pd) => _getPositionDayText(pd)).join(', ');
     return 'Repeats on: $text of each month';
   }
@@ -1230,7 +1245,7 @@ enum _MonthlyPatternType {
 /// E.g., "1st Thursday" or "3rd Monday"
 class _PositionDay {
   final int position; // 1=First, 2=Second, 3=Third, 4=Fourth, -1=Last
-  final int weekday;  // 1=Monday, 2=Tuesday, ..., 7=Sunday
+  final int weekday; // 1=Monday, 2=Tuesday, ..., 7=Sunday
 
   _PositionDay(this.position, this.weekday);
 
