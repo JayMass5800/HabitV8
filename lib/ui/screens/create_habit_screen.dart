@@ -2030,10 +2030,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       if (_selectedFrequency != HabitFrequency.single) {
         try {
           // Use the habit's built-in conversion method
-          habit.getOrCreateRRule(); // This auto-converts and sets usesRRule flag
+          habit
+              .getOrCreateRRule(); // This auto-converts and sets usesRRule flag
           AppLogger.info('✅ Auto-generated RRule for new habit: ${habit.name}');
         } catch (e) {
-          AppLogger.warning('Failed to auto-generate RRule, using legacy format: $e');
+          AppLogger.warning(
+              'Failed to auto-generate RRule, using legacy format: $e');
           // Not critical - habit will work with legacy frequency system
         }
       }

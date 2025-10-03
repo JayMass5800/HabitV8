@@ -425,58 +425,89 @@ if (habit.usesRRule && habit.rruleString != null) {
 ### **PHASE 4: UI Refactoring** 🔄 IN PROGRESS
 **Goal:** Update all UI to work with RRule system
 
-**Status:** Building core UI components for RRule pattern creation
+**Status:** Enhanced RRule builder with comprehensive advanced pattern support
 
-#### **4.1 RRule Builder Widget** 🔄 IN PROGRESS
+#### **4.1 RRule Builder Widget** ✅ COMPLETE
 
-**Status:** ✅ Initial implementation complete
+**Status:** ✅ Fully enhanced with comprehensive pattern support
 
-Created `lib/ui/widgets/rrule_builder_widget.dart` (680 lines):
+Created `lib/ui/widgets/rrule_builder_widget.dart` (1015+ lines):
 
 **Implemented Features:**
 
-1. ✅ **Simple/Advanced Mode Toggle**
-   - Simple mode: Quick frequency selection (Hourly, Daily, Weekly, Monthly, Yearly)
-   - Advanced mode: Full RRule builder with all options
-   - Seamless switching between modes
+1. ✅ **Frequency Selector**
+   - ChoiceChips for all frequency types
+   - Support: Hourly, Daily, Weekly, Monthly, Yearly, Single
+   - Clean Material Design 3 UI
 
-2. ✅ **Frequency Selector**
-   - ChoiceChips for simple mode
-   - Dropdown for advanced mode
-   - All frequency types supported
-
-3. ✅ **Interval Input**
+2. ✅ **Advanced Interval Input** (ENHANCED)
    - "Repeat every X day(s)/week(s)/month(s)/year(s)"
    - Number input with validation
-   - Dynamic unit labels based on frequency
+   - **NEW:** Real-time interval examples:
+     - "Every other day (Monday, Wednesday, Friday...)"
+     - "Every other week (biweekly)"
+     - "Every 3 months"
+   - Helpful info panel shows when interval > 1
+   - Maps to RRule INTERVAL parameter
 
-4. ✅ **Day Selector** (for Weekly)
+3. ✅ **Day Selector** (for Weekly)
    - FilterChips for each day of the week
    - Multi-select support
    - Maps to RRule BYDAY parameter
 
-5. ✅ **Month Day Selector** (for Monthly)
-   - FilterChips for days 1-31
-   - Multi-select support
-   - Maps to RRule BYMONTHDAY parameter
+4. ✅ **Enhanced Monthly Pattern Selector** (MAJOR UPGRADE)
+   - **NEW:** Two pattern types with SegmentedButton toggle:
+     - **On Days:** Select specific days (1-31) - traditional approach
+     - **On Position:** Select position + weekday - for complex patterns
+   
+   - **Position-Based Patterns:**
+     - Position dropdown: First / Second / Third / Fourth / Last
+     - Weekday dropdown: Monday - Sunday
+     - Real-time example text: "The second Tuesday of each month"
+     - Maps to RRule BYDAY with position prefix (e.g., "2TU", "-1FR")
+   
+   - **Examples Supported:**
+     - "1st Monday of each month" → BYDAY=1MO
+     - "Last Friday of each month" → BYDAY=-1FR
+     - "3rd Wednesday of each month" → BYDAY=3WE
+     - Traditional: Days 1,15,30 → BYMONTHDAY=1,15,30
 
-6. ✅ **Yearly Options**
+5. ✅ **Yearly Options**
    - Month dropdown (January - December)
    - Day dropdown (1-31)
    - Maps to RRule BYMONTH and BYMONTHDAY
 
-7. ✅ **Termination Options**
+6. ✅ **Termination Options**
    - Never (infinite recurrence)
    - After X occurrences (COUNT parameter)
    - Until specific date (UNTIL parameter)
    - Radio buttons with inline inputs
 
-8. ✅ **Preview Panel** (Real-time)
+7. ✅ **Preview Panel** (Real-time)
    - Human-readable pattern summary from RRuleService
    - Next 5 occurrences displayed
    - Updates automatically on any change
    - Visual feedback with icons
    - Error handling with user-friendly messages
+
+**Advanced Pattern Capabilities:**
+
+✅ **Interval Patterns:**
+- Every 2 days (INTERVAL=2;FREQ=DAILY)
+- Every other week (INTERVAL=2;FREQ=WEEKLY)
+- Every 3 months (INTERVAL=3;FREQ=MONTHLY)
+- Every 6 months (INTERVAL=6;FREQ=MONTHLY)
+
+✅ **Position-Based Monthly Patterns:**
+- 1st Monday of month (BYDAY=1MO)
+- 2nd Tuesday of month (BYDAY=2TU)
+- 3rd Wednesday of month (BYDAY=3WE)
+- 4th Thursday of month (BYDAY=4TH)
+- Last Friday of month (BYDAY=-1FR)
+
+✅ **Combined Patterns:**
+- Every other week on Monday and Friday (INTERVAL=2;FREQ=WEEKLY;BYDAY=MO,FR)
+- 1st and 3rd Monday of each month (multiple BYDAY values)
 
 **Technical Details:**
 - Integrates with RRuleService for pattern generation
@@ -484,19 +515,33 @@ Created `lib/ui/widgets/rrule_builder_widget.dart` (680 lines):
 - Full state management for all inputs
 - Responsive layout with Material Design 3
 - Error-safe preview generation
+- Helper text and examples throughout
+- Automatic preview updates on any change
+
+**User Experience Enhancements:**
+- Info panels with friendly examples
+- "Example: The second Tuesday of each month"
+- "Every other day (Monday, Wednesday, Friday...)"
+- Visual segmented button for pattern type selection
+- No complexity for simple use cases
+- Advanced features available when needed
 
 **Deliverables:**
-- ✅ Complete RRule builder widget (680 lines)
+- ✅ Complete RRule builder widget (1015+ lines)
 - ✅ Real-time preview with RRuleService integration
 - ✅ Input validation (interval > 0, valid dates)
 - ✅ User-friendly error messages
+- ✅ Position-based monthly patterns
+- ✅ Interval examples and helper text
 - ✅ No compilation errors
+- ✅ All advanced pattern types supported
 
 **Next Steps:**
 - [ ] Add unit tests for RRuleBuilderWidget
 - [x] Integrate into create_habit_screen.dart (auto-conversion approach)
 - [ ] Integrate into edit_habit_screen.dart (same auto-conversion)
-- [ ] Test habit creation with RRule auto-generation
+- [ ] Test complex pattern creation end-to-end
+- [ ] Add option to use RRuleBuilderWidget for advanced users (optional)
 
 #### **4.2 Update Habit Creation/Edit Screens** 🔄 IN PROGRESS
 
