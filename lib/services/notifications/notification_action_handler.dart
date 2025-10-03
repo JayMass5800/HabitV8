@@ -8,6 +8,115 @@ import 'notification_helpers.dart';
 import 'notification_storage.dart';
 import 'notification_scheduler.dart';
 
+// ============================================================================
+// TOP-LEVEL FUNCTIONS - Required for background isolate communication
+// These MUST be top-level functions (not class methods) for Flutter's
+// background notification system to work properly in release builds
+// ============================================================================
+
+/// Background notification response handler (TOP-LEVEL FUNCTION)
+/// This is called when the app is not running or in background
+/// MUST be a top-level function for background isolate to work!
+@pragma('vm:entry-point')
+Future<void> onBackgroundNotificationResponse(
+    NotificationResponse response) async {
+  try {
+    AppLogger.info('🔔 BACKGROUND notification response received');
+    AppLogger.info('Background action ID: ${response.actionId}');
+    AppLogger.info('Background payload: ${response.payload}');
+
+    // Initialize Hive for background processing
+    await Hive.initFlutter();
+    AppLogger.info('✅ Hive initialized in background handler');
+
+    if (response.payload != null) {
+      try {
+        final payload = jsonDecode(response.payload!);
+        final habitId = payload['habitId'] as String?;
+
+        if (habitId != null) {
+          AppLogger.info('Extracted habitId from payload: $habitId');
+
+          // Process the action in background
+          if (response.actionId != null) {
+            AppLogger.info(
+                'Processing background action: ${response.actionId}');
+            await NotificationActionHandler.completeHabitInBackground(habitId);
+          }
+        }
+      } catch (e) {
+        AppLogger.error('Error parsing background notification payload', e);
+      }
+    }
+
+    AppLogger.info('✅ Background notification response processed');
+  } catch (e) {
+    AppLogger.error('Error in background notification handler', e);
+  }
+}
+
+/// Foreground notification tap handler (TOP-LEVEL FUNCTION)
+/// This is called when the app is running and notification is tapped
+/// MUST be a top-level function for proper notification handling!
+@pragma('vm:entry-point')
+Future<void> onNotificationTapped(NotificationResponse response) async {
+  AppLogger.info('=== NOTIFICATION TAPPED - DETAILED DEBUG LOG ===');
+  AppLogger.info('📱 Notification Response Details:');
+  AppLogger.info('  - ID: ${response.id}');
+  AppLogger.info('  - Action ID: ${response.actionId}');
+  AppLogger.info('  - Payload: ${response.payload}');
+  AppLogger.info('  - Input: ${response.input}');
+  AppLogger.info('  - Notification Type: ${response.notificationResponseType}');
+  AppLogger.info('================================================');
+
+  if (response.payload != null) {
+    try {
+      AppLogger.debug('🔍 DEBUG: Attempting to parse payload JSON');
+      final payload = jsonDecode(response.payload!);
+      AppLogger.debug('🔍 DEBUG: Payload parsed successfully: $payload');
+
+      final habitId =
+          NotificationHelpers.extractHabitIdFromPayload(response.payload!);
+      AppLogger.debug('🔍 DEBUG: Extracted habitId: $habitId');
+
+      if (habitId != null) {
+        AppLogger.debug(
+            '🔍 DEBUG: habitId is not null, proceeding with action');
+        AppLogger.info('📋 Extracted habitId from payload: $habitId');
+
+        // Handle different action types
+        if (response.actionId != null) {
+          AppLogger.debug(
+              '🔍 DEBUG: Action ID is not null: ${response.actionId}');
+          AppLogger.info('🎯 Processing action: ${response.actionId}');
+          NotificationActionHandler.handleNotificationAction(
+              habitId, response.actionId!);
+        } else {
+          AppLogger.debug('🔍 DEBUG: Action ID is null, treating as tap');
+          AppLogger.info('👆 No action ID - treating as notification tap');
+          // No specific action - user just tapped the notification
+          // Could navigate to habit detail or mark as read
+        }
+      } else {
+        AppLogger.debug('🔍 DEBUG: habitId is null');
+        AppLogger.warning('⚠️ No habitId found in notification payload');
+      }
+    } catch (e) {
+      AppLogger.debug('🔍 DEBUG: Exception during payload parsing: $e');
+      AppLogger.error('❌ Error parsing notification payload', e);
+    }
+  } else {
+    AppLogger.debug('🔍 DEBUG: Payload is null');
+    AppLogger.warning('⚠️ Notification payload is null');
+  }
+
+  AppLogger.info('=== NOTIFICATION TAP PROCESSING COMPLETE ===');
+}
+
+// ============================================================================
+// CLASS DEFINITION
+// ============================================================================
+
 /// Handles notification action processing and callbacks
 /// Manages background/foreground notification responses, completion, and snooze actions
 @pragma('vm:entry-point')
@@ -64,48 +173,9 @@ class NotificationActionHandler {
     AppLogger.info('✅ Direct completion handler registered');
   }
 
-  /// Background notification response handler
-  /// This is called when the app is not running or in background
-  @pragma('vm:entry-point')
-  static Future<void> onBackgroundNotificationResponse(
-      NotificationResponse response) async {
-    try {
-      AppLogger.info('🔔 BACKGROUND notification response received');
-      AppLogger.info('Background action ID: ${response.actionId}');
-      AppLogger.info('Background payload: ${response.payload}');
-
-      // Initialize Hive for background processing
-      await Hive.initFlutter();
-      AppLogger.info('✅ Hive initialized in background handler');
-
-      if (response.payload != null) {
-        try {
-          final payload = jsonDecode(response.payload!);
-          final habitId = payload['habitId'] as String?;
-
-          if (habitId != null) {
-            AppLogger.info('Extracted habitId from payload: $habitId');
-
-            // Process the action in background
-            if (response.actionId != null) {
-              AppLogger.info(
-                  'Processing background action: ${response.actionId}');
-              await _completeHabitInBackground(habitId);
-            }
-          }
-        } catch (e) {
-          AppLogger.error('Error parsing background notification payload', e);
-        }
-      }
-
-      AppLogger.info('✅ Background notification response processed');
-    } catch (e) {
-      AppLogger.error('Error in background notification handler', e);
-    }
-  }
-
   /// Complete a habit in background when app is not running
-  static Future<void> _completeHabitInBackground(String habitId) async {
+  /// Made public so it can be called from top-level background handler
+  static Future<void> completeHabitInBackground(String habitId) async {
     try {
       AppLogger.info('⚙️ Completing habit in background: $habitId');
 
@@ -134,64 +204,6 @@ class NotificationActionHandler {
     } catch (e) {
       AppLogger.error('Error completing habit in background', e);
     }
-  }
-
-  /// Foreground notification tap handler
-  /// This is called when the app is running and notification is tapped
-  @pragma('vm:entry-point')
-  static Future<void> onNotificationTapped(
-      NotificationResponse response) async {
-    AppLogger.info('=== NOTIFICATION TAPPED - DETAILED DEBUG LOG ===');
-    AppLogger.info('📱 Notification Response Details:');
-    AppLogger.info('  - ID: ${response.id}');
-    AppLogger.info('  - Action ID: ${response.actionId}');
-    AppLogger.info('  - Payload: ${response.payload}');
-    AppLogger.info('  - Input: ${response.input}');
-    AppLogger.info(
-        '  - Notification Type: ${response.notificationResponseType}');
-    AppLogger.info('================================================');
-
-    if (response.payload != null) {
-      try {
-        AppLogger.debug('🔍 DEBUG: Attempting to parse payload JSON');
-        final payload = jsonDecode(response.payload!);
-        AppLogger.debug('🔍 DEBUG: Payload parsed successfully: $payload');
-
-        final habitId =
-            NotificationHelpers.extractHabitIdFromPayload(response.payload!);
-        AppLogger.debug('🔍 DEBUG: Extracted habitId: $habitId');
-
-        if (habitId != null) {
-          AppLogger.debug(
-              '🔍 DEBUG: habitId is not null, proceeding with action');
-          AppLogger.info('📋 Extracted habitId from payload: $habitId');
-
-          // Handle different action types
-          if (response.actionId != null) {
-            AppLogger.debug(
-                '🔍 DEBUG: Action ID is not null: ${response.actionId}');
-            AppLogger.info('🎯 Processing action: ${response.actionId}');
-            _handleNotificationAction(habitId, response.actionId!);
-          } else {
-            AppLogger.debug('🔍 DEBUG: Action ID is null, treating as tap');
-            AppLogger.info('👆 No action ID - treating as notification tap');
-            // No specific action - user just tapped the notification
-            // Could navigate to habit detail or mark as read
-          }
-        } else {
-          AppLogger.debug('🔍 DEBUG: habitId is null');
-          AppLogger.warning('⚠️ No habitId found in notification payload');
-        }
-      } catch (e) {
-        AppLogger.debug('🔍 DEBUG: Exception during payload parsing: $e');
-        AppLogger.error('❌ Error parsing notification payload', e);
-      }
-    } else {
-      AppLogger.debug('🔍 DEBUG: Payload is null');
-      AppLogger.warning('⚠️ Notification payload is null');
-    }
-
-    AppLogger.info('=== NOTIFICATION TAP PROCESSING COMPLETE ===');
   }
 
   /// Process pending actions stored during app initialization
@@ -304,8 +316,9 @@ class NotificationActionHandler {
   }
 
   /// Handle notification actions (Complete/Snooze)
+  /// Made public so it can be called from top-level foreground handler
   @pragma('vm:entry-point')
-  static void _handleNotificationAction(String habitId, String action) async {
+  static void handleNotificationAction(String habitId, String action) async {
     AppLogger.debug(
       '🚀 DEBUG: _handleNotificationAction called with habitId: $habitId, action: $action',
     );

@@ -1,241 +1,95 @@
-/InsetsController(26037): hide(ime())
-I/ImeTracker(26037): com.habittracker.habitv8.debug:4023de35: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
-I/ImeTracker(26037): system_server:cbc073dd: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
-D/ImeBackDispatcher(26037): Register received callback id=244282150 priority=0
-D/WindowOnBackDispatcher(26037): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@d580840
-D/ImeBackDispatcher(26037): Unregister received callback id=244282150
-D/WindowOnBackDispatcher(26037): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@b9d83bc
-I/ImeTracker(26037): system_server:ed9a2c9: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (26037): │ #1   AppLifecycleService._ensureDatabaseConnection.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:165:23)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 🐛 ✅ Database connection is healthy
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (26037): │ #1   NotificationActionHandler.processPendingActionsManually (package:habitv8/services/notifications/notification_action_handler.dart:765:15)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 💡 🔄 Manually processing pending actions
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (26037): │ #1   NotificationActionHandler.processPendingActionsManually (package:habitv8/services/notifications/notification_action_handler.dart:769:17)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 💡 ✅ Using callback to process pending actions
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (26037): │ #1   NotificationActionHandler.processPendingActions (package:habitv8/services/notifications/notification_action_handler.dart:200:17)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 💡 ⏭️  Skipping - initial pending actions already processed
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (26037): │ #1   AppLifecycleService._processPendingActionsWithRetry.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:213:19)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 💡 ✅ Pending actions processed successfully on attempt 1
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): 🧪 FORCE UPDATE: Starting immediate widget update...
-I/flutter (26037): Filtering 4 habits for date 2025-10-02:
-I/flutter (26037):   - test: HabitFrequency.daily -> INCLUDED
-I/flutter (26037):   - test again: HabitFrequency.hourly -> INCLUDED
-I/flutter (26037):   - jcjfjfjf: HabitFrequency.weekly -> INCLUDED
-I/flutter (26037):   - : HabitFrequency.monthly -> EXCLUDED
-I/flutter (26037): Result: 3 habits for today
-I/flutter (26037): Widget data preparation: Found 4 total habits, 3 for today
-I/flutter (26037): 🎨 Getting app theme: ThemeMode.system
-I/flutter (26037): 🎨 App is in SYSTEM mode, device brightness: Brightness.dark → dark
-I/flutter (26037): 🎨 Final theme mode to send to widgets: dark
-I/flutter (26037): 🎨 Using app primary color: 4280391411
-I/flutter (26037): 🎯 Widget data prepared: 3 habits in list, JSON length: 548
-I/flutter (26037): 🎯 First 200 chars of habits JSON: [{"id":"1759444870814","name":"test","category":"Health","colorValue":4280391411,"isCompleted":true,"status":"Completed","timeDisplay":"15:42","frequency":"HabitFrequency.daily"},{"id":"1759445307953"
-I/flutter (26037): 🎯 Theme data: dark, primary: 4280391411
-I/flutter (26037): Saved widget theme data: dark, color: 4280391411
-I/flutter (26037): Updating widget HabitTimelineWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (26037): ✅ Saved habits: length=548, preview=[{"id":"1759444870814","name":"test","category":"Health","colorValue":4280391411,"isCompleted":true,"status":"Completed","timeDisplay":"15:42","freque...
-I/flutter (26037): ✅ Saved nextHabit: null
-I/flutter (26037): ✅ Saved selectedDate: 2025-10-02
-I/flutter (26037): ✅ Saved themeMode: dark
-I/flutter (26037): ✅ Saved primaryColor: 4280391411
-I/flutter (26037): ✅ Saved lastUpdate: 1759446892919
-I/flutter (26037): Widget HabitTimelineWidgetProvider update completed
-I/flutter (26037): Updating widget HabitCompactWidgetProvider with data keys: [habits, nextHabit, selectedDate, themeMode, primaryColor, lastUpdate]
-I/flutter (26037): ✅ Saved habits: length=548, preview=[{"id":"1759444870814","name":"test","category":"Health","colorValue":4280391411,"isCompleted":true,"status":"Completed","timeDisplay":"15:42","freque...
-I/flutter (26037): ✅ Saved nextHabit: null
-I/flutter (26037): ✅ Saved selectedDate: 2025-10-02
-I/flutter (26037): ✅ Saved themeMode: dark
-I/flutter (26037): ✅ Saved primaryColor: 4280391411
-I/flutter (26037): ✅ Saved lastUpdate: 1759446892919
-I/flutter (26037): Widget HabitCompactWidgetProvider update completed
-I/flutter (26037): All widgets updated successfully
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (26037): │ #1   MidnightHabitResetService.checkForMissedResetOnAppActive (package:habitv8/services/midnight_habit_reset_service.dart:259:17)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 🐛 🔍 Checking for missed resets on app activation
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (26037): │ #1   MidnightHabitResetService._checkMissedReset (package:habitv8/services/midnight_habit_reset_service.dart:83:21)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 🐛 ✅ No missed reset - last reset was today
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (26037): │ #1   AppLifecycleService._checkMissedResetOnResume.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:263:21)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 🐛 ✅ Missed reset check completed on app resume
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/MainActivity(26037): Widget force refresh triggered for both compact and timeline widgets
-I/flutter (26037): 🧪 FORCE UPDATE: Successfully triggered widget refresh via method channel
-I/flutter (26037): 🧪 FORCE UPDATE: Completed successfully
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
-I/flutter (26037): │ #1   AppLifecycleService._refreshWidgetsOnResume.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:241:21)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 🐛 ✅ Widgets force refreshed successfully on app resume
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-W/JobInfo (26037): Requested important-while-foreground flag for job40 is ignored and takes no effect
-D/WM-SystemJobScheduler(26037): Scheduling work ID 00273b7e-6919-4793-86c9-1ec9370b991fJob ID 40
-D/WM-GreedyScheduler(26037): Starting work for 00273b7e-6919-4793-86c9-1ec9370b991f
-D/WM-Processor(26037): Processor: processing WorkGenerationalId(workSpecId=00273b7e-6919-4793-86c9-1ec9370b991f, generation=0)
-D/WM-WorkerWrapper(26037): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
-I/WidgetUpdateWorker(26037): Starting widget update work
-D/WidgetUpdateWorker(26037): Widget data loaded: 548 characters
-D/WidgetUpdateWorker(26037): Updating habits data: 548 characters
-D/WidgetUpdateWorker(26037): Processed 3 total habits, 3 for today
-D/WidgetUpdateWorker(26037): Theme settings copied: mode=null, color=ffffffff
-D/WidgetUpdateWorker(26037): Widget data updated from Flutter preferences
-D/WM-SystemJobService(26037): onStartJob for WorkGenerationalId(workSpecId=00273b7e-6919-4793-86c9-1ec9370b991f, generation=0)
-D/WidgetUpdateWorker(26037): Updated 1 timeline widgets
-D/WidgetUpdateWorker(26037): Updated 1 compact widgets
-D/HabitTimelineWidget(26037): onUpdate called with 1 widget IDs
-D/HabitTimelineWidget(26037): ListView setup completed for widget 133 (service will read fresh theme data)
-D/WM-Processor(26037): Work WorkGenerationalId(workSpecId=00273b7e-6919-4793-86c9-1ec9370b991f, generation=0) is already enqueued for processing
-D/HabitTimelineWidget(26037): Detected theme mode: 'dark'
-D/HabitTimelineWidget(26037): Using theme - mode: 'dark', primary: ff2196f3
-D/HabitTimelineWidget(26037): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/HabitTimelineWidget(26037): Found habits in widgetData
-D/HabitTimelineWidget(26037): Widget update completed for ID: 133
-D/HabitCompactWidget(26037): onUpdate called with 1 widget IDs
-D/HabitCompactWidget(26037): ListView setup completed for widget 132 with theme extras: mode=dark, primary=ff2196f3
-D/HabitCompactWidget(26037): Detected theme mode: 'dark'
-D/HabitCompactWidget(26037): Using theme - mode: 'dark', primary: ff2196f3
-D/HabitCompactWidget(26037): Semi-transparent theme applied - isDark: true, bg: 800f0f0f
-D/HabitCompactWidget(26037): Found habits in widgetData
-D/HabitCompactWidget(26037): Widget update completed for ID: 132
-I/WidgetUpdateWorker(26037): ✅ Widget update work completed successfully
-I/WM-WorkerWrapper(26037): Worker result SUCCESS for Work [ id=00273b7e-6919-4793-86c9-1ec9370b991f, tags={ com.habittracker.habitv8.WidgetUpdateWorker } ]
-D/WM-Processor(26037): Processor 00273b7e-6919-4793-86c9-1ec9370b991f executed; reschedule = false
-D/WM-SystemJobService(26037): 00273b7e-6919-4793-86c9-1ec9370b991f executed on JobScheduler
-D/WM-GreedyScheduler(26037): Cancelling work ID 00273b7e-6919-4793-86c9-1ec9370b991f
-D/HabitTimelineService(26037): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(26037): 🎨 Loading fresh theme data from preferences:
-D/HabitTimelineService(26037):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(26037):   - Flutter['flutter.theme_mode']: null
-D/HabitTimelineService(26037): 🎨 Final detected theme mode: 'dark'
-D/HabitTimelineService(26037): Theme applied - isDark: true, textColor: ffffffff, primary: ff2196f3
-D/HabitTimelineService(26037): ✅ Found habits data at key 'habits', length: 548, preview: [{"id":"1759444870814","name":"test","category":"Health","colorValue":4280391411,"isCompleted":true,
-D/HabitTimelineService(26037): Attempting to load habits from key: habits, Raw length: 548
-D/HabitTimelineService(26037): Loaded 3 habits for timeline widget
-D/HabitTimelineService(26037): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(26037): getCount returning: 3 habits
-D/HabitTimelineService(26037): getViewAt position: 0
-D/HabitTimelineService(26037): Created view for habit: test at position 0
-D/HabitTimelineService(26037): getViewAt position: 1
-D/HabitTimelineService(26037): Created view for habit: test again at position 1
-D/HabitTimelineService(26037): getViewAt position: 2
-D/HabitTimelineService(26037): Created view for habit: jcjfjfjf at position 2
-D/HabitCompactWidget(26037): onDataSetChanged called
-D/HabitCompactWidget(26037): Loading theme data
-D/HabitCompactWidget(26037): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
-D/HabitTimelineService(26037): getCount returning: 3 habits
-D/HabitTimelineService(26037): getViewAt position: 0
-D/HabitCompactWidget(26037): ✅ Found habits data at key 'habits', length: 548, preview: [{"id":"1759444870814","name":"test","category":"Health","colorValue":4280391411,"isCompleted":true,
-D/HabitCompactWidget(26037): Raw habits JSON length: 548
-D/HabitTimelineService(26037): Created view for habit: test at position 0
-D/HabitCompactWidget(26037): Parsed habits array with 3 items
-D/HabitTimelineService(26037): getViewAt position: 1
-D/HabitCompactWidget(26037): Final habits list size: 3
-D/HabitTimelineService(26037): Created view for habit: test again at position 1
-D/HabitCompactWidget(26037): getCount called, returning: 3
-D/HabitCompactWidget(26037): getViewAt called for position: 0
-D/HabitTimelineService(26037): getViewAt position: 2
-D/HabitTimelineService(26037): Created view for habit: jcjfjfjf at position 2
-D/HabitCompactWidget(26037): Created view for habit at position 0
-D/HabitCompactWidget(26037): getViewAt called for position: 1
-D/HabitCompactWidget(26037): Created view for habit at position 1
-D/HabitCompactWidget(26037): getViewAt called for position: 2
-D/HabitCompactWidget(26037): Created view for habit at position 2
-D/HabitCompactWidget(26037): getCount called, returning: 3
-D/HabitCompactWidget(26037): getViewAt called for position: 0
-D/HabitTimelineService(26037): onDataSetChanged called - reloading habit data
-D/HabitTimelineService(26037): 🎨 Loading fresh theme data from preferences:
-D/HabitTimelineService(26037):   - HomeWidget['themeMode']: dark
-D/HabitTimelineService(26037):   - Flutter['flutter.theme_mode']: null
-D/HabitCompactWidget(26037): Created view for habit at position 0
-D/HabitTimelineService(26037): 🎨 Final detected theme mode: 'dark'
-D/HabitTimelineService(26037): Theme applied - isDark: true, textColor: ffffffff, primary: ff2196f3
-D/HabitTimelineService(26037): ✅ Found habits data at key 'habits', length: 548, preview: [{"id":"1759444870814","name":"test","category":"Health","colorValue":4280391411,"isCompleted":true,
-D/HabitTimelineService(26037): Attempting to load habits from key: habits, Raw length: 548
-D/HabitCompactWidget(26037): getViewAt called for position: 1
-D/HabitCompactWidget(26037): Created view for habit at position 1
-D/HabitCompactWidget(26037): getViewAt called for position: 2
-D/HabitCompactWidget(26037): Created view for habit at position 2
-D/HabitTimelineService(26037): Loaded 3 habits for timeline widget
-D/HabitTimelineService(26037): First habit keys: [id, name, category, colorValue, isCompleted, status, timeDisplay, frequency]
-D/HabitTimelineService(26037): getCount returning: 3 habits
-D/HabitTimelineService(26037): getViewAt position: 0
-D/HabitTimelineService(26037): Created view for habit: test at position 0
-D/HabitTimelineService(26037): getViewAt position: 1
-D/HabitTimelineService(26037): Created view for habit: test again at position 1
-D/HabitTimelineService(26037): getViewAt position: 2
-D/HabitTimelineService(26037): Created view for habit: jcjfjfjf at position 2
-D/HabitCompactWidget(26037): onDataSetChanged called
-D/HabitCompactWidget(26037): Loading theme data
-D/HabitCompactWidget(26037): Theme loaded - mode: dark, text: ffffffff, bg: ff121212, primary: ff2196f3
-D/HabitCompactWidget(26037): ✅ Found habits data at key 'habits', length: 548, preview: [{"id":"1759444870814","name":"test","category":"Health","colorValue":4280391411,"isCompleted":true,
-D/HabitCompactWidget(26037): Raw habits JSON length: 548
-D/HabitCompactWidget(26037): Parsed habits array with 3 items
-D/HabitCompactWidget(26037): Final habits list size: 3
-D/HabitCompactWidget(26037): getCount called, returning: 3
-D/HabitCompactWidget(26037): getViewAt called for position: 0
-D/HabitCompactWidget(26037): Created view for habit at position 0
-D/HabitCompactWidget(26037): getViewAt called for position: 1
-D/HabitCompactWidget(26037): Created view for habit at position 1
-D/HabitCompactWidget(26037): getViewAt called for position: 2
-D/HabitCompactWidget(26037): Created view for habit at position 2
-D/WindowOnBackDispatcher(26037): setTopOnBackInvokedCallback (unwrapped): androidx.activity.OnBackPressedDispatcher$Api34Impl$createOnBackAnimationCallback$1@4fef921
-D/WindowOnBackDispatcher(26037): setTopOnBackInvokedCallback (unwrapped): android.app.Activity$$ExternalSyntheticLambda0@b9d83bc
-I/flutter (26037): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(61)] Using the Impeller rendering backend (Vulkan).
-E/DartVM  (26037): ERROR: To access 'package:habitv8/services/notifications/notification_action_handler.dart::NotificationActionHandler' from native code, it must be annotated.
-E/DartVM  (26037): ERROR: See https://github.com/dart-lang/sdk/blob/master/runtime/docs/compiler/aot/entry_point_pragma.md
-E/flutter (26037): [ERROR:flutter/lib/ui/dart_runtime_hooks.cc(38)] Dart Error: ERROR: To access 'package:habitv8/services/notifications/notification_action_handler.dart::NotificationActionHandler' from native code, it must be annotated.
-E/flutter (26037): ERROR: See https://github.com/dart-lang/sdk/blob/master/runtime/docs/compiler/aot/entry_point_pragma.md
-E/flutter (26037): [ERROR:flutter/shell/common/shell.cc(115)] Dart Error: ERROR: To access 'package:habitv8/services/notifications/notification_action_handler.dart::NotificationActionHandler' from native code, it must be annotated.
-E/flutter (26037): ERROR: See https://github.com/dart-lang/sdk/blob/master/runtime/docs/compiler/aot/entry_point_pragma.md
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (26037): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:43:15)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 💡 🔍 Checking notification callback registration...
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (26037): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:44:15)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 💡 📦 Container available: true
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (26037): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:45:15)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 💡 🔗 Callback currently set: true
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-I/flutter (26037): │ #0   AppLogger.info (package:habitv8/services/logging_service.dart:20:13)
-I/flutter (26037): │ #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:56:17)
-I/flutter (26037): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
-I/flutter (26037): │ 💡 ✅ Notification action callback is properly registered
-I/flutter (26037): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+10-02 16:21:36.650  1733  6744 I ActivityManager: Force stopping com.habittracker.habitv8.debug appid=10575 user=0: from pid 27941
+10-02 16:21:36.686  1733  6744 I ActivityManager: Killing 27515:com.habittracker.habitv8.debug/u0a575 (adj 905): stop com.habittracker.habitv8.debug due to from pid 27941
+10-02 16:21:36.713  1733  6744 I AppsFilter: interaction: PackageSetting{b6b9d1 com.rackfx.androidapp/10566} -> PackageSetting{b9bbe15 com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:36.713  1733  6744 I AppsFilter: interaction: PackageSetting{2d80737 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{b9bbe15 com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:36.713  1733  6744 I AppsFilter: interaction: PackageSetting{19c220d com.example.health_dashboard/10484} -> PackageSetting{b9bbe15 com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:41.951  1733  1963 I PackageManager: Update package com.habittracker.habitv8.debug code path from /data/app/~~Mye6pJWwOWH0y6-jDNXfhw==/com.habittracker.habitv8.debug-nW1jmxAWkUkidgdt8fwi9Q== to /data/app/vmdl250069680.tmp; Retain data    
+and using new
+10-02 16:21:42.059  1733  1963 I AppsFilter: interaction: PackageSetting{459e80a com.rackfx.androidapp/10566} -> PackageSetting{b2f7b8a com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.060  1733  1963 I AppsFilter: interaction: PackageSetting{c7698cb com.google.android.microdroid.empty_payload/10294} -> PackageSetting{b2f7b8a com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.060  1733  1963 I AppsFilter: interaction: PackageSetting{dae848a com.example.health_dashboard/10484} -> PackageSetting{b2f7b8a com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.060  1733  1963 I AppsFilter: interaction: PackageSetting{459e80a com.rackfx.androidapp/10566} -> PackageSetting{e7f9a3a com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.061  1733  1963 I AppsFilter: interaction: PackageSetting{c7698cb com.google.android.microdroid.empty_payload/10294} -> PackageSetting{e7f9a3a com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.061  1733  1963 I AppsFilter: interaction: PackageSetting{dae848a com.example.health_dashboard/10484} -> PackageSetting{e7f9a3a com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.186  1733  1888 I ActivityManager: Force stopping com.habittracker.habitv8.debug appid=10575 user=-1: installPackageLI
+10-02 16:21:42.202  1733  1963 I PackageManager: installation completed for package:com.habittracker.habitv8.debug. Final code path: /data/app/~~Eols0ZbXD0AO7vnnUXn1aw==/com.habittracker.habitv8.debug-blljoiFZIdt_Zu9Jbfvv4w==
+10-02 16:21:42.203  1733  1963 I AppsFilter: interaction: PackageSetting{b6b9d1 com.rackfx.androidapp/10566} -> PackageSetting{3635baf com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.203  1733  1963 I AppsFilter: interaction: PackageSetting{2d80737 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{3635baf com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.203  1733  1963 I AppsFilter: interaction: PackageSetting{19c220d com.example.health_dashboard/10484} -> PackageSetting{3635baf com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.217  1733  1963 I ActivityManager: Force stopping com.habittracker.habitv8.debug appid=10575 user=0: pkg removed
+10-02 16:21:42.269  1733  1733 I Telecom : CarModeTracker: Package com.habittracker.habitv8.debug is not tracked.: SSH.oR@xN4
+10-02 16:21:42.284  1733  2396 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:21:42.390  1733  1889 I ActivityManager: Start proc 27985:com.habittracker.habitv8.debug/u0a575 for broadcast {com.habittracker.habitv8.debug/com.habittracker.habitv8.HabitTimelineWidgetProvider}
+10-02 16:21:42.676  1733  2478 I AppsFilter: interaction: PackageSetting{b6b9d1 com.rackfx.androidapp/10566} -> PackageSetting{304ffcb com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.676  1733  2478 I AppsFilter: interaction: PackageSetting{2d80737 com.google.android.microdroid.empty_payload/10294} -> PackageSetting{304ffcb com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.676  1733  2478 I AppsFilter: interaction: PackageSetting{19c220d com.example.health_dashboard/10484} -> PackageSetting{304ffcb com.habittracker.habitv8.debug/10575} BLOCKED
+10-02 16:21:42.684  1733  2478 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x30000000 xflg=0x4 cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity (has extras)}      
+with LAUNCH_SINGLE_TOP from uid 2000 (com.android.shell) (BAL_ALLOW_PERMISSION) result code=0
+10-02 16:21:43.183  1733  1859 W ActivityTaskManager: Activity top resumed state loss timeout for ActivityRecord{211687356 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t3133}
+10-02 16:21:43.184  1733  1859 W ActivityTaskManager: Activity pause timeout for ActivityRecord{211687356 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t3133}
+10-02 16:21:45.143  1733  1761 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10000000 xflg=0x4 pkg=com.habittracker.habitv8.debug 
+cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity (has extras)} with LAUNCH_SINGLE_TOP from uid 10575 (com.habittracker.habitv8.debug) (BAL_ALLOW_GRACE_PERIOD) result code=3
+10-02 16:21:45.329  1733  3572 I ActivityTaskManager: Activity reported stop, but no longer stopping: ActivityRecord{211687356 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t3133} RESUMED
+10-02 16:21:46.287  1733  2340 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:21:50.203  1733  1761 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:22:15.361  1733  3572 E ActivityTaskManager: Background activity launch blocked! goo.gle/android-bal [callingPackage: com.habittracker.habitv8.debug; callingPackageTargetSdk: 36; callingUid: 10575; callingPid: 27985; appSwitchState: 1; 
+callingUidHasVisibleActivity: false; callingUidHasVisibleNotPinnedActivity: false; callingUidHasNonAppVisibleWindow: false; callingUidProcState: LAST_ACTIVITY; isCallingUidPersistentSystemProcess: false; allowBalExemptionForSystemProcess: false;     
+intent: Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10000000 xflg=0x4 pkg=com.habittracker.habitv8.debug cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity (has extras) }; callerApp:     
+ProcessRecord{d644a00 27985:com.habittracker.habitv8.debug/u0a575}; inVisibleTask: false; balAllowedByPiCreator: BSP.ALLOW_BAL; resultIfPiCreatorAllowsBal: BAL_BLOCK; callerStartMode: MODE_BACKGROUND_ACTIVITY_START_SYSTEM_DEFINED; hasRealCaller:     
+true; isCallForResult: false; isPendingIntent: false; autoOptInReason: notPendingIntent; realCallingPackage: com.habittracker.habitv8.debug; realCallingPackageTargetSdk: 36; realCallingUid: 10575; realCallingPid: 27985;
+realCallingUidHasVisibleActivity: false; realCallingUidHasVisibleNotPinnedActivity: false; realCallingUidHasNonAppVisibleWindow: false; realCallingUidProcState: LAST_ACTIVITY; isRealCallingUidPersistentSystemProcess: false;
+originatingPendingIntent: null; realCallerApp: ProcessRecord{d644a00 27985:com.habittracker.habitv8.debug/u0a575}; realInVisibleTask: false; balAllowedByPiSender: BSP.ALLOW_BAL; resultIfPiSenderAllowsBal: BAL_BLOCK; realCallerStartMode:
+MODE_BACKGROUND_ACTIVITY_START_SYSTEM_DEFINED; balDontBringExistingBackgroundTaskStackToFg: true]
+10-02 16:22:15.371  1733  3572 I ActivityTaskManager:    ChangeInfo{5c5c7fd container=ActivityRecord{247246950 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t-1} flags=0x0}
+10-02 16:22:15.371  1733  3572 I ActivityTaskManager: } of invisible launch ActivityRecord{247246950 u0 com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity t-1}
+10-02 16:22:15.372  1733  3572 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10000000 xflg=0x4 pkg=com.habittracker.habitv8.debug
+cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity (has extras)} with LAUNCH_SINGLE_TOP from uid 10575 (com.habittracker.habitv8.debug) (BAL_BLOCK) result code=3
+10-02 16:23:01.653  1733  6305 I AppsFilter: interaction: PackageSetting{304ffcb com.habittracker.habitv8.debug/10575} -> PackageSetting{ff1681f com.google.android.apps.nexuslauncher/10263} BLOCKED
+10-02 16:23:01.655  1733  6305 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 xflg=0x4 cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity
+bnds=[28,385][218,598]} with LAUNCH_SINGLE_TOP from uid 10263 (com.google.android.apps.nexuslauncher) (sr=234118602) (BAL_ALLOW_VISIBLE_WINDOW) result code=2
+10-02 16:23:01.756  1733  6305 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:23:21.965  1733  6734 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:24:08.304  1733  3572 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:24:17.218  1733  2758 W JobScheduler: Job didn't exist in JobStore: 6cae8a5 {androidx.work.systemjobscheduler} #u0a575/56
+#WidgetUpdateWorker#@androidx.work.systemjobscheduler@com.habittracker.habitv8.debug/androidx.work.impl.background.systemjob.SystemJobService
+10-02 16:24:23.085  1733  2638 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:25:01.973  1733  5471 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:25:15.055  1733  6461 W JobScheduler: Job didn't exist in JobStore: bd09cc2 {androidx.work.systemjobscheduler} #u0a575/58
+#WidgetUpdateWorker#@androidx.work.systemjobscheduler@com.habittracker.habitv8.debug/androidx.work.impl.background.systemjob.SystemJobService
+10-02 16:25:23.426  1733  4107 W JobScheduler: Job didn't exist in JobStore: 94552bb {androidx.work.systemjobscheduler} #u0a575/59 
+#WidgetUpdateWorker#@androidx.work.systemjobscheduler@com.habittracker.habitv8.debug/androidx.work.impl.background.systemjob.SystemJobService
+10-02 16:25:25.121  1733  5448 I AppsFilter: interaction: PackageSetting{304ffcb com.habittracker.habitv8.debug/10575} -> PackageSetting{ff1681f com.google.android.apps.nexuslauncher/10263} BLOCKED
+10-02 16:25:25.122  1733  5448 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 xflg=0x4 cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.MainActivity
+bnds=[28,385][218,598]} with LAUNCH_SINGLE_TOP from uid 10263 (com.google.android.apps.nexuslauncher) (sr=234118602) (BAL_ALLOW_VISIBLE_WINDOW) result code=2
+10-02 16:25:25.227  1733  1947 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:25:44.327  1733  3621 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:26:13.209  1733  5448 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8.debug and userId: 0
+10-02 16:26:19.852  1733  3579 W JobScheduler: Job didn't exist in JobStore: e86c280 {androidx.work.systemjobscheduler} #u0a575/62
+#WidgetUpdateWorker#@androidx.work.systemjobscheduler@com.habittracker.habitv8.debug/androidx.work.impl.background.systemjob.SystemJobService
+10-02 16:29:35.811 18950 18950 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
+10-02 16:29:36.019 18950 18950 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
+10-02 16:29:36.020  4913  5143 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=0 tag=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection
+key=0|com.habittracker.habitv8.debug|0|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection|10575|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection: Notification(channel=habit_scheduled_channel shortcut=null contentView=null       
+vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|LOCAL_ONLY|GROUP_SUMMARY|AUTOGROUP_SUMMARY|SILENT color=0x00000000 groupKey=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection vis=PRIVATE))
+10-02 16:29:36.021  4913  5143 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=0 tag=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection
+key=0|com.habittracker.habitv8.debug|0|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection|10575|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection: Notification(channel=habit_scheduled_channel shortcut=null contentView=null       
+vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|LOCAL_ONLY|GROUP_SUMMARY|AUTOGROUP_SUMMARY|SILENT color=0x00000000 groupKey=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection vis=PRIVATE))
+10-02 16:29:36.315  4913  5143 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=5199938 tag=null key=0|com.habittracker.habitv8.debug|5199938|null|10575:
+Notification(channel=habit_scheduled_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 actions=2 vis=PRIVATE))
+10-02 16:29:36.316  4913  5143 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=5199938 tag=null key=0|com.habittracker.habitv8.debug|5199938|null|10575:
+Notification(channel=habit_scheduled_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 actions=2 vis=PRIVATE))
+10-02 16:30:10.719 18950 18950 I NotificationListener: Handling notification state refresh for com.habittracker.habitv8.debug#0
+10-02 16:30:12.458 18950 18950 I NotificationListener: Handling notification state refresh for com.habittracker.habitv8.debug#0
+10-02 16:30:22.302 18950 18950 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
+10-02 16:30:22.303 18950 18950 I NotificationListener: received notification removed event - com.habittracker.habitv8.debug#UserHandle{0},category=-1
+10-02 16:30:22.803  4913  5143 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=156880 tag=null key=0|com.habittracker.habitv8.debug|156880|null|10575: 
+Notification(channel=habit_scheduled_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 actions=2 vis=PRIVATE))
+10-02 16:30:22.805  4913  5143 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=156880 tag=null key=0|com.habittracker.habitv8.debug|156880|null|10575:
+Notification(channel=habit_scheduled_channel shortcut=null contentView=null vibrate=null sound=null defaults=0 flags=AUTO_CANCEL color=0x00000000 actions=2 vis=PRIVATE))
+10-02 16:30:22.808  4913  5143 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=0 tag=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection
+key=0|com.habittracker.habitv8.debug|0|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection|10575|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection: Notification(channel=habit_scheduled_channel shortcut=null contentView=null       
+vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|LOCAL_ONLY|GROUP_SUMMARY|AUTOGROUP_SUMMARY|SILENT color=0x00000000 groupKey=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection vis=PRIVATE))
+10-02 16:30:22.809  4913  5143 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8.debug user=UserHandle{0} id=0 tag=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection
+key=0|com.habittracker.habitv8.debug|0|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection|10575|0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection: Notification(channel=habit_scheduled_channel shortcut=null contentView=null       
+vibrate=null sound=null defaults=0 flags=AUTO_CANCEL|LOCAL_ONLY|GROUP_SUMMARY|AUTOGROUP_SUMMARY|SILENT color=0x00000000 groupKey=0|com.habittracker.habitv8.debug|g:Aggregate_AlertingSection vis=PRIVATE))

@@ -16,9 +16,8 @@ class NotificationService {
   static Future<void> initialize() async {
     await NotificationCore.initialize(
       plugin: _notificationsPlugin,
-      onForegroundTap: NotificationActionHandler.onNotificationTapped,
-      onBackgroundTap:
-          NotificationActionHandler.onBackgroundNotificationResponse,
+      onForegroundTap: onNotificationTapped,
+      onBackgroundTap: onBackgroundNotificationResponse,
     );
     _scheduler = NotificationScheduler(_notificationsPlugin);
     _alarmScheduler = NotificationAlarmScheduler.instance;
