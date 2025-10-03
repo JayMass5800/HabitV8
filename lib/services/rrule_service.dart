@@ -333,4 +333,128 @@ class RRuleService {
       return [];
     }
   }
+
+  /// Parse RRule string to extract UI components
+  ///
+  /// Returns a map with parsed values that can be used to populate the UI.
+  /// Returns null if parsing fails.
+  static Map<String, dynamic>? parseRRuleToComponents(String rruleString) {
+    try {
+      // Remove RRULE: prefix if present
+      final cleanRRule = rruleString.startsWith('RRULE:')
+          ? rruleString.substring(6)
+          : rruleString;
+
+      final parts = cleanRRule.split(';');
+      final Map<String, String> components = {};
+
+      for (final part in parts) {
+        final keyValue = part.split('=');
+        if (keyValue.length == 2) {
+          components[keyValue[0]] = keyValue[1];
+        }
+      }
+
+      final result = <String, dynamic>{};
+
+      // Parse FREQ
+      if (components.containsKey('FREQ')) {
+        result['frequency'] = components['FREQ'];
+      }
+
+      // Parse INTERVAL
+      if (components.containsKey('INTERVAL')) {
+        result['interval'] = int.tryParse(components['INTERVAL']!) ?? 1;
+      } else {
+        result['interval'] = 1;
+      }
+
+      // Parse BYDAY (weekdays)
+      if (components.containsKey('BYDAY')) {
+        final byDayStr = components['BYDAY']!;
+        
+        // Check if it contains position prefix (e.g., "2TU" or "-1FR")
+        final hasPosition = RegExp(r'^-?\d+[A-Z]{2}$').hasMatch(byDayStr);
+        
+        if (hasPosition) {
+          // Monthly position pattern (e.g., "2TU" = 2nd Tuesday)
+          final match = RegExp(r'^(-?\d+)([A-Z]{2})$').firstMatch(byDayStr);
+          if (match != null) {
+            result['monthlyWeekdayPosition'] = int.parse(match.group(1)!);
+            result['monthlyWeekday'] = _rruleDayToWeekday(match.group(2)!);
+          }
+        } else {
+          // Weekly pattern - parse multiple days
+          final days = byDayStr.split(',');
+          result['weekdays'] =
+              days.map((day) => _rruleDayToWeekday(day)).toList();
+        }
+      }
+
+      // Parse BYMONTHDAY
+      if (components.containsKey('BYMONTHDAY')) {
+        final monthDays = components['BYMONTHDAY']!
+            .split(',')
+            .map((day) => int.tryParse(day))
+            .whereType<int>()
+            .toList();
+        result['monthDays'] = monthDays;
+      }
+
+      // Parse BYMONTH (yearly)
+      if (components.containsKey('BYMONTH')) {
+        result['yearlyMonth'] = int.tryParse(components['BYMONTH']!) ?? 1;
+      }
+
+      // Parse yearly day (from BYMONTHDAY when FREQ=YEARLY)
+      if (components['FREQ'] == 'YEARLY' &&
+          components.containsKey('BYMONTHDAY')) {
+        result['yearlyDay'] = int.tryParse(components['BYMONTHDAY']!) ?? 1;
+      }
+
+      // Parse COUNT
+      if (components.containsKey('COUNT')) {
+        result['count'] = int.tryParse(components['COUNT']!);
+      }
+
+      // Parse UNTIL
+      if (components.containsKey('UNTIL')) {
+        try {
+          final untilStr = components['UNTIL']!;
+          // Format: YYYYMMDDTHHmmssZ or YYYYMMDD
+          if (untilStr.contains('T')) {
+            final dateStr = untilStr.split('T')[0];
+            result['until'] = DateTime.parse(
+              '${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}',
+            );
+          } else {
+            result['until'] = DateTime.parse(
+              '${untilStr.substring(0, 4)}-${untilStr.substring(4, 6)}-${untilStr.substring(6, 8)}',
+            );
+          }
+        } catch (e) {
+          AppLogger.error('Failed to parse UNTIL date: $e');
+        }
+      }
+
+      return result;
+    } catch (e) {
+      AppLogger.error('Failed to parse RRule to components: $e');
+      return null;
+    }
+  }
+
+  /// Convert RRule day code to weekday number
+  static int _rruleDayToWeekday(String dayCode) {
+    const days = {
+      'MO': 1,
+      'TU': 2,
+      'WE': 3,
+      'TH': 4,
+      'FR': 5,
+      'SA': 6,
+      'SU': 7,
+    };
+    return days[dayCode.toUpperCase()] ?? 1;
+  }
 }

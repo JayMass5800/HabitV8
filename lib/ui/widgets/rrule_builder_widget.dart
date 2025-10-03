@@ -82,8 +82,79 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   }
 
   void _parseExistingRRule(String rruleString) {
-    // TODO: Parse existing RRule string to populate UI
-    // For now, we'll start fresh in advanced mode
+    try {
+      final components = RRuleService.parseRRuleToComponents(rruleString);
+      if (components == null) return;
+
+      // Parse frequency
+      if (components.containsKey('frequency')) {
+        switch (components['frequency']) {
+          case 'HOURLY':
+            _frequency = HabitFrequency.hourly;
+            break;
+          case 'DAILY':
+            _frequency = HabitFrequency.daily;
+            break;
+          case 'WEEKLY':
+            _frequency = HabitFrequency.weekly;
+            break;
+          case 'MONTHLY':
+            _frequency = HabitFrequency.monthly;
+            break;
+          case 'YEARLY':
+            _frequency = HabitFrequency.yearly;
+            break;
+        }
+      }
+
+      // Parse interval
+      if (components.containsKey('interval')) {
+        _interval = components['interval'];
+      }
+
+      // Parse weekdays (for weekly frequency)
+      if (components.containsKey('weekdays')) {
+        _selectedWeekdays.clear();
+        _selectedWeekdays.addAll((components['weekdays'] as List).cast<int>());
+      }
+
+      // Parse month days (for monthly frequency - day of month pattern)
+      if (components.containsKey('monthDays')) {
+        _selectedMonthDays.clear();
+        _selectedMonthDays.addAll((components['monthDays'] as List).cast<int>());
+        _monthlyPatternType = _MonthlyPatternType.onDays;
+      }
+
+      // Parse monthly position pattern (e.g., 2nd Tuesday)
+      if (components.containsKey('monthlyWeekdayPosition') &&
+          components.containsKey('monthlyWeekday')) {
+        _monthlyPatternType = _MonthlyPatternType.onPosition;
+        _monthlyWeekdayPosition = components['monthlyWeekdayPosition'];
+        _monthlyWeekday = components['monthlyWeekday'];
+      }
+
+      // Parse yearly options
+      if (components.containsKey('yearlyMonth')) {
+        _yearlyMonth = components['yearlyMonth'];
+      }
+      if (components.containsKey('yearlyDay')) {
+        _yearlyDay = components['yearlyDay'];
+      }
+
+      // Parse termination options
+      if (components.containsKey('count')) {
+        _terminationType = _TerminationType.count;
+        _count = components['count'];
+      } else if (components.containsKey('until')) {
+        _terminationType = _TerminationType.until;
+        _untilDate = components['until'];
+      } else {
+        _terminationType = _TerminationType.never;
+      }
+    } catch (e) {
+      // If parsing fails, log it but don't crash - just use defaults
+      debugPrint('Failed to parse RRule: $e');
+    }
   }
 
   void _updatePreview() {

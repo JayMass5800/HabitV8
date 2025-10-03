@@ -10,6 +10,7 @@ import '../../services/category_suggestion_service.dart';
 import '../../services/comprehensive_habit_suggestions_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/alarm_manager_service.dart';
+import '../widgets/rrule_builder_widget.dart';
 
 class CreateHabitScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? prefilledData;
@@ -31,6 +32,11 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   bool _notificationsEnabled = true;
   TimeOfDay? _notificationTime;
   bool _isSaving = false;
+
+  // RRule integration
+  bool _useAdvancedScheduling = false;
+  String? _rruleString;
+  DateTime _rruleStartDate = DateTime.now();
 
   // Alarm-related fields
   bool _alarmEnabled = false;
@@ -408,111 +414,434 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Frequency',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: _selectedColor,
+            // Header with toggle
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _useAdvancedScheduling ? 'Advanced Scheduling' : 'Frequency',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: _selectedColor,
+                        ),
                   ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: HabitFrequency.values.map((frequency) {
-                return ChoiceChip(
-                  label: Text(_getFrequencyDisplayName(frequency)),
-                  selected: _selectedFrequency == frequency,
-                  onSelected: (selected) {
-                    if (selected) {
+                ),
+                // Info button
+                IconButton(
+                  icon: const Icon(Icons.info_outline),
+                  tooltip: 'Learn about scheduling modes',
+                  onPressed: _showSchedulingInfoDialog,
+                ),
+                // Toggle button
+                Container(
+                  decoration: BoxDecoration(
+                    color: _useAdvancedScheduling
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: TextButton.icon(
+                    onPressed: () {
                       setState(() {
-                        _selectedFrequency = frequency;
-                        _selectedWeekdays.clear();
-                        _selectedMonthDays.clear();
-                        _hourlyTimes.clear();
-                        _selectedYearlyDates.clear();
-                        _singleDateTime = null;
+                        _useAdvancedScheduling = !_useAdvancedScheduling;
                       });
-                    }
-                  },
-                );
-              }).toList(),
+                    },
+                    icon: Icon(
+                      _useAdvancedScheduling ? Icons.tune : Icons.auto_awesome,
+                      size: 18,
+                    ),
+                    label: Text(
+                      _useAdvancedScheduling ? 'Simple' : 'Advanced',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _useAdvancedScheduling
+                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            // Enhanced Hourly Habits - Multiple time picker
-            if (_selectedFrequency == HabitFrequency.hourly) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Select times throughout the day:',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+            const SizedBox(height: 8),
+            
+            // Mode explanation banner
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _useAdvancedScheduling
+                    ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
+                    : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _useAdvancedScheduling
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                      : Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                ),
               ),
-              const SizedBox(height: 8),
-              _buildHourlyTimeSelector(),
-              const SizedBox(height: 16),
-              Text(
-                'Select days of the week:',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              child: Row(
+                children: [
+                  Icon(
+                    _useAdvancedScheduling ? Icons.auto_awesome : Icons.calendar_today,
+                    size: 20,
+                    color: _useAdvancedScheduling
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.secondary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _useAdvancedScheduling
+                          ? 'Advanced mode: Create complex patterns like "every other week" or "2nd Tuesday of each month"'
+                          : 'Simple mode: Quick setup for daily, weekly, monthly, or yearly habits',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            height: 1.3,
+                          ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              _buildWeekdaySelector(),
-            ],
-            if (_selectedFrequency == HabitFrequency.weekly) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Select days of the week:',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 8),
-              _buildWeekdaySelector(),
-            ],
-            // Enhanced Monthly Reminders - True calendar view
-            if (_selectedFrequency == HabitFrequency.monthly) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Select days of the month:',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 8),
-              _buildMonthDaySelector(),
-            ],
-            // Enhanced Yearly Habits - Calendar-style date picker
-            if (_selectedFrequency == HabitFrequency.yearly) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Select dates throughout the year:',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 8),
-              _buildYearlyCalendarSelector(),
-            ],
-            // Single Habit - One-time date and time picker
-            if (_selectedFrequency == HabitFrequency.single) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Select the date and time for this one-time habit:',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 8),
-              _buildSingleDateTimeSelector(),
-            ],
+            ),
             const SizedBox(height: 16),
-            // Remove the target count section completely
+
+            // Content - either simple or advanced
+            if (_useAdvancedScheduling)
+              Column(
+                children: [
+                  RRuleBuilderWidget(
+                    initialRRuleString: _rruleString,
+                    initialStartDate: _rruleStartDate,
+                    initialFrequency: _selectedFrequency,
+                    onRRuleChanged: (rruleString, startDate) {
+                      setState(() {
+                        _rruleString = rruleString;
+                        _rruleStartDate = startDate;
+                      });
+                    },
+                  ),
+                  // Hybrid approach: Show hourly times selector for hourly frequency
+                  if (_selectedFrequency == HabitFrequency.hourly) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Hourly habits require specific times since RRule doesn\'t support multiple times per day',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                    height: 1.3,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Select times throughout the day:',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildHourlyTimeSelector(),
+                  ],
+                ],
+              )
+            else
+              _buildSimpleFrequencyUI(),
           ],
         ),
       ),
+    );
+  }
+
+  void _showSchedulingInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.help_outline, size: 28),
+            SizedBox(width: 12),
+            Text('Scheduling Modes'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildInfoSection(
+                icon: Icons.calendar_today,
+                title: 'Simple Mode',
+                description: 'Perfect for most habits',
+                examples: [
+                  '• Every day',
+                  '• Specific days of the week',
+                  '• Specific days of the month',
+                  '• Once a year on a date',
+                ],
+                color: Colors.green,
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 20),
+              _buildInfoSection(
+                icon: Icons.auto_awesome,
+                title: 'Advanced Mode',
+                description: 'For complex scheduling patterns',
+                examples: [
+                  '• Every other day/week/month',
+                  '• 2nd Tuesday of each month',
+                  '• Last Friday of every month',
+                  '• Every 3 weeks',
+                  '• Repeat until a specific date',
+                  '• Repeat a set number of times',
+                  '• Hourly habits with custom times',
+                ],
+                color: Colors.blue,
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Tip: Start with Simple mode. Switch to Advanced only if you need complex patterns.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontStyle: FontStyle.italic,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Got it!'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoSection({
+    required IconData icon,
+    required String title,
+    required String description,
+    required List<String> examples,
+    required Color color,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: color.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Examples:',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 4),
+              ...examples.map((example) => Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      example,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  )),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSimpleFrequencyUI() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: HabitFrequency.values.map((frequency) {
+            return ChoiceChip(
+              label: Text(_getFrequencyDisplayName(frequency)),
+              selected: _selectedFrequency == frequency,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    _selectedFrequency = frequency;
+                    _selectedWeekdays.clear();
+                    _selectedMonthDays.clear();
+                    _hourlyTimes.clear();
+                    _selectedYearlyDates.clear();
+                    _singleDateTime = null;
+                  });
+                }
+              },
+            );
+          }).toList(),
+        ),
+        // Enhanced Hourly Habits - Multiple time picker
+        if (_selectedFrequency == HabitFrequency.hourly) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Select times throughout the day:',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          _buildHourlyTimeSelector(),
+          const SizedBox(height: 16),
+          Text(
+            'Select days of the week:',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          _buildWeekdaySelector(),
+        ],
+        if (_selectedFrequency == HabitFrequency.weekly) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Select days of the week:',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          _buildWeekdaySelector(),
+        ],
+        // Enhanced Monthly Reminders - True calendar view
+        if (_selectedFrequency == HabitFrequency.monthly) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Select days of the month:',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          _buildMonthDaySelector(),
+        ],
+        // Enhanced Yearly Habits - Calendar-style date picker
+        if (_selectedFrequency == HabitFrequency.yearly) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Select dates throughout the year:',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          _buildYearlyCalendarSelector(),
+        ],
+        // Single Habit - One-time date and time picker
+        if (_selectedFrequency == HabitFrequency.single) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Select the date and time for this one-time habit:',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 8),
+          _buildSingleDateTimeSelector(),
+        ],
+        const SizedBox(height: 16),
+        // Remove the target count section completely
+      ],
     );
   }
 
@@ -2025,9 +2354,19 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         alarmSoundUri: _selectedAlarmSoundUri,
       );
 
-      // Phase 4: Auto-generate RRule for all new habits (except single)
-      // This provides consistency and enables complex patterns in the future
-      if (_selectedFrequency != HabitFrequency.single) {
+      // If using advanced scheduling mode, apply the RRule directly
+      if (_useAdvancedScheduling && _rruleString != null) {
+        habit.rruleString = _rruleString;
+        habit.dtStart = _rruleStartDate;
+        habit.usesRRule = true;
+        AppLogger.info('✅ Using advanced RRule scheduling: $_rruleString');
+        // Note: Hourly times are still stored separately for hybrid approach
+        if (_selectedFrequency == HabitFrequency.hourly) {
+          AppLogger.info('  📅 Hybrid mode: RRule pattern + ${_hourlyTimes.length} specific times');
+        }
+      } else if (_selectedFrequency != HabitFrequency.single) {
+        // Phase 4: Auto-generate RRule for all new habits (except single)
+        // This provides consistency and enables complex patterns in the future
         try {
           // Use the habit's built-in conversion method
           habit
