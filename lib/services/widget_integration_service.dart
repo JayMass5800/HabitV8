@@ -613,7 +613,21 @@ class WidgetIntegrationService {
       case HabitFrequency.weekly:
         return habit.selectedWeekdays.contains(date.weekday);
       case HabitFrequency.monthly:
-        return habit.monthlySchedule.contains(date.day);
+        // Use selectedMonthDays for consistency with widget_service.dart
+        final habitDay = habit.selectedMonthDays.isNotEmpty
+            ? habit.selectedMonthDays.first
+            : 1;
+        return date.day == habitDay;
+      case HabitFrequency.yearly:
+        // Check if today matches any of the yearly dates
+        return habit.selectedYearlyDates.any((yearlyDateString) {
+          try {
+            final yearlyDate = DateTime.parse(yearlyDateString);
+            return date.month == yearlyDate.month && date.day == yearlyDate.day;
+          } catch (e) {
+            return false;
+          }
+        });
       case HabitFrequency.single:
         if (habit.singleDateTime != null) {
           final habitDate = DateTime(
@@ -627,8 +641,6 @@ class WidgetIntegrationService {
         return false;
       case HabitFrequency.hourly:
         return true;
-      default:
-        return false;
     }
   }
 
