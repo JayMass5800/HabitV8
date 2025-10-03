@@ -2025,6 +2025,19 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         alarmSoundUri: _selectedAlarmSoundUri,
       );
 
+      // Phase 4: Auto-generate RRule for all new habits (except single)
+      // This provides consistency and enables complex patterns in the future
+      if (_selectedFrequency != HabitFrequency.single) {
+        try {
+          // Use the habit's built-in conversion method
+          habit.getOrCreateRRule(); // This auto-converts and sets usesRRule flag
+          AppLogger.info('✅ Auto-generated RRule for new habit: ${habit.name}');
+        } catch (e) {
+          AppLogger.warning('Failed to auto-generate RRule, using legacy format: $e');
+          // Not critical - habit will work with legacy frequency system
+        }
+      }
+
       // Debug logging for sound settings
       AppLogger.debug('Creating habit with sound settings:');
       AppLogger.debug('  - Sound Name: $_selectedAlarmSoundName');

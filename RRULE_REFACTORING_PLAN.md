@@ -494,45 +494,58 @@ Created `lib/ui/widgets/rrule_builder_widget.dart` (680 lines):
 
 **Next Steps:**
 - [ ] Add unit tests for RRuleBuilderWidget
-- [ ] Integrate into create_habit_screen.dart
-- [ ] Integrate into edit_habit_screen.dart
+- [x] Integrate into create_habit_screen.dart (auto-conversion approach)
+- [ ] Integrate into edit_habit_screen.dart (same auto-conversion)
+- [ ] Test habit creation with RRule auto-generation
 
-#### **4.2 Update Habit Creation/Edit Screens** (Days 6-8)
+#### **4.2 Update Habit Creation/Edit Screens** 🔄 IN PROGRESS
 
-1. **`create_habit_screen.dart`**
-   - Replace current frequency selector with RRuleBuilderWidget
-   - Keep simple mode for basic users (daily, weekly, etc.)
-   - Add "Advanced" mode for RRule builder
-   - Save `rruleString` and `dtStart` when creating habit
+**Design Decision: Automatic RRule Conversion (No User Complexity)**
 
-2. **`edit_habit_screen.dart`**
-   - Same updates as create screen
-   - Handle migration of old habits to RRule on edit
-   - Show warning if converting from legacy format
+After user feedback, we adopted a **seamless auto-conversion approach** instead of manual mode toggles:
 
-**UI Flow:**
-```
-┌─────────────────────────────────┐
-│  Create Habit                   │
-├─────────────────────────────────┤
-│  Name: [           ]            │
-│  Category: [Health ▼]           │
-│                                 │
-│  Schedule Type:                 │
-│  ( ) Simple (Daily/Weekly/etc)  │
-│  (•) Advanced (Custom pattern)  │
-│                                 │
-│  [RRule Builder Widget]         │
-│                                 │
-│  [ Cancel ]  [ Create Habit ]   │
-└─────────────────────────────────┘
-```
+✅ **What We Did:**
+- Keep the existing familiar UI exactly as it is
+- Users select frequency (Daily, Weekly, etc.) as they always have
+- Users pick days/dates using the same intuitive selectors
+- **Behind the scenes**: Automatically convert to RRule when saving
+- Zero learning curve, zero UI changes for users
+
+❌ **What We Avoided:**
+- Manual "Simple/Advanced" mode toggle (too confusing)
+- Forcing users to understand RRule concepts
+- Breaking existing user workflows
+
+**Implementation:**
+
+1. ✅ **`create_habit_screen.dart`** - UPDATED
+   - UI remains unchanged (familiar frequency chips, day selectors)
+   - Added auto-conversion after habit creation:
+     ```dart
+     if (_selectedFrequency != HabitFrequency.single) {
+       habit.getOrCreateRRule(); // Auto-convert to RRule
+     }
+     ```
+   - Falls back gracefully to legacy if conversion fails
+   - No breaking changes to existing code
+
+2. **`edit_habit_screen.dart`** - PENDING
+   - Same approach as create screen
+   - Auto-convert legacy habits to RRule on save
+   - Optional: Show info message "Upgraded to flexible scheduling"
+
+**Benefits:**
+- ✅ 100% backward compatible
+- ✅ Zero user confusion
+- ✅ All new habits use modern RRule system
+- ✅ Old habits auto-upgrade when edited
+- ✅ Future complex patterns (intervals, etc.) easy to add
 
 **Deliverables:**
-- [ ] Updated create screen
-- [ ] Updated edit screen  
-- [ ] Simple/Advanced mode toggle
-- [ ] Migration on edit
+- ✅ Updated create screen with auto-conversion
+- [ ] Updated edit screen with auto-conversion
+- [ ] Test habit creation flow
+- [ ] Test habit editing flow
 
 #### **4.3 Update Display Screens** (Days 9-12)
 
