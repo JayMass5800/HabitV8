@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../logging_service.dart';
+import '../rrule_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_core.dart';
 import 'notification_helpers.dart';
@@ -270,37 +271,43 @@ class NotificationScheduler {
         'Cancelled existing notifications for habit ID: ${habit.id}',
       );
 
-      // Route to frequency-specific scheduler
-      switch (habit.frequency) {
-        case HabitFrequency.daily:
-          AppLogger.debug('Scheduling daily notifications');
-          await _scheduleDailyHabitNotifications(habit, hour, minute);
-          break;
+      // Use RRule-based scheduling if habit uses RRule
+      if (habit.usesRRule && habit.rruleString != null) {
+        AppLogger.debug('Scheduling RRule-based notifications');
+        await _scheduleRRuleHabitNotifications(habit, hour, minute);
+      } else {
+        // Legacy frequency-specific scheduler
+        switch (habit.frequency) {
+          case HabitFrequency.daily:
+            AppLogger.debug('Scheduling daily notifications');
+            await _scheduleDailyHabitNotifications(habit, hour, minute);
+            break;
 
-        case HabitFrequency.weekly:
-          AppLogger.debug('Scheduling weekly notifications');
-          await _scheduleWeeklyHabitNotifications(habit, hour, minute);
-          break;
+          case HabitFrequency.weekly:
+            AppLogger.debug('Scheduling weekly notifications');
+            await _scheduleWeeklyHabitNotifications(habit, hour, minute);
+            break;
 
-        case HabitFrequency.monthly:
-          AppLogger.debug('Scheduling monthly notifications');
-          await _scheduleMonthlyHabitNotifications(habit, hour, minute);
-          break;
+          case HabitFrequency.monthly:
+            AppLogger.debug('Scheduling monthly notifications');
+            await _scheduleMonthlyHabitNotifications(habit, hour, minute);
+            break;
 
-        case HabitFrequency.yearly:
-          AppLogger.debug('Scheduling yearly notifications');
-          await _scheduleYearlyHabitNotifications(habit, hour, minute);
-          break;
+          case HabitFrequency.yearly:
+            AppLogger.debug('Scheduling yearly notifications');
+            await _scheduleYearlyHabitNotifications(habit, hour, minute);
+            break;
 
-        case HabitFrequency.single:
-          AppLogger.debug('Scheduling single habit notification');
-          await _scheduleSingleHabitNotifications(habit);
-          break;
+          case HabitFrequency.single:
+            AppLogger.debug('Scheduling single habit notification');
+            await _scheduleSingleHabitNotifications(habit);
+            break;
 
-        case HabitFrequency.hourly:
-          AppLogger.debug('Scheduling hourly notifications');
-          await _scheduleHourlyHabitNotifications(habit, hour, minute);
-          break;
+          case HabitFrequency.hourly:
+            AppLogger.debug('Scheduling hourly notifications');
+            await _scheduleHourlyHabitNotifications(habit, hour, minute);
+            break;
+        }
       }
 
       AppLogger.info(
@@ -690,5 +697,89 @@ class NotificationScheduler {
     await _plugin.cancel(dailyId);
 
     AppLogger.info('✅ Cancelled all notifications for habit: $habitId');
+  }
+
+  /// Schedule notifications using RRule (new unified approach)
+  Future<void> _scheduleRRuleHabitNotifications(
+    Habit habit,
+    int hour,
+    int minute,
+  ) async {
+    if (habit.rruleString == null) {
+      AppLogger.error('Habit ${habit.name} has no RRule string');
+      return;
+    }
+
+    final now = tz.TZDateTime.now(tz.local);
+    final endDate = now.add(const Duration(days: 84)); // Schedule 12 weeks ahead
+
+    try {
+      // Get all occurrences from RRule
+      final occurrences = RRuleService.getOccurrences(
+        rruleString: habit.rruleString!,
+        startDate: habit.dtStart ?? habit.createdAt,
+        rangeStart: now,
+        rangeEnd: endDate,
+      );
+
+      int scheduledCount = 0;
+
+      for (final occurrence in occurrences) {
+        // Create TZDateTime for the notification
+        final scheduledTime = tz.TZDateTime(
+          tz.local,
+          occurrence.year,
+          occurrence.month,
+          occurrence.day,
+          hour,
+          minute,
+        );
+
+        if (scheduledTime.isAfter(now)) {
+          final notificationId = NotificationHelpers.generateSafeId(
+              '${habit.id}_rrule_${occurrence.year}_${occurrence.month}_${occurrence.day}');
+
+          final AndroidNotificationDetails androidDetails =
+              AndroidNotificationDetails(
+            'habit_scheduled_channel',
+            'Scheduled Habit Notifications',
+            channelDescription: 'Scheduled notifications for habit reminders',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+            enableVibration: true,
+          );
+
+          const DarwinNotificationDetails iOSDetails =
+              DarwinNotificationDetails(categoryIdentifier: 'habit_category');
+
+          final NotificationDetails platformChannelSpecifics =
+              NotificationDetails(
+            android: androidDetails,
+            iOS: iOSDetails,
+          );
+
+          await _plugin.zonedSchedule(
+            notificationId,
+            '🎯 ${habit.name}',
+            'Time to complete your habit! Don\'t break your streak.',
+            scheduledTime,
+            platformChannelSpecifics,
+            androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+            uiLocalNotificationDateInterpretation:
+                UILocalNotificationDateInterpretation.absoluteTime,
+            payload: 'habit_${habit.id}',
+          );
+
+          scheduledCount++;
+        }
+      }
+
+      AppLogger.info(
+          '📅 Scheduled $scheduledCount RRule notifications for ${habit.name}');
+    } catch (e) {
+      AppLogger.error(
+          'Failed to schedule RRule notifications for ${habit.name}: $e');
+    }
   }
 }

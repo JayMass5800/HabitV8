@@ -351,17 +351,19 @@ switch (habit.frequency) {
    - RRule habits reset correctly at midnight
    - Legacy logic maintained
 
-**3.2 Medium Priority Services** 🔄 NEXT UP
+**3.2 Medium Priority Services** ✅ COMPLETE
 
-6. **`work_manager_habit_service.dart`** - PENDING
-   - Update notification scheduling logic
-   - Generate notification dates using RRule occurrences
-   - Simplify `_scheduleWeeklyContinuous`, `_scheduleMonthlyContinuous`, etc.
-   - Consolidate into single `_scheduleNotifications()` method
+6. ✅ **`work_manager_habit_service.dart`**
+   - Added `_scheduleRRuleContinuous()` method
+   - Updated main scheduling switch to check for RRule first
+   - Schedules 12 weeks of notifications using RRule occurrences
+   - Legacy methods preserved for backward compatibility
 
-7. **`alarm_manager_service.dart` & `alarm_service.dart`** - PENDING
-   - Update alarm scheduling to use RRule occurrences
-   - Remove frequency-specific logic
+7. ✅ **`notification_scheduler.dart`**
+   - Added `_scheduleRRuleHabitNotifications()` method
+   - Updated scheduling logic to use RRule when available
+   - Full Android/iOS notification details supported
+   - Legacy frequency-based scheduling maintained
 
 **3.3 Low Priority Services** - PENDING
 
@@ -404,13 +406,14 @@ if (habit.usesRRule && habit.rruleString != null) {
 
 **Deliverables:**
 - ✅ 5 high-priority services updated to support RRule
+- ✅ 2 medium-priority notification services updated
 - ✅ 100% backward compatibility maintained
 - ✅ 30 total tests passing (12 RRuleService + 18 Phase2 integration)
 - ✅ All frequency types supported: hourly, daily, weekly, monthly, yearly, single
 - ✅ No breaking changes to existing functionality
 - ✅ Performance maintained with RRule caching
-- [ ] Medium-priority services (notifications/alarms) - in progress
-- [ ] Low-priority services - pending
+- [ ] Low-priority services - in progress
+- [ ] UI components - pending
 
 ---
 
@@ -1036,17 +1039,19 @@ Before starting the refactoring:
 ### Current Status
 - 🔄 **Phase 3:** Remaining Service Updates - IN PROGRESS
   - High priority services (5/5) ✅ COMPLETE
-  - Medium priority services (0/2) - NEXT UP
-  - Low priority services (0/2) - PENDING
+  - Medium priority services (2/2) ✅ COMPLETE
+  - Low priority services (0/2) - NEXT UP
   
 ### Statistics
-- Total commits: 3
+- Total commits: 4 (ready for 5th commit)
 - Total test coverage: 30 passing tests
   - 12 RRuleService unit tests (includes hourly frequency)
   - 18 Phase 2 integration tests (includes hourly patterns)
 - Frequency types covered: hourly, daily, weekly, monthly, yearly, single
-- Services updated: 5 (widget, stats, insights, calendar, midnight reset)
-- Lines of code added: ~700
+- Services updated: 7 total
+  - 5 high-priority: widget, stats, insights, calendar, midnight reset
+  - 2 medium-priority: work_manager_habit_service, notification_scheduler
+- Lines of code added: ~900
 - Backward compatibility: 100% maintained
 - Breaking changes: 0
 

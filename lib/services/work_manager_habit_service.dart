@@ -284,6 +284,13 @@ class WorkManagerHabitService {
       return;
     }
 
+    // Use RRule-based scheduling if habit uses RRule
+    if (habit.usesRRule && habit.rruleString != null) {
+      await _scheduleRRuleContinuous(habit);
+      return;
+    }
+
+    // Legacy frequency-based scheduling
     switch (frequency) {
       case 'daily':
         await _scheduleDailyContinuous(habit);
@@ -744,6 +751,67 @@ class WorkManagerHabitService {
           'Failed to schedule single habit notification for "${habit.name}": $e';
       AppLogger.error(error);
       throw Exception(error);
+    }
+  }
+
+  /// Schedule notifications using RRule (new unified approach)
+  /// This replaces the separate daily/weekly/monthly scheduling methods for RRule-based habits
+  static Future<void> _scheduleRRuleContinuous(dynamic habit) async {
+    if (habit.rruleString == null) {
+      AppLogger.error('Habit ${habit.name} has no RRule string');
+      return;
+    }
+
+    final notificationTime = habit.notificationTime;
+    if (notificationTime == null) {
+      AppLogger.warning('Habit ${habit.name} has no notification time set');
+      return;
+    }
+
+    final now = DateTime.now();
+    final endDate = now.add(const Duration(days: 84)); // Schedule 12 weeks ahead
+
+    try {
+      // Get all occurrences from RRule
+      final occurrences = RRuleService.getOccurrences(
+        rruleString: habit.rruleString!,
+        startDate: habit.dtStart ?? habit.createdAt,
+        rangeStart: now,
+        rangeEnd: endDate,
+      );
+
+      int scheduledCount = 0;
+
+      for (final occurrence in occurrences) {
+        // Combine occurrence date with notification time
+        DateTime scheduledTime = DateTime(
+          occurrence.year,
+          occurrence.month,
+          occurrence.day,
+          notificationTime.hour,
+          notificationTime.minute,
+        );
+
+        if (scheduledTime.isAfter(now)) {
+          final id = NotificationService.generateSafeId(
+              '${habit.id}_rrule_${occurrence.year}_${occurrence.month}_${occurrence.day}');
+
+          await NotificationService.scheduleNotification(
+            id: id,
+            title: '🎯 ${habit.name}',
+            body: 'Time to complete your habit! Don\'t break your streak.',
+            scheduledTime: scheduledTime,
+            payload: _createNotificationPayload(habit.id, 'rrule'),
+          );
+
+          scheduledCount++;
+        }
+      }
+
+      AppLogger.debug(
+          '📅 Scheduled $scheduledCount RRule notifications for ${habit.name}');
+    } catch (e) {
+      AppLogger.error('Failed to schedule RRule notifications for ${habit.name}: $e');
     }
   }
 
