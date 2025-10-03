@@ -121,7 +121,8 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
       // Parse month days (for monthly frequency - day of month pattern)
       if (components.containsKey('monthDays')) {
         _selectedMonthDays.clear();
-        _selectedMonthDays.addAll((components['monthDays'] as List).cast<int>());
+        _selectedMonthDays
+            .addAll((components['monthDays'] as List).cast<int>());
         _monthlyPatternType = _MonthlyPatternType.onDays;
       }
 

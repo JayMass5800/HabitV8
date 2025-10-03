@@ -372,10 +372,10 @@ class RRuleService {
       // Parse BYDAY (weekdays)
       if (components.containsKey('BYDAY')) {
         final byDayStr = components['BYDAY']!;
-        
+
         // Check if it contains position prefix (e.g., "2TU" or "-1FR")
         final hasPosition = RegExp(r'^-?\d+[A-Z]{2}$').hasMatch(byDayStr);
-        
+
         if (hasPosition) {
           // Monthly position pattern (e.g., "2TU" = 2nd Tuesday)
           final match = RegExp(r'^(-?\d+)([A-Z]{2})$').firstMatch(byDayStr);

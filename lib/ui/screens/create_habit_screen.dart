@@ -419,7 +419,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    _useAdvancedScheduling ? 'Advanced Scheduling' : 'Frequency',
+                    _useAdvancedScheduling
+                        ? 'Advanced Scheduling'
+                        : 'Frequency',
                     style: Theme.of(
                       context,
                     ).textTheme.titleMedium?.copyWith(
@@ -463,7 +465,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                       ),
                     ),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -472,25 +475,39 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            
+
             // Mode explanation banner
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: _useAdvancedScheduling
-                    ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
-                    : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    ? Theme.of(context)
+                        .colorScheme
+                        .primaryContainer
+                        .withValues(alpha: 0.3)
+                    : Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest
+                        .withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: _useAdvancedScheduling
-                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                      : Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                      ? Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.3)
+                      : Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
-                    _useAdvancedScheduling ? Icons.auto_awesome : Icons.calendar_today,
+                    _useAdvancedScheduling
+                        ? Icons.auto_awesome
+                        : Icons.calendar_today,
                     size: 20,
                     color: _useAdvancedScheduling
                         ? Theme.of(context).colorScheme.primary
@@ -534,10 +551,16 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.3),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .secondaryContainer
+                            .withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .secondary
+                              .withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -551,8 +574,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                           Expanded(
                             child: Text(
                               'Hourly habits require specific times since RRule doesn\'t support multiple times per day',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                     height: 1.3,
                                   ),
                             ),
@@ -564,8 +591,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                     Text(
                       'Select times throughout the day:',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
+                            fontWeight: FontWeight.w500,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     _buildHourlyTimeSelector(),
@@ -2362,7 +2389,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         AppLogger.info('✅ Using advanced RRule scheduling: $_rruleString');
         // Note: Hourly times are still stored separately for hybrid approach
         if (_selectedFrequency == HabitFrequency.hourly) {
-          AppLogger.info('  📅 Hybrid mode: RRule pattern + ${_hourlyTimes.length} specific times');
+          AppLogger.info(
+              '  📅 Hybrid mode: RRule pattern + ${_hourlyTimes.length} specific times');
         }
       } else if (_selectedFrequency != HabitFrequency.single) {
         // Phase 4: Auto-generate RRule for all new habits (except single)
