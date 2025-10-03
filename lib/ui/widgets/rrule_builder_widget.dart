@@ -53,6 +53,8 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   final Set<int> _selectedMonthDays = {};
   _MonthlyPatternType _monthlyPatternType =
       _MonthlyPatternType.onDays; // New: Day of month vs. position
+  // Changed to support multiple position+day combinations (e.g., 1st AND 3rd Thursday)
+  final Set<_PositionDay> _selectedPositionDays = {};
   int _monthlyWeekdayPosition =
       1; // New: 1=First, 2=Second, 3=Third, 4=Fourth, -1=Last
   int _monthlyWeekday = 1; // New: 1=Monday, 2=Tuesday, etc.
@@ -249,12 +251,14 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
           parts.add('BYMONTHDAY=${days.join(',')}');
         }
       } else {
-        // Pattern: "On the 2nd Tuesday of the month"
-        // Uses BYDAY with position prefix (e.g., "2TU" = 2nd Tuesday, "-1FR" = Last Friday)
-        final dayCode = _weekdayToRRule(_monthlyWeekday);
-        final positionPrefix =
-            _monthlyWeekdayPosition == 0 ? '' : '$_monthlyWeekdayPosition';
-        parts.add('BYDAY=$positionPrefix$dayCode');
+        // Pattern: "On the 2nd Tuesday and 3rd Thursday of the month" (multiple positions)
+        if (_selectedPositionDays.isNotEmpty) {
+          final byDayValues = _selectedPositionDays.map((pd) {
+            final dayCode = _weekdayToRRule(pd.weekday);
+            return '${pd.position}$dayCode';
+          }).join(',');
+          parts.add('BYDAY=$byDayValues');
+        }
         // Note: BYSETPOS is an alternative but BYDAY with position is more standard
       }
     }
@@ -659,34 +663,35 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: List.generate(31, (index) {
-              final day = index + 1;
-              return FilterChip(
-                label: Text(day.toString()),
-                selected: _selectedMonthDays.contains(day),
-                onSelected: (selected) {
-                  setState(() {
-                    if (selected) {
-                      _selectedMonthDays.add(day);
-                    } else {
-                      _selectedMonthDays.remove(day);
-                    }
-                  });
-                  _updatePreview();
-                },
-              );
-            }),
-          ),
+          _buildMonthlyCalendarView(),
         ] else ...[
-          // Position-based pattern (e.g., "2nd Tuesday")
+          // Position-based pattern (e.g., "2nd Tuesday AND 3rd Thursday")
           Text(
-            'Select position and day:',
+            'Add position and day combinations:',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 8),
+          // Show selected combinations
+          if (_selectedPositionDays.isNotEmpty) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _selectedPositionDays.map((pd) {
+                return Chip(
+                  label: Text(_getPositionDayText(pd)),
+                  deleteIcon: const Icon(Icons.close, size: 18),
+                  onDeleted: () {
+                    setState(() {
+                      _selectedPositionDays.remove(pd);
+                    });
+                    _updatePreview();
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 8),
+          ],
+          // Add new combination
           Row(
             children: [
               Expanded(
@@ -710,7 +715,6 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                       setState(() {
                         _monthlyWeekdayPosition = value;
                       });
-                      _updatePreview();
                     }
                   },
                 ),
@@ -739,7 +743,6 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                       setState(() {
                         _monthlyWeekday = value;
                       });
-                      _updatePreview();
                     }
                   },
                 ),
@@ -747,59 +750,54 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
             ],
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _getPositionPreviewText(),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ],
+          ElevatedButton.icon(
+            onPressed: () {
+              final newPd = _PositionDay(_monthlyWeekdayPosition, _monthlyWeekday);
+              if (!_selectedPositionDays.contains(newPd)) {
+                setState(() {
+                  _selectedPositionDays.add(newPd);
+                });
+                _updatePreview();
+              }
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add Combination'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 40),
             ),
           ),
+          if (_selectedPositionDays.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest
+                    .withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _getMultiplePositionsPreview(),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ],
     );
-  }
-
-  String _getPositionPreviewText() {
-    const positions = {
-      1: 'first',
-      2: 'second',
-      3: 'third',
-      4: 'fourth',
-      -1: 'last',
-    };
-    const weekdays = {
-      1: 'Monday',
-      2: 'Tuesday',
-      3: 'Wednesday',
-      4: 'Thursday',
-      5: 'Friday',
-      6: 'Saturday',
-      7: 'Sunday',
-    };
-
-    final position = positions[_monthlyWeekdayPosition] ?? '';
-    final weekday = weekdays[_monthlyWeekday] ?? '';
-
-    return 'Example: The $position $weekday of each month';
   }
 
   Widget _buildYearlySelector() {
@@ -1071,6 +1069,134 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
     );
   }
 
+  Widget _buildMonthlyCalendarView() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        children: [
+          // Weekday headers
+          Row(
+            children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                .map((day) => Expanded(
+                      child: Center(
+                        child: Text(
+                          day,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 8),
+          // Calendar grid (31 days in 5 rows)
+          for (int row = 0; row < 5; row++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: List.generate(7, (col) {
+                  final day = row * 7 + col + 1;
+                  if (day > 31) {
+                    return const Expanded(child: SizedBox());
+                  }
+                  final isSelected = _selectedMonthDays.contains(day);
+                  return Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          if (isSelected) {
+                            _selectedMonthDays.remove(day);
+                          } else {
+                            _selectedMonthDays.add(day);
+                          }
+                        });
+                        _updatePreview();
+                      },
+                      borderRadius: BorderRadius.circular(4),
+                      child: Container(
+                        height: 36,
+                        margin: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            day.toString(),
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.onPrimary
+                                  : Theme.of(context).colorScheme.onSurface,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          if (_selectedMonthDays.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '${_selectedMonthDays.length} day${_selectedMonthDays.length == 1 ? "" : "s"} selected',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  String _getPositionDayText(_PositionDay pd) {
+    const positions = {
+      1: 'First',
+      2: 'Second',
+      3: 'Third',
+      4: 'Fourth',
+      -1: 'Last',
+    };
+    const weekdays = {
+      1: 'Monday',
+      2: 'Tuesday',
+      3: 'Wednesday',
+      4: 'Thursday',
+      5: 'Friday',
+      6: 'Saturday',
+      7: 'Sunday',
+    };
+    return '${positions[pd.position]} ${weekdays[pd.weekday]}';
+  }
+
+  String _getMultiplePositionsPreview() {
+    if (_selectedPositionDays.isEmpty) return '';
+    final sorted = _selectedPositionDays.toList()..sort((a, b) {
+      if (a.position == b.position) return a.weekday.compareTo(b.weekday);
+      return a.position.compareTo(b.position);
+    });
+    final text = sorted.map((pd) => _getPositionDayText(pd)).join(', ');
+    return 'Repeats on: $text of each month';
+  }
+
   String _getFrequencyDisplayName(HabitFrequency frequency) {
     switch (frequency) {
       case HabitFrequency.hourly:
@@ -1098,4 +1224,24 @@ enum _TerminationType {
 enum _MonthlyPatternType {
   onDays, // e.g., "on day 15 of the month"
   onPosition, // e.g., "on the 2nd Tuesday of the month"
+}
+
+/// Represents a position+day combination for monthly patterns
+/// E.g., "1st Thursday" or "3rd Monday"
+class _PositionDay {
+  final int position; // 1=First, 2=Second, 3=Third, 4=Fourth, -1=Last
+  final int weekday;  // 1=Monday, 2=Tuesday, ..., 7=Sunday
+
+  _PositionDay(this.position, this.weekday);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _PositionDay &&
+          runtimeType == other.runtimeType &&
+          position == other.position &&
+          weekday == other.weekday;
+
+  @override
+  int get hashCode => position.hashCode ^ weekday.hashCode;
 }
