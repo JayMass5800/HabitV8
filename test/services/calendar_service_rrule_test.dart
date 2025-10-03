@@ -9,7 +9,7 @@ void main() {
       final habit = Habit.create(
         name: 'Daily RRule Habit',
         category: 'Health',
-        colorValue: Colors.blue.value,
+        colorValue: Colors.blue.toARGB32(),
         frequency: HabitFrequency.daily,
       )
         ..usesRRule = true
@@ -25,7 +25,7 @@ void main() {
       final habit = Habit.create(
         name: 'Weekly RRule Habit',
         category: 'Health',
-        colorValue: Colors.green.value,
+        colorValue: Colors.green.toARGB32(),
         frequency: HabitFrequency.weekly,
       )
         ..usesRRule = true
@@ -51,7 +51,7 @@ void main() {
       final habit = Habit.create(
         name: 'Legacy Daily Habit',
         category: 'Health',
-        colorValue: Colors.red.value,
+        colorValue: Colors.red.toARGB32(),
         frequency: HabitFrequency.daily,
       );
 
@@ -64,7 +64,7 @@ void main() {
       final habit = Habit.create(
         name: 'Legacy Weekly Habit',
         category: 'Health',
-        colorValue: Colors.orange.value,
+        colorValue: Colors.orange.toARGB32(),
         frequency: HabitFrequency.weekly,
         selectedWeekdays: const [1], // Monday
       );
@@ -84,7 +84,7 @@ void main() {
       final rruleHabit = Habit.create(
         name: 'RRule Weekly',
         category: 'Health',
-        colorValue: Colors.purple.value,
+        colorValue: Colors.purple.toARGB32(),
         frequency: HabitFrequency.weekly,
       )
         ..usesRRule = true
@@ -94,7 +94,7 @@ void main() {
       final legacyHabit = Habit.create(
         name: 'Legacy Daily',
         category: 'Health',
-        colorValue: Colors.teal.value,
+        colorValue: Colors.teal.toARGB32(),
         frequency: HabitFrequency.daily,
       );
 
@@ -119,7 +119,7 @@ void main() {
       final habit = Habit.create(
         name: 'Bi-weekly Habit',
         category: 'Health',
-        colorValue: Colors.indigo.value,
+        colorValue: Colors.indigo.toARGB32(),
         frequency: HabitFrequency.weekly,
       )
         ..usesRRule = true

@@ -21,12 +21,12 @@ class RRuleBuilderWidget extends StatefulWidget {
   final HabitFrequency? initialFrequency; // For simple mode
 
   const RRuleBuilderWidget({
-    Key? key,
+    super.key,
     this.initialRRuleString,
     this.initialStartDate,
     required this.onRRuleChanged,
     this.initialFrequency,
-  }) : super(key: key);
+  });
 
   @override
   State<RRuleBuilderWidget> createState() => _RRuleBuilderWidgetState();
@@ -47,10 +47,10 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   DateTime? _untilDate;
 
   // Weekly options
-  Set<int> _selectedWeekdays = {};
+  final Set<int> _selectedWeekdays = {};
 
   // Monthly options
-  Set<int> _selectedMonthDays = {};
+  final Set<int> _selectedMonthDays = {};
   _MonthlyPatternType _monthlyPatternType =
       _MonthlyPatternType.onDays; // New: Day of month vs. position
   int _monthlyWeekdayPosition =
@@ -441,7 +441,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
               color: Theme.of(context)
                   .colorScheme
                   .primaryContainer
-                  .withOpacity(0.3),
+                  .withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -674,8 +674,10 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+              color: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -920,10 +922,13 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -983,7 +988,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ],
       ),
