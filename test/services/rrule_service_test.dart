@@ -98,8 +98,7 @@ void main() {
           equals('Every 2 weeks'));
       expect(
           RRuleService.getRRuleSummary('FREQ=MONTHLY'), equals('Every month'));
-      expect(
-          RRuleService.getRRuleSummary('FREQ=YEARLY'), equals('Every year'));
+      expect(RRuleService.getRRuleSummary('FREQ=YEARLY'), equals('Every year'));
     });
 
     test('Get next occurrences', () {

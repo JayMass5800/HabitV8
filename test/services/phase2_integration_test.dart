@@ -30,7 +30,7 @@ void main() {
           ),
           isTrue,
         );
-        
+
         // Tomorrow should also be due
         final tomorrow = today.add(const Duration(days: 1));
         expect(
@@ -46,7 +46,7 @@ void main() {
       test('isDueOnDate works for weekly RRule', () {
         // Oct 2, 2025 is Thursday
         final thursday = DateTime(2025, 10, 2);
-        
+
         // Should be due on Thursday
         expect(
           RRuleService.isDueOnDate(
@@ -72,7 +72,7 @@ void main() {
       test('isDueOnDate works for every-other-week pattern', () {
         // Start on Oct 7, 2025 (Tuesday - first occurrence)
         final startDate = DateTime(2025, 10, 7);
-        
+
         // First Tuesday (Oct 7) - should be true
         expect(
           RRuleService.isDueOnDate(
@@ -180,7 +180,7 @@ void main() {
         );
 
         expect(occurrences.length, equals(5));
-        
+
         // Each occurrence should be after the previous
         for (int i = 1; i < occurrences.length; i++) {
           expect(occurrences[i].isAfter(occurrences[i - 1]), isTrue);
@@ -253,4 +253,3 @@ void main() {
     });
   });
 }
-

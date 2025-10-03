@@ -687,14 +687,22 @@ class RRuleBuilderWidget extends StatefulWidget {
 
 ### Current Frequency Type Conversions
 
-| Legacy Type | RRule Pattern | Example |
-|-------------|--------------|---------|
-| Hourly | `FREQ=HOURLY` | Every hour |
-| Daily | `FREQ=DAILY` | Every day |
-| Weekly (Mon, Wed, Fri) | `FREQ=WEEKLY;BYDAY=MO,WE,FR` | Every week on M/W/F |
-| Monthly (15th) | `FREQ=MONTHLY;BYMONTHDAY=15` | 15th of each month |
-| Yearly (July 4) | `FREQ=YEARLY;BYMONTH=7;BYMONTHDAY=4` | Every July 4th |
-| Single | (No RRule - one-time event) | Oct 3, 2025 at 2pm |
+| Legacy Type | RRule Pattern | Example | Notes |
+|-------------|--------------|---------|-------|
+| Hourly | `FREQ=HOURLY` OR keep legacy | Every hour OR specific times | See hourly habits special case below |
+| Daily | `FREQ=DAILY` | Every day | |
+| Weekly (Mon, Wed, Fri) | `FREQ=WEEKLY;BYDAY=MO,WE,FR` | Every week on M/W/F | |
+| Monthly (15th) | `FREQ=MONTHLY;BYMONTHDAY=15` | 15th of each month | |
+| Yearly (July 4) | `FREQ=YEARLY;BYMONTH=7;BYMONTHDAY=4` | Every July 4th | |
+| Single | (No RRule - one-time event) | Oct 3, 2025 at 2pm | |
+
+**Special Case: Hourly Habits with Specific Times**
+
+The legacy "hourly" frequency is actually "daily at specific times" (e.g., 9 AM, 11:30 AM, 3 PM).
+- RRule `FREQ=HOURLY` means "every hour" (not what we want)
+- Better representation: `FREQ=DAILY` with time-based scheduling
+- **Recommendation:** Keep `hourlyTimes` field for specific time management
+- Hourly habits may remain on legacy system or use hybrid approach
 
 ### New Complex Patterns (Enabled by RRule)
 
@@ -711,6 +719,28 @@ class RRuleBuilderWidget extends StatefulWidget {
 ---
 
 ## 🚨 Risk Assessment & Mitigation
+
+### Critical Design Decisions
+
+**1. Hourly Habits with Specific Times**
+   - **Current System:** "Hourly" habits store specific times (e.g., 9:00 AM, 11:30 AM, 3:00 PM)
+   - **Problem:** These aren't truly "hourly" - they're "daily at specific times"
+   - **RRule Limitation:** `FREQ=HOURLY` means every hour (1:00, 2:00, 3:00...)
+   - **Solution Options:**
+     - Option A: Convert to `FREQ=DAILY;BYHOUR=9,11,15;BYMINUTE=0,30,0` (complex, brittle)
+     - Option B: Store multiple RRule strings (one per time)
+     - Option C: Keep `hourlyTimes` field and handle separately (hybrid approach)
+     - **Recommended: Option C** - Maintain hourly habit special handling
+   - **Implementation:**
+     ```dart
+     // For "hourly" habits, check both RRule AND hourlyTimes
+     if (habit.frequency == HabitFrequency.hourly && habit.hourlyTimes.isNotEmpty) {
+       // Check if current time matches any of the hourlyTimes
+       // This is a special case that doesn't map cleanly to pure RRule
+     }
+     ```
+   - **Migration:** Keep hourly habits on legacy system OR convert to multiple notifications
+   - **User Impact:** Hourly habits continue working as-is, no change to UX
 
 ### High Risk Areas
 
@@ -970,12 +1000,19 @@ Before starting the refactoring:
 
 ## 📝 Next Steps
 
+**Immediate Actions:**
 1. ✅ ~~Review this plan with team~~
 2. ✅ ~~Validate timeline against available resources~~
 3. ✅ ~~Start Phase 0~~
 4. ✅ ~~Complete Phase 1~~
-5. **Begin Phase 2:** Service layer integration
-6. **Continue regular testing** after each service update
+5. ✅ ~~Complete Phase 2~~
+6. **Continue Phase 3:** Update notification/alarm services
+7. **Address Hourly Habits:** Decide on final approach for specific-time scheduling
+   - Current: Hourly habits use `hourlyTimes` field with specific times
+   - Need: Determine if RRule conversion is needed or keep hybrid approach
+   - Recommendation: Keep hourly habits on legacy system for Phase 3-4, revisit in Phase 5
+
+**Continue regular testing** after each service update
 
 ---
 
