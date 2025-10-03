@@ -49,6 +49,7 @@ dependencies:
   intl: ^0.20.2
   shared_preferences: ^2.2.2
   timezone: 0.9.4
+  rrule: ^0.2.15  # RRule (Recurrence Rule) for flexible habit scheduling
   logger: ^2.4.0
   url_launcher: ^6.2.5
   table_calendar: ^3.0.9 # Calendar integration for habit events

@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import '../../services/habit_stats_service.dart';
+import '../../services/logging_service.dart';
 
 part 'habit.g.dart';
 
@@ -91,6 +92,25 @@ class Habit extends HiveObject {
 
   @HiveField(25)
   int snoozeDelayMinutes = 10; // Default 10 minutes snooze
+
+  // ==================== NEW RRULE FIELDS ====================
+  
+  /// RRule string defining the recurrence pattern
+  /// Example: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"
+  /// This replaces the legacy frequency system with a standardized approach
+  @HiveField(28)
+  String? rruleString;
+
+  /// Start date for the RRule (DTSTART in iCalendar)
+  /// This is the date when the recurrence pattern begins
+  @HiveField(29)
+  DateTime? dtStart;
+
+  /// Flag indicating whether this habit uses the RRule system
+  /// (vs. legacy frequency system)
+  /// Used for gradual migration from old to new system
+  @HiveField(30)
+  bool usesRRule = false;
 
   Habit() {
     id = DateTime.now().millisecondsSinceEpoch.toString();
@@ -405,6 +425,132 @@ class Habit extends HiveObject {
     await super.delete();
   }
 
+  // ==================== RRULE HELPER METHODS ====================
+
+  /// Get or create the RRule string for this habit
+  /// Performs lazy migration from legacy format if needed
+  String? getOrCreateRRule() {
+    // If already using RRule, return it
+    if (usesRRule && rruleString != null) {
+      return rruleString;
+    }
+
+    // Skip single frequency (no recurrence)
+    if (frequency == HabitFrequency.single) {
+      return null;
+    }
+
+    // Lazy migration: convert from legacy format
+    if (!usesRRule) {
+      try {
+        // Import the RRuleService dynamically to avoid circular dependency
+        // The actual import will be at the top of the file
+        final convertedRRule = _convertToRRule();
+        
+        if (convertedRRule != null) {
+          rruleString = convertedRRule;
+          dtStart = dtStart ?? createdAt;
+          usesRRule = true;
+          
+          // Save the updated habit asynchronously
+          save().then((_) {
+            AppLogger.info('Migrated habit "$name" to RRule: $rruleString');
+          }).catchError((error) {
+            AppLogger.error('Failed to save migrated habit: $error');
+          });
+        }
+      } catch (e) {
+        AppLogger.error('Failed to migrate habit "$name" to RRule: $e');
+      }
+    }
+
+    return rruleString;
+  }
+
+  /// Internal method to convert legacy format to RRule
+  /// This mirrors the logic in RRuleService to avoid circular dependency during migration
+  String? _convertToRRule() {
+    switch (frequency) {
+      case HabitFrequency.hourly:
+        return 'FREQ=HOURLY';
+      case HabitFrequency.daily:
+        return 'FREQ=DAILY';
+      case HabitFrequency.weekly:
+        if (selectedWeekdays.isEmpty) return 'FREQ=WEEKLY';
+        final days = selectedWeekdays.map(_weekdayToRRuleDay).join(',');
+        return 'FREQ=WEEKLY;BYDAY=$days';
+      case HabitFrequency.monthly:
+        if (selectedMonthDays.isEmpty) return 'FREQ=MONTHLY';
+        return 'FREQ=MONTHLY;BYMONTHDAY=${selectedMonthDays.join(',')}';
+      case HabitFrequency.yearly:
+        if (selectedYearlyDates.isEmpty) return 'FREQ=YEARLY';
+        try {
+          final date = DateTime.parse(selectedYearlyDates.first);
+          return 'FREQ=YEARLY;BYMONTH=${date.month};BYMONTHDAY=${date.day}';
+        } catch (e) {
+          return 'FREQ=YEARLY';
+        }
+      case HabitFrequency.single:
+        return null;
+    }
+  }
+
+  String _weekdayToRRuleDay(int weekday) {
+    const days = {
+      0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE',
+      4: 'TH', 5: 'FR', 6: 'SA', 7: 'SU',
+    };
+    return days[weekday] ?? 'MO';
+  }
+
+  /// Check if this habit is RRule-based
+  bool isRRuleBased() {
+    return usesRRule && rruleString != null;
+  }
+
+  /// Get human-readable schedule summary
+  /// Returns a user-friendly description of when the habit occurs
+  String getScheduleSummary() {
+    if (isRRuleBased()) {
+      // This will use RRuleService.getRRuleSummary when available
+      // For now, return a simple summary
+      return _getSimpleRRuleSummary();
+    } else {
+      // Legacy summary
+      return _getLegacyScheduleSummary();
+    }
+  }
+
+  String _getSimpleRRuleSummary() {
+    if (rruleString == null) return 'Custom schedule';
+    
+    // Simple parsing for common patterns
+    if (rruleString!.contains('FREQ=DAILY')) return 'Every day';
+    if (rruleString!.contains('FREQ=WEEKLY')) return 'Weekly';
+    if (rruleString!.contains('FREQ=MONTHLY')) return 'Monthly';
+    if (rruleString!.contains('FREQ=YEARLY')) return 'Yearly';
+    if (rruleString!.contains('FREQ=HOURLY')) return 'Every hour';
+    
+    return 'Custom schedule';
+  }
+
+  String _getLegacyScheduleSummary() {
+    switch (frequency) {
+      case HabitFrequency.hourly:
+        return 'Every hour';
+      case HabitFrequency.daily:
+        return 'Every day';
+      case HabitFrequency.weekly:
+        return 'Weekly';
+      case HabitFrequency.monthly:
+        return 'Monthly';
+      case HabitFrequency.yearly:
+        return 'Yearly';
+      case HabitFrequency.single:
+        return 'One time';
+    }
+  }
+
   // Convert habit to JSON for export
   Map<String, dynamic> toJson() {
     return {
@@ -436,6 +582,9 @@ class Habit extends HiveObject {
       'alarmSoundName': alarmSoundName,
       'alarmSoundUri': alarmSoundUri,
       'snoozeDelayMinutes': snoozeDelayMinutes,
+      'rruleString': rruleString,
+      'dtStart': dtStart?.toIso8601String(),
+      'usesRRule': usesRRule,
     };
   }
 }

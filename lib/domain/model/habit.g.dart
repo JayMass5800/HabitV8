@@ -44,13 +44,16 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..alarmEnabled = fields[23] as bool
       ..alarmSoundName = fields[24] as String?
       ..alarmSoundUri = fields[27] as String?
-      ..snoozeDelayMinutes = fields[25] as int;
+      ..snoozeDelayMinutes = fields[25] as int
+      ..rruleString = fields[28] as String?
+      ..dtStart = fields[29] as DateTime?
+      ..usesRRule = fields[30] as bool;
   }
 
   @override
   void write(BinaryWriter writer, Habit obj) {
     writer
-      ..writeByte(28)
+      ..writeByte(31)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -106,7 +109,13 @@ class HabitAdapter extends TypeAdapter<Habit> {
       ..writeByte(27)
       ..write(obj.alarmSoundUri)
       ..writeByte(25)
-      ..write(obj.snoozeDelayMinutes);
+      ..write(obj.snoozeDelayMinutes)
+      ..writeByte(28)
+      ..write(obj.rruleString)
+      ..writeByte(29)
+      ..write(obj.dtStart)
+      ..writeByte(30)
+      ..write(obj.usesRRule);
   }
 
   @override
