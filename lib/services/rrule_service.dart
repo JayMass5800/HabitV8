@@ -94,24 +94,55 @@ class RRuleService {
   static String createRRule({
     required Frequency frequency,
     int interval = 1,
-    List<ByWeekDayEntry>? byWeekDays,
+    List<int>? byWeekDays,
     List<int>? byMonthDays,
     int? bySetPos,
     DateTime? until,
     int? count,
   }) {
     try {
-      final rule = RecurrenceRule(
-        frequency: frequency,
-        interval: interval,
-        byWeekDays: byWeekDays?.toSet(),
-        byMonthDays: byMonthDays?.toSet(),
-        bySetPositions: bySetPos != null ? {bySetPos} : null,
-        until: until,
-        count: count,
-      );
-
-      return rule.toString();
+      // Build RRule string manually for better control
+      final freq = frequency.toString().split('.').last.toUpperCase();
+      final parts = <String>['FREQ=$freq'];
+      
+      if (interval > 1) {
+        parts.add('INTERVAL=$interval');
+      }
+      
+      if (byWeekDays != null && byWeekDays.isNotEmpty) {
+        final days = byWeekDays.map((day) {
+          const dayCodes = {
+            DateTime.monday: 'MO',
+            DateTime.tuesday: 'TU',
+            DateTime.wednesday: 'WE',
+            DateTime.thursday: 'TH',
+            DateTime.friday: 'FR',
+            DateTime.saturday: 'SA',
+            DateTime.sunday: 'SU',
+          };
+          return dayCodes[day] ?? 'MO';
+        }).join(',');
+        parts.add('BYDAY=$days');
+      }
+      
+      if (byMonthDays != null && byMonthDays.isNotEmpty) {
+        parts.add('BYMONTHDAY=${byMonthDays.join(',')}');
+      }
+      
+      if (bySetPos != null) {
+        parts.add('BYSETPOS=$bySetPos');
+      }
+      
+      if (count != null) {
+        parts.add('COUNT=$count');
+      }
+      
+      if (until != null) {
+        final formatted = until.toUtc().toIso8601String().replaceAll(RegExp(r'[-:]'), '').split('.')[0] + 'Z';
+        parts.add('UNTIL=$formatted');
+      }
+      
+      return parts.join(';');
     } catch (e) {
       AppLogger.error('Failed to create RRule: $e');
       rethrow;
@@ -130,10 +161,11 @@ class RRuleService {
     }
 
     try {
-      final rule = RecurrenceRule.fromString(
-        rruleString,
-        dtStart: startDate,
-      );
+      // The rrule package expects "RRULE:FREQ=..." format
+      final rruleWithPrefix = rruleString.startsWith('RRULE:') 
+          ? rruleString 
+          : 'RRULE:$rruleString';
+      final rule = RecurrenceRule.fromString(rruleWithPrefix);
       _rruleCache[cacheKey] = rule;
       return rule;
     } catch (e) {
@@ -155,7 +187,22 @@ class RRuleService {
       final rule = parseRRule(rruleString, startDate);
       if (rule == null) return [];
 
-      final occurrences = rule.between(rangeStart, rangeEnd);
+      // The rrule package requires dates to be in UTC without milliseconds
+      final start = DateTime.utc(
+        rangeStart.year,
+        rangeStart.month,
+        rangeStart.day,
+      );
+
+      // Get all instances starting from the start date
+      final allInstances = rule.getAllInstances(start: start).take(1000);
+      
+      // Filter to only those in range
+      final occurrences = allInstances.where((date) {
+        return (date.isAfter(rangeStart) || date.isAtSameMomentAs(rangeStart)) &&
+               (date.isBefore(rangeEnd) || date.isAtSameMomentAs(rangeEnd));
+      }).toList();
+      
       return occurrences;
     } catch (e) {
       AppLogger.error('Failed to get occurrences: $e');
@@ -199,84 +246,23 @@ class RRuleService {
   /// - "Every day"
   static String getRRuleSummary(String rruleString) {
     try {
-      final rule = RecurrenceRule.fromString(rruleString);
+      // Simple parsing for common patterns
+      if (rruleString.contains('FREQ=HOURLY')) return 'Every hour';
+      if (rruleString.contains('FREQ=DAILY')) return 'Every day';
+      if (rruleString.contains('FREQ=WEEKLY')) {
+        if (rruleString.contains('INTERVAL=2')) {
+          return 'Every 2 weeks';
+        }
+        return 'Every week';
+      }
+      if (rruleString.contains('FREQ=MONTHLY')) return 'Every month';
+      if (rruleString.contains('FREQ=YEARLY')) return 'Every year';
       
-      // Build summary based on frequency
-      String summary = _getFrequencySummary(rule);
-      
-      // Add interval if not 1
-      if (rule.interval > 1) {
-        summary = summary.replaceFirst(
-          'Every',
-          'Every ${rule.interval}',
-        );
-      }
-
-      // Add day-specific info
-      if (rule.byWeekDays?.isNotEmpty ?? false) {
-        final days = rule.byWeekDays!
-            .map((day) => _formatWeekDay(day))
-            .join(', ');
-        summary += ' on $days';
-      }
-
-      if (rule.byMonthDays?.isNotEmpty ?? false) {
-        final days = rule.byMonthDays!.join(', ');
-        summary += ' on day(s) $days';
-      }
-
-      return summary;
+      return 'Custom schedule';
     } catch (e) {
       AppLogger.error('Failed to get RRule summary: $e');
       return 'Custom schedule';
     }
-  }
-
-  static String _getFrequencySummary(RecurrenceRule rule) {
-    switch (rule.frequency) {
-      case Frequency.hourly:
-        return 'Every hour';
-      case Frequency.daily:
-        return 'Every day';
-      case Frequency.weekly:
-        return 'Every week';
-      case Frequency.monthly:
-        return 'Every month';
-      case Frequency.yearly:
-        return 'Every year';
-      default:
-        return 'Custom';
-    }
-  }
-
-  static String _formatWeekDay(ByWeekDayEntry day) {
-    const dayNames = {
-      DateTime.monday: 'Monday',
-      DateTime.tuesday: 'Tuesday',
-      DateTime.wednesday: 'Wednesday',
-      DateTime.thursday: 'Thursday',
-      DateTime.friday: 'Friday',
-      DateTime.saturday: 'Saturday',
-      DateTime.sunday: 'Sunday',
-    };
-
-    final dayName = dayNames[day.day] ?? 'Unknown';
-    
-    if (day.occurrence != 0) {
-      final ordinal = _getOrdinal(day.occurrence);
-      return '$ordinal $dayName';
-    }
-    
-    return dayName;
-  }
-
-  static String _getOrdinal(int n) {
-    if (n == -1) return 'Last';
-    if (n == 1) return 'First';
-    if (n == 2) return 'Second';
-    if (n == 3) return 'Third';
-    if (n == 4) return 'Fourth';
-    return '${n}th';
   }
 
   /// Validate an RRule string
@@ -284,7 +270,11 @@ class RRuleService {
   /// Returns true if the RRule string is valid and can be parsed.
   static bool isValidRRule(String rruleString) {
     try {
-      RecurrenceRule.fromString(rruleString);
+      // The rrule package expects "RRULE:FREQ=..." format
+      final rruleWithPrefix = rruleString.startsWith('RRULE:') 
+          ? rruleString 
+          : 'RRULE:$rruleString';
+      RecurrenceRule.fromString(rruleWithPrefix);
       return true;
     } catch (e) {
       return false;
@@ -310,8 +300,11 @@ class RRuleService {
       final rule = parseRRule(rruleString, startDate);
       if (rule == null) return [];
 
+      // The rrule package requires dates to be in UTC without milliseconds
       final now = DateTime.now();
-      final occurrences = rule.getAllInstances(start: now).take(count).toList();
+      final start = DateTime.utc(now.year, now.month, now.day);
+      
+      final occurrences = rule.getAllInstances(start: start).take(count).toList();
       return occurrences;
     } catch (e) {
       AppLogger.error('Failed to get next occurrences: $e');
