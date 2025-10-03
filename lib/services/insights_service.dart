@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:logger/logger.dart';
 import '../domain/model/habit.dart';
+import 'rrule_service.dart';
 
 /// Service for calculating comprehensive habit insights and analytics
 class InsightsService {
@@ -595,6 +596,18 @@ class InsightsService {
   /// Helper method to calculate expected completions for a period
   int _getExpectedCompletionsForPeriod(
       Habit habit, DateTime start, DateTime end) {
+    // Use RRule if available
+    if (habit.usesRRule && habit.rruleString != null) {
+      final occurrences = RRuleService.getOccurrences(
+        rruleString: habit.rruleString!,
+        startDate: habit.dtStart ?? habit.createdAt,
+        rangeStart: start,
+        rangeEnd: end,
+      );
+      return occurrences.length;
+    }
+
+    // Legacy frequency-based calculation
     final days = end.difference(start).inDays;
 
     switch (habit.frequency) {

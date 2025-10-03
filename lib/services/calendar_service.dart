@@ -193,7 +193,7 @@ class CalendarService {
     if (habit.isRRuleBased()) {
       final rruleString = habit.rruleString;
       final startDate = habit.dtStart ?? habit.createdAt;
-      
+
       if (rruleString != null) {
         return RRuleService.isDueOnDate(
           rruleString: rruleString,
@@ -202,7 +202,7 @@ class CalendarService {
         );
       }
     }
-    
+
     // Legacy frequency-based logic for backward compatibility
     switch (habit.frequency) {
       case HabitFrequency.hourly:

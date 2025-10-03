@@ -45,7 +45,8 @@ void main() {
       expect(CalendarService.isHabitDueOnDate(habit, monday), isTrue);
     });
 
-    test('isHabitDueOnDate falls back to legacy logic for non-RRule habits', () {
+    test('isHabitDueOnDate falls back to legacy logic for non-RRule habits',
+        () {
       // Legacy daily habit (no RRule)
       final habit = Habit.create(
         name: 'Legacy Daily Habit',
@@ -77,7 +78,9 @@ void main() {
       expect(CalendarService.isHabitDueOnDate(habit, friday), isFalse);
     });
 
-    test('getHabitsForDate filters correctly with mix of RRule and legacy habits', () {
+    test(
+        'getHabitsForDate filters correctly with mix of RRule and legacy habits',
+        () {
       final rruleHabit = Habit.create(
         name: 'RRule Weekly',
         category: 'Health',
@@ -99,12 +102,14 @@ void main() {
 
       // Oct 3, 2025 is a Friday - both should be included
       final friday = DateTime(2025, 10, 3);
-      final habitsOnFriday = CalendarService.getHabitsForDate(friday, allHabits);
+      final habitsOnFriday =
+          CalendarService.getHabitsForDate(friday, allHabits);
       expect(habitsOnFriday.length, equals(2));
 
       // Oct 4, 2025 is a Saturday - only legacy daily should be included
       final saturday = DateTime(2025, 10, 4);
-      final habitsOnSaturday = CalendarService.getHabitsForDate(saturday, allHabits);
+      final habitsOnSaturday =
+          CalendarService.getHabitsForDate(saturday, allHabits);
       expect(habitsOnSaturday.length, equals(1));
       expect(habitsOnSaturday.first.name, equals('Legacy Daily'));
     });
@@ -122,13 +127,16 @@ void main() {
         ..dtStart = DateTime(2025, 10, 3); // Starting Oct 3 (Friday)
 
       // Oct 3, 2025 - first occurrence
-      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 3)), isTrue);
+      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 3)),
+          isTrue);
 
       // Oct 10, 2025 - one week later (should be false)
-      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 10)), isFalse);
+      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 10)),
+          isFalse);
 
       // Oct 17, 2025 - two weeks later (should be true)
-      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 17)), isTrue);
+      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 17)),
+          isTrue);
     });
   });
 }

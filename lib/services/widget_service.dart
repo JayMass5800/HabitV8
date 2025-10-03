@@ -136,7 +136,7 @@ class WidgetService {
     if (habit.isRRuleBased()) {
       final rruleString = habit.rruleString;
       final startDate = habit.dtStart ?? habit.createdAt;
-      
+
       if (rruleString != null) {
         return RRuleService.isDueOnDate(
           rruleString: rruleString,
@@ -146,7 +146,16 @@ class WidgetService {
       }
     }
 
-    // Legacy frequency-based logic
+    // Check if habit uses RRule system
+    if (habit.usesRRule && habit.rruleString != null) {
+      return RRuleService.isDueOnDate(
+        rruleString: habit.rruleString!,
+        startDate: habit.dtStart ?? habit.createdAt,
+        checkDate: date,
+      );
+    }
+
+    // Legacy frequency-based logic for old habits
     switch (habit.frequency) {
       case HabitFrequency.daily:
         return true; // Daily habits are always relevant

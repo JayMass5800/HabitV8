@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import '../domain/model/habit.dart';
 import 'cache_service.dart';
+import 'rrule_service.dart';
 
 /// Service for computing and caching habit statistics
 class HabitStatsService {
@@ -112,32 +113,45 @@ class HabitStatsService {
 
     // Expected completions based on frequency
     int expectedCompletions;
-    switch (habit.frequency) {
-      case HabitFrequency.hourly:
-        // For hourly habits, calculate based on actual scheduled times and days
-        final scheduledTimesPerDay = habit.hourlyTimes.length;
-        final scheduledDaysPerWeek = habit.selectedWeekdays.length;
-        final weeksInPeriod = (days / 7).ceil();
-        expectedCompletions =
-            (scheduledTimesPerDay * scheduledDaysPerWeek * weeksInPeriod)
-                .round();
-        break;
-      case HabitFrequency.daily:
-        expectedCompletions = days;
-        break;
-      case HabitFrequency.weekly:
-        expectedCompletions = (days / 7).ceil();
-        break;
-      case HabitFrequency.monthly:
-        expectedCompletions = (days / 30).ceil();
-        break;
-      case HabitFrequency.yearly:
-        expectedCompletions = (days / 365).ceil();
-        break;
-      case HabitFrequency.single:
-        // Single habits can only be completed once
-        expectedCompletions = 1;
-        break;
+    
+    // Use RRule if available
+    if (habit.usesRRule && habit.rruleString != null) {
+      final occurrences = RRuleService.getOccurrences(
+        rruleString: habit.rruleString!,
+        startDate: habit.dtStart ?? habit.createdAt,
+        rangeStart: startDate,
+        rangeEnd: now,
+      );
+      expectedCompletions = occurrences.length;
+    } else {
+      // Legacy frequency-based calculation
+      switch (habit.frequency) {
+        case HabitFrequency.hourly:
+          // For hourly habits, calculate based on actual scheduled times and days
+          final scheduledTimesPerDay = habit.hourlyTimes.length;
+          final scheduledDaysPerWeek = habit.selectedWeekdays.length;
+          final weeksInPeriod = (days / 7).ceil();
+          expectedCompletions =
+              (scheduledTimesPerDay * scheduledDaysPerWeek * weeksInPeriod)
+                  .round();
+          break;
+        case HabitFrequency.daily:
+          expectedCompletions = days;
+          break;
+        case HabitFrequency.weekly:
+          expectedCompletions = (days / 7).ceil();
+          break;
+        case HabitFrequency.monthly:
+          expectedCompletions = (days / 30).ceil();
+          break;
+        case HabitFrequency.yearly:
+          expectedCompletions = (days / 365).ceil();
+          break;
+        case HabitFrequency.single:
+          // Single habits can only be completed once
+          expectedCompletions = 1;
+          break;
+      }
     }
 
     return (recentCompletions / math.max(expectedCompletions, 1)).clamp(

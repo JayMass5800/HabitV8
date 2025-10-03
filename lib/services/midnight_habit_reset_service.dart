@@ -4,6 +4,7 @@ import '../domain/model/habit.dart';
 import '../data/database.dart';
 import 'notification_service.dart';
 import 'widget_integration_service.dart';
+import 'rrule_service.dart';
 import 'logging_service.dart';
 
 /// Service responsible for resetting habits at midnight based on their frequency
@@ -166,6 +167,16 @@ class MidnightHabitResetService {
 
   /// Check if a habit should be reset based on its frequency and current time
   static bool _shouldResetHabit(Habit habit, DateTime now) {
+    // Check if habit uses RRule system
+    if (habit.usesRRule && habit.rruleString != null) {
+      return RRuleService.isDueOnDate(
+        rruleString: habit.rruleString!,
+        startDate: habit.dtStart ?? habit.createdAt,
+        checkDate: now,
+      );
+    }
+
+    // Legacy frequency-based logic for old habits
     switch (habit.frequency) {
       case HabitFrequency.daily:
         // Daily habits reset every day at midnight
