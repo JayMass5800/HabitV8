@@ -78,7 +78,11 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
       _frequency = widget.initialFrequency!;
     }
 
-    _updatePreview();
+    // Defer the preview update until after the first frame to avoid
+    // calling setState on parent during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updatePreview();
+    });
   }
 
   void _parseExistingRRule(String rruleString) {

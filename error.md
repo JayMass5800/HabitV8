@@ -1,56 +1,318 @@
-PS C:\HabitV8> adb logcat | Select-String -Pattern "AlarmService|AlarmReceiver"
+W/JobInfo (31985): Requested important-while-foreground flag for job8 is ignored and takes no effect
+D/WM-SystemJobScheduler(31985): Scheduling work ID 3cedab9f-65a2-4116-b71a-febbae5fcf3fJob ID 8
+D/WM-GreedyScheduler(31985): Starting work for 3cedab9f-65a2-4116-b71a-febbae5fcf3f
+D/WM-SystemJobService(31985): onStartJob for WorkGenerationalId(workSpecId=3cedab9f-65a2-4116-b71a-febbae5fcf3f, generation=0)
+D/WM-Processor(31985): Processor: processing WorkGenerationalId(workSpecId=3cedab9f-65a2-4116-b71a-febbae5fcf3f, generation=0)
+D/WM-Processor(31985): Work WorkGenerationalId(workSpecId=3cedab9f-65a2-4116-b71a-febbae5fcf3f, generation=0) is already enqueued for processing
+D/WM-WorkerWrapper(31985): Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+I/WidgetUpdateWorker(31985): Starting widget update work
+D/WidgetUpdateWorker(31985): Widget data loaded: 2 characters
+D/WidgetUpdateWorker(31985): Skipping habits update - no new data to write (would be empty array)
+D/WidgetUpdateWorker(31985): Theme settings copied: mode=null, color=ffffffff
+D/WidgetUpdateWorker(31985): Widget data updated from Flutter preferences
+I/WidgetUpdateWorker(31985): ✅ Widget update work completed successfully
+I/WM-WorkerWrapper(31985): Worker result SUCCESS for Work [ id=3cedab9f-65a2-4116-b71a-febbae5fcf3f, tags={ com.habittracker.habitv8.WidgetUpdateWorker } ]
+D/WM-Processor(31985): Processor 3cedab9f-65a2-4116-b71a-febbae5fcf3f executed; reschedule = false
+D/WM-SystemJobService(31985): 3cedab9f-65a2-4116-b71a-febbae5fcf3f executed on JobScheduler
+D/WM-GreedyScheduler(31985): Cancelling work ID 3cedab9f-65a2-4116-b71a-febbae5fcf3f
+I/flutter (31985): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (31985): │ #0   AppLogger.debug (package:habitv8/services/logging_service.dart:16:13)
+I/flutter (31985): │ #1   _CreateHabitScreenState._buildFrequencySection (package:habitv8/ui/screens/create_habit_screen.dart:408:15)
+I/flutter (31985): ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+I/flutter (31985): │ 🐛 Building frequency section, current frequency: HabitFrequency.daily
+I/flutter (31985): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-10-02 20:04:00.158  1439  4765 I ActivityManager: Background started FGS: Allowed [callingPackage: com.habittracker.habitv8.debug; callingUid: 10581; uidState: RCVR; uidBFSL: n/a; intent: Intent { xflg=0x4 
-cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.AlarmService (has extras) }; code:ALARM_MANAGER_WHILE_IDLE; tempAllowListReason:<13da4be Intent { flg=0x10 xflg=0x4
-cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.AlarmReceiver (has extras) }/u0,reasonCode:ALARM_MANAGER_WHILE_IDLE,duration:10000,callingUid:10581>; allowWiu:-1; targetSdkVersion:36; callerTargetSdkVersion:36; startForegroundCount:0;    
-bindFromPackage:null: isBindService:false]
-10-02 20:04:00.236  1439  4765 W ActivityManager: Foreground service started from background can not have location/camera/microphone access: service com.habittracker.habitv8.debug/com.habittracker.habitv8.AlarmService
-10-02 20:06:00.051  1439  4225 I ActivityManager: Background started FGS: Allowed [callingPackage: com.habittracker.habitv8.debug; callingUid: 10581; uidState: RCVR; uidBFSL: n/a; intent: Intent { xflg=0x4 
-cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.AlarmService (has extras) }; code:ALARM_MANAGER_WHILE_IDLE; tempAllowListReason:<9f5acde Intent { flg=0x10 xflg=0x4 
-cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.AlarmReceiver (has extras) }/u0,reasonCode:ALARM_MANAGER_WHILE_IDLE,duration:10000,callingUid:10581>; allowWiu:-1; targetSdkVersion:36; callerTargetSdkVersion:36; startForegroundCount:0;    
-bindFromPackage:null: isBindService:false]
-10-02 20:06:00.075  1439  4225 W ActivityManager: Foreground service started from background can not have location/camera/microphone access: service com.habittracker.habitv8.debug/com.habittracker.habitv8.AlarmService
-10-02 20:11:54.371 18620 18620 I flutter : │ #1   NativeAlarmService.scheduleAlarm (package:habitv8/native_alarm_service.dart:20:17)
-10-02 20:11:54.383 18620 18620 I flutter : │ #1   NativeAlarmService.scheduleAlarm (package:habitv8/native_alarm_service.dart:32:19)
-10-02 20:11:55.249 18620 18620 I flutter : │ #1   NativeAlarmService.cancelAlarm (package:habitv8/native_alarm_service.dart:47:17)
-10-02 20:11:55.253 18620 18620 I flutter : │ #1   NativeAlarmService.cancelAlarm (package:habitv8/native_alarm_service.dart:54:19)
-10-02 20:11:55.265 18620 18620 I flutter : │ #1   NativeAlarmService.scheduleAlarm (package:habitv8/native_alarm_service.dart:20:17)
-10-02 20:11:55.267 18620 18620 I flutter : │ #1   NativeAlarmService.scheduleAlarm (package:habitv8/native_alarm_service.dart:32:19)
-10-02 20:13:00.049 18620 18620 I AlarmReceiver: Alarm received: null
-10-02 20:13:00.049 18620 18620 I AlarmReceiver: Processing alarm for: fghjhk (ID: 11490698)
-10-02 20:13:00.062  1439  4219 I ActivityManager: Background started FGS: Allowed [callingPackage: com.habittracker.habitv8.debug; callingUid: 10581; uidState: RCVR; uidBFSL: n/a; intent: Intent { xflg=0x4
-cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.AlarmService (has extras) }; code:ALARM_MANAGER_WHILE_IDLE; tempAllowListReason:<f0fef42 Intent { flg=0x10 xflg=0x4
-cmp=com.habittracker.habitv8.debug/com.habittracker.habitv8.AlarmReceiver (has extras) }/u0,reasonCode:ALARM_MANAGER_WHILE_IDLE,duration:10000,callingUid:10581>; allowWiu:-1; targetSdkVersion:36; callerTargetSdkVersion:36; startForegroundCount:0;    
-bindFromPackage:null: isBindService:false]
-10-02 20:13:00.068 18620 18620 I AlarmReceiver: ✅ AlarmService started for: fghjhk
-10-02 20:13:00.075 18620 18620 I AlarmService: AlarmService onCreate
-10-02 20:13:00.085 18620 18620 I AlarmService: AlarmService onStartCommand
-10-02 20:13:00.085 18620 18620 D AlarmService: Service started with action: null
-10-02 20:13:00.086 18620 18620 I AlarmService: Starting alarm service for: fghjhk (ID: 11490698, Habit ID: 1759461113849)
-10-02 20:13:00.086 18620 18620 D AlarmService: 📢 Creating notification channel...
-10-02 20:13:00.086 18620 18620 D AlarmService: 📺 Creating notification channel: habit_alarm_service
-10-02 20:13:00.088 18620 18620 I AlarmService: ✅ Notification channel created/verified: habit_alarm_service (Importance: 4)
-10-02 20:13:00.088 18620 18620 D AlarmService: 🚀 Starting foreground service with notification...
-10-02 20:13:00.088 18620 18620 D AlarmService: 📱 Creating notification for habit: fghjhk (Alarm ID: 11490698, Habit ID: 1759461113849)
-10-02 20:13:00.089 18620 18620 D AlarmService: 📢 Notifications enabled for app: true
-10-02 20:13:00.093 18620 18620 D AlarmService: 🔗 Created pending intent for app launch
-10-02 20:13:00.095 18620 18620 D AlarmService: ✅ Created action pending intents (complete & snooze)
-10-02 20:13:00.107 18620 18620 I AlarmService: ✅ Notification built successfully with 2 action buttons
-10-02 20:13:00.111  1439  1520 W ActivityManager: Foreground service started from background can not have location/camera/microphone access: service com.habittracker.habitv8.debug/com.habittracker.habitv8.AlarmService
-10-02 20:13:00.115 18620 18620 I AlarmService: ✅ Foreground service started with notification ID: 1001
-10-02 20:13:00.115 18620 18620 I AlarmService: Playing alarm sound:
-10-02 20:13:00.216 18620 18620 I AlarmService: MediaPlayer started successfully
-10-02 20:13:00.223 18620 18620 I AlarmService: Vibration pattern started
-10-02 20:13:01.219 18620 18620 D AlarmService: Volume increased to %
-10-02 20:13:02.220 18620 18620 D AlarmService: Volume increased to %
-10-02 20:13:03.222 18620 18620 D AlarmService: Volume increased to %
-10-02 20:13:04.223 18620 18620 D AlarmService: Volume increased to %
-10-02 20:13:05.225 18620 18620 D AlarmService: Volume increased to %
-10-02 20:13:06.227 18620 18620 D AlarmService: Volume increased to %
-10-02 20:13:07.230 18620 18620 D AlarmService: Volume increased to %
-10-02 20:13:08.233 18620 18620 D AlarmService: Volume increased to %
-10-02 20:13:14.256 18620 18620 I AlarmService: AlarmService onDestroy
-10-02 20:13:14.275 18620 18620 I AlarmService: MediaPlayer stopped and released
-10-02 20:13:14.275 18620 18620 I AlarmService: All alarm sounds stopped
-10-02 20:13:14.276 18620 18620 I AlarmService: Vibration stopped
-10-02 20:13:14.277 18620 18620 I AlarmService: Wake lock released
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following assertion was thrown building DefaultTextStyle(debugLabel: (englishLike bodyMedium
+2021).merge((whiteMountainView bodyMedium).apply), inherit: false, color: Color(alpha: 1.0000, red:
+0.8824, green: 0.8863, blue: 0.9098, colorSpace: ColorSpace.sRGB), family: Roboto, size: 14.0,
+weight: 400, letterSpacing: 0.3, baseline: alphabetic, height: 1.4x, leadingDistribution: even,
+decoration: Color(alpha: 1.0000, red: 0.8824, green: 0.8863, blue: 0.9098, colorSpace:
+ColorSpace.sRGB) TextDecoration.none, softWrap: wrapping at box width, overflow: clip):
+setState() or markNeedsBuild() called during build.
+This CreateHabitScreen widget cannot be marked as needing to build because the framework is already
+in the process of building widgets. A widget can be marked as needing to be built during the build
+phase only if one of its ancestors is currently building. This exception is allowed because the
+framework builds parent widgets before children, which means a dirty descendant will always be
+built. Otherwise, the framework might not visit this widget during this build phase.
+The widget on which setState() or markNeedsBuild() was called was:
+  CreateHabitScreen
+The widget which was currently being built when the offending call was made was:
+  DefaultTextStyle
+
+The relevant error-causing widget was:
+  Card Card:file:///C:/HabitV8/lib/ui/screens/create_habit_screen.dart:411:12
+
+When the exception was thrown, this was the stack:
+#0      Element.markNeedsBuild.<anonymous closure> (package:flutter/src/widgets/framework.dart:5271:9)
+#1      Element.markNeedsBuild (package:flutter/src/widgets/framework.dart:5283:6)
+#2      State.setState (package:flutter/src/widgets/framework.dart:1219:15)
+#3      _CreateHabitScreenState._buildFrequencySection.<anonymous closure> (package:habitv8/ui/screens/create_habit_screen.dart:542:23)
+#4      _RRuleBuilderWidgetState._updatePreview (package:habitv8/ui/widgets/rrule_builder_widget.dart:199:28)
+#5      _RRuleBuilderWidgetState.initState (package:habitv8/ui/widgets/rrule_builder_widget.dart:81:5)
+#6      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5842:55)
+#7      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5691:5)
+#8      Element.inflateWidget (package:flutter/src/widgets/framework.dart:4539:16)
+#9      MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7159:36)
+#10     Element.updateChild (package:flutter/src/widgets/framework.dart:4004:18)
+#11     Element.updateChildren (package:flutter/src/widgets/framework.dart:4201:11)
+#12     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7192:17)
+#13     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#14     Element.updateChildren (package:flutter/src/widgets/framework.dart:4140:11)
+#15     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7192:17)
+#16     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#17     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#18     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#19     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#20     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#21     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#22     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#23     ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#24     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#25     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#26     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#27     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#28     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#29     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#30     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#31     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#32     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#33     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#34     ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#35     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#36     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#37     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#38     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#39     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#40     StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#41     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#42     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#43     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#44     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#45     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#46     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#47     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#48     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#49     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#50     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#51     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#52     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#53     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#54     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#55     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#56     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#57     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#58     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#59     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#60     StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#61     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#62     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#63     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#64     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#65     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#66     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#67     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#68     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#69     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#70     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#71     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#72     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#73     ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#74     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#75     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#76     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#77     ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#78     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#79     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#80     StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#81     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#82     StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#83     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#84     ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#85     Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#86     StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#87     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#88     SliverMultiBoxAdaptorElement.updateChild (package:flutter/src/widgets/sliver.dart:1000:37)
+#89     SliverMultiBoxAdaptorElement.performRebuild.processElement (package:flutter/src/widgets/sliver.dart:892:35)
+#90     Iterable.forEach (dart:core/iterable.dart:366:35)
+#91     SliverMultiBoxAdaptorElement.performRebuild (package:flutter/src/widgets/sliver.dart:946:24)
+#92     SliverMultiBoxAdaptorElement.update (package:flutter/src/widgets/sliver.dart:868:7)
+#93     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#94     SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#95     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#96     Element.updateChildren (package:flutter/src/widgets/framework.dart:4140:11)
+#97     MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7192:17)
+#98     _ViewportElement.update (package:flutter/src/widgets/viewport.dart:256:11)
+#99     Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#100    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#101    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#102    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#103    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#104    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#105    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#106    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#107    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#108    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#109    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#110    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#111    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#112    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#113    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#114    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#115    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#116    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#117    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#118    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#119    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#120    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#121    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#122    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#123    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#124    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#125    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#126    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#127    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#128    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#129    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#130    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#131    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#132    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#133    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#134    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#135    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#136    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#137    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#138    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#139    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#140    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#141    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#142    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#143    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#144    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#145    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#146    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#147    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#148    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#149    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#150    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#151    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#152    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#153    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#154    StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#155    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#156    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#157    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#158    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#159    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#160    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#161    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#162    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#163    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#164    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#165    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#166    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#167    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#168    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#169    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#170    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#171    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#172    StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#173    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#174    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#175    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#176    StatelessElement.update (package:flutter/src/widgets/framework.dart:5787:5)
+#177    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#178    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#179    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#180    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#181    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#182    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#183    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#184    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#185    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#186    Element.updateChildren (package:flutter/src/widgets/framework.dart:4140:11)
+#187    MultiChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7192:17)
+#188    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#189    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#190    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#191    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#192    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#193    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#194    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#195    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#196    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#197    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#198    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#199    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#200    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#201    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#202    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#203    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#204    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#205    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#206    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#207    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#208    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#209    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#210    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#211    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#212    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#213    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#214    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#215    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#216    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#217    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#218    SingleChildRenderObjectElement.update (package:flutter/src/widgets/framework.dart:7015:14)
+#219    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#220    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#221    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#222    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#223    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#224    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#225    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#226    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#227    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#228    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#229    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#230    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#231    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#232    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#233    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#234    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#235    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#236    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#237    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#238    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#239    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#240    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#241    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#242    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#243    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#244    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#245    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#246    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#247    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#248    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#249    ProxyElement.update (package:flutter/src/widgets/framework.dart:6041:5)
+#250    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#251    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#252    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#253    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#254    StatefulElement.update (package:flutter/src/widgets/framework.dart:5899:5)
+#255    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+#256    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5738:16)
+#257    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5874:11)
+#258    Element.rebuild (package:flutter/src/widgets/framework.dart:5427:7)
+#259    BuildScope._tryRebuild (package:flutter/src/widgets/framework.dart:2694:15)
+#260    BuildScope._flushDirtyElements (package:flutter/src/widgets/framework.dart:2752:11)
+#261    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3056:18)
+#262    WidgetsBinding.drawFrame (package:flutter/src/widgets/binding.dart:1240:21)
+#263    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#264    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1438:15)
+#265    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1351:9)
+#266    SchedulerBinding._handleDrawFrame (package:flutter/src/scheduler/binding.dart:1204:5)
+#267    _invoke (dart:ui/hooks.dart:331:13)
+#268    PlatformDispatcher._drawFrame (dart:ui/platform_dispatcher.dart:444:5)
+#269    _drawFrame (dart:ui/hooks.dart:303:31)
+
+════════════════════════════════════════════════════════════════════════════════════════════════════

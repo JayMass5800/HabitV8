@@ -543,58 +543,103 @@ Created `lib/ui/widgets/rrule_builder_widget.dart` (1015+ lines):
 - [ ] Test complex pattern creation end-to-end
 - [ ] Add option to use RRuleBuilderWidget for advanced users (optional)
 
-#### **4.2 Update Habit Creation/Edit Screens** ✅ COMPLETE
+#### **4.2 Update Habit Creation/Edit Screens** ✅ IN PROGRESS → UPDATED
 
-**Design Decision: Automatic RRule Conversion (No User Complexity)**
+**Design Decision: Hybrid Dual-Mode UI with Smart Defaults**
 
-After user feedback, we adopted a **seamless auto-conversion approach** instead of manual mode toggles:
+After iterative refinement based on user feedback, we implemented a **user-friendly dual-mode approach**:
 
-✅ **What We Did:**
-- Keep the existing familiar UI exactly as it is
-- Users select frequency (Daily, Weekly, etc.) as they always have
-- Users pick days/dates using the same intuitive selectors
-- **Behind the scenes**: Automatically convert to RRule when saving
-- Zero learning curve, zero UI changes for users
+✅ **What We Built:**
+- **Simple Mode (Default):** Familiar frequency selection (Daily, Weekly, Monthly, etc.)
+  - Same intuitive day/date selectors users know
+  - Auto-converts to RRule behind the scenes on save
+  - Perfect for 95% of use cases
+  
+- **Advanced Mode (Optional):** Full RRuleBuilderWidget integration
+  - Toggle switch with clear "Simple ↔ Advanced" button
+  - Info dialog explaining differences with examples
+  - Supports complex patterns: "every other week", "2nd Tuesday", etc.
+  - Visual banner explaining current mode
+  - Seamless switching between modes
 
-❌ **What We Avoided:**
-- Manual "Simple/Advanced" mode toggle (too confusing)
-- Forcing users to understand RRule concepts
-- Breaking existing user workflows
+- **Hybrid Hourly Approach:** 🆕 CRITICAL
+  - RRule doesn't natively support multiple specific times per day
+  - Solution: Combine RRule pattern + hourly times array
+  - Both modes show hourly times selector for hourly frequency
+  - RRule handles day pattern (which days to repeat)
+  - hourlyTimes array handles specific times (9am, 2pm, 6pm, etc.)
+  - Example: "Every weekday at 9am, 2pm, 6pm" = FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR + times=[09:00, 14:00, 18:00]
 
-**Implementation:**
+**Implementation Details:**
 
-1. ✅ **`create_habit_screen.dart`** - COMPLETE
-   - UI remains unchanged (familiar frequency chips, day selectors)
-   - Added auto-conversion after habit creation:
-     ```dart
-     if (_selectedFrequency != HabitFrequency.single) {
-       habit.getOrCreateRRule(); // Auto-convert to RRule
-     }
-     ```
-   - Falls back gracefully to legacy if conversion fails
-   - No breaking changes to existing code
+1. ✅ **`create_habit_screen.dart`** - UPDATED WITH DUAL MODE
+   - Added `_useAdvancedScheduling` boolean toggle
+   - Added `_rruleString` and `_rruleStartDate` (dtStart) state
+   - Created `_showSchedulingInfoDialog()` with clear examples:
+     - Simple Mode: Daily, weekly on specific days, monthly on dates
+     - Advanced Mode: Every other week, position-based (2nd Tuesday), intervals
+   - Mode toggle button with visual indicators (icons, colors)
+   - Info banner explaining current mode benefits
+   - RRuleBuilderWidget integrated into advanced mode
+   - Hourly times selector shown in BOTH modes for hourly frequency 🆕
+   - Save logic checks `_useAdvancedScheduling`:
+     - If true: Uses `_rruleString` and `dtStart` directly
+     - If false: Auto-converts legacy fields to RRule
+   - Hourly times always saved to habit.hourlyTimes array (hybrid approach)
 
-2. ✅ **`edit_habit_screen.dart`** - COMPLETE
-   - Same approach as create screen
-   - Auto-convert legacy habits to RRule on save
-   - Saves twice: once for legacy fields, once for RRule
-   - Debug logging for transparency
-   - Seamless upgrade of existing habits
+2. 🔄 **`edit_habit_screen.dart`** - TODO (pending)
+   - Same dual-mode approach needed
+   - Parse existing RRule to populate advanced UI
+   - Handle hybrid hourly patterns on load
+
+**Hybrid Hourly Architecture:**
+```dart
+// Habit model stores BOTH:
+habit.rruleString = "FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR";  // Which days
+habit.hourlyTimes = ["09:00", "14:00", "18:00"];         // Which times
+
+// Services combine both:
+if (habit.usesRRule && habit.frequency == HabitFrequency.hourly) {
+  // 1. Get days from RRule
+  final days = RRuleService.getOccurrences(...);
+  // 2. For each day, schedule all hourly times
+  for (final day in days) {
+    for (final time in habit.hourlyTimes) {
+      scheduleNotification(day + time);
+    }
+  }
+}
+```
+
+**User Experience Improvements:**
+- ✅ Clear mode toggle with tooltip
+- ✅ Info dialog with side-by-side comparison
+- ✅ Visual distinction between modes (colors, icons)
+- ✅ Mode-specific help text and examples
+- ✅ No complexity unless user needs it
+- ✅ Start simple, switch to advanced only when needed
+- ✅ Hourly explanation: "RRule doesn't support multiple times, so we use a hybrid approach"
 
 **Benefits:**
 - ✅ 100% backward compatible
-- ✅ Zero user confusion
-- ✅ All new habits use modern RRule system
-- ✅ Old habits auto-upgrade when edited
-- ✅ Future complex patterns (intervals, etc.) easy to add
+- ✅ Zero breaking changes
+- ✅ Simple mode = zero learning curve
+- ✅ Advanced mode = unlimited power
+- ✅ Clear explanation of differences
+- ✅ Hybrid hourly approach handles real-world use case
+- ✅ Future-proof for any scheduling pattern
 
 **Deliverables:**
-- ✅ Updated create screen with auto-conversion
-- ✅ Updated edit screen with auto-conversion
+- ✅ create_habit_screen.dart updated with dual mode
+- ✅ Info dialog with clear examples
+- ✅ Mode toggle with visual indicators
+- ✅ RRuleBuilderWidget integration
+- ✅ Hybrid hourly times support in both modes
+- ✅ RRuleService.parseRRuleToComponents() for parsing existing patterns
 - ✅ No compilation errors
-- ✅ Graceful fallback handling
-- [ ] Test habit creation flow (pending manual testing)
-- [ ] Test habit editing flow (pending manual testing)
+- [ ] edit_habit_screen.dart update (pending)
+- [ ] Test mode switching (pending manual testing)
+- [ ] Test hourly hybrid patterns (pending manual testing)
 
 #### **4.3 Update Display Screens** ✅ COMPLETE
 
@@ -1140,20 +1185,29 @@ Before starting the refactoring:
   - High priority services (5/5) ✅ COMPLETE
   - Medium priority services (2/2) ✅ COMPLETE
   - Low priority services (2/2) ✅ COMPLETE (no changes needed)
-- ✅ **Phase 4:** UI Refactoring - COMPLETE
-  - RRule Builder Widget (1/1) ✅ COMPLETE (with advanced patterns)
-  - Create/Edit Screens (2/2) ✅ COMPLETE (auto-conversion implemented)
+- 🔄 **Phase 4:** UI Refactoring - IN PROGRESS (90% Complete)
+  - RRule Builder Widget (1/1) ✅ COMPLETE (with advanced patterns + parsing)
+  - Create Screen (1/1) ✅ COMPLETE (dual-mode + hybrid hourly)
+  - Edit Screen (0/1) ⏳ PENDING (needs dual-mode integration)
   - Display Screens (3/3) ✅ COMPLETE (timeline, calendar, all_habits)
   
 ### Statistics
-- Total commits: 7+ on feature branch
+- Total commits: 10+ on feature branch
 - Total test coverage: 30 passing tests
-  - 12 RRuleService unit tests (includes hourly frequency)
+  - 12 RRuleService unit tests (includes hourly frequency + parsing)
   - 18 Phase 2 integration tests (includes hourly patterns)
-- Frequency types covered: hourly, daily, weekly, monthly, yearly, single
+- Frequency types covered: hourly (hybrid), daily, weekly, monthly, yearly, single
 - Services updated: 9/9 analyzed (7 updated, 2 no changes needed)
   - 5 high-priority: widget, stats, insights, calendar, midnight reset
   - 2 medium-priority: work_manager_habit_service, notification_scheduler
+  - 2 low-priority analyzed: trend_analysis (no changes), suggestions (no changes)
+- UI Components: 1/1 widgets created + dual-mode integration
+  - ✅ RRuleBuilderWidget (1026 lines, full featured + RRule parsing)
+  - ✅ Dual-mode UI with info dialogs and mode toggle
+  - ✅ Hybrid hourly approach (RRule + times array)
+- Lines of code added: ~2,100 (900 services + 1,200 UI)
+- Backward compatibility: 100% maintained
+- Breaking changes: 0
 
 ### Phase 4 Completions (Oct 3, 2025)
 **4.1 RRule Builder Widget:**
@@ -1161,14 +1215,21 @@ Before starting the refactoring:
 - ✅ Interval support with helpful examples (every 2 weeks, every 3 months)
 - ✅ SegmentedButton UI for pattern type selection
 - ✅ Real-time preview and helper text
-- ✅ 1015+ lines, comprehensive pattern coverage (~95%)
+- ✅ RRule parsing via RRuleService.parseRRuleToComponents()
+- ✅ _parseExistingRRule() implemented (TODO resolved)
+- ✅ 1026+ lines, comprehensive pattern coverage (~95%)
 
-**4.2 Create/Edit Screens:**
-- ✅ Auto-conversion in create_habit_screen.dart
-- ✅ Auto-conversion in edit_habit_screen.dart
-- ✅ Seamless upgrade of legacy habits to RRule
-- ✅ Zero UI changes, zero user confusion
-- ✅ Graceful fallback to legacy on error
+**4.2 Create Screen Update:**
+- ✅ Dual-mode UI: Simple (default) ↔ Advanced (optional)
+- ✅ Clear mode toggle with visual indicators
+- ✅ Info dialog with side-by-side mode comparison
+- ✅ Mode-specific help banners and examples
+- ✅ RRuleBuilderWidget integration in advanced mode
+- ✅ Hybrid hourly approach: RRule pattern + times array
+- ✅ Hourly times shown in BOTH modes for hourly frequency
+- ✅ Automatic RRule conversion in simple mode
+- ✅ Direct RRule usage in advanced mode
+- ✅ Zero UI breaking changes
 
 **4.3 Display Screens:**
 - ✅ timeline_screen.dart updated with RRule support
@@ -1176,12 +1237,6 @@ Before starting the refactoring:
 - ✅ all_habits_screen.dart updated with RRule summaries
 - ✅ All screens use RRuleService.isDueOnDate() when available
 - ✅ Graceful fallback to legacy frequency logic
-  - 2 low-priority analyzed: trend_analysis (no changes), suggestions (no changes)
-- UI Components: 1/1 widgets created
-  - ✅ RRuleBuilderWidget (680 lines, full featured)
-- Lines of code added: ~1,580 (900 services + 680 UI)
-- Backward compatibility: 100% maintained
-- Breaking changes: 0
 
 ### Remaining Work
 - Phase 4: UI Update (~4-5 days) - NEXT UP
