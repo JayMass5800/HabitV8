@@ -1772,35 +1772,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 onTap: _selectNotificationTime,
               ),
             ],
-            // Show info for hourly habits
-            if ((_notificationsEnabled || _alarmEnabled) &&
-                _selectedFrequency == HabitFrequency.hourly) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _selectedColor.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: _selectedColor, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Hourly habits will send notifications every hour during your active hours (8 AM - 10 PM)',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: _selectedColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
             // Show info for single habits
             if ((_notificationsEnabled || _alarmEnabled) &&
                 _selectedFrequency == HabitFrequency.single) ...[
