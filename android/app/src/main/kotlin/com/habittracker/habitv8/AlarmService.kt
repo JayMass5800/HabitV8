@@ -126,8 +126,13 @@ class AlarmService : Service() {
         Log.i(TAG, "Starting alarm service for: $habitName (ID: $alarmId, Habit ID: $habitId)")
         
         // Create notification channel and start foreground service
+        Log.d(TAG, "📢 Creating notification channel...")
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, createNotification())
+        
+        Log.d(TAG, "🚀 Starting foreground service with notification...")
+        val notification = createNotification()
+        startForeground(NOTIFICATION_ID, notification)
+        Log.i(TAG, "✅ Foreground service started with notification ID: $NOTIFICATION_ID")
         
         // Start playing the alarm sound
         if (soundUriString != null && soundUriString.isNotEmpty()) {
@@ -273,6 +278,8 @@ class AlarmService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.d(TAG, "📺 Creating notification channel: $CHANNEL_ID")
+            
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
@@ -287,10 +294,33 @@ class AlarmService : Service() {
             
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+            
+            // Verify channel was created
+            val createdChannel = notificationManager.getNotificationChannel(CHANNEL_ID)
+            if (createdChannel != null) {
+                Log.i(TAG, "✅ Notification channel created/verified: $CHANNEL_ID (Importance: ${createdChannel.importance})")
+            } else {
+                Log.e(TAG, "❌ Failed to create notification channel: $CHANNEL_ID")
+            }
+        } else {
+            Log.d(TAG, "📺 Skipping channel creation (API < 26)")
         }
     }
 
     private fun createNotification(): Notification {
+        Log.d(TAG, "📱 Creating notification for habit: $habitName (Alarm ID: $alarmId, Habit ID: $habitId)")
+        
+        // Check if notifications are enabled
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val notificationsEnabled = notificationManager.areNotificationsEnabled()
+            Log.d(TAG, "📢 Notifications enabled for app: $notificationsEnabled")
+            
+            if (!notificationsEnabled) {
+                Log.e(TAG, "❌ NOTIFICATIONS ARE DISABLED FOR THIS APP!")
+            }
+        }
+        
         // Create an intent to open the app when notification is tapped
         val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -302,6 +332,8 @@ class AlarmService : Service() {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+        
+        Log.d(TAG, "🔗 Created pending intent for app launch")
         
         // Create intent to complete alarm
         val completeIntent = Intent(this, AlarmActionReceiver::class.java).apply {
@@ -335,8 +367,10 @@ class AlarmService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
+        Log.d(TAG, "✅ Created action pending intents (complete & snooze)")
+        
         // Build the notification with action buttons
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("🔔 $habitName")
             .setContentText("Alarm is ringing - Tap to open app")
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
@@ -349,6 +383,9 @@ class AlarmService : Service() {
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "✅ COMPLETE", completePendingIntent)
             .addAction(android.R.drawable.ic_menu_recent_history, "⏰ SNOOZE", snoozePendingIntent)
             .build()
+            
+        Log.i(TAG, "✅ Notification built successfully with 2 action buttons")
+        return notification
     }
 
     private fun playAlarmSound(uri: Uri) {

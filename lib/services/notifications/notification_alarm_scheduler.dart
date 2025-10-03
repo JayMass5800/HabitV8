@@ -3,6 +3,7 @@ import '../logging_service.dart';
 import '../alarm_manager_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_helpers.dart';
+import 'notification_core.dart';
 
 /// System alarm scheduling functionality
 ///
@@ -31,15 +32,29 @@ class NotificationAlarmScheduler {
     AppLogger.debug('Alarm sound: ${habit.alarmSoundName}');
     AppLogger.debug('Alarm sound URI: ${habit.alarmSoundUri}');
 
-    // Initialize AlarmManagerService to use system alarms for this habit
-    await AlarmManagerService.initialize();
-
     // Skip if alarms are disabled
     if (!habit.alarmEnabled) {
       AppLogger.debug('Skipping alarms - disabled');
       AppLogger.info('Alarms disabled for habit: ${habit.name}');
       return;
     }
+
+    // Request notification permissions before scheduling alarms
+    // This ensures the user sees the permission dialog when enabling alarms
+    AppLogger.info(
+        '🔔 Checking notification permissions before scheduling alarm...');
+    final bool hasPermission =
+        await NotificationCore.ensureNotificationPermissions();
+    if (!hasPermission) {
+      AppLogger.warning(
+        '⚠️ Notification permission denied - alarm will fire but notification may not show',
+      );
+      // Continue anyway - the alarm will still fire and play sound
+      // The foreground service should still work even without notification permission
+    }
+
+    // Initialize AlarmManagerService to use system alarms for this habit
+    await AlarmManagerService.initialize();
 
     // For non-hourly, non-single habits, require notification time
     if (habit.frequency != HabitFrequency.hourly &&
