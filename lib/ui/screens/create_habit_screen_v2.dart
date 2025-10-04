@@ -323,7 +323,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              initialValue: _selectedCategory,
+              value: _selectedCategory,
               decoration: const InputDecoration(
                 labelText: 'Category',
                 border: OutlineInputBorder(),
