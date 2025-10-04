@@ -28,6 +28,12 @@ class HabitTimelineRemoteViewsFactory(
         android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID,
         android.appwidget.AppWidgetManager.INVALID_APPWIDGET_ID
     )
+    
+    // Cache to prevent redundant loading
+    private var cachedHabitsJson: String? = null
+    private var cacheTimestamp: Long = 0
+    private val CACHE_VALIDITY_MS = 2000 // 2 seconds cache to prevent triple-refresh issue
+    
     // Remove reliance on stale theme extras - always read fresh theme data
 
     override fun onCreate() {
@@ -186,6 +192,13 @@ class HabitTimelineRemoteViewsFactory(
 
     override fun onDataSetChanged() {
         // Called when notifyAppWidgetViewDataChanged is triggered
+        // Check cache to prevent redundant reloads within 2 seconds
+        val now = System.currentTimeMillis()
+        if (now - cacheTimestamp < CACHE_VALIDITY_MS && cachedHabitsJson != null) {
+            Log.d("HabitTimelineService", "⚡ Using cached data (${now - cacheTimestamp}ms old), skipping reload")
+            return
+        }
+        
         Log.d("HabitTimelineService", "onDataSetChanged called - reloading habit data")
         loadThemeData()
         loadHabitData()
@@ -269,6 +282,10 @@ class HabitTimelineRemoteViewsFactory(
                 Log.e("HabitTimelineService", "Failed to parse habits JSON array", e)
                 emptyList()
             }
+
+            // Update cache
+            cachedHabitsJson = habitsArrayString
+            cacheTimestamp = System.currentTimeMillis()
 
             Log.d("HabitTimelineService", "Loaded ${habits.size} habits for timeline widget")
             if (habits.isNotEmpty()) {

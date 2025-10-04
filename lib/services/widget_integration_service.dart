@@ -22,6 +22,9 @@ class WidgetIntegrationService {
       _instance ??= WidgetIntegrationService._();
 
   Timer? _periodicUpdateTimer;
+  Timer?
+      _debounceTimer; // Debounce widget updates to prevent excessive refreshes
+  bool _updatePending = false; // Track if an update is already scheduled
 
   WidgetIntegrationService._();
 
@@ -103,8 +106,35 @@ class WidgetIntegrationService {
     }
   }
 
-  /// Update all widgets with current habit data
+  /// Update all widgets with current habit data (debounced to prevent excessive updates)
   Future<void> updateAllWidgets() async {
+    // Cancel any pending update
+    _debounceTimer?.cancel();
+
+    // If an update is already in progress, just mark that another is needed
+    if (_updatePending) {
+      debugPrint('⏱️ Widget update already pending, will schedule another');
+      _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+        _performWidgetUpdate();
+      });
+      return;
+    }
+
+    // Schedule the update with a small delay to batch rapid calls
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _performWidgetUpdate();
+    });
+  }
+
+  /// Perform the actual widget update (internal method)
+  Future<void> _performWidgetUpdate() async {
+    if (_updatePending) {
+      debugPrint('⏱️ Skipping duplicate widget update');
+      return;
+    }
+
+    _updatePending = true;
+
     try {
       final widgetData = await _prepareWidgetData();
 
@@ -125,9 +155,11 @@ class WidgetIntegrationService {
       // Update compact widget
       await _updateWidget(_compactWidgetName, widgetData);
 
-      debugPrint('All widgets updated successfully');
+      debugPrint('✅ All widgets updated successfully (debounced)');
     } catch (e) {
-      debugPrint('Error updating widgets: $e');
+      debugPrint('Error in debounced widget update: $e');
+    } finally {
+      _updatePending = false;
     }
   }
 

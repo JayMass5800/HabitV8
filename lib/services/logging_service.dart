@@ -1,19 +1,25 @@
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
 class AppLogger {
+  // Optimize logger for production builds - reduce overhead
   static final Logger _logger = Logger(
     printer: PrettyPrinter(
-      methodCount: 2,
-      errorMethodCount: 8,
+      methodCount: kDebugMode ? 2 : 0, // No stack traces in release
+      errorMethodCount: kDebugMode ? 8 : 2, // Minimal error traces in release
       lineLength: 120,
-      colors: true,
-      printEmojis: true,
+      colors: kDebugMode, // No ANSI colors in release
+      printEmojis: kDebugMode, // No emojis in release
       dateTimeFormat: DateTimeFormat.none,
     ),
+    level: kDebugMode ? Level.debug : Level.info, // Less verbose in release
   );
 
+  /// Debug logs - only in debug builds to reduce memory overhead
   static void debug(String message) {
-    _logger.d(message);
+    if (kDebugMode) {
+      _logger.d(message);
+    }
   }
 
   static void info(String message) {
@@ -28,7 +34,10 @@ class AppLogger {
     _logger.e(message, error: error, stackTrace: stackTrace);
   }
 
+  /// Verbose logs - only in debug builds
   static void verbose(String message) {
-    _logger.t(message);
+    if (kDebugMode) {
+      _logger.t(message);
+    }
   }
 }

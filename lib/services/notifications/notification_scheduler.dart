@@ -647,13 +647,15 @@ class NotificationScheduler {
   ///
   /// Optimized approach: Only cancels pending notifications that actually exist
   Future<void> cancelHabitNotificationsByHabitId(String habitId) async {
-    AppLogger.info('🚫 Starting notification cancellation for habit: $habitId');
+    AppLogger.debug(
+        '🚫 Starting notification cancellation for habit: $habitId');
 
     try {
       // Get all currently pending notifications
       final pendingNotifications = await _plugin.pendingNotificationRequests();
 
       int cancelledCount = 0;
+      final List<int> cancelledIds = []; // Batch IDs for single log entry
 
       // Only cancel notifications that:
       // 1. Match this habit ID in the payload
@@ -676,13 +678,20 @@ class NotificationScheduler {
         if (shouldCancel) {
           await _plugin.cancel(notification.id);
           cancelledCount++;
-          AppLogger.debug('Cancelled notification ID: ${notification.id}');
+          cancelledIds.add(notification.id);
         }
       }
 
-      AppLogger.info(
-        '✅ Cancelled $cancelledCount notifications for habit: $habitId (checked ${pendingNotifications.length} pending)',
-      );
+      // Single batched log entry instead of one per notification
+      if (cancelledCount > 0) {
+        AppLogger.info(
+          '✅ Cancelled $cancelledCount notifications for habit: $habitId (scanned ${pendingNotifications.length} pending)',
+        );
+        // Only log individual IDs in debug mode and only if count is reasonable
+        if (cancelledCount <= 10) {
+          AppLogger.debug('Cancelled IDs: ${cancelledIds.join(", ")}');
+        }
+      }
     } catch (e) {
       AppLogger.error('Error during optimized notification cancellation', e);
       // Fallback to cancelling the main notification only
