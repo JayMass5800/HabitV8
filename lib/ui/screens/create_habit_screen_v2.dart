@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
-import '../../services/notification_service.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/comprehensive_habit_suggestions_service.dart';
 import '../../services/alarm_manager_service.dart';
@@ -1468,35 +1467,8 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
         }
       }
 
-      // Schedule notifications/alarms if enabled (non-blocking) - V1 style
-      if (_notificationsEnabled || _alarmEnabled) {
-        try {
-          // Pass isNewHabit: true to skip unnecessary notification cancellation
-          await NotificationService.scheduleHabitNotifications(
-            habit,
-            isNewHabit: true,
-          );
-          AppLogger.info(
-            'Notifications/alarms scheduled successfully for habit: ${habit.name}',
-          );
-        } catch (e) {
-          AppLogger.warning(
-            'Failed to schedule notifications/alarms for habit: ${habit.name} - $e',
-          );
-          // Don't block habit creation if notification scheduling fails
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Habit created but notifications/alarms could not be scheduled: ${e.toString()}',
-                ),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 4),
-              ),
-            );
-          }
-        }
-      }
+      // NOTE: Notification/alarm scheduling is handled by addHabit() in database.dart
+      // to avoid double scheduling. Removed from here to fix performance issue.
 
       // Log the habit creation
       if (mounted) {

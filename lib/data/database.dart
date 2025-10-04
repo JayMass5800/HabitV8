@@ -640,9 +640,10 @@ class HabitService {
         AppLogger.error('Failed to sync new habit to calendar', e);
       }
 
-      // Update widgets with new habit data
+      // Update widgets with new habit data (debounced - will batch with other updates)
       try {
-        await WidgetIntegrationService.instance.onHabitsChanged();
+        // Use non-awaited call to prevent blocking and rely on debouncing
+        WidgetIntegrationService.instance.onHabitsChanged();
       } catch (e) {
         AppLogger.error('Failed to update widgets after adding habit', e);
         // Don't block the operation if widget update fails

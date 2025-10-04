@@ -752,6 +752,47 @@ class NotificationScheduler {
 
       int scheduledCount = 0;
 
+      // Pre-create reusable notification details to reduce memory allocations
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+        'habit_scheduled_channel',
+        'Scheduled Habit Notifications',
+        channelDescription: 'Scheduled notifications for habit reminders',
+        importance: Importance.max,
+        priority: Priority.high,
+        sound: UriAndroidNotificationSound(
+            'content://settings/system/notification_sound'),
+        playSound: true,
+        enableVibration: true,
+        actions: [
+          AndroidNotificationAction(
+            'complete',
+            'COMPLETE',
+            showsUserInterface: false,
+          ),
+          AndroidNotificationAction(
+            'snooze',
+            'SNOOZE 30MIN',
+            showsUserInterface: false,
+          ),
+        ],
+      );
+
+      const DarwinNotificationDetails iOSDetails =
+          DarwinNotificationDetails(categoryIdentifier: 'habit_category');
+
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidDetails,
+        iOS: iOSDetails,
+      );
+
+      // Pre-create reusable payload to reduce string allocations
+      final payload =
+          jsonEncode({'habitId': habit.id, 'type': 'habit_reminder'});
+      final notificationTitle = '🎯 ${habit.name}';
+      const notificationBody =
+          'Time to complete your habit! Don\'t break your streak.';
+
       for (final occurrence in occurrences) {
         // Create TZDateTime for the notification
         final scheduledTime = tz.TZDateTime(
@@ -767,47 +808,10 @@ class NotificationScheduler {
           final notificationId = NotificationHelpers.generateSafeId(
               '${habit.id}_rrule_${occurrence.year}_${occurrence.month}_${occurrence.day}');
 
-          final AndroidNotificationDetails androidDetails =
-              AndroidNotificationDetails(
-            'habit_scheduled_channel',
-            'Scheduled Habit Notifications',
-            channelDescription: 'Scheduled notifications for habit reminders',
-            importance: Importance.max,
-            priority: Priority.high,
-            sound: const UriAndroidNotificationSound(
-                'content://settings/system/notification_sound'),
-            playSound: true,
-            enableVibration: true,
-            actions: const [
-              AndroidNotificationAction(
-                'complete',
-                'COMPLETE',
-                showsUserInterface: false,
-              ),
-              AndroidNotificationAction(
-                'snooze',
-                'SNOOZE 30MIN',
-                showsUserInterface: false,
-              ),
-            ],
-          );
-
-          const DarwinNotificationDetails iOSDetails =
-              DarwinNotificationDetails(categoryIdentifier: 'habit_category');
-
-          final NotificationDetails platformChannelSpecifics =
-              NotificationDetails(
-            android: androidDetails,
-            iOS: iOSDetails,
-          );
-
-          final payload =
-              jsonEncode({'habitId': habit.id, 'type': 'habit_reminder'});
-
           await _plugin.zonedSchedule(
             notificationId,
-            '🎯 ${habit.name}',
-            'Time to complete your habit! Don\'t break your streak.',
+            notificationTitle,
+            notificationBody,
             scheduledTime,
             platformChannelSpecifics,
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
