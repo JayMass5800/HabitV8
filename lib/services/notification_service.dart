@@ -52,9 +52,9 @@ class NotificationService {
     return NotificationActionHandler.getPendingActionsCount();
   }
 
-  static Future<void> scheduleHabitNotifications(Habit habit) async {
+  static Future<void> scheduleHabitNotifications(Habit habit, {bool isNewHabit = false}) async {
     await cancelHabitNotificationsByHabitId(habit.id);
-    await _scheduler.scheduleHabitNotifications(habit);
+    await _scheduler.scheduleHabitNotifications(habit, isNewHabit: isNewHabit);
     await _alarmScheduler.scheduleHabitAlarms(habit);
   }
 
