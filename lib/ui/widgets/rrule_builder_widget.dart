@@ -958,7 +958,8 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                           initialDate: _untilDate ??
                               DateTime.now().add(const Duration(days: 30)),
                           firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 3650)),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 3650)),
                         );
                         if (picked != null) {
                           setState(() {
