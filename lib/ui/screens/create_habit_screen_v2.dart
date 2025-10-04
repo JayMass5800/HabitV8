@@ -367,9 +367,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
                   decoration: BoxDecoration(
                     color: _useAdvancedMode
                         ? Theme.of(context).colorScheme.primaryContainer
-                        : Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: TextButton.icon(

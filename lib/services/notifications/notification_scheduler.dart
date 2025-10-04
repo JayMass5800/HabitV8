@@ -652,27 +652,27 @@ class NotificationScheduler {
     try {
       // Get all currently pending notifications
       final pendingNotifications = await _plugin.pendingNotificationRequests();
-      
+
       int cancelledCount = 0;
-      
+
       // Only cancel notifications that:
       // 1. Match this habit ID in the payload
       // 2. Have IDs generated from this habit ID
       for (final notification in pendingNotifications) {
         bool shouldCancel = false;
-        
+
         // Check if payload contains this habit ID
-        if (notification.payload != null && 
+        if (notification.payload != null &&
             notification.payload!.contains(habitId)) {
           shouldCancel = true;
         }
-        
+
         // Check if notification ID was generated from this habit ID pattern
         final expectedMainId = NotificationHelpers.generateSafeId(habitId);
         if (notification.id == expectedMainId) {
           shouldCancel = true;
         }
-        
+
         if (shouldCancel) {
           await _plugin.cancel(notification.id);
           cancelledCount++;
@@ -688,7 +688,8 @@ class NotificationScheduler {
       // Fallback to cancelling the main notification only
       final mainNotificationId = NotificationHelpers.generateSafeId(habitId);
       await _plugin.cancel(mainNotificationId);
-      AppLogger.info('✅ Fallback: Cancelled main notification for habit: $habitId');
+      AppLogger.info(
+          '✅ Fallback: Cancelled main notification for habit: $habitId');
     }
   }
 
@@ -767,7 +768,8 @@ class NotificationScheduler {
             iOS: iOSDetails,
           );
 
-          final payload = jsonEncode({'habitId': habit.id, 'type': 'habit_reminder'});
+          final payload =
+              jsonEncode({'habitId': habit.id, 'type': 'habit_reminder'});
 
           await _plugin.zonedSchedule(
             notificationId,
