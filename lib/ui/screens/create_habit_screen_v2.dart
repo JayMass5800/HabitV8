@@ -1364,7 +1364,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
         );
       }
 
-      // Create habit
+      // Create habit - V1 style with proper data structure
       final habit = Habit.create(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -1374,15 +1374,22 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
         targetCount: 1,
         notificationsEnabled: _notificationsEnabled,
         notificationTime: notificationDateTime,
-        selectedWeekdays: _selectedWeekdays, // For hourly habits
-        selectedMonthDays: [],
+        selectedWeekdays: _selectedFrequency == HabitFrequency.hourly
+            ? _selectedWeekdays
+            : _simpleWeekdays.toList(), // Use simple weekdays for weekly habits
+        selectedMonthDays: _simpleMonthDays.toList(), // From simple mode
         hourlyTimes: _hourlyTimes
             .map(
               (time) =>
                   '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
             )
             .toList(),
-        selectedYearlyDates: [],
+        selectedYearlyDates: _simpleYearlyDates
+            .map(
+              (date) =>
+                  '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+            )
+            .toList(),
         singleDateTime: _singleDateTime,
         alarmEnabled: _alarmEnabled,
         alarmSoundName: _selectedAlarmSoundName,
@@ -1407,31 +1414,101 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
       final habitService = habitServiceAsync.value;
 
       if (habitService == null) {
-        _showError('Habit service not available');
         setState(() {
           _isSaving = false;
         });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Habit service not available'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
 
-      // Save habit
-      await habitService.addHabit(habit);
+      // Save habit with V1's retry logic
+      try {
+        await habitService.addHabit(habit);
+      } catch (e) {
+        // If it's a database connection error, try to refresh the provider and retry once
+        if (e.toString().contains('Database box is closed') ||
+            e.toString().contains('Database connection lost')) {
+          AppLogger.info(
+              'Database connection lost, refreshing providers and retrying...');
 
-      // Schedule notifications if enabled
+          // Invalidate the providers to force refresh
+          ref.invalidate(databaseProvider);
+          ref.invalidate(habitServiceProvider);
+
+          // Wait a moment for providers to refresh
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Try to get fresh service and retry
+          try {
+            final freshServiceAsync = ref.read(habitServiceProvider);
+            final freshService = freshServiceAsync.value;
+
+            if (freshService == null) {
+              throw StateError(
+                  'Could not obtain fresh habit service after refresh');
+            }
+
+            AppLogger.info(
+                'Retrying habit creation with fresh database connection...');
+            await freshService.addHabit(habit);
+            AppLogger.info('✅ Habit created successfully on retry');
+          } catch (retryError) {
+            AppLogger.error('Retry failed: $retryError');
+            rethrow; // Rethrow the retry error
+          }
+        } else {
+          rethrow; // Re-throw other errors
+        }
+      }
+
+      // Schedule notifications/alarms if enabled (non-blocking) - V1 style
       if (_notificationsEnabled || _alarmEnabled) {
         try {
           await NotificationService.scheduleHabitNotifications(habit);
           AppLogger.info(
-            'Notifications scheduled successfully for habit: ${habit.name}',
+            'Notifications/alarms scheduled successfully for habit: ${habit.name}',
           );
         } catch (e) {
           AppLogger.warning(
-            'Failed to schedule notifications for habit: ${habit.name} - $e',
+            'Failed to schedule notifications/alarms for habit: ${habit.name} - $e',
           );
+          // Don't block habit creation if notification scheduling fails
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Habit created but notifications/alarms could not be scheduled: ${e.toString()}',
+                ),
+                backgroundColor: Colors.orange,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
         }
       }
 
-      AppLogger.info('Habit created: ${habit.name}');
+      // Log the habit creation
+      if (mounted) {
+        AppLogger.info('Habit created: ${habit.name}');
+      }
+
+      // Show success message - V1 style
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Habit "${habit.name}" created successfully!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
 
       // Navigate back
       if (mounted) {
