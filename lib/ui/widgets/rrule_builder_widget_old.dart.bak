@@ -428,7 +428,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<HabitFrequency>(
-          initialValue: _frequency,
+          value: _frequency,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),

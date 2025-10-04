@@ -531,7 +531,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Advanced mode: Create complex patterns like "every other week" or "2nd Tuesday of each month"',
+                  'Create custom schedules: Choose your frequency (daily/weekly/monthly/yearly), set intervals like "every 2 weeks" or "every 3 days", pick specific days, and see a preview of your pattern.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         height: 1.3,
@@ -546,7 +546,8 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
           initialRRuleString: _rruleString,
           initialStartDate: _rruleStartDate,
           initialFrequency: _selectedFrequency,
-          forceAdvancedMode: true, // Skip RRule widget's Simple/Advanced toggle
+          forceAdvancedMode:
+              true, // Show all advanced options immediately (no nested toggle)
           onRRuleChanged: (rruleString, startDate) {
             setState(() {
               _rruleString = rruleString;
@@ -1153,6 +1154,29 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
                   ),
             ),
             const SizedBox(height: 16),
+
+            // Time selector - shown first for all frequencies except hourly and single
+            if (_selectedFrequency != HabitFrequency.hourly &&
+                _selectedFrequency != HabitFrequency.single) ...[
+              ListTile(
+                title: Text(
+                  _alarmEnabled ? 'Alarm Time' : 'Notification Time',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                subtitle: Text(
+                  _notificationTime != null
+                      ? _notificationTime!.format(context)
+                      : 'Tap to set time',
+                ),
+                trailing: const Icon(Icons.access_time),
+                onTap: _selectNotificationTime,
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+            ],
+
+            // Notification/Alarm toggles
             SwitchListTile(
               title: const Text('Enable Notifications'),
               subtitle: const Text('Get reminded about your habit'),
@@ -1167,30 +1191,13 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
                 });
               },
             ),
-            if (_notificationsEnabled &&
-                _selectedFrequency != HabitFrequency.hourly &&
-                _selectedFrequency != HabitFrequency.single) ...[
-              const SizedBox(height: 8),
-              ListTile(
-                title: const Text('Notification Time'),
-                subtitle: Text(
-                  _notificationTime != null
-                      ? _notificationTime!.format(context)
-                      : 'Not set',
-                ),
-                trailing: const Icon(Icons.access_time),
-                onTap: _selectNotificationTime,
-              ),
-            ],
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             SwitchListTile(
               title: const Text('Enable Alarms'),
               subtitle: Text(
                 _alarmEnabled
-                    ? 'Use system alarms instead of notifications (more persistent)'
-                    : 'Alarms are more persistent than notifications',
+                    ? 'System alarms are more persistent than notifications'
+                    : 'Use system alarms instead of notifications',
               ),
               value: _alarmEnabled,
               onChanged: (value) {
@@ -1203,8 +1210,12 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
                 });
               },
             ),
+
+            // Alarm-specific settings
             if (_alarmEnabled) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
               ListTile(
                 title: const Text('Alarm Sound'),
                 subtitle: Text(
