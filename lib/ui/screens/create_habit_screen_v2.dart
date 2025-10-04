@@ -171,7 +171,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
     } catch (e) {
       // If parsing fails, return default
     }
-    return const TimeOfDay(hour: 9, minute: 0);
+    return TimeOfDay.now();
   }
 
   Color _getCategoryColor(String category) {
@@ -1252,7 +1252,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
   Future<void> _selectNotificationTime() async {
     final time = await showTimePicker(
       context: context,
-      initialTime: _notificationTime ?? const TimeOfDay(hour: 9, minute: 0),
+      initialTime: _notificationTime ?? TimeOfDay.now(),
     );
 
     if (time != null) {
@@ -1923,7 +1923,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
       _selectedColor = _getCategoryColor(suggestion.category);
       _selectedFrequency = suggestion.frequency;
       _notificationsEnabled = true;
-      _notificationTime = const TimeOfDay(hour: 9, minute: 0);
+      _notificationTime = TimeOfDay.now();
     });
 
     // Close suggestions after applying

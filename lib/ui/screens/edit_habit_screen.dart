@@ -1693,7 +1693,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       context: context,
       initialTime: _singleDateTime != null
           ? TimeOfDay.fromDateTime(_singleDateTime!)
-          : const TimeOfDay(hour: 9, minute: 0),
+          : TimeOfDay.now(),
       helpText: 'Select the time for this habit (24-hour format)',
       builder: (context, child) {
         return MediaQuery(
