@@ -196,7 +196,7 @@ class NotificationScheduler {
   ///
   /// Main entry point for habit notification scheduling.
   /// Routes to appropriate frequency-specific scheduler.
-  /// 
+  ///
   /// [isNewHabit] - Set to true when creating a new habit to skip unnecessary
   /// notification cancellation (new habits can't have existing notifications).
   /// Defaults to false for safety (assumes editing existing habit).
