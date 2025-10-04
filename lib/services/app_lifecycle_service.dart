@@ -2,6 +2,7 @@
 // Handles proper resource cleanup when the app is shutting down
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
 // Old renewal services removed - now using midnight_habit_reset_service.dart
@@ -16,6 +17,7 @@ import '../data/database.dart';
 class AppLifecycleService with WidgetsBindingObserver {
   static AppLifecycleService? _instance;
   static bool _isInitialized = false;
+  static ProviderContainer? _container;
 
   AppLifecycleService._();
 
@@ -26,10 +28,13 @@ class AppLifecycleService with WidgetsBindingObserver {
   }
 
   /// Initialize the lifecycle service
-  static void initialize() {
+  static void initialize([ProviderContainer? container]) {
     if (_isInitialized) return;
 
     AppLogger.info('🔄 Initializing AppLifecycleService...');
+
+    // Store container reference for state invalidation
+    _container = container;
 
     // Add the observer to listen for app lifecycle changes
     WidgetsBinding.instance.addObserver(instance);
@@ -127,6 +132,19 @@ class AppLifecycleService with WidgetsBindingObserver {
 
       // Ensure database is accessible after app resume
       _ensureDatabaseConnection();
+
+      // CRITICAL: Invalidate habits state to force refresh from database
+      // This ensures UI picks up changes made by background notification actions
+      if (_container != null) {
+        try {
+          _container!.invalidate(habitsNotifierProvider);
+          AppLogger.info('🔄 Invalidated habitsNotifierProvider to force refresh from database');
+        } catch (e) {
+          AppLogger.error('Error invalidating habitsNotifierProvider', e);
+        }
+      } else {
+        AppLogger.warning('⚠️ Container is null - cannot invalidate habits state');
+      }
 
       // Re-register notification action callback in case it was lost during background
       NotificationActionService.ensureCallbackRegistered();

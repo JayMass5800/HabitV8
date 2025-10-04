@@ -60,14 +60,6 @@ void main() async {
     ),
   );
 
-  // Initialize app lifecycle service for proper resource cleanup
-  try {
-    AppLifecycleService.initialize();
-  } catch (e) {
-    AppLogger.error('Error initializing app lifecycle service', e);
-    // Continue with app startup even if lifecycle service fails
-  }
-
   // Initialize timezone data
   try {
     tz.initializeTimeZones();
@@ -110,6 +102,14 @@ void main() async {
   // Create provider container and initialize notification action service
   final container = ProviderContainer();
   NotificationActionService.initialize(container);
+
+  // Initialize app lifecycle service with container for proper state management
+  try {
+    AppLifecycleService.initialize(container);
+  } catch (e) {
+    AppLogger.error('Error initializing app lifecycle service', e);
+    // Continue with app startup even if lifecycle service fails
+  }
 
   // Initialize alarm complete service
   try {
