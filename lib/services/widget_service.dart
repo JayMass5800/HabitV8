@@ -354,7 +354,7 @@ class WidgetService {
           await _openApp('/timeline');
           break;
         case 'open_create_habit':
-          await _openApp('/create-habit');
+          await _openApp('/create-habit-v2');
           break;
         case 'open_edit_habit':
           final habitId = data['habitId'] as String?;

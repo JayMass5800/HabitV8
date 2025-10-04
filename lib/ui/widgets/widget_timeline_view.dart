@@ -94,7 +94,7 @@ class WidgetTimelineView extends StatelessWidget {
             children: [
               if (onNavigate != null)
                 GestureDetector(
-                  onTap: () => onNavigate!('/create-habit'),
+                  onTap: () => onNavigate!('/create-habit-v2'),
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -216,7 +216,7 @@ class WidgetTimelineView extends StatelessWidget {
             ),
             if (onNavigate != null)
               GestureDetector(
-                onTap: () => onNavigate!('/create-habit'),
+                onTap: () => onNavigate!('/create-habit-v2'),
                 child: Container(
                   margin: const EdgeInsets.only(top: 8),
                   padding:
@@ -642,7 +642,7 @@ class CompactWidgetTimelineView extends StatelessWidget {
                 children: [
                   if (onNavigate != null)
                     GestureDetector(
-                      onTap: () => onNavigate!('/create-habit'),
+                      onTap: () => onNavigate!('/create-habit-v2'),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),

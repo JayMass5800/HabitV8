@@ -729,7 +729,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       floatingActionButton: FloatingActionButton(
         heroTag: "main_shell_fab",
         onPressed: () {
-          context.push('/create-habit');
+          context.push('/create-habit-v2');
         },
         child: const Icon(Icons.add),
       ),

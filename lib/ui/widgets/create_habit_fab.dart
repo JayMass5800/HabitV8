@@ -17,7 +17,7 @@ class CreateHabitFAB extends StatelessWidget {
     return FloatingActionButton(
       heroTag: "create_habit_fab",
       onPressed: () {
-        context.push('/create-habit', extra: prefilledData);
+        context.push('/create-habit-v2', extra: prefilledData);
       },
       tooltip: tooltip ?? 'Create New Habit',
       child: const Icon(Icons.add),
@@ -41,7 +41,7 @@ class CreateHabitExtendedFAB extends StatelessWidget {
     return FloatingActionButton.extended(
       heroTag: "create_habit_extended_fab",
       onPressed: () {
-        context.push('/create-habit', extra: prefilledData);
+        context.push('/create-habit-v2', extra: prefilledData);
       },
       icon: const Icon(Icons.add),
       label: Text(label ?? 'Create Habit'),

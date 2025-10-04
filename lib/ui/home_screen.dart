@@ -84,7 +84,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     icon: Icons.add_circle,
                     title: 'Create Habit',
                     subtitle: 'Start tracking a new habit',
-                    onTap: () => context.push('/create-habit'),
+                    onTap: () => context.push('/create-habit-v2'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -212,7 +212,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     const SizedBox(height: 12),
                                     ElevatedButton.icon(
                                       onPressed: () =>
-                                          context.push('/create-habit'),
+                                          context.push('/create-habit-v2'),
                                       icon: const Icon(Icons.add),
                                       label: const Text('Create First Habit'),
                                     ),
