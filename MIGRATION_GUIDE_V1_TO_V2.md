@@ -530,7 +530,7 @@ class HabitCreationAnalytics {
 ### Documentation
 - `CREATE_HABIT_SCREEN_V2_README.md` - Feature documentation
 - `CREATE_HABIT_SCREEN_COMPARISON.md` - V1 vs V2 comparison
-- `create_habit_screen_v2_example.dart` - Usage examples
+- `YEARLY_RRULE_EXAMPLES.md` - Yearly pattern examples
 
 ### Code Files
 - `lib/ui/screens/create_habit_screen.dart` - Original V1

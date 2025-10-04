@@ -1467,24 +1467,79 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
             throw Exception('No yearly dates selected');
           }
           // For yearly, we'll use the first date as the base and create multiple rules if needed
-          // For simplicity, we'll just use BYMONTH and BYMONTHDAY
+          // Sort dates by month and day
           final sortedDates = _simpleYearlyDates.toList()
             ..sort((a, b) {
               if (a.month != b.month) return a.month.compareTo(b.month);
               return a.day.compareTo(b.day);
             });
 
-          // Group by month
+          // Group by month to get unique months and days
           final monthGroups = <int, List<int>>{};
           for (final date in sortedDates) {
             monthGroups.putIfAbsent(date.month, () => []).add(date.day);
           }
 
-          // For now, create a simple rule with the first date
-          // TODO: Support multiple dates across different months
-          final firstDate = sortedDates.first;
-          rruleString =
-              'FREQ=YEARLY;BYMONTH=${firstDate.month};BYMONTHDAY=${firstDate.day}';
+          // Check if all dates are in the same month
+          if (monthGroups.length == 1) {
+            // Single month: FREQ=YEARLY;BYMONTH=3;BYMONTHDAY=15,20,25
+            final month = monthGroups.keys.first;
+            final days = monthGroups[month]!.join(',');
+            rruleString = 'FREQ=YEARLY;BYMONTH=$month;BYMONTHDAY=$days';
+          } else {
+            // Multiple months: Check if we can use BYMONTH with BYMONTHDAY
+            // RRule expands BYMONTH and BYMONTHDAY as a Cartesian product
+            // So we need to check if all selected dates match this pattern
+
+            // Get all unique months and days
+            final allMonths = monthGroups.keys.toList()..sort();
+            final allDays = <int>{};
+            for (final days in monthGroups.values) {
+              allDays.addAll(days);
+            }
+            final sortedDays = allDays.toList()..sort();
+
+            // Check if the Cartesian product matches our selected dates
+            final expectedDates = <String>{};
+            for (final month in allMonths) {
+              for (final day in sortedDays) {
+                // Check if this day is valid for this month
+                try {
+                  DateTime(2024, month, day); // Use leap year to validate
+                  expectedDates.add('$month-$day');
+                } catch (e) {
+                  // Invalid date (e.g., Feb 31), skip
+                }
+              }
+            }
+
+            final selectedDates =
+                sortedDates.map((d) => '${d.month}-${d.day}').toSet();
+
+            // If the pattern matches, use BYMONTH and BYMONTHDAY
+            if (expectedDates.length == selectedDates.length &&
+                expectedDates.containsAll(selectedDates)) {
+              final months = allMonths.join(',');
+              final days = sortedDays.join(',');
+              rruleString = 'FREQ=YEARLY;BYMONTH=$months;BYMONTHDAY=$days';
+            } else {
+              // Pattern doesn't match Cartesian product
+              // Use RDATE for specific dates (requires dtStart + RDATE list)
+              // For now, fall back to creating multiple simple rules
+              // or use the most common pattern
+
+              // Strategy: Use the month with the most dates
+              final maxMonth = monthGroups.entries
+                  .reduce((a, b) => a.value.length > b.value.length ? a : b)
+                  .key;
+              final days = monthGroups[maxMonth]!.join(',');
+              rruleString = 'FREQ=YEARLY;BYMONTH=$maxMonth;BYMONTHDAY=$days';
+
+              AppLogger.warning(
+                  'Yearly habit has complex date pattern. Using primary month ($maxMonth) only. '
+                  'Consider using Advanced Mode for full control.');
+            }
+          }
           break;
 
         default:

@@ -180,7 +180,10 @@ context.push('/create-habit-v2');
 
 ## Known Limitations
 
-1. **Yearly Habits**: Simple mode currently only generates RRule for the first selected date when multiple dates span different months. Future enhancement needed for multiple dates across months.
+1. **Yearly Habits with Complex Patterns**: Simple mode intelligently handles multiple dates across months:
+   - **Same month, multiple days**: `FREQ=YEARLY;BYMONTH=3;BYMONTHDAY=15,20,25` ✅
+   - **Multiple months, pattern matches**: `FREQ=YEARLY;BYMONTH=3,6,9;BYMONTHDAY=15,30` ✅ (creates 6 occurrences: Mar 15, Mar 30, Jun 15, Jun 30, Sep 15, Sep 30)
+   - **Multiple months, irregular pattern**: Falls back to the month with the most dates and logs a warning suggesting Advanced Mode for full control
 
 2. **Hourly Habits**: Does not use RRule due to limitations in the RRule spec for multiple times per day. Uses legacy system instead.
 
