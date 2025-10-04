@@ -505,12 +505,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 const Icon(Icons.star, color: Colors.amber, size: 20),
                 const SizedBox(width: 8),
-                Text(
-                  'Premium features included in your 30-day free trial',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
+                Flexible(
+                  child: Text(
+                    'Premium features included in your 30-day free trial',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ],
