@@ -350,105 +350,110 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with advanced mode toggle
+            // Header with mode toggle
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    'Frequency',
+                    'Schedule',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: _selectedColor,
                         ),
                   ),
                 ),
-                // Only show advanced toggle for non-hourly, non-single frequencies
-                if (_selectedFrequency != HabitFrequency.hourly &&
-                    _selectedFrequency != HabitFrequency.single) ...[
-                  Container(
-                    decoration: BoxDecoration(
-                      color: _useAdvancedMode
-                          ? Theme.of(context).colorScheme.primaryContainer
-                          : Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(20),
+                // Mode toggle at top level
+                Container(
+                  decoration: BoxDecoration(
+                    color: _useAdvancedMode
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _useAdvancedMode = !_useAdvancedMode;
+                      });
+                    },
+                    icon: Icon(
+                      _useAdvancedMode ? Icons.light_mode : Icons.tune,
+                      size: 18,
                     ),
-                    child: TextButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _useAdvancedMode = !_useAdvancedMode;
-                        });
-                      },
-                      icon: Icon(
-                        _useAdvancedMode ? Icons.tune : Icons.auto_awesome,
-                        size: 18,
+                    label: Text(
+                      _useAdvancedMode ? 'Simple' : 'Advanced',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _useAdvancedMode
+                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
-                      label: Text(
-                        _useAdvancedMode ? 'Simple' : 'Advanced',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _useAdvancedMode
-                              ? Theme.of(context).colorScheme.onPrimaryContainer
-                              : Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
-                ],
+                ),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Frequency selector
-            _buildFrequencyChips(),
-            const SizedBox(height: 16),
-
-            // Conditional UI based on frequency and mode
-            if (_useAdvancedMode &&
-                _selectedFrequency != HabitFrequency.hourly &&
-                _selectedFrequency != HabitFrequency.single)
+            // Mode-specific UI
+            if (_useAdvancedMode)
               _buildAdvancedModeUI()
             else
-              _buildSimpleModeUI(),
+              _buildSimpleModeWithFrequencySelector(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFrequencyChips() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: HabitFrequency.values.map((frequency) {
-        return ChoiceChip(
-          label: Text(_getFrequencyDisplayName(frequency)),
-          selected: _selectedFrequency == frequency,
-          onSelected: (selected) {
-            if (selected) {
-              setState(() {
-                _selectedFrequency = frequency;
-                // Clear selections when changing frequency
-                _simpleWeekdays.clear();
-                _simpleMonthDays.clear();
-                _simpleYearlyDates.clear();
-                _hourlyTimes.clear();
-                _selectedWeekdays.clear();
-                _singleDateTime = null;
-                _useAdvancedMode = false; // Reset to simple mode
-              });
-            }
-          },
-        );
-      }).toList(),
+  Widget _buildSimpleModeWithFrequencySelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Frequency',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: HabitFrequency.values.map((frequency) {
+            return ChoiceChip(
+              label: Text(_getFrequencyDisplayName(frequency)),
+              selected: _selectedFrequency == frequency,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    _selectedFrequency = frequency;
+                    // Clear selections when changing frequency
+                    _simpleWeekdays.clear();
+                    _simpleMonthDays.clear();
+                    _simpleYearlyDates.clear();
+                    _hourlyTimes.clear();
+                    _selectedWeekdays.clear();
+                    _singleDateTime = null;
+                  });
+                }
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+        // Show frequency-specific UI
+        _buildSimpleModeUI(),
+      ],
     );
   }
 

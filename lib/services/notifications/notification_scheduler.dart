@@ -645,58 +645,51 @@ class NotificationScheduler {
 
   /// Cancel all notifications for a habit by habit ID string
   ///
-  /// Attempts to cancel all possible notification variations for this habit.
+  /// Optimized approach: Only cancels pending notifications that actually exist
   Future<void> cancelHabitNotificationsByHabitId(String habitId) async {
     AppLogger.info('🚫 Starting notification cancellation for habit: $habitId');
 
-    // Cancel the main notification using the hashed habit ID
-    final mainNotificationId = NotificationHelpers.generateSafeId(habitId);
-    await _plugin.cancel(mainNotificationId);
-    AppLogger.debug('Cancelled main notification ID: $mainNotificationId');
-
-    // Cancel related notifications with safe approach - try common patterns
-    // For weekly notifications (7 days)
-    for (int weekday = 1; weekday <= 7; weekday++) {
-      final weeklyId =
-          NotificationHelpers.generateSafeId('${habitId}_week_$weekday');
-      await _plugin.cancel(weeklyId);
-    }
-
-    // For monthly notifications (31 days)
-    for (int monthDay = 1; monthDay <= 31; monthDay++) {
-      final monthlyId =
-          NotificationHelpers.generateSafeId('${habitId}_month_$monthDay');
-      await _plugin.cancel(monthlyId);
-    }
-
-    // For yearly notifications (12 months x 31 days)
-    for (int month = 1; month <= 12; month++) {
-      for (int day = 1; day <= 31; day++) {
-        final yearlyId =
-            NotificationHelpers.generateSafeId('${habitId}_year_${month}_$day');
-        await _plugin.cancel(yearlyId);
+    try {
+      // Get all currently pending notifications
+      final pendingNotifications = await _plugin.pendingNotificationRequests();
+      
+      int cancelledCount = 0;
+      
+      // Only cancel notifications that:
+      // 1. Match this habit ID in the payload
+      // 2. Have IDs generated from this habit ID
+      for (final notification in pendingNotifications) {
+        bool shouldCancel = false;
+        
+        // Check if payload contains this habit ID
+        if (notification.payload != null && 
+            notification.payload!.contains(habitId)) {
+          shouldCancel = true;
+        }
+        
+        // Check if notification ID was generated from this habit ID pattern
+        final expectedMainId = NotificationHelpers.generateSafeId(habitId);
+        if (notification.id == expectedMainId) {
+          shouldCancel = true;
+        }
+        
+        if (shouldCancel) {
+          await _plugin.cancel(notification.id);
+          cancelledCount++;
+          AppLogger.debug('Cancelled notification ID: ${notification.id}');
+        }
       }
+
+      AppLogger.info(
+        '✅ Cancelled $cancelledCount notifications for habit: $habitId (checked ${pendingNotifications.length} pending)',
+      );
+    } catch (e) {
+      AppLogger.error('Error during optimized notification cancellation', e);
+      // Fallback to cancelling the main notification only
+      final mainNotificationId = NotificationHelpers.generateSafeId(habitId);
+      await _plugin.cancel(mainNotificationId);
+      AppLogger.info('✅ Fallback: Cancelled main notification for habit: $habitId');
     }
-
-    // For hourly notifications (24 hours x 60 minutes)
-    for (int hour = 0; hour < 24; hour++) {
-      for (int minute = 0; minute < 60; minute += 15) {
-        // Check every 15 minutes
-        final hourlyId = NotificationHelpers.generateSafeId(
-            '${habitId}_hour_${hour}_$minute');
-        await _plugin.cancel(hourlyId);
-      }
-    }
-
-    // For single habit notifications
-    final singleId = NotificationHelpers.generateSafeId('${habitId}_single');
-    await _plugin.cancel(singleId);
-
-    // Cancel daily notifications
-    final dailyId = NotificationHelpers.generateSafeId(habitId);
-    await _plugin.cancel(dailyId);
-
-    AppLogger.info('✅ Cancelled all notifications for habit: $habitId');
   }
 
   /// Schedule notifications using RRule (new unified approach)
@@ -747,8 +740,22 @@ class NotificationScheduler {
             channelDescription: 'Scheduled notifications for habit reminders',
             importance: Importance.max,
             priority: Priority.high,
+            sound: const UriAndroidNotificationSound(
+                'content://settings/system/notification_sound'),
             playSound: true,
             enableVibration: true,
+            actions: const [
+              AndroidNotificationAction(
+                'complete',
+                'COMPLETE',
+                showsUserInterface: false,
+              ),
+              AndroidNotificationAction(
+                'snooze',
+                'SNOOZE 30MIN',
+                showsUserInterface: false,
+              ),
+            ],
           );
 
           const DarwinNotificationDetails iOSDetails =
@@ -760,6 +767,8 @@ class NotificationScheduler {
             iOS: iOSDetails,
           );
 
+          final payload = jsonEncode({'habitId': habit.id, 'type': 'habit_reminder'});
+
           await _plugin.zonedSchedule(
             notificationId,
             '🎯 ${habit.name}',
@@ -769,7 +778,7 @@ class NotificationScheduler {
             androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
             uiLocalNotificationDateInterpretation:
                 UILocalNotificationDateInterpretation.absoluteTime,
-            payload: 'habit_${habit.id}',
+            payload: payload,
           );
 
           scheduledCount++;
