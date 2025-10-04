@@ -1066,6 +1066,19 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   }
 
   Widget _buildMonthlyCalendarView() {
+    // Get the current month to show a realistic calendar layout
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
+    final daysInMonth = lastDayOfMonth.day;
+
+    // Get the weekday of the first day (1 = Monday, 7 = Sunday)
+    final firstWeekday = firstDayOfMonth.weekday;
+
+    // Calculate total cells needed (including leading empty cells)
+    final totalCells = firstWeekday - 1 + daysInMonth;
+    final rows = (totalCells / 7).ceil();
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
@@ -1076,6 +1089,45 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
       padding: const EdgeInsets.all(8),
       child: Column(
         children: [
+          // Month/Year display
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              DateFormat('MMMM yyyy').format(now),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+            ),
+          ),
+          // Info text
+          Container(
+            padding: const EdgeInsets.all(8),
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .primaryContainer
+                  .withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Select day numbers (e.g., 1st, 15th, 30th) that repeat every month',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
           // Weekday headers
           Row(
             children: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -1096,25 +1148,31 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                 .toList(),
           ),
           const SizedBox(height: 8),
-          // Calendar grid (31 days in 5 rows)
-          for (int row = 0; row < 5; row++)
+          // Calendar grid with proper layout
+          for (int row = 0; row < rows; row++)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Row(
                 children: List.generate(7, (col) {
-                  final day = row * 7 + col + 1;
-                  if (day > 31) {
-                    return const Expanded(child: SizedBox());
+                  final cellIndex = row * 7 + col;
+                  final dayNumber = cellIndex - (firstWeekday - 2);
+
+                  // Empty cell before month starts or after month ends
+                  if (dayNumber < 1 || dayNumber > daysInMonth) {
+                    return const Expanded(child: SizedBox(height: 36));
                   }
-                  final isSelected = _selectedMonthDays.contains(day);
+
+                  final isSelected = _selectedMonthDays.contains(dayNumber);
+                  final isToday = dayNumber == now.day;
+
                   return Expanded(
                     child: InkWell(
                       onTap: () {
                         setState(() {
                           if (isSelected) {
-                            _selectedMonthDays.remove(day);
+                            _selectedMonthDays.remove(dayNumber);
                           } else {
-                            _selectedMonthDays.add(day);
+                            _selectedMonthDays.add(dayNumber);
                           }
                         });
                         _updatePreview();
@@ -1126,29 +1184,40 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
+                              : isToday
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer
+                                      .withValues(alpha: 0.3)
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest
+                                      .withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
                             color: isSelected
                                 ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .outline
-                                    .withValues(alpha: 0.2),
-                            width: isSelected ? 2 : 1,
+                                : isToday
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .outline
+                                        .withValues(alpha: 0.2),
+                            width: isSelected
+                                ? 2
+                                : isToday
+                                    ? 1.5
+                                    : 1,
                           ),
                         ),
                         child: Center(
                           child: Text(
-                            day.toString(),
+                            dayNumber.toString(),
                             style: TextStyle(
                               color: isSelected
                                   ? Theme.of(context).colorScheme.onPrimary
                                   : Theme.of(context).colorScheme.onSurface,
-                              fontWeight: isSelected
+                              fontWeight: isSelected || isToday
                                   ? FontWeight.bold
                                   : FontWeight.normal,
                             ),
@@ -1164,7 +1233,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                '${_selectedMonthDays.length} day${_selectedMonthDays.length == 1 ? "" : "s"} selected',
+                '${_selectedMonthDays.length} day${_selectedMonthDays.length == 1 ? "" : "s"} selected: ${_selectedMonthDays.toList()..sort()}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
