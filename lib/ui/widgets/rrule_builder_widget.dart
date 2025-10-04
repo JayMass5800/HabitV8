@@ -335,8 +335,8 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
               _isAdvancedMode = !_isAdvancedMode;
             });
           },
-          icon: Icon(_isAdvancedMode ? Icons.light_mode : Icons.settings),
-          label: Text(_isAdvancedMode ? 'Simple Mode' : 'Advanced Mode'),
+          icon: Icon(_isAdvancedMode ? Icons.light_mode : Icons.tune),
+          label: Text(_isAdvancedMode ? 'Basic' : 'Custom Intervals'),
         ),
       ],
     );
@@ -393,11 +393,9 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Only show frequency selector if not forced by parent
-        if (!widget.forceAdvancedMode) ...[
-          _buildFrequencySelector(),
-          const SizedBox(height: 16),
-        ],
+        // Always show frequency selector for full flexibility
+        _buildFrequencySelector(),
+        const SizedBox(height: 16),
 
         // Interval
         _buildIntervalSelector(),

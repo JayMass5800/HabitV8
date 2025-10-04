@@ -397,7 +397,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
                       size: 18,
                     ),
                     label: Text(
-                      _useAdvancedMode ? 'Simple' : 'Advanced',
+                      _useAdvancedMode ? 'Simple' : 'Custom Schedules',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

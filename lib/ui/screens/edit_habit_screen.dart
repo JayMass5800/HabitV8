@@ -961,7 +961,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Notifications',
+              'Notifications & Alarms',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(
@@ -970,32 +970,10 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                   ),
             ),
             const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Enable Notifications'),
-              subtitle: Text(
-                _selectedFrequency == HabitFrequency.hourly
-                    ? 'Get reminded at your selected times throughout the day'
-                    : 'Get reminded when it\'s time for your habit',
-              ),
-              value: _notificationsEnabled,
-              onChanged: (value) {
-                setState(() {
-                  _notificationsEnabled = value;
-                });
-              },
-              thumbColor: WidgetStateProperty.resolveWith<Color?>(
-                (Set<WidgetState> states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return _selectedColor;
-                  }
-                  return null;
-                },
-              ),
-            ),
-            // Show time picker for non-hourly habits when notifications OR alarms are enabled
+
+            // TIME SELECTOR FIRST - Always visible when notifications or alarms enabled
             if ((_notificationsEnabled || _alarmEnabled) &&
                 _selectedFrequency != HabitFrequency.hourly) ...[
-              const SizedBox(height: 16),
               ListTile(
                 title: Text(_alarmEnabled ? 'Alarm Time' : 'Notification Time'),
                 subtitle: Text(
@@ -1016,11 +994,12 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                   }
                 },
               ),
+              const SizedBox(height: 16),
             ],
+
             // Show info for hourly habits
             if ((_notificationsEnabled || _alarmEnabled) &&
                 _selectedFrequency == HabitFrequency.hourly) ...[
-              const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -1045,20 +1024,40 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
             ],
 
-            // Alarm Settings Section
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 16),
-            Text(
-              'Alarm Settings',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: _selectedColor,
-                  ),
+            // NOTIFICATION TOGGLE
+            SwitchListTile(
+              title: const Text('Enable Notifications'),
+              subtitle: Text(
+                _selectedFrequency == HabitFrequency.hourly
+                    ? 'Get reminded at your selected times throughout the day'
+                    : 'Get reminded when it\'s time for your habit',
+              ),
+              value: _notificationsEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _notificationsEnabled = value;
+                  if (value) {
+                    // When enabling notifications, disable alarms (mutually exclusive)
+                    _alarmEnabled = false;
+                  }
+                });
+              },
+              thumbColor: WidgetStateProperty.resolveWith<Color?>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return _selectedColor;
+                  }
+                  return null;
+                },
+              ),
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 8),
+
+            // ALARM TOGGLE
             SwitchListTile(
               title: const Text('Enable Alarms'),
               subtitle: Text(
@@ -1085,6 +1084,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                 },
               ),
             ),
+
+            // ALARM SOUND PICKER - Conditionally shown when alarms enabled
             if (_alarmEnabled) ...[
               const SizedBox(height: 8),
               ListTile(
