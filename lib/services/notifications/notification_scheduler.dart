@@ -196,9 +196,16 @@ class NotificationScheduler {
   ///
   /// Main entry point for habit notification scheduling.
   /// Routes to appropriate frequency-specific scheduler.
-  Future<void> scheduleHabitNotifications(Habit habit) async {
+  /// 
+  /// [isNewHabit] - Set to true when creating a new habit to skip unnecessary
+  /// notification cancellation (new habits can't have existing notifications).
+  /// Defaults to false for safety (assumes editing existing habit).
+  Future<void> scheduleHabitNotifications(
+    Habit habit, {
+    bool isNewHabit = false,
+  }) async {
     AppLogger.debug(
-      'Starting notification scheduling for habit: ${habit.name}',
+      'Starting notification scheduling for habit: ${habit.name} (isNewHabit: $isNewHabit)',
     );
     AppLogger.debug('Notifications enabled: ${habit.notificationsEnabled}');
 
@@ -263,13 +270,20 @@ class NotificationScheduler {
     }
 
     try {
-      // Cancel any existing notifications for this habit first
-      await cancelHabitNotifications(
-        NotificationHelpers.generateSafeId(habit.id),
-      );
-      AppLogger.debug(
-        'Cancelled existing notifications for habit ID: ${habit.id}',
-      );
+      // Only cancel existing notifications if this is an existing habit being updated
+      // New habits can't have notifications yet, so skip the expensive scan
+      if (!isNewHabit) {
+        await cancelHabitNotifications(
+          NotificationHelpers.generateSafeId(habit.id),
+        );
+        AppLogger.debug(
+          'Cancelled existing notifications for habit ID: ${habit.id}',
+        );
+      } else {
+        AppLogger.debug(
+          'Skipping notification cancellation - new habit with no existing notifications',
+        );
+      }
 
       // Use RRule-based scheduling if habit uses RRule
       if (habit.usesRRule && habit.rruleString != null) {

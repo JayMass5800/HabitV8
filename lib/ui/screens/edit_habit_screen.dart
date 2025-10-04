@@ -1637,7 +1637,11 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
     // Use the comprehensive notification service that handles both notifications and alarms
     try {
-      await NotificationService.scheduleHabitNotifications(habit);
+      // Pass isNewHabit: false (default) - editing existing habit, need to cancel old notifications
+      await NotificationService.scheduleHabitNotifications(
+        habit,
+        isNewHabit: false,
+      );
     } catch (e) {
       // Error scheduling notifications/alarms
     }

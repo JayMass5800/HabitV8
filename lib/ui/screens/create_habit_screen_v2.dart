@@ -1471,7 +1471,11 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
       // Schedule notifications/alarms if enabled (non-blocking) - V1 style
       if (_notificationsEnabled || _alarmEnabled) {
         try {
-          await NotificationService.scheduleHabitNotifications(habit);
+          // Pass isNewHabit: true to skip unnecessary notification cancellation
+          await NotificationService.scheduleHabitNotifications(
+            habit,
+            isNewHabit: true,
+          );
           AppLogger.info(
             'Notifications/alarms scheduled successfully for habit: ${habit.name}',
           );

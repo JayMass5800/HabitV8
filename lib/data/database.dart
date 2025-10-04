@@ -614,7 +614,11 @@ class HabitService {
       // Schedule notifications/alarms for the new habit
       try {
         if (habit.notificationsEnabled || habit.alarmEnabled) {
-          await NotificationService.scheduleHabitNotifications(habit);
+          // Pass isNewHabit: true to skip unnecessary notification cancellation
+          await NotificationService.scheduleHabitNotifications(
+            habit,
+            isNewHabit: true,
+          );
           AppLogger.info(
               'Scheduled notifications/alarms for new habit "${habit.name}"');
         }
@@ -679,7 +683,11 @@ class HabitService {
       // Reschedule notifications/alarms for the updated habit
       try {
         if (habit.notificationsEnabled || habit.alarmEnabled) {
-          await NotificationService.scheduleHabitNotifications(habit);
+          // Pass isNewHabit: false (default) - this is an update, so cancel old notifications
+          await NotificationService.scheduleHabitNotifications(
+            habit,
+            isNewHabit: false,
+          );
           AppLogger.info(
               'Rescheduled notifications/alarms for updated habit "${habit.name}"');
         } else {
