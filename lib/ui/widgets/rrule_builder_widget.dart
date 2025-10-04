@@ -19,6 +19,7 @@ class RRuleBuilderWidget extends StatefulWidget {
   final DateTime? initialStartDate;
   final Function(String? rruleString, DateTime startDate) onRRuleChanged;
   final HabitFrequency? initialFrequency; // For simple mode
+  final bool forceAdvancedMode; // Skip internal Simple/Advanced toggle
 
   const RRuleBuilderWidget({
     super.key,
@@ -26,6 +27,7 @@ class RRuleBuilderWidget extends StatefulWidget {
     this.initialStartDate,
     required this.onRRuleChanged,
     this.initialFrequency,
+    this.forceAdvancedMode = false,
   });
 
   @override
@@ -34,7 +36,7 @@ class RRuleBuilderWidget extends StatefulWidget {
 
 class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   // Mode toggle
-  bool _isAdvancedMode = false;
+  late bool _isAdvancedMode;
 
   // Common fields
   late DateTime _startDate;
@@ -71,6 +73,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   void initState() {
     super.initState();
     _startDate = widget.initialStartDate ?? DateTime.now();
+    _isAdvancedMode = widget.forceAdvancedMode; // Start in forced mode if requested
 
     // Initialize from existing RRule or frequency
     if (widget.initialRRuleString != null) {
@@ -298,9 +301,11 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Mode Toggle
-        _buildModeToggle(),
-        const SizedBox(height: 16),
+        // Mode Toggle - only show if not forced into advanced mode
+        if (!widget.forceAdvancedMode) ...[
+          _buildModeToggle(),
+          const SizedBox(height: 16),
+        ],
 
         // Main Builder UI
         _isAdvancedMode ? _buildAdvancedMode() : _buildSimpleMode(),

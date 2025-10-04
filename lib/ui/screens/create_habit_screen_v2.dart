@@ -530,6 +530,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
           initialRRuleString: _rruleString,
           initialStartDate: _rruleStartDate,
           initialFrequency: _selectedFrequency,
+          forceAdvancedMode: true, // Skip RRule widget's Simple/Advanced toggle
           onRRuleChanged: (rruleString, startDate) {
             setState(() {
               _rruleString = rruleString;
