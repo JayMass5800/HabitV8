@@ -420,7 +420,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<HabitFrequency>(
-          value: _frequency,
+          initialValue: _frequency,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -696,7 +696,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  value: _monthlyWeekdayPosition,
+                  initialValue: _monthlyWeekdayPosition,
                   decoration: const InputDecoration(
                     labelText: 'Position',
                     border: OutlineInputBorder(),
@@ -722,7 +722,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<int>(
-                  value: _monthlyWeekday,
+                  initialValue: _monthlyWeekday,
                   decoration: const InputDecoration(
                     labelText: 'Day',
                     border: OutlineInputBorder(),
@@ -832,7 +832,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
             Expanded(
               flex: 2,
               child: DropdownButtonFormField<int>(
-                value: _yearlyMonth,
+                initialValue: _yearlyMonth,
                 decoration: const InputDecoration(
                   labelText: 'Month',
                   border: OutlineInputBorder(),
@@ -858,7 +858,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
             const SizedBox(width: 12),
             Expanded(
               child: DropdownButtonFormField<int>(
-                value: _yearlyDay,
+                initialValue: _yearlyDay,
                 decoration: const InputDecoration(
                   labelText: 'Day',
                   border: OutlineInputBorder(),
@@ -898,9 +898,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
               ),
         ),
         const SizedBox(height: 8),
-        RadioListTile<_TerminationType>(
-          title: const Text('Never'),
-          value: _TerminationType.never,
+        RadioGroup<_TerminationType>(
           groupValue: _terminationType,
           onChanged: (value) {
             setState(() {
@@ -908,86 +906,80 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
             });
             _updatePreview();
           },
-        ),
-        RadioListTile<_TerminationType>(
-          title: Row(
+          child: Column(
             children: [
-              const Text('After'),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 80,
-                child: TextFormField(
-                  initialValue: _count.toString(),
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  onChanged: (value) {
-                    final count = int.tryParse(value);
-                    if (count != null && count > 0) {
-                      setState(() {
-                        _count = count;
-                      });
-                      if (_terminationType == _TerminationType.count) {
-                        _updatePreview();
-                      }
-                    }
-                  },
-                ),
+              RadioListTile<_TerminationType>(
+                title: const Text('Never'),
+                value: _TerminationType.never,
               ),
-              const SizedBox(width: 12),
-              const Text('occurrences'),
+              RadioListTile<_TerminationType>(
+                title: Row(
+                  children: [
+                    const Text('After'),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 80,
+                      child: TextFormField(
+                        initialValue: _count.toString(),
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        onChanged: (value) {
+                          final count = int.tryParse(value);
+                          if (count != null && count > 0) {
+                            setState(() {
+                              _count = count;
+                            });
+                            if (_terminationType == _TerminationType.count) {
+                              _updatePreview();
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text('occurrences'),
+                  ],
+                ),
+                value: _TerminationType.count,
+              ),
+              RadioListTile<_TerminationType>(
+                title: Row(
+                  children: [
+                    const Text('On date:'),
+                    const SizedBox(width: 12),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _untilDate ??
+                              DateTime.now().add(const Duration(days: 30)),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 3650)),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _untilDate = picked;
+                            _terminationType = _TerminationType.until;
+                          });
+                          _updatePreview();
+                        }
+                      },
+                      child: Text(
+                        _untilDate != null
+                            ? DateFormat('MMM d, y').format(_untilDate!)
+                            : 'Pick Date',
+                      ),
+                    ),
+                  ],
+                ),
+                value: _TerminationType.until,
+              ),
             ],
           ),
-          value: _TerminationType.count,
-          groupValue: _terminationType,
-          onChanged: (value) {
-            setState(() {
-              _terminationType = value!;
-            });
-            _updatePreview();
-          },
-        ),
-        RadioListTile<_TerminationType>(
-          title: Row(
-            children: [
-              const Text('On date:'),
-              const SizedBox(width: 12),
-              TextButton(
-                onPressed: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _untilDate ??
-                        DateTime.now().add(const Duration(days: 30)),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 3650)),
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _untilDate = picked;
-                      _terminationType = _TerminationType.until;
-                    });
-                    _updatePreview();
-                  }
-                },
-                child: Text(
-                  _untilDate != null
-                      ? DateFormat('MMM d, y').format(_untilDate!)
-                      : 'Pick Date',
-                ),
-              ),
-            ],
-          ),
-          value: _TerminationType.until,
-          groupValue: _terminationType,
-          onChanged: (value) {
-            setState(() {
-              _terminationType = value!;
-            });
-            _updatePreview();
-          },
         ),
       ],
     );
