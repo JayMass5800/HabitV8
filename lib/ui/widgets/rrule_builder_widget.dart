@@ -393,9 +393,11 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Frequency
-        _buildFrequencySelector(),
-        const SizedBox(height: 16),
+        // Only show frequency selector if not forced by parent
+        if (!widget.forceAdvancedMode) ...[
+          _buildFrequencySelector(),
+          const SizedBox(height: 16),
+        ],
 
         // Interval
         _buildIntervalSelector(),
@@ -426,7 +428,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<HabitFrequency>(
-          initialValue: _frequency,
+          value: _frequency,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),

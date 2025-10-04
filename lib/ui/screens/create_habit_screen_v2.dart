@@ -6,6 +6,8 @@ import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/category_suggestion_service.dart';
+import '../../services/comprehensive_habit_suggestions_service.dart';
+import '../../services/alarm_manager_service.dart';
 import '../../services/logging_service.dart';
 import '../widgets/rrule_builder_widget.dart';
 
@@ -59,9 +61,14 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
   DateTime? _singleDateTime;
 
   // Alarm settings
-  final bool _alarmEnabled = false;
+  bool _alarmEnabled = false;
   String? _selectedAlarmSoundName;
   String? _selectedAlarmSoundUri;
+
+  // Habit suggestions
+  List<HabitSuggestion> _habitSuggestions = [];
+  bool _loadingSuggestions = false;
+  bool _showSuggestions = false;
 
   // Categories
   List<String> get _categories => CategorySuggestionService.getAllCategories();
@@ -83,6 +90,11 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
   void initState() {
     super.initState();
     _initializeFromPrefilledData();
+    _loadHabitSuggestions();
+
+    // Add listeners to text controllers for category suggestions
+    _nameController.addListener(_onHabitTextChanged);
+    _descriptionController.addListener(_onHabitTextChanged);
   }
 
   void _initializeFromPrefilledData() {
@@ -230,6 +242,11 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
             ],
             _buildBasicInfoSection(),
             const SizedBox(height: 24),
+            // Habit suggestions section
+            if (_habitSuggestions.isNotEmpty) ...[
+              _buildHabitSuggestionsDropdown(),
+              const SizedBox(height: 24),
+            ],
             _buildFrequencySection(),
             const SizedBox(height: 24),
             _buildNotificationSection(),
@@ -1130,7 +1147,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Notifications',
+              'Notifications & Alarms',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: _selectedColor,
@@ -1144,6 +1161,10 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
               onChanged: (value) {
                 setState(() {
                   _notificationsEnabled = value;
+                  if (value) {
+                    // Disable alarms when enabling notifications
+                    _alarmEnabled = false;
+                  }
                 });
               },
             ),
@@ -1160,6 +1181,67 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
                 ),
                 trailing: const Icon(Icons.access_time),
                 onTap: _selectNotificationTime,
+              ),
+            ],
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('Enable Alarms'),
+              subtitle: Text(
+                _alarmEnabled
+                    ? 'Use system alarms instead of notifications (more persistent)'
+                    : 'Alarms are more persistent than notifications',
+              ),
+              value: _alarmEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _alarmEnabled = value;
+                  if (value) {
+                    // Disable notifications when enabling alarms
+                    _notificationsEnabled = false;
+                  }
+                });
+              },
+            ),
+            if (_alarmEnabled) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                title: const Text('Alarm Sound'),
+                subtitle: Text(
+                  _selectedAlarmSoundName ?? 'Default system alarm',
+                ),
+                trailing: const Icon(Icons.music_note),
+                onTap: _selectAlarmSound,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber,
+                      color: Colors.orange,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Alarms require exact alarm permissions on Android 12+. The app will request this permission when needed.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.orange.shade700,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ],
@@ -1569,6 +1651,384 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
         ),
       );
     }
+  }
+
+  // ==================== HABIT SUGGESTIONS ====================
+
+  /// Load comprehensive habit suggestions
+  Future<void> _loadHabitSuggestions() async {
+    setState(() {
+      _loadingSuggestions = true;
+    });
+
+    try {
+      final suggestions =
+          await ComprehensiveHabitSuggestionsService.generateSuggestions();
+      if (mounted) {
+        setState(() {
+          _habitSuggestions = suggestions;
+          _loadingSuggestions = false;
+        });
+      }
+    } catch (e) {
+      AppLogger.error('Error loading habit suggestions', e);
+      if (mounted) {
+        setState(() {
+          _loadingSuggestions = false;
+        });
+      }
+    }
+  }
+
+  /// Update category suggestions when text changes
+  void _onHabitTextChanged() {
+    setState(() {
+      // This will trigger a rebuild and update category suggestions
+    });
+  }
+
+  /// Build comprehensive habit suggestions dropdown
+  Widget _buildHabitSuggestionsDropdown() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.lightbulb,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Habit Suggestions',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showSuggestions = !_showSuggestions;
+                    });
+                  },
+                  icon: Icon(
+                    _showSuggestions ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                  ),
+                  label: Text(_showSuggestions ? 'Hide' : 'Show'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Get inspired with personalized habit suggestions.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            ),
+            if (_showSuggestions) ...[
+              const SizedBox(height: 16),
+              _buildSuggestionsGrid(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsGrid() {
+    if (_loadingSuggestions) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_habitSuggestions.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          'No suggestions available at the moment.',
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      );
+    }
+
+    // Group suggestions by type
+    final groupedSuggestions = <String, List<HabitSuggestion>>{};
+    for (final suggestion in _habitSuggestions) {
+      groupedSuggestions.putIfAbsent(suggestion.type, () => []).add(suggestion);
+    }
+
+    return Column(
+      children: groupedSuggestions.entries.map((entry) {
+        final type = entry.key;
+        final suggestions =
+            entry.value.take(3).toList(); // Show max 3 per category
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    _getTypeIcon(type),
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    type,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            ...suggestions.map((suggestion) => Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: Icon(
+                      _getCategoryIcon(suggestion.category),
+                      color: _getCategoryColor(suggestion.category),
+                    ),
+                    title: Text(suggestion.name),
+                    subtitle: Text(
+                      suggestion.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(Icons.add),
+                    onTap: () => _applySuggestion(suggestion),
+                  ),
+                )),
+            const SizedBox(height: 8),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  IconData _getTypeIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'health':
+        return Icons.favorite;
+      case 'fitness':
+        return Icons.fitness_center;
+      case 'productivity':
+        return Icons.work;
+      case 'learning':
+        return Icons.school;
+      case 'mindfulness':
+        return Icons.self_improvement;
+      default:
+        return Icons.star;
+    }
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'health':
+        return Icons.favorite;
+      case 'fitness':
+        return Icons.fitness_center;
+      case 'productivity':
+        return Icons.work;
+      case 'learning':
+        return Icons.school;
+      case 'personal':
+        return Icons.person;
+      case 'social':
+        return Icons.people;
+      case 'finance':
+        return Icons.attach_money;
+      case 'mindfulness':
+        return Icons.self_improvement;
+      default:
+        return Icons.emoji_objects;
+    }
+  }
+
+  void _applySuggestion(HabitSuggestion suggestion) {
+    setState(() {
+      _nameController.text = suggestion.name;
+      _descriptionController.text = suggestion.description;
+      _selectedCategory = suggestion.category;
+      _selectedColor = _getCategoryColor(suggestion.category);
+      _selectedFrequency = suggestion.frequency;
+      _notificationsEnabled = true;
+      _notificationTime = const TimeOfDay(hour: 9, minute: 0);
+    });
+
+    // Close suggestions after applying
+    setState(() {
+      _showSuggestions = false;
+    });
+  }
+
+  // ==================== ALARM SELECTION ====================
+
+  Future<void> _selectAlarmSound() async {
+    final availableSounds = await AlarmManagerService.getAvailableAlarmSounds();
+
+    if (!mounted) return;
+
+    String? currentlyPlaying;
+
+    final selected = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.music_note, color: _selectedColor),
+              const SizedBox(width: 8),
+              const Text('Select Alarm Sound'),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 500,
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _selectedColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _selectedColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: _selectedColor, size: 20),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Tap the play button to preview sounds.',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: availableSounds.length,
+                    itemBuilder: (context, index) {
+                      final sound = availableSounds[index];
+                      final soundName = sound['name']!;
+                      final soundUri = sound['uri']!;
+                      final isSelected = soundName == _selectedAlarmSoundName;
+                      final isPlaying = currentlyPlaying == soundUri;
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        elevation: isSelected ? 3 : 1,
+                        color: isSelected
+                            ? _selectedColor.withValues(alpha: 0.1)
+                            : null,
+                        child: ListTile(
+                          leading: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isPlaying
+                                  ? Colors.red.withValues(alpha: 0.1)
+                                  : Colors.blue.withValues(alpha: 0.1),
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                isPlaying ? Icons.stop : Icons.play_arrow,
+                                color: isPlaying ? Colors.red : Colors.blue,
+                              ),
+                              onPressed: () async {
+                                if (isPlaying) {
+                                  await AlarmManagerService
+                                      .stopAlarmSoundPreview();
+                                  setDialogState(() {
+                                    currentlyPlaying = null;
+                                  });
+                                } else {
+                                  await AlarmManagerService
+                                      .stopAlarmSoundPreview();
+                                  await AlarmManagerService
+                                      .playAlarmSoundPreview(soundUri);
+                                  setDialogState(() {
+                                    currentlyPlaying = soundUri;
+                                  });
+
+                                  // Auto-stop after 4 seconds
+                                  Future.delayed(
+                                    const Duration(seconds: 4),
+                                    () async {
+                                      await AlarmManagerService
+                                          .stopAlarmSoundPreview();
+                                      try {
+                                        setDialogState(() {
+                                          currentlyPlaying = null;
+                                        });
+                                      } catch (e) {
+                                        // Dialog was closed, ignore
+                                      }
+                                    },
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          title: Text(soundName),
+                          trailing: isSelected
+                              ? Icon(Icons.check_circle, color: _selectedColor)
+                              : null,
+                          onTap: () {
+                            Navigator.of(context).pop({
+                              'name': soundName,
+                              'uri': soundUri,
+                            });
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (selected != null && mounted) {
+      setState(() {
+        _selectedAlarmSoundName = selected['name'];
+        _selectedAlarmSoundUri = selected['uri'];
+      });
+    }
+
+    // Stop any playing sound when dialog closes
+    await AlarmManagerService.stopAlarmSoundPreview();
   }
 }
 
