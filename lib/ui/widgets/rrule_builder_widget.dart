@@ -73,7 +73,8 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   void initState() {
     super.initState();
     _startDate = widget.initialStartDate ?? DateTime.now();
-    _isAdvancedMode = widget.forceAdvancedMode; // Start in forced mode if requested
+    _isAdvancedMode =
+        widget.forceAdvancedMode; // Start in forced mode if requested
 
     // Initialize from existing RRule or frequency
     if (widget.initialRRuleString != null) {
