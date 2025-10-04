@@ -138,12 +138,14 @@ class AppLifecycleService with WidgetsBindingObserver {
       if (_container != null) {
         try {
           _container!.invalidate(habitsNotifierProvider);
-          AppLogger.info('🔄 Invalidated habitsNotifierProvider to force refresh from database');
+          AppLogger.info(
+              '🔄 Invalidated habitsNotifierProvider to force refresh from database');
         } catch (e) {
           AppLogger.error('Error invalidating habitsNotifierProvider', e);
         }
       } else {
-        AppLogger.warning('⚠️ Container is null - cannot invalidate habits state');
+        AppLogger.warning(
+            '⚠️ Container is null - cannot invalidate habits state');
       }
 
       // Re-register notification action callback in case it was lost during background
