@@ -358,10 +358,20 @@ class NotificationScheduler {
       nextNotification = nextNotification.add(const Duration(days: 1));
     }
 
+    // Validate habit ID before scheduling
+    if (habit.id.isEmpty) {
+      AppLogger.error(
+          'Cannot schedule notification: habit ID is empty for ${habit.name}');
+      return;
+    }
+
+    AppLogger.debug(
+        'Scheduling daily notification with habit ID: "${habit.id}"');
+
     try {
       await scheduleHabitNotification(
         id: NotificationHelpers.generateSafeId(habit.id),
-        habitId: habit.id.toString(),
+        habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your daily habit! Keep your streak going.',
         scheduledTime: nextNotification,
@@ -405,7 +415,7 @@ class NotificationScheduler {
 
       await scheduleHabitNotification(
         id: NotificationHelpers.generateSafeId('${habit.id}_week_$weekday'),
-        habitId: habit.id.toString(),
+        habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your weekly habit! Don\'t break your streak.',
         scheduledTime: nextNotification,
@@ -465,7 +475,7 @@ class NotificationScheduler {
 
       await scheduleHabitNotification(
         id: NotificationHelpers.generateSafeId('${habit.id}_month_$monthDay'),
-        habitId: habit.id.toString(),
+        habitId: habit.id,
         title: '🎯 ${habit.name}',
         body:
             'Time to complete your monthly habit! Stay consistent with your goals.',
@@ -524,7 +534,7 @@ class NotificationScheduler {
           id: NotificationHelpers.generateSafeId(
             '${habit.id}_year_${month}_$day',
           ),
-          habitId: habit.id.toString(),
+          habitId: habit.id,
           title: '🎯 ${habit.name}',
           body: 'Time for your yearly habit! Make this milestone count.',
           scheduledTime: nextNotification,
@@ -559,7 +569,7 @@ class NotificationScheduler {
 
     await scheduleHabitNotification(
       id: NotificationHelpers.generateSafeId('${habit.id}_single'),
-      habitId: habit.id.toString(),
+      habitId: habit.id,
       title: '🎯 ${habit.name}',
       body: 'Time to complete your one-time habit!',
       scheduledTime: singleDateTime,
