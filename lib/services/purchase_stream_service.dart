@@ -6,7 +6,8 @@ import 'logging_service.dart';
 /// Global service to handle purchase stream events
 /// This ensures purchase restoration works even when PurchaseScreen is not open
 class PurchaseStreamService {
-  static final PurchaseStreamService _instance = PurchaseStreamService._internal();
+  static final PurchaseStreamService _instance =
+      PurchaseStreamService._internal();
   factory PurchaseStreamService() => _instance;
   PurchaseStreamService._internal();
 
@@ -28,7 +29,8 @@ class PurchaseStreamService {
       // Check if in-app purchases are available
       final isAvailable = await _inAppPurchase.isAvailable();
       if (!isAvailable) {
-        AppLogger.warning('In-app purchases not available - skipping stream initialization');
+        AppLogger.warning(
+            'In-app purchases not available - skipping stream initialization');
         return;
       }
 
@@ -84,7 +86,8 @@ class PurchaseStreamService {
   static Future<void> _processCompletedPurchase(
       PurchaseDetails purchaseDetails) async {
     try {
-      AppLogger.info('Processing completed purchase: ${purchaseDetails.productID}');
+      AppLogger.info(
+          'Processing completed purchase: ${purchaseDetails.productID}');
 
       // Check if this is a valid premium purchase
       // Product ID should match our premium product
@@ -101,7 +104,8 @@ class PurchaseStreamService {
       }
 
       // Check for duplicate purchase
-      final existingToken = await SubscriptionService().getExistingPurchaseToken();
+      final existingToken =
+          await SubscriptionService().getExistingPurchaseToken();
       final purchaseToken = purchaseDetails.purchaseID ??
           purchaseDetails.verificationData.serverVerificationData;
 
@@ -125,8 +129,8 @@ class PurchaseStreamService {
   /// Check if product ID is a valid premium product
   static bool _isValidPremiumProduct(String productId) {
     // Accept both the primary product ID and any variations
-    return productId.contains('premium') || 
-           productId == 'premium_lifetime_access';
+    return productId.contains('premium') ||
+        productId == 'premium_lifetime_access';
   }
 
   /// Store audit data for purchase
@@ -140,7 +144,8 @@ class PurchaseStreamService {
         'source': 'global_handler',
       };
 
-      final auditJson = auditData.entries.map((e) => '${e.key}:${e.value}').join(',');
+      final auditJson =
+          auditData.entries.map((e) => '${e.key}:${e.value}').join(',');
       await SubscriptionService().storeAuditData(
         'purchase_audit_global_${DateTime.now().millisecondsSinceEpoch}',
         auditJson,

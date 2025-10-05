@@ -686,7 +686,8 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   /// This method is kept for future use but doesn't call restorePurchases to avoid duplicates
   Future<void> _queryExistingPurchases() async {
     try {
-      AppLogger.info('Purchase screen initialized - existing purchases already queried at startup');
+      AppLogger.info(
+          'Purchase screen initialized - existing purchases already queried at startup');
       // Removed duplicate restorePurchases() call - already done in main.dart
       // This prevents unnecessary API calls to Google Play Billing
     } catch (e) {

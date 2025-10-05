@@ -26,7 +26,7 @@ class SubscriptionService {
   // Trial period: 30 days
   static const int _trialDurationDays = 30;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  
+
   // Initialization state to prevent race conditions
   static Completer<void>? _initializationCompleter;
   static bool _isInitialized = false;
@@ -38,9 +38,9 @@ class SubscriptionService {
     if (_initializationCompleter != null) {
       return _initializationCompleter!.future;
     }
-    
+
     _initializationCompleter = Completer<void>();
-    
+
     try {
       await _checkAndStartTrial();
       await _updateSubscriptionStatus();
@@ -53,7 +53,7 @@ class SubscriptionService {
       _initializationCompleter = null;
     }
   }
-  
+
   /// Wait for initialization to complete (prevents race conditions)
   Future<void> _ensureInitialized() async {
     if (_isInitialized) return;
@@ -90,7 +90,7 @@ class SubscriptionService {
   Future<SubscriptionStatus> getSubscriptionStatus() async {
     // Ensure initialization is complete before checking status
     await _ensureInitialized();
-    
+
     final prefs = await SharedPreferences.getInstance();
 
     // Check if user has purchased premium
@@ -157,7 +157,7 @@ class SubscriptionService {
 
     final trialStartDate = DateTime.parse(trialStartDateStr);
     final now = DateTime.now();
-    
+
     // Use hours-based calculation to prevent losing up to 24 hours due to time truncation
     final hoursSinceTrialStart = now.difference(trialStartDate).inHours;
     final daysSinceTrialStart = (hoursSinceTrialStart / 24).floor();
@@ -175,7 +175,7 @@ class SubscriptionService {
   Future<bool> isFeatureAvailable(PremiumFeature feature) async {
     // Ensure initialization is complete
     await _ensureInitialized();
-    
+
     final status = await getSubscriptionStatus();
 
     // Premium users have access to all features
