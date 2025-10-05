@@ -202,9 +202,7 @@ class NotificationActionService {
             '✅ SUCCESS: Habit marked as complete from notification: ${habit.name} $frequencyText$timeInfo',
           );
 
-          // Force save to ensure persistence
-          await habitService.updateHabit(habit);
-          AppLogger.info('Habit data saved to database');
+          // markHabitComplete already saves to database and flushes, no need to save again
 
           // Add small delay to ensure database write completes
           await Future.delayed(const Duration(milliseconds: 100));
