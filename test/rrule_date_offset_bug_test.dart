@@ -3,9 +3,10 @@ import 'package:habitv8/services/rrule_service.dart';
 
 void main() {
   group('RRule Date Offset Bug Tests', () {
-    test('Monthly habit on 5th, 10th, 15th - should only show on those days', () {
+    test('Monthly habit on 5th, 10th, 15th - should only show on those days',
+        () {
       final startDate = DateTime(2025, 10, 1); // Oct 1, 2025
-      
+
       // Test the 5th - should be TRUE
       final isDueOn5th = RRuleService.isDueOnDate(
         rruleString: 'FREQ=MONTHLY;BYMONTHDAY=5,10,15',
@@ -65,7 +66,7 @@ void main() {
 
     test('Weekly habit on Monday - should only show on Mondays', () {
       final startDate = DateTime(2025, 10, 6); // Oct 6, 2025 (Monday)
-      
+
       // Test Monday Oct 6 - should be TRUE
       final isDueOnMon6 = RRuleService.isDueOnDate(
         rruleString: 'FREQ=WEEKLY;BYDAY=MO',
@@ -88,7 +89,8 @@ void main() {
         startDate: startDate,
         checkDate: DateTime(2025, 10, 7),
       );
-      expect(isDueOnTue7, isFalse, reason: 'Should NOT be due on Tuesday Oct 7');
+      expect(isDueOnTue7, isFalse,
+          reason: 'Should NOT be due on Tuesday Oct 7');
 
       // Test next Monday Oct 13 - should be TRUE
       final isDueOnMon13 = RRuleService.isDueOnDate(
@@ -101,7 +103,7 @@ void main() {
 
     test('Daily habit - should show every day', () {
       final startDate = DateTime(2025, 10, 1);
-      
+
       for (int day = 1; day <= 10; day++) {
         final isDue = RRuleService.isDueOnDate(
           rruleString: 'FREQ=DAILY',
@@ -124,13 +126,16 @@ void main() {
         rangeEnd: rangeEnd,
       );
 
-      expect(occurrences.length, equals(3), 
-        reason: 'Should have exactly 3 occurrences in October');
-      
+      expect(occurrences.length, equals(3),
+          reason: 'Should have exactly 3 occurrences in October');
+
       // Check that the dates are exactly the 5th, 10th, and 15th
-      expect(occurrences[0].day, equals(5), reason: 'First occurrence should be on the 5th');
-      expect(occurrences[1].day, equals(10), reason: 'Second occurrence should be on the 10th');
-      expect(occurrences[2].day, equals(15), reason: 'Third occurrence should be on the 15th');
+      expect(occurrences[0].day, equals(5),
+          reason: 'First occurrence should be on the 5th');
+      expect(occurrences[1].day, equals(10),
+          reason: 'Second occurrence should be on the 10th');
+      expect(occurrences[2].day, equals(15),
+          reason: 'Third occurrence should be on the 15th');
     });
   });
 }
