@@ -73,12 +73,16 @@ class WidgetIntegrationService {
   Future<void> forceWidgetUpdate() async {
     try {
       debugPrint('🧪 FORCE UPDATE: Starting immediate widget update...');
+      debugPrint(
+          '🧪 FORCE UPDATE: Called from notification completion handler');
 
       // Update data first
       await updateAllWidgets();
+      debugPrint('🧪 FORCE UPDATE: updateAllWidgets() completed');
 
       // Force explicit widget refresh using method channel to trigger onUpdate
       await Future.delayed(const Duration(milliseconds: 300));
+      debugPrint('🧪 FORCE UPDATE: Waited 300ms for data propagation');
 
       try {
         await _widgetUpdateChannel.invokeMethod('forceWidgetRefresh');
@@ -93,11 +97,13 @@ class WidgetIntegrationService {
           name: _timelineWidgetName,
           androidName: _timelineWidgetName,
         );
+        debugPrint('🧪 FORCE UPDATE: Timeline widget update called');
 
         await HomeWidget.updateWidget(
           name: _compactWidgetName,
           androidName: _compactWidgetName,
         );
+        debugPrint('🧪 FORCE UPDATE: Compact widget update called');
       }
 
       debugPrint('🧪 FORCE UPDATE: Completed successfully');
