@@ -87,13 +87,13 @@ class HabitsState {
   HabitsState copyWith({
     List<Habit>? habits,
     bool? isLoading,
-    String? error,
+    String? Function()? error,
     DateTime? lastUpdated,
   }) {
     return HabitsState(
       habits: habits ?? this.habits,
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
+      error: error != null ? error() : this.error,
       lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
@@ -117,6 +117,30 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
     _startPeriodicRefresh();
   }
 
+  /// Safely update state with proper error handling
+  void _safeUpdateState(HabitsState Function() stateBuilder) {
+    if (!mounted) {
+      AppLogger.debug('Skipping state update - notifier not mounted');
+      return;
+    }
+    
+    try {
+      state = stateBuilder();
+    } catch (e) {
+      // Catch any null check or state update errors
+      AppLogger.error('Error updating HabitsNotifier state: $e');
+      // If the error is related to disposed notifier, just log and continue
+      if (e.toString().contains('Null check') || 
+          e.toString().contains('disposed') ||
+          e.toString().contains('StateNotifier')) {
+        AppLogger.debug('StateNotifier likely disposed during update, ignoring error');
+      } else {
+        // For other errors, rethrow
+        rethrow;
+      }
+    }
+  }
+
   Future<void> _loadHabits() async {
     try {
       // Check if the notifier is still mounted before updating state
@@ -126,9 +150,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       }
 
       // Update state to show loading (with null check)
-      if (mounted) {
-        state = state.copyWith(isLoading: true, error: null);
-      }
+      _safeUpdateState(() => state.copyWith(isLoading: true, error: () => null));
 
       final habits = await _habitService.getAllHabits();
       _updateCompletionsCount(habits);
@@ -141,13 +163,11 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       }
 
       // Update state with null safety check
-      if (mounted) {
-        state = state.copyWith(
-          habits: habits,
-          isLoading: false,
-          lastUpdated: DateTime.now(),
-        );
-      }
+      _safeUpdateState(() => state.copyWith(
+        habits: habits,
+        isLoading: false,
+        lastUpdated: DateTime.now(),
+      ));
     } catch (e) {
       AppLogger.error('Error loading habits: $e');
 
@@ -159,13 +179,11 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       }
 
       // Update error state with null safety check
-      if (mounted) {
-        state = state.copyWith(
-          isLoading: false,
-          error: e.toString(),
-          lastUpdated: DateTime.now(),
-        );
-      }
+      _safeUpdateState(() => state.copyWith(
+        isLoading: false,
+        error: () => e.toString(),
+        lastUpdated: DateTime.now(),
+      ));
     }
   }
 
@@ -217,10 +235,10 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       if (_habitsChanged(habits) && mounted) {
         _updateCompletionsCount(habits);
 
-        state = state.copyWith(
+        _safeUpdateState(() => state.copyWith(
           habits: habits,
           lastUpdated: DateTime.now(),
-        );
+        ));
       }
     } catch (e) {
       // Handle specific case where box has been closed (during database reset)
@@ -314,9 +332,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       await _loadHabits();
     } catch (e) {
       // Update error state if still mounted
-      if (mounted) {
-        state = state.copyWith(error: e.toString());
-      }
+      _safeUpdateState(() => state.copyWith(error: () => e.toString()));
       rethrow;
     }
   }
@@ -353,7 +369,14 @@ final habitsNotifierProvider =
   final habitServiceAsync = ref.watch(habitServiceProvider);
 
   return habitServiceAsync.when(
-    data: (habitService) => HabitsNotifier(habitService),
+    data: (habitService) {
+      final notifier = HabitsNotifier(habitService);
+      // Ensure cleanup when the provider is disposed
+      ref.onDispose(() {
+        notifier.dispose();
+      });
+      return notifier;
+    },
     loading: () {
       // Return a temporary notifier with loading state instead of throwing
       AppLogger.debug(
