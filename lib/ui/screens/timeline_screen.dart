@@ -707,7 +707,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       try {
         final habitService = await ref.read(currentHabitServiceProvider.future);
         await habitService.updateHabit(habit);
-        
+
         // Invalidate provider to trigger refresh from database
         ref.invalidate(habitsProvider);
       } catch (e) {
@@ -890,7 +890,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       try {
         final habitService = await ref.read(currentHabitServiceProvider.future);
         await habitService.updateHabit(habit);
-        
+
         // Invalidate provider to trigger refresh from database
         ref.invalidate(habitsProvider);
       } catch (e) {

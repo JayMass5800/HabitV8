@@ -153,7 +153,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
     try {
       _isRefreshing = true;
-      
+
       // Check if the notifier is still mounted before updating state
       if (!mounted) {
         AppLogger.debug('HabitsNotifier is not mounted, skipping _loadHabits');
@@ -181,7 +181,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
             isLoading: false,
             lastUpdated: DateTime.now(),
           ));
-      
+
       _isRefreshing = false;
     } catch (e) {
       AppLogger.error('Error loading habits: $e');
@@ -199,7 +199,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
             error: () => e.toString(),
             lastUpdated: DateTime.now(),
           ));
-      
+
       _isRefreshing = false;
     }
   }
@@ -236,7 +236,10 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   Future<void> _checkForUpdates() async {
     // Skip check if database reset, bulk import, refresh is in progress, or notifier is not mounted
-    if (_databaseResetInProgress || _bulkImportInProgress || _isRefreshing || !mounted) {
+    if (_databaseResetInProgress ||
+        _bulkImportInProgress ||
+        _isRefreshing ||
+        !mounted) {
       return;
     }
 
@@ -321,10 +324,10 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
     try {
       AppLogger.info('🚀 Force immediate habits refresh triggered');
-      
+
       // Cancel periodic timer to avoid conflicts during force refresh
       _refreshTimer?.cancel();
-      
+
       // Wait a brief moment to ensure any in-flight periodic refresh completes
       await Future.delayed(const Duration(milliseconds: 100));
 
