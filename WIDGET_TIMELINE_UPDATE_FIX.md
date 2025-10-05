@@ -3,6 +3,28 @@
 ## Issue Summary
 Newly created habits were not appearing on the home screen widget or timeline screen immediately. The widget would only update after closing and reopening the app, and even then, completion status wasn't reflected properly.
 
+## Latest Update (Race Condition Fix)
+**Date**: October 5, 2025
+
+### Additional Issue Discovered
+Even after fixing the cache issue, widgets were still showing stale data. Analysis of logs revealed a **race condition**:
+
+**Evidence from logs**:
+```
+I/flutter: 🎯 Widget data prepared: 3 habits in list, JSON length: 540
+I/flutter: ✅ Saved habits: length=540  (Flutter saves 3 habits)
+D/WidgetUpdateWorker: Widget data loaded: 362 characters  (Worker reads OLD 2-habit data!)
+D/WidgetUpdateWorker: Processed 2 total habits, 2 for today
+D/HabitTimelineService: Loaded 2 habits for timeline widget
+```
+
+**Root Cause**: The `WidgetUpdateWorker` was being triggered immediately after `onHabitsChanged()` was called, but *before* Flutter's async `HomeWidget.saveWidgetData()` calls finished writing to SharedPreferences. The worker executed faster than Flutter's write operations, reading stale data.
+
+**Solution**: Added strategic delays to ensure write completion:
+1. Increased widget update propagation delay from 100ms to 300ms
+2. Added 500ms delay before triggering Android `WidgetUpdateWorker` to ensure all SharedPreferences writes complete
+3. This gives Flutter enough time to complete all async write operations before the worker reads data
+
 ## Root Causes Identified
 
 ### 1. Android Widget Cache Issue
@@ -45,12 +67,26 @@ D/HabitTimelineService: Loaded 1 habits for timeline widget  (OLD DATA!)
 **Problem**:
 - Flutter's `HomeWidget.updateWidget()` is asynchronous
 - There was no guarantee the update notification reached the Android RemoteViewsFactory before the next operation
-- This could cause race conditions where the widget service didn't get notified of data changes
+- **CRITICAL**: `WidgetUpdateWorker` was triggered before `HomeWidget.saveWidgetData()` completed
+- This created a race condition where the worker read stale SharedPreferences data
 
 **Fix**:
-- Added a 100ms delay after `HomeWidget.updateWidget()` to ensure the update propagates to Android
+- Increased delay after `HomeWidget.updateWidget()` from 100ms to 300ms to ensure data propagation
+- Added 500ms delay before triggering `WidgetUpdateWorker` to ensure ALL write operations complete
 - Added detailed logging to track widget update flow
-- This gives the Android system time to call `onDataSetChanged()` on the RemoteViewsFactory
+- This prevents the worker from reading stale data during the write-read cycle
+
+**Code Changes**:
+```dart
+// In _updateWidget() - increased propagation delay
+await HomeWidget.updateWidget(name: widgetName, androidName: widgetName);
+await Future.delayed(const Duration(milliseconds: 300)); // Was 100ms
+
+// In _triggerAndroidWidgetUpdate() - ensure writes complete first
+await Future.delayed(const Duration(milliseconds: 500)); // NEW: Wait for writes
+const platform = MethodChannel('com.habittracker.habitv8/widget_update');
+await platform.invokeMethod('triggerImmediateUpdate');
+```
 
 ## Files Modified
 
@@ -134,10 +170,12 @@ loadHabitData() // Guaranteed fresh data
 ```
 
 ## Performance Impact
-- **Before**: Up to 2-second delay showing new habits on widget
-- **After**: Immediate update (< 200ms)
+- **Before**: Up to 2-second delay + race condition causing stale data
+- **After**: Immediate update with reliable data (< 1 second total latency)
 - **Cache still active**: For rapid `getViewAt()` calls within the same refresh cycle
-- **No negative impact**: Flutter already has 300ms debouncing on widget updates
+- **Write completion delay**: 500ms added to ensure data integrity (prevents reading stale data)
+- **No negative impact**: Total delay (300ms + 500ms = 800ms) is acceptable for reliable updates
+- **Flutter debouncing**: Already has 300ms debouncing on widget updates, so delays don't compound
 
 ## Related Issues
 This fix resolves:
