@@ -58,7 +58,7 @@ class SubscriptionService {
   /// Returns early if initialization takes too long to prevent UI blocking
   Future<void> _ensureInitialized() async {
     if (_isInitialized) return;
-    
+
     try {
       if (_initializationCompleter != null) {
         // Wait for initialization with timeout to prevent deadlock
@@ -188,8 +188,9 @@ class SubscriptionService {
     if (!_isInitialized) {
       _ensureInitialized(); // Fire and forget if not initialized
     }
-    
-    final status = await getSubscriptionStatus();    // Premium users have access to all features
+
+    final status =
+        await getSubscriptionStatus(); // Premium users have access to all features
     if (status == SubscriptionStatus.premium) {
       return true;
     }
