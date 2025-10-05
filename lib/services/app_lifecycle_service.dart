@@ -11,6 +11,7 @@ import 'notification_service.dart';
 import 'widget_integration_service.dart';
 import 'midnight_habit_reset_service.dart';
 import 'logging_service.dart';
+import 'notifications/notification_action_handler.dart';
 import '../data/database.dart';
 
 /// Service that manages app lifecycle events and ensures proper resource cleanup
@@ -155,6 +156,9 @@ class AppLifecycleService with WidgetsBindingObserver {
       // Use longer delay and retry mechanism to ensure providers are fully initialized
       _processPendingActionsWithRetry();
 
+      // Process pending habit completions that failed in background (e.g., orphaned notifications)
+      _processPendingCompletions();
+
       // Refresh widgets to ensure they show current day data
       _refreshWidgetsOnResume();
 
@@ -244,6 +248,18 @@ class AppLifecycleService with WidgetsBindingObserver {
           AppLogger.error(
               '❌ All $maxAttempts attempts failed to process pending actions');
         }
+      }
+    });
+  }
+
+  /// Process pending habit completions that failed in background
+  static void _processPendingCompletions() {
+    Future.delayed(const Duration(milliseconds: 1500), () async {
+      try {
+        await NotificationActionHandler.processPendingCompletions();
+        AppLogger.info('✅ Pending completions processed successfully');
+      } catch (e) {
+        AppLogger.error('Error processing pending completions', e);
       }
     });
   }

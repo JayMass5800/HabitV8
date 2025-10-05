@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../logging_service.dart';
 import '../../data/database.dart';
 import '../widget_integration_service.dart';
@@ -186,7 +187,37 @@ class NotificationActionHandler {
       // Get the habit
       final habit = await habitService.getHabitById(habitId);
       if (habit == null) {
-        AppLogger.warning('Habit not found in background: $habitId');
+        AppLogger.warning('❌ Habit not found in background: $habitId');
+        AppLogger.info(
+            '🧹 This is likely an orphaned notification. Attempting to cancel it...');
+
+        // Try to cancel the orphaned notification
+        try {
+          await NotificationService.cancelHabitNotificationsByHabitId(habitId);
+          AppLogger.info(
+              '✅ Cancelled orphaned notification for habit: $habitId');
+        } catch (e) {
+          AppLogger.error('Failed to cancel orphaned notification', e);
+        }
+
+        // Store the failed action for retry when app opens (in case it's a sync issue)
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final pendingActions =
+              prefs.getStringList('pending_habit_completions') ?? [];
+          final actionData = jsonEncode({
+            'habitId': habitId,
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          });
+          pendingActions.add(actionData);
+          await prefs.setStringList(
+              'pending_habit_completions', pendingActions);
+          AppLogger.info(
+              '📝 Stored pending completion for retry when app opens');
+        } catch (e) {
+          AppLogger.error('Failed to store pending completion', e);
+        }
+
         return;
       }
 
@@ -211,6 +242,71 @@ class NotificationActionHandler {
       }
     } catch (e) {
       AppLogger.error('Error completing habit in background', e);
+    }
+  }
+
+  /// Process pending habit completions that failed in background (e.g., habit not found)
+  static Future<void> processPendingCompletions() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pendingActions =
+          prefs.getStringList('pending_habit_completions') ?? [];
+
+      if (pendingActions.isEmpty) {
+        return;
+      }
+
+      AppLogger.info(
+          '🔄 Processing ${pendingActions.length} pending habit completions...');
+
+      final habitBox = await DatabaseService.getInstance();
+      final habitService = HabitService(habitBox);
+      final successfulActions = <String>[];
+
+      for (final actionJson in pendingActions) {
+        try {
+          final actionData = jsonDecode(actionJson) as Map<String, dynamic>;
+          final habitId = actionData['habitId'] as String;
+          final timestamp = actionData['timestamp'] as int;
+          final actionDate = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+          // Check if the habit exists now
+          final habit = await habitService.getHabitById(habitId);
+          if (habit != null) {
+            // Complete the habit for the original date
+            await habitService.markHabitComplete(habitId, actionDate);
+            AppLogger.info(
+                '✅ Completed pending action for habit: ${habit.name}');
+            successfulActions.add(actionJson);
+          } else {
+            // If habit still doesn't exist after 24 hours, remove the pending action
+            final age = DateTime.now().difference(actionDate);
+            if (age.inHours > 24) {
+              AppLogger.info(
+                  '🧹 Removing stale pending action (${age.inHours}h old) for habit: $habitId');
+              successfulActions.add(actionJson);
+            }
+          }
+        } catch (e) {
+          AppLogger.error('Error processing pending completion', e);
+        }
+      }
+
+      // Remove successfully processed actions
+      if (successfulActions.isNotEmpty) {
+        final remainingActions = pendingActions
+            .where((a) => !successfulActions.contains(a))
+            .toList();
+        await prefs.setStringList(
+            'pending_habit_completions', remainingActions);
+        AppLogger.info(
+            '✅ Processed ${successfulActions.length} pending completions, ${remainingActions.length} remaining');
+
+        // Update widgets after processing completions
+        await WidgetIntegrationService.instance.onHabitsChanged();
+      }
+    } catch (e) {
+      AppLogger.error('Error processing pending completions', e);
     }
   }
 

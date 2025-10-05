@@ -674,8 +674,30 @@ class HabitService {
       // Update widgets AFTER database changes are complete
       // MUST be awaited to ensure widget update completes before screen navigation
       try {
+        // First immediate update
         await WidgetIntegrationService.instance.onHabitsChanged();
         AppLogger.debug('✅ Widget update completed after adding habit');
+
+        // Schedule additional delayed updates to ensure widget picks up changes
+        // This helps with Android widget update timing issues
+        Future.delayed(const Duration(milliseconds: 500), () async {
+          try {
+            await WidgetIntegrationService.instance.forceWidgetUpdate();
+            AppLogger.debug('✅ Delayed widget force update completed');
+          } catch (e) {
+            AppLogger.error('Failed delayed widget update', e);
+          }
+        });
+
+        // One more update after 1 second to be absolutely sure
+        Future.delayed(const Duration(seconds: 1), () async {
+          try {
+            await WidgetIntegrationService.instance.forceWidgetUpdate();
+            AppLogger.debug('✅ Final delayed widget update completed');
+          } catch (e) {
+            AppLogger.error('Failed final widget update', e);
+          }
+        });
       } catch (e) {
         AppLogger.error('Failed to update widgets after adding habit', e);
         // Don't block the operation if widget update fails
