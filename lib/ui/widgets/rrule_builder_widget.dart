@@ -476,13 +476,10 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
               color: Theme.of(context)
                   .colorScheme
                   .surfaceContainerHighest
-                  .withValues(alpha: 0.3),
+                  .withAlpha(76),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: 0.3),
+                color: Theme.of(context).colorScheme.outline.withAlpha(76),
               ),
             ),
             child: ListTile(
@@ -540,10 +537,8 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primaryContainer
-                  .withValues(alpha: 0.3),
+              color:
+                  Theme.of(context).colorScheme.primaryContainer.withAlpha(76),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -689,10 +684,8 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primaryContainer
-                  .withValues(alpha: 0.3),
+              color:
+                  Theme.of(context).colorScheme.primaryContainer.withAlpha(76),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -946,7 +939,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                 color: Theme.of(context)
                     .colorScheme
                     .surfaceContainerHighest
-                    .withValues(alpha: 0.3),
+                    .withAlpha(76),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -1081,15 +1074,6 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
             RadioListTile<_TerminationType>(
               title: const Text('Never'),
               value: _TerminationType.never,
-              groupValue: _terminationType,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _terminationType = value;
-                  });
-                  _updatePreview();
-                }
-              },
             ),
             RadioListTile<_TerminationType>(
               title: Row(
@@ -1124,15 +1108,6 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                 ],
               ),
               value: _TerminationType.count,
-              groupValue: _terminationType,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _terminationType = value;
-                  });
-                  _updatePreview();
-                }
-              },
             ),
             RadioListTile<_TerminationType>(
               title: Row(
@@ -1166,15 +1141,6 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                 ],
               ),
               value: _TerminationType.until,
-              groupValue: _terminationType,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _terminationType = value;
-                  });
-                  _updatePreview();
-                }
-              },
             ),
           ],
         ),
@@ -1186,13 +1152,11 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.3),
+        color:
+            Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(76),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          color: Theme.of(context).colorScheme.outline.withAlpha(51),
         ),
       ),
       child: Column(
@@ -1276,8 +1240,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
-            color:
-                Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+            color: Theme.of(context).colorScheme.outline.withAlpha(51)),
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.all(8),
@@ -1299,10 +1262,8 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
             padding: const EdgeInsets.all(8),
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .primaryContainer
-                  .withValues(alpha: 0.3),
+              color:
+                  Theme.of(context).colorScheme.primaryContainer.withAlpha(76),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Row(
@@ -1382,11 +1343,11 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                                   ? Theme.of(context)
                                       .colorScheme
                                       .primaryContainer
-                                      .withValues(alpha: 0.3)
+                                      .withAlpha(76)
                                   : Theme.of(context)
                                       .colorScheme
                                       .surfaceContainerHighest
-                                      .withValues(alpha: 0.3),
+                                      .withAlpha(76),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
                             color: isSelected
@@ -1396,7 +1357,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                                     : Theme.of(context)
                                         .colorScheme
                                         .outline
-                                        .withValues(alpha: 0.2),
+                                        .withAlpha(51),
                             width: isSelected
                                 ? 2
                                 : isToday
