@@ -206,6 +206,24 @@ class NotificationActionService {
           await habitService.updateHabit(habit);
           AppLogger.info('Habit data saved to database');
 
+          // Add small delay to ensure database write completes
+          await Future.delayed(const Duration(milliseconds: 100));
+          AppLogger.info('⏱️ Waited for database write to complete');
+
+          // **CRITICAL: Invalidate providers FIRST to ensure UI picks up changes**
+          try {
+            // Invalidate habitsNotifierProvider to force timeline screen refresh
+            _container!.invalidate(habitsNotifierProvider);
+            AppLogger.info(
+                '✅ habitsNotifierProvider invalidated for UI refresh');
+
+            // Also invalidate habitServiceProvider for other dependent widgets
+            _container!.invalidate(habitServiceProvider);
+            AppLogger.info('✅ habitServiceProvider invalidated for UI refresh');
+          } catch (e) {
+            AppLogger.warning('Could not invalidate providers: $e');
+          }
+
           // Trigger immediate UI updates for faster feedback
           await _triggerImmediateUIUpdate();
 
@@ -231,16 +249,6 @@ class NotificationActionService {
               AppLogger.error(
                   '❌ Fallback widget update also failed', fallbackError);
             }
-          }
-
-          // Force a complete provider refresh to ensure UI updates
-          try {
-            // Invalidate all related providers to force UI refresh
-            _container!.invalidate(habitServiceProvider);
-            AppLogger.info(
-                '✅ All habit-related providers invalidated for UI refresh');
-          } catch (e) {
-            AppLogger.warning('Could not invalidate additional providers: $e');
           }
         } else {
           // Log with frequency-specific message
@@ -402,11 +410,17 @@ class NotificationActionService {
       } catch (e) {
         AppLogger.warning('Could not trigger immediate habits refresh: $e');
         // Fallback to standard provider invalidation
-        _container!.invalidate(habitServiceProvider);
+        // Note: Provider invalidation is already done before this function is called
+        // This is just a safety fallback
+        try {
+          _container!.invalidate(habitsNotifierProvider);
+          _container!.invalidate(habitServiceProvider);
+          AppLogger.info('✅ Fallback provider invalidation completed');
+        } catch (invalidateError) {
+          AppLogger.error(
+              'Error in fallback provider invalidation', invalidateError);
+        }
       }
-
-      // Also invalidate the main provider to ensure all dependent widgets update
-      _container!.invalidate(habitServiceProvider);
     } catch (e) {
       AppLogger.error('Error in immediate UI update', e);
     }
