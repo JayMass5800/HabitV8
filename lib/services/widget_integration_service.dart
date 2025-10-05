@@ -582,7 +582,11 @@ class WidgetIntegrationService {
 
   /// Update widgets when a habit is completed
   Future<void> onHabitCompleted() async {
+    debugPrint('🔄 onHabitCompleted called - updating all widgets');
     await updateAllWidgets();
+    // CRITICAL: Also trigger immediate Android widget update
+    await _triggerAndroidWidgetUpdate();
+    debugPrint('✅ Widget update completed after habit completion');
   }
 
   /// Filter habits for a specific date
