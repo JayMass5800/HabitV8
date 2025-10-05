@@ -125,8 +125,10 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
         return;
       }
 
-      // Update state to show loading
-      state = state.copyWith(isLoading: true, error: null);
+      // Update state to show loading (with null check)
+      if (mounted) {
+        state = state.copyWith(isLoading: true, error: null);
+      }
 
       final habits = await _habitService.getAllHabits();
       _updateCompletionsCount(habits);
@@ -138,12 +140,17 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
         return;
       }
 
-      state = state.copyWith(
-        habits: habits,
-        isLoading: false,
-        lastUpdated: DateTime.now(),
-      );
+      // Update state with null safety check
+      if (mounted) {
+        state = state.copyWith(
+          habits: habits,
+          isLoading: false,
+          lastUpdated: DateTime.now(),
+        );
+      }
     } catch (e) {
+      AppLogger.error('Error loading habits: $e');
+      
       // Check if still mounted before updating error state
       if (!mounted) {
         AppLogger.debug(
@@ -151,11 +158,14 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
         return;
       }
 
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-        lastUpdated: DateTime.now(),
-      );
+      // Update error state with null safety check
+      if (mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          error: e.toString(),
+          lastUpdated: DateTime.now(),
+        );
+      }
     }
   }
 
@@ -203,8 +213,8 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
         return;
       }
 
-      // Only update if habits have actually changed
-      if (_habitsChanged(habits)) {
+      // Only update if habits have actually changed and still mounted
+      if (_habitsChanged(habits) && mounted) {
         _updateCompletionsCount(habits);
 
         state = state.copyWith(
@@ -344,9 +354,15 @@ final habitsNotifierProvider =
 
   return habitServiceAsync.when(
     data: (habitService) => HabitsNotifier(habitService),
-    loading: () => throw StateError('HabitService is loading'),
-    error: (error, stackTrace) =>
-        throw StateError('HabitService error: $error'),
+    loading: () {
+      // Return a temporary notifier with loading state instead of throwing
+      AppLogger.debug('HabitService is still loading, creating temporary notifier');
+      throw StateError('HabitService is loading');
+    },
+    error: (error, stackTrace) {
+      AppLogger.error('HabitService error in provider: $error');
+      throw StateError('HabitService error: $error');
+    },
   );
 });
 
