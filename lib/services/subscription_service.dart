@@ -63,15 +63,27 @@ class SubscriptionService {
       if (_initializationCompleter != null) {
         // Wait for initialization with timeout to prevent deadlock
         await _initializationCompleter!.future
-            .timeout(const Duration(seconds: 3));
+            .timeout(const Duration(seconds: 5));
       } else {
         // Start initialization if not already started
-        // Don't wait - let it complete in background
-        initialize();
+        await initialize().timeout(const Duration(seconds: 5));
+      }
+    } on TimeoutException catch (e) {
+      // Timeout - force complete to prevent permanent blocking
+      AppLogger.warning('Initialization timeout, forcing completion: $e');
+      _isInitialized = true;
+      if (_initializationCompleter != null &&
+          !_initializationCompleter!.isCompleted) {
+        _initializationCompleter!.complete();
       }
     } catch (e) {
-      // Timeout or error - continue anyway to prevent UI blocking
-      AppLogger.warning('Initialization timeout or error, continuing: $e');
+      // Other error - mark as initialized to prevent blocking
+      AppLogger.error('Initialization error, continuing: $e');
+      _isInitialized = true;
+      if (_initializationCompleter != null &&
+          !_initializationCompleter!.isCompleted) {
+        _initializationCompleter!.completeError(e);
+      }
     }
   }
 
@@ -193,7 +205,7 @@ class SubscriptionService {
     }
 
     final status = await getSubscriptionStatus();
-    
+
     // Premium users have access to all features
     if (status == SubscriptionStatus.premium) {
       return true;
