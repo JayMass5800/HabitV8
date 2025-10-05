@@ -99,8 +99,11 @@ class SubscriptionService {
 
   /// Get current subscription status
   Future<SubscriptionStatus> getSubscriptionStatus() async {
-    // Ensure initialization is complete before checking status
-    await _ensureInitialized();
+    // Try to ensure initialization, but don't block UI
+    // This prevents deadlock during app startup
+    if (!_isInitialized) {
+      unawaited(_ensureInitialized());
+    }
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -186,11 +189,12 @@ class SubscriptionService {
   Future<bool> isFeatureAvailable(PremiumFeature feature) async {
     // Try to ensure initialization without blocking
     if (!_isInitialized) {
-      _ensureInitialized(); // Fire and forget if not initialized
+      unawaited(_ensureInitialized());
     }
 
-    final status =
-        await getSubscriptionStatus(); // Premium users have access to all features
+    final status = await getSubscriptionStatus();
+    
+    // Premium users have access to all features
     if (status == SubscriptionStatus.premium) {
       return true;
     }
