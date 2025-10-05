@@ -188,12 +188,16 @@ class RRuleService {
       if (rule == null) return [];
 
       // Convert to UTC as required by rrule package
-      final start =
-          DateTime.utc(startDate.year, startDate.month, startDate.day);
-      final rangeStartUtc =
-          DateTime.utc(rangeStart.year, rangeStart.month, rangeStart.day);
-      final rangeEndUtc =
-          DateTime.utc(rangeEnd.year, rangeEnd.month, rangeEnd.day, 23, 59, 59);
+      // Preserve time components from input if already in UTC, otherwise extract date parts
+      final start = DateTime.utc(startDate.year, startDate.month, startDate.day);
+      
+      final rangeStartUtc = rangeStart.isUtc
+          ? rangeStart
+          : DateTime.utc(rangeStart.year, rangeStart.month, rangeStart.day);
+      
+      final rangeEndUtc = rangeEnd.isUtc
+          ? rangeEnd
+          : DateTime.utc(rangeEnd.year, rangeEnd.month, rangeEnd.day, 23, 59, 59);
 
       // Get instances starting from the habit start date
       final instances = rule.getInstances(start: start);
@@ -242,15 +246,16 @@ class RRuleService {
     required DateTime checkDate,
   }) {
     try {
-      // Create a date range for the entire day
-      final dayStart = DateTime(checkDate.year, checkDate.month, checkDate.day);
-      final dayEnd = dayStart.add(const Duration(days: 1));
+      // Create a date range for the entire day in UTC
+      // This ensures we're checking only the specific day, not bleeding into adjacent days
+      final dayStartUtc = DateTime.utc(checkDate.year, checkDate.month, checkDate.day);
+      final dayEndUtc = DateTime.utc(checkDate.year, checkDate.month, checkDate.day, 23, 59, 59);
 
       final occurrences = getOccurrences(
         rruleString: rruleString,
         startDate: startDate,
-        rangeStart: dayStart,
-        rangeEnd: dayEnd,
+        rangeStart: dayStartUtc,
+        rangeEnd: dayEndUtc,
       );
 
       return occurrences.isNotEmpty;
