@@ -26,15 +26,41 @@ class SubscriptionService {
   // Trial period: 30 days
   static const int _trialDurationDays = 30;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  
+  // Initialization state to prevent race conditions
+  static Completer<void>? _initializationCompleter;
+  static bool _isInitialized = false;
 
   /// Initialize the subscription service and start trial if first time user
   Future<void> initialize() async {
+    // If already initialized or in progress, wait for completion
+    if (_isInitialized) return;
+    if (_initializationCompleter != null) {
+      return _initializationCompleter!.future;
+    }
+    
+    _initializationCompleter = Completer<void>();
+    
     try {
       await _checkAndStartTrial();
       await _updateSubscriptionStatus();
+      _isInitialized = true;
+      _initializationCompleter!.complete();
       AppLogger.info('SubscriptionService initialized successfully');
     } catch (e) {
       AppLogger.error('Error initializing subscription service', e);
+      _initializationCompleter!.completeError(e);
+      _initializationCompleter = null;
+    }
+  }
+  
+  /// Wait for initialization to complete (prevents race conditions)
+  Future<void> _ensureInitialized() async {
+    if (_isInitialized) return;
+    if (_initializationCompleter != null) {
+      await _initializationCompleter!.future;
+    } else {
+      await initialize();
     }
   }
 
@@ -62,6 +88,9 @@ class SubscriptionService {
 
   /// Get current subscription status
   Future<SubscriptionStatus> getSubscriptionStatus() async {
+    // Ensure initialization is complete before checking status
+    await _ensureInitialized();
+    
     final prefs = await SharedPreferences.getInstance();
 
     // Check if user has purchased premium
@@ -128,19 +157,25 @@ class SubscriptionService {
 
     final trialStartDate = DateTime.parse(trialStartDateStr);
     final now = DateTime.now();
-    final daysSinceTrialStart = now.difference(trialStartDate).inDays;
+    
+    // Use hours-based calculation to prevent losing up to 24 hours due to time truncation
+    final hoursSinceTrialStart = now.difference(trialStartDate).inHours;
+    final daysSinceTrialStart = (hoursSinceTrialStart / 24).floor();
 
     final remainingDays = _trialDurationDays - daysSinceTrialStart;
 
     // Debug logging to track trial calculation
     AppLogger.info(
-        '🔍 Trial Debug: Start Date=$trialStartDate, Now=$now, DaysSince=$daysSinceTrialStart, Remaining=$remainingDays');
+        '🔍 Trial Debug: Start Date=$trialStartDate, Now=$now, Hours=$hoursSinceTrialStart, Days=$daysSinceTrialStart, Remaining=$remainingDays');
 
     return remainingDays > 0 ? remainingDays : 0;
   }
 
   /// Check if a specific feature is available to the current user
   Future<bool> isFeatureAvailable(PremiumFeature feature) async {
+    // Ensure initialization is complete
+    await _ensureInitialized();
+    
     final status = await getSubscriptionStatus();
 
     // Premium users have access to all features

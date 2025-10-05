@@ -682,11 +682,13 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   }
 
   /// Query existing purchases to handle any unprocessed ones
+  /// Note: Actual restore is done in main.dart at startup with global listener
+  /// This method is kept for future use but doesn't call restorePurchases to avoid duplicates
   Future<void> _queryExistingPurchases() async {
     try {
-      AppLogger.info('Querying existing purchases...');
-      await _inAppPurchase.restorePurchases();
-      AppLogger.info('Existing purchases query completed');
+      AppLogger.info('Purchase screen initialized - existing purchases already queried at startup');
+      // Removed duplicate restorePurchases() call - already done in main.dart
+      // This prevents unnecessary API calls to Google Play Billing
     } catch (e) {
       AppLogger.warning('Failed to query existing purchases: $e');
       // This is not a critical error, so don't fail initialization
@@ -1006,16 +1008,17 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   Future<void> _performEnhancedClientVerification(
       PurchaseDetails purchaseDetails) async {
     try {
-      // 1. Validate purchase timestamp - reject purchases older than 24 hours
-      // This prevents replay attacks with old purchase tokens
+      // 1. Validate purchase timestamp - reject purchases older than 30 days
+      // This prevents replay attacks while allowing legitimate restore scenarios
+      // Changed from 24 hours to 30 days to handle device replacements and delayed restores
       if (purchaseDetails.transactionDate != null) {
         final purchaseTime = DateTime.fromMillisecondsSinceEpoch(
             int.parse(purchaseDetails.transactionDate!));
         final timeDifference = DateTime.now().difference(purchaseTime);
 
-        if (timeDifference.inHours > 24) {
+        if (timeDifference.inDays > 30) {
           throw Exception(
-              'Purchase token is too old (${timeDifference.inHours} hours) - possible replay attack');
+              'Purchase token is too old (${timeDifference.inDays} days) - possible replay attack');
         }
 
         AppLogger.info(

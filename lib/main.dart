@@ -19,6 +19,7 @@ import 'services/onboarding_service.dart';
 import 'services/midnight_habit_reset_service.dart';
 import 'services/app_lifecycle_service.dart';
 import 'services/subscription_service.dart';
+import 'services/purchase_stream_service.dart';
 import 'services/widget_integration_service.dart';
 import 'services/widget_launch_handler.dart';
 import 'package:home_widget/home_widget.dart';
@@ -168,6 +169,10 @@ void _initializeSubscriptionService() async {
 
     final subscriptionService = SubscriptionService();
     await subscriptionService.initialize();
+
+    // CRITICAL: Initialize global purchase stream listener BEFORE restoring purchases
+    // This ensures purchase events are caught even when PurchaseScreen is not open
+    await PurchaseStreamService.initialize();
 
     // Automatically check for existing purchases (critical for device loss recovery)
     await _checkForExistingPurchasesQuietly();
