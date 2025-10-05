@@ -192,14 +192,11 @@ class HabitTimelineRemoteViewsFactory(
 
     override fun onDataSetChanged() {
         // Called when notifyAppWidgetViewDataChanged is triggered
-        // Check cache to prevent redundant reloads within 2 seconds
-        val now = System.currentTimeMillis()
-        if (now - cacheTimestamp < CACHE_VALIDITY_MS && cachedHabitsJson != null) {
-            Log.d("HabitTimelineService", "⚡ Using cached data (${now - cacheTimestamp}ms old), skipping reload")
-            return
-        }
+        // ALWAYS invalidate cache when data changes - this is the fix for stale widget data
+        Log.d("HabitTimelineService", "onDataSetChanged called - FORCING reload (invalidating cache)")
+        cachedHabitsJson = null
+        cacheTimestamp = 0
         
-        Log.d("HabitTimelineService", "onDataSetChanged called - reloading habit data")
         loadThemeData()
         loadHabitData()
     }

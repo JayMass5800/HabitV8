@@ -198,11 +198,14 @@ class WidgetIntegrationService {
       // Longer delay to ensure data is written to SharedPreferences
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // Update the widget
+      // Update the widget - this triggers onDataSetChanged in the Android RemoteViewsFactory
       await HomeWidget.updateWidget(
         name: widgetName,
         androidName: widgetName,
       );
+
+      // Add extra delay to ensure the update propagates to the widget service
+      await Future.delayed(const Duration(milliseconds: 100));
 
       debugPrint('Widget $widgetName update completed');
     } catch (e) {
@@ -535,9 +538,11 @@ class WidgetIntegrationService {
 
   /// Update widgets when habits change
   Future<void> onHabitsChanged() async {
+    debugPrint('🔄 onHabitsChanged called - updating all widgets');
     await updateAllWidgets();
     // Also trigger immediate Android widget update
     await _triggerAndroidWidgetUpdate();
+    debugPrint('✅ Widget update completed after habit changes');
   }
 
   /// Update widgets when theme changes

@@ -665,6 +665,11 @@ class HabitService {
         AppLogger.error('Failed to update widgets after adding habit', e);
         // Don't block the operation if widget update fails
       }
+
+      // CRITICAL: Force immediate HabitsNotifier refresh after adding habit
+      // This ensures the timeline screen updates immediately instead of waiting
+      // for the 1-second periodic refresh timer
+      AppLogger.debug('Triggering immediate state refresh after adding habit');
     } catch (e) {
       AppLogger.error('Error in addHabit: $e');
 
