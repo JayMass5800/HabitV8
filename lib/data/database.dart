@@ -123,17 +123,18 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       AppLogger.debug('Skipping state update - notifier not mounted');
       return;
     }
-    
+
     try {
       state = stateBuilder();
     } catch (e) {
       // Catch any null check or state update errors
       AppLogger.error('Error updating HabitsNotifier state: $e');
       // If the error is related to disposed notifier, just log and continue
-      if (e.toString().contains('Null check') || 
+      if (e.toString().contains('Null check') ||
           e.toString().contains('disposed') ||
           e.toString().contains('StateNotifier')) {
-        AppLogger.debug('StateNotifier likely disposed during update, ignoring error');
+        AppLogger.debug(
+            'StateNotifier likely disposed during update, ignoring error');
       } else {
         // For other errors, rethrow
         rethrow;
@@ -150,7 +151,8 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       }
 
       // Update state to show loading (with null check)
-      _safeUpdateState(() => state.copyWith(isLoading: true, error: () => null));
+      _safeUpdateState(
+          () => state.copyWith(isLoading: true, error: () => null));
 
       final habits = await _habitService.getAllHabits();
       _updateCompletionsCount(habits);
@@ -164,10 +166,10 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
       // Update state with null safety check
       _safeUpdateState(() => state.copyWith(
-        habits: habits,
-        isLoading: false,
-        lastUpdated: DateTime.now(),
-      ));
+            habits: habits,
+            isLoading: false,
+            lastUpdated: DateTime.now(),
+          ));
     } catch (e) {
       AppLogger.error('Error loading habits: $e');
 
@@ -180,10 +182,10 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
       // Update error state with null safety check
       _safeUpdateState(() => state.copyWith(
-        isLoading: false,
-        error: () => e.toString(),
-        lastUpdated: DateTime.now(),
-      ));
+            isLoading: false,
+            error: () => e.toString(),
+            lastUpdated: DateTime.now(),
+          ));
     }
   }
 
@@ -236,9 +238,9 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
         _updateCompletionsCount(habits);
 
         _safeUpdateState(() => state.copyWith(
-          habits: habits,
-          lastUpdated: DateTime.now(),
-        ));
+              habits: habits,
+              lastUpdated: DateTime.now(),
+            ));
       }
     } catch (e) {
       // Handle specific case where box has been closed (during database reset)
