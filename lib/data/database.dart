@@ -711,12 +711,12 @@ class HabitService {
       }
 
       await habit.save();
-      
+
       // CRITICAL: Flush the database to ensure data is written to disk
       // before widgets try to read it. Without this, getAllHabits() may
       // return stale data from cache, causing widgets to show old completion status
       await _habitBox.flush();
-      
+
       _invalidateCache(); // Invalidate cache when updating habit
 
       // Reschedule notifications/alarms for the updated habit
@@ -1024,7 +1024,7 @@ class HabitService {
       // Invalidate cache before saving
       _statsService.invalidateHabitCache(habitId);
       await habit.save();
-      
+
       // CRITICAL: Flush database to ensure completion is written to disk
       await _habitBox.flush();
 
@@ -1087,7 +1087,7 @@ class HabitService {
     // Invalidate cache before saving
     _statsService.invalidateHabitCache(habitId);
     await habit.save();
-    
+
     // CRITICAL: Flush database to ensure completion removal is written to disk
     await _habitBox.flush();
 
