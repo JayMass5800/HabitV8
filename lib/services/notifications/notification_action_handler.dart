@@ -194,6 +194,14 @@ class NotificationActionHandler {
       await habitService.markHabitComplete(habitId, DateTime.now());
       AppLogger.info('✅ Habit completed in background: ${habit.name}');
 
+      // Force flush to ensure database changes are persisted
+      await habitBox.flush();
+      AppLogger.debug('💾 Database flushed after background completion');
+
+      // Add small delay to ensure all writes complete and SharedPreferences sync
+      await Future.delayed(const Duration(milliseconds: 500));
+      AppLogger.debug('⏱️ Waited for database sync');
+
       // Update widget if available
       try {
         await WidgetIntegrationService.instance.onHabitCompleted();

@@ -5,6 +5,17 @@ All notable changes to HabitV8 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### 🔧 Fixed
+- **Calendar Weekday Filtering** (CRITICAL - October 5, 2025)
+  - Fixed hourly habits not displaying on Sundays in calendar view
+  - Fixed weekly Sunday habits incorrectly showing on both Saturday and Sunday
+  - Root cause: Incorrect weekday conversion (0-based vs 1-7 format)
+  - Updated `calendar_screen.dart` to use `DateTime.weekday` directly (1=Monday, 7=Sunday)
+  - Added comprehensive test suite for weekday filtering edge cases
+  - All habit frequencies (hourly, weekly, daily, monthly, yearly, single) now display correctly
+
 ## [1.0.1] - 2024-12-XX - Health Integration Improvements
 
 ### 🔧 Fixed

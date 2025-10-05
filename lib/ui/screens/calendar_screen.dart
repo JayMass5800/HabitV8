@@ -110,9 +110,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           // Fallback: if no weekdays selected, use the creation day
           return checkDate.weekday == habitDate.weekday;
         }
-        // Convert DateTime.weekday (1=Monday) to our format (0=Sunday)
-        final dayOfWeek = checkDate.weekday == 7 ? 0 : checkDate.weekday;
-        return habit.selectedWeekdays.contains(dayOfWeek);
+        // Use DateTime.weekday directly (1=Monday, 7=Sunday) - matches storage format
+        return habit.selectedWeekdays.contains(checkDate.weekday);
 
       case HabitFrequency.monthly:
         // Check if the day of month is in the selected month days
@@ -128,9 +127,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         if (habit.selectedWeekdays.isEmpty || habit.hourlyTimes.isEmpty) {
           return false; // No schedule set up
         }
-        // Convert DateTime.weekday (1=Monday) to our format (0=Sunday)
-        final dayOfWeek = checkDate.weekday == 7 ? 0 : checkDate.weekday;
-        return habit.selectedWeekdays.contains(dayOfWeek);
+        // Use DateTime.weekday directly (1=Monday, 7=Sunday) - matches storage format
+        return habit.selectedWeekdays.contains(checkDate.weekday);
 
       case HabitFrequency.yearly:
         // Check if the date is in the selected yearly dates
