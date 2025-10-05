@@ -126,6 +126,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
     try {
       state = stateBuilder();
+      AppLogger.debug('State updated successfully in HabitsNotifier');
     } catch (e) {
       // Catch any null check or state update errors
       AppLogger.error('Error updating HabitsNotifier state: $e');
@@ -133,7 +134,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       if (e.toString().contains('Null check') ||
           e.toString().contains('disposed') ||
           e.toString().contains('StateNotifier')) {
-        AppLogger.debug(
+        AppLogger.warning(
             'StateNotifier likely disposed during update, ignoring error');
       } else {
         // For other errors, rethrow
@@ -371,14 +372,7 @@ final habitsNotifierProvider =
   final habitServiceAsync = ref.watch(habitServiceProvider);
 
   return habitServiceAsync.when(
-    data: (habitService) {
-      final notifier = HabitsNotifier(habitService);
-      // Ensure cleanup when the provider is disposed
-      ref.onDispose(() {
-        notifier.dispose();
-      });
-      return notifier;
-    },
+    data: (habitService) => HabitsNotifier(habitService),
     loading: () {
       // Return a temporary notifier with loading state instead of throwing
       AppLogger.debug(
