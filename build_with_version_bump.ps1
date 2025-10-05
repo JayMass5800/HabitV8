@@ -89,6 +89,44 @@ function Update-BuildNumber {
     }
 }
 
+# Function to update version in settings screen
+function Update-SettingsScreenVersion {
+    param($NewVersionString)
+    
+    Write-Host "🔧 Updating settings screen version..." -ForegroundColor Yellow
+    
+    $settingsPath = "lib\ui\screens\settings_screen.dart"
+    
+    if (-not (Test-Path $settingsPath)) {
+        Write-Host "⚠️ Warning: settings_screen.dart not found at $settingsPath" -ForegroundColor Yellow
+        return $false
+    }
+
+    try {
+        $content = Get-Content $settingsPath -Raw
+        
+        # Extract version part only (without build number) from version string like "8.4.8+35"
+        $versionPart = $NewVersionString -replace '\+.*$', ''
+        
+        # Replace the hardcoded version with the new version
+        $versionPattern = "const Text\('v[0-9]+\.[0-9]+\.[0-9]+'\)"
+        $newVersionText = "const Text('v$versionPart')"
+        
+        if ($content -match $versionPattern) {
+            $newContent = $content -replace $versionPattern, $newVersionText
+            $newContent | Set-Content $settingsPath -NoNewline
+            Write-Host "✅ Successfully updated settings screen to v$versionPart" -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "⚠️ Warning: Could not find version pattern in settings_screen.dart" -ForegroundColor Yellow
+            return $false
+        }
+    } catch {
+        Write-Host "⚠️ Warning: Error updating settings_screen.dart: $($_.Exception.Message)" -ForegroundColor Yellow
+        return $false
+    }
+}
+
 # Function to run Flutter build
 function Invoke-FlutterBuild {
     param($BuildType, $Debug)
@@ -186,7 +224,10 @@ try {
         exit 1
     }
 
-    # Step 2: Build if not skipped
+    # Step 2: Update settings screen version
+    Update-SettingsScreenVersion -NewVersionString $newVersionString
+
+    # Step 3: Build if not skipped
     if (-not $SkipBuild) {
         $buildSuccess = Invoke-FlutterBuild -BuildType $BuildType -Debug $Debug
         if (-not $buildSuccess) {
