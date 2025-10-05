@@ -193,7 +193,9 @@ class NotificationActionHandler {
 
         // Try to cancel the orphaned notification
         try {
-          await NotificationService.cancelHabitNotificationsByHabitId(habitId);
+          // Create a local scheduler instance for background operation
+          final scheduler = NotificationScheduler(_notificationsPlugin);
+          await scheduler.cancelHabitNotificationsByHabitId(habitId);
           AppLogger.info(
               '✅ Cancelled orphaned notification for habit: $habitId');
         } catch (e) {
