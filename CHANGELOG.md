@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### 🔧 Fixed
+- **RRule Date Offset Bug** (CRITICAL - October 5, 2025)
+  - Fixed recurring habits displaying on wrong days (off-by-one errors) in Calendar and Timeline
+  - Fixed monthly habits (e.g., 5th, 10th, 15th) incorrectly showing on adjacent days (4th, 9th, 14th)
+  - Fixed weekly habits (e.g., Monday) incorrectly showing on Sunday
+  - Root cause: Improper timezone handling and date range calculation in `RRuleService`
+  - Updated `isDueOnDate()` to use UTC DateTimes with explicit same-day boundaries
+  - Updated `getOccurrences()` to preserve UTC time components and avoid double-conversion
+  - Added comprehensive test suite (`test/rrule_date_offset_bug_test.dart`) to prevent regression
+  - All 54 tests passing, no breaking changes
+  - See `RRULE_DATE_OFFSET_FIX.md` for technical details
+
 - **Calendar Weekday Filtering** (CRITICAL - October 5, 2025)
   - Fixed hourly habits not displaying on Sundays in calendar view
   - Fixed weekly Sunday habits incorrectly showing on both Saturday and Sunday
