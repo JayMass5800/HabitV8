@@ -69,12 +69,24 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   List<DateTime> _previewOccurrences = [];
   String _patternSummary = '';
 
+  // Start Date customization
+  bool _isStartDateCustomized = false;
+
   @override
   void initState() {
     super.initState();
     _startDate = widget.initialStartDate ?? DateTime.now();
     _isAdvancedMode =
         widget.forceAdvancedMode; // Start in forced mode if requested
+
+    // If initialStartDate was provided and is not today, mark as customized
+    if (widget.initialStartDate != null) {
+      final today = DateTime.now();
+      final initialDate = widget.initialStartDate!;
+      _isStartDateCustomized = !(initialDate.year == today.year &&
+          initialDate.month == today.month &&
+          initialDate.day == today.day);
+    }
 
     // Initialize from existing RRule or frequency
     if (widget.initialRRuleString != null) {
@@ -346,6 +358,10 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Start Date Picker
+        _buildStartDatePicker(),
+        const SizedBox(height: 16),
+
         Text(
           'Frequency',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -393,6 +409,10 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Start Date Picker
+        _buildStartDatePicker(),
+        const SizedBox(height: 16),
+
         // Always show frequency selector for full flexibility
         _buildFrequencySelector(),
         const SizedBox(height: 16),
@@ -412,6 +432,150 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
         ],
       ],
     );
+  }
+
+  Widget _buildStartDatePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Collapsed view - just shows "Start today" or custom date
+        if (!_isStartDateCustomized) ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(
+              Icons.calendar_today_outlined,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+            title: Text(
+              'Starting today',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            trailing: TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _isStartDateCustomized = true;
+                });
+              },
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Customize'),
+            ),
+          ),
+        ] else ...[
+          // Expanded view - full date picker
+          Text(
+            'Start Date',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context)
+                    .colorScheme
+                    .outline
+                    .withValues(alpha: 0.3),
+              ),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.calendar_today,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: Text(
+                DateFormat('EEEE, MMMM d, y').format(_startDate),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+              subtitle: Text(
+                'Pattern starts from this date',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _startDate,
+                        firstDate: DateTime(2020),
+                        lastDate:
+                            DateTime.now().add(const Duration(days: 3650)),
+                      );
+                      if (picked != null && picked != _startDate) {
+                        setState(() {
+                          _startDate = picked;
+                        });
+                        _updatePreview();
+                      }
+                    },
+                    child: const Text('Change'),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18),
+                    tooltip: 'Reset to today',
+                    onPressed: () {
+                      setState(() {
+                        _startDate = DateTime.now();
+                        _isStartDateCustomized = false;
+                      });
+                      _updatePreview();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .primaryContainer
+                  .withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _getStartDateHelpText(),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _getStartDateHelpText() {
+    if (_frequency == HabitFrequency.weekly && _interval == 2) {
+      return 'For bi-weekly patterns, the start date determines which week the pattern begins. '
+          'To create alternating schedules (e.g., trash vs recycling), set different start dates.';
+    } else if (_interval > 1) {
+      return 'The start date anchors your pattern. For interval-based schedules, '
+          'this determines the first occurrence in the cycle.';
+    }
+    return 'This is the first date in your recurring pattern. All future occurrences are calculated from this date.';
   }
 
   Widget _buildFrequencySelector() {

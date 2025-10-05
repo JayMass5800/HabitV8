@@ -138,5 +138,42 @@ void main() {
       expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 17)),
           isTrue);
     });
+
+    test('isHabitDueOnDate uses dtStart instead of createdAt for RRule habits',
+        () {
+      // This test demonstrates the critical fix for biweekly habits
+      // where createdAt and dtStart can differ, causing incorrect scheduling
+
+      final habit = Habit.create(
+        name: 'Biweekly with different dtStart',
+        category: 'Health',
+        colorValue: Colors.blue.toARGB32(),
+        frequency: HabitFrequency.weekly,
+      )
+        ..usesRRule = true
+        ..rruleString = 'FREQ=WEEKLY;INTERVAL=2;BYDAY=MO'
+        ..dtStart = DateTime(2025, 10, 6) // Monday, Oct 6
+        ..createdAt = DateTime(2025, 10, 1); // Earlier date (Wednesday)
+
+      // Oct 6, 2025 - first occurrence (dtStart Monday)
+      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 6)),
+          isTrue);
+
+      // Oct 13, 2025 - one week later (should be false - interval is 2)
+      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 13)),
+          isFalse);
+
+      // Oct 20, 2025 - two weeks later (should be true)
+      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 20)),
+          isTrue);
+
+      // Oct 27, 2025 - three weeks later (should be false)
+      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 10, 27)),
+          isFalse);
+
+      // Nov 3, 2025 - four weeks later (should be true)
+      expect(CalendarService.isHabitDueOnDate(habit, DateTime(2025, 11, 3)),
+          isTrue);
+    });
   });
 }

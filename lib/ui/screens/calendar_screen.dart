@@ -84,9 +84,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     // Phase 4: Use RRule if available, otherwise fall back to legacy frequency
     if (habit.usesRRule && habit.rruleString != null) {
       try {
+        // Use dtStart if available, otherwise fall back to createdAt
+        // This is critical for interval-based RRules (e.g., bi-weekly)
+        final startDate = habit.dtStart ?? habit.createdAt;
         return RRuleService.isDueOnDate(
           rruleString: habit.rruleString!,
-          startDate: habit.createdAt,
+          startDate: startDate,
           checkDate: checkDate,
         );
       } catch (e) {
