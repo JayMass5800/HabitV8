@@ -738,8 +738,12 @@ class NotificationScheduler {
     }
 
     final now = tz.TZDateTime.now(tz.local);
-    final endDate =
-        now.add(const Duration(days: 84)); // Schedule 12 weeks ahead
+    // Use frequency-aware scheduling window for optimal coverage
+    final endDate = switch (habit.frequency) {
+      HabitFrequency.yearly => now.add(const Duration(days: 730)),  // 2 years for yearly habits
+      HabitFrequency.monthly => now.add(const Duration(days: 365)), // 1 year for monthly habits
+      _ => now.add(const Duration(days: 84)),                       // 12 weeks for all others
+    };
 
     try {
       // Get all occurrences from RRule
