@@ -55,12 +55,23 @@ class SubscriptionService {
   }
 
   /// Wait for initialization to complete (prevents race conditions)
+  /// Returns early if initialization takes too long to prevent UI blocking
   Future<void> _ensureInitialized() async {
     if (_isInitialized) return;
-    if (_initializationCompleter != null) {
-      await _initializationCompleter!.future;
-    } else {
-      await initialize();
+    
+    try {
+      if (_initializationCompleter != null) {
+        // Wait for initialization with timeout to prevent deadlock
+        await _initializationCompleter!.future
+            .timeout(const Duration(seconds: 3));
+      } else {
+        // Start initialization if not already started
+        // Don't wait - let it complete in background
+        initialize();
+      }
+    } catch (e) {
+      // Timeout or error - continue anyway to prevent UI blocking
+      AppLogger.warning('Initialization timeout or error, continuing: $e');
     }
   }
 
@@ -173,12 +184,12 @@ class SubscriptionService {
 
   /// Check if a specific feature is available to the current user
   Future<bool> isFeatureAvailable(PremiumFeature feature) async {
-    // Ensure initialization is complete
-    await _ensureInitialized();
-
-    final status = await getSubscriptionStatus();
-
-    // Premium users have access to all features
+    // Try to ensure initialization without blocking
+    if (!_isInitialized) {
+      _ensureInitialized(); // Fire and forget if not initialized
+    }
+    
+    final status = await getSubscriptionStatus();    // Premium users have access to all features
     if (status == SubscriptionStatus.premium) {
       return true;
     }
