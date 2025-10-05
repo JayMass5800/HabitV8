@@ -26,10 +26,6 @@ Future<void> onBackgroundNotificationResponse(
     AppLogger.info('Background action ID: ${response.actionId}');
     AppLogger.info('Background payload: ${response.payload}');
 
-    // Initialize Hive for background processing
-    await Hive.initFlutter();
-    AppLogger.info('✅ Hive initialized in background handler');
-
     if (response.payload != null) {
       try {
         final payload = jsonDecode(response.payload!);
@@ -42,7 +38,30 @@ Future<void> onBackgroundNotificationResponse(
           if (response.actionId != null) {
             AppLogger.info(
                 'Processing background action: ${response.actionId}');
-            await NotificationActionHandler.completeHabitInBackground(habitId);
+
+            // CRITICAL FIX: Try to use callback first (app might be running)
+            // Android sometimes routes action button taps to background handler
+            // even when app is in foreground
+            final callback = NotificationActionHandler.onNotificationAction;
+            final directHandler =
+                NotificationActionHandler.directCompletionHandler;
+
+            if (callback != null) {
+              AppLogger.info('✅ Using callback handler (app is running)');
+              callback(habitId, response.actionId!);
+            } else if (directHandler != null) {
+              AppLogger.info(
+                  '✅ Using direct completion handler (app is running)');
+              await directHandler(habitId);
+            } else {
+              AppLogger.info(
+                  '⚠️ No handlers available, using background database access');
+              // Initialize Hive for background processing only if needed
+              await Hive.initFlutter();
+              AppLogger.info('✅ Hive initialized in background handler');
+              await NotificationActionHandler.completeHabitInBackground(
+                  habitId);
+            }
           }
         }
       } catch (e) {
@@ -314,13 +333,6 @@ class NotificationActionHandler {
 
   /// Process pending actions stored during app initialization
   static Future<void> processPendingActions() async {
-    // Prevent processing if already completed initial processing
-    if (_hasProcessedInitialActions) {
-      AppLogger.info(
-          '⏭️  Skipping - initial pending actions already processed');
-      return;
-    }
-
     AppLogger.info('🔄 Processing pending notification actions');
 
     // Load all actions from storage module
@@ -328,15 +340,29 @@ class NotificationActionHandler {
 
     AppLogger.info('Found ${allActions.length} actions in storage');
 
+    // If no actions and already processed initial, skip
+    if (allActions.isEmpty && _hasProcessedInitialActions) {
+      AppLogger.info(
+          '⏭️  No new actions - initial pending actions already processed');
+      return;
+    }
+
     // Process all actions
     for (final actionData in allActions) {
       try {
         final habitId = actionData['habitId'] as String;
         final action = actionData['action'] as String;
-        final timestamp = actionData['timestamp'] as String?;
-        final actionTime = timestamp != null
-            ? DateTime.tryParse(timestamp) ?? DateTime.now()
-            : DateTime.now();
+
+        // Handle timestamp - can be either int (milliseconds) or String (ISO 8601)
+        final timestampValue = actionData['timestamp'];
+        DateTime actionTime;
+        if (timestampValue is int) {
+          actionTime = DateTime.fromMillisecondsSinceEpoch(timestampValue);
+        } else if (timestampValue is String) {
+          actionTime = DateTime.tryParse(timestampValue) ?? DateTime.now();
+        } else {
+          actionTime = DateTime.now();
+        }
 
         AppLogger.info(
             'Processing stored action: $action for habit $habitId at $actionTime');
@@ -401,19 +427,30 @@ class NotificationActionHandler {
       AppLogger.info(
           'Processing stored action: $action for habit $habitId at $actionTime');
 
-      final normalizedAction = action.toLowerCase().replaceAll('_action', '');
+      // Normalize action: remove _action suffix and _habit suffix, convert to lowercase
+      final normalizedAction = action
+          .toLowerCase()
+          .replaceAll('_action', '')
+          .replaceAll('_habit', '');
+
+      AppLogger.info('Normalized action: "$action" -> "$normalizedAction"');
 
       switch (normalizedAction) {
         case 'complete':
           // Mark habit as complete using the stored action time
+          AppLogger.info('Executing complete action for habit: $habitId');
           await _completeHabitFromNotification(habitId);
+          AppLogger.info('✅ Complete action executed successfully');
           break;
         case 'snooze':
           // Reschedule notification for later
+          AppLogger.info('Executing snooze action for habit: $habitId');
           await _handleSnoozeAction(habitId);
+          AppLogger.info('✅ Snooze action executed successfully');
           break;
         default:
-          AppLogger.warning('Unknown stored action: $action');
+          AppLogger.warning(
+              'Unknown stored action: "$action" (normalized: "$normalizedAction")');
       }
     } catch (e) {
       AppLogger.error(
@@ -453,9 +490,11 @@ class NotificationActionHandler {
 
     try {
       // Normalize action IDs to handle both iOS and Android formats
-      final normalizedAction = action.toLowerCase().replaceAll('_action', '');
-      AppLogger.debug('🔄 DEBUG: Original action: $action');
-      AppLogger.debug('🔄 DEBUG: Normalized action: $normalizedAction');
+      final normalizedAction = action
+          .toLowerCase()
+          .replaceAll('_action', '')
+          .replaceAll('_habit', '');
+      AppLogger.info('Normalized action: "$action" -> "$normalizedAction"');
 
       switch (normalizedAction) {
         case 'complete':
