@@ -106,7 +106,7 @@ class WidgetIntegrationService {
     }
   }
 
-  /// Update all widgets with current habit data (debounced to prevent excessive updates)
+  /// Update all widgets with current habit data (minimal delay for batching)
   Future<void> updateAllWidgets() async {
     // Cancel any pending update
     _debounceTimer?.cancel();
@@ -114,14 +114,14 @@ class WidgetIntegrationService {
     // If an update is already in progress, just mark that another is needed
     if (_updatePending) {
       debugPrint('⏱️ Widget update already pending, will schedule another');
-      _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _debounceTimer = Timer(const Duration(milliseconds: 200), () {
         _performWidgetUpdate();
       });
       return;
     }
 
-    // Schedule the update with a small delay to batch rapid calls
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    // Minimal delay to batch rapid calls (reduced from 300ms to 100ms)
+    _debounceTimer = Timer(const Duration(milliseconds: 100), () {
       _performWidgetUpdate();
     });
   }
@@ -195,8 +195,8 @@ class WidgetIntegrationService {
         }
       }
 
-      // Longer delay to ensure data is written to SharedPreferences
-      await Future.delayed(const Duration(milliseconds: 200));
+      // Small delay to ensure data is written to SharedPreferences
+      await Future.delayed(const Duration(milliseconds: 100));
 
       // Update the widget - this triggers onDataSetChanged in the Android RemoteViewsFactory
       await HomeWidget.updateWidget(
@@ -204,9 +204,8 @@ class WidgetIntegrationService {
         androidName: widgetName,
       );
 
-      // Add extra delay to ensure the update propagates to the widget service
-      // Increased from 100ms to 300ms for more reliable propagation
-      await Future.delayed(const Duration(milliseconds: 300));
+      // Minimal delay to ensure the update propagates
+      await Future.delayed(const Duration(milliseconds: 100));
 
       debugPrint('Widget $widgetName update completed');
     } catch (e) {
@@ -567,15 +566,10 @@ class WidgetIntegrationService {
   /// Trigger immediate Android widget update
   Future<void> _triggerAndroidWidgetUpdate() async {
     try {
-      // CRITICAL: Add delay to ensure all SharedPreferences writes complete
-      // before the Android WorkManager worker reads the data.
-      // Without this delay, the worker reads stale data causing widgets to show old habits.
-      await Future.delayed(const Duration(milliseconds: 500));
-
+      // Trigger the worker immediately - the data is already saved by this point
       const platform = MethodChannel('com.habittracker.habitv8/widget_update');
       await platform.invokeMethod('triggerImmediateUpdate');
-      debugPrint(
-          'Android widget immediate update triggered (after write completion delay)');
+      debugPrint('Android widget immediate update triggered');
     } catch (e) {
       debugPrint('Error triggering Android widget update: $e');
     }
