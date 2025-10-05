@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.1] - 2024-12-XX - Health Integration Improvements
 
 ### 🔧 Fixed
+- **RRule Export/Import** (CRITICAL)
+  - Fixed RRule-based habits reverting to daily frequency after export/import
+  - Added RRule fields (`rruleString`, `dtStart`, `usesRRule`) to JSON import parsing
+  - Added RRule fields to CSV export headers and data rows
+  - Added RRule field parsing to CSV import functionality
+  - Complex frequencies like "every two weeks" now correctly preserve through export/import cycle
+  
 - **Health Data Integration**
   - Fixed health toggle not updating immediately after permissions granted
   - Resolved issue requiring app restart to activate health data sync

@@ -115,6 +115,9 @@ class DataExportImportService {
         'Alarm Enabled',
         'Alarm Sound',
         'Snooze Delay (min)',
+        'RRule String', // RRule recurrence pattern
+        'DT Start', // RRule start date
+        'Uses RRule', // Flag indicating RRule usage
       ]);
 
       // Add habit data rows
@@ -158,6 +161,9 @@ class DataExportImportService {
           habit.alarmEnabled.toString(),
           habit.alarmSoundName ?? '',
           habit.snoozeDelayMinutes.toString(),
+          habit.rruleString ?? '', // RRule recurrence pattern
+          habit.dtStart?.toIso8601String() ?? '', // RRule start date
+          habit.usesRRule.toString(), // RRule usage flag
         ]);
       }
 
@@ -624,6 +630,13 @@ class DataExportImportService {
     habit.alarmSoundName = json['alarmSoundName'] as String?;
     habit.snoozeDelayMinutes = json['snoozeDelayMinutes'] as int? ?? 10;
 
+    // Parse RRule fields (new system)
+    habit.rruleString = json['rruleString'] as String?;
+    if (json['dtStart'] != null) {
+      habit.dtStart = DateTime.parse(json['dtStart'] as String);
+    }
+    habit.usesRRule = json['usesRRule'] as bool? ?? false;
+
     return habit;
   }
 
@@ -730,6 +743,17 @@ class DataExportImportService {
           break;
         case 'Snooze Delay (min)':
           habit.snoozeDelayMinutes = int.tryParse(value) ?? 10;
+          break;
+        case 'RRule String':
+          habit.rruleString = value.isEmpty ? null : value;
+          break;
+        case 'DT Start':
+          if (value.isNotEmpty) {
+            habit.dtStart = DateTime.parse(value);
+          }
+          break;
+        case 'Uses RRule':
+          habit.usesRRule = value.toLowerCase() == 'true';
           break;
       }
     }
