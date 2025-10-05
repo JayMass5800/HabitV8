@@ -150,7 +150,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
       }
     } catch (e) {
       AppLogger.error('Error loading habits: $e');
-      
+
       // Check if still mounted before updating error state
       if (!mounted) {
         AppLogger.debug(
@@ -356,7 +356,8 @@ final habitsNotifierProvider =
     data: (habitService) => HabitsNotifier(habitService),
     loading: () {
       // Return a temporary notifier with loading state instead of throwing
-      AppLogger.debug('HabitService is still loading, creating temporary notifier');
+      AppLogger.debug(
+          'HabitService is still loading, creating temporary notifier');
       throw StateError('HabitService is loading');
     },
     error: (error, stackTrace) {
