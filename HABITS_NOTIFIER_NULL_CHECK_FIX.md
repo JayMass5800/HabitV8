@@ -232,6 +232,19 @@ To prevent similar issues in the future:
 5. **Log but don't crash** on disposed notifier errors
 6. **Test notification flows** after provider lifecycle changes
 
+## Related Issues
+
+### Issue #2: Notification Completion Flickering (Fixed)
+After fixing the double-disposal issue, another problem was discovered: marking habits complete from notifications caused flickering between complete/incomplete states. This was caused by:
+
+1. **Concurrent refresh operations** - Multiple refresh paths running simultaneously
+2. **Aggressive 1-second polling** - Too frequent for notification completion flow
+3. **No refresh locking** - Race conditions between periodic and forced refreshes
+
+**Solution**: Added refresh lock mechanism and increased periodic interval to 3 seconds.
+
+**Details**: See `NOTIFICATION_COMPLETION_RACE_CONDITION_FIX.md`
+
 ## Related Files
 - `lib/data/database.dart` - Main fix location
 - `lib/ui/screens/timeline_screen.dart` - Uses `habitsNotifierProvider`

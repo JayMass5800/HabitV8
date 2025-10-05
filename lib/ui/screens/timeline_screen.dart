@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/rrule_service.dart';
+import '../../services/logging_service.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/smooth_transitions.dart';
@@ -51,9 +52,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 onPressed: () async {
                   final messenger = ScaffoldMessenger.of(context);
                   try {
-                    await ref
-                        .read(habitsNotifierProvider.notifier)
-                        .refreshHabits();
+                    ref.invalidate(habitsProvider);
                     if (mounted) {
                       messenger.showSnackBar(
                         const SnackBar(
@@ -63,13 +62,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                       );
                     }
                   } catch (e) {
-                    // If provider not ready, just invalidate and retry
-                    ref.invalidate(habitsNotifierProvider);
                     if (mounted) {
                       messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Refreshing habits...'),
-                          duration: Duration(seconds: 1),
+                        SnackBar(
+                          content: Text('Error refreshing: $e'),
+                          duration: Duration(seconds: 2),
                         ),
                       );
                     }
@@ -141,62 +138,15 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   Widget _buildHabitsList() {
     return Consumer(
       builder: (context, ref, child) {
-        // Watch the habits state with proper error handling
-        final habitsStateAsync = ref.watch(habitsStateProvider);
+        // Watch habits directly from database (like widget does)
+        final habitsAsync = ref.watch(habitsProvider);
 
-        return habitsStateAsync.when(
-          data: (habitsState) {
-            if (habitsState.isLoading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (habitsState.error != null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error, size: 64, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error loading habits',
-                      style: const TextStyle(fontSize: 18, color: Colors.red),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      habitsState.error!,
-                      style: const TextStyle(color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        try {
-                          ref
-                              .read(habitsNotifierProvider.notifier)
-                              .forceImmediateRefresh();
-                        } catch (e) {
-                          // If provider not ready, just invalidate and retry
-                          ref.invalidate(habitsNotifierProvider);
-                        }
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            if (habitsState.habits.isEmpty) {
+        return habitsAsync.when(
+          data: (allHabits) {
+            if (allHabits.isEmpty) {
               return RefreshIndicator(
                 onRefresh: () async {
-                  try {
-                    await ref
-                        .read(habitsNotifierProvider.notifier)
-                        .forceImmediateRefresh();
-                  } catch (e) {
-                    // If provider not ready, just invalidate and retry
-                    ref.invalidate(habitsNotifierProvider);
-                  }
+                  ref.invalidate(habitsProvider);
                 },
                 child: ListView(
                   children: const [
@@ -223,8 +173,6 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 ),
               );
             }
-
-            final allHabits = habitsState.habits;
 
             // Optimize filtering and sorting with single pass
             final hourlyHabits = <Habit>[];
@@ -377,7 +325,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 Icon(Icons.error, size: 64, color: Colors.red),
                 const SizedBox(height: 16),
                 Text(
-                  'Error initializing habits',
+                  'Error loading habits',
                   style: const TextStyle(fontSize: 18, color: Colors.red),
                 ),
                 const SizedBox(height: 8),
@@ -389,7 +337,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    ref.invalidate(habitsNotifierProvider);
+                    ref.invalidate(habitsProvider);
                   },
                   child: const Text('Retry'),
                 ),
@@ -755,20 +703,16 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         habit.completions.add(_selectedDate);
       }
 
-      // Use the reactive notifier to update the habit with immediate refresh
+      // Update habit in database directly (like widget does)
       try {
-        await ref.read(habitsNotifierProvider.notifier).updateHabit(habit);
-        // Trigger immediate refresh to ensure UI is synchronized
-        await ref.read(habitsNotifierProvider.notifier).forceImmediateRefresh();
+        final habitService = await ref.read(currentHabitServiceProvider.future);
+        await habitService.updateHabit(habit);
+        
+        // Invalidate provider to trigger refresh from database
+        ref.invalidate(habitsProvider);
       } catch (e) {
-        // If provider not ready, fall back to direct service update
-        final habitServiceAsync = ref.read(habitServiceProvider);
-        if (habitServiceAsync.hasValue) {
-          await habitServiceAsync.value!.updateHabit(habit);
-          ref.invalidate(habitsNotifierProvider);
-        } else {
-          rethrow;
-        }
+        AppLogger.error('Error updating habit', e);
+        rethrow;
       }
 
       // Clear optimistic state after successful update
@@ -942,20 +886,16 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         habit.completions.add(targetDateTime);
       }
 
-      // Use the reactive notifier to update the habit with immediate refresh
+      // Update habit in database directly (like widget does)
       try {
-        await ref.read(habitsNotifierProvider.notifier).updateHabit(habit);
-        // Trigger immediate refresh to ensure UI is synchronized
-        await ref.read(habitsNotifierProvider.notifier).forceImmediateRefresh();
+        final habitService = await ref.read(currentHabitServiceProvider.future);
+        await habitService.updateHabit(habit);
+        
+        // Invalidate provider to trigger refresh from database
+        ref.invalidate(habitsProvider);
       } catch (e) {
-        // If provider not ready, fall back to direct service update
-        final habitServiceAsync = ref.read(habitServiceProvider);
-        if (habitServiceAsync.hasValue) {
-          await habitServiceAsync.value!.updateHabit(habit);
-          ref.invalidate(habitsNotifierProvider);
-        } else {
-          rethrow;
-        }
+        AppLogger.error('Error updating hourly habit', e);
+        rethrow;
       }
 
       // Clear optimistic state after successful update

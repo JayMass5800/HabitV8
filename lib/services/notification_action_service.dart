@@ -212,10 +212,10 @@ class NotificationActionService {
 
           // **CRITICAL: Invalidate providers FIRST to ensure UI picks up changes**
           try {
-            // Invalidate habitsNotifierProvider to force timeline screen refresh
-            _container!.invalidate(habitsNotifierProvider);
+            // Invalidate habits provider to force timeline screen refresh
+            _container!.invalidate(habitsProvider);
             AppLogger.info(
-                '✅ habitsNotifierProvider invalidated for UI refresh');
+                '✅ habitsProvider invalidated for UI refresh');
 
             // Also invalidate habitServiceProvider for other dependent widgets
             _container!.invalidate(habitServiceProvider);
@@ -401,21 +401,16 @@ class NotificationActionService {
       AppLogger.info(
           '🚀 Triggering immediate UI update for notification completion');
 
-      // Get the habits notifier and force immediate refresh
+      // Invalidate provider to trigger immediate refresh from database
       try {
-        final habitsNotifier =
-            _container!.read(habitsNotifierProvider.notifier);
-        await habitsNotifier.forceImmediateRefresh();
-        AppLogger.info('✅ Immediate habits refresh completed');
+        _container!.invalidate(habitsProvider);
+        AppLogger.info('✅ Immediate habits refresh completed via provider invalidation');
       } catch (e) {
-        AppLogger.warning('Could not trigger immediate habits refresh: $e');
-        // Fallback to standard provider invalidation
-        // Note: Provider invalidation is already done before this function is called
-        // This is just a safety fallback
+        AppLogger.warning('Could not invalidate habits provider: $e');
+        // Fallback to service provider invalidation
         try {
-          _container!.invalidate(habitsNotifierProvider);
           _container!.invalidate(habitServiceProvider);
-          AppLogger.info('✅ Fallback provider invalidation completed');
+          AppLogger.info('✅ Fallback habitService provider invalidation completed');
         } catch (invalidateError) {
           AppLogger.error(
               'Error in fallback provider invalidation', invalidateError);

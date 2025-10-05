@@ -295,13 +295,8 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
         }
 
         await habitService.updateHabit(habit);
-        // Force immediate UI refresh for faster feedback
-        try {
-          ref.read(habitsNotifierProvider.notifier).forceImmediateRefresh();
-        } catch (e) {
-          // Fallback to standard provider invalidation
-          ref.invalidate(habitServiceProvider);
-        }
+        // Invalidate provider to trigger refresh
+        ref.invalidate(habitsProvider);
       },
       loading: () {},
       error: (error, stack) {

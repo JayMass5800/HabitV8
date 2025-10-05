@@ -106,6 +106,7 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
   final Map<String, int> _habitCompletionsCount = {};
   static bool _databaseResetInProgress = false; // Track database reset state
   static bool _bulkImportInProgress = false; // Track bulk import state
+  bool _isRefreshing = false; // Prevent concurrent refreshes
 
   HabitsNotifier(this._habitService)
       : super(HabitsState(
@@ -144,10 +145,19 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
   }
 
   Future<void> _loadHabits() async {
+    // Prevent concurrent refreshes to avoid race conditions
+    if (_isRefreshing) {
+      AppLogger.debug('Refresh already in progress, skipping _loadHabits');
+      return;
+    }
+
     try {
+      _isRefreshing = true;
+      
       // Check if the notifier is still mounted before updating state
       if (!mounted) {
         AppLogger.debug('HabitsNotifier is not mounted, skipping _loadHabits');
+        _isRefreshing = false;
         return;
       }
 
@@ -171,6 +181,8 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
             isLoading: false,
             lastUpdated: DateTime.now(),
           ));
+      
+      _isRefreshing = false;
     } catch (e) {
       AppLogger.error('Error loading habits: $e');
 
@@ -187,6 +199,8 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
             error: () => e.toString(),
             lastUpdated: DateTime.now(),
           ));
+      
+      _isRefreshing = false;
     }
   }
 
@@ -199,8 +213,9 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
   void _startPeriodicRefresh() {
     _refreshTimer?.cancel();
-    // Reduced from 3 seconds to 1 second for faster UI updates
-    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+    // Set to 3 seconds to reduce race conditions with notification completions
+    // Notification completions use forceImmediateRefresh() for instant updates
+    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       _checkForUpdates();
     });
   }
@@ -220,8 +235,8 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
   }
 
   Future<void> _checkForUpdates() async {
-    // Skip check if database reset or bulk import is in progress, or notifier is not mounted
-    if (_databaseResetInProgress || _bulkImportInProgress || !mounted) {
+    // Skip check if database reset, bulk import, refresh is in progress, or notifier is not mounted
+    if (_databaseResetInProgress || _bulkImportInProgress || _isRefreshing || !mounted) {
       return;
     }
 
@@ -306,8 +321,12 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
 
     try {
       AppLogger.info('🚀 Force immediate habits refresh triggered');
-      // Cancel periodic timer briefly to avoid conflicts
+      
+      // Cancel periodic timer to avoid conflicts during force refresh
       _refreshTimer?.cancel();
+      
+      // Wait a brief moment to ensure any in-flight periodic refresh completes
+      await Future.delayed(const Duration(milliseconds: 100));
 
       // Force immediate reload
       await _loadHabits();
@@ -365,7 +384,9 @@ class HabitsNotifier extends StateNotifier<HabitsState> {
   }
 }
 
-// Provider for real-time habits state
+// DEPRECATED: Old StateNotifier-based provider with periodic refresh
+// Kept for backwards compatibility during migration
+// Use habitsProvider instead for direct database access
 final habitsNotifierProvider =
     StateNotifierProvider<HabitsNotifier, HabitsState>((ref) {
   // Watch both providers to ensure proper initialization order
@@ -386,7 +407,8 @@ final habitsNotifierProvider =
   );
 });
 
-// Fallback provider that handles the loading state gracefully
+// DEPRECATED: Fallback provider that handles the loading state gracefully
+// Use habitsProvider instead
 final habitsStateProvider = Provider<AsyncValue<HabitsState>>((ref) {
   try {
     final habitsState = ref.watch(habitsNotifierProvider);
@@ -395,6 +417,19 @@ final habitsStateProvider = Provider<AsyncValue<HabitsState>>((ref) {
     // Return loading state while services are initializing
     return const AsyncValue.loading();
   }
+});
+
+/// NEW: Simple, direct provider that reads from database without caching
+/// This matches the pattern used by widgets for instant, reliable updates
+final habitsProvider = FutureProvider.autoDispose<List<Habit>>((ref) async {
+  final habitService = await ref.watch(habitServiceProvider.future);
+  return await habitService.getAllHabits();
+});
+
+/// Convenience provider for accessing HabitService methods
+/// Use this when you need to call update/delete/add methods
+final currentHabitServiceProvider = FutureProvider<HabitService>((ref) async {
+  return await ref.watch(habitServiceProvider.future);
 });
 
 class DatabaseService {
