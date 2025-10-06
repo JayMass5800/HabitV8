@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -30,6 +31,31 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _isUpdatingHabit = false;
   final Map<String, bool> _optimisticCompletions = {};
+  Timer? _autoRefreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Start automatic refresh to pick up changes from notifications
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (mounted) {
+        // Invalidate provider to trigger refresh from database
+        // This ensures UI updates when habits are completed from notifications
+        ref.invalidate(habitsProvider);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,37 +71,19 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
               });
             },
           ),
-          // Add refresh button for manual refresh
-          Consumer(
-            builder: (context, ref, child) {
-              return IconButton(
-                onPressed: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  try {
-                    ref.invalidate(habitsProvider);
-                    if (mounted) {
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Habits refreshed'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text('Error refreshing: $e'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  }
-                },
-                icon: const Icon(Icons.refresh),
-                tooltip: 'Refresh habits',
+          // Manual refresh button (auto-refresh runs every 2 seconds)
+          IconButton(
+            onPressed: () {
+              ref.invalidate(habitsProvider);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Refreshing...'),
+                  duration: Duration(milliseconds: 800),
+                ),
               );
             },
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh now',
           ),
         ],
       ),

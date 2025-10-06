@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/database.dart';
@@ -21,6 +22,7 @@ class AllHabitsScreen extends ConsumerStatefulWidget {
 class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
   String _selectedCategory = 'All';
   String _selectedSort = 'Recent';
+  Timer? _autoRefreshTimer;
 
   final List<String> _sortOptions = [
     'Recent',
@@ -30,6 +32,30 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
     'Alphabetical',
     'Completion Rate',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Start automatic refresh to pick up changes from notifications
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (mounted) {
+        // Invalidate provider to trigger refresh from database
+        // This ensures UI updates when habits are completed from notifications
+        ref.invalidate(habitsProvider);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,28 +155,28 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       ),
       body: Consumer(
         builder: (context, ref, child) {
-          final habitServiceAsync = ref.watch(habitServiceProvider);
+          // Use habitsProvider for direct database access (auto-refreshes)
+          final habitsAsync = ref.watch(habitsProvider);
 
-          return habitServiceAsync.when(
-            data: (habitService) => FutureBuilder<List<Habit>>(
-              future: habitService.getAllHabits(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const LoadingWidget(message: 'Loading habits...');
-                }
+          return habitsAsync.when(
+            data: (allHabits) {
+              if (allHabits.isEmpty) {
+                return const EmptyStateWidget(
+                  icon: Icons.track_changes,
+                  title: 'No habits yet',
+                  subtitle: 'Create your first habit to get started!',
+                );
+              }
 
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const EmptyStateWidget(
-                    icon: Icons.track_changes,
-                    title: 'No habits yet',
-                    subtitle: 'Create your first habit to get started!',
-                  );
-                }
+              final filteredHabits = _filterAndSortHabits(allHabits);
 
-                final allHabits = snapshot.data!;
-                final filteredHabits = _filterAndSortHabits(allHabits);
-
-                return ListView.builder(
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(habitsProvider);
+                  // Wait a bit for the provider to refresh
+                  await Future.delayed(const Duration(milliseconds: 300));
+                },
+                child: ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: filteredHabits.length,
                   itemBuilder: (context, index) {
@@ -166,8 +192,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                         habit.hourlyTimes.isNotEmpty) {
                       return CollapsibleHourlyHabitCard(
                         habit: habit,
-                        selectedDate: DateTime
-                            .now(), // For all habits screen, use current date
+                        selectedDate: DateTime.now(),
                         onToggleHourlyCompletion: (habit, timeSlot) =>
                             _toggleHourlyHabitCompletion(habit, timeSlot),
                         isHourlyHabitCompletedAtTime:
@@ -185,9 +210,9 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                       ),
                     );
                   },
-                );
-              },
-            ),
+                ),
+              );
+            },
             loading: () => const LoadingWidget(message: 'Loading habits...'),
             error: (error, stack) => Center(
               child: Column(
@@ -198,7 +223,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                   Text('Error loading habits: $error'),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => ref.invalidate(habitServiceProvider),
+                    onPressed: () => ref.invalidate(habitsProvider),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -265,7 +290,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
     }
   }
 
-  void _toggleHourlyHabitCompletion(Habit habit, TimeOfDay timeSlot) {
+  void _toggleHourlyHabitCompletion(Habit habit, TimeOfDay timeSlot) async {
     final now = DateTime.now();
     final targetDateTime = DateTime(
       now.year,
@@ -276,44 +301,42 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
     );
 
     final isCompleted = _isHourlyHabitCompletedAtTime(habit, now, timeSlot);
-    final habitServiceAsync = ref.read(habitServiceProvider);
 
-    habitServiceAsync.when(
-      data: (habitService) async {
-        // ✅ CRITICAL FIX: Fetch fresh habit from database to avoid overwriting
-        final freshHabit = await habitService.getHabitById(habit.id);
-        if (freshHabit == null) {
-          AppLogger.error('Habit not found in database: ${habit.id}');
-          return;
-        }
+    try {
+      // Get habit service and fetch fresh habit from database
+      final habitService = await ref.read(currentHabitServiceProvider.future);
+      final freshHabit = await habitService.getHabitById(habit.id);
+      
+      if (freshHabit == null) {
+        AppLogger.error('Habit not found in database: ${habit.id}');
+        return;
+      }
 
-        if (isCompleted) {
-          // Remove completion for this specific time slot
-          freshHabit.completions.removeWhere((completion) {
-            return completion.year == targetDateTime.year &&
-                completion.month == targetDateTime.month &&
-                completion.day == targetDateTime.day &&
-                completion.hour == targetDateTime.hour &&
-                completion.minute == targetDateTime.minute;
-          });
-        } else {
-          // Add completion for this specific time slot
-          freshHabit.completions.add(targetDateTime);
-        }
+      if (isCompleted) {
+        // Remove completion for this specific time slot
+        freshHabit.completions.removeWhere((completion) {
+          return completion.year == targetDateTime.year &&
+              completion.month == targetDateTime.month &&
+              completion.day == targetDateTime.day &&
+              completion.hour == targetDateTime.hour &&
+              completion.minute == targetDateTime.minute;
+        });
+      } else {
+        // Add completion for this specific time slot
+        freshHabit.completions.add(targetDateTime);
+      }
 
-        await habitService.updateHabit(freshHabit);
-        // Invalidate provider to trigger refresh
-        ref.invalidate(habitsProvider);
-      },
-      loading: () {},
-      error: (error, stack) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: $error')));
-        }
-      },
-    );
+      await habitService.updateHabit(freshHabit);
+      
+      // Invalidate provider to trigger refresh
+      ref.invalidate(habitsProvider);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $error')),
+        );
+      }
+    }
   }
 
   bool _isHourlyHabitCompletedAtTime(
