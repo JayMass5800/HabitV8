@@ -203,6 +203,18 @@ class NotificationActionHandler {
       final habitBox = await DatabaseService.getInstance();
       final habitService = HabitService(habitBox);
 
+      // DEBUG: Log all habits in the database
+      try {
+        final allHabits = await habitService.getAllHabits();
+        AppLogger.info(
+            '🔍 DEBUG: Database contains ${allHabits.length} habits');
+        for (final h in allHabits) {
+          AppLogger.info('🔍 DEBUG: Habit in DB: id=${h.id}, name=${h.name}');
+        }
+      } catch (e) {
+        AppLogger.error('🔍 DEBUG: Failed to list habits', e);
+      }
+
       // Get the habit
       final habit = await habitService.getHabitById(habitId);
       if (habit == null) {
