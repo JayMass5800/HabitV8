@@ -7,6 +7,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'data/database_isar.dart'; // CRITICAL: Import Isar database for notification scheduling
 import 'services/notification_service.dart';
 import 'services/notification_action_service.dart';
 import 'services/alarm_manager_service.dart';
@@ -137,6 +138,10 @@ void main() async {
 
   // Initialize widget integration service (non-blocking)
   _initializeWidgetService();
+
+  // CRITICAL: Schedule notifications for all existing habits after Isar migration
+  // This ensures notifications work immediately after app starts
+  _scheduleAllHabitNotifications();
 
   // Check for Android 15+ boot completion flag and handle notification rescheduling
   _handleBootCompletionIfNeeded();
@@ -883,5 +888,53 @@ Future<void> _rescheduleNotificationsAfterBoot() async {
     AppLogger.info('✅ Notification rescheduling completed after boot');
   } catch (e) {
     AppLogger.error('❌ Error rescheduling notifications after boot', e);
+  }
+}
+
+/// Schedule notifications for all existing habits
+/// CRITICAL: This ensures notifications work after Isar migration or app restart
+Future<void> _scheduleAllHabitNotifications() async {
+  try {
+    // Small delay to ensure all services are initialized
+    await Future.delayed(const Duration(seconds: 1));
+
+    AppLogger.info(
+        '🔔 Scheduling notifications for all existing habits (Isar)');
+
+    // Get Isar database instance
+    final isar = await IsarDatabaseService.getInstance();
+    final habitService = HabitServiceIsar(isar);
+
+    // Get all active habits
+    final habits = await habitService.getActiveHabits();
+
+    AppLogger.info(
+        '📋 Found ${habits.length} active habits to schedule notifications for');
+
+    int scheduledCount = 0;
+    int skippedCount = 0;
+    int errorCount = 0;
+
+    for (final habit in habits) {
+      try {
+        if (habit.notificationsEnabled) {
+          await NotificationService.scheduleHabitNotifications(habit);
+          scheduledCount++;
+          AppLogger.debug('✅ Scheduled notifications for: ${habit.name}');
+        } else {
+          skippedCount++;
+          AppLogger.debug('⏭️ Skipped (disabled): ${habit.name}');
+        }
+      } catch (e) {
+        errorCount++;
+        AppLogger.error(
+            '❌ Error scheduling notifications for ${habit.name}', e);
+      }
+    }
+
+    AppLogger.info(
+        '✅ Notification scheduling complete: $scheduledCount scheduled, $skippedCount skipped, $errorCount errors');
+  } catch (e) {
+    AppLogger.error('❌ Error scheduling all habit notifications', e);
   }
 }
