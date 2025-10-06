@@ -607,7 +607,8 @@ class DatabaseService {
       for (final habit in expiredHabits) {
         // Archive expired single habit instead of deleting
         habit.isActive = false;
-        await habit.save();
+        // 🔔 CRITICAL: Use box.put() instead of habit.save() to trigger watch() stream
+        await habitBox.put(habit.key!, habit);
 
         // Cancel any pending notifications for this habit
         try {
@@ -866,7 +867,8 @@ class HabitService {
         throw StateError('Database box is closed');
       }
 
-      await habit.save();
+      // 🔔 CRITICAL: Use box.put() instead of habit.save() to trigger watch() stream
+      await _habitBox.put(habit.key!, habit);
 
       // CRITICAL: Flush the database to ensure data is written to disk
       // before widgets try to read it. Without this, getAllHabits() may
@@ -1179,7 +1181,8 @@ class HabitService {
 
       // Invalidate cache before saving
       _statsService.invalidateHabitCache(habitId);
-      await habit.save();
+      // 🔔 CRITICAL: Use box.put() instead of habit.save() to trigger watch() stream
+      await _habitBox.put(habit.key!, habit);
 
       // CRITICAL: Flush database to ensure completion is written to disk
       await _habitBox.flush();
@@ -1242,7 +1245,8 @@ class HabitService {
 
     // Invalidate cache before saving
     _statsService.invalidateHabitCache(habitId);
-    await habit.save();
+    // 🔔 CRITICAL: Use box.put() instead of habit.save() to trigger watch() stream
+    await _habitBox.put(habit.key!, habit);
 
     // CRITICAL: Flush database to ensure completion removal is written to disk
     await _habitBox.flush();
@@ -1309,8 +1313,9 @@ class HabitService {
     }
 
     // Batch save
+    // 🔔 CRITICAL: Use box.put() instead of habit.save() to trigger watch() stream
     for (final habit in habitsToUpdate) {
-      await habit.save();
+      await _habitBox.put(habit.key!, habit);
     }
 
     // Sync all updated habits to calendar if enabled
