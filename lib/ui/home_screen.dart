@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../services/notification_service.dart';
-import '../data/database.dart';
+import '../../data/database_isar.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -141,7 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Habit stats card
             Consumer(
               builder: (context, ref, child) {
-                return ref.watch(habitServiceProvider).when(
+                return ref.watch(habitServiceIsarProvider).when(
                       data: (habitService) => FutureBuilder(
                         future: habitService.getAllHabits(),
                         builder: (context, snapshot) {

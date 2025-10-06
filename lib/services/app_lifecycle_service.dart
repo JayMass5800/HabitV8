@@ -13,7 +13,7 @@ import 'widget_integration_service.dart';
 import 'midnight_habit_reset_service.dart';
 import 'logging_service.dart';
 import 'notifications/notification_action_handler.dart';
-import '../data/database.dart';
+import '../data/database_isar.dart';
 
 /// Service that manages app lifecycle events and ensures proper resource cleanup
 class AppLifecycleService with WidgetsBindingObserver {
@@ -140,14 +140,14 @@ class AppLifecycleService with WidgetsBindingObserver {
       if (_container != null) {
         try {
           AppLogger.info(
-              '🔄 About to invalidate habitsStreamProvider on app resume');
-          _container!.invalidate(habitsStreamProvider);
+              '🔄 About to invalidate habitsStreamIsarProvider on app resume');
+          _container!.invalidate(habitsStreamIsarProvider);
           AppLogger.info(
-              '🔄 Invalidated habitsStreamProvider to force refresh from database');
+              '🔄 Invalidated habitsStreamIsarProvider to force refresh from database');
 
           // Also invalidate the habit service provider to ensure fresh data
-          _container!.invalidate(habitServiceProvider);
-          AppLogger.info('🔄 Invalidated habitServiceProvider');
+          _container!.invalidate(habitServiceIsarProvider);
+          AppLogger.info('🔄 Invalidated habitServiceIsarProvider');
 
           // Add delay to allow invalidation to process and stream to initialize
           await Future.delayed(const Duration(milliseconds: 300));
@@ -174,9 +174,9 @@ class AppLifecycleService with WidgetsBindingObserver {
               await Future.delayed(const Duration(milliseconds: 200));
 
               // Invalidate again to trigger fresh emit that active listener will catch
-              _container!.invalidate(habitsStreamProvider);
+              _container!.invalidate(habitsStreamIsarProvider);
               AppLogger.info(
-                  '🔄 Re-invalidated habitsStreamProvider to emit fresh data');
+                  '🔄 Re-invalidated habitsStreamIsarProvider to emit fresh data');
 
               // Clear the flag
               await prefs.setBool('pending_database_changes', false);

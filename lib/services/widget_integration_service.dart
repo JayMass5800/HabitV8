@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/model/habit.dart';
-import '../data/database.dart';
+import '../data/database_isar.dart';
 import '../services/theme_service.dart';
 import 'rrule_service.dart';
 import 'dart:convert';

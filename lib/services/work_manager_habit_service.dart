@@ -1,7 +1,8 @@
 // Removed unused kDebugMode import to satisfy analyzer
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
-import '../data/database.dart';
+import '../data/database.dart' as hive_db;
+import '../data/database_isar.dart';
 
 import 'notification_service.dart';
 import 'logging_service.dart';

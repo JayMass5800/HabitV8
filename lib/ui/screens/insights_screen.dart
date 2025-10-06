@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/insights_service.dart';
 import '../../services/enhanced_insights_service.dart';
@@ -190,7 +190,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       ),
       body: Consumer(
         builder: (context, ref, child) {
-          final habitServiceAsync = ref.watch(habitServiceProvider);
+          final habitServiceAsync = ref.watch(habitServiceIsarProvider);
 
           return habitServiceAsync.when(
             data: (habitService) => FutureBuilder<List<Habit>>(
@@ -206,7 +206,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   opacity: _fadeController,
                   child: RefreshIndicator(
                     onRefresh: () async {
-                      ref.invalidate(habitServiceProvider);
+                      ref.invalidate(habitServiceIsarProvider);
                       _resetAIInsights(); // Reset AI insights on refresh
                       await _updateAIStatus(); // Update AI status on refresh
                     },
@@ -2067,7 +2067,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   Future<Map<String, double>> _getAchievementsProgress() async {
     try {
       // Access the habit service through the provider
-      final habitServiceAsync = ref.read(habitServiceProvider);
+      final habitServiceAsync = ref.read(habitServiceIsarProvider);
       final habitService = await habitServiceAsync.maybeWhen(
         data: (service) => Future.value(service),
         orElse: () => throw Exception('Habit service not available'),
@@ -2850,7 +2850,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
     try {
       // Get the habit service and find the habit by ID
-      final habitServiceAsync = ref.read(habitServiceProvider);
+      final habitServiceAsync = ref.read(habitServiceIsarProvider);
 
       // Handle the AsyncValue properly
       await habitServiceAsync.when(

@@ -1,7 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:isar/isar.dart';
 import '../../domain/model/habit.dart' as hive_model;
-import '../../domain/model/habit_isar.dart' as isar_model;
+import '../../domain/model/habit.dart' as isar_model;
 import '../../services/logging_service.dart';
 
 class HiveToIsarMigrator {
@@ -58,7 +58,7 @@ class HiveToIsarMigrator {
   /// Convert single Hive habit to Isar habit
   static isar_model.Habit _convertHabitToIsar(hive_model.Habit hiveHabit) {
     return isar_model.Habit()
-      ..habitId = hiveHabit.id
+      ..id = hiveHabit.id
       ..name = hiveHabit.name
       ..description = hiveHabit.description
       ..category = hiveHabit.category

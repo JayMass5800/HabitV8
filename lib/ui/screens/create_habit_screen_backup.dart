@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:timezone/timezone.dart' as tz;
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/category_suggestion_service.dart';
@@ -2293,7 +2293,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return;
       }
 
-      final databaseAsync = ref.read(databaseProvider);
+      final databaseAsync = ref.read(isarProvider);
       final database = databaseAsync.value;
 
       if (database == null) {
@@ -2385,7 +2385,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       AppLogger.debug('  - Alarm Enabled: $_alarmEnabled');
 
       // Get HabitService instead of direct database access
-      final habitServiceAsync = ref.read(habitServiceProvider);
+      final habitServiceAsync = ref.read(habitServiceIsarProvider);
       HabitService? habitService = habitServiceAsync.value;
 
       if (habitService == null) {
@@ -2413,15 +2413,15 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               'Database connection lost, refreshing providers and retrying...');
 
           // Invalidate the providers to force refresh
-          ref.invalidate(databaseProvider);
-          ref.invalidate(habitServiceProvider);
+          ref.invalidate(isarProvider);
+          ref.invalidate(habitServiceIsarProvider);
 
           // Wait a moment for providers to refresh
           await Future.delayed(const Duration(milliseconds: 500));
 
           // Try to get fresh service and retry
           try {
-            final freshServiceAsync = ref.read(habitServiceProvider);
+            final freshServiceAsync = ref.read(habitServiceIsarProvider);
             final freshService = freshServiceAsync.value;
 
             if (freshService == null) {

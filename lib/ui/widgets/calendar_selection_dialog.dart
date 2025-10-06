@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../services/calendar_service.dart';
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../../services/logging_service.dart';
 
 class CalendarSelectionDialog extends ConsumerStatefulWidget {
@@ -316,7 +316,7 @@ class _CalendarSelectionDialogState
 
       if (success) {
         // Get all existing habits and sync them to the calendar
-        final habitServiceAsync = ref.read(habitServiceProvider);
+        final habitServiceAsync = ref.read(habitServiceIsarProvider);
         final habitService = habitServiceAsync.value;
 
         if (habitService != null) {

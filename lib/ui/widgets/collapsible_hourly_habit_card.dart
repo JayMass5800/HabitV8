@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/model/habit.dart';
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../screens/edit_habit_screen.dart';
 
 class CollapsibleHourlyHabitCard extends ConsumerStatefulWidget {
@@ -507,12 +507,12 @@ class _CollapsibleHourlyHabitCardState
 
   Future<void> _deleteHabit() async {
     try {
-      final habitServiceAsync = ref.read(habitServiceProvider);
+      final habitServiceAsync = ref.read(habitServiceIsarProvider);
       await habitServiceAsync.when(
         data: (habitService) async {
           await habitService.deleteHabit(widget.habit);
           // Force UI refresh by invalidating the provider
-          ref.invalidate(habitServiceProvider);
+          ref.invalidate(habitServiceIsarProvider);
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(

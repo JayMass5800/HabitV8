@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/progressive_disclosure.dart';
@@ -46,7 +46,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       ),
       body: Consumer(
         builder: (context, ref, child) {
-          final habitServiceAsync = ref.watch(habitServiceProvider);
+          final habitServiceAsync = ref.watch(habitServiceIsarProvider);
 
           return habitServiceAsync.when(
             data: (habitService) => FutureBuilder<List<Habit>>(

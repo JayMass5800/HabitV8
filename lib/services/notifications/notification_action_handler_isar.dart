@@ -4,10 +4,9 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../logging_service.dart';
-import '../../domain/model/habit_isar.dart';
+import '../../domain/model/habit.dart';
 import '../widget_integration_service.dart';
 import 'notification_helpers.dart';
-import 'notification_storage.dart';
 import 'notification_scheduler.dart';
 
 // ============================================================================
@@ -181,7 +180,7 @@ class NotificationActionHandlerIsar {
             '🔍 DEBUG: Database contains ${allHabits.length} habits');
         for (final h in allHabits) {
           AppLogger.info(
-              '🔍 DEBUG: Habit in DB: id=${h.habitId}, name=${h.name}');
+              '🔍 DEBUG: Habit in DB: id=${h.id}, name=${h.name}');
         }
       } catch (e) {
         AppLogger.error('🔍 DEBUG: Failed to list habits', e);
@@ -189,7 +188,7 @@ class NotificationActionHandlerIsar {
 
       // Get the habit
       final habit =
-          await isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+          await isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit == null) {
         AppLogger.warning('❌ Habit not found in background: $habitId');
@@ -294,11 +293,12 @@ class NotificationActionHandlerIsar {
       );
 
       final habit =
-          await isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+          await isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
-        await scheduler.scheduleNotification(
-          habit: habit,
+        await scheduler.scheduleHabitNotification(
+          id: habitId.hashCode + snoozeTime.millisecondsSinceEpoch ~/ 1000,
+          habitId: habit.id,
           scheduledTime: snoozeTime,
           title: '⏰ Snoozed Reminder',
           body: 'Time to complete: ${habit.name}',
@@ -337,7 +337,7 @@ class NotificationActionHandlerIsar {
 
           // Get the habit
           final habit =
-              await isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+              await isar.habits.filter().idEqualTo(habitId).findFirst();
 
           if (habit != null) {
             // Complete the habit

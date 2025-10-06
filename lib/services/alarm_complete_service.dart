@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'logging_service.dart';
-import '../data/database.dart';
+import '../data/database_isar.dart';
 
 /// Service to handle alarm completion callbacks from native Android
 class AlarmCompleteService {
@@ -80,7 +80,7 @@ class AlarmCompleteService {
       }
 
       // Get the habit service
-      final habitService = await _container!.read(habitServiceProvider.future);
+      final habitService = await _container!.read(habitServiceIsarProvider.future);
 
       // Get the habit
       final habit = await habitService.getHabitById(actualHabitId);

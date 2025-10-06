@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/model/habit.dart';
-import '../data/database.dart';
+import '../data/database_isar.dart';
 import 'theme_service.dart';
 import 'logging_service.dart';
 import 'rrule_service.dart';

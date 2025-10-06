@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../data/database.dart';
+import '../data/database_isar.dart';
 import '../services/notification_service.dart';
 import '../services/logging_service.dart';
 

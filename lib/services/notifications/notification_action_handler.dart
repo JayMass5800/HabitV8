@@ -3,7 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../logging_service.dart';
-import '../../data/database.dart';
+import '../data/database_isar.dart';
 import '../widget_integration_service.dart';
 import 'notification_helpers.dart';
 import 'notification_storage.dart';

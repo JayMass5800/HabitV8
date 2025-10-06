@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../domain/model/habit.dart';
-import '../data/database.dart';
+import '../data/database_isar.dart';
 import 'logging_service.dart';
 import 'habit_stats_service.dart';
 

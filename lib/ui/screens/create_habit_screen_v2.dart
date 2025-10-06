@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/comprehensive_habit_suggestions_service.dart';
@@ -1350,7 +1350,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
         return;
       }
 
-      final databaseAsync = ref.read(databaseProvider);
+      final databaseAsync = ref.read(isarProvider);
       final database = databaseAsync.value;
 
       if (database == null) {
@@ -1420,7 +1420,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
       }
 
       // Get HabitService
-      final habitServiceAsync = ref.read(habitServiceProvider);
+      final habitServiceAsync = ref.read(habitServiceIsarProvider);
       final habitService = habitServiceAsync.value;
 
       if (habitService == null) {
@@ -1449,15 +1449,15 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
               'Database connection lost, refreshing providers and retrying...');
 
           // Invalidate the providers to force refresh
-          ref.invalidate(databaseProvider);
-          ref.invalidate(habitServiceProvider);
+          ref.invalidate(isarProvider);
+          ref.invalidate(habitServiceIsarProvider);
 
           // Wait a moment for providers to refresh
           await Future.delayed(const Duration(milliseconds: 500));
 
           // Try to get fresh service and retry
           try {
-            final freshServiceAsync = ref.read(habitServiceProvider);
+            final freshServiceAsync = ref.read(habitServiceIsarProvider);
             final freshService = freshServiceAsync.value;
 
             if (freshService == null) {

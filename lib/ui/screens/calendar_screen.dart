@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/calendar_service.dart';
 import '../../services/rrule_service.dart';
@@ -43,7 +43,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Future<void> _toggleHabitCompletion(Habit habit, DateTime day) async {
     try {
-      final habitService = ref.read(habitServiceProvider).value;
+      final habitService = ref.read(habitServiceIsarProvider).value;
       if (habitService != null) {
         final isCompleted = _isHabitCompletedOnDate(habit, day);
         if (isCompleted) {
@@ -248,7 +248,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ),
       body: Consumer(
         builder: (context, ref, child) {
-          final habitServiceAsync = ref.watch(habitServiceProvider);
+          final habitServiceAsync = ref.watch(habitServiceIsarProvider);
 
           return habitServiceAsync.when(
             data: (habitService) => FutureBuilder<List<Habit>>(

@@ -1,4 +1,4 @@
-import 'habit_isar.dart';
+import 'habit.dart';
 
 extension HabitComputedProperties on Habit {
   /// Get completion rate for the last 30 days

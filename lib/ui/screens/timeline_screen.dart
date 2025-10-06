@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/rrule_service.dart';
 import '../../services/logging_service.dart';
@@ -52,7 +52,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           // Manual refresh button (StreamProvider auto-updates on database changes!)
           IconButton(
             onPressed: () {
-              ref.invalidate(habitsStreamProvider);
+              ref.invalidate(habitsStreamIsarProvider);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Refreshing...'),
@@ -126,14 +126,14 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       builder: (context, ref, child) {
         // 🔔 REACTIVE: Watch habits stream for instant updates when database changes!
         // No more polling - Hive's watch() automatically emits new data
-        final habitsAsync = ref.watch(habitsStreamProvider);
+        final habitsAsync = ref.watch(habitsStreamIsarProvider);
 
         return habitsAsync.when(
           data: (allHabits) {
             if (allHabits.isEmpty) {
               return RefreshIndicator(
                 onRefresh: () async {
-                  ref.invalidate(habitsStreamProvider);
+                  ref.invalidate(habitsStreamIsarProvider);
                 },
                 child: ListView(
                   children: const [
@@ -324,7 +324,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    ref.invalidate(habitsStreamProvider);
+                    ref.invalidate(habitsStreamIsarProvider);
                   },
                   child: const Text('Retry'),
                 ),
@@ -692,7 +692,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         AppLogger.info('✅ TIMELINE: Completion added successfully');
       }
 
-      // 🔔 REACTIVE UPDATE: The database change automatically triggers habitsStreamProvider
+      // 🔔 REACTIVE UPDATE: The database change automatically triggers habitsStreamIsarProvider
       // to emit fresh data. No need to manually invalidate or wait!
       // The stream listener will catch the change and rebuild the UI instantly.
       AppLogger.info(

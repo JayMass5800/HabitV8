@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/database.dart';
+import '../data/database_isar.dart';
 import '../domain/model/habit.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
@@ -127,7 +127,7 @@ class NotificationActionService {
 
       // Get the habit service from the provider and wait for it to be ready
       AppLogger.info('Waiting for habit service to be ready...');
-      final habitService = await _container!.read(habitServiceProvider.future);
+      final habitService = await _container!.read(habitServiceIsarProvider.future);
 
       try {
         AppLogger.info('Habit service obtained successfully');
@@ -238,12 +238,12 @@ class NotificationActionService {
           // **CRITICAL: Invalidate providers FIRST to ensure UI picks up changes**
           try {
             // Invalidate habits stream provider to force timeline screen refresh
-            _container!.invalidate(habitsStreamProvider);
-            AppLogger.info('✅ habitsStreamProvider invalidated for UI refresh');
+            _container!.invalidate(habitsStreamIsarProvider);
+            AppLogger.info('✅ habitsStreamIsarProvider invalidated for UI refresh');
 
-            // Also invalidate habitServiceProvider for other dependent widgets
-            _container!.invalidate(habitServiceProvider);
-            AppLogger.info('✅ habitServiceProvider invalidated for UI refresh');
+            // Also invalidate habitServiceIsarProvider for other dependent widgets
+            _container!.invalidate(habitServiceIsarProvider);
+            AppLogger.info('✅ habitServiceIsarProvider invalidated for UI refresh');
           } catch (e) {
             AppLogger.warning('Could not invalidate providers: $e');
           }
@@ -299,7 +299,7 @@ class NotificationActionService {
 
       // Get the habit service from the provider to get habit details for better notification
       AppLogger.info('Waiting for habit service to be ready for snooze...');
-      final habitService = await _container!.read(habitServiceProvider.future);
+      final habitService = await _container!.read(habitServiceIsarProvider.future);
 
       String habitName = 'Your habit'; // Default fallback
       try {
@@ -348,7 +348,7 @@ class NotificationActionService {
       // Get the habit service from the provider to get habit details
       AppLogger.info(
           'Waiting for habit service to be ready for alarm snooze...');
-      final habitService = await _container!.read(habitServiceProvider.future);
+      final habitService = await _container!.read(habitServiceIsarProvider.future);
 
       try {
         // Get the habit for alarm details
@@ -427,14 +427,14 @@ class NotificationActionService {
 
       // Invalidate stream provider to trigger immediate refresh from database
       try {
-        _container!.invalidate(habitsStreamProvider);
+        _container!.invalidate(habitsStreamIsarProvider);
         AppLogger.info(
             '✅ Immediate habits refresh completed via stream provider invalidation');
       } catch (e) {
         AppLogger.warning('Could not invalidate habits stream provider: $e');
         // Fallback to service provider invalidation
         try {
-          _container!.invalidate(habitServiceProvider);
+          _container!.invalidate(habitServiceIsarProvider);
           AppLogger.info(
               '✅ Fallback habitService provider invalidation completed');
         } catch (invalidateError) {

@@ -14,7 +14,7 @@ import '../../services/calendar_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/data_export_import_service.dart';
 import '../../services/subscription_service.dart';
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../../screens/widget_configuration_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -671,7 +671,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         await CalendarService.setCalendarSyncEnabled(true);
 
         // Sync all existing habits
-        final habitServiceAsync = ref.read(habitServiceProvider);
+        final habitServiceAsync = ref.read(habitServiceIsarProvider);
         final habitService = habitServiceAsync.value;
         if (habitService != null) {
           final allHabits = await habitService.getAllHabits();
@@ -696,7 +696,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         // Disable calendar sync and remove all habit events
         await CalendarService.setCalendarSyncEnabled(false);
 
-        final habitServiceAsync = ref.read(habitServiceProvider);
+        final habitServiceAsync = ref.read(habitServiceIsarProvider);
         final habitService = habitServiceAsync.value;
         if (habitService != null) {
           final allHabits = await habitService.getAllHabits();
@@ -1281,7 +1281,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       try {
         final syncEnabled = await CalendarService.isCalendarSyncEnabled();
         if (syncEnabled) {
-          final habitService = await ref.read(habitServiceProvider.future);
+          final habitService = await ref.read(habitServiceIsarProvider.future);
           final habits = await habitService.getAllHabits();
           await CalendarService.removeAllHabitsFromCalendar(habits);
           AppLogger.info('All calendar events removed');
@@ -1295,8 +1295,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       // Invalidate providers BEFORE resetting database to stop periodic refresh
       if (mounted) {
-        ref.invalidate(habitServiceProvider);
-        ref.invalidate(databaseProvider);
+        ref.invalidate(habitServiceIsarProvider);
+        ref.invalidate(isarProvider);
         AppLogger.info('Providers invalidated');
       }
 
@@ -1312,8 +1312,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       // Force database reinitialization by invalidating providers AGAIN
       if (mounted) {
-        ref.invalidate(habitServiceProvider);
-        ref.invalidate(databaseProvider);
+        ref.invalidate(habitServiceIsarProvider);
+        ref.invalidate(isarProvider);
         AppLogger.info('Providers re-invalidated after database reset');
       }
 
@@ -1420,7 +1420,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
 
       // Get all habits from database
-      final habitService = await ref.read(habitServiceProvider.future);
+      final habitService = await ref.read(habitServiceIsarProvider.future);
       final habits = await habitService.getAllHabits();
 
       AppLogger.info('Retrieved ${habits.length} habits from database');
@@ -1614,7 +1614,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Refresh the UI to show new habits
       if (result.success && mounted) {
         // Invalidate the habit service provider to refresh data
-        ref.invalidate(habitServiceProvider);
+        ref.invalidate(habitServiceIsarProvider);
       }
     } catch (e) {
       if (mounted) {

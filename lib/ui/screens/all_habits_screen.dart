@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/database.dart';
+import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/logging_service.dart';
 import '../../services/rrule_service.dart';
@@ -133,7 +133,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       body: Consumer(
         builder: (context, ref, child) {
           // 🔔 REACTIVE: Watch habits stream for instant updates!
-          final habitsAsync = ref.watch(habitsStreamProvider);
+          final habitsAsync = ref.watch(habitsStreamIsarProvider);
 
           return habitsAsync.when(
             data: (allHabits) {
@@ -149,7 +149,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  ref.invalidate(habitsStreamProvider);
+                  ref.invalidate(habitsStreamIsarProvider);
                   // Wait a bit for the stream to emit fresh data
                   await Future.delayed(const Duration(milliseconds: 300));
                 },
@@ -200,7 +200,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                   Text('Error loading habits: $error'),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => ref.invalidate(habitsStreamProvider),
+                    onPressed: () => ref.invalidate(habitsStreamIsarProvider),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -643,7 +643,7 @@ class _HabitCard extends ConsumerWidget {
 
         if (result == true) {
           // Refresh the habits list
-          ref.invalidate(habitServiceProvider);
+          ref.invalidate(habitServiceIsarProvider);
         }
         break;
 
@@ -671,13 +671,13 @@ class _HabitCard extends ConsumerWidget {
         );
 
         if (confirmed == true) {
-          // Use Riverpod to access the habitServiceProvider
-          final habitServiceAsync = ref.watch(habitServiceProvider);
+          // Use Riverpod to access the habitServiceIsarProvider
+          final habitServiceAsync = ref.watch(habitServiceIsarProvider);
 
           await habitServiceAsync.when(
             data: (habitService) async {
               try {
-                await habitService.deleteHabit(habit);
+                await habitService.deleteHabit(habit.id);
 
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -688,7 +688,7 @@ class _HabitCard extends ConsumerWidget {
                 }
 
                 // Refresh the habits list
-                ref.invalidate(habitServiceProvider);
+                ref.invalidate(habitServiceIsarProvider);
               } catch (e) {
                 AppLogger.error('Error deleting habit', e);
                 if (context.mounted) {

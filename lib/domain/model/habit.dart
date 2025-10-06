@@ -134,6 +134,9 @@ class Habit {
       ..snoozeDelayMinutes = snoozeDelayMinutes;
   }
 
+  // ==================== COMPUTED PROPERTIES - IGNORED BY ISAR ====================
+  
+  @ignore
   // Calculate completion rate based on the last 30 days (now cached)
   double get completionRate => _statsService.getCompletionRate(this);
 
@@ -141,25 +144,34 @@ class Habit {
   double getCompletionRate({int days = 30}) =>
       _statsService.getCompletionRate(this, days: days);
 
+  @ignore
   // Get cached streak information
   StreakInfo get streakInfo => _statsService.getStreakInfo(this);
 
+  @ignore
   // Override current and longest streak to use cached values
   int get currentStreakCached => streakInfo.current;
+  
+  @ignore
   int get longestStreakCached => streakInfo.longest;
 
+  @ignore
   // Get weekly completion pattern
   List<double> get weeklyPattern => _statsService.getWeeklyPattern(this);
 
+  @ignore
   // Get monthly statistics
   MonthlyStats get monthlyStats => _statsService.getMonthlyStats(this);
 
+  @ignore
   // Get consistency score (0-100)
   double get consistencyScore => _statsService.getConsistencyScore(this);
 
+  @ignore
   // Get habit momentum
   double get momentum => _statsService.getMomentum(this);
 
+  @ignore
   // Check if habit was completed today (cached)
   bool get isCompletedToday {
     final today = DateTime.now();
@@ -173,6 +185,7 @@ class Habit {
     );
   }
 
+  @ignore
   // Check if habit was completed for the current period based on frequency (cached)
   bool get isCompletedForCurrentPeriod {
     final now = DateTime.now();
@@ -308,6 +321,7 @@ class Habit {
     return (daysSinceFirstDay / 7).ceil();
   }
 
+  @ignore
   // Get days since last completion (cached)
   int get daysSinceLastCompletion {
     return _statsService.cache.getOrCompute(
@@ -326,6 +340,7 @@ class Habit {
     return now.difference(lastCompletion).inDays;
   }
 
+  @ignore
   // Get next expected completion date (cached)
   DateTime? get nextExpectedCompletion {
     return _statsService.cache.getOrCompute(
@@ -365,6 +380,7 @@ class Habit {
     }
   }
 
+  @ignore
   // Check if habit is overdue (cached)
   bool get isOverdue {
     return _statsService.cache.getOrCompute(

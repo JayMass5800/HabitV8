@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import '../domain/model/habit_isar.dart';
+import '../domain/model/habit.dart';
 import '../services/logging_service.dart';
 
 // Provider for Isar instance
@@ -103,7 +103,7 @@ class HabitServiceIsar {
 
   /// Get habit by ID
   Future<Habit?> getHabitById(String habitId) async {
-    return await _isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+    return await _isar.habits.filter().idEqualTo(habitId).findFirst();
   }
 
   /// Add new habit
@@ -126,10 +126,10 @@ class HabitServiceIsar {
   Future<void> deleteHabit(String habitId) async {
     await _isar.writeTxn(() async {
       final habit =
-          await _isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+          await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
-        await _isar.habits.delete(habit.id);
+        await _isar.habits.delete(habit.isarId);
         AppLogger.info('✅ Habit deleted: ${habit.name}');
       }
     });
@@ -139,7 +139,7 @@ class HabitServiceIsar {
   Future<void> completeHabit(String habitId, DateTime completionTime) async {
     await _isar.writeTxn(() async {
       final habit =
-          await _isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+          await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
         habit.completions.add(completionTime);
@@ -153,7 +153,7 @@ class HabitServiceIsar {
   Future<void> uncompleteHabit(String habitId, DateTime completionTime) async {
     await _isar.writeTxn(() async {
       final habit =
-          await _isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+          await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
         habit.completions.removeWhere((completion) {
@@ -184,7 +184,7 @@ class HabitServiceIsar {
   Stream<Habit?> watchHabit(String habitId) {
     return _isar.habits
         .filter()
-        .habitIdEqualTo(habitId)
+        .idEqualTo(habitId)
         .watch(fireImmediately: true)
         .map((habits) => habits.isNotEmpty ? habits.first : null);
   }
@@ -208,5 +208,20 @@ class HabitServiceIsar {
       await _isar.habits.putAll(habits);
     });
     AppLogger.info('✅ Bulk update: ${habits.length} habits updated');
+  }
+
+  /// Mark habit as complete (alias for completeHabit)
+  Future<void> markHabitComplete(String habitId, DateTime completionTime) async {
+    await completeHabit(habitId, completionTime);
+  }
+
+  /// Remove habit completion (alias for uncompleteHabit)
+  Future<void> removeHabitCompletion(String habitId, DateTime completionTime) async {
+    await uncompleteHabit(habitId, completionTime);
+  }
+
+  /// Check if habit is completed for current period
+  bool isHabitCompletedForCurrentPeriod(Habit habit) {
+    return habit.isCompletedForCurrentPeriod;
   }
 }
