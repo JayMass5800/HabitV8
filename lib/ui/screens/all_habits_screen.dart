@@ -280,28 +280,16 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
 
     habitServiceAsync.when(
       data: (habitService) async {
-        // ✅ CRITICAL FIX: Fetch fresh habit from database to avoid overwriting
-        final freshHabit = await habitService.getHabitById(habit.id);
-        if (freshHabit == null) {
-          AppLogger.error('Habit not found in database: ${habit.id}');
-          return;
-        }
-
+        // Use service methods to handle completion (matches widget pattern)
+        // This ensures we're always working with fresh database data
         if (isCompleted) {
-          // Remove completion for this specific time slot
-          freshHabit.completions.removeWhere((completion) {
-            return completion.year == targetDateTime.year &&
-                completion.month == targetDateTime.month &&
-                completion.day == targetDateTime.day &&
-                completion.hour == targetDateTime.hour &&
-                completion.minute == targetDateTime.minute;
-          });
+          // Remove completion for this specific time slot using service method
+          await habitService.removeHabitCompletion(habit.id, targetDateTime);
         } else {
-          // Add completion for this specific time slot
-          freshHabit.completions.add(targetDateTime);
+          // Add completion for this specific time slot using service method
+          await habitService.markHabitComplete(habit.id, targetDateTime);
         }
 
-        await habitService.updateHabit(freshHabit);
         // Invalidate provider to trigger refresh
         ref.invalidate(habitsProvider);
       },
