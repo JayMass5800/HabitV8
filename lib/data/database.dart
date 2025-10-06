@@ -646,6 +646,29 @@ class DatabaseService {
     }
   }
 
+  /// Force reload the database box to pick up changes from other isolates
+  /// This is needed when background isolates (e.g., notification handlers) modify the database
+  static Future<void> reloadDatabase() async {
+    try {
+      AppLogger.debug(
+          '🔄 Reloading database to sync changes from background isolates...');
+
+      // Close the current box instance
+      if (_habitBox != null && _habitBox!.isOpen) {
+        await _habitBox!.close();
+      }
+      _habitBox = null;
+
+      // Reopen the box to get fresh data from disk
+      await getInstance();
+
+      AppLogger.debug('✅ Database reloaded successfully');
+    } catch (e) {
+      AppLogger.error('Error reloading database', e);
+      // Don't rethrow - we want to continue even if reload fails
+    }
+  }
+
   // Method to manually reset the database if needed
   static Future<void> resetDatabase() async {
     try {

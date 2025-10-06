@@ -154,7 +154,7 @@ class AppLifecycleService with WidgetsBindingObserver {
           AppLogger.info('⏱️ Delay after invalidation complete');
 
           // Check if database was changed in background (e.g., notification completion)
-          // If so, trigger ANOTHER invalidation to force stream to emit fresh data
+          // If so, reload database and trigger invalidation to force stream to emit fresh data
           try {
             final prefs = await SharedPreferences.getInstance();
             final hasPendingChanges =
@@ -162,7 +162,13 @@ class AppLifecycleService with WidgetsBindingObserver {
 
             if (hasPendingChanges) {
               AppLogger.info(
-                  '🚩 Detected pending_database_changes flag - triggering stream refresh');
+                  '🚩 Detected pending_database_changes flag - reloading database and triggering stream refresh');
+
+              // CRITICAL: Reload database to pick up changes from background isolate
+              // Background isolates have separate Hive box instances, so we need to
+              // close and reopen the box to see changes written by background handlers
+              await DatabaseService.reloadDatabase();
+              AppLogger.info('🔄 Database reloaded from disk');
 
               // Wait a bit more to ensure stream listener is active
               await Future.delayed(const Duration(milliseconds: 200));
