@@ -115,7 +115,7 @@ class AppLifecycleService with WidgetsBindingObserver {
     // Close database connections properly to avoid cursor leaks
     try {
       AppLogger.info('🗄️ Closing database connections...');
-      DatabaseService.closeDatabase();
+      IsarDatabaseService.closeDatabase();
     } catch (e) {
       AppLogger.error('Error closing database', e);
     }
@@ -167,7 +167,7 @@ class AppLifecycleService with WidgetsBindingObserver {
               // CRITICAL: Reload database to pick up changes from background isolate
               // Background isolates have separate Hive box instances, so we need to
               // close and reopen the box to see changes written by background handlers
-              await DatabaseService.reloadDatabase();
+              await IsarDatabaseService.reloadDatabase();
               AppLogger.info('🔄 Database reloaded from disk');
 
               // Wait a bit more to ensure stream listener is active
@@ -230,7 +230,7 @@ class AppLifecycleService with WidgetsBindingObserver {
       Future.delayed(const Duration(milliseconds: 200), () async {
         try {
           // Check if database is accessible without forcibly closing it
-          final instance = await DatabaseService.getInstance();
+          final instance = await IsarDatabaseService.getInstance();
 
           // Test if the database is actually working by performing a simple operation
           try {
@@ -245,11 +245,11 @@ class AppLifecycleService with WidgetsBindingObserver {
           // Only close and reopen if there's actually a problem
           AppLogger.info(
               'Refreshing database connection due to stale state...');
-          await DatabaseService.closeDatabase();
+          await IsarDatabaseService.closeDatabase();
           await Future.delayed(const Duration(milliseconds: 100));
 
           // Trigger database reconnection by calling getInstance
-          await DatabaseService.getInstance();
+          await IsarDatabaseService.getInstance();
           AppLogger.debug('✅ Database connection refreshed successfully');
         } catch (e) {
           AppLogger.error('❌ Database reconnection failed: $e');
@@ -257,9 +257,9 @@ class AppLifecycleService with WidgetsBindingObserver {
           // If database reconnection fails, try one more time with a full reset
           try {
             AppLogger.warning('Attempting database recovery...');
-            await DatabaseService.closeDatabase();
+            await IsarDatabaseService.closeDatabase();
             await Future.delayed(const Duration(milliseconds: 500));
-            await DatabaseService.getInstance();
+            await IsarDatabaseService.getInstance();
             AppLogger.info('✅ Database recovered successfully');
           } catch (retryError) {
             AppLogger.error('❌ Database recovery failed: $retryError');

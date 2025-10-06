@@ -566,7 +566,7 @@ final habitsProvider = FutureProvider.autoDispose<List<Habit>>((ref) async {
 
 /// Convenience provider for accessing HabitService methods
 /// Use this when you need to call update/delete/add methods
-final currentHabitServiceProvider = FutureProvider<HabitService>((ref) async {
+final habitServiceIsarProvider = FutureProvider<HabitService>((ref) async {
   return await ref.watch(habitServiceProvider.future);
 });
 

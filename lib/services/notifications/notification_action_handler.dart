@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:isar/isar.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../logging_service.dart';
-import '../data/database_isar.dart';
+import '../../domain/model/habit.dart';
 import '../widget_integration_service.dart';
 import 'notification_helpers.dart';
-import 'notification_storage.dart';
 import 'notification_scheduler.dart';
 
 // ============================================================================
@@ -18,11 +18,13 @@ import 'notification_scheduler.dart';
 /// Background notification response handler (TOP-LEVEL FUNCTION)
 /// This is called when the app is not running or in background
 /// MUST be a top-level function for background isolate to work!
+///
+/// ISAR VERSION - Multi-isolate safe!
 @pragma('vm:entry-point')
-Future<void> onBackgroundNotificationResponse(
+Future<void> onBackgroundNotificationResponseIsar(
     NotificationResponse response) async {
   try {
-    AppLogger.info('🔔 BACKGROUND notification response received');
+    AppLogger.info('🔔 BACKGROUND notification response received (Isar)');
     AppLogger.info('Background action ID: ${response.actionId}');
     AppLogger.info('Background payload: ${response.payload}');
 
@@ -42,9 +44,9 @@ Future<void> onBackgroundNotificationResponse(
             // CRITICAL FIX: Try to use callback first (app might be running)
             // Android sometimes routes action button taps to background handler
             // even when app is in foreground
-            final callback = NotificationActionHandler.onNotificationAction;
+            final callback = NotificationActionHandlerIsar.onNotificationAction;
             final directHandler =
-                NotificationActionHandler.directCompletionHandler;
+                NotificationActionHandlerIsar.directCompletionHandler;
 
             if (callback != null) {
               AppLogger.info('✅ Using callback handler (app is running)');
@@ -55,11 +57,9 @@ Future<void> onBackgroundNotificationResponse(
               await directHandler(habitId);
             } else {
               AppLogger.info(
-                  '⚠️ No handlers available, using background database access');
-              // Initialize Hive for background processing only if needed
-              await Hive.initFlutter();
-              AppLogger.info('✅ Hive initialized in background handler');
-              await NotificationActionHandler.completeHabitInBackground(
+                  '⚠️ No handlers available, using background Isar access');
+              // Open Isar in background isolate - THIS IS THE KEY ADVANTAGE!
+              await NotificationActionHandlerIsar.completeHabitInBackground(
                   habitId);
             }
           }
@@ -79,8 +79,8 @@ Future<void> onBackgroundNotificationResponse(
 /// This is called when the app is running and notification is tapped
 /// MUST be a top-level function for proper notification handling!
 @pragma('vm:entry-point')
-Future<void> onNotificationTapped(NotificationResponse response) async {
-  AppLogger.info('=== NOTIFICATION TAPPED - DETAILED DEBUG LOG ===');
+Future<void> onNotificationTappedIsar(NotificationResponse response) async {
+  AppLogger.info('=== NOTIFICATION TAPPED (ISAR) - DETAILED DEBUG LOG ===');
   AppLogger.info('📱 Notification Response Details:');
   AppLogger.info('  - ID: ${response.id}');
   AppLogger.info('  - Action ID: ${response.actionId}');
@@ -100,112 +100,82 @@ Future<void> onNotificationTapped(NotificationResponse response) async {
       AppLogger.debug('🔍 DEBUG: Extracted habitId: $habitId');
 
       if (habitId != null) {
-        AppLogger.debug(
-            '🔍 DEBUG: habitId is not null, proceeding with action');
-        AppLogger.info('📋 Extracted habitId from payload: $habitId');
-
-        // Handle different action types
-        if (response.actionId != null) {
-          AppLogger.debug(
-              '🔍 DEBUG: Action ID is not null: ${response.actionId}');
-          AppLogger.info('🎯 Processing action: ${response.actionId}');
-          NotificationActionHandler.handleNotificationAction(
-              habitId, response.actionId!);
+        AppLogger.debug('🔍 DEBUG: Checking if actionId is "complete"');
+        if (response.actionId == 'complete') {
+          AppLogger.info('✅ Complete action detected - calling handler');
+          final callback = NotificationActionHandlerIsar.onNotificationAction;
+          if (callback != null) {
+            AppLogger.debug(
+                '🔍 DEBUG: Callback is not null, invoking callback');
+            callback(habitId, 'complete');
+          } else {
+            AppLogger.warning(
+                '⚠️ WARNING: Callback is null, cannot process action');
+          }
         } else {
-          AppLogger.debug('🔍 DEBUG: Action ID is null, treating as tap');
-          AppLogger.info('👆 No action ID - treating as notification tap');
-          // No specific action - user just tapped the notification
-          // Could navigate to habit detail or mark as read
+          AppLogger.info(
+              'ℹ️ Non-complete action or no action, just opening app');
         }
       } else {
-        AppLogger.debug('🔍 DEBUG: habitId is null');
-        AppLogger.warning('⚠️ No habitId found in notification payload');
+        AppLogger.warning('⚠️ WARNING: Could not extract habitId from payload');
       }
     } catch (e) {
-      AppLogger.debug('🔍 DEBUG: Exception during payload parsing: $e');
-      AppLogger.error('❌ Error parsing notification payload', e);
+      AppLogger.error('Error processing notification tap', e);
     }
-  } else {
-    AppLogger.debug('🔍 DEBUG: Payload is null');
-    AppLogger.warning('⚠️ Notification payload is null');
   }
-
-  AppLogger.info('=== NOTIFICATION TAP PROCESSING COMPLETE ===');
 }
 
 // ============================================================================
-// CLASS DEFINITION
+// NOTIFICATION ACTION HANDLER CLASS
 // ============================================================================
 
-/// Handles notification action processing and callbacks
-/// Manages background/foreground notification responses, completion, and snooze actions
-@pragma('vm:entry-point')
-class NotificationActionHandler {
-  static NotificationActionHandler? _instance;
+class NotificationActionHandlerIsar {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  /// Notification scheduler instance for scheduling operations
-  static late final NotificationScheduler _scheduler;
+  /// Callback for when a notification action is triggered in foreground
+  /// This is set by the main app to handle UI updates
+  static void Function(String habitId, String actionId)? onNotificationAction;
 
-  /// Callback for notification actions (complete/snooze)
-  static void Function(String habitId, String action)? onNotificationAction;
-
-  /// Direct completion handler for when callback isn't available
+  /// Direct completion handler (bypasses UI callback)
+  /// Used when app is running but we want to complete habit directly
   static Future<void> Function(String habitId)? directCompletionHandler;
 
-  /// List of pending actions to be processed when app is ready
-  static final List<Map<String, String>> _pendingActions = [];
-
-  /// Track callback registration for debugging
-  static int _callbackSetCount = 0;
-  static DateTime? _lastCallbackSetTime;
-
-  /// Flag to track if initial pending actions have been processed
-  static bool _hasProcessedInitialActions = false;
-
-  NotificationActionHandler._() {
-    _scheduler = NotificationScheduler(_notificationsPlugin);
-  }
-
-  static NotificationActionHandler getInstance() {
-    _instance ??= NotificationActionHandler._();
-    return _instance!;
-  }
-
-  /// Register notification action callback
-  /// This should be called during app initialization to handle notification actions
-  static void setNotificationActionCallback(
-      void Function(String habitId, String action) callback) {
+  /// Register the notification action callback
+  static void registerActionCallback(
+      void Function(String habitId, String actionId) callback) {
     onNotificationAction = callback;
-    _callbackSetCount++;
-    _lastCallbackSetTime = DateTime.now();
-    AppLogger.info('✅ Notification action callback registered');
-    AppLogger.info(
-        '📊 Callback registration count: $_callbackSetCount, last set at: $_lastCallbackSetTime');
+    AppLogger.info('✅ Notification action callback registered (Isar)');
   }
 
   /// Register direct completion handler
-  /// This is a fallback for when the main callback isn't available
   static void setDirectCompletionHandler(
       Future<void> Function(String habitId) handler) {
     directCompletionHandler = handler;
-    AppLogger.info('✅ Direct completion handler registered');
+    AppLogger.info('✅ Direct completion handler registered (Isar)');
   }
 
   /// Complete a habit in background when app is not running
   /// Made public so it can be called from top-level background handler
+  ///
+  /// ISAR VERSION - Multi-isolate safe! No complex workarounds needed!
   static Future<void> completeHabitInBackground(String habitId) async {
     try {
-      AppLogger.info('⚙️ Completing habit in background: $habitId');
+      AppLogger.info('⚙️ Completing habit in background (Isar): $habitId');
 
-      // Initialize database
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      // Open Isar in background isolate - THIS WORKS PERFECTLY WITH ISAR!
+      final dir = await getApplicationDocumentsDirectory();
+      final isar = await Isar.open(
+        [HabitSchema],
+        directory: dir.path,
+        name: 'habitv8_db',
+      );
+
+      AppLogger.info('✅ Isar opened in background isolate');
 
       // DEBUG: Log all habits in the database
       try {
-        final allHabits = await habitService.getAllHabits();
+        final allHabits = await isar.habits.where().findAll();
         AppLogger.info(
             '🔍 DEBUG: Database contains ${allHabits.length} habits');
         for (final h in allHabits) {
@@ -216,7 +186,8 @@ class NotificationActionHandler {
       }
 
       // Get the habit
-      final habit = await habitService.getHabitById(habitId);
+      final habit = await isar.habits.filter().idEqualTo(habitId).findFirst();
+
       if (habit == null) {
         AppLogger.warning('❌ Habit not found in background: $habitId');
         AppLogger.info(
@@ -224,7 +195,6 @@ class NotificationActionHandler {
 
         // Try to cancel the orphaned notification
         try {
-          // Create a local scheduler instance for background operation
           final scheduler = NotificationScheduler(_notificationsPlugin);
           await scheduler.cancelHabitNotificationsByHabitId(habitId);
           AppLogger.info(
@@ -255,44 +225,92 @@ class NotificationActionHandler {
       }
 
       // Mark the habit as complete for today
-      await habitService.markHabitComplete(habitId, DateTime.now());
+      // Isar transaction - automatically synced across isolates!
+      await isar.writeTxn(() async {
+        habit.completions.add(DateTime.now());
+        await isar.habits.put(habit);
+      });
+
       AppLogger.info('✅ Habit completed in background: ${habit.name}');
 
-      // Force flush to ensure database changes are persisted
-      await habitBox.flush();
-      AppLogger.debug('💾 Database flushed after background completion');
+      // NO NEED FOR FLUSH - Isar handles this automatically!
+      // NO NEED FOR FLAGS - Isar streams update automatically!
 
-      // Set flag to notify main app that database was changed in background
-      // This triggers stream refresh when app resumes
+      // The main isolate will automatically see this change via Isar's
+      // reactive streams - this is the POWER of Isar!
+
+      // Update widget data
       try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('pending_database_changes', true);
-        AppLogger.info(
-            '🚩 Set pending_database_changes flag for stream refresh');
-      } catch (e) {
-        AppLogger.error('Failed to set pending_database_changes flag', e);
-      }
-
-      // Add small delay to ensure all writes complete and SharedPreferences sync
-      await Future.delayed(const Duration(milliseconds: 500));
-      AppLogger.debug('⏱️ Waited for database sync');
-
-      // Update widget data WITHOUT using method channels (background isolate limitation)
-      // The widget will be refreshed by WorkManager periodic updates or when app resumes
-      try {
-        // Only update the SharedPreferences data, don't trigger method channels
-        await WidgetIntegrationService.instance.updateAllWidgets();
+        await WidgetIntegrationService.instance.onHabitsChanged();
         AppLogger.info('✅ Widget data updated after background completion');
       } catch (e) {
-        AppLogger.error('Error updating widget data in background', e);
+        AppLogger.error('Failed to update widget data', e);
       }
-    } catch (e) {
-      AppLogger.error('Error completing habit in background', e);
+
+      AppLogger.info('🎉 Background completion successful with Isar!');
+    } catch (e, stackTrace) {
+      AppLogger.error('Error completing habit in background', e, stackTrace);
+
+      // Store the failed action for retry
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final pendingActions =
+            prefs.getStringList('pending_habit_completions') ?? [];
+        final actionData = jsonEncode({
+          'habitId': habitId,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+          'error': e.toString(),
+        });
+        pendingActions.add(actionData);
+        await prefs.setStringList('pending_habit_completions', pendingActions);
+        AppLogger.info('📝 Stored failed completion for retry');
+      } catch (e2) {
+        AppLogger.error('Failed to store failed completion', e2);
+      }
     }
   }
 
-  /// Process pending habit completions that failed in background (e.g., habit not found)
-  static Future<void> processPendingCompletions() async {
+  /// Handle snooze action
+  static Future<void> handleSnoozeAction(
+    String habitId,
+    int snoozeMinutes,
+  ) async {
+    try {
+      AppLogger.info('⏰ Handling snooze for habit: $habitId');
+
+      // Schedule a new notification after snooze delay
+      final scheduler = NotificationScheduler(_notificationsPlugin);
+      final snoozeTime = DateTime.now().add(Duration(minutes: snoozeMinutes));
+
+      // Open Isar to get habit details
+      final dir = await getApplicationDocumentsDirectory();
+      final isar = await Isar.open(
+        [HabitSchema],
+        directory: dir.path,
+        name: 'habitv8_db',
+      );
+
+      final habit = await isar.habits.filter().idEqualTo(habitId).findFirst();
+
+      if (habit != null) {
+        await scheduler.scheduleHabitNotification(
+          id: habitId.hashCode + snoozeTime.millisecondsSinceEpoch ~/ 1000,
+          habitId: habit.id,
+          scheduledTime: snoozeTime,
+          title: '⏰ Snoozed Reminder',
+          body: 'Time to complete: ${habit.name}',
+        );
+
+        AppLogger.info(
+            '✅ Snoozed notification scheduled for ${snoozeTime.toString()}');
+      }
+    } catch (e) {
+      AppLogger.error('Error handling snooze action', e);
+    }
+  }
+
+  /// Process pending completions (called when app starts)
+  static Future<void> processPendingCompletions(Isar isar) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final pendingActions =
@@ -303,735 +321,51 @@ class NotificationActionHandler {
       }
 
       AppLogger.info(
-          '🔄 Processing ${pendingActions.length} pending habit completions...');
+          '🔄 Processing ${pendingActions.length} pending completions');
 
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
-      final successfulActions = <String>[];
+      final processedActions = <String>[];
 
       for (final actionJson in pendingActions) {
         try {
-          final actionData = jsonDecode(actionJson) as Map<String, dynamic>;
-          final habitId = actionData['habitId'] as String;
-          final timestamp = actionData['timestamp'] as int;
-          final actionDate = DateTime.fromMillisecondsSinceEpoch(timestamp);
+          final action = jsonDecode(actionJson) as Map<String, dynamic>;
+          final habitId = action['habitId'] as String;
+          final timestamp = action['timestamp'] as int;
+          final completionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
 
-          // Check if the habit exists now
-          final habit = await habitService.getHabitById(habitId);
+          // Get the habit
+          final habit =
+              await isar.habits.filter().idEqualTo(habitId).findFirst();
+
           if (habit != null) {
-            // Complete the habit for the original date
-            await habitService.markHabitComplete(habitId, actionDate);
-            AppLogger.info(
-                '✅ Completed pending action for habit: ${habit.name}');
-            successfulActions.add(actionJson);
+            // Complete the habit
+            await isar.writeTxn(() async {
+              habit.completions.add(completionTime);
+              await isar.habits.put(habit);
+            });
+
+            AppLogger.info('✅ Processed pending completion for: ${habit.name}');
+            processedActions.add(actionJson);
           } else {
-            // If habit still doesn't exist after 24 hours, remove the pending action
-            final age = DateTime.now().difference(actionDate);
-            if (age.inHours > 24) {
-              AppLogger.info(
-                  '🧹 Removing stale pending action (${age.inHours}h old) for habit: $habitId');
-              successfulActions.add(actionJson);
-            }
+            AppLogger.warning(
+                '⚠️ Habit not found for pending completion: $habitId');
+            processedActions.add(actionJson); // Remove it anyway
           }
         } catch (e) {
           AppLogger.error('Error processing pending completion', e);
+          // Don't add to processedActions - will retry next time
         }
       }
 
-      // Remove successfully processed actions
-      if (successfulActions.isNotEmpty) {
-        final remainingActions = pendingActions
-            .where((a) => !successfulActions.contains(a))
-            .toList();
-        await prefs.setStringList(
-            'pending_habit_completions', remainingActions);
+      // Remove processed actions
+      if (processedActions.isNotEmpty) {
+        pendingActions
+            .removeWhere((action) => processedActions.contains(action));
+        await prefs.setStringList('pending_habit_completions', pendingActions);
         AppLogger.info(
-            '✅ Processed ${successfulActions.length} pending completions, ${remainingActions.length} remaining');
-
-        // Update widgets after processing completions
-        await WidgetIntegrationService.instance.onHabitsChanged();
+            '✅ Removed ${processedActions.length} processed actions');
       }
     } catch (e) {
       AppLogger.error('Error processing pending completions', e);
     }
-  }
-
-  /// Process pending actions stored during app initialization
-  static Future<void> processPendingActions() async {
-    AppLogger.info('🔄 Processing pending notification actions');
-
-    // Load all actions from storage module
-    final allActions = await NotificationStorage.loadAllActions();
-
-    AppLogger.info('Found ${allActions.length} actions in storage');
-
-    // If no actions and already processed initial, skip
-    if (allActions.isEmpty && _hasProcessedInitialActions) {
-      AppLogger.info(
-          '⏭️  No new actions - initial pending actions already processed');
-      return;
-    }
-
-    // Process all actions
-    for (final actionData in allActions) {
-      try {
-        final habitId = actionData['habitId'] as String;
-        final action = actionData['action'] as String;
-
-        // Handle timestamp - can be either int (milliseconds) or String (ISO 8601)
-        final timestampValue = actionData['timestamp'];
-        DateTime actionTime;
-        if (timestampValue is int) {
-          actionTime = DateTime.fromMillisecondsSinceEpoch(timestampValue);
-        } else if (timestampValue is String) {
-          actionTime = DateTime.tryParse(timestampValue) ?? DateTime.now();
-        } else {
-          actionTime = DateTime.now();
-        }
-
-        AppLogger.info(
-            'Processing stored action: $action for habit $habitId at $actionTime');
-
-        // Process the stored action
-        await _processStoredAction(habitId, action, actionTime);
-
-        // Remove successfully processed action
-        await NotificationStorage.removeAction(habitId, action);
-        AppLogger.info('✅ Successfully processed and removed action');
-      } catch (e) {
-        AppLogger.error('Error processing stored action', e);
-      }
-    }
-
-    // Process in-memory pending actions if callback is available
-    if (onNotificationAction != null && _pendingActions.isNotEmpty) {
-      AppLogger.info(
-          '📬 Processing ${_pendingActions.length} in-memory pending actions');
-
-      final callback = onNotificationAction!;
-
-      final actionsToProcess = List<Map<String, String>>.from(_pendingActions);
-      _pendingActions.clear();
-
-      for (final actionData in actionsToProcess) {
-        final habitId = actionData['habitId']!;
-        final action = actionData['action']!;
-        final timestamp = actionData['timestamp']!;
-
-        AppLogger.info(
-          '⚡ Processing pending action: $action for habit: $habitId (queued at: $timestamp)',
-        );
-
-        try {
-          callback(habitId, action);
-          AppLogger.info(
-            '✅ Successfully processed pending action: $action for habit: $habitId',
-          );
-        } catch (e) {
-          AppLogger.error(
-            '❌ Error processing pending action: $action for habit: $habitId',
-            e,
-          );
-        }
-      }
-
-      AppLogger.info('🎉 All pending actions processed');
-    } else {
-      AppLogger.info('📭 No pending actions to process');
-    }
-
-    // Mark that we've processed initial actions
-    _hasProcessedInitialActions = true;
-    AppLogger.info('✅ Initial pending actions processing complete');
-  }
-
-  /// Process a stored action from notification storage
-  static Future<void> _processStoredAction(
-      String habitId, String action, DateTime actionTime) async {
-    try {
-      AppLogger.info(
-          'Processing stored action: $action for habit $habitId at $actionTime');
-
-      // Normalize action: remove _action suffix and _habit suffix, convert to lowercase
-      final normalizedAction = action
-          .toLowerCase()
-          .replaceAll('_action', '')
-          .replaceAll('_habit', '');
-
-      AppLogger.info('Normalized action: "$action" -> "$normalizedAction"');
-
-      switch (normalizedAction) {
-        case 'complete':
-          // Mark habit as complete using the stored action time
-          AppLogger.info('Executing complete action for habit: $habitId');
-          await _completeHabitFromNotification(habitId);
-          AppLogger.info('✅ Complete action executed successfully');
-          break;
-        case 'snooze':
-          // Reschedule notification for later
-          AppLogger.info('Executing snooze action for habit: $habitId');
-          await _handleSnoozeAction(habitId);
-          AppLogger.info('✅ Snooze action executed successfully');
-          break;
-        default:
-          AppLogger.warning(
-              'Unknown stored action: "$action" (normalized: "$normalizedAction")');
-      }
-    } catch (e) {
-      AppLogger.error(
-          'Error processing stored action: $action for habit $habitId', e);
-    }
-  }
-
-  /// Handle notification actions (Complete/Snooze)
-  /// Made public so it can be called from top-level foreground handler
-  @pragma('vm:entry-point')
-  static void handleNotificationAction(String habitId, String action) async {
-    AppLogger.debug(
-      '🚀 DEBUG: _handleNotificationAction called with habitId: $habitId, action: $action',
-    );
-    AppLogger.info('🚀🚀🚀 NOTIFICATION ACTION HANDLER CALLED! 🚀🚀🚀');
-    AppLogger.info('Handling notification action: $action for habit: $habitId');
-
-    // Check callback status for debugging
-    final callbackAvailable = ensureCallbackIsSet();
-
-    // If callback is not available, try to re-register it
-    if (!callbackAvailable) {
-      AppLogger.warning(
-          '🔄 Callback not available, attempting to re-register...');
-      // Import the notification action service dynamically to avoid circular imports
-      try {
-        // Try to re-register the callback by calling the ensure method
-        // This will be handled by the app lifecycle service when app resumes
-        AppLogger.info(
-            '📦 Storing action for later processing due to missing callback');
-        NotificationStorage.storeAction(habitId, action);
-        return;
-      } catch (e) {
-        AppLogger.error('Failed to handle missing callback', e);
-      }
-    }
-
-    try {
-      // Normalize action IDs to handle both iOS and Android formats
-      final normalizedAction = action
-          .toLowerCase()
-          .replaceAll('_action', '')
-          .replaceAll('_habit', '');
-      AppLogger.info('Normalized action: "$action" -> "$normalizedAction"');
-
-      switch (normalizedAction) {
-        case 'complete':
-          AppLogger.debug(
-            '✅ DEBUG: Processing complete action for habit: $habitId',
-          );
-          AppLogger.info('🔥 Processing complete action for habit: $habitId');
-
-          // Always cancel the notification first for complete action
-          final notificationId = habitId.hashCode;
-          await _scheduler.cancelNotification(notificationId);
-          AppLogger.debug(
-            '🗑️ DEBUG: Notification cancelled with ID: $notificationId',
-          );
-          AppLogger.info(
-            '✅ Notification cancelled for complete action for habit: $habitId',
-          );
-
-          // Also cancel any snooze notifications for this habit since it's now completed
-          await _cancelSnoozeNotificationsForHabit(habitId);
-          AppLogger.debug(
-            '🗑️ Cancelled any snooze notifications for completed habit: $habitId',
-          );
-
-          // Call the callback if set
-          if (onNotificationAction != null) {
-            AppLogger.debug('📞 DEBUG: Calling notification action callback');
-            AppLogger.info(
-              '📞 Calling complete action callback for habit: $habitId',
-            );
-            AppLogger.info(
-              '🔍 Callback state: set $_callbackSetCount times, last at $_lastCallbackSetTime',
-            );
-            try {
-              onNotificationAction!(habitId, 'complete');
-              AppLogger.debug('✅ DEBUG: Callback executed successfully');
-              AppLogger.info(
-                '✅ Complete action callback executed for habit: $habitId',
-              );
-            } catch (callbackError) {
-              AppLogger.error(
-                'Error executing complete action callback for habit: $habitId',
-                callbackError,
-              );
-              // Store for later processing if callback fails
-              NotificationStorage.storeAction(habitId, 'complete');
-            }
-          } else {
-            AppLogger.debug('❌ DEBUG: No notification action callback set!');
-            AppLogger.warning(
-              '❌ No notification action callback set - action will be lost',
-            );
-            AppLogger.warning(
-              '🔍 Callback debug: set $_callbackSetCount times, last at $_lastCallbackSetTime',
-            );
-            AppLogger.warning('🔍 Current time: ${DateTime.now()}');
-
-            // Store the action for later processing if callback is not set
-            NotificationStorage.storeAction(habitId, 'complete');
-
-            // Try to re-register the callback in case it was lost
-            ensureCallbackIsSet();
-          }
-          break;
-
-        case 'snooze':
-          AppLogger.debug('😴 Processing snooze action for habit: $habitId');
-          AppLogger.info('😴 Processing snooze action for habit: $habitId');
-          // Handle snooze action
-          try {
-            await _handleSnoozeAction(habitId);
-            AppLogger.debug('✅ DEBUG: Snooze action completed');
-            AppLogger.info('✅ Snooze action completed for habit: $habitId');
-          } catch (snoozeError) {
-            AppLogger.error('❌ Error handling snooze action', snoozeError);
-          }
-          break;
-
-        default:
-          AppLogger.debug('⚠️ DEBUG: Unknown action: $normalizedAction');
-          AppLogger.warning('⚠️ Unknown action: $normalizedAction');
-      }
-    } catch (e) {
-      AppLogger.debug('❌ DEBUG: Exception in action handler: $e');
-      AppLogger.error('❌ Error handling notification action', e);
-    }
-  }
-
-  /// Handle snooze action specifically with enhanced error handling and validation
-  static Future<void> _handleSnoozeAction(String habitId) async {
-    try {
-      // Generate a unique notification ID for the snooze to prevent conflicts
-      final snoozeId =
-          NotificationHelpers.generateSnoozeNotificationId(habitId);
-      AppLogger.info(
-        '🔔 Starting enhanced snooze process for habit: $habitId (snooze ID: $snoozeId)',
-      );
-
-      // Cancel the current notification (use the original ID)
-      final originalNotificationId = habitId.hashCode;
-      await _scheduler.cancelNotification(originalNotificationId);
-      AppLogger.info('❌ Cancelled current notification for habit: $habitId');
-
-      // Schedule a new notification for 30 minutes later
-      final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
-      AppLogger.info('⏰ Scheduling snoozed notification for: $snoozeTime');
-
-      // Validate the snooze time is reasonable
-      final timeDiff = snoozeTime.difference(DateTime.now()).inMinutes;
-      if (timeDiff < 29 || timeDiff > 31) {
-        AppLogger.warning(
-            '⚠️ Snooze time calculation seems off: $timeDiff minutes');
-      }
-
-      // Check exact alarm permissions before scheduling
-      final canScheduleExact =
-          await NotificationHelpers.canScheduleExactAlarms();
-      AppLogger.info('📋 Can schedule exact alarms: $canScheduleExact');
-
-      if (!canScheduleExact) {
-        AppLogger.warning(
-            '⚠️ Exact alarm permission not available - snooze may be delayed');
-        AppLogger.warning(
-            '💡 Note: Exact alarm permission should have been granted during habit setup');
-        AppLogger.warning(
-            '💡 If snooze is still delayed, it\'s likely due to battery optimization');
-        // Log battery optimization guidance
-        await NotificationHelpers.checkBatteryOptimizationStatus();
-      } else {
-        AppLogger.info(
-            '✅ Exact alarm permission available - checking for battery optimization issues');
-        // Even with exact alarm permission, battery optimization can still cause delays
-        AppLogger.info(
-            '💡 If snooze notifications are delayed, check battery optimization settings:');
-        AppLogger.info(
-            '1. Settings > Apps > HabitV8 > Battery > Don\'t optimize');
-        AppLogger.info('2. Samsung: Add to "Never sleeping apps"');
-        AppLogger.info(
-            '3. MIUI: Enable "Autostart" and disable "Battery saver"');
-      }
-
-      try {
-        // Create personalized snooze notification content
-        String title = '⏰ Habit Reminder (Snoozed)';
-        String body =
-            'Time to complete your snoozed habit! Don\'t forget to stay consistent.';
-
-        // Cancel any existing snooze notifications for this habit to prevent duplicates
-        await _cancelSnoozeNotificationsForHabit(habitId);
-        AppLogger.debug(
-            'Cancelled any existing snooze notifications for habit: $habitId');
-
-        // Attempt to schedule the notification with the unique snooze ID
-        await _scheduler.scheduleHabitNotification(
-          id: snoozeId,
-          habitId: habitId,
-          title: title,
-          body: body,
-          scheduledTime: snoozeTime,
-        );
-
-        // Verify the notification was actually scheduled
-        await NotificationHelpers.verifyNotificationScheduled(
-          _notificationsPlugin,
-          snoozeId,
-          habitId,
-        );
-
-        AppLogger.info(
-          '✅ Snoozed notification scheduled successfully for habit: $habitId at $snoozeTime (ID: $snoozeId)',
-        );
-      } catch (scheduleError) {
-        AppLogger.error(
-          '❌ Failed to schedule snoozed notification for habit: $habitId',
-          scheduleError,
-        );
-
-        // Try fallback scheduling method
-        await _fallbackSnoozeScheduling(habitId, snoozeId, snoozeTime);
-      }
-
-      AppLogger.info('✅ Snooze action completed for habit: $habitId');
-    } catch (e) {
-      AppLogger.error('❌ Error handling snooze action for habit: $habitId', e);
-      // Try emergency fallback
-      await _emergencySnoozeNotification(habitId);
-    }
-  }
-
-  /// Handle snooze action with habit name for personalized notifications
-  static Future<void> handleSnoozeActionWithName(
-      String habitId, String habitName) async {
-    try {
-      // Generate a unique notification ID for the snooze to prevent conflicts
-      final snoozeId =
-          NotificationHelpers.generateSnoozeNotificationId(habitId);
-      AppLogger.info(
-        '🔔 Starting enhanced snooze process for habit: $habitName ($habitId) (snooze ID: $snoozeId)',
-      );
-
-      // Cancel the current notification (use the original ID)
-      final originalNotificationId = habitId.hashCode;
-      await _scheduler.cancelNotification(originalNotificationId);
-      AppLogger.info('❌ Cancelled current notification for habit: $habitName');
-
-      // Schedule a new notification for 30 minutes later
-      final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
-      AppLogger.info('⏰ Scheduling snoozed notification for: $snoozeTime');
-
-      // Validate the snooze time is reasonable
-      final timeDiff = snoozeTime.difference(DateTime.now()).inMinutes;
-      if (timeDiff < 29 || timeDiff > 31) {
-        AppLogger.warning(
-            '⚠️ Snooze time calculation seems off: $timeDiff minutes');
-      }
-
-      // Check exact alarm permissions before scheduling
-      final canScheduleExact =
-          await NotificationHelpers.canScheduleExactAlarms();
-      AppLogger.info('📋 Can schedule exact alarms: $canScheduleExact');
-
-      if (!canScheduleExact) {
-        AppLogger.warning(
-            '⚠️ Exact alarm permission not available - snooze may be delayed');
-        AppLogger.warning(
-            '💡 Note: Exact alarm permission should have been granted during habit setup');
-        AppLogger.warning(
-            '💡 If snooze is still delayed, it\'s likely due to battery optimization');
-        // Log battery optimization guidance
-        await NotificationHelpers.checkBatteryOptimizationStatus();
-      } else {
-        AppLogger.info(
-            '✅ Exact alarm permission available - checking for battery optimization issues');
-        // Even with exact alarm permission, battery optimization can still cause delays
-        AppLogger.info(
-            '💡 If snooze notifications are delayed, check battery optimization settings:');
-        AppLogger.info(
-            '1. Settings > Apps > HabitV8 > Battery > Don\'t optimize');
-        AppLogger.info('2. Samsung: Add to "Never sleeping apps"');
-        AppLogger.info(
-            '3. MIUI: Enable "Autostart" and disable "Battery saver"');
-      }
-
-      try {
-        // Create personalized snooze notification content with habit name
-        String title = '⏰ $habitName (Snoozed)';
-        String body =
-            'Time to complete "$habitName"! Don\'t break your streak.';
-
-        // Cancel any existing snooze notifications for this habit to prevent duplicates
-        await _cancelSnoozeNotificationsForHabit(habitId);
-        AppLogger.debug(
-            'Cancelled any existing snooze notifications for habit: $habitName');
-
-        // Attempt to schedule the notification with the unique snooze ID
-        await _scheduler.scheduleHabitNotification(
-          id: snoozeId,
-          habitId: habitId,
-          title: title,
-          body: body,
-          scheduledTime: snoozeTime,
-        );
-
-        // Verify the notification was actually scheduled
-        await NotificationHelpers.verifyNotificationScheduled(
-          _notificationsPlugin,
-          snoozeId,
-          habitId,
-        );
-
-        AppLogger.info(
-          '✅ Snoozed notification scheduled successfully for habit: $habitName at $snoozeTime (ID: $snoozeId)',
-        );
-      } catch (scheduleError) {
-        AppLogger.error(
-          '❌ Failed to schedule snoozed notification for habit: $habitName',
-          scheduleError,
-        );
-
-        // Try fallback scheduling method
-        await _fallbackSnoozeScheduling(habitId, snoozeId, snoozeTime);
-      }
-
-      AppLogger.info('✅ Snooze action completed for habit: $habitName');
-    } catch (e) {
-      AppLogger.error(
-          '❌ Error handling snooze action for habit: $habitName ($habitId)', e);
-      // Try emergency fallback
-      await _emergencySnoozeNotification(habitId);
-    }
-  }
-
-  /// Fallback scheduling method for when primary scheduling fails
-  static Future<void> _fallbackSnoozeScheduling(
-      String habitId, int notificationId, DateTime snoozeTime) async {
-    try {
-      AppLogger.info(
-          '🔄 Attempting fallback snooze scheduling for habit: $habitId');
-
-      // Try to get habit name for better notification content
-      String habitName = 'Your habit'; // Default fallback
-      try {
-        // Attempt to retrieve habit name from database for more specific notification
-        final habitBox = await DatabaseService.getInstance();
-        final habitService = HabitService(habitBox);
-        final habit = await habitService.getHabitById(habitId);
-        if (habit != null) {
-          habitName = habit.name;
-          AppLogger.info('Retrieved habit name for fallback: $habitName');
-        }
-      } catch (e) {
-        AppLogger.debug('Could not retrieve habit name for fallback: $e');
-      }
-
-      // Try scheduling with immediate show and re-schedule pattern
-      await _scheduler.showNotification(
-        id: notificationId + 1000,
-        title: '⏰ $habitName (Snoozed)',
-        body: 'Snooze scheduled. You\'ll be reminded in 30 minutes.',
-        payload:
-            jsonEncode({'habitId': habitId, 'type': 'snooze_confirmation'}),
-      );
-
-      AppLogger.info('✅ Fallback notification shown for habit: $habitName');
-    } catch (fallbackError) {
-      AppLogger.error('❌ Fallback scheduling also failed for habit: $habitId',
-          fallbackError);
-    }
-  }
-
-  /// Emergency notification for when all scheduling methods fail
-  static Future<void> _emergencySnoozeNotification(String habitId) async {
-    try {
-      AppLogger.info(
-          '🚨 Triggering emergency snooze notification for habit: $habitId');
-
-      // Try to get habit name for better notification content
-      String habitName = 'your habit'; // Default fallback
-      try {
-        final habitBox = await DatabaseService.getInstance();
-        final habitService = HabitService(habitBox);
-        final habit = await habitService.getHabitById(habitId);
-        if (habit != null) {
-          habitName = habit.name;
-        }
-      } catch (e) {
-        AppLogger.debug(
-            'Could not retrieve habit name for emergency notification: $e');
-      }
-
-      // Show an immediate notification telling user to check manually
-      await _scheduler.showNotification(
-        id: DateTime.now().millisecondsSinceEpoch,
-        title: '⚠️ Snooze Notification Failed',
-        body:
-            'Snooze failed for "$habitName". Please check your habit manually in 30 minutes.',
-        payload: jsonEncode({'habitId': habitId, 'type': 'snooze_error'}),
-      );
-    } catch (e) {
-      AppLogger.error('Emergency notification also failed', e);
-    }
-  }
-
-  /// Cancel snooze notifications for a specific habit
-  /// This prevents old snooze notifications from interfering with new notifications
-  static Future<void> _cancelSnoozeNotificationsForHabit(String habitId) async {
-    try {
-      AppLogger.debug(
-          '🧹 Checking for snooze notifications to cancel for habit: $habitId');
-
-      // Get all pending notifications
-      final pendingNotifications =
-          await NotificationHelpers.getPendingNotifications(
-              _notificationsPlugin);
-      int cancelledSnoozeCount = 0;
-
-      for (final notification in pendingNotifications) {
-        // Check if this is a snooze notification for this specific habit
-        if (notification.id >= 2000000 && notification.id <= 2999999) {
-          // For snooze notifications, we need to check if the payload contains this habitId
-          // Since we can't directly access payload here, we'll cancel based on ID pattern
-          // Snooze IDs are generated from habitId hash, so we can reverse-engineer
-          final baseId = habitId.hashCode.abs();
-          final expectedSnoozeRange = (baseId % 900000) + 2000000;
-
-          // Check if this notification ID could belong to this habit (within reasonable range)
-          if (notification.id >= expectedSnoozeRange &&
-              notification.id <= expectedSnoozeRange + 1000) {
-            await _notificationsPlugin.cancel(notification.id);
-            AppLogger.debug(
-                '❌ Cancelled snooze notification ID: ${notification.id} for habit: $habitId');
-            cancelledSnoozeCount++;
-          }
-        }
-      }
-
-      if (cancelledSnoozeCount > 0) {
-        AppLogger.info(
-            '✅ Cancelled $cancelledSnoozeCount snooze notification(s) for habit: $habitId');
-      } else {
-        AppLogger.debug(
-            'No snooze notifications found to cancel for habit: $habitId');
-      }
-    } catch (e) {
-      AppLogger.error(
-          'Error cancelling snooze notifications for habit: $habitId', e);
-    }
-  }
-
-  /// Complete a habit from notification action
-  static Future<void> _completeHabitFromNotification(String habitId) async {
-    AppLogger.info('Completing habit from notification: $habitId');
-    if (directCompletionHandler != null) {
-      await directCompletionHandler!(habitId);
-    } else {
-      AppLogger.warning('Direct completion handler not set');
-    }
-  }
-
-  /// Get the number of pending actions (for debugging)
-  static int getPendingActionsCount() {
-    return _pendingActions.length;
-  }
-
-  /// Manually trigger processing of pending actions (for app initialization)
-  static Future<void> processPendingActionsManually() async {
-    AppLogger.info('🔄 Manually processing pending actions');
-
-    // Always try to process actions, using either callback or direct handler
-    if (onNotificationAction != null) {
-      AppLogger.info('✅ Using callback to process pending actions');
-      await processPendingActions();
-    } else if (directCompletionHandler != null) {
-      AppLogger.warning('⚠️ Callback not set, using direct completion handler');
-      await _processPendingActionsWithDirectHandler();
-    } else {
-      AppLogger.error(
-          '❌ Cannot process pending actions - neither callback nor direct handler available');
-    }
-  }
-
-  /// Process pending actions using the direct completion handler when callback is not available
-  static Future<void> _processPendingActionsWithDirectHandler() async {
-    try {
-      AppLogger.info(
-          '🎯 Processing pending actions with direct completion handler');
-
-      // Load all actions from storage module
-      final allActions = await NotificationStorage.loadAllActions();
-
-      AppLogger.info('Found ${allActions.length} actions in storage');
-
-      int processedCount = 0;
-
-      // Process all actions
-      for (final actionData in allActions) {
-        try {
-          final habitId = actionData['habitId'] as String;
-          final action = actionData['action'] as String;
-
-          // Only process complete actions with direct handler
-          if (action.toLowerCase() == 'complete' &&
-              directCompletionHandler != null) {
-            AppLogger.info(
-                'Processing complete action for habit: $habitId using direct handler');
-            try {
-              await directCompletionHandler!(habitId);
-              processedCount++;
-              AppLogger.info('✅ Successfully completed habit: $habitId');
-              // Remove successfully processed action
-              await NotificationStorage.removeAction(habitId, action);
-            } catch (e) {
-              final errorMessage = e.toString().toLowerCase();
-              if (errorMessage.contains('still loading') ||
-                  errorMessage.contains('loading')) {
-                AppLogger.warning(
-                    '⏳ Habit service still loading for $habitId, will retry later');
-                // Don't remove action, so it stays in storage for retry
-              } else {
-                AppLogger.error('❌ Failed to complete habit: $habitId', e);
-                // Remove action even if failed to avoid infinite retry
-                await NotificationStorage.removeAction(habitId, action);
-                processedCount++;
-              }
-            }
-          } else {
-            AppLogger.info(
-                'Skipping non-complete action or missing handler: $action for habit $habitId');
-          }
-        } catch (e) {
-          AppLogger.error('Error processing individual pending action', e);
-        }
-      }
-
-      AppLogger.info('✅ Processed $processedCount actions with direct handler');
-    } catch (e) {
-      AppLogger.error('Error in _processPendingActionsWithDirectHandler', e);
-    }
-  }
-
-  /// Check if callback is set and re-initialize if needed
-  static bool ensureCallbackIsSet() {
-    final isSet = onNotificationAction != null;
-    AppLogger.info('🔍 Callback check: ${isSet ? "SET" : "NOT SET"}');
-    if (!isSet) {
-      AppLogger.warning(
-        '⚠️ Callback is not set! This may cause notification actions to fail.',
-      );
-      AppLogger.info(
-        '🔍 Callback was set $_callbackSetCount times, last at $_lastCallbackSetTime',
-      );
-    }
-    return isSet;
   }
 }

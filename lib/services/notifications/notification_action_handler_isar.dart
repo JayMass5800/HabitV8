@@ -179,16 +179,14 @@ class NotificationActionHandlerIsar {
         AppLogger.info(
             '🔍 DEBUG: Database contains ${allHabits.length} habits');
         for (final h in allHabits) {
-          AppLogger.info(
-              '🔍 DEBUG: Habit in DB: id=${h.id}, name=${h.name}');
+          AppLogger.info('🔍 DEBUG: Habit in DB: id=${h.id}, name=${h.name}');
         }
       } catch (e) {
         AppLogger.error('🔍 DEBUG: Failed to list habits', e);
       }
 
       // Get the habit
-      final habit =
-          await isar.habits.filter().idEqualTo(habitId).findFirst();
+      final habit = await isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit == null) {
         AppLogger.warning('❌ Habit not found in background: $habitId');
@@ -292,8 +290,7 @@ class NotificationActionHandlerIsar {
         name: 'habitv8_db',
       );
 
-      final habit =
-          await isar.habits.filter().idEqualTo(habitId).findFirst();
+      final habit = await isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
         await scheduler.scheduleHabitNotification(

@@ -135,7 +135,7 @@ class Habit {
   }
 
   // ==================== COMPUTED PROPERTIES - IGNORED BY ISAR ====================
-  
+
   @ignore
   // Calculate completion rate based on the last 30 days (now cached)
   double get completionRate => _statsService.getCompletionRate(this);
@@ -151,7 +151,7 @@ class Habit {
   @ignore
   // Override current and longest streak to use cached values
   int get currentStreakCached => streakInfo.current;
-  
+
   @ignore
   int get longestStreakCached => streakInfo.longest;
 

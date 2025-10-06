@@ -219,14 +219,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
             if (hourlyHabits.isEmpty && regularHabits.isEmpty) {
               return RefreshIndicator(
                 onRefresh: () async {
-                  try {
-                    await ref
-                        .read(habitsNotifierProvider.notifier)
-                        .refreshHabits();
-                  } catch (e) {
-                    // If provider not ready, just invalidate and retry
-                    ref.invalidate(habitsNotifierProvider);
-                  }
+                  ref.invalidate(habitsStreamIsarProvider);
+                  await Future.delayed(const Duration(milliseconds: 100));
                 },
                 child: ListView(
                   children: [
@@ -260,15 +254,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
             return RefreshIndicator(
               onRefresh: () async {
-                try {
-                  // Force immediate refresh for faster response
-                  await ref
-                      .read(habitsNotifierProvider.notifier)
-                      .forceImmediateRefresh();
-                } catch (e) {
-                  // If provider not ready, just invalidate and retry
-                  ref.invalidate(habitsNotifierProvider);
-                }
+                ref.invalidate(habitsStreamIsarProvider);
+                await Future.delayed(const Duration(milliseconds: 100));
               },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -674,7 +661,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
     try {
       // Get habit service
-      final habitService = await ref.read(currentHabitServiceProvider.future);
+      final habitService = await ref.read(habitServiceIsarProvider.future);
 
       // Use service methods to handle completion (matches widget pattern)
       // This ensures we're always working with fresh database data
@@ -856,7 +843,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
 
     try {
       // Get habit service
-      final habitService = await ref.read(currentHabitServiceProvider.future);
+      final habitService = await ref.read(habitServiceIsarProvider.future);
 
       // Use service methods to handle completion (matches widget pattern)
       // This ensures we're always working with fresh database data

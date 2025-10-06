@@ -125,8 +125,7 @@ class HabitServiceIsar {
   /// Delete habit
   Future<void> deleteHabit(String habitId) async {
     await _isar.writeTxn(() async {
-      final habit =
-          await _isar.habits.filter().idEqualTo(habitId).findFirst();
+      final habit = await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
         await _isar.habits.delete(habit.isarId);
@@ -138,8 +137,7 @@ class HabitServiceIsar {
   /// Mark habit as complete
   Future<void> completeHabit(String habitId, DateTime completionTime) async {
     await _isar.writeTxn(() async {
-      final habit =
-          await _isar.habits.filter().idEqualTo(habitId).findFirst();
+      final habit = await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
         habit.completions.add(completionTime);
@@ -152,8 +150,7 @@ class HabitServiceIsar {
   /// Uncomplete habit (remove completion)
   Future<void> uncompleteHabit(String habitId, DateTime completionTime) async {
     await _isar.writeTxn(() async {
-      final habit =
-          await _isar.habits.filter().idEqualTo(habitId).findFirst();
+      final habit = await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
         habit.completions.removeWhere((completion) {
@@ -211,12 +208,14 @@ class HabitServiceIsar {
   }
 
   /// Mark habit as complete (alias for completeHabit)
-  Future<void> markHabitComplete(String habitId, DateTime completionTime) async {
+  Future<void> markHabitComplete(
+      String habitId, DateTime completionTime) async {
     await completeHabit(habitId, completionTime);
   }
 
   /// Remove habit completion (alias for uncompleteHabit)
-  Future<void> removeHabitCompletion(String habitId, DateTime completionTime) async {
+  Future<void> removeHabitCompletion(
+      String habitId, DateTime completionTime) async {
     await uncompleteHabit(habitId, completionTime);
   }
 

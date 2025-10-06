@@ -281,7 +281,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
 
     try {
       // Get habit service and fetch fresh habit from database
-      final habitService = await ref.read(currentHabitServiceProvider.future);
+      final habitService = await ref.read(habitServiceIsarProvider.future);
       final freshHabit = await habitService.getHabitById(habit.id);
 
       if (freshHabit == null) {
