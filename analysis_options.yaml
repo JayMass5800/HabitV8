@@ -25,6 +25,8 @@ linter:
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 
 analyzer:
+  exclude:
+    - archive/**  # Exclude archived migration code from analysis
   errors:
     avoid_print: error  # Make print statements show as errors, not just warnings
 
