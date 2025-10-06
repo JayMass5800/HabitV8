@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/rrule_service.dart';
+import '../../services/logging_service.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/smooth_transitions.dart';
@@ -51,6 +52,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       if (mounted) {
         // Invalidate provider to trigger refresh from database
         // This ensures UI updates when habits are completed from notifications
+        AppLogger.debug('⏰ TIMELINE: Auto-refresh timer tick - invalidating habitsProvider');
         ref.invalidate(habitsProvider);
       }
     });
@@ -684,6 +686,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     final optimisticKey = '${habit.id}_${_selectedDate.millisecondsSinceEpoch}';
     final isCompleted = _isHabitCompletedOnDate(habit, _selectedDate);
 
+    AppLogger.info(
+        '🎯 TIMELINE: Toggling completion for habit "${habit.name}" (${habit.id}) on ${_selectedDate.toIso8601String()} - currently: ${isCompleted ? "completed" : "not completed"}');
+
     // Optimistic UI update with immediate visual feedback
     setState(() {
       _optimisticCompletions[optimisticKey] = !isCompleted;
@@ -697,16 +702,28 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       // This ensures we're always working with fresh database data
       if (isCompleted) {
         // Remove completion using service method
+        AppLogger.debug(
+            '🐛 TIMELINE: Removing completion via habitService.removeHabitCompletion()');
         await habitService.removeHabitCompletion(habit.id, _selectedDate);
+        AppLogger.info('✅ TIMELINE: Completion removed successfully');
       } else {
         // Add completion using service method
+        AppLogger.debug(
+            '🐛 TIMELINE: Adding completion via habitService.markHabitComplete()');
         await habitService.markHabitComplete(habit.id, _selectedDate);
+        AppLogger.info('✅ TIMELINE: Completion added successfully');
       }
 
       // Invalidate provider to trigger refresh from database
+      AppLogger.debug('🐛 TIMELINE: Invalidating habitsProvider to refresh UI');
       ref.invalidate(habitsProvider);
 
-      // Clear optimistic state after successful update
+      // Wait for provider to fetch fresh data before clearing optimistic state
+      AppLogger.debug('🐛 TIMELINE: Waiting for habitsProvider to fetch fresh data...');
+      await ref.read(habitsProvider.future);
+      AppLogger.info('✅ TIMELINE: Fresh data loaded, clearing optimistic state');
+
+      // Clear optimistic state after successful update and data refresh
       setState(() {
         _optimisticCompletions.remove(optimisticKey);
       });

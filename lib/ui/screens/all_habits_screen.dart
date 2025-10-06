@@ -328,8 +328,9 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
 
       await habitService.updateHabit(freshHabit);
 
-      // Invalidate provider to trigger refresh
+      // Invalidate provider to trigger refresh and wait for fresh data
       ref.invalidate(habitsProvider);
+      await ref.read(habitsProvider.future);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
