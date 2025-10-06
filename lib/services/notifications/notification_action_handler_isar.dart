@@ -19,7 +19,7 @@ import 'notification_scheduler.dart';
 /// Background notification response handler (TOP-LEVEL FUNCTION)
 /// This is called when the app is not running or in background
 /// MUST be a top-level function for background isolate to work!
-/// 
+///
 /// ISAR VERSION - Multi-isolate safe!
 @pragma('vm:entry-point')
 Future<void> onBackgroundNotificationResponseIsar(
@@ -158,7 +158,7 @@ class NotificationActionHandlerIsar {
 
   /// Complete a habit in background when app is not running
   /// Made public so it can be called from top-level background handler
-  /// 
+  ///
   /// ISAR VERSION - Multi-isolate safe! No complex workarounds needed!
   static Future<void> completeHabitInBackground(String habitId) async {
     try {
@@ -188,10 +188,8 @@ class NotificationActionHandlerIsar {
       }
 
       // Get the habit
-      final habit = await isar.habits
-          .filter()
-          .habitIdEqualTo(habitId)
-          .findFirst();
+      final habit =
+          await isar.habits.filter().habitIdEqualTo(habitId).findFirst();
 
       if (habit == null) {
         AppLogger.warning('❌ Habit not found in background: $habitId');
@@ -240,7 +238,7 @@ class NotificationActionHandlerIsar {
 
       // NO NEED FOR FLUSH - Isar handles this automatically!
       // NO NEED FOR FLAGS - Isar streams update automatically!
-      
+
       // The main isolate will automatically see this change via Isar's
       // reactive streams - this is the POWER of Isar!
 
@@ -295,10 +293,8 @@ class NotificationActionHandlerIsar {
         name: 'habitv8_db',
       );
 
-      final habit = await isar.habits
-          .filter()
-          .habitIdEqualTo(habitId)
-          .findFirst();
+      final habit =
+          await isar.habits.filter().habitIdEqualTo(habitId).findFirst();
 
       if (habit != null) {
         await scheduler.scheduleNotification(
@@ -337,14 +333,11 @@ class NotificationActionHandlerIsar {
           final action = jsonDecode(actionJson) as Map<String, dynamic>;
           final habitId = action['habitId'] as String;
           final timestamp = action['timestamp'] as int;
-          final completionTime =
-              DateTime.fromMillisecondsSinceEpoch(timestamp);
+          final completionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
 
           // Get the habit
-          final habit = await isar.habits
-              .filter()
-              .habitIdEqualTo(habitId)
-              .findFirst();
+          final habit =
+              await isar.habits.filter().habitIdEqualTo(habitId).findFirst();
 
           if (habit != null) {
             // Complete the habit
@@ -368,9 +361,11 @@ class NotificationActionHandlerIsar {
 
       // Remove processed actions
       if (processedActions.isNotEmpty) {
-        pendingActions.removeWhere((action) => processedActions.contains(action));
+        pendingActions
+            .removeWhere((action) => processedActions.contains(action));
         await prefs.setStringList('pending_habit_completions', pendingActions);
-        AppLogger.info('✅ Removed ${processedActions.length} processed actions');
+        AppLogger.info(
+            '✅ Removed ${processedActions.length} processed actions');
       }
     } catch (e) {
       AppLogger.error('Error processing pending completions', e);

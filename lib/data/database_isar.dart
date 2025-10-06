@@ -19,11 +19,11 @@ final habitServiceIsarProvider = FutureProvider<HabitServiceIsar>((ref) async {
 final habitsStreamIsarProvider = StreamProvider.autoDispose<List<Habit>>((ref) {
   return Stream<List<Habit>>.multi((controller) async {
     final habitService = await ref.watch(habitServiceIsarProvider.future);
-    
+
     // Emit initial data
     final initialHabits = await habitService.getAllHabits();
     controller.add(initialHabits);
-    
+
     // Listen to Isar's watch stream for real-time updates
     final subscription = habitService.watchAllHabits().listen(
       (habits) {
@@ -35,37 +35,37 @@ final habitsStreamIsarProvider = StreamProvider.autoDispose<List<Habit>>((ref) {
         controller.addError(error);
       },
     );
-    
+
     ref.onDispose(() {
       subscription.cancel();
     });
-    
+
     await controller.done;
   });
 });
 
 class IsarDatabaseService {
   static Isar? _isar;
-  
+
   /// Get Isar instance (singleton pattern)
   static Future<Isar> getInstance() async {
     if (_isar != null && _isar!.isOpen) {
       return _isar!;
     }
-    
+
     final dir = await getApplicationDocumentsDirectory();
-    
+
     _isar = await Isar.open(
       [HabitSchema],
       directory: dir.path,
       name: 'habitv8_db',
       inspector: true, // Enable Isar Inspector for debugging
     );
-    
+
     AppLogger.info('✅ Isar database initialized at: ${dir.path}');
     return _isar!;
   }
-  
+
   /// Close Isar instance
   static Future<void> closeDatabase() async {
     if (_isar != null && _isar!.isOpen) {
@@ -74,7 +74,7 @@ class IsarDatabaseService {
       AppLogger.info('✅ Isar database closed');
     }
   }
-  
+
   /// Reset database (delete all data)
   static Future<void> resetDatabase() async {
     if (_isar != null && _isar!.isOpen) {
@@ -88,30 +88,24 @@ class IsarDatabaseService {
 
 class HabitServiceIsar {
   final Isar _isar;
-  
+
   HabitServiceIsar(this._isar);
-  
+
   /// Get all habits
   Future<List<Habit>> getAllHabits() async {
     return await _isar.habits.where().findAll();
   }
-  
+
   /// Get active habits only
   Future<List<Habit>> getActiveHabits() async {
-    return await _isar.habits
-        .filter()
-        .isActiveEqualTo(true)
-        .findAll();
+    return await _isar.habits.filter().isActiveEqualTo(true).findAll();
   }
-  
+
   /// Get habit by ID
   Future<Habit?> getHabitById(String habitId) async {
-    return await _isar.habits
-        .filter()
-        .habitIdEqualTo(habitId)
-        .findFirst();
+    return await _isar.habits.filter().habitIdEqualTo(habitId).findFirst();
   }
-  
+
   /// Add new habit
   Future<void> addHabit(Habit habit) async {
     await _isar.writeTxn(() async {
@@ -119,7 +113,7 @@ class HabitServiceIsar {
     });
     AppLogger.info('✅ Habit added: ${habit.name}');
   }
-  
+
   /// Update existing habit
   Future<void> updateHabit(Habit habit) async {
     await _isar.writeTxn(() async {
@@ -127,30 +121,26 @@ class HabitServiceIsar {
     });
     AppLogger.info('✅ Habit updated: ${habit.name}');
   }
-  
+
   /// Delete habit
   Future<void> deleteHabit(String habitId) async {
     await _isar.writeTxn(() async {
-      final habit = await _isar.habits
-          .filter()
-          .habitIdEqualTo(habitId)
-          .findFirst();
-      
+      final habit =
+          await _isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+
       if (habit != null) {
         await _isar.habits.delete(habit.id);
         AppLogger.info('✅ Habit deleted: ${habit.name}');
       }
     });
   }
-  
+
   /// Mark habit as complete
   Future<void> completeHabit(String habitId, DateTime completionTime) async {
     await _isar.writeTxn(() async {
-      final habit = await _isar.habits
-          .filter()
-          .habitIdEqualTo(habitId)
-          .findFirst();
-      
+      final habit =
+          await _isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+
       if (habit != null) {
         habit.completions.add(completionTime);
         await _isar.habits.put(habit);
@@ -158,15 +148,13 @@ class HabitServiceIsar {
       }
     });
   }
-  
+
   /// Uncomplete habit (remove completion)
   Future<void> uncompleteHabit(String habitId, DateTime completionTime) async {
     await _isar.writeTxn(() async {
-      final habit = await _isar.habits
-          .filter()
-          .habitIdEqualTo(habitId)
-          .findFirst();
-      
+      final habit =
+          await _isar.habits.filter().habitIdEqualTo(habitId).findFirst();
+
       if (habit != null) {
         habit.completions.removeWhere((completion) {
           final completionDay = DateTime(
@@ -186,12 +174,12 @@ class HabitServiceIsar {
       }
     });
   }
-  
+
   /// Watch all habits (reactive stream)
   Stream<List<Habit>> watchAllHabits() {
     return _isar.habits.where().watch(fireImmediately: true);
   }
-  
+
   /// Watch specific habit (reactive stream)
   Stream<Habit?> watchHabit(String habitId) {
     return _isar.habits
@@ -200,15 +188,12 @@ class HabitServiceIsar {
         .watch(fireImmediately: true)
         .map((habits) => habits.isNotEmpty ? habits.first : null);
   }
-  
+
   /// Get habits by category
   Future<List<Habit>> getHabitsByCategory(String category) async {
-    return await _isar.habits
-        .filter()
-        .categoryEqualTo(category)
-        .findAll();
+    return await _isar.habits.filter().categoryEqualTo(category).findAll();
   }
-  
+
   /// Search habits by name
   Future<List<Habit>> searchHabits(String query) async {
     return await _isar.habits
@@ -216,7 +201,7 @@ class HabitServiceIsar {
         .nameContains(query, caseSensitive: false)
         .findAll();
   }
-  
+
   /// Bulk update habits
   Future<void> updateHabits(List<Habit> habits) async {
     await _isar.writeTxn(() async {

@@ -7,72 +7,72 @@ part 'habit.g.dart';
 @collection
 class Habit {
   Id isarId = Isar.autoIncrement; // Auto-incrementing ID for Isar
-  
+
   @Index(unique: true)
   late String id; // Original string ID for compatibility
-  
+
   late String name;
-  
+
   String? description;
-  
+
   late String category;
-  
+
   late int colorValue;
-  
+
   late DateTime createdAt;
-  
+
   DateTime? nextDueDate;
-  
+
   @Enumerated(EnumType.name)
   late HabitFrequency frequency;
-  
+
   late int targetCount;
-  
+
   // Isar supports List<DateTime> natively!
   List<DateTime> completions = [];
-  
+
   int currentStreak = 0;
-  
+
   int longestStreak = 0;
-  
+
   bool isActive = true;
-  
+
   bool notificationsEnabled = true;
-  
+
   DateTime? notificationTime;
-  
+
   List<int> weeklySchedule = [];
-  
+
   List<int> monthlySchedule = [];
-  
+
   DateTime? reminderTime;
-  
+
   @Enumerated(EnumType.name)
   HabitDifficulty difficulty = HabitDifficulty.medium;
-  
+
   List<int> selectedWeekdays = [];
-  
+
   List<int> selectedMonthDays = [];
-  
+
   List<String> hourlyTimes = [];
-  
+
   List<String> selectedYearlyDates = [];
-  
+
   DateTime? singleDateTime;
-  
+
   bool alarmEnabled = false;
-  
+
   String? alarmSoundName;
-  
+
   String? alarmSoundUri;
-  
+
   int snoozeDelayMinutes = 10;
-  
+
   // RRule fields
   String? rruleString;
-  
+
   DateTime? dtStart;
-  
+
   bool usesRRule = false;
 
   // ==================== COMPUTED PROPERTIES AND METHODS ====================

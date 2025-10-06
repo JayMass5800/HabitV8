@@ -12,12 +12,12 @@ class HiveToIsarMigrator {
   ) async {
     try {
       AppLogger.info('🔄 Starting Hive to Isar migration...');
-      
+
       final hiveHabits = hiveBox.values.toList();
       AppLogger.info('📊 Found ${hiveHabits.length} habits in Hive database');
-      
+
       final isarHabits = <isar_model.Habit>[];
-      
+
       for (final hiveHabit in hiveHabits) {
         try {
           isarHabits.add(_convertHabitToIsar(hiveHabit));
@@ -31,14 +31,14 @@ class HiveToIsarMigrator {
           );
         }
       }
-      
+
       await isar.writeTxn(() async {
         await isar.habits.putAll(isarHabits);
       });
-      
+
       final isarCount = await isar.habits.count();
       AppLogger.info('✅ Migration completed: $isarCount habits migrated');
-      
+
       return MigrationResult(
         success: true,
         hiveCount: hiveHabits.length,
@@ -54,7 +54,7 @@ class HiveToIsarMigrator {
       );
     }
   }
-  
+
   /// Convert single Hive habit to Isar habit
   static isar_model.Habit _convertHabitToIsar(hive_model.Habit hiveHabit) {
     return isar_model.Habit()
@@ -90,7 +90,7 @@ class HiveToIsarMigrator {
       ..dtStart = hiveHabit.dtStart
       ..usesRRule = hiveHabit.usesRRule;
   }
-  
+
   static isar_model.HabitFrequency _convertFrequency(
     hive_model.HabitFrequency freq,
   ) {
@@ -98,7 +98,7 @@ class HiveToIsarMigrator {
       (e) => e.name == freq.name,
     );
   }
-  
+
   static isar_model.HabitDifficulty _convertDifficulty(
     hive_model.HabitDifficulty diff,
   ) {
@@ -113,16 +113,16 @@ class MigrationResult {
   final int hiveCount;
   final int isarCount;
   final String? errorMessage;
-  
+
   MigrationResult({
     required this.success,
     required this.hiveCount,
     required this.isarCount,
     this.errorMessage,
   });
-  
+
   bool get isValid => success && hiveCount == isarCount;
-  
+
   @override
   String toString() {
     if (success) {
