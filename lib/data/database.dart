@@ -17,6 +17,17 @@ import '../services/alarm_manager_service.dart';
 import '../services/alarm_service.dart';
 import '../services/widget_integration_service.dart';
 
+// Global stream controller for manual database update triggers
+// This allows any part of the app to force an immediate UI refresh
+final _manualUpdateController = StreamController<void>.broadcast();
+Stream<void> get manualDatabaseUpdateStream => _manualUpdateController.stream;
+
+/// Call this function after any database operation to trigger immediate UI updates
+void triggerDatabaseUpdate() {
+  AppLogger.info('🔔 Manual database update triggered');
+  _manualUpdateController.add(null);
+}
+
 // Provider for the Habit database box with error recovery
 final databaseProvider = FutureProvider<Box<Habit>>((ref) async {
   try {
@@ -425,38 +436,104 @@ final habitsStateProvider = Provider<AsyncValue<HabitsState>>((ref) {
 /// REACTIVE: Stream-based provider using Hive's watch() for instant updates
 /// This is the CORRECT way to handle Hive database updates - event-driven, not polling!
 /// Emits fresh data whenever ANY habit changes in the database
-final habitsStreamProvider =
-    StreamProvider.autoDispose<List<Habit>>((ref) async* {
+final habitsStreamProvider = StreamProvider.autoDispose<List<Habit>>((ref) {
   AppLogger.info('🔔 habitsStreamProvider: Initializing reactive stream');
-  final habitService = await ref.watch(habitServiceProvider.future);
 
-  // Emit initial data immediately
-  habitService.forceRefresh();
-  final initialHabits = await habitService.getAllHabits();
-  AppLogger.info(
-      '🔔 habitsStreamProvider: Emitting initial ${initialHabits.length} habits');
-  yield initialHabits;
+  return Stream<List<Habit>>.multi((controller) async {
+    try {
+      final habitService = await ref.watch(habitServiceProvider.future);
 
-  // Then listen to database changes and emit updates automatically
-  // This replaces the old 2-second polling timer with instant, event-driven updates!
-  await for (final event in habitService.habitChanges) {
-    AppLogger.debug(
-        '🔔 Database event detected: ${event.key} (deleted: ${event.deleted})');
-    habitService.forceRefresh();
-    final freshHabits = await habitService.getAllHabits();
-    AppLogger.info(
-        '🔔 habitsStreamProvider: Emitting fresh ${freshHabits.length} habits after database change');
+      // Emit initial data immediately
+      habitService.forceRefresh();
+      final initialHabits = await habitService.getAllHabits();
+      AppLogger.info(
+          '🔔 habitsStreamProvider: Emitting initial ${initialHabits.length} habits');
+      controller.add(initialHabits);
 
-    // Log what changed for debugging
-    for (var habit in freshHabits) {
-      if (habit.completions.isNotEmpty) {
-        AppLogger.debug(
-            '   ${habit.name}: ${habit.completions.length} completions');
+      // Track last emission time to avoid duplicate emissions
+      DateTime lastEmission = DateTime.now();
+      bool isEmitting = false;
+
+      // Helper function to emit fresh data with debouncing
+      Future<void> emitFreshData(String source) async {
+        // Prevent concurrent emissions
+        if (isEmitting) {
+          AppLogger.debug('🔔 Emission already in progress, skipping $source');
+          return;
+        }
+
+        // Debounce: Skip if we emitted less than 500ms ago
+        final now = DateTime.now();
+        if (now.difference(lastEmission).inMilliseconds < 500) {
+          AppLogger.debug('🔔 Debouncing $source emission (too soon)');
+          return;
+        }
+
+        try {
+          isEmitting = true;
+          lastEmission = now;
+
+          habitService.forceRefresh();
+          final freshHabits = await habitService.getAllHabits();
+          AppLogger.info(
+              '🔔 habitsStreamProvider: Emitting fresh ${freshHabits.length} habits from $source');
+
+          // Log what changed for debugging
+          for (var habit in freshHabits) {
+            if (habit.completions.isNotEmpty) {
+              AppLogger.debug(
+                  '   ${habit.name}: ${habit.completions.length} completions');
+            }
+          }
+
+          controller.add(freshHabits);
+        } catch (e) {
+          AppLogger.error('Error emitting fresh data from $source: $e');
+          controller.addError(e);
+        } finally {
+          isEmitting = false;
+        }
       }
-    }
 
-    yield freshHabits;
-  }
+      // Listen to Hive's watch() stream for database changes
+      final watchSubscription = habitService.habitChanges.listen(
+        (event) {
+          AppLogger.debug(
+              '🔔 Database event detected: ${event.key} (deleted: ${event.deleted})');
+          emitFreshData('watch');
+        },
+        onError: (error) {
+          AppLogger.error('Error in habitChanges stream: $error');
+        },
+      );
+
+      // Listen to manual update triggers for instant updates
+      final manualSubscription = manualDatabaseUpdateStream.listen((_) {
+        AppLogger.debug('🔔 Manual update trigger received');
+        emitFreshData('manual');
+      });
+
+      // Add a periodic timer as backup (every 2 seconds) to catch any missed updates
+      final timer = Timer.periodic(const Duration(seconds: 2), (_) {
+        AppLogger.debug('🔔 Periodic check triggered');
+        emitFreshData('timer');
+      });
+
+      // Clean up when provider is disposed
+      ref.onDispose(() {
+        AppLogger.debug('🔔 habitsStreamProvider: Cleaning up subscriptions');
+        watchSubscription.cancel();
+        manualSubscription.cancel();
+        timer.cancel();
+      });
+
+      // Keep the stream alive
+      await controller.done;
+    } catch (e) {
+      AppLogger.error('Error in habitsStreamProvider: $e');
+      controller.addError(e);
+    }
+  });
 });
 
 /// DEPRECATED: Old polling-based provider - kept for backward compatibility
@@ -837,6 +914,9 @@ class HabitService {
         AppLogger.error('Failed to update widgets after adding habit', e);
         // Don't block the operation if widget update fails
       }
+
+      // 🔔 CRITICAL: Trigger manual UI update for instant timeline refresh
+      triggerDatabaseUpdate();
     } catch (e) {
       AppLogger.error('Error in addHabit: $e');
 
@@ -920,6 +1000,9 @@ class HabitService {
         AppLogger.error('Failed to update widgets after updating habit', e);
         // Don't block the operation if widget update fails
       }
+
+      // 🔔 CRITICAL: Trigger manual UI update for instant refresh
+      triggerDatabaseUpdate();
     } catch (e) {
       AppLogger.error('Error in updateHabit: $e');
 
@@ -999,6 +1082,9 @@ class HabitService {
         AppLogger.error('Failed to update widgets after deleting habit', e);
         // Don't block the operation if widget update fails
       }
+
+      // 🔔 CRITICAL: Trigger manual UI update for instant timeline refresh
+      triggerDatabaseUpdate();
     } catch (e) {
       AppLogger.error('Error deleting habit ${habit.name}', e);
 
@@ -1206,6 +1292,9 @@ class HabitService {
         // Don't block the completion if widget update fails
       }
 
+      // 🔔 CRITICAL: Trigger manual UI update for instant timeline refresh
+      triggerDatabaseUpdate();
+
       // Sync completion to calendar if enabled
       try {
         final syncEnabled = await CalendarService.isCalendarSyncEnabled();
@@ -1277,6 +1366,9 @@ class HabitService {
     } catch (e) {
       AppLogger.error('Failed to sync habit completion removal to calendar', e);
     }
+
+    // 🔔 CRITICAL: Trigger manual UI update for instant timeline refresh
+    triggerDatabaseUpdate();
   }
 
   // Bulk operations for better performance
@@ -1341,6 +1433,9 @@ class HabitService {
         );
       }
     }
+
+    // 🔔 CRITICAL: Trigger manual UI update for instant timeline refresh
+    triggerDatabaseUpdate();
   }
 
   // Cleanup expired cache entries periodically
