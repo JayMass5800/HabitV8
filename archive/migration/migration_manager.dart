@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hive/hive.dart';
-import '../database.dart' as hive_db;
+import '../database_hive_backup.dart.bak' as hive_db;
 import '../database_isar.dart';
 import 'hive_to_isar_migrator.dart';
 import '../../services/logging_service.dart';
