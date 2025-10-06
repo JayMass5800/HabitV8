@@ -425,31 +425,36 @@ final habitsStateProvider = Provider<AsyncValue<HabitsState>>((ref) {
 /// REACTIVE: Stream-based provider using Hive's watch() for instant updates
 /// This is the CORRECT way to handle Hive database updates - event-driven, not polling!
 /// Emits fresh data whenever ANY habit changes in the database
-final habitsStreamProvider = StreamProvider.autoDispose<List<Habit>>((ref) async* {
+final habitsStreamProvider =
+    StreamProvider.autoDispose<List<Habit>>((ref) async* {
   AppLogger.info('🔔 habitsStreamProvider: Initializing reactive stream');
   final habitService = await ref.watch(habitServiceProvider.future);
-  
+
   // Emit initial data immediately
   habitService.forceRefresh();
   final initialHabits = await habitService.getAllHabits();
-  AppLogger.info('🔔 habitsStreamProvider: Emitting initial ${initialHabits.length} habits');
+  AppLogger.info(
+      '🔔 habitsStreamProvider: Emitting initial ${initialHabits.length} habits');
   yield initialHabits;
-  
+
   // Then listen to database changes and emit updates automatically
   // This replaces the old 2-second polling timer with instant, event-driven updates!
   await for (final event in habitService.habitChanges) {
-    AppLogger.debug('🔔 Database event detected: ${event.key} (deleted: ${event.deleted})');
+    AppLogger.debug(
+        '🔔 Database event detected: ${event.key} (deleted: ${event.deleted})');
     habitService.forceRefresh();
     final freshHabits = await habitService.getAllHabits();
-    AppLogger.info('🔔 habitsStreamProvider: Emitting fresh ${freshHabits.length} habits after database change');
-    
+    AppLogger.info(
+        '🔔 habitsStreamProvider: Emitting fresh ${freshHabits.length} habits after database change');
+
     // Log what changed for debugging
     for (var habit in freshHabits) {
       if (habit.completions.isNotEmpty) {
-        AppLogger.debug('   ${habit.name}: ${habit.completions.length} completions');
+        AppLogger.debug(
+            '   ${habit.name}: ${habit.completions.length} completions');
       }
     }
-    
+
     yield freshHabits;
   }
 });
@@ -458,7 +463,8 @@ final habitsStreamProvider = StreamProvider.autoDispose<List<Habit>>((ref) async
 /// Use habitsStreamProvider instead for instant, reactive updates
 @Deprecated('Use habitsStreamProvider for reactive updates')
 final habitsProvider = FutureProvider.autoDispose<List<Habit>>((ref) async {
-  AppLogger.info('🔍 habitsProvider (deprecated): Starting to fetch habits from database');
+  AppLogger.info(
+      '🔍 habitsProvider (deprecated): Starting to fetch habits from database');
   final habitService = await ref.watch(habitServiceProvider.future);
 
   // CRITICAL: Force cache refresh to get fresh database data

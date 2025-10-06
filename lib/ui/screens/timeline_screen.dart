@@ -695,7 +695,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       // 🔔 REACTIVE UPDATE: The database change automatically triggers habitsStreamProvider
       // to emit fresh data. No need to manually invalidate or wait!
       // The stream listener will catch the change and rebuild the UI instantly.
-      AppLogger.info('✅ TIMELINE: Database updated, stream will auto-emit fresh data');
+      AppLogger.info(
+          '✅ TIMELINE: Database updated, stream will auto-emit fresh data');
 
       // Clear optimistic state immediately - stream handles the real update
       setState(() {
@@ -868,7 +869,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       }
 
       // 🔔 REACTIVE: Stream auto-updates, no manual invalidation needed!
-      AppLogger.info('✅ TIMELINE: Hourly completion updated, stream will auto-emit');
+      AppLogger.info(
+          '✅ TIMELINE: Hourly completion updated, stream will auto-emit');
 
       // Clear optimistic state - stream handles the real update
       setState(() {

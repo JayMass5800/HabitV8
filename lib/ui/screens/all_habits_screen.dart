@@ -307,7 +307,8 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
 
       // 🔔 REACTIVE: Database change automatically triggers stream update!
       // No manual invalidation needed - Hive's watch() handles it
-      AppLogger.info('✅ ALL_HABITS: Hourly completion updated, stream will auto-emit');
+      AppLogger.info(
+          '✅ ALL_HABITS: Hourly completion updated, stream will auto-emit');
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
