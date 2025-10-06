@@ -250,6 +250,16 @@ class NotificationActionHandler {
       await habitBox.flush();
       AppLogger.debug('💾 Database flushed after background completion');
 
+      // Set flag to notify main app that database was changed in background
+      // This triggers stream refresh when app resumes
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('pending_database_changes', true);
+        AppLogger.info('🚩 Set pending_database_changes flag for stream refresh');
+      } catch (e) {
+        AppLogger.error('Failed to set pending_database_changes flag', e);
+      }
+
       // Add small delay to ensure all writes complete and SharedPreferences sync
       await Future.delayed(const Duration(milliseconds: 500));
       AppLogger.debug('⏱️ Waited for database sync');

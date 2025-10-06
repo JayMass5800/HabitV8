@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
 // Old renewal services removed - now using midnight_habit_reset_service.dart
@@ -148,9 +149,35 @@ class AppLifecycleService with WidgetsBindingObserver {
           _container!.invalidate(habitServiceProvider);
           AppLogger.info('🔄 Invalidated habitServiceProvider');
 
-          // Add delay to allow invalidation to process
+          // Add delay to allow invalidation to process and stream to initialize
           await Future.delayed(const Duration(milliseconds: 300));
           AppLogger.info('⏱️ Delay after invalidation complete');
+
+          // Check if database was changed in background (e.g., notification completion)
+          // If so, trigger ANOTHER invalidation to force stream to emit fresh data
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            final hasPendingChanges = prefs.getBool('pending_database_changes') ?? false;
+            
+            if (hasPendingChanges) {
+              AppLogger.info('🚩 Detected pending_database_changes flag - triggering stream refresh');
+              
+              // Wait a bit more to ensure stream listener is active
+              await Future.delayed(const Duration(milliseconds: 200));
+              
+              // Invalidate again to trigger fresh emit that active listener will catch
+              _container!.invalidate(habitsStreamProvider);
+              AppLogger.info('🔄 Re-invalidated habitsStreamProvider to emit fresh data');
+              
+              // Clear the flag
+              await prefs.setBool('pending_database_changes', false);
+              AppLogger.info('✅ Cleared pending_database_changes flag');
+            } else {
+              AppLogger.debug('ℹ️ No pending database changes detected');
+            }
+          } catch (e) {
+            AppLogger.error('Error checking pending_database_changes flag', e);
+          }
         } catch (e) {
           AppLogger.error('Error invalidating habitsProvider', e);
         }
