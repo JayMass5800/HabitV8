@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../data/database.dart';
 import '../../domain/model/habit.dart';
 import '../../services/rrule_service.dart';
-import '../../services/logging_service.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/smooth_transitions.dart';
@@ -691,51 +690,21 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     });
 
     try {
-      // ✅ CRITICAL FIX: Fetch fresh habit from database to avoid overwriting
-      // The habit parameter might be stale if notification marked complete in background
+      // Get habit service
       final habitService = await ref.read(currentHabitServiceProvider.future);
-      final freshHabit = await habitService.getHabitById(habit.id);
 
-      if (freshHabit == null) {
-        AppLogger.error('Habit not found in database: ${habit.id}');
-        return;
-      }
-
-      AppLogger.info(
-          '🔄 Toggle completion - Fresh habit has ${freshHabit.completions.length} completions');
-
+      // Use service methods to handle completion (matches widget pattern)
+      // This ensures we're always working with fresh database data
       if (isCompleted) {
-        // Remove completion
-        freshHabit.completions.removeWhere((completion) {
-          final completionDate = DateTime(
-            completion.year,
-            completion.month,
-            completion.day,
-          );
-          final selectedDate = DateTime(
-            _selectedDate.year,
-            _selectedDate.month,
-            _selectedDate.day,
-          );
-          return completionDate == selectedDate;
-        });
+        // Remove completion using service method
+        await habitService.removeHabitCompletion(habit.id, _selectedDate);
       } else {
-        // Add completion
-        freshHabit.completions.add(_selectedDate);
+        // Add completion using service method
+        await habitService.markHabitComplete(habit.id, _selectedDate);
       }
 
-      // Update habit in database directly (like widget does)
-      try {
-        await habitService.updateHabit(freshHabit);
-        AppLogger.info(
-            '✅ Updated habit in database, now has ${freshHabit.completions.length} completions');
-
-        // Invalidate provider to trigger refresh from database
-        ref.invalidate(habitsProvider);
-      } catch (e) {
-        AppLogger.error('Error updating habit', e);
-        rethrow;
-      }
+      // Invalidate provider to trigger refresh from database
+      ref.invalidate(habitsProvider);
 
       // Clear optimistic state after successful update
       setState(() {
@@ -894,45 +863,21 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     });
 
     try {
-      // ✅ CRITICAL FIX: Fetch fresh habit from database to avoid overwriting
-      // The habit parameter might be stale if notification marked complete in background
+      // Get habit service
       final habitService = await ref.read(currentHabitServiceProvider.future);
-      final freshHabit = await habitService.getHabitById(habit.id);
 
-      if (freshHabit == null) {
-        AppLogger.error('Habit not found in database: ${habit.id}');
-        return;
-      }
-
-      AppLogger.info(
-          '🔄 Toggle hourly completion - Fresh habit has ${freshHabit.completions.length} completions');
-
+      // Use service methods to handle completion (matches widget pattern)
+      // This ensures we're always working with fresh database data
       if (isCompleted) {
-        // Remove completion for this specific time slot
-        freshHabit.completions.removeWhere((completion) {
-          return completion.year == targetDateTime.year &&
-              completion.month == targetDateTime.month &&
-              completion.day == targetDateTime.day &&
-              completion.hour == targetDateTime.hour &&
-              completion.minute == targetDateTime.minute;
-        });
+        // Remove completion for this specific time slot using service method
+        await habitService.removeHabitCompletion(habit.id, targetDateTime);
       } else {
-        // Add completion for this specific time slot
-        freshHabit.completions.add(targetDateTime);
+        // Add completion for this specific time slot using service method
+        await habitService.markHabitComplete(habit.id, targetDateTime);
       }
 
-      // Update habit in database directly (like widget does)
-      try {
-        await habitService.updateHabit(freshHabit);
-        AppLogger.info(
-            '✅ Updated hourly habit in database, now has ${freshHabit.completions.length} completions');
-
-        // Invalidate provider to trigger refresh from database
-        ref.invalidate(habitsProvider);
-      } catch (e) {
-        AppLogger.error('Error updating hourly habit', e);
-        rethrow;
-      }
+      // Invalidate provider to trigger refresh from database
+      ref.invalidate(habitsProvider);
 
       // Clear optimistic state after successful update
       setState(() {
