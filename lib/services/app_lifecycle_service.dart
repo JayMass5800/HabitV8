@@ -126,7 +126,7 @@ class AppLifecycleService with WidgetsBindingObserver {
   }
 
   /// Handle app resumed state - re-register callbacks and process pending actions
-  static void _handleAppResumed() {
+  static void _handleAppResumed() async {
     try {
       AppLogger.info(
           '🔄 Handling app resume - re-registering notification callbacks...');
@@ -138,9 +138,14 @@ class AppLifecycleService with WidgetsBindingObserver {
       // This ensures UI picks up changes made by background notification actions
       if (_container != null) {
         try {
+          AppLogger.info('🔄 About to invalidate habitsProvider on app resume');
           _container!.invalidate(habitsProvider);
           AppLogger.info(
               '🔄 Invalidated habitsProvider to force refresh from database');
+          
+          // Add delay to allow invalidation to process
+          await Future.delayed(const Duration(milliseconds: 200));
+          AppLogger.info('⏱️ Delay after invalidation complete');
         } catch (e) {
           AppLogger.error('Error invalidating habitsProvider', e);
         }

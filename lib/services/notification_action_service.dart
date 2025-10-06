@@ -190,6 +190,10 @@ class NotificationActionService {
 
         if (!isCompleted) {
           // Mark the habit as complete for this time period
+          AppLogger.info('📝 About to call markHabitComplete for habit: ${habit.id}');
+          AppLogger.info('   Completion time: $completionTime');
+          AppLogger.info('   Current completions count: ${habit.completions.length}');
+          
           await habitService.markHabitComplete(
             actualHabitId,
             completionTime,
@@ -201,6 +205,24 @@ class NotificationActionService {
           AppLogger.info(
             '✅ SUCCESS: Habit marked as complete from notification: ${habit.name} $frequencyText$timeInfo',
           );
+
+          // Verify completion was saved by re-fetching habit
+          try {
+            final verifyHabit = await habitService.getHabitById(actualHabitId);
+            if (verifyHabit != null) {
+              AppLogger.info('✅ VERIFICATION: Habit now has ${verifyHabit.completions.length} completions');
+              if (verifyHabit.completions.isEmpty) {
+                AppLogger.error('❌ CRITICAL: Completion was NOT saved to database!');
+              } else {
+                final latestCompletion = verifyHabit.completions.last;
+                AppLogger.info('   Latest completion: $latestCompletion');
+              }
+            } else {
+              AppLogger.error('❌ CRITICAL: Could not retrieve habit for verification!');
+            }
+          } catch (e) {
+            AppLogger.error('Failed to verify completion: $e');
+          }
 
           // markHabitComplete already saves to database and flushes, no need to save again
 

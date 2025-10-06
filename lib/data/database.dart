@@ -425,8 +425,19 @@ final habitsStateProvider = Provider<AsyncValue<HabitsState>>((ref) {
 /// NEW: Simple, direct provider that reads from database without caching
 /// This matches the pattern used by widgets for instant, reliable updates
 final habitsProvider = FutureProvider.autoDispose<List<Habit>>((ref) async {
+  AppLogger.info('🔍 habitsProvider: Starting to fetch habits from database');
   final habitService = await ref.watch(habitServiceProvider.future);
-  return await habitService.getAllHabits();
+  final habits = await habitService.getAllHabits();
+  AppLogger.info('🔍 habitsProvider: Fetched ${habits.length} habits from database');
+  
+  // Log completion counts for debugging
+  for (var habit in habits) {
+    if (habit.completions.isNotEmpty) {
+      AppLogger.debug('   ${habit.name}: ${habit.completions.length} completions');
+    }
+  }
+  
+  return habits;
 });
 
 /// Convenience provider for accessing HabitService methods
