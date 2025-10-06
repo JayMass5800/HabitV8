@@ -1197,7 +1197,8 @@ class HabitService {
 
       // Update widgets with new completion data - use IMMEDIATE update for instant feedback!
       try {
-        AppLogger.info('🔔 Triggering IMMEDIATE widget update after completion');
+        AppLogger.info(
+            '🔔 Triggering IMMEDIATE widget update after completion');
         await WidgetIntegrationService.instance.forceWidgetUpdate();
         AppLogger.info('✅ Immediate widget update completed');
       } catch (e) {
