@@ -22,7 +22,8 @@ class AllHabitsScreen extends ConsumerStatefulWidget {
 class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
   String _selectedCategory = 'All';
   String _selectedSort = 'Recent';
-  Timer? _autoRefreshTimer;
+
+  // No more timer! StreamProvider handles reactive updates automatically ✨
 
   final List<String> _sortOptions = [
     'Recent',
@@ -32,30 +33,6 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
     'Alphabetical',
     'Completion Rate',
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _autoRefreshTimer?.cancel();
-    super.dispose();
-  }
-
-  /// Start automatic refresh to pick up changes from notifications
-  void _startAutoRefresh() {
-    _autoRefreshTimer?.cancel();
-    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (mounted) {
-        // Invalidate provider to trigger refresh from database
-        // This ensures UI updates when habits are completed from notifications
-        ref.invalidate(habitsProvider);
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,8 +132,8 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       ),
       body: Consumer(
         builder: (context, ref, child) {
-          // Use habitsProvider for direct database access (auto-refreshes)
-          final habitsAsync = ref.watch(habitsProvider);
+          // 🔔 REACTIVE: Watch habits stream for instant updates!
+          final habitsAsync = ref.watch(habitsStreamProvider);
 
           return habitsAsync.when(
             data: (allHabits) {
@@ -172,8 +149,8 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  ref.invalidate(habitsProvider);
-                  // Wait a bit for the provider to refresh
+                  ref.invalidate(habitsStreamProvider);
+                  // Wait a bit for the stream to emit fresh data
                   await Future.delayed(const Duration(milliseconds: 300));
                 },
                 child: ListView.builder(
@@ -223,7 +200,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                   Text('Error loading habits: $error'),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => ref.invalidate(habitsProvider),
+                    onPressed: () => ref.invalidate(habitsStreamProvider),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -328,9 +305,9 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
 
       await habitService.updateHabit(freshHabit);
 
-      // Invalidate provider to trigger refresh and wait for fresh data
-      ref.invalidate(habitsProvider);
-      await ref.read(habitsProvider.future);
+      // 🔔 REACTIVE: Database change automatically triggers stream update!
+      // No manual invalidation needed - Hive's watch() handles it
+      AppLogger.info('✅ ALL_HABITS: Hourly completion updated, stream will auto-emit');
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

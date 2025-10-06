@@ -31,33 +31,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _isUpdatingHabit = false;
   final Map<String, bool> _optimisticCompletions = {};
-  Timer? _autoRefreshTimer;
 
-  @override
-  void initState() {
-    super.initState();
-    _startAutoRefresh();
-  }
-
-  @override
-  void dispose() {
-    _autoRefreshTimer?.cancel();
-    super.dispose();
-  }
-
-  /// Start automatic refresh to pick up changes from notifications
-  void _startAutoRefresh() {
-    _autoRefreshTimer?.cancel();
-    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (mounted) {
-        // Invalidate provider to trigger refresh from database
-        // This ensures UI updates when habits are completed from notifications
-        AppLogger.debug(
-            '⏰ TIMELINE: Auto-refresh timer tick - invalidating habitsProvider');
-        ref.invalidate(habitsProvider);
-      }
-    });
-  }
+  // No more timer! Hive's reactive streams handle updates automatically ✨
+  // The StreamProvider will emit new data whenever the database changes
 
   @override
   Widget build(BuildContext context) {
@@ -73,10 +49,10 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
               });
             },
           ),
-          // Manual refresh button (auto-refresh runs every 2 seconds)
+          // Manual refresh button (StreamProvider auto-updates on database changes!)
           IconButton(
             onPressed: () {
-              ref.invalidate(habitsProvider);
+              ref.invalidate(habitsStreamProvider);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Refreshing...'),
@@ -148,15 +124,16 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   Widget _buildHabitsList() {
     return Consumer(
       builder: (context, ref, child) {
-        // Watch habits directly from database (like widget does)
-        final habitsAsync = ref.watch(habitsProvider);
+        // 🔔 REACTIVE: Watch habits stream for instant updates when database changes!
+        // No more polling - Hive's watch() automatically emits new data
+        final habitsAsync = ref.watch(habitsStreamProvider);
 
         return habitsAsync.when(
           data: (allHabits) {
             if (allHabits.isEmpty) {
               return RefreshIndicator(
                 onRefresh: () async {
-                  ref.invalidate(habitsProvider);
+                  ref.invalidate(habitsStreamProvider);
                 },
                 child: ListView(
                   children: const [
@@ -347,7 +324,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    ref.invalidate(habitsProvider);
+                    ref.invalidate(habitsStreamProvider);
                   },
                   child: const Text('Retry'),
                 ),
@@ -715,18 +692,12 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         AppLogger.info('✅ TIMELINE: Completion added successfully');
       }
 
-      // Invalidate provider to trigger refresh from database
-      AppLogger.debug('🐛 TIMELINE: Invalidating habitsProvider to refresh UI');
-      ref.invalidate(habitsProvider);
+      // 🔔 REACTIVE UPDATE: The database change automatically triggers habitsStreamProvider
+      // to emit fresh data. No need to manually invalidate or wait!
+      // The stream listener will catch the change and rebuild the UI instantly.
+      AppLogger.info('✅ TIMELINE: Database updated, stream will auto-emit fresh data');
 
-      // Wait for provider to fetch fresh data before clearing optimistic state
-      AppLogger.debug(
-          '🐛 TIMELINE: Waiting for habitsProvider to fetch fresh data...');
-      await ref.read(habitsProvider.future);
-      AppLogger.info(
-          '✅ TIMELINE: Fresh data loaded, clearing optimistic state');
-
-      // Clear optimistic state after successful update and data refresh
+      // Clear optimistic state immediately - stream handles the real update
       setState(() {
         _optimisticCompletions.remove(optimisticKey);
       });
@@ -896,10 +867,10 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         await habitService.markHabitComplete(habit.id, targetDateTime);
       }
 
-      // Invalidate provider to trigger refresh from database
-      ref.invalidate(habitsProvider);
+      // 🔔 REACTIVE: Stream auto-updates, no manual invalidation needed!
+      AppLogger.info('✅ TIMELINE: Hourly completion updated, stream will auto-emit');
 
-      // Clear optimistic state after successful update
+      // Clear optimistic state - stream handles the real update
       setState(() {
         _optimisticCompletions.remove(optimisticKey);
       });

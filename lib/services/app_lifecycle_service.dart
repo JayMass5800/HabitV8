@@ -138,10 +138,10 @@ class AppLifecycleService with WidgetsBindingObserver {
       // This ensures UI picks up changes made by background notification actions
       if (_container != null) {
         try {
-          AppLogger.info('🔄 About to invalidate habitsProvider on app resume');
-          _container!.invalidate(habitsProvider);
+          AppLogger.info('🔄 About to invalidate habitsStreamProvider on app resume');
+          _container!.invalidate(habitsStreamProvider);
           AppLogger.info(
-              '🔄 Invalidated habitsProvider to force refresh from database');
+              '🔄 Invalidated habitsStreamProvider to force refresh from database');
 
           // Also invalidate the habit service provider to ensure fresh data
           _container!.invalidate(habitServiceProvider);

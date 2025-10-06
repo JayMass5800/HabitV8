@@ -237,9 +237,9 @@ class NotificationActionService {
 
           // **CRITICAL: Invalidate providers FIRST to ensure UI picks up changes**
           try {
-            // Invalidate habits provider to force timeline screen refresh
-            _container!.invalidate(habitsProvider);
-            AppLogger.info('✅ habitsProvider invalidated for UI refresh');
+            // Invalidate habits stream provider to force timeline screen refresh
+            _container!.invalidate(habitsStreamProvider);
+            AppLogger.info('✅ habitsStreamProvider invalidated for UI refresh');
 
             // Also invalidate habitServiceProvider for other dependent widgets
             _container!.invalidate(habitServiceProvider);
@@ -425,13 +425,13 @@ class NotificationActionService {
       AppLogger.info(
           '🚀 Triggering immediate UI update for notification completion');
 
-      // Invalidate provider to trigger immediate refresh from database
+      // Invalidate stream provider to trigger immediate refresh from database
       try {
-        _container!.invalidate(habitsProvider);
+        _container!.invalidate(habitsStreamProvider);
         AppLogger.info(
-            '✅ Immediate habits refresh completed via provider invalidation');
+            '✅ Immediate habits refresh completed via stream provider invalidation');
       } catch (e) {
-        AppLogger.warning('Could not invalidate habits provider: $e');
+        AppLogger.warning('Could not invalidate habits stream provider: $e');
         // Fallback to service provider invalidation
         try {
           _container!.invalidate(habitServiceProvider);
