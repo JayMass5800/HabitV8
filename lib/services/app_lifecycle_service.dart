@@ -142,7 +142,7 @@ class AppLifecycleService with WidgetsBindingObserver {
           _container!.invalidate(habitsProvider);
           AppLogger.info(
               '🔄 Invalidated habitsProvider to force refresh from database');
-          
+
           // Add delay to allow invalidation to process
           await Future.delayed(const Duration(milliseconds: 200));
           AppLogger.info('⏱️ Delay after invalidation complete');
