@@ -127,7 +127,8 @@ class NotificationActionService {
 
       // Get the habit service from the provider and wait for it to be ready
       AppLogger.info('Waiting for habit service to be ready...');
-      final habitService = await _container!.read(habitServiceIsarProvider.future);
+      final habitService =
+          await _container!.read(habitServiceIsarProvider.future);
 
       try {
         AppLogger.info('Habit service obtained successfully');
@@ -180,10 +181,10 @@ class NotificationActionService {
           });
         } else {
           // For non-hourly habits, use the existing logic
-          isCompleted = habitService.isHabitCompletedForCurrentPeriod(
-            actualHabitId,
-            completionTime,
-          );
+          final habit = await habitService.getHabitById(actualHabitId);
+          if (habit != null) {
+            isCompleted = habitService.isHabitCompletedForCurrentPeriod(habit);
+          }
         }
 
         AppLogger.info('Habit completion status: $isCompleted');
@@ -239,11 +240,13 @@ class NotificationActionService {
           try {
             // Invalidate habits stream provider to force timeline screen refresh
             _container!.invalidate(habitsStreamIsarProvider);
-            AppLogger.info('✅ habitsStreamIsarProvider invalidated for UI refresh');
+            AppLogger.info(
+                '✅ habitsStreamIsarProvider invalidated for UI refresh');
 
             // Also invalidate habitServiceIsarProvider for other dependent widgets
             _container!.invalidate(habitServiceIsarProvider);
-            AppLogger.info('✅ habitServiceIsarProvider invalidated for UI refresh');
+            AppLogger.info(
+                '✅ habitServiceIsarProvider invalidated for UI refresh');
           } catch (e) {
             AppLogger.warning('Could not invalidate providers: $e');
           }
@@ -299,7 +302,8 @@ class NotificationActionService {
 
       // Get the habit service from the provider to get habit details for better notification
       AppLogger.info('Waiting for habit service to be ready for snooze...');
-      final habitService = await _container!.read(habitServiceIsarProvider.future);
+      final habitService =
+          await _container!.read(habitServiceIsarProvider.future);
 
       String habitName = 'Your habit'; // Default fallback
       try {
@@ -348,7 +352,8 @@ class NotificationActionService {
       // Get the habit service from the provider to get habit details
       AppLogger.info(
           'Waiting for habit service to be ready for alarm snooze...');
-      final habitService = await _container!.read(habitServiceIsarProvider.future);
+      final habitService =
+          await _container!.read(habitServiceIsarProvider.future);
 
       try {
         // Get the habit for alarm details

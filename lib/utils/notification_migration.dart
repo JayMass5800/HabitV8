@@ -52,8 +52,8 @@ class NotificationMigration {
       }
 
       // Get database instance
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
 
       // Cancel all existing notifications
       AppLogger.info('📝 Cancelling all existing notifications...');
@@ -115,8 +115,8 @@ class NotificationMigration {
 
       try {
         // Get database instance
-        final habitBox = await DatabaseService.getInstance();
-        final habitService = HabitService(habitBox);
+        final isar = await IsarDatabaseService.getInstance();
+        final habitService = HabitServiceIsar(isar);
 
         // Cancel all existing notifications
         await NotificationService.cancelAllNotifications();

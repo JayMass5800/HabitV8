@@ -225,8 +225,8 @@ class WidgetIntegrationService {
       final selectedDate = DateTime.now();
 
       // Get habit data - use database directly since WidgetService methods are private
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
       final allHabits = await habitService.getAllHabits();
       final habits = _filterHabitsForDate(allHabits, selectedDate);
       final nextHabit = _findNextHabit(allHabits);
@@ -405,8 +405,8 @@ class WidgetIntegrationService {
 
       // **1. DATABASE UPDATE:**
       // Get database service and update habit data
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
 
       // Load habit
       final habit = await habitService.getHabitById(habitId);

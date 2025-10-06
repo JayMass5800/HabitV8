@@ -37,8 +37,8 @@ class WidgetService {
       // If no habits provided, we'll need to get them from the database
       if (habitsToUse.isEmpty) {
         try {
-          final habitBox = await DatabaseService.getInstance();
-          final habitService = HabitService(habitBox);
+          final isar = await IsarDatabaseService.getInstance();
+          final habitService = HabitServiceIsar(isar);
           habitsToUse = await habitService.getAllHabits();
         } catch (e) {
           AppLogger.error('Failed to get habits from database for widget', e);

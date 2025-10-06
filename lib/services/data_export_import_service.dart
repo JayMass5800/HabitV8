@@ -306,7 +306,7 @@ class DataExportImportService {
 
       // Save imported habits to database
       final habitService =
-          await DatabaseService.getInstance().then((box) => HabitService(box));
+          await IsarDatabaseService.getInstance().then((isar) => HabitServiceIsar(isar));
       int duplicateCount = 0;
       int importedCount = 0;
 
@@ -317,7 +317,7 @@ class DataExportImportService {
           'Starting bulk JSON import of ${importedHabits.length} habits...');
 
       // Mark bulk import in progress to reduce race conditions
-      HabitsNotifier.markBulkImportInProgress();
+      // Bulk import - Isar streams handle updates automatically
 
       try {
         for (final habit in importedHabits) {
@@ -343,7 +343,7 @@ class DataExportImportService {
         }
       } finally {
         // Always mark bulk import as complete
-        HabitsNotifier.markBulkImportComplete();
+        // Bulk import complete - Isar streams handle updates automatically
 
         // Invalidate all stats cache to ensure imported completion data is used
         HabitStatsService().invalidateAllStats();
@@ -436,7 +436,7 @@ class DataExportImportService {
 
       // Save imported habits to database
       final habitService =
-          await DatabaseService.getInstance().then((box) => HabitService(box));
+          await IsarDatabaseService.getInstance().then((isar) => HabitServiceIsar(isar));
       int duplicateCount = 0;
       int importedCount = 0;
 
@@ -447,7 +447,7 @@ class DataExportImportService {
           'Starting bulk CSV import of ${importedHabits.length} habits...');
 
       // Mark bulk import in progress to reduce race conditions
-      HabitsNotifier.markBulkImportInProgress();
+      // Bulk import - Isar streams handle updates automatically
 
       try {
         for (final habit in importedHabits) {
@@ -473,7 +473,7 @@ class DataExportImportService {
         }
       } finally {
         // Always mark bulk import as complete
-        HabitsNotifier.markBulkImportComplete();
+        // Bulk import complete - Isar streams handle updates automatically
 
         // Invalidate all stats cache to ensure imported completion data is used
         HabitStatsService().invalidateAllStats();

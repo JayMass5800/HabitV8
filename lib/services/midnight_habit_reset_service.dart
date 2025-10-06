@@ -101,8 +101,8 @@ class MidnightHabitResetService {
           '🌙 Performing midnight habit reset at ${now.toIso8601String()}');
 
       // Get all active habits
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
       final habits = await habitService.getAllHabits();
       final activeHabits = habits.where((habit) => habit.isActive).toList();
 

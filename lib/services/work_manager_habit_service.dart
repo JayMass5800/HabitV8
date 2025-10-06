@@ -1,7 +1,6 @@
 // Removed unused kDebugMode import to satisfy analyzer
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
-import '../data/database.dart' as hive_db;
 import '../data/database_isar.dart';
 
 import 'notification_service.dart';
@@ -181,8 +180,8 @@ class WorkManagerHabitService {
           '🔄 Starting habit continuation renewal process${forceRenewal ? ' (forced)' : ''}${specificHabitId != null ? ' for habit ID: ' : ''}');
 
       // Get all active habits
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
       final habits = await habitService.getAllHabits();
 
       // Filter habits based on parameters
@@ -433,8 +432,8 @@ class WorkManagerHabitService {
           '🚨 Starting automated alarm renewal for all alarm-enabled habits');
 
       // Get all active habits
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
       final habits = await habitService.getAllHabits();
 
       // Filter to only habits with alarms enabled

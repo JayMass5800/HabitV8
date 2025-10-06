@@ -2386,7 +2386,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
       // Get HabitService instead of direct database access
       final habitServiceAsync = ref.read(habitServiceIsarProvider);
-      HabitService? habitService = habitServiceAsync.value;
+      HabitServiceIsar? habitService = habitServiceAsync.value;
 
       if (habitService == null) {
         setState(() {

@@ -510,7 +510,7 @@ class _CollapsibleHourlyHabitCardState
       final habitServiceAsync = ref.read(habitServiceIsarProvider);
       await habitServiceAsync.when(
         data: (habitService) async {
-          await habitService.deleteHabit(widget.habit);
+          await habitService.deleteHabit(widget.habit.id);
           // Force UI refresh by invalidating the provider
           ref.invalidate(habitServiceIsarProvider);
 

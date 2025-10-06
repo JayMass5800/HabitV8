@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:timezone/timezone.dart' as tz;
+import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/category_suggestion_service.dart';
@@ -1676,7 +1677,11 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       }
 
       // Save to database
-      await widget.habit.save();
+      final habitServiceAsync = ref.read(habitServiceIsarProvider);
+      final habitService = await habitServiceAsync.value;
+      if (habitService != null) {
+        await habitService.updateHabit(widget.habit);
+      }
 
       // Phase 4: Auto-generate RRule when editing habits (except single)
       // This seamlessly upgrades legacy habits to the modern RRule system
@@ -1686,7 +1691,10 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           // Use the habit's built-in conversion method
           widget.habit
               .getOrCreateRRule(); // Auto-converts and sets usesRRule flag
-          await widget.habit.save(); // Save again to persist RRule changes
+          if (habitService != null) {
+            await habitService.updateHabit(
+                widget.habit); // Save again to persist RRule changes
+          }
           debugPrint('✅ Auto-upgraded habit to RRule: ${widget.habit.name}');
         } catch (e) {
           debugPrint(

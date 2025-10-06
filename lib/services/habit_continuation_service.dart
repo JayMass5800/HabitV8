@@ -111,12 +111,9 @@ class HabitContinuationService {
     try {
       AppLogger.info('🔄 Starting habit continuation renewal process');
 
-      // First, clean up any expired single habits
-      await DatabaseService.cleanupExpiredSingleHabits();
-
       // Get all active habits
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
       final habits = await habitService.getAllHabits();
       final activeHabits = habits.where((habit) => habit.isActive).toList();
 

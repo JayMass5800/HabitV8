@@ -1291,7 +1291,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
 
       // Mark database reset as in progress to prevent refresh attempts
-      HabitsNotifier.markDatabaseResetInProgress();
+      // Database reset - Isar streams handle updates automatically
 
       // Invalidate providers BEFORE resetting database to stop periodic refresh
       if (mounted) {
@@ -1304,7 +1304,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await Future.delayed(const Duration(milliseconds: 300));
 
       // Reset the database (this will delete all habits)
-      await DatabaseService.resetDatabase();
+      await IsarDatabaseService.resetDatabase();
       AppLogger.info('Database reset completed');
 
       // Wait a bit longer to ensure database cleanup is complete
@@ -1318,7 +1318,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       }
 
       // Mark reset as complete
-      HabitsNotifier.markDatabaseResetComplete();
+      // Database reset complete - Isar streams handle updates automatically
 
       // Remove loading overlay
       if (mounted && loadingOverlay != null) {
@@ -1358,7 +1358,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       AppLogger.error('Failed to clear all data', e);
 
       // Mark reset as complete even on error
-      HabitsNotifier.markDatabaseResetComplete();
+      // Database reset complete - Isar streams handle updates automatically
 
       // Remove loading overlay if it's still shown
       if (mounted && loadingOverlay != null) {
@@ -1667,8 +1667,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       AppLogger.info('🔔 Starting notification refresh after import');
 
       // Get all habits from the database
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
       final habits = await habitService.getAllHabits();
       final activeHabits = habits.where((habit) => habit.isActive).toList();
 

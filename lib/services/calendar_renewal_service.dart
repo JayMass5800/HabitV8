@@ -115,8 +115,8 @@ class CalendarRenewalService {
       AppLogger.info('Starting calendar renewal process');
 
       // Get all active habits
-      final habitBox = await DatabaseService.getInstance();
-      final habitService = HabitService(habitBox);
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
       final habits = await habitService.getAllHabits();
       final activeHabits = habits.where((habit) => habit.isActive).toList();
 

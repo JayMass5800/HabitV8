@@ -164,11 +164,11 @@ class AppLifecycleService with WidgetsBindingObserver {
               AppLogger.info(
                   '🚩 Detected pending_database_changes flag - reloading database and triggering stream refresh');
 
-              // CRITICAL: Reload database to pick up changes from background isolate
-              // Background isolates have separate Hive box instances, so we need to
-              // close and reopen the box to see changes written by background handlers
-              await IsarDatabaseService.reloadDatabase();
-              AppLogger.info('🔄 Database reloaded from disk');
+              // ISAR: No need to reload - Isar is multi-isolate safe!
+              // Background isolates can write directly to the same Isar instance
+              // await IsarDatabaseService.reloadDatabase(); // Not needed for Isar
+              AppLogger.info(
+                  '🔄 Isar is multi-isolate safe - no reload needed');
 
               // Wait a bit more to ensure stream listener is active
               await Future.delayed(const Duration(milliseconds: 200));
@@ -230,11 +230,12 @@ class AppLifecycleService with WidgetsBindingObserver {
       Future.delayed(const Duration(milliseconds: 200), () async {
         try {
           // Check if database is accessible without forcibly closing it
-          final instance = await IsarDatabaseService.getInstance();
+          await IsarDatabaseService.getInstance();
 
           // Test if the database is actually working by performing a simple operation
           try {
-            instance.length; // This will throw if the box is stale
+            // ISAR: Database health check - just verify instance is accessible
+            // The fact that getInstance() succeeded means Isar is healthy
             AppLogger.debug('✅ Database connection is healthy');
             return;
           } catch (testError) {
@@ -305,7 +306,8 @@ class AppLifecycleService with WidgetsBindingObserver {
   static void _processPendingCompletions() {
     Future.delayed(const Duration(milliseconds: 1500), () async {
       try {
-        await NotificationActionHandler.processPendingCompletions();
+        final isar = await IsarDatabaseService.getInstance();
+        await NotificationActionHandlerIsar.processPendingCompletions(isar);
         AppLogger.info('✅ Pending completions processed successfully');
       } catch (e) {
         AppLogger.error('Error processing pending completions', e);
