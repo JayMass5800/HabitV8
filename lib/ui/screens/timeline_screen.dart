@@ -683,9 +683,21 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     });
 
     try {
+      // ✅ CRITICAL FIX: Fetch fresh habit from database to avoid overwriting
+      // The habit parameter might be stale if notification marked complete in background
+      final habitService = await ref.read(currentHabitServiceProvider.future);
+      final freshHabit = await habitService.getHabitById(habit.id);
+      
+      if (freshHabit == null) {
+        AppLogger.error('Habit not found in database: ${habit.id}');
+        return;
+      }
+      
+      AppLogger.info('🔄 Toggle completion - Fresh habit has ${freshHabit.completions.length} completions');
+
       if (isCompleted) {
         // Remove completion
-        habit.completions.removeWhere((completion) {
+        freshHabit.completions.removeWhere((completion) {
           final completionDate = DateTime(
             completion.year,
             completion.month,
@@ -700,13 +712,13 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         });
       } else {
         // Add completion
-        habit.completions.add(_selectedDate);
+        freshHabit.completions.add(_selectedDate);
       }
 
       // Update habit in database directly (like widget does)
       try {
-        final habitService = await ref.read(currentHabitServiceProvider.future);
-        await habitService.updateHabit(habit);
+        await habitService.updateHabit(freshHabit);
+        AppLogger.info('✅ Updated habit in database, now has ${freshHabit.completions.length} completions');
 
         // Invalidate provider to trigger refresh from database
         ref.invalidate(habitsProvider);
@@ -872,9 +884,21 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     });
 
     try {
+      // ✅ CRITICAL FIX: Fetch fresh habit from database to avoid overwriting
+      // The habit parameter might be stale if notification marked complete in background
+      final habitService = await ref.read(currentHabitServiceProvider.future);
+      final freshHabit = await habitService.getHabitById(habit.id);
+      
+      if (freshHabit == null) {
+        AppLogger.error('Habit not found in database: ${habit.id}');
+        return;
+      }
+      
+      AppLogger.info('🔄 Toggle hourly completion - Fresh habit has ${freshHabit.completions.length} completions');
+
       if (isCompleted) {
         // Remove completion for this specific time slot
-        habit.completions.removeWhere((completion) {
+        freshHabit.completions.removeWhere((completion) {
           return completion.year == targetDateTime.year &&
               completion.month == targetDateTime.month &&
               completion.day == targetDateTime.day &&
@@ -883,13 +907,13 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         });
       } else {
         // Add completion for this specific time slot
-        habit.completions.add(targetDateTime);
+        freshHabit.completions.add(targetDateTime);
       }
 
       // Update habit in database directly (like widget does)
       try {
-        final habitService = await ref.read(currentHabitServiceProvider.future);
-        await habitService.updateHabit(habit);
+        await habitService.updateHabit(freshHabit);
+        AppLogger.info('✅ Updated hourly habit in database, now has ${freshHabit.completions.length} completions');
 
         // Invalidate provider to trigger refresh from database
         ref.invalidate(habitsProvider);
