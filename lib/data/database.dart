@@ -1195,9 +1195,11 @@ class HabitService {
             'Failed to check for achievements after habit completion', e);
       }
 
-      // Update widgets with new completion data
+      // Update widgets with new completion data - use IMMEDIATE update for instant feedback!
       try {
-        await WidgetIntegrationService.instance.onHabitCompleted();
+        AppLogger.info('🔔 Triggering IMMEDIATE widget update after completion');
+        await WidgetIntegrationService.instance.forceWidgetUpdate();
+        AppLogger.info('✅ Immediate widget update completed');
       } catch (e) {
         AppLogger.error('Failed to update widgets after habit completion', e);
         // Don't block the completion if widget update fails

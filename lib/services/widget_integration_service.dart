@@ -81,8 +81,8 @@ class WidgetIntegrationService {
       debugPrint('🧪 FORCE UPDATE: updateAllWidgets() completed');
 
       // Force explicit widget refresh using method channel to trigger onUpdate
-      await Future.delayed(const Duration(milliseconds: 300));
-      debugPrint('🧪 FORCE UPDATE: Waited 300ms for data propagation');
+      // NO DELAY - immediate update!
+      debugPrint('🧪 FORCE UPDATE: Triggering immediate widget refresh');
 
       try {
         await _widgetUpdateChannel.invokeMethod('forceWidgetRefresh');
@@ -120,14 +120,14 @@ class WidgetIntegrationService {
     // If an update is already in progress, just mark that another is needed
     if (_updatePending) {
       debugPrint('⏱️ Widget update already pending, will schedule another');
-      _debounceTimer = Timer(const Duration(milliseconds: 200), () {
+      _debounceTimer = Timer(const Duration(milliseconds: 50), () {
         _performWidgetUpdate();
       });
       return;
     }
 
-    // Minimal delay to batch rapid calls (reduced from 300ms to 100ms)
-    _debounceTimer = Timer(const Duration(milliseconds: 100), () {
+    // Minimal delay to batch rapid calls (reduced to 0ms for instant updates!)
+    _debounceTimer = Timer(const Duration(milliseconds: 0), () {
       _performWidgetUpdate();
     });
   }
