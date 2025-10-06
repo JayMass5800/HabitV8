@@ -52,7 +52,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       if (mounted) {
         // Invalidate provider to trigger refresh from database
         // This ensures UI updates when habits are completed from notifications
-        AppLogger.debug('⏰ TIMELINE: Auto-refresh timer tick - invalidating habitsProvider');
+        AppLogger.debug(
+            '⏰ TIMELINE: Auto-refresh timer tick - invalidating habitsProvider');
         ref.invalidate(habitsProvider);
       }
     });
@@ -719,9 +720,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
       ref.invalidate(habitsProvider);
 
       // Wait for provider to fetch fresh data before clearing optimistic state
-      AppLogger.debug('🐛 TIMELINE: Waiting for habitsProvider to fetch fresh data...');
+      AppLogger.debug(
+          '🐛 TIMELINE: Waiting for habitsProvider to fetch fresh data...');
       await ref.read(habitsProvider.future);
-      AppLogger.info('✅ TIMELINE: Fresh data loaded, clearing optimistic state');
+      AppLogger.info(
+          '✅ TIMELINE: Fresh data loaded, clearing optimistic state');
 
       // Clear optimistic state after successful update and data refresh
       setState(() {
