@@ -280,9 +280,16 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
 
     habitServiceAsync.when(
       data: (habitService) async {
+        // ✅ CRITICAL FIX: Fetch fresh habit from database to avoid overwriting
+        final freshHabit = await habitService.getHabitById(habit.id);
+        if (freshHabit == null) {
+          AppLogger.error('Habit not found in database: ${habit.id}');
+          return;
+        }
+
         if (isCompleted) {
           // Remove completion for this specific time slot
-          habit.completions.removeWhere((completion) {
+          freshHabit.completions.removeWhere((completion) {
             return completion.year == targetDateTime.year &&
                 completion.month == targetDateTime.month &&
                 completion.day == targetDateTime.day &&
@@ -291,10 +298,10 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
           });
         } else {
           // Add completion for this specific time slot
-          habit.completions.add(targetDateTime);
+          freshHabit.completions.add(targetDateTime);
         }
 
-        await habitService.updateHabit(habit);
+        await habitService.updateHabit(freshHabit);
         // Invalidate provider to trigger refresh
         ref.invalidate(habitsProvider);
       },
