@@ -255,7 +255,8 @@ class NotificationActionHandler {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('pending_database_changes', true);
-        AppLogger.info('🚩 Set pending_database_changes flag for stream refresh');
+        AppLogger.info(
+            '🚩 Set pending_database_changes flag for stream refresh');
       } catch (e) {
         AppLogger.error('Failed to set pending_database_changes flag', e);
       }

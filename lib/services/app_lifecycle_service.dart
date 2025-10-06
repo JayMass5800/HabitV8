@@ -157,18 +157,21 @@ class AppLifecycleService with WidgetsBindingObserver {
           // If so, trigger ANOTHER invalidation to force stream to emit fresh data
           try {
             final prefs = await SharedPreferences.getInstance();
-            final hasPendingChanges = prefs.getBool('pending_database_changes') ?? false;
-            
+            final hasPendingChanges =
+                prefs.getBool('pending_database_changes') ?? false;
+
             if (hasPendingChanges) {
-              AppLogger.info('🚩 Detected pending_database_changes flag - triggering stream refresh');
-              
+              AppLogger.info(
+                  '🚩 Detected pending_database_changes flag - triggering stream refresh');
+
               // Wait a bit more to ensure stream listener is active
               await Future.delayed(const Duration(milliseconds: 200));
-              
+
               // Invalidate again to trigger fresh emit that active listener will catch
               _container!.invalidate(habitsStreamProvider);
-              AppLogger.info('🔄 Re-invalidated habitsStreamProvider to emit fresh data');
-              
+              AppLogger.info(
+                  '🔄 Re-invalidated habitsStreamProvider to emit fresh data');
+
               // Clear the flag
               await prefs.setBool('pending_database_changes', false);
               AppLogger.info('✅ Cleared pending_database_changes flag');
