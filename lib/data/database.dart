@@ -427,12 +427,12 @@ final habitsStateProvider = Provider<AsyncValue<HabitsState>>((ref) {
 final habitsProvider = FutureProvider.autoDispose<List<Habit>>((ref) async {
   AppLogger.info('🔍 habitsProvider: Starting to fetch habits from database');
   final habitService = await ref.watch(habitServiceProvider.future);
-  
+
   // CRITICAL: Force cache refresh to get fresh database data
   // This ensures we pick up changes made by background notifications
   habitService.forceRefresh();
   AppLogger.debug('🔄 Forced HabitService cache refresh');
-  
+
   final habits = await habitService.getAllHabits();
   AppLogger.info(
       '🔍 habitsProvider: Fetched ${habits.length} habits from database');
