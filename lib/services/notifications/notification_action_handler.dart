@@ -254,12 +254,14 @@ class NotificationActionHandler {
       await Future.delayed(const Duration(milliseconds: 500));
       AppLogger.debug('⏱️ Waited for database sync');
 
-      // Update widget if available
+      // Update widget data WITHOUT using method channels (background isolate limitation)
+      // The widget will be refreshed by WorkManager periodic updates or when app resumes
       try {
-        await WidgetIntegrationService.instance.onHabitCompleted();
-        AppLogger.info('✅ Widget updated after background completion');
+        // Only update the SharedPreferences data, don't trigger method channels
+        await WidgetIntegrationService.instance.updateAllWidgets();
+        AppLogger.info('✅ Widget data updated after background completion');
       } catch (e) {
-        AppLogger.error('Error updating widget in background', e);
+        AppLogger.error('Error updating widget data in background', e);
       }
     } catch (e) {
       AppLogger.error('Error completing habit in background', e);

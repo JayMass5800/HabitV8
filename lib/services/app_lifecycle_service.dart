@@ -143,8 +143,12 @@ class AppLifecycleService with WidgetsBindingObserver {
           AppLogger.info(
               '🔄 Invalidated habitsProvider to force refresh from database');
 
+          // Also invalidate the habit service provider to ensure fresh data
+          _container!.invalidate(habitServiceProvider);
+          AppLogger.info('🔄 Invalidated habitServiceProvider');
+
           // Add delay to allow invalidation to process
-          await Future.delayed(const Duration(milliseconds: 200));
+          await Future.delayed(const Duration(milliseconds: 300));
           AppLogger.info('⏱️ Delay after invalidation complete');
         } catch (e) {
           AppLogger.error('Error invalidating habitsProvider', e);
@@ -166,6 +170,9 @@ class AppLifecycleService with WidgetsBindingObserver {
 
       // Refresh widgets to ensure they show current day data
       _refreshWidgetsOnResume();
+
+      // Trigger immediate widget update via method channel (foreground only)
+      _triggerWidgetRefreshOnResume();
 
       // Check for missed midnight resets (more efficient than hourly checks)
       _checkMissedResetOnResume();
@@ -267,6 +274,19 @@ class AppLifecycleService with WidgetsBindingObserver {
         AppLogger.error('Error processing pending completions', e);
       }
     });
+  }
+
+  /// Trigger Android widget refresh on resume via method channel
+  static void _triggerWidgetRefreshOnResume() async {
+    try {
+      AppLogger.info('🔄 Triggering widget refresh on app resume...');
+      // Add delay to ensure app is fully in foreground before using method channels
+      await Future.delayed(const Duration(milliseconds: 2000));
+      await WidgetIntegrationService.instance.onHabitCompleted();
+      AppLogger.info('✅ Widget refresh triggered successfully');
+    } catch (e) {
+      AppLogger.error('Error triggering widget refresh on resume', e);
+    }
   }
 
   /// Refresh widgets when app resumes to ensure current day data is shown
