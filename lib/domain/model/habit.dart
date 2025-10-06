@@ -1,154 +1,138 @@
-import 'package:hive/hive.dart';
+import 'package:isar/isar.dart';
 import '../../services/habit_stats_service.dart';
 import '../../services/logging_service.dart';
 
 part 'habit.g.dart';
 
-@HiveType(typeId: 0)
-class Habit extends HiveObject {
-  @HiveField(0)
-  late String id;
-
-  @HiveField(1)
+@collection
+class Habit {
+  Id isarId = Isar.autoIncrement; // Auto-incrementing ID for Isar
+  
+  @Index(unique: true)
+  late String id; // Original string ID for compatibility
+  
   late String name;
-
-  @HiveField(2)
+  
   String? description;
-
-  @HiveField(3)
+  
   late String category;
-
-  @HiveField(4)
+  
   late int colorValue;
-
-  @HiveField(5)
+  
   late DateTime createdAt;
-
-  @HiveField(6)
+  
   DateTime? nextDueDate;
-
-  @HiveField(7)
+  
+  @Enumerated(EnumType.name)
   late HabitFrequency frequency;
-
-  @HiveField(8)
+  
   late int targetCount;
-
-  @HiveField(9)
+  
+  // Isar supports List<DateTime> natively!
   List<DateTime> completions = [];
-
-  @HiveField(10)
+  
   int currentStreak = 0;
-
-  @HiveField(11)
+  
   int longestStreak = 0;
-
-  @HiveField(12)
+  
   bool isActive = true;
-
-  @HiveField(13)
+  
   bool notificationsEnabled = true;
-
-  @HiveField(14)
+  
   DateTime? notificationTime;
-
-  @HiveField(15)
+  
   List<int> weeklySchedule = [];
-
-  @HiveField(16)
+  
   List<int> monthlySchedule = [];
-
-  @HiveField(17)
+  
   DateTime? reminderTime;
-
-  @HiveField(18)
+  
+  @Enumerated(EnumType.name)
   HabitDifficulty difficulty = HabitDifficulty.medium;
-
-  // Add new fields for frequency-specific data
-  @HiveField(19)
+  
   List<int> selectedWeekdays = [];
-
-  @HiveField(20)
+  
   List<int> selectedMonthDays = [];
-
-  @HiveField(21)
-  List<String> hourlyTimes = []; // Store as string format "HH:mm"
-
-  @HiveField(22)
-  List<String> selectedYearlyDates = []; // Store as string format "yyyy-MM-dd"
-
-  // Single habit date/time - stores the exact date and time for one-off habits
-  @HiveField(26)
+  
+  List<String> hourlyTimes = [];
+  
+  List<String> selectedYearlyDates = [];
+  
   DateTime? singleDateTime;
-
-  // Alarm-specific fields
-  @HiveField(23)
+  
   bool alarmEnabled = false;
-
-  @HiveField(24)
-  String? alarmSoundName; // System alarm sound display name
-
-  @HiveField(27)
-  String? alarmSoundUri; // System alarm sound URI
-
-  @HiveField(25)
-  int snoozeDelayMinutes = 10; // Default 10 minutes snooze
-
-  // ==================== NEW RRULE FIELDS ====================
-
-  /// RRule string defining the recurrence pattern
-  /// Example: "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"
-  /// This replaces the legacy frequency system with a standardized approach
-  @HiveField(28)
+  
+  String? alarmSoundName;
+  
+  String? alarmSoundUri;
+  
+  int snoozeDelayMinutes = 10;
+  
+  // RRule fields
   String? rruleString;
-
-  /// Start date for the RRule (DTSTART in iCalendar)
-  /// This is the date when the recurrence pattern begins
-  @HiveField(29)
+  
   DateTime? dtStart;
-
-  /// Flag indicating whether this habit uses the RRule system
-  /// (vs. legacy frequency system)
-  /// Used for gradual migration from old to new system
-  @HiveField(30)
+  
   bool usesRRule = false;
 
-  Habit() {
-    id = DateTime.now().millisecondsSinceEpoch.toString();
-  }
-
-  Habit.create({
-    required this.name,
-    this.description,
-    required this.category,
-    required this.colorValue,
-    required this.frequency,
-    this.targetCount = 1,
-    this.notificationsEnabled = true,
-    this.notificationTime,
-    this.reminderTime,
-    this.weeklySchedule = const [],
-    this.monthlySchedule = const [],
-    this.difficulty = HabitDifficulty.medium,
-    this.selectedWeekdays = const [],
-    this.selectedMonthDays = const [],
-    this.hourlyTimes = const [],
-    this.selectedYearlyDates = const [],
-    this.singleDateTime,
-    this.alarmEnabled = false,
-    this.alarmSoundName,
-    this.alarmSoundUri,
-    this.snoozeDelayMinutes = 10,
-  }) {
-    id = DateTime.now().millisecondsSinceEpoch.toString();
-    createdAt = DateTime.now();
-    isActive = true;
-    currentStreak = 0;
-    longestStreak = 0;
-    completions = [];
-  }
+  // ==================== COMPUTED PROPERTIES AND METHODS ====================
 
   // Private cache reference for efficient access
   static final HabitStatsService _statsService = HabitStatsService();
+
+  // Named constructor for creating new habits
+  static Habit create({
+    required String name,
+    String? description,
+    required String category,
+    required int colorValue,
+    required HabitFrequency frequency,
+    int targetCount = 1,
+    bool notificationsEnabled = true,
+    DateTime? notificationTime,
+    DateTime? reminderTime,
+    List<int> weeklySchedule = const [],
+    List<int> monthlySchedule = const [],
+    HabitDifficulty difficulty = HabitDifficulty.medium,
+    List<int> selectedWeekdays = const [],
+    List<int> selectedMonthDays = const [],
+    List<String> hourlyTimes = const [],
+    List<String> selectedYearlyDates = const [],
+    DateTime? singleDateTime,
+    bool alarmEnabled = false,
+    String? alarmSoundName,
+    String? alarmSoundUri,
+    int snoozeDelayMinutes = 10,
+  }) {
+    return Habit()
+      ..id = DateTime.now().millisecondsSinceEpoch.toString()
+      ..name = name
+      ..description = description
+      ..category = category
+      ..colorValue = colorValue
+      ..createdAt = DateTime.now()
+      ..frequency = frequency
+      ..targetCount = targetCount
+      ..isActive = true
+      ..currentStreak = 0
+      ..longestStreak = 0
+      ..completions = []
+      ..notificationsEnabled = notificationsEnabled
+      ..notificationTime = notificationTime
+      ..reminderTime = reminderTime
+      ..weeklySchedule = List.from(weeklySchedule)
+      ..monthlySchedule = List.from(monthlySchedule)
+      ..difficulty = difficulty
+      ..selectedWeekdays = List.from(selectedWeekdays)
+      ..selectedMonthDays = List.from(selectedMonthDays)
+      ..hourlyTimes = List.from(hourlyTimes)
+      ..selectedYearlyDates = List.from(selectedYearlyDates)
+      ..singleDateTime = singleDateTime
+      ..alarmEnabled = alarmEnabled
+      ..alarmSoundName = alarmSoundName
+      ..alarmSoundUri = alarmSoundUri
+      ..snoozeDelayMinutes = snoozeDelayMinutes;
+  }
 
   // Calculate completion rate based on the last 30 days (now cached)
   double get completionRate => _statsService.getCompletionRate(this);
@@ -219,7 +203,6 @@ class Habit extends HiveObject {
   bool _checkCompletedForCurrentPeriod(DateTime checkTime) {
     switch (frequency) {
       case HabitFrequency.hourly:
-        // Check if completed in the current hour
         final currentHour = DateTime(
           checkTime.year,
           checkTime.month,
@@ -237,7 +220,6 @@ class Habit extends HiveObject {
         });
 
       case HabitFrequency.daily:
-        // Check if completed today
         final today = DateTime(checkTime.year, checkTime.month, checkTime.day);
         return completions.any((completion) {
           final completionDay = DateTime(
@@ -249,7 +231,6 @@ class Habit extends HiveObject {
         });
 
       case HabitFrequency.weekly:
-        // Check if completed in the current week (Monday to Sunday)
         final weekStart = _getWeekStart(checkTime);
         final weekEnd = weekStart.add(
           const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
@@ -262,7 +243,6 @@ class Habit extends HiveObject {
         });
 
       case HabitFrequency.monthly:
-        // Check if completed in the current month
         final monthStart = DateTime(checkTime.year, checkTime.month, 1);
         final monthEnd = DateTime(
           checkTime.year,
@@ -277,7 +257,6 @@ class Habit extends HiveObject {
         });
 
       case HabitFrequency.yearly:
-        // Check if completed in the current year
         final yearStart = DateTime(checkTime.year, 1, 1);
         final yearEnd = DateTime(
           checkTime.year + 1,
@@ -292,7 +271,6 @@ class Habit extends HiveObject {
         });
 
       case HabitFrequency.single:
-        // Check if completed (single habits can only be completed once)
         return completions.isNotEmpty;
     }
   }
@@ -316,7 +294,6 @@ class Habit extends HiveObject {
   }
 
   DateTime _getWeekStart(DateTime date) {
-    // Get the Monday of the current week
     final daysFromMonday = (date.weekday - 1) % 7;
     return DateTime(
       date.year,
@@ -384,7 +361,6 @@ class Habit extends HiveObject {
           lastCompletion.day,
         );
       case HabitFrequency.single:
-        // Single habits don't repeat, so return null to indicate no next completion
         return null;
     }
   }
@@ -411,53 +387,27 @@ class Habit extends HiveObject {
     _statsService.invalidateHabitCache(id);
   }
 
-  // Override save method to invalidate cache
-  @override
-  Future<void> save() async {
-    await super.save();
-    invalidateCache();
-  }
-
-  // Override delete method to invalidate cache
-  @override
-  Future<void> delete() async {
-    invalidateCache();
-    await super.delete();
-  }
-
   // ==================== RRULE HELPER METHODS ====================
 
   /// Get or create the RRule string for this habit
-  /// Performs lazy migration from legacy format if needed
   String? getOrCreateRRule() {
-    // If already using RRule, return it
     if (usesRRule && rruleString != null) {
       return rruleString;
     }
 
-    // Skip single frequency (no recurrence)
     if (frequency == HabitFrequency.single) {
       return null;
     }
 
-    // Lazy migration: convert from legacy format
     if (!usesRRule) {
       try {
-        // Import the RRuleService dynamically to avoid circular dependency
-        // The actual import will be at the top of the file
         final convertedRRule = _convertToRRule();
 
         if (convertedRRule != null) {
           rruleString = convertedRRule;
           dtStart = dtStart ?? createdAt;
           usesRRule = true;
-
-          // Save the updated habit asynchronously
-          save().then((_) {
-            AppLogger.info('Migrated habit "$name" to RRule: $rruleString');
-          }).catchError((error) {
-            AppLogger.error('Failed to save migrated habit: $error');
-          });
+          AppLogger.info('Migrated habit "$name" to RRule: $rruleString');
         }
       } catch (e) {
         AppLogger.error('Failed to migrate habit "$name" to RRule: $e');
@@ -468,7 +418,6 @@ class Habit extends HiveObject {
   }
 
   /// Internal method to convert legacy format to RRule
-  /// This mirrors the logic in RRuleService to avoid circular dependency during migration
   String? _convertToRRule() {
     switch (frequency) {
       case HabitFrequency.hourly:
@@ -515,14 +464,10 @@ class Habit extends HiveObject {
   }
 
   /// Get human-readable schedule summary
-  /// Returns a user-friendly description of when the habit occurs
   String getScheduleSummary() {
     if (isRRuleBased()) {
-      // This will use RRuleService.getRRuleSummary when available
-      // For now, return a simple summary
       return _getSimpleRRuleSummary();
     } else {
-      // Legacy summary
       return _getLegacyScheduleSummary();
     }
   }
@@ -530,7 +475,6 @@ class Habit extends HiveObject {
   String _getSimpleRRuleSummary() {
     if (rruleString == null) return 'Custom schedule';
 
-    // Simple parsing for common patterns
     if (rruleString!.contains('FREQ=DAILY')) return 'Every day';
     if (rruleString!.contains('FREQ=WEEKLY')) return 'Weekly';
     if (rruleString!.contains('FREQ=MONTHLY')) return 'Monthly';
@@ -567,7 +511,7 @@ class Habit extends HiveObject {
       'colorValue': colorValue,
       'createdAt': createdAt.toIso8601String(),
       'nextDueDate': nextDueDate?.toIso8601String(),
-      'frequency': frequency.toString().split('.').last,
+      'frequency': frequency.name,
       'targetCount': targetCount,
       'completions': completions.map((date) => date.toIso8601String()).toList(),
       'currentStreak': currentStreak,
@@ -578,7 +522,7 @@ class Habit extends HiveObject {
       'weeklySchedule': weeklySchedule,
       'monthlySchedule': monthlySchedule,
       'reminderTime': reminderTime?.toIso8601String(),
-      'difficulty': difficulty.toString().split('.').last,
+      'difficulty': difficulty.name,
       'selectedWeekdays': selectedWeekdays,
       'selectedMonthDays': selectedMonthDays,
       'hourlyTimes': hourlyTimes,
@@ -593,30 +537,84 @@ class Habit extends HiveObject {
       'usesRRule': usesRRule,
     };
   }
+
+  // Create from JSON (for import)
+  static Habit fromJson(Map<String, dynamic> json) {
+    return Habit()
+      ..id = json['id'] as String
+      ..name = json['name'] as String
+      ..description = json['description'] as String?
+      ..category = json['category'] as String
+      ..colorValue = json['colorValue'] as int
+      ..createdAt = DateTime.parse(json['createdAt'] as String)
+      ..nextDueDate = json['nextDueDate'] != null
+          ? DateTime.parse(json['nextDueDate'] as String)
+          : null
+      ..frequency = HabitFrequency.values.firstWhere(
+        (e) => e.name == json['frequency'],
+      )
+      ..targetCount = json['targetCount'] as int
+      ..completions = (json['completions'] as List<dynamic>)
+          .map((e) => DateTime.parse(e as String))
+          .toList()
+      ..currentStreak = json['currentStreak'] as int
+      ..longestStreak = json['longestStreak'] as int
+      ..isActive = json['isActive'] as bool
+      ..notificationsEnabled = json['notificationsEnabled'] as bool
+      ..notificationTime = json['notificationTime'] != null
+          ? DateTime.parse(json['notificationTime'] as String)
+          : null
+      ..weeklySchedule = (json['weeklySchedule'] as List<dynamic>)
+          .map((e) => e as int)
+          .toList()
+      ..monthlySchedule = (json['monthlySchedule'] as List<dynamic>)
+          .map((e) => e as int)
+          .toList()
+      ..reminderTime = json['reminderTime'] != null
+          ? DateTime.parse(json['reminderTime'] as String)
+          : null
+      ..difficulty = HabitDifficulty.values.firstWhere(
+        (e) => e.name == json['difficulty'],
+      )
+      ..selectedWeekdays = (json['selectedWeekdays'] as List<dynamic>)
+          .map((e) => e as int)
+          .toList()
+      ..selectedMonthDays = (json['selectedMonthDays'] as List<dynamic>)
+          .map((e) => e as int)
+          .toList()
+      ..hourlyTimes = (json['hourlyTimes'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList()
+      ..selectedYearlyDates = (json['selectedYearlyDates'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList()
+      ..singleDateTime = json['singleDateTime'] != null
+          ? DateTime.parse(json['singleDateTime'] as String)
+          : null
+      ..alarmEnabled = json['alarmEnabled'] as bool? ?? false
+      ..alarmSoundName = json['alarmSoundName'] as String?
+      ..alarmSoundUri = json['alarmSoundUri'] as String?
+      ..snoozeDelayMinutes = json['snoozeDelayMinutes'] as int? ?? 10
+      ..rruleString = json['rruleString'] as String?
+      ..dtStart = json['dtStart'] != null
+          ? DateTime.parse(json['dtStart'] as String)
+          : null
+      ..usesRRule = json['usesRRule'] as bool? ?? false;
+  }
 }
 
-@HiveType(typeId: 1)
+// Enums remain the same
 enum HabitFrequency {
-  @HiveField(0)
   hourly,
-  @HiveField(1)
   daily,
-  @HiveField(2)
   weekly,
-  @HiveField(3)
   monthly,
-  @HiveField(4)
   yearly,
-  @HiveField(5)
   single,
 }
 
-@HiveType(typeId: 2)
 enum HabitDifficulty {
-  @HiveField(0)
   easy,
-  @HiveField(1)
   medium,
-  @HiveField(2)
   hard,
 }

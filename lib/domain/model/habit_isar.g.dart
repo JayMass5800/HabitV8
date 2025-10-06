@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'habit.dart';
+part of 'habit_isar.dart';
 
 // **************************************************************************
 // IsarCollectionGenerator
@@ -79,15 +79,15 @@ const HabitSchema = CollectionSchema(
       type: IsarType.string,
       enumMap: _HabitfrequencyEnumValueMap,
     ),
-    r'hourlyTimes': PropertySchema(
+    r'habitId': PropertySchema(
       id: 12,
+      name: r'habitId',
+      type: IsarType.string,
+    ),
+    r'hourlyTimes': PropertySchema(
+      id: 13,
       name: r'hourlyTimes',
       type: IsarType.stringList,
-    ),
-    r'id': PropertySchema(
-      id: 13,
-      name: r'id',
-      type: IsarType.string,
     ),
     r'isActive': PropertySchema(
       id: 14,
@@ -179,16 +179,16 @@ const HabitSchema = CollectionSchema(
   serialize: _habitSerialize,
   deserialize: _habitDeserialize,
   deserializeProp: _habitDeserializeProp,
-  idName: r'isarId',
+  idName: r'id',
   indexes: {
-    r'id': IndexSchema(
-      id: -3268401673993471357,
-      name: r'id',
+    r'habitId': IndexSchema(
+      id: 1000409552522198739,
+      name: r'habitId',
       unique: true,
       replace: false,
       properties: [
         IndexPropertySchema(
-          name: r'id',
+          name: r'habitId',
           type: IndexType.hash,
           caseSensitive: true,
         )
@@ -231,6 +231,7 @@ int _habitEstimateSize(
   }
   bytesCount += 3 + object.difficulty.name.length * 3;
   bytesCount += 3 + object.frequency.name.length * 3;
+  bytesCount += 3 + object.habitId.length * 3;
   bytesCount += 3 + object.hourlyTimes.length * 3;
   {
     for (var i = 0; i < object.hourlyTimes.length; i++) {
@@ -238,7 +239,6 @@ int _habitEstimateSize(
       bytesCount += value.length * 3;
     }
   }
-  bytesCount += 3 + object.id.length * 3;
   bytesCount += 3 + object.monthlySchedule.length * 8;
   bytesCount += 3 + object.name.length * 3;
   {
@@ -278,8 +278,8 @@ void _habitSerialize(
   writer.writeString(offsets[9], object.difficulty.name);
   writer.writeDateTime(offsets[10], object.dtStart);
   writer.writeString(offsets[11], object.frequency.name);
-  writer.writeStringList(offsets[12], object.hourlyTimes);
-  writer.writeString(offsets[13], object.id);
+  writer.writeString(offsets[12], object.habitId);
+  writer.writeStringList(offsets[13], object.hourlyTimes);
   writer.writeBool(offsets[14], object.isActive);
   writer.writeLong(offsets[15], object.longestStreak);
   writer.writeLongList(offsets[16], object.monthlySchedule);
@@ -322,10 +322,10 @@ Habit _habitDeserialize(
   object.frequency =
       _HabitfrequencyValueEnumMap[reader.readStringOrNull(offsets[11])] ??
           HabitFrequency.hourly;
-  object.hourlyTimes = reader.readStringList(offsets[12]) ?? [];
-  object.id = reader.readString(offsets[13]);
+  object.habitId = reader.readString(offsets[12]);
+  object.hourlyTimes = reader.readStringList(offsets[13]) ?? [];
+  object.id = id;
   object.isActive = reader.readBool(offsets[14]);
-  object.isarId = id;
   object.longestStreak = reader.readLong(offsets[15]);
   object.monthlySchedule = reader.readLongList(offsets[16]) ?? [];
   object.name = reader.readString(offsets[17]);
@@ -379,9 +379,9 @@ P _habitDeserializeProp<P>(
       return (_HabitfrequencyValueEnumMap[reader.readStringOrNull(offset)] ??
           HabitFrequency.hourly) as P;
     case 12:
-      return (reader.readStringList(offset) ?? []) as P;
-    case 13:
       return (reader.readString(offset)) as P;
+    case 13:
+      return (reader.readStringList(offset) ?? []) as P;
     case 14:
       return (reader.readBool(offset)) as P;
     case 15:
@@ -449,7 +449,7 @@ const _HabitfrequencyValueEnumMap = {
 };
 
 Id _habitGetId(Habit object) {
-  return object.isarId;
+  return object.id;
 }
 
 List<IsarLinkBase<dynamic>> _habitGetLinks(Habit object) {
@@ -457,65 +457,65 @@ List<IsarLinkBase<dynamic>> _habitGetLinks(Habit object) {
 }
 
 void _habitAttach(IsarCollection<dynamic> col, Id id, Habit object) {
-  object.isarId = id;
+  object.id = id;
 }
 
 extension HabitByIndex on IsarCollection<Habit> {
-  Future<Habit?> getById(String id) {
-    return getByIndex(r'id', [id]);
+  Future<Habit?> getByHabitId(String habitId) {
+    return getByIndex(r'habitId', [habitId]);
   }
 
-  Habit? getByIdSync(String id) {
-    return getByIndexSync(r'id', [id]);
+  Habit? getByHabitIdSync(String habitId) {
+    return getByIndexSync(r'habitId', [habitId]);
   }
 
-  Future<bool> deleteById(String id) {
-    return deleteByIndex(r'id', [id]);
+  Future<bool> deleteByHabitId(String habitId) {
+    return deleteByIndex(r'habitId', [habitId]);
   }
 
-  bool deleteByIdSync(String id) {
-    return deleteByIndexSync(r'id', [id]);
+  bool deleteByHabitIdSync(String habitId) {
+    return deleteByIndexSync(r'habitId', [habitId]);
   }
 
-  Future<List<Habit?>> getAllById(List<String> idValues) {
-    final values = idValues.map((e) => [e]).toList();
-    return getAllByIndex(r'id', values);
+  Future<List<Habit?>> getAllByHabitId(List<String> habitIdValues) {
+    final values = habitIdValues.map((e) => [e]).toList();
+    return getAllByIndex(r'habitId', values);
   }
 
-  List<Habit?> getAllByIdSync(List<String> idValues) {
-    final values = idValues.map((e) => [e]).toList();
-    return getAllByIndexSync(r'id', values);
+  List<Habit?> getAllByHabitIdSync(List<String> habitIdValues) {
+    final values = habitIdValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'habitId', values);
   }
 
-  Future<int> deleteAllById(List<String> idValues) {
-    final values = idValues.map((e) => [e]).toList();
-    return deleteAllByIndex(r'id', values);
+  Future<int> deleteAllByHabitId(List<String> habitIdValues) {
+    final values = habitIdValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'habitId', values);
   }
 
-  int deleteAllByIdSync(List<String> idValues) {
-    final values = idValues.map((e) => [e]).toList();
-    return deleteAllByIndexSync(r'id', values);
+  int deleteAllByHabitIdSync(List<String> habitIdValues) {
+    final values = habitIdValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'habitId', values);
   }
 
-  Future<Id> putById(Habit object) {
-    return putByIndex(r'id', object);
+  Future<Id> putByHabitId(Habit object) {
+    return putByIndex(r'habitId', object);
   }
 
-  Id putByIdSync(Habit object, {bool saveLinks = true}) {
-    return putByIndexSync(r'id', object, saveLinks: saveLinks);
+  Id putByHabitIdSync(Habit object, {bool saveLinks = true}) {
+    return putByIndexSync(r'habitId', object, saveLinks: saveLinks);
   }
 
-  Future<List<Id>> putAllById(List<Habit> objects) {
-    return putAllByIndex(r'id', objects);
+  Future<List<Id>> putAllByHabitId(List<Habit> objects) {
+    return putAllByIndex(r'habitId', objects);
   }
 
-  List<Id> putAllByIdSync(List<Habit> objects, {bool saveLinks = true}) {
-    return putAllByIndexSync(r'id', objects, saveLinks: saveLinks);
+  List<Id> putAllByHabitIdSync(List<Habit> objects, {bool saveLinks = true}) {
+    return putAllByIndexSync(r'habitId', objects, saveLinks: saveLinks);
   }
 }
 
 extension HabitQueryWhereSort on QueryBuilder<Habit, Habit, QWhere> {
-  QueryBuilder<Habit, Habit, QAfterWhere> anyIsarId() {
+  QueryBuilder<Habit, Habit, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(const IdWhereClause.any());
     });
@@ -523,108 +523,109 @@ extension HabitQueryWhereSort on QueryBuilder<Habit, Habit, QWhere> {
 }
 
 extension HabitQueryWhere on QueryBuilder<Habit, Habit, QWhereClause> {
-  QueryBuilder<Habit, Habit, QAfterWhereClause> isarIdEqualTo(Id isarId) {
+  QueryBuilder<Habit, Habit, QAfterWhereClause> idEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(
-        lower: isarId,
-        upper: isarId,
+        lower: id,
+        upper: id,
       ));
     });
   }
 
-  QueryBuilder<Habit, Habit, QAfterWhereClause> isarIdNotEqualTo(Id isarId) {
+  QueryBuilder<Habit, Habit, QAfterWhereClause> idNotEqualTo(Id id) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
             .addWhereClause(
-              IdWhereClause.lessThan(upper: isarId, includeUpper: false),
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
             )
             .addWhereClause(
-              IdWhereClause.greaterThan(lower: isarId, includeLower: false),
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
             );
       } else {
         return query
             .addWhereClause(
-              IdWhereClause.greaterThan(lower: isarId, includeLower: false),
+              IdWhereClause.greaterThan(lower: id, includeLower: false),
             )
             .addWhereClause(
-              IdWhereClause.lessThan(upper: isarId, includeUpper: false),
+              IdWhereClause.lessThan(upper: id, includeUpper: false),
             );
       }
     });
   }
 
-  QueryBuilder<Habit, Habit, QAfterWhereClause> isarIdGreaterThan(Id isarId,
+  QueryBuilder<Habit, Habit, QAfterWhereClause> idGreaterThan(Id id,
       {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
-        IdWhereClause.greaterThan(lower: isarId, includeLower: include),
+        IdWhereClause.greaterThan(lower: id, includeLower: include),
       );
     });
   }
 
-  QueryBuilder<Habit, Habit, QAfterWhereClause> isarIdLessThan(Id isarId,
+  QueryBuilder<Habit, Habit, QAfterWhereClause> idLessThan(Id id,
       {bool include = false}) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
-        IdWhereClause.lessThan(upper: isarId, includeUpper: include),
+        IdWhereClause.lessThan(upper: id, includeUpper: include),
       );
     });
   }
 
-  QueryBuilder<Habit, Habit, QAfterWhereClause> isarIdBetween(
-    Id lowerIsarId,
-    Id upperIsarId, {
+  QueryBuilder<Habit, Habit, QAfterWhereClause> idBetween(
+    Id lowerId,
+    Id upperId, {
     bool includeLower = true,
     bool includeUpper = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IdWhereClause.between(
-        lower: lowerIsarId,
+        lower: lowerId,
         includeLower: includeLower,
-        upper: upperIsarId,
+        upper: upperId,
         includeUpper: includeUpper,
       ));
     });
   }
 
-  QueryBuilder<Habit, Habit, QAfterWhereClause> idEqualTo(String id) {
+  QueryBuilder<Habit, Habit, QAfterWhereClause> habitIdEqualTo(String habitId) {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(IndexWhereClause.equalTo(
-        indexName: r'id',
-        value: [id],
+        indexName: r'habitId',
+        value: [habitId],
       ));
     });
   }
 
-  QueryBuilder<Habit, Habit, QAfterWhereClause> idNotEqualTo(String id) {
+  QueryBuilder<Habit, Habit, QAfterWhereClause> habitIdNotEqualTo(
+      String habitId) {
     return QueryBuilder.apply(this, (query) {
       if (query.whereSort == Sort.asc) {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'id',
+              indexName: r'habitId',
               lower: [],
-              upper: [id],
+              upper: [habitId],
               includeUpper: false,
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'id',
-              lower: [id],
+              indexName: r'habitId',
+              lower: [habitId],
               includeLower: false,
               upper: [],
             ));
       } else {
         return query
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'id',
-              lower: [id],
+              indexName: r'habitId',
+              lower: [habitId],
               includeLower: false,
               upper: [],
             ))
             .addWhereClause(IndexWhereClause.between(
-              indexName: r'id',
+              indexName: r'habitId',
               lower: [],
-              upper: [id],
+              upper: [habitId],
               includeUpper: false,
             ));
       }
@@ -1838,6 +1839,136 @@ extension HabitQueryFilter on QueryBuilder<Habit, Habit, QFilterCondition> {
     });
   }
 
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'habitId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'habitId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'habitId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'habitId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'habitId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'habitId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'habitId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'habitId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'habitId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> habitIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'habitId',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<Habit, Habit, QAfterFilterCondition> hourlyTimesElementEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -2057,55 +2188,46 @@ extension HabitQueryFilter on QueryBuilder<Habit, Habit, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> idEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
+  QueryBuilder<Habit, Habit, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'id',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<Habit, Habit, QAfterFilterCondition> idGreaterThan(
-    String value, {
+    Id value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         include: include,
         property: r'id',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<Habit, Habit, QAfterFilterCondition> idLessThan(
-    String value, {
+    Id value, {
     bool include = false,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.lessThan(
         include: include,
         property: r'id',
         value: value,
-        caseSensitive: caseSensitive,
       ));
     });
   }
 
   QueryBuilder<Habit, Habit, QAfterFilterCondition> idBetween(
-    String lower,
-    String upper, {
+    Id lower,
+    Id upper, {
     bool includeLower = true,
     bool includeUpper = true,
-    bool caseSensitive = true,
   }) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
@@ -2114,73 +2236,6 @@ extension HabitQueryFilter on QueryBuilder<Habit, Habit, QFilterCondition> {
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> idStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'id',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> idEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'id',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> idContains(String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'id',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> idMatches(String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'id',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> idIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'id',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> idIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'id',
-        value: '',
       ));
     });
   }
@@ -2191,58 +2246,6 @@ extension HabitQueryFilter on QueryBuilder<Habit, Habit, QFilterCondition> {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isActive',
         value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> isarIdEqualTo(Id value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'isarId',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> isarIdGreaterThan(
-    Id value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'isarId',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> isarIdLessThan(
-    Id value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'isarId',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterFilterCondition> isarIdBetween(
-    Id lower,
-    Id upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'isarId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
       ));
     });
   }
@@ -3917,15 +3920,15 @@ extension HabitQuerySortBy on QueryBuilder<Habit, Habit, QSortBy> {
     });
   }
 
-  QueryBuilder<Habit, Habit, QAfterSortBy> sortById() {
+  QueryBuilder<Habit, Habit, QAfterSortBy> sortByHabitId() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'id', Sort.asc);
+      return query.addSortBy(r'habitId', Sort.asc);
     });
   }
 
-  QueryBuilder<Habit, Habit, QAfterSortBy> sortByIdDesc() {
+  QueryBuilder<Habit, Habit, QAfterSortBy> sortByHabitIdDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'id', Sort.desc);
+      return query.addSortBy(r'habitId', Sort.desc);
     });
   }
 
@@ -4207,6 +4210,18 @@ extension HabitQuerySortThenBy on QueryBuilder<Habit, Habit, QSortThenBy> {
     });
   }
 
+  QueryBuilder<Habit, Habit, QAfterSortBy> thenByHabitId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'habitId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Habit, Habit, QAfterSortBy> thenByHabitIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'habitId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Habit, Habit, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -4228,18 +4243,6 @@ extension HabitQuerySortThenBy on QueryBuilder<Habit, Habit, QSortThenBy> {
   QueryBuilder<Habit, Habit, QAfterSortBy> thenByIsActiveDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isActive', Sort.desc);
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterSortBy> thenByIsarId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'isarId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Habit, Habit, QAfterSortBy> thenByIsarIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'isarId', Sort.desc);
     });
   }
 
@@ -4457,16 +4460,16 @@ extension HabitQueryWhereDistinct on QueryBuilder<Habit, Habit, QDistinct> {
     });
   }
 
-  QueryBuilder<Habit, Habit, QDistinct> distinctByHourlyTimes() {
+  QueryBuilder<Habit, Habit, QDistinct> distinctByHabitId(
+      {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'hourlyTimes');
+      return query.addDistinctBy(r'habitId', caseSensitive: caseSensitive);
     });
   }
 
-  QueryBuilder<Habit, Habit, QDistinct> distinctById(
-      {bool caseSensitive = true}) {
+  QueryBuilder<Habit, Habit, QDistinct> distinctByHourlyTimes() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'id', caseSensitive: caseSensitive);
+      return query.addDistinctBy(r'hourlyTimes');
     });
   }
 
@@ -4576,9 +4579,9 @@ extension HabitQueryWhereDistinct on QueryBuilder<Habit, Habit, QDistinct> {
 }
 
 extension HabitQueryProperty on QueryBuilder<Habit, Habit, QQueryProperty> {
-  QueryBuilder<Habit, int, QQueryOperations> isarIdProperty() {
+  QueryBuilder<Habit, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'isarId');
+      return query.addPropertyName(r'id');
     });
   }
 
@@ -4654,15 +4657,15 @@ extension HabitQueryProperty on QueryBuilder<Habit, Habit, QQueryProperty> {
     });
   }
 
-  QueryBuilder<Habit, List<String>, QQueryOperations> hourlyTimesProperty() {
+  QueryBuilder<Habit, String, QQueryOperations> habitIdProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'hourlyTimes');
+      return query.addPropertyName(r'habitId');
     });
   }
 
-  QueryBuilder<Habit, String, QQueryOperations> idProperty() {
+  QueryBuilder<Habit, List<String>, QQueryOperations> hourlyTimesProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'id');
+      return query.addPropertyName(r'hourlyTimes');
     });
   }
 
