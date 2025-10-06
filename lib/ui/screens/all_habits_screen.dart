@@ -306,7 +306,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       // Get habit service and fetch fresh habit from database
       final habitService = await ref.read(currentHabitServiceProvider.future);
       final freshHabit = await habitService.getHabitById(habit.id);
-      
+
       if (freshHabit == null) {
         AppLogger.error('Habit not found in database: ${habit.id}');
         return;
@@ -327,7 +327,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       }
 
       await habitService.updateHabit(freshHabit);
-      
+
       // Invalidate provider to trigger refresh
       ref.invalidate(habitsProvider);
     } catch (error) {
