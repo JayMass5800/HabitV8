@@ -46,75 +46,69 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       ),
       body: Consumer(
         builder: (context, ref, child) {
-          final habitServiceAsync = ref.watch(habitServiceIsarProvider);
+          // 🔔 REACTIVE: Watch habits stream for instant stats updates!
+          // Stats now update automatically when habits are completed
+          final habitsAsync = ref.watch(habitsStreamIsarProvider);
 
-          return habitServiceAsync.when(
-            data: (habitService) => FutureBuilder<List<Habit>>(
-              future: habitService.getAllHabits(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.analytics, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text(
-                          'No habit data yet',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Start completing habits to see your progress!',
-                          style: TextStyle(color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final habits = snapshot.data!;
-                final hasData = habits.any(
-                  (habit) => habit.completions.isNotEmpty,
+          return habitsAsync.when(
+            data: (habits) {
+              if (habits.isEmpty) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.analytics, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'No habit data yet',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Start completing habits to see your progress!',
+                        style: TextStyle(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 );
+              }
 
-                if (!hasData) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.insights, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text(
-                          'Complete some habits to see statistics',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Your progress charts will appear here once you start tracking!',
-                          style: TextStyle(color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
+              final hasData = habits.any(
+                (habit) => habit.completions.isNotEmpty,
+              );
 
-                return TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildWeeklyStats(habits),
-                    _buildMonthlyStats(habits),
-                    _buildYearlyStats(habits),
-                  ],
+              if (!hasData) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.insights, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'Complete some habits to see statistics',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Your progress charts will appear here once you start tracking!',
+                        style: TextStyle(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 );
-              },
-            ),
+              }
+
+              return TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildWeeklyStats(habits),
+                  _buildMonthlyStats(habits),
+                  _buildYearlyStats(habits),
+                ],
+              );
+            },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => Center(child: Text('Error: $error')),
           );
@@ -303,9 +297,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                   alignment: BarChartAlignment.spaceAround,
                   maxY: weekData.values.isNotEmpty
                       ? weekData.values
-                                .reduce((a, b) => a > b ? a : b)
-                                .toDouble() +
-                            2
+                              .reduce((a, b) => a > b ? a : b)
+                              .toDouble() +
+                          2
                       : 10,
                   barTouchData: BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
@@ -562,8 +556,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                 Text(
                   'Monthly Category Performance',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -737,8 +731,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                 Text(
                   'Yearly Category Evolution',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -956,7 +950,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                     ];
                     final colorIndex =
                         categoryData.keys.toList().indexOf(entry.key) %
-                        colors.length;
+                            colors.length;
 
                     return PieChartSectionData(
                       value: entry.value.toDouble(),
@@ -1013,12 +1007,16 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                       children: [
                         Text(
                           habit.name,
-                          style: Theme.of(context).textTheme.bodyMedium
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         Text(
                           '${(rate * 100).toInt()}% success rate',
-                          style: Theme.of(context).textTheme.bodySmall
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
                               ?.copyWith(color: Colors.grey[600]),
                         ),
                       ],
@@ -1168,9 +1166,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
         habit,
         period,
       );
-      final rate = expectedCompletions > 0
-          ? completions / expectedCompletions
-          : 0.0;
+      final rate =
+          expectedCompletions > 0 ? completions / expectedCompletions : 0.0;
 
       return {
         'habit': habit,
@@ -1341,8 +1338,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                 Text(
                   'Yearly Consistency Heatmap',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -1429,8 +1426,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
                 Text(
                   'Yearly Milestones & Achievements',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -1609,9 +1606,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
     daysWithCompletions = completedDays.length;
     final daysSoFar = now.difference(DateTime(now.year, 1, 1)).inDays + 1;
-    final consistencyRate = daysSoFar > 0
-        ? ((daysWithCompletions / daysSoFar) * 100).round()
-        : 0;
+    final consistencyRate =
+        daysSoFar > 0 ? ((daysWithCompletions / daysSoFar) * 100).round() : 0;
 
     String bestMonth = 'N/A';
     if (monthlyCompletions.isNotEmpty) {
@@ -1737,9 +1733,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
         if (sortedDates[i].difference(sortedDates[i - 1]).inDays == 1) {
           tempStreak++;
         } else {
-          longestStreak = longestStreak > tempStreak
-              ? longestStreak
-              : tempStreak;
+          longestStreak =
+              longestStreak > tempStreak ? longestStreak : tempStreak;
           tempStreak = 1;
         }
       }

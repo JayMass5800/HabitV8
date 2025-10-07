@@ -248,43 +248,31 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ),
       body: Consumer(
         builder: (context, ref, child) {
-          final habitServiceAsync = ref.watch(habitServiceIsarProvider);
+          // 🔔 REACTIVE: Watch habits stream for instant calendar updates!
+          // Calendar now updates automatically when habits are added/completed/deleted
+          final habitsAsync = ref.watch(habitsStreamIsarProvider);
 
-          return habitServiceAsync.when(
-            data: (habitService) => FutureBuilder<List<Habit>>(
-              future: habitService.getAllHabits(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const LoadingWidget(message: 'Loading calendar...');
-                }
+          return habitsAsync.when(
+            data: (allHabits) {
+              final filteredHabits = _selectedCategory == 'All'
+                  ? allHabits
+                  : allHabits
+                      .where((habit) => habit.category == _selectedCategory)
+                      .toList();
 
-                if (!snapshot.hasData) {
-                  return const Center(
-                    child: Text('No habits found'),
-                  );
-                }
-
-                final allHabits = snapshot.data!;
-                final filteredHabits = _selectedCategory == 'All'
-                    ? allHabits
-                    : allHabits
-                        .where((habit) => habit.category == _selectedCategory)
-                        .toList();
-
-                return SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        _buildCalendar(filteredHabits),
-                        const SizedBox(height: 24),
-                        _buildInstructions(),
-                      ],
-                    ),
+              return SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      _buildCalendar(filteredHabits),
+                      const SizedBox(height: 24),
+                      _buildInstructions(),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
             loading: () => const LoadingWidget(message: 'Loading calendar...'),
             error: (error, stackTrace) => Center(
               child: Text(

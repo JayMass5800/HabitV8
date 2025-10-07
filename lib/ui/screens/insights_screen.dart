@@ -190,38 +190,31 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       ),
       body: Consumer(
         builder: (context, ref, child) {
-          final habitServiceAsync = ref.watch(habitServiceIsarProvider);
+          // 🔔 REACTIVE: Watch habits stream for instant insights updates!
+          // AI insights, analytics, and gamification now update automatically
+          final habitsAsync = ref.watch(habitsStreamIsarProvider);
 
-          return habitServiceAsync.when(
-            data: (habitService) => FutureBuilder<List<Habit>>(
-              future: habitService.getAllHabits(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final habits = snapshot.data ?? [];
-
-                return FadeTransition(
-                  opacity: _fadeController,
-                  child: RefreshIndicator(
-                    onRefresh: () async {
-                      ref.invalidate(habitServiceIsarProvider);
-                      _resetAIInsights(); // Reset AI insights on refresh
-                      await _updateAIStatus(); // Update AI status on refresh
-                    },
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildAnalyticsTab(habits, theme),
-                        _buildAIInsightsTab(habits, theme),
-                        _buildGamificationTab(habits, theme),
-                      ],
-                    ),
+          return habitsAsync.when(
+            data: (habits) {
+              return FadeTransition(
+                opacity: _fadeController,
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(habitsStreamIsarProvider);
+                    _resetAIInsights(); // Reset AI insights on refresh
+                    await _updateAIStatus(); // Update AI status on refresh
+                  },
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildAnalyticsTab(habits, theme),
+                      _buildAIInsightsTab(habits, theme),
+                      _buildGamificationTab(habits, theme),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stackTrace) => Center(
               child: Column(

@@ -50,6 +50,41 @@ final habitsStreamIsarProvider = StreamProvider.autoDispose<List<Habit>>((ref) {
   });
 });
 
+// Stream provider for watching individual habits by ID
+// Use this for edit screens, detail views, etc. to get real-time updates for a specific habit
+final habitByIdProvider = StreamProvider.autoDispose.family<Habit?, String>(
+  (ref, habitId) {
+    return Stream<Habit?>.multi((controller) async {
+      final habitService = await ref.watch(habitServiceIsarProvider.future);
+
+      // Emit initial data
+      final initialHabit = await habitService.getHabitById(habitId);
+      controller.add(initialHabit);
+      AppLogger.info(
+          '🔄 habitByIdProvider: Emitted initial habit (${initialHabit?.name ?? "not found"})');
+
+      // Listen to Isar's watch stream for real-time updates
+      final subscription = habitService.watchHabit(habitId).listen(
+        (habit) {
+          AppLogger.info(
+              '🔔 Isar: Habit ${habit?.name ?? "deleted"} updated, emitting to watchers');
+          controller.add(habit);
+        },
+        onError: (error) {
+          AppLogger.error('Error in Isar habit watch stream: $error');
+          controller.addError(error);
+        },
+      );
+
+      ref.onDispose(() {
+        subscription.cancel();
+      });
+
+      await controller.done;
+    });
+  },
+);
+
 class IsarDatabaseService {
   static Isar? _isar;
 
