@@ -79,14 +79,14 @@ class MidnightHabitResetService {
         if (currentDate.isAfter(lastResetDate)) {
           AppLogger.info(
               '📅 Missed reset detected (last: ${lastResetDate.toIso8601String()}, current: ${currentDate.toIso8601String()}), performing catch-up reset');
-          await _performMidnightReset();
+          await _performMidnightReset(isCatchUp: true);
         } else {
           AppLogger.debug('✅ No missed reset - last reset was today');
         }
       } else {
         // First time running, perform initial reset
         AppLogger.info('🆕 First time running, performing initial reset');
-        await _performMidnightReset();
+        await _performMidnightReset(isCatchUp: true);
       }
     } catch (e) {
       AppLogger.error('❌ Error checking missed reset', e);
@@ -94,11 +94,14 @@ class MidnightHabitResetService {
   }
 
   /// Perform the midnight reset
-  static Future<void> _performMidnightReset() async {
+  /// [isCatchUp] indicates if this is a catch-up reset (app started after midnight)
+  /// or an actual scheduled midnight reset
+  static Future<void> _performMidnightReset({bool isCatchUp = false}) async {
     try {
       final now = DateTime.now();
+      final resetType = isCatchUp ? 'CATCH-UP' : 'SCHEDULED MIDNIGHT';
       AppLogger.info(
-          '🌙 Performing midnight habit reset at ${now.toIso8601String()}');
+          '🌙 Performing $resetType habit reset at ${now.hour}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}');
 
       // Get all active habits
       final isar = await IsarDatabaseService.getInstance();

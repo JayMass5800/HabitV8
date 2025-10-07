@@ -207,22 +207,7 @@
             android:textSize="14sp"
             android:textColor="@color/widget_text_secondary"
             android:alpha="0.8"
-            android:layout_marginBottom="16dp"
             android:gravity="center" />
-
-        <TextView
-            android:id="@+id/empty_state_add_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="+ Add New Habit"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/white"
-            android:background="@drawable/widget_add_button_background"
-            android:paddingHorizontal="20dp"
-            android:paddingVertical="12dp"
-            android:clickable="true"
-            android:contentDescription="Add new habit" />
 
     </LinearLayout>
 
