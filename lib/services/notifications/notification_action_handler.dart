@@ -369,4 +369,92 @@ class NotificationActionHandlerIsar {
       AppLogger.error('Error processing pending completions', e);
     }
   }
+
+  /// Process pending habit completions that failed during background execution
+  /// This is called when the app opens to retry failed completions
+  /// Enhanced version for public API with better error handling and widget updates
+  static Future<void> processPendingActionsManually(Isar isar) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pendingActions =
+          prefs.getStringList('pending_habit_completions') ?? [];
+
+      if (pendingActions.isEmpty) {
+        AppLogger.info('✅ No pending habit completions to process');
+        return;
+      }
+
+      AppLogger.info(
+          '🔄 Processing ${pendingActions.length} pending completions...');
+
+      int successCount = 0;
+      int failCount = 0;
+      final failedActions = <String>[];
+
+      for (final actionJson in pendingActions) {
+        try {
+          final action = jsonDecode(actionJson) as Map<String, dynamic>;
+          final habitId = action['habitId'] as String;
+          final timestamp = action['timestamp'] as int;
+          final completionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+
+          // Attempt to complete the habit
+          final habit =
+              await isar.habits.filter().idEqualTo(habitId).findFirst();
+
+          if (habit == null) {
+            AppLogger.warning(
+                '⚠️ Habit not found for pending action: $habitId');
+            failCount++;
+            continue; // Don't retry, habit was probably deleted
+          }
+
+          // Complete the habit with the original timestamp
+          await isar.writeTxn(() async {
+            habit.completions.add(completionTime);
+            await isar.habits.put(habit);
+          });
+
+          AppLogger.info('✅ Processed pending completion: ${habit.name}');
+          successCount++;
+        } catch (e) {
+          AppLogger.error('❌ Failed to process pending action', e);
+          failedActions.add(actionJson);
+          failCount++;
+        }
+      }
+
+      // Update SharedPreferences with only failed actions
+      await prefs.setStringList('pending_habit_completions', failedActions);
+
+      AppLogger.info(
+        '📊 Pending actions processed: $successCount succeeded, $failCount failed',
+      );
+
+      if (successCount > 0) {
+        // Trigger widget update after processing completions
+        try {
+          await WidgetIntegrationService.instance.onHabitsChanged();
+          AppLogger.info('✅ Widgets updated after pending completions');
+        } catch (e) {
+          AppLogger.error('Failed to update widgets', e);
+        }
+      }
+    } catch (e) {
+      AppLogger.error('Error processing pending actions', e);
+    }
+  }
+
+  /// Get count of pending actions (for debugging and monitoring)
+  static Future<int> getPendingActionsCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pendingActions =
+          prefs.getStringList('pending_habit_completions') ?? [];
+      return pendingActions.length;
+    } catch (e) {
+      AppLogger.error('Error getting pending actions count', e);
+      return 0;
+    }
+  }
 }

@@ -4,11 +4,11 @@ import 'logging_service.dart';
 import 'widget_integration_service.dart';
 
 /// Notification Update Coordinator
-/// 
+///
 /// This service listens to Isar's lazy watchers and coordinates updates
 /// across all app components when habits change (especially from background
 /// notification completions).
-/// 
+///
 /// ENHANCEMENT 4: Ensures completing a habit from notification shade
 /// automatically updates Timeline, All Habits, Stats, Widgets, and all screens.
 class NotificationUpdateCoordinator {
@@ -48,7 +48,8 @@ class NotificationUpdateCoordinator {
       );
 
       _isInitialized = true;
-      AppLogger.info('✅ NotificationUpdateCoordinator initialized successfully');
+      AppLogger.info(
+          '✅ NotificationUpdateCoordinator initialized successfully');
       AppLogger.info(
           '📡 Now listening for habit changes (notifications, widgets, etc.)');
     } catch (e) {
@@ -60,7 +61,8 @@ class NotificationUpdateCoordinator {
   /// This is the central coordination point for all UI updates
   void _onHabitsChanged() {
     AppLogger.info('🔔 Habits changed detected by lazy watcher!');
-    AppLogger.info('📱 Triggering coordinated updates across all components...');
+    AppLogger.info(
+        '📱 Triggering coordinated updates across all components...');
 
     // Widget updates are critical for home screen widgets
     _updateWidgets();
@@ -68,7 +70,8 @@ class NotificationUpdateCoordinator {
     // The Timeline, All Habits, Stats screens will update automatically
     // because they use habitsStreamIsarProvider which watches the database
     // This log helps with debugging to see the update flow
-    AppLogger.info('✅ All screens using habitsStreamIsarProvider will auto-update');
+    AppLogger.info(
+        '✅ All screens using habitsStreamIsarProvider will auto-update');
   }
 
   /// Update widgets when habits change

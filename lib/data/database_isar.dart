@@ -24,13 +24,16 @@ final habitsStreamIsarProvider = StreamProvider.autoDispose<List<Habit>>((ref) {
     // Emit initial data
     final initialHabits = await habitService.getAllHabits();
     controller.add(initialHabits);
-    AppLogger.info('🔄 habitsStreamIsarProvider: Emitted initial data (${initialHabits.length} habits)');
+    AppLogger.info(
+        '🔄 habitsStreamIsarProvider: Emitted initial data (${initialHabits.length} habits)');
 
     // Listen to Isar's watch stream for real-time updates
     final subscription = habitService.watchAllHabits().listen(
       (habits) {
-        AppLogger.info('🔔 Isar: Emitting ${habits.length} habits to all screens');
-        AppLogger.info('📱 Timeline, All Habits, Stats screens will auto-refresh now!');
+        AppLogger.info(
+            '🔔 Isar: Emitting ${habits.length} habits to all screens');
+        AppLogger.info(
+            '📱 Timeline, All Habits, Stats screens will auto-refresh now!');
         controller.add(habits);
       },
       onError: (error) {

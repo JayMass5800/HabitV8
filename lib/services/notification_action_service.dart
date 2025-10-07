@@ -33,9 +33,11 @@ class NotificationActionService {
     AppLogger.info(
       '🔗 Callback registered: ${NotificationService.onNotificationAction != null}',
     );
-    AppLogger.info(
-      '📋 Pending actions count: ${NotificationService.getPendingActionsCount()}',
-    );
+
+    // Log pending actions count (async)
+    NotificationService.getPendingActionsCount().then((count) {
+      AppLogger.info('📋 Pending actions count: $count');
+    });
   }
 
   /// Re-register the callback if it gets lost

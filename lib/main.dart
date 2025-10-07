@@ -252,7 +252,8 @@ void _initializeNotificationUpdateCoordinator() async {
     // Small delay to let database and widgets initialize first
     await Future.delayed(const Duration(seconds: 3));
     await NotificationUpdateCoordinator.instance.initialize();
-    AppLogger.info('✅ NotificationUpdateCoordinator initialized - instant updates enabled');
+    AppLogger.info(
+        '✅ NotificationUpdateCoordinator initialized - instant updates enabled');
   } catch (e) {
     AppLogger.error('Error initializing notification update coordinator', e);
     // Don't block app startup if coordinator fails

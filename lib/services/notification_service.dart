@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../domain/model/habit.dart';
+import '../data/database_isar.dart';
 import 'notifications/notification_core.dart';
 import 'notifications/notification_helpers.dart';
 import 'notifications/notification_scheduler.dart';
@@ -48,10 +49,8 @@ class NotificationService {
   }
 
   /// Get the number of pending actions (for debugging)
-  /// TODO: Implement in NotificationActionHandlerIsar if needed
-  static int getPendingActionsCount() {
-    // return NotificationActionHandlerIsar.getPendingActionsCount();
-    return 0; // Placeholder - Isar version doesn't track this
+  static Future<int> getPendingActionsCount() async {
+    return await NotificationActionHandlerIsar.getPendingActionsCount();
   }
 
   static Future<void> scheduleHabitNotifications(Habit habit,
@@ -166,9 +165,12 @@ class NotificationService {
   }
 
   static Future<void> processPendingActionsManually() async {
-    // TODO: Isar version requires Isar instance parameter
-    // await NotificationActionHandlerIsar.processPendingActionsManually();
-    // For now, this is handled automatically by background isolates
+    try {
+      final isar = await IsarDatabaseService.getInstance();
+      await NotificationActionHandlerIsar.processPendingActionsManually(isar);
+    } catch (e) {
+      // Error logging handled in NotificationActionHandlerIsar
+    }
   }
 
   static Future<bool> areNotificationsEnabled() async {
