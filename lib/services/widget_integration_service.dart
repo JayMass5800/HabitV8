@@ -69,11 +69,20 @@ class WidgetIntegrationService {
 
       // Listen to habit changes and update widgets automatically
       // Using watchAllHabits() instead of watchHabitsLazy() for immediate data access
-      _habitWatchSubscription = habitService.watchAllHabits().listen((habits) {
-        debugPrint(
-            '🔔 Habits changed (${habits.length} habits), updating widgets immediately');
-        updateAllWidgets(); // Uses existing debounced update method
-      });
+      _habitWatchSubscription = habitService.watchAllHabits().listen(
+        (habits) {
+          final timestamp = DateTime.now().toIso8601String();
+          debugPrint(
+              '🔔 [$timestamp] Isar listener fired: ${habits.length} habits detected');
+          debugPrint('🔔 Updating widgets via Isar listener...');
+          updateAllWidgets(); // Uses existing debounced update method
+          debugPrint('🔔 Widget update triggered from Isar listener');
+        },
+        onError: (error) {
+          debugPrint('❌ Error in Isar listener: $error');
+        },
+        cancelOnError: false,
+      );
 
       debugPrint('✅ Widget Isar listener initialized with immediate updates');
     } catch (e) {
@@ -143,6 +152,9 @@ class WidgetIntegrationService {
 
   /// Update all widgets with current habit data (immediate, no debounce)
   Future<void> updateAllWidgets() async {
+    final timestamp = DateTime.now().toIso8601String();
+    debugPrint('📱 [$timestamp] updateAllWidgets() called');
+
     // Cancel any pending update
     _debounceTimer?.cancel();
 
@@ -156,7 +168,9 @@ class WidgetIntegrationService {
     }
 
     // IMMEDIATE update - no delay for instant responsiveness!
+    debugPrint('📱 Performing immediate widget update...');
     await _performWidgetUpdate();
+    debugPrint('📱 [$timestamp] updateAllWidgets() completed');
   }
 
   /// Perform the actual widget update (internal method)

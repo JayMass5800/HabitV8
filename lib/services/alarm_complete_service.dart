@@ -100,13 +100,29 @@ class AlarmCompleteService {
 
       AppLogger.info('✅ Habit completed successfully: ${habit.name}');
 
-      // Update widgets immediately after completion
+      // Add small delay to ensure database write completes
+      await Future.delayed(const Duration(milliseconds: 100));
+      AppLogger.info('⏱️ Waited for database write to complete');
+
+      // **CRITICAL: Use forceWidgetUpdate() for immediate widget refresh**
+      // The Isar listener may not fire immediately from background context
       try {
-        await WidgetIntegrationService.instance.onHabitsChanged();
-        AppLogger.info('✅ Widget data updated after alarm completion');
+        AppLogger.info('🔄 Force-updating widgets after alarm completion...');
+        await WidgetIntegrationService.instance.forceWidgetUpdate();
+        AppLogger.info(
+            '✅ Widgets force-updated successfully after alarm completion');
       } catch (e) {
         AppLogger.error(
-            'Failed to update widget data after alarm completion', e);
+            '❌ Failed to force-update widgets after alarm completion', e);
+
+        // Fallback to regular update
+        try {
+          await WidgetIntegrationService.instance.onHabitsChanged();
+          AppLogger.info('✅ Fallback widget update completed');
+        } catch (fallbackError) {
+          AppLogger.error(
+              '❌ Fallback widget update also failed', fallbackError);
+        }
       }
     } catch (e, stackTrace) {
       AppLogger.error('Failed to complete habit $habitName', e);
