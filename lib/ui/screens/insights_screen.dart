@@ -2463,7 +2463,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               const SizedBox(height: 24),
 
               SizedBox(
-                height: 280,
+                height: 295,
                 child: _buildTimeOfDayHeatmap(timePatternData, theme),
               ),
             ] else ...[
