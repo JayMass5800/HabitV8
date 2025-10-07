@@ -2911,7 +2911,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
         // Hour labels below bars
         SizedBox(
-          height: 50,
+          height: 40,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final barWidth = (constraints.maxWidth - 32) / 24;
@@ -2929,35 +2929,22 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                           ? Center(
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 4,
+                                  horizontal: 4,
+                                  vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.primaryContainer
-                                      .withValues(alpha: 0.6),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: theme.colorScheme.outline
-                                        .withValues(alpha: 0.3),
-                                    width: 0.5,
-                                  ),
+                                      .withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    formatHour(hour),
-                                    style:
-                                        theme.textTheme.labelMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 11,
-                                      color:
-                                          theme.colorScheme.onPrimaryContainer,
-                                      letterSpacing: 0,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.visible,
+                                child: Text(
+                                  formatHour(hour),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 9,
+                                    color: theme.colorScheme.onPrimaryContainer,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
                             )
