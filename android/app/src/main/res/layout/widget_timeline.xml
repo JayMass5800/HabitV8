@@ -159,7 +159,8 @@
             android:textColor="@color/widget_text_primary"
             android:layout_marginBottom="16dp" />
 
-        <View
+        <!-- Divider line using TextView for RemoteViews compatibility -->
+        <TextView
             android:layout_width="60dp"
             android:layout_height="2dp"
             android:background="@color/widget_text_secondary"

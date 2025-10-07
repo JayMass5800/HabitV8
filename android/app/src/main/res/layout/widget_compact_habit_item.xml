@@ -9,8 +9,8 @@
     android:padding="10dp"
     android:layout_marginBottom="4dp">
 
-    <!-- Habit Color Indicator (Changed to FrameLayout for RemoteViews compatibility) -->
-    <FrameLayout
+    <!-- Habit Color Indicator (Using TextView as a colored bar for RemoteViews compatibility) -->
+    <TextView
         android:id="@+id/compact_habit_color_indicator"
         android:layout_width="4dp"
         android:layout_height="32dp"
