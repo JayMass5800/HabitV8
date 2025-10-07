@@ -210,7 +210,7 @@
             android:gravity="center" />
 
         <TextView
-            android:id="@+id/add_habit_button"
+            android:id="@+id/empty_state_add_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="+ Add New Habit"
