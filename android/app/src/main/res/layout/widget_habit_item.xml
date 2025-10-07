@@ -60,6 +60,38 @@
 
         </LinearLayout>
 
+        <!-- Hourly Time Slots Container (for hourly habits) -->
+        <LinearLayout
+            android:id="@+id/hourly_slots_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/hourly_slots_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Slots:"
+                android:textSize="11sp"
+                android:textColor="@color/widget_text_secondary"
+                android:layout_marginEnd="4dp" />
+
+            <!-- Slot indicators will be dynamically shown via text -->
+            <TextView
+                android:id="@+id/hourly_slots_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="09:00 ✓  14:00 ○  18:00 ○"
+                android:textSize="11sp"
+                android:textColor="@color/widget_text_primary"
+                android:fontFamily="monospace"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
         <!-- Status and Category Row -->
         <LinearLayout
             android:layout_width="match_parent"

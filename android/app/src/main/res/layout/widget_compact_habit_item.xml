@@ -37,7 +37,7 @@
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <!-- Habit Time -->
+        <!-- Habit Time or Hourly Slots Progress -->
         <TextView
             android:id="@+id/compact_habit_time"
             android:layout_width="wrap_content"
@@ -47,6 +47,18 @@
             android:textStyle="normal"
             android:textColor="@color/widget_text_secondary"
             android:layout_marginTop="1dp"
+            android:visibility="gone" />
+
+        <!-- Hourly Slots Progress (compact format) -->
+        <TextView
+            android:id="@+id/compact_hourly_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2/3 slots"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_secondary"
+            android:layout_marginTop="2dp"
             android:visibility="gone" />
 
     </LinearLayout>

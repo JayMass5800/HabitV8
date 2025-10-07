@@ -31,10 +31,10 @@ Future<void> onBackgroundNotificationResponseIsar(
     if (response.payload != null) {
       try {
         final payload = jsonDecode(response.payload!);
-        final habitId = payload['habitId'] as String?;
+        final rawHabitId = payload['habitId'] as String?;
 
-        if (habitId != null) {
-          AppLogger.info('Extracted habitId from payload: $habitId');
+        if (rawHabitId != null) {
+          AppLogger.info('Extracted habitId from payload: $rawHabitId');
 
           // Process the action in background
           if (response.actionId != null) {
@@ -50,17 +50,27 @@ Future<void> onBackgroundNotificationResponseIsar(
 
             if (callback != null) {
               AppLogger.info('✅ Using callback handler (app is running)');
-              callback(habitId, response.actionId!);
+              // Extract base habitId for callback (callbacks expect base ID)
+              final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
+                  response.payload!);
+              if (baseHabitId != null) {
+                callback(baseHabitId, response.actionId!);
+              }
             } else if (directHandler != null) {
               AppLogger.info(
                   '✅ Using direct completion handler (app is running)');
-              await directHandler(habitId);
+              // Extract base habitId for direct handler
+              final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
+                  response.payload!);
+              if (baseHabitId != null) {
+                await directHandler(baseHabitId);
+              }
             } else {
               AppLogger.info(
                   '⚠️ No handlers available, using background Isar access');
-              // Open Isar in background isolate - THIS IS THE KEY ADVANTAGE!
+              // Pass RAW habitId (with time slot for hourly habits) to background handler
               await NotificationActionHandlerIsar.completeHabitInBackground(
-                  habitId);
+                  rawHabitId, response.payload!);
             }
           }
         }
@@ -159,9 +169,30 @@ class NotificationActionHandlerIsar {
   /// Made public so it can be called from top-level background handler
   ///
   /// ISAR VERSION - Multi-isolate safe! No complex workarounds needed!
-  static Future<void> completeHabitInBackground(String habitId) async {
+  ///
+  /// @param rawHabitId - The raw habitId from payload (may include time slot for hourly habits)
+  /// @param payload - The full notification payload JSON string
+  static Future<void> completeHabitInBackground(
+    String rawHabitId,
+    String payload,
+  ) async {
+    // Extract base habitId (without time slot) - declare outside try for error handler
+    final habitId = NotificationHelpers.extractHabitIdFromPayload(payload);
+    if (habitId == null) {
+      AppLogger.error('❌ Failed to extract base habitId from payload');
+      return;
+    }
+
     try {
       AppLogger.info('⚙️ Completing habit in background (Isar): $habitId');
+
+      // Extract time slot for hourly habits
+      final timeSlot = NotificationHelpers.extractTimeSlotFromPayload(payload);
+      if (timeSlot != null) {
+        AppLogger.info(
+          '⏰ Hourly habit detected - time slot: ${timeSlot['hour']}:${timeSlot['minute']}',
+        );
+      }
 
       // Open Isar in background isolate - THIS WORKS PERFECTLY WITH ISAR!
       final dir = await getApplicationDocumentsDirectory();
@@ -224,10 +255,33 @@ class NotificationActionHandlerIsar {
         return;
       }
 
-      // Mark the habit as complete for today
+      // Mark the habit as complete
+      // For hourly habits, use the specific time slot from the notification payload
+      // For other habits, use the current time
       // Isar transaction - automatically synced across isolates!
       await isar.writeTxn(() async {
-        habit.completions.add(DateTime.now());
+        DateTime completionTime;
+
+        if (timeSlot != null && habit.frequency == HabitFrequency.hourly) {
+          // Use the specific time slot from the notification
+          final now = DateTime.now();
+          completionTime = DateTime(
+            now.year,
+            now.month,
+            now.day,
+            timeSlot['hour']!,
+            timeSlot['minute']!,
+          );
+          AppLogger.info(
+            '⏰ Hourly habit: Completing at time slot ${timeSlot['hour']}:${timeSlot['minute']}',
+          );
+        } else {
+          // For non-hourly habits, use current time
+          completionTime = DateTime.now();
+          AppLogger.info('✅ Regular habit: Completing at current time');
+        }
+
+        habit.completions.add(completionTime);
         await isar.habits.put(habit);
       });
 

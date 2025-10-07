@@ -288,7 +288,7 @@ class WidgetIntegrationService {
     final status = _getHabitStatus(habit, date);
     final timeDisplay = _getHabitTimeDisplay(habit);
 
-    return {
+    final json = <String, dynamic>{
       'id': habit.id,
       'name': habit.name,
       'category': habit.category,
@@ -298,6 +298,43 @@ class WidgetIntegrationService {
       'timeDisplay': timeDisplay,
       'frequency': habit.frequency.toString(),
     };
+
+    // For hourly habits, include detailed time slot information
+    if (habit.frequency == HabitFrequency.hourly &&
+        habit.hourlyTimes.isNotEmpty) {
+      final timeSlots = <Map<String, dynamic>>[];
+
+      for (final timeStr in habit.hourlyTimes) {
+        final timeParts = timeStr.split(':');
+        if (timeParts.length == 2) {
+          final hour = int.tryParse(timeParts[0]);
+          final minute = int.tryParse(timeParts[1]);
+
+          if (hour != null && minute != null) {
+            // Check if this specific time slot is completed
+            final isSlotCompleted =
+                _isHourlySlotCompleted(habit, date, hour, minute);
+
+            timeSlots.add({
+              'time': timeStr,
+              'hour': hour,
+              'minute': minute,
+              'isCompleted': isSlotCompleted,
+            });
+          }
+        }
+      }
+
+      json['hourlySlots'] = timeSlots;
+      json['completedSlots'] =
+          timeSlots.where((slot) => slot['isCompleted'] == true).length;
+      json['totalSlots'] = timeSlots.length;
+
+      // Override isCompleted for hourly habits - only true if ALL slots are completed
+      json['isCompleted'] = json['completedSlots'] == json['totalSlots'];
+    }
+
+    return json;
   }
 
   /// Get current theme data (always follows app theme)
@@ -408,18 +445,62 @@ class WidgetIntegrationService {
       final isar = await IsarDatabaseService.getInstance();
       final habitService = HabitServiceIsar(isar);
 
-      // Load habit
+      // Load habit directly using habit service
       final habit = await habitService.getHabitById(habitId);
       if (habit == null) {
         debugPrint('❌ Habit not found: $habitId');
         return;
       }
 
-      debugPrint('✅ Found habit: ${habit.name}');
+      debugPrint(
+          '✅ Found habit: ${habit.name} (frequency: ${habit.frequency})');
 
-      // Add completion using the habit service
-      await habitService.markHabitComplete(habitId, DateTime.now());
-      debugPrint('✅ Habit marked as complete in database');
+      // For hourly habits, complete the next pending time slot
+      // For other habits, complete with current time
+      DateTime completionTime = DateTime.now();
+
+      if (habit.frequency == HabitFrequency.hourly &&
+          habit.hourlyTimes.isNotEmpty) {
+        // Find the next incomplete time slot
+        final now = DateTime.now();
+        String? nextSlot;
+
+        for (final timeStr in habit.hourlyTimes) {
+          final timeParts = timeStr.split(':');
+          if (timeParts.length == 2) {
+            final hour = int.tryParse(timeParts[0]);
+            final minute = int.tryParse(timeParts[1]);
+
+            if (hour != null && minute != null) {
+              // Check if this slot is already completed
+              final slotCompleted = habit.completions.any((completion) =>
+                  completion.year == now.year &&
+                  completion.month == now.month &&
+                  completion.day == now.day &&
+                  completion.hour == hour);
+
+              if (!slotCompleted) {
+                nextSlot = timeStr;
+                completionTime =
+                    DateTime(now.year, now.month, now.day, hour, minute);
+                debugPrint('⏰ Completing hourly slot: $timeStr');
+                break;
+              }
+            }
+          }
+        }
+
+        if (nextSlot == null) {
+          debugPrint('✅ All hourly slots already completed for today');
+          // All slots complete - refresh widget to show updated state
+          await instance.updateAllWidgets();
+          return;
+        }
+      }
+
+      // Add completion using habit service for proper transaction handling
+      await habitService.markHabitComplete(habitId, completionTime);
+      debugPrint('✅ Habit marked as complete in database at $completionTime');
 
       // **2. EXPLICIT WIDGET REFRESH (THE KEY STEP):**
       // Following the example pattern - update widgets with new data
@@ -768,11 +849,33 @@ class WidgetIntegrationService {
 
   /// Check if habit is completed on a specific date
   bool _isHabitCompletedOnDate(Habit habit, DateTime date) {
+    // For hourly habits, check if at least one slot is completed
+    if (habit.frequency == HabitFrequency.hourly) {
+      return habit.completions.any((completion) {
+        return completion.year == date.year &&
+            completion.month == date.month &&
+            completion.day == date.day;
+      });
+    }
+
+    // For other frequencies, check for any completion on the date
     return habit.completions.any((completion) {
       final completionDate =
           DateTime(completion.year, completion.month, completion.day);
       return completionDate
           .isAtSameMomentAs(DateTime(date.year, date.month, date.day));
+    });
+  }
+
+  /// Check if a specific hourly time slot is completed
+  bool _isHourlySlotCompleted(
+      Habit habit, DateTime date, int hour, int minute) {
+    return habit.completions.any((completion) {
+      return completion.year == date.year &&
+          completion.month == date.month &&
+          completion.day == date.day &&
+          completion.hour == hour;
+      // Note: We only check hour, not minute, because completions are recorded per hour
     });
   }
 

@@ -98,6 +98,63 @@ class NotificationHelpers {
     }
   }
 
+  /// Extract time slot from hourly habit payload
+  ///
+  /// For hourly habits with payload format: {"habitId": "abc123|14:30"}
+  /// Returns a map with 'hour' and 'minute' keys, or null if not an hourly habit
+  /// or if the time format is invalid.
+  ///
+  /// Example:
+  /// ```dart
+  /// final timeSlot = extractTimeSlotFromPayload(payload);
+  /// if (timeSlot != null) {
+  ///   print('Hour: ${timeSlot['hour']}, Minute: ${timeSlot['minute']}');
+  /// }
+  /// ```
+  static Map<String, int>? extractTimeSlotFromPayload(String? payload) {
+    if (payload == null || payload.isEmpty) {
+      return null;
+    }
+
+    try {
+      final Map<String, dynamic> data = jsonDecode(payload);
+      final String? rawHabitId = data['habitId'];
+
+      if (rawHabitId == null || !rawHabitId.contains('|')) {
+        return null; // Not an hourly habit
+      }
+
+      // Extract time part (format: "id|HH:MM")
+      final parts = rawHabitId.split('|');
+      if (parts.length != 2) {
+        return null;
+      }
+
+      final timeStr = parts[1];
+      final timeParts = timeStr.split(':');
+      if (timeParts.length != 2) {
+        return null;
+      }
+
+      final hour = int.tryParse(timeParts[0]);
+      final minute = int.tryParse(timeParts[1]);
+
+      if (hour == null ||
+          minute == null ||
+          hour < 0 ||
+          hour > 23 ||
+          minute < 0 ||
+          minute > 59) {
+        return null;
+      }
+
+      return {'hour': hour, 'minute': minute};
+    } catch (e) {
+      AppLogger.error('Failed to parse time slot from payload', e);
+      return null;
+    }
+  }
+
   // ==================== HABIT COMPLETION CHECKING ====================
 
   /// Check if a habit has been completed for its current period

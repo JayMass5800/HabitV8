@@ -67,6 +67,12 @@ class HabitCompactRemoteViewsFactory(
             val colorValue = (habit["colorValue"] as? Number)?.toInt()
             val colorHex = habit["colorHex"] as? String ?: habit["color"] as? String
             val habitStatus = habit["status"] as? String ?: ""
+            val frequency = habit["frequency"] as? String ?: ""
+
+            // Check if this is an hourly habit
+            val isHourlyHabit = frequency.contains("hourly", ignoreCase = true)
+            val completedSlots = (habit["completedSlots"] as? Number)?.toInt() ?: 0
+            val totalSlots = (habit["totalSlots"] as? Number)?.toInt() ?: 0
 
             // Resolve color from value or hex
             val color = when {
@@ -79,13 +85,34 @@ class HabitCompactRemoteViewsFactory(
             remoteViews.setTextViewText(R.id.compact_habit_name, habitName)
             remoteViews.setTextColor(R.id.compact_habit_name, textColor)
 
-            // Set time text (hide if empty)
-            if (scheduledTime.isNotEmpty()) {
-                remoteViews.setTextViewText(R.id.compact_habit_time, scheduledTime)
-                remoteViews.setTextColor(R.id.compact_habit_time, textColor)
-                remoteViews.setViewVisibility(R.id.compact_habit_time, android.view.View.VISIBLE)
-            } else {
+            // Handle hourly habits with progress display
+            if (isHourlyHabit && totalSlots > 0) {
+                // Hide regular time, show hourly progress
                 remoteViews.setViewVisibility(R.id.compact_habit_time, android.view.View.GONE)
+                
+                // Show progress (e.g., "2/3 slots" with color indication)
+                val progressText = "$completedSlots/$totalSlots slots"
+                remoteViews.setTextViewText(R.id.compact_hourly_progress, progressText)
+                
+                // Color the progress text based on completion
+                val progressColor = when {
+                    completedSlots == totalSlots -> 0xFF4CAF50.toInt() // Green when all done
+                    completedSlots > 0 -> color // Primary color when partially done
+                    else -> textColor // Default when none done
+                }
+                remoteViews.setTextColor(R.id.compact_hourly_progress, progressColor)
+                remoteViews.setViewVisibility(R.id.compact_hourly_progress, android.view.View.VISIBLE)
+            } else {
+                // Regular habit - hide progress, show time if available
+                remoteViews.setViewVisibility(R.id.compact_hourly_progress, android.view.View.GONE)
+                
+                if (scheduledTime.isNotEmpty()) {
+                    remoteViews.setTextViewText(R.id.compact_habit_time, scheduledTime)
+                    remoteViews.setTextColor(R.id.compact_habit_time, textColor)
+                    remoteViews.setViewVisibility(R.id.compact_habit_time, android.view.View.VISIBLE)
+                } else {
+                    remoteViews.setViewVisibility(R.id.compact_habit_time, android.view.View.GONE)
+                }
             }
 
             // Set color indicator

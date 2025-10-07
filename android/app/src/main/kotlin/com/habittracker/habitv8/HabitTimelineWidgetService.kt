@@ -71,6 +71,13 @@ class HabitTimelineRemoteViewsFactory(
                 ?: (habit["scheduledTime"] as? String) ?: ""
             val isCompleted = habit["isCompleted"] as? Boolean ?: false
             val habitStatus = habit["status"] as? String ?: "Due"
+            val frequency = habit["frequency"] as? String ?: ""
+
+            // Check if this is an hourly habit with time slots
+            val isHourlyHabit = frequency.contains("hourly", ignoreCase = true)
+            val hourlySlots = habit["hourlySlots"] as? List<*>
+            val completedSlots = (habit["completedSlots"] as? Number)?.toInt() ?: 0
+            val totalSlots = (habit["totalSlots"] as? Number)?.toInt() ?: 0
 
             // Resolve color from ARGB int or hex string
             val colorInt = (habit["colorValue"] as? Number)?.toInt()
@@ -85,13 +92,55 @@ class HabitTimelineRemoteViewsFactory(
             remoteViews.setTextViewText(R.id.habit_name, habitName)
             remoteViews.setTextColor(R.id.habit_name, textColor)
             
-            // Set scheduled time if available with theme-aware text color
-            if (scheduledTime.isNotEmpty()) {
-                remoteViews.setTextViewText(R.id.habit_time, scheduledTime)
+            // Handle hourly habits with time slot display
+            if (isHourlyHabit && hourlySlots != null && hourlySlots.isNotEmpty()) {
+                // Build time slot display string with smart truncation for many slots
+                val maxSlotsToShow = 5  // Show max 5 slots to prevent overflow
+                val slotsDisplay = buildString {
+                    val slotsToDisplay = hourlySlots.take(maxSlotsToShow)
+                    for ((index, slotObj) in slotsToDisplay.withIndex()) {
+                        if (slotObj is Map<*, *>) {
+                            val time = slotObj["time"] as? String ?: ""
+                            val slotCompleted = slotObj["isCompleted"] as? Boolean ?: false
+                            
+                            if (time.isNotEmpty()) {
+                                if (index > 0) append("  ")
+                                append(time)
+                                append(if (slotCompleted) " ✓" else " ○")
+                            }
+                        }
+                    }
+                    
+                    // Show "... +X" if there are more slots
+                    val remainingSlots = hourlySlots.size - maxSlotsToShow
+                    if (remainingSlots > 0) {
+                        append("  ... +$remainingSlots")
+                    }
+                }
+                
+                // Show hourly slots container and set text
+                remoteViews.setViewVisibility(R.id.hourly_slots_container, android.view.View.VISIBLE)
+                remoteViews.setTextViewText(R.id.hourly_slots_display, slotsDisplay)
+                remoteViews.setTextColor(R.id.hourly_slots_display, textColor)
+                remoteViews.setTextColor(R.id.hourly_slots_label, textColor)
+                
+                // Show completion progress in time field (e.g., "2/3 completed")
+                val progressText = "$completedSlots/$totalSlots completed"
+                remoteViews.setTextViewText(R.id.habit_time, progressText)
                 remoteViews.setTextColor(R.id.habit_time, textColor)
                 remoteViews.setViewVisibility(R.id.habit_time, android.view.View.VISIBLE)
             } else {
-                remoteViews.setViewVisibility(R.id.habit_time, android.view.View.GONE)
+                // Regular habit - hide hourly slots container
+                remoteViews.setViewVisibility(R.id.hourly_slots_container, android.view.View.GONE)
+                
+                // Set scheduled time if available with theme-aware text color
+                if (scheduledTime.isNotEmpty()) {
+                    remoteViews.setTextViewText(R.id.habit_time, scheduledTime)
+                    remoteViews.setTextColor(R.id.habit_time, textColor)
+                    remoteViews.setViewVisibility(R.id.habit_time, android.view.View.VISIBLE)
+                } else {
+                    remoteViews.setViewVisibility(R.id.habit_time, android.view.View.GONE)
+                }
             }
 
             // Set color indicator
