@@ -2461,7 +2461,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               // Peak Hours Summary Metrics
               _buildPeakHoursSummary(timePatternData, theme),
               const SizedBox(height: 24),
-              
+
               SizedBox(
                 height: 280,
                 child: _buildTimeOfDayHeatmap(timePatternData, theme),
