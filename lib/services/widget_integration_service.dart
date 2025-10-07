@@ -801,11 +801,11 @@ class WidgetIntegrationService {
       case HabitFrequency.weekly:
         return habit.selectedWeekdays.contains(date.weekday);
       case HabitFrequency.monthly:
-        // Use selectedMonthDays for consistency with widget_service.dart
-        final habitDay = habit.selectedMonthDays.isNotEmpty
-            ? habit.selectedMonthDays.first
-            : 1;
-        return date.day == habitDay;
+        // Check if the date's day matches ANY of the selected month days
+        if (habit.selectedMonthDays.isEmpty) {
+          return date.day == 1; // Default to 1st if none selected
+        }
+        return habit.selectedMonthDays.contains(date.day);
       case HabitFrequency.yearly:
         // Check if today matches any of the yearly dates
         return habit.selectedYearlyDates.any((yearlyDateString) {

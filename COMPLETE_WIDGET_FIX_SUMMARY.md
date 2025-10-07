@@ -30,6 +30,16 @@
 - Primary text: Dark in light mode, light in dark mode
 - Secondary text: Medium contrast in both modes
 
+### 4. ✅ Accurate Tomorrow's Habit Count
+**Problem**: Celebration message showed "Ready to tackle tomorrow's X habits" but X was just today's count, not tomorrow's actual scheduled habits.
+
+**Solution**:
+- Flutter pre-calculates tomorrow's habit count using existing `_getHabitsForDate()` logic
+- Handles all frequency types: daily, weekly, monthly, yearly, hourly, single-day, RRule-based
+- Android reads the pre-calculated value from widget data
+- No code duplication - reuses existing, tested frequency logic
+- Accurate count for better user planning and motivation
+
 ## Files Modified
 
 ### Flutter/Dart Files
@@ -44,34 +54,42 @@
    - Added logging to `updateAllWidgets()` method
    - Set `cancelOnError: false` to prevent listener from dying
 
+3. **`lib/services/widget_service.dart`**
+   - Added tomorrow's habit count calculation
+   - Uses existing `_getHabitsForDate()` for accuracy
+   - Added `tomorrowHabitCount` field to widget data
+   - Handles all frequency types automatically
+
 ### Android/Kotlin Files
-3. **`android/app/src/main/kotlin/com/habittracker/habitv8/HabitTimelineWidgetProvider.kt`**
+4. **`android/app/src/main/kotlin/com/habittracker/habitv8/HabitTimelineWidgetProvider.kt`**
    - Added detailed logging for habit completion status
    - Added special logging for hourly habits (slots)
    - Added state check logging (celebration/normal/empty)
    - Enhanced `getHabitCompletionStatus()` with per-habit logging
+   - Updated `getTomorrowHabitCount()` to read pre-calculated value
+   - Added fallback for backward compatibility
 
-4. **`android/app/src/main/kotlin/com/habittracker/habitv8/HabitCompactWidgetProvider.kt`**
+5. **`android/app/src/main/kotlin/com/habittracker/habitv8/HabitCompactWidgetProvider.kt`**
    - Added same enhanced logging as timeline widget
    - Added state check logging
    - Helps diagnose celebration display issues
 
 ### Android Layout Files
-5. **`android/app/src/main/res/layout/widget_timeline.xml`**
+6. **`android/app/src/main/res/layout/widget_timeline.xml`**
    - Changed celebration_state from vertical to horizontal orientation
    - Moved emoji to right side (72sp size)
    - Text content on left with better hierarchy
    - Improved spacing and padding (20dp container)
    - Count now uses primary color for emphasis
 
-6. **`android/app/src/main/res/layout/widget_compact.xml`**
+7. **`android/app/src/main/res/layout/widget_compact.xml`**
    - Changed compact_celebration_state to horizontal orientation
    - Moved emoji to right side (56sp size)
    - Simplified text for compact space
    - Optimized padding (12dp container)
 
 ### Android Resource Files
-7. **`android/app/src/main/res/values-night/colors.xml`** (NEW)
+8. **`android/app/src/main/res/values-night/colors.xml`** (NEW)
    - Created dark theme color overrides
    - `widget_text_primary`: #FFFFFF (white) in dark mode
    - `widget_text_secondary`: #B3FFFFFF (70% white) in dark mode

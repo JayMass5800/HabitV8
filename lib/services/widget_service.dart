@@ -53,6 +53,11 @@ class WidgetService {
       final tomorrow = date.add(const Duration(days: 1));
       final tomorrowHabits = _getHabitsForDate(habitsToUse, tomorrow);
       final tomorrowCount = tomorrowHabits.length;
+      
+      AppLogger.info('Widget update: date=$date, today habits=${relevantHabits.length}, tomorrow=$tomorrow, tomorrow habits=$tomorrowCount');
+      if (tomorrowCount > 0) {
+        AppLogger.info('Tomorrow habits: ${tomorrowHabits.map((h) => h.name).join(", ")}');
+      }
 
       // Get current time and next habit
       final now = DateTime.now();
@@ -77,12 +82,16 @@ class WidgetService {
         'primaryColor': primaryColor.toARGB32(),
         'lastUpdate': DateTime.now().millisecondsSinceEpoch,
       };
+      
+      AppLogger.info('Widget data prepared: tomorrowHabitCount=$tomorrowCount');
 
       // Store data for widget access
       await HomeWidget.saveWidgetData<String>(
         _habitsDataKey,
         jsonEncode(widgetData),
       );
+      
+      AppLogger.info('Widget data saved to SharedPreferences with key: $_habitsDataKey');
 
       // Update widget UI
       await HomeWidget.updateWidget(
@@ -168,16 +177,18 @@ class WidgetService {
         return true; // Daily habits are always relevant
 
       case HabitFrequency.weekly:
-        final habitWeekday = habit.selectedWeekdays.isNotEmpty
-            ? habit.selectedWeekdays.first
-            : DateTime.sunday;
-        return date.weekday == habitWeekday;
+        // Check if the date's weekday matches ANY of the selected weekdays
+        if (habit.selectedWeekdays.isEmpty) {
+          return date.weekday == DateTime.sunday; // Default to Sunday if none selected
+        }
+        return habit.selectedWeekdays.contains(date.weekday);
 
       case HabitFrequency.monthly:
-        final habitDay = habit.selectedMonthDays.isNotEmpty
-            ? habit.selectedMonthDays.first
-            : 1;
-        return date.day == habitDay;
+        // Check if the date's day matches ANY of the selected month days
+        if (habit.selectedMonthDays.isEmpty) {
+          return date.day == 1; // Default to 1st if none selected
+        }
+        return habit.selectedMonthDays.contains(date.day);
 
       case HabitFrequency.yearly:
         return habit.selectedYearlyDates.any((yearlyDateString) {
