@@ -2791,195 +2791,215 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
-  /// Build hour label for time-of-day heatmap
-  Widget _buildHourLabel(int hour, ThemeData theme) {
-    String label;
-    if (hour == 0) {
-      label = '12AM';
-    } else if (hour < 12) {
-      label = '${hour}AM';
-    } else if (hour == 12) {
-      label = '12PM';
-    } else {
-      label = '${hour - 12}PM';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-          color: theme.colorScheme.onPrimaryContainer,
-        ),
-      ),
-    );
-  }
-
-  /// Build time-of-day heatmap
+  /// Build time-of-day heatmap - REDESIGNED for better layout
   Widget _buildTimeOfDayHeatmap(
       List<Map<String, dynamic>> data, ThemeData theme) {
-    final maxPercentage = data.isNotEmpty
-        ? data
-            .map((d) => d['percentage'] as double)
-            .reduce((a, b) => a > b ? a : b)
-        : 1.0;
+    if (data.isEmpty) return const SizedBox();
+    
+    final maxPercentage = data
+        .map((d) => d['percentage'] as double)
+        .reduce((a, b) => a > b ? a : b);
 
-    // Helper function to get color based on intensity for better visual differentiation
-    Color getHeatmapColor(double intensity, ThemeData theme) {
+    // Helper function to get color based on intensity
+    Color getHeatmapColor(double intensity) {
       if (intensity < 0.2) {
-        return theme.colorScheme.primary.withValues(alpha: 0.3);
+        return theme.colorScheme.primary.withValues(alpha: 0.4);
       } else if (intensity < 0.4) {
-        return theme.colorScheme.primary.withValues(alpha: 0.5);
+        return theme.colorScheme.primary.withValues(alpha: 0.6);
       } else if (intensity < 0.6) {
-        return theme.colorScheme.primary.withValues(alpha: 0.7);
+        return theme.colorScheme.primary.withValues(alpha: 0.8);
       } else if (intensity < 0.8) {
-        return theme.colorScheme.secondary.withValues(alpha: 0.8);
+        return theme.colorScheme.secondary;
       } else {
-        return theme.colorScheme.tertiary.withValues(alpha: 0.9);
+        return theme.colorScheme.tertiary;
       }
     }
 
+    // Helper to format hour
+    String formatHour(int hour) {
+      if (hour == 0 || hour == 24) return '12AM';
+      if (hour == 12) return '12PM';
+      if (hour < 12) return '${hour}AM';
+      return '${hour - 12}PM';
+    }
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Hour labels with larger, more readable styling
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildHourLabel(0, theme),
-              _buildHourLabel(3, theme),
-              _buildHourLabel(6, theme),
-              _buildHourLabel(9, theme),
-              _buildHourLabel(12, theme),
-              _buildHourLabel(15, theme),
-              _buildHourLabel(18, theme),
-              _buildHourLabel(21, theme),
-            ],
-          ),
-        ),
+        // Bars with labels underneath
+        SizedBox(
+          height: 180,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final barWidth = (constraints.maxWidth - 32) / 24;
+              
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(24, (index) {
+                    final item = data[index];
+                    final percentage = item['percentage'] as double;
+                    final hour = item['hour'] as int;
+                    final completions = item['completions'] as int;
+                    final intensity = maxPercentage > 0 ? percentage / maxPercentage : 0.0;
+                    final barHeight = 140 * intensity;
 
-        const SizedBox(height: 12),
-
-        // Heatmap bars with distinct color gradients
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: data.map((item) {
-                final percentage = item['percentage'] as double;
-                final intensity =
-                    maxPercentage > 0 ? percentage / maxPercentage : 0.0;
-                final hour = item['hour'] as int;
-
-                return Expanded(
-                  child: Container(
-                    height: 160 * intensity,
-                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          getHeatmapColor(intensity, theme),
-                          getHeatmapColor(intensity, theme)
-                              .withValues(alpha: 0.6 + (intensity * 0.4)),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: intensity > 0.6
-                            ? theme.colorScheme.tertiary.withValues(alpha: 0.4)
-                            : theme.colorScheme.outline.withValues(alpha: 0.2),
-                        width: intensity > 0.6 ? 1.5 : 1,
-                      ),
-                      boxShadow: intensity > 0.4
-                          ? [
-                              BoxShadow(
-                                color: getHeatmapColor(intensity, theme)
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 3,
-                                offset: const Offset(0, 2),
+                    return SizedBox(
+                      width: barWidth,
+                      child: GestureDetector(
+                        onTap: completions > 0 ? () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${formatHour(hour)}: ${percentage.toStringAsFixed(1)}% ($completions habit${completions == 1 ? '' : 's'})',
                               ),
-                            ]
-                          : null,
-                    ),
-                    child: Tooltip(
-                      message:
-                          '${hour == 0 ? '12 AM' : hour < 12 ? '$hour AM' : hour == 12 ? '12 PM' : '${hour - 12} PM'}\n${percentage.toStringAsFixed(1)}% of completions\n${item['completions']} habit${item['completions'] == 1 ? '' : 's'}',
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        } : null,
+                        child: Tooltip(
+                          message: completions > 0
+                              ? '${formatHour(hour)}\n${percentage.toStringAsFixed(1)}%\n$completions completion${completions == 1 ? '' : 's'}'
+                              : '${formatHour(hour)}\nNo completions',
+                          child: Container(
+                            height: barHeight < 4 && completions > 0 ? 4 : barHeight,
+                            margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                            decoration: BoxDecoration(
+                              gradient: completions > 0
+                                  ? LinearGradient(
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                      colors: [
+                                        getHeatmapColor(intensity),
+                                        getHeatmapColor(intensity).withValues(alpha: 0.7),
+                                      ],
+                                    )
+                                  : null,
+                              color: completions == 0
+                                  ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+                                  : null,
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(3),
+                              ),
+                              border: intensity > 0.6
+                                  ? Border.all(
+                                      color: getHeatmapColor(intensity),
+                                      width: 1,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              );
+            },
           ),
         ),
 
         const SizedBox(height: 8),
 
-        // Enhanced Legend
+        // Hour labels below bars
+        SizedBox(
+          height: 40,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final barWidth = (constraints.maxWidth - 32) / 24;
+              
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: List.generate(24, (hour) {
+                    // Show every 4th hour label
+                    final showLabel = hour % 4 == 0;
+                    
+                    return SizedBox(
+                      width: barWidth,
+                      child: showLabel
+                          ? Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  formatHour(hour),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 9,
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            )
+                          : const SizedBox(),
+                    );
+                  }),
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Color intensity legend
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.trending_down,
-                size: 16,
+                Icons.water_drop_outlined,
+                size: 14,
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Text(
-                'Low',
-                style: theme.textTheme.bodySmall?.copyWith(
+                'Low Activity',
+                style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(width: 12),
               Container(
-                width: 60,
-                height: 10,
+                width: 80,
+                height: 8,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      theme.colorScheme.primary.withValues(alpha: 0.3),
-                      theme.colorScheme.primary.withValues(alpha: 0.9),
+                      theme.colorScheme.primary.withValues(alpha: 0.4),
+                      theme.colorScheme.secondary,
+                      theme.colorScheme.tertiary,
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                'High',
-                style: theme.textTheme.bodySmall?.copyWith(
+                'High Activity',
+                style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Icon(
-                Icons.trending_up,
-                size: 16,
-                color: theme.colorScheme.primary,
+                Icons.local_fire_department,
+                size: 14,
+                color: theme.colorScheme.tertiary,
               ),
             ],
           ),
