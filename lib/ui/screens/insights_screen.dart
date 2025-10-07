@@ -56,21 +56,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     _tabController = TabController(length: 3, vsync: this);
 
     // Listen for tab changes to show onboarding and load AI insights
-    _tabController.addListener(() {
-      if (_tabController.index == 1) {
-        // AI Insights tab
-        if (!_aiInsightsRequested) {
-          // Load AI insights automatically on first access
-          _loadAIInsights();
-        }
-        // Show onboarding after a delay
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            AIInsightsOnboarding.showIfNeeded(context);
-          }
-        });
-      }
-    });
+    _tabController.addListener(_onTabChanged);
 
     // Initialize AI status and start animations
     // IMPORTANT: Initialize AI status synchronously to prevent race conditions
@@ -140,8 +126,27 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     }
   }
 
+  /// Handle tab changes to load AI insights and show onboarding
+  void _onTabChanged() {
+    if (_tabController.index == 1) {
+      // AI Insights tab
+      if (!_aiInsightsRequested) {
+        // Load AI insights automatically on first access
+        _loadAIInsights();
+      }
+      // Show onboarding after a delay
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          AIInsightsOnboarding.showIfNeeded(context);
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
+    // CRITICAL: Remove tab controller listener to prevent resource leak
+    _tabController.removeListener(_onTabChanged);
     _fadeController.dispose();
     _slideController.dispose();
     _tabController.dispose();
