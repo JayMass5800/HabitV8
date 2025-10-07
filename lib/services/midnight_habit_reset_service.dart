@@ -36,6 +36,7 @@ class MidnightHabitResetService {
   }
 
   /// Start the midnight timer
+  /// PERFORMANCE: Uses one-time timer with rescheduling instead of periodic
   static Future<void> _startMidnightTimer() async {
     // Cancel existing timer if any
     _midnightTimer?.cancel();
@@ -48,17 +49,16 @@ class MidnightHabitResetService {
     AppLogger.info(
         '⏰ Next midnight reset in: ${timeUntilMidnight.inHours}h ${timeUntilMidnight.inMinutes % 60}m');
 
-    // Set timer for next midnight
+    // PERFORMANCE: Use one-time timer instead of periodic
+    // After firing, it reschedules itself for the next midnight
     _midnightTimer = Timer(timeUntilMidnight, () async {
       await _performMidnightReset();
 
-      // Set up daily recurring timer after first midnight
-      _midnightTimer = Timer.periodic(const Duration(days: 1), (timer) async {
-        await _performMidnightReset();
-      });
+      // Reschedule for next midnight (recursive pattern)
+      _startMidnightTimer();
     });
 
-    AppLogger.info('🌙 Midnight reset timer started');
+    AppLogger.info('🌙 Midnight reset timer scheduled (one-time)');
   }
 
   /// Check if we missed a reset while the app was closed

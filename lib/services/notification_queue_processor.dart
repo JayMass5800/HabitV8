@@ -1,13 +1,14 @@
 // Notification Queue Processor for HabitV8
-// Handles notification scheduling completely off the main thread
+// Handles notification scheduling using event-driven processing
+// PERFORMANCE: Replaced polling timer with immediate processing when tasks are enqueued
 
 import 'dart:async';
 import 'logging_service.dart';
 
 /// A specialized processor for handling notification scheduling in the background
 /// to prevent main thread blocking during app startup
+/// Uses event-driven processing instead of polling for better performance
 class NotificationQueueProcessor {
-  static Timer? _processingTimer;
   static final List<NotificationTask> _taskQueue = [];
   static bool _isProcessing = false;
   static int _processedCount = 0;
@@ -36,85 +37,65 @@ class NotificationQueueProcessor {
   }
 
   /// Add a notification task to the queue for background processing
+  /// PERFORMANCE: Immediately starts processing instead of waiting for timer
   static void enqueueNotificationTask(NotificationTask task) {
     _taskQueue.add(task);
     AppLogger.debug(
         '📥 Queued notification task: ${task.habitName} (queue size: ${_taskQueue.length})');
 
-    // Start processing if not already running
+    // Start processing immediately if not already running
     if (!_isProcessing) {
-      _startProcessing();
+      _processQueue();
     }
   }
 
-  /// Start the background processing of queued notification tasks
-  static void _startProcessing() {
-    if (_isProcessing) return;
+  /// Process all tasks in the queue sequentially
+  /// PERFORMANCE: Event-driven processing - no polling timer
+  static Future<void> _processQueue() async {
+    if (_isProcessing || _taskQueue.isEmpty) return;
 
     _isProcessing = true;
     _processedCount = 0;
     _failedCount = 0;
 
-    AppLogger.info('🚀 Starting notification queue processor');
+    AppLogger.info('🚀 Starting notification queue processing');
 
-    // Use a timer to process tasks with significant delays to prevent main thread blocking
-    _processingTimer =
-        Timer.periodic(const Duration(seconds: 2), (timer) async {
-      await _processNextTask();
+    while (_taskQueue.isNotEmpty) {
+      final task = _taskQueue.removeAt(0);
 
-      // Stop processing when queue is empty
-      if (_taskQueue.isEmpty) {
-        _stopProcessing();
+      try {
+        AppLogger.debug('🔄 Processing notification for: ${task.habitName}');
+
+        // Small delay to ensure main thread responsiveness
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        // Use the callback to schedule the notification
+        if (_scheduleNotificationCallback != null) {
+          await _scheduleNotificationCallback!(
+            id: task.id,
+            habitId: task.habitId,
+            title: task.title,
+            body: task.body,
+            scheduledTime: task.scheduledTime,
+          );
+        } else {
+          throw Exception('Schedule notification callback not set');
+        }
+
+        _processedCount++;
+        AppLogger.debug(
+            '✅ Successfully processed notification for: ${task.habitName}');
+      } catch (e) {
+        _failedCount++;
+        AppLogger.warning(
+            '❌ Failed to process notification for ${task.habitName}: $e');
       }
-    });
-  }
-
-  /// Process the next task in the queue
-  static Future<void> _processNextTask() async {
-    if (_taskQueue.isEmpty) return;
-
-    final task = _taskQueue.removeAt(0);
-
-    try {
-      AppLogger.debug('🔄 Processing notification for: ${task.habitName}');
-
-      // Add a small delay before processing to ensure main thread responsiveness
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // Use the callback to schedule the notification
-      if (_scheduleNotificationCallback != null) {
-        await _scheduleNotificationCallback!(
-          id: task.id,
-          habitId: task.habitId,
-          title: task.title,
-          body: task.body,
-          scheduledTime: task.scheduledTime,
-        );
-      } else {
-        throw Exception('Schedule notification callback not set');
-      }
-
-      _processedCount++;
-      AppLogger.debug(
-          '✅ Successfully processed notification for: ${task.habitName}');
-
-      // Additional delay after successful processing
-      await Future.delayed(const Duration(milliseconds: 50));
-    } catch (e) {
-      _failedCount++;
-      AppLogger.warning(
-          '❌ Failed to process notification for ${task.habitName}: $e');
     }
-  }
 
-  /// Stop the background processing
-  static void _stopProcessing() {
-    _processingTimer?.cancel();
-    _processingTimer = null;
     _isProcessing = false;
 
     AppLogger.info(
-        '🏁 Notification queue processing completed. Processed: $_processedCount, Failed: $_failedCount');
+        '🏁 Queue processing completed. Processed: $_processedCount, Failed: $_failedCount');
   }
 
   /// Get current queue status
@@ -130,19 +111,13 @@ class NotificationQueueProcessor {
   /// Clear the queue (use with caution)
   static void clearQueue() {
     _taskQueue.clear();
-    _stopProcessing();
+    _isProcessing = false;
     AppLogger.warning('🧹 Notification queue cleared');
   }
 
   /// Dispose all resources properly - call this when app is shutting down
   static void dispose() {
     AppLogger.info('🔄 Disposing NotificationQueueProcessor resources...');
-
-    // Cancel the processing timer if active
-    if (_processingTimer != null && _processingTimer!.isActive) {
-      _processingTimer!.cancel();
-    }
-    _processingTimer = null;
 
     // Clear the task queue
     _taskQueue.clear();

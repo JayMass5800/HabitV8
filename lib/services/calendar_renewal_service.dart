@@ -5,35 +5,32 @@ import '../data/database_isar.dart';
 import 'calendar_service.dart';
 import 'logging_service.dart';
 
-/// Service to handle automatic calendar sync renewal
-/// Ensures habit events continue to be created beyond the initial sync period
+/// DEPRECATED: Service to handle automatic calendar sync renewal
+/// This service is now redundant - calendar sync is handled by midnight reset service
+/// and Isar listeners provide automatic updates
+///
+/// PERFORMANCE NOTE: This service used Timer.periodic polling which caused
+/// unnecessary background activity and garbage collection.
+///
+/// Kept for backward compatibility but should not be initialized in new code.
+@Deprecated('Use MidnightHabitResetService and Isar listeners instead')
 class CalendarRenewalService {
   static Timer? _renewalTimer;
   static bool _isInitialized = false;
 
   /// Initialize the calendar renewal service
+  /// DEPRECATED: This service is no longer needed
+  @Deprecated('Use MidnightHabitResetService and Isar listeners instead')
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
-    try {
-      AppLogger.info('Initializing calendar renewal service');
+    AppLogger.warning(
+        '⚠️ CalendarRenewalService.initialize() called but this service is deprecated');
+    AppLogger.info(
+        '🔄 Please use MidnightHabitResetService and Isar listeners instead');
 
-      // Check if calendar sync is enabled
-      final syncEnabled = await CalendarService.isCalendarSyncEnabled();
-      if (!syncEnabled) {
-        AppLogger.info(
-            'Calendar sync disabled, skipping renewal service initialization');
-        return;
-      }
-
-      // Start the renewal timer
-      await _startRenewalTimer();
-
-      _isInitialized = true;
-      AppLogger.info('Calendar renewal service initialized successfully');
-    } catch (e) {
-      AppLogger.error('Failed to initialize calendar renewal service', e);
-    }
+    // Don't start the polling timer - let it remain unused
+    _isInitialized = true;
   }
 
   /// Start the automatic renewal timer

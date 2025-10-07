@@ -128,10 +128,8 @@ void main() async {
   // Initialize subscription service and check for existing purchases (critical for device loss recovery)
   _initializeSubscriptionService();
 
-  // Set up a periodic callback check to ensure it doesn't get lost
-  Timer.periodic(const Duration(minutes: 1), (timer) {
-    NotificationActionService.ensureCallbackRegistered();
-  });
+  // PERFORMANCE: Callback re-registration removed - callback is already registered at startup
+  // and does not get lost. If it does, that's a bug to fix, not poll around.
 
   // Initialize midnight habit reset service (non-blocking)
   // This replaces the old calendar renewal and habit continuation systems

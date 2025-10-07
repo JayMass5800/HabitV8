@@ -11,6 +11,7 @@ import 'dart:convert';
 import 'dart:ui' as ui;
 
 /// Service to manage widget integration and updates
+/// PERFORMANCE: Uses Isar listeners for event-driven updates instead of polling
 class WidgetIntegrationService {
   static const String _timelineWidgetName = 'HabitTimelineWidgetProvider';
   static const String _compactWidgetName = 'HabitCompactWidgetProvider';
@@ -21,7 +22,8 @@ class WidgetIntegrationService {
   static WidgetIntegrationService get instance =>
       _instance ??= WidgetIntegrationService._();
 
-  Timer? _periodicUpdateTimer;
+  StreamSubscription<void>?
+      _habitWatchSubscription; // Isar listener for habit changes
   Timer?
       _debounceTimer; // Debounce widget updates to prevent excessive refreshes
   bool _updatePending = false; // Track if an update is already scheduled
@@ -29,6 +31,7 @@ class WidgetIntegrationService {
   WidgetIntegrationService._();
 
   /// Initialize widget integration and set up background handlers
+  /// PERFORMANCE: Uses Isar listener for event-driven updates instead of polling
   Future<void> initialize() async {
     try {
       // Register background callback for widget interactions
@@ -40,15 +43,34 @@ class WidgetIntegrationService {
       // Set initial widget data
       await updateAllWidgets();
 
-      // Start periodic updates to ensure widgets stay fresh
-      startPeriodicUpdates();
+      // PERFORMANCE: Set up Isar listener for automatic widget updates on habit changes
+      await _setupHabitListener();
 
       // Schedule Android WorkManager updates for independent widget updates
       await _scheduleAndroidWidgetUpdates();
 
-      debugPrint('Widget integration initialized successfully');
+      debugPrint('✅ Widget integration initialized with Isar listener');
     } catch (e) {
       debugPrint('Error initializing widget integration: $e');
+    }
+  }
+
+  /// Set up Isar listener for automatic widget updates when habits change
+  /// PERFORMANCE: Event-driven updates instead of polling every 30 minutes
+  Future<void> _setupHabitListener() async {
+    try {
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
+
+      // Listen to habit changes and update widgets automatically
+      _habitWatchSubscription = habitService.watchHabitsLazy().listen((_) {
+        debugPrint('🔔 Habits changed, updating widgets automatically');
+        updateAllWidgets(); // Uses existing debounced update method
+      });
+
+      debugPrint('✅ Widget Isar listener initialized');
+    } catch (e) {
+      debugPrint('⚠️ Error setting up widget Isar listener: $e');
     }
   }
 
@@ -542,43 +564,26 @@ class WidgetIntegrationService {
     }
   }
 
-  /// Start periodic widget updates (every 30 minutes)
+  /// DEPRECATED: Periodic updates removed - now using Isar listeners
+  /// This method is kept for backward compatibility but does nothing
+  @Deprecated('Widget updates are now event-driven via Isar listeners')
   void startPeriodicUpdates() {
-    try {
-      // Cancel existing timer if any
-      _periodicUpdateTimer?.cancel();
-
-      // Update widgets every 30 minutes to ensure they stay fresh
-      _periodicUpdateTimer =
-          Timer.periodic(const Duration(minutes: 30), (timer) async {
-        try {
-          debugPrint('Performing periodic widget update');
-          await updateAllWidgets();
-        } catch (e) {
-          debugPrint('Error during periodic widget update: $e');
-        }
-      });
-
-      debugPrint('Periodic widget updates started (every 15 minutes)');
-    } catch (e) {
-      debugPrint('Error starting periodic widget updates: $e');
-    }
+    debugPrint(
+        '⚠️ startPeriodicUpdates called but is deprecated - using Isar listeners instead');
   }
 
-  /// Stop periodic widget updates
+  /// DEPRECATED: Periodic updates removed - now using Isar listeners
+  @Deprecated('Widget updates are now event-driven via Isar listeners')
   void stopPeriodicUpdates() {
-    try {
-      _periodicUpdateTimer?.cancel();
-      _periodicUpdateTimer = null;
-      debugPrint('Periodic widget updates stopped');
-    } catch (e) {
-      debugPrint('Error stopping periodic widget updates: $e');
-    }
+    debugPrint(
+        '⚠️ stopPeriodicUpdates called but is deprecated - using Isar listeners instead');
   }
 
-  /// Schedule periodic widget updates (legacy method - now calls startPeriodicUpdates)
+  /// DEPRECATED: Now using Isar listeners
+  @Deprecated('Widget updates are now event-driven via Isar listeners')
   Future<void> schedulePeriodicUpdates() async {
-    startPeriodicUpdates();
+    debugPrint(
+        '⚠️ schedulePeriodicUpdates called but is deprecated - using Isar listeners instead');
   }
 
   /// Check if the app was launched from a widget
@@ -959,5 +964,20 @@ class WidgetIntegrationService {
         }
         return '';
     }
+  }
+
+  /// Dispose resources and cancel listeners
+  void dispose() {
+    debugPrint('🔄 Disposing WidgetIntegrationService resources...');
+
+    // Cancel Isar listener
+    _habitWatchSubscription?.cancel();
+    _habitWatchSubscription = null;
+
+    // Cancel debounce timer
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
+
+    debugPrint('✅ WidgetIntegrationService disposed successfully');
   }
 }

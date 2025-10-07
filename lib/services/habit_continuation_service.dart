@@ -6,8 +6,15 @@ import 'notification_service.dart';
 import 'alarm_manager_service.dart';
 import 'logging_service.dart';
 
-/// Service responsible for ensuring habits continue to work indefinitely
-/// Handles automatic renewal of notifications and alarms for all habit frequencies
+/// DEPRECATED: Service responsible for ensuring habits continue to work indefinitely
+/// This service is now redundant - handled by MidnightHabitResetService
+/// which uses one-time scheduled timers instead of polling
+///
+/// PERFORMANCE NOTE: This service used Timer.periodic polling every 12 hours which
+/// caused unnecessary background activity and garbage collection.
+///
+/// Kept for backward compatibility but should not be initialized in new code.
+@Deprecated('Use MidnightHabitResetService instead')
 class HabitContinuationService {
   static Timer? _renewalTimer;
   static bool _isInitialized = false;
@@ -18,23 +25,18 @@ class HabitContinuationService {
   static const int _defaultRenewalIntervalHours = 12;
 
   /// Initialize the habit continuation service
+  /// DEPRECATED: This service is no longer needed
+  @Deprecated('Use MidnightHabitResetService instead')
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
-    try {
-      AppLogger.info('🔄 Initializing Habit Continuation Service');
+    AppLogger.warning(
+        '⚠️ HabitContinuationService.initialize() called but this service is deprecated');
+    AppLogger.info(
+        '🔄 Please use MidnightHabitResetService instead - it handles habit continuation without polling');
 
-      // Start the renewal timer
-      await _startRenewalTimer();
-
-      // Perform initial renewal check
-      await _performRenewalCheck();
-
-      _isInitialized = true;
-      AppLogger.info('✅ Habit Continuation Service initialized successfully');
-    } catch (e) {
-      AppLogger.error('❌ Failed to initialize Habit Continuation Service', e);
-    }
+    // Don't start the polling timer - let it remain unused
+    _isInitialized = true;
   }
 
   /// Start the automatic renewal timer
