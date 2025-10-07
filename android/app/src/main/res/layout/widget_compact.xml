@@ -76,36 +76,51 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
         android:visibility="gone">
 
+        <!-- Text Content on the Left -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="start|center_vertical"
+            android:paddingEnd="12dp"
+            android:paddingRight="12dp">
+
+            <TextView
+                android:id="@+id/compact_celebration_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All Complete!"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_text_primary"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/compact_celebration_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5/5"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_primary_color" />
+
+        </LinearLayout>
+
+        <!-- Celebration Emoji on the Right -->
         <TextView
             android:id="@+id/compact_celebration_emoji"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🎉"
-            android:textSize="48sp"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/compact_celebration_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ALL HABITS COMPLETED"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_text_primary"
-            android:layout_marginBottom="4dp" />
-
-        <TextView
-            android:id="@+id/compact_celebration_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="5/5"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_text_primary" />
+            android:textSize="56sp"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp" />
 
     </LinearLayout>
 

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget Theme Colors for Dark Mode -->
+    <color name="widget_text_primary">@color/widget_text_primary_dark</color>
+    <color name="widget_text_secondary">@color/widget_text_secondary_dark</color>
+    <color name="widget_background">@color/widget_background_dark</color>
+    <color name="widget_surface">@color/widget_surface_dark</color>
+</resources>

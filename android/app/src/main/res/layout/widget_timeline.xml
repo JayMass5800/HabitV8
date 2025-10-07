@@ -125,57 +125,68 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="16dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="20dp"
         android:visibility="gone">
 
+        <!-- Text Content on the Left -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="start|center_vertical"
+            android:paddingEnd="16dp"
+            android:paddingRight="16dp">
+
+            <TextView
+                android:id="@+id/celebration_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="All Habits Complete!"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_text_primary"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/celebration_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5/5"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/widget_primary_color"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Divider line using TextView for RemoteViews compatibility -->
+            <TextView
+                android:layout_width="80dp"
+                android:layout_height="2dp"
+                android:background="@color/widget_text_secondary"
+                android:alpha="0.3"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/celebration_encouragement"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ready to tackle tomorrow's 5 habits"
+                android:textSize="14sp"
+                android:textColor="@color/widget_text_secondary" />
+
+        </LinearLayout>
+
+        <!-- Celebration Emoji on the Right -->
         <TextView
             android:id="@+id/celebration_emoji"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🎉"
-            android:textSize="64sp"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:id="@+id/celebration_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="All Habits Complete!"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_text_primary"
-            android:layout_marginBottom="6dp"
-            android:gravity="center" />
-
-        <TextView
-            android:id="@+id/celebration_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="5/5"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="@color/widget_text_primary"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Divider line using TextView for RemoteViews compatibility -->
-        <TextView
-            android:layout_width="60dp"
-            android:layout_height="2dp"
-            android:background="@color/widget_text_secondary"
-            android:alpha="0.3"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:id="@+id/celebration_encouragement"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ready to tackle tomorrow's 5 habits"
-            android:textSize="14sp"
-            android:textColor="@color/widget_text_secondary"
-            android:gravity="center"
-            android:alpha="0.9" />
+            android:textSize="72sp"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp" />
 
     </LinearLayout>
 
