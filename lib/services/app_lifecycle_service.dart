@@ -11,6 +11,7 @@ import 'notification_action_service.dart';
 import 'notification_service.dart';
 import 'widget_integration_service.dart';
 import 'midnight_habit_reset_service.dart';
+import 'notification_update_coordinator.dart';
 import 'logging_service.dart';
 import 'notifications/notification_action_handler.dart';
 import '../data/database_isar.dart';
@@ -110,6 +111,22 @@ class AppLifecycleService with WidgetsBindingObserver {
       NotificationQueueProcessor.dispose();
     } catch (e) {
       AppLogger.error('Error disposing NotificationQueueProcessor', e);
+    }
+
+    try {
+      // Dispose WidgetIntegrationService (StreamSubscription + Timer)
+      WidgetIntegrationService.instance.dispose();
+      AppLogger.info('✅ WidgetIntegrationService disposed');
+    } catch (e) {
+      AppLogger.error('Error disposing WidgetIntegrationService', e);
+    }
+
+    try {
+      // Dispose NotificationUpdateCoordinator (StreamSubscription)
+      NotificationUpdateCoordinator.instance.dispose();
+      AppLogger.info('✅ NotificationUpdateCoordinator disposed');
+    } catch (e) {
+      AppLogger.error('Error disposing NotificationUpdateCoordinator', e);
     }
 
     // Close database connections properly to avoid cursor leaks
