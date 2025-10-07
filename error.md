@@ -1,4 +1,6 @@
-Widget and Feature Update Prompt
+1: primary focus... currently the timeline screen and hoescreen widgets are not making proper use of isar listener capabilities or are being delayed by something as when pressing complete on a habit notification neither are updating straight away as they should, the app has to be closed and reopened for the timeline to update and then sometime after the home screen widgets update, all of this should happen on the data change, is the notification not being processed straight away?  is something caching the change to be handled later? if so this needs ammending to fully utilise isar capabilities and be a rapidly responsive application
+
+ 2: secondary focus....Widget and Feature Update Prompt
 Please implement the following updates to the daily habits home screen widgets and verify the underlying data listener and refresh mechanisms.
 
 1. Habit Completion Celebration
@@ -47,7 +49,6 @@ Question to confirm: Does the midnight refresh logic automatically trigger a man
 Requirement: If the midnight refresh does not explicitly trigger a widget refresh, this needs to be implemented. The widgets must show the new day's habits immediately after the midnight refresh logic has run.
 Also the listeners in the timeline screen only seem to be updating after an app open and close rather than on a data change like a completion from a notification. They should update immediately,I want this application to be fast and reliable 
 
-Also the listeners in the timeline screen only seem to be updating after an app open and close rather than on a data change like a completion from a notification. They should update immediately,I want this application to be fast and reliable 
 
 
 

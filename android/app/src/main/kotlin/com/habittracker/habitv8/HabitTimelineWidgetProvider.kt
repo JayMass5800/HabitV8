@@ -85,11 +85,37 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 
                 // Check if we have habits to show (pass widgetData to check fallback data too)
                 val hasHabits = checkForHabits(context, widgetData)
-                if (hasHabits) {
+                val completionStatus = getHabitCompletionStatus(context)
+                val allComplete = completionStatus.first == completionStatus.second && completionStatus.second > 0
+                
+                if (hasHabits && allComplete) {
+                    // Show celebration state when all habits are complete
+                    views.setViewVisibility(R.id.habits_list, android.view.View.GONE)
+                    views.setViewVisibility(R.id.celebration_state, android.view.View.VISIBLE)
+                    views.setViewVisibility(R.id.empty_state, android.view.View.GONE)
+                    
+                    // Update celebration text with actual count
+                    views.setTextViewText(R.id.celebration_count, "${completionStatus.first}/${completionStatus.second}")
+                    
+                    // Get tomorrow's habit count for encouragement message
+                    val tomorrowCount = getTomorrowHabitCount(context)
+                    val encouragementText = if (tomorrowCount > 0) {
+                        "Ready to tackle tomorrow's $tomorrowCount habit${if (tomorrowCount != 1) "s" else ""}"
+                    } else {
+                        "Great work! Keep up the momentum!"
+                    }
+                    views.setTextViewText(R.id.celebration_encouragement, encouragementText)
+                    
+                    Log.d("HabitTimelineWidget", "🎉 All habits complete! Showing celebration state (${completionStatus.first}/${completionStatus.second})")
+                } else if (hasHabits) {
+                    // Show normal habit list
                     views.setViewVisibility(R.id.habits_list, android.view.View.VISIBLE)
+                    views.setViewVisibility(R.id.celebration_state, android.view.View.GONE)
                     views.setViewVisibility(R.id.empty_state, android.view.View.GONE)
                 } else {
+                    // Show empty state (no habits scheduled)
                     views.setViewVisibility(R.id.habits_list, android.view.View.GONE)
+                    views.setViewVisibility(R.id.celebration_state, android.view.View.GONE)
                     views.setViewVisibility(R.id.empty_state, android.view.View.VISIBLE)
                     setupEmptyStateClickHandler(context, views, appWidgetId)
                 }
@@ -208,6 +234,58 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         } catch (e: Exception) {
             Log.e("HabitTimelineWidget", "Error checking for habits", e)
             false
+        }
+    }
+
+    private fun getHabitCompletionStatus(context: Context): Pair<Int, Int> {
+        return try {
+            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val habitsJson = prefs.getString("habits", null)
+                ?: prefs.getString("home_widget.string.habits", null)
+                ?: prefs.getString("habits_data", null)
+            
+            if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
+                val habitsArray = org.json.JSONArray(habitsJson)
+                var completedCount = 0
+                var totalCount = habitsArray.length()
+                
+                for (i in 0 until habitsArray.length()) {
+                    val habitObj = habitsArray.getJSONObject(i)
+                    val isCompleted = habitObj.optBoolean("isCompleted", false)
+                    if (isCompleted) {
+                        completedCount++
+                    }
+                }
+                
+                Log.d("HabitTimelineWidget", "Completion status: $completedCount/$totalCount")
+                return Pair(completedCount, totalCount)
+            } else {
+                return Pair(0, 0)
+            }
+        } catch (e: Exception) {
+            Log.e("HabitTimelineWidget", "Error getting habit completion status", e)
+            Pair(0, 0)
+        }
+    }
+
+    private fun getTomorrowHabitCount(context: Context): Int {
+        // For now, return today's count as a simple estimate
+        // In the future, this could be enhanced to actually calculate tomorrow's scheduled habits
+        return try {
+            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val habitsJson = prefs.getString("habits", null)
+                ?: prefs.getString("home_widget.string.habits", null)
+                ?: prefs.getString("habits_data", null)
+            
+            if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
+                val habitsArray = org.json.JSONArray(habitsJson)
+                habitsArray.length()
+            } else {
+                0
+            }
+        } catch (e: Exception) {
+            Log.e("HabitTimelineWidget", "Error getting tomorrow's habit count", e)
+            0
         }
     }
 

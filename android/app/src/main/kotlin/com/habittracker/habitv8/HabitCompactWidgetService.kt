@@ -41,8 +41,9 @@ class HabitCompactRemoteViewsFactory(
     }
 
     override fun getCount(): Int {
-        val count = habits.size.coerceAtMost(3)
-        Log.d("HabitCompactWidget", "getCount called, returning: $count")
+        // Return all habits - widget is scrollable so no need to limit
+        val count = habits.size
+        Log.d("HabitCompactWidget", "getCount called, returning: $count (all habits, scrollable)")
         return count
     }
 

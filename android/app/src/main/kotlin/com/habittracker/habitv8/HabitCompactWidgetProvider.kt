@@ -83,9 +83,24 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
                 // Check if we have habits to show (pass widgetData to check fallback data too)
                 val hasHabits = checkForHabits(context, widgetData)
                 val habitCount = getHabitCount(context)
+                val completionStatus = getHabitCompletionStatus(context)
+                val allComplete = completionStatus.first == completionStatus.second && completionStatus.second > 0
                 
-                if (hasHabits) {
+                if (hasHabits && allComplete) {
+                    // Show celebration state when all habits are complete
+                    views.setViewVisibility(R.id.compact_habits_list, android.view.View.GONE)
+                    views.setViewVisibility(R.id.compact_celebration_state, android.view.View.VISIBLE)
+                    views.setViewVisibility(R.id.compact_empty_state, android.view.View.GONE)
+                    views.setViewVisibility(R.id.more_habits_indicator, android.view.View.GONE)
+                    
+                    // Update celebration text with actual count
+                    views.setTextViewText(R.id.compact_celebration_count, "${completionStatus.first}/${completionStatus.second}")
+                    
+                    Log.d("HabitCompactWidget", "🎉 All habits complete! Showing celebration state (${completionStatus.first}/${completionStatus.second})")
+                } else if (hasHabits) {
+                    // Show normal habit list
                     views.setViewVisibility(R.id.compact_habits_list, android.view.View.VISIBLE)
+                    views.setViewVisibility(R.id.compact_celebration_state, android.view.View.GONE)
                     views.setViewVisibility(R.id.compact_empty_state, android.view.View.GONE)
                     
                     // Show scroll hint if there are more than 5 habits
@@ -96,7 +111,9 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
                         views.setViewVisibility(R.id.more_habits_indicator, android.view.View.GONE)
                     }
                 } else {
+                    // Show empty state (no habits scheduled)
                     views.setViewVisibility(R.id.compact_habits_list, android.view.View.GONE)
+                    views.setViewVisibility(R.id.compact_celebration_state, android.view.View.GONE)
                     views.setViewVisibility(R.id.compact_empty_state, android.view.View.VISIBLE)
                     views.setViewVisibility(R.id.more_habits_indicator, android.view.View.GONE)
                     setupEmptyStateClickHandler(context, views, appWidgetId)
@@ -236,6 +253,37 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         } catch (e: Exception) {
             Log.e("HabitCompactWidget", "Error getting habit count", e)
             0
+        }
+    }
+
+    private fun getHabitCompletionStatus(context: Context): Pair<Int, Int> {
+        return try {
+            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val habitsJson = prefs.getString("habits", null)
+                ?: prefs.getString("home_widget.string.habits", null)
+                ?: prefs.getString("habits_data", null)
+            
+            if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
+                val habitsArray = org.json.JSONArray(habitsJson)
+                var completedCount = 0
+                var totalCount = habitsArray.length()
+                
+                for (i in 0 until habitsArray.length()) {
+                    val habitObj = habitsArray.getJSONObject(i)
+                    val isCompleted = habitObj.optBoolean("isCompleted", false)
+                    if (isCompleted) {
+                        completedCount++
+                    }
+                }
+                
+                Log.d("HabitCompactWidget", "Completion status: $completedCount/$totalCount")
+                return Pair(completedCount, totalCount)
+            } else {
+                return Pair(0, 0)
+            }
+        } catch (e: Exception) {
+            Log.e("HabitCompactWidget", "Error getting habit completion status", e)
+            Pair(0, 0)
         }
     }
 

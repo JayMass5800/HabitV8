@@ -17,7 +17,9 @@ final habitServiceIsarProvider = FutureProvider<HabitServiceIsar>((ref) async {
 });
 
 // Stream provider for reactive habit updates
-final habitsStreamIsarProvider = StreamProvider.autoDispose<List<Habit>>((ref) {
+// CRITICAL: NOT using autoDispose to keep stream alive even when screens are not visible
+// This ensures immediate updates when habits are completed from notifications
+final habitsStreamIsarProvider = StreamProvider<List<Habit>>((ref) {
   return Stream<List<Habit>>.multi((controller) async {
     final habitService = await ref.watch(habitServiceIsarProvider.future);
 
@@ -43,6 +45,7 @@ final habitsStreamIsarProvider = StreamProvider.autoDispose<List<Habit>>((ref) {
     );
 
     ref.onDispose(() {
+      AppLogger.info('🔄 habitsStreamIsarProvider: Disposing subscription');
       subscription.cancel();
     });
 

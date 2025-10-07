@@ -22,7 +22,7 @@ class WidgetIntegrationService {
   static WidgetIntegrationService get instance =>
       _instance ??= WidgetIntegrationService._();
 
-  StreamSubscription<void>?
+  StreamSubscription<List<Habit>>?
       _habitWatchSubscription; // Isar listener for habit changes
   Timer?
       _debounceTimer; // Debounce widget updates to prevent excessive refreshes
@@ -57,18 +57,25 @@ class WidgetIntegrationService {
 
   /// Set up Isar listener for automatic widget updates when habits change
   /// PERFORMANCE: Event-driven updates instead of polling every 30 minutes
+  /// CRITICAL: Uses watchAllHabits() with fireImmediately for instant updates
+  /// LIFECYCLE: Subscription is kept alive until dispose() is called by AppLifecycleService
   Future<void> _setupHabitListener() async {
     try {
+      // Cancel any existing subscription to prevent duplicates
+      await _habitWatchSubscription?.cancel();
+
       final isar = await IsarDatabaseService.getInstance();
       final habitService = HabitServiceIsar(isar);
 
       // Listen to habit changes and update widgets automatically
-      _habitWatchSubscription = habitService.watchHabitsLazy().listen((_) {
-        debugPrint('🔔 Habits changed, updating widgets automatically');
+      // Using watchAllHabits() instead of watchHabitsLazy() for immediate data access
+      _habitWatchSubscription = habitService.watchAllHabits().listen((habits) {
+        debugPrint(
+            '🔔 Habits changed (${habits.length} habits), updating widgets immediately');
         updateAllWidgets(); // Uses existing debounced update method
       });
 
-      debugPrint('✅ Widget Isar listener initialized');
+      debugPrint('✅ Widget Isar listener initialized with immediate updates');
     } catch (e) {
       debugPrint('⚠️ Error setting up widget Isar listener: $e');
     }
@@ -134,7 +141,7 @@ class WidgetIntegrationService {
     }
   }
 
-  /// Update all widgets with current habit data (minimal delay for batching)
+  /// Update all widgets with current habit data (immediate, no debounce)
   Future<void> updateAllWidgets() async {
     // Cancel any pending update
     _debounceTimer?.cancel();
@@ -148,10 +155,8 @@ class WidgetIntegrationService {
       return;
     }
 
-    // Minimal delay to batch rapid calls (reduced to 0ms for instant updates!)
-    _debounceTimer = Timer(const Duration(milliseconds: 0), () {
-      _performWidgetUpdate();
-    });
+    // IMMEDIATE update - no delay for instant responsiveness!
+    await _performWidgetUpdate();
   }
 
   /// Perform the actual widget update (internal method)
@@ -967,17 +972,25 @@ class WidgetIntegrationService {
   }
 
   /// Dispose resources and cancel listeners
+  /// Called by AppLifecycleService when app is paused/stopped
   void dispose() {
     debugPrint('🔄 Disposing WidgetIntegrationService resources...');
 
     // Cancel Isar listener
-    _habitWatchSubscription?.cancel();
-    _habitWatchSubscription = null;
+    if (_habitWatchSubscription != null) {
+      _habitWatchSubscription?.cancel();
+      _habitWatchSubscription = null;
+      debugPrint('✅ Cancelled habit watch subscription');
+    }
 
     // Cancel debounce timer
-    _debounceTimer?.cancel();
-    _debounceTimer = null;
+    if (_debounceTimer != null) {
+      _debounceTimer?.cancel();
+      _debounceTimer = null;
+      debugPrint('✅ Cancelled debounce timer');
+    }
 
-    debugPrint('✅ WidgetIntegrationService disposed successfully');
+    debugPrint(
+        '✅ WidgetIntegrationService disposed successfully - no resource leaks');
   }
 }

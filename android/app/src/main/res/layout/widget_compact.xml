@@ -70,13 +70,52 @@
         android:clipToPadding="false"
         android:paddingBottom="2dp" />
 
-    <!-- Empty State -->
+    <!-- Celebration State (when all habits complete) -->
+    <LinearLayout
+        android:id="@+id/compact_celebration_state"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/compact_celebration_emoji"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎉"
+            android:textSize="48sp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/compact_celebration_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ALL HABITS COMPLETED"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_primary"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/compact_celebration_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="5/5"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_primary" />
+
+    </LinearLayout>
+
+    <!-- Empty State (no habits scheduled) -->
     <TextView
         android:id="@+id/compact_empty_state"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:text="All habits completed!"
+        android:text="No habits scheduled for today"
         android:textSize="11sp"
         android:textColor="@color/widget_text_secondary"
         android:gravity="center"

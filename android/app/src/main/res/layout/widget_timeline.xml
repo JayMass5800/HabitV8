@@ -119,7 +119,66 @@
         android:clipToPadding="false"
         android:paddingBottom="4dp" />
 
-    <!-- Empty State -->
+    <!-- Celebration State (when all habits complete) -->
+    <LinearLayout
+        android:id="@+id/celebration_state"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/celebration_emoji"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎉"
+            android:textSize="64sp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/celebration_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="All Habits Complete!"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_primary"
+            android:layout_marginBottom="6dp"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/celebration_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="5/5"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/widget_text_primary"
+            android:layout_marginBottom="16dp" />
+
+        <View
+            android:layout_width="60dp"
+            android:layout_height="2dp"
+            android:background="@color/widget_text_secondary"
+            android:alpha="0.3"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/celebration_encouragement"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ready to tackle tomorrow's 5 habits"
+            android:textSize="14sp"
+            android:textColor="@color/widget_text_secondary"
+            android:gravity="center"
+            android:alpha="0.9" />
+
+    </LinearLayout>
+
+    <!-- Empty State (no habits scheduled) -->
     <LinearLayout
         android:id="@+id/empty_state"
         android:layout_width="match_parent"
