@@ -2458,8 +2458,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
             const SizedBox(height: 24),
             if (timePatternData.isNotEmpty) ...[
+              // Peak Hours Summary Metrics
+              _buildPeakHoursSummary(timePatternData, theme),
+              const SizedBox(height: 24),
+              
               SizedBox(
-                height: 240,
+                height: 280,
                 child: _buildTimeOfDayHeatmap(timePatternData, theme),
               ),
             ] else ...[
@@ -2669,6 +2673,124 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
+  /// Build peak hours summary metrics
+  Widget _buildPeakHoursSummary(
+      List<Map<String, dynamic>> data, ThemeData theme) {
+    // Find top 3 peak hours
+    final sortedData = List<Map<String, dynamic>>.from(data);
+    sortedData.sort((a, b) =>
+        (b['percentage'] as double).compareTo(a['percentage'] as double));
+    final topHours = sortedData.take(3).toList();
+
+    String formatHour(int hour) {
+      if (hour == 0) return '12 AM';
+      if (hour < 12) return '$hour AM';
+      if (hour == 12) return '12 PM';
+      return '${hour - 12} PM';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primaryContainer,
+            theme.colorScheme.secondaryContainer,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Top 3 Peak Hours
+          ...topHours.asMap().entries.map((entry) {
+            final index = entry.key;
+            final hourData = entry.value;
+            final hour = hourData['hour'] as int;
+            final percentage = hourData['percentage'] as double;
+            final completions = hourData['completions'] as int;
+
+            return Expanded(
+              child: Container(
+                margin: EdgeInsets.only(
+                  right: index < 2 ? 8 : 0,
+                ),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.shadow.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          index == 0
+                              ? Icons.emoji_events
+                              : index == 1
+                                  ? Icons.star
+                                  : Icons.star_half,
+                          color: index == 0
+                              ? theme.colorScheme.tertiary
+                              : theme.colorScheme.secondary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '#${index + 1}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      formatHour(hour),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${percentage.toStringAsFixed(1)}%',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.secondary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$completions habit${completions == 1 ? '' : 's'}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   /// Build time-of-day heatmap
   Widget _buildTimeOfDayHeatmap(
       List<Map<String, dynamic>> data, ThemeData theme) {
@@ -2678,39 +2800,58 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             .reduce((a, b) => a > b ? a : b)
         : 1.0;
 
+    // Helper function to get color based on intensity for better visual differentiation
+    Color getHeatmapColor(double intensity, ThemeData theme) {
+      if (intensity < 0.2) {
+        return theme.colorScheme.primary.withValues(alpha: 0.3);
+      } else if (intensity < 0.4) {
+        return theme.colorScheme.primary.withValues(alpha: 0.5);
+      } else if (intensity < 0.6) {
+        return theme.colorScheme.primary.withValues(alpha: 0.7);
+      } else if (intensity < 0.8) {
+        return theme.colorScheme.secondary.withValues(alpha: 0.8);
+      } else {
+        return theme.colorScheme.tertiary.withValues(alpha: 0.9);
+      }
+    }
+
     return Column(
       children: [
-        // Hour labels with improved styling
+        // Hour labels with larger, more readable styling
         Container(
-          height: 40,
+          height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Row(
             children: List.generate(24, (hour) {
               final shouldShowLabel =
-                  hour % 4 == 0; // Show every 4th hour for cleaner look
+                  hour % 3 == 0; // Show every 3rd hour for better coverage
               return Expanded(
                 child: Center(
                   child: shouldShowLabel
                       ? Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 4),
+                              horizontal: 8, vertical: 6),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(8),
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: theme.colorScheme.outline
+                                  .withValues(alpha: 0.3),
+                              width: 1,
+                            ),
                           ),
                           child: Text(
                             hour == 0
-                                ? '12 AM'
+                                ? '12AM'
                                 : hour < 12
-                                    ? '$hour AM'
+                                    ? '${hour}AM'
                                     : hour == 12
-                                        ? '12 PM'
-                                        : '${hour - 12} PM',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.8),
+                                        ? '12PM'
+                                        : '${hour - 12}PM',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                              color: theme.colorScheme.onPrimaryContainer,
                             ),
                           ),
                         )
@@ -2721,9 +2862,9 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           ),
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
 
-        // Heatmap bars with improved styling
+        // Heatmap bars with distinct color gradients
         Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -2737,38 +2878,41 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
                 return Expanded(
                   child: Container(
-                    height: 140 * intensity,
+                    height: 160 * intensity,
                     margin: const EdgeInsets.symmetric(horizontal: 1.5),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          theme.colorScheme.primary.withValues(alpha: 0.8),
-                          theme.colorScheme.primary
-                              .withValues(alpha: 0.4 + (intensity * 0.4)),
+                          getHeatmapColor(intensity, theme),
+                          getHeatmapColor(intensity, theme)
+                              .withValues(alpha: 0.6 + (intensity * 0.4)),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(4),
-                      boxShadow: intensity > 0.3
+                      border: Border.all(
+                        color: intensity > 0.6
+                            ? theme.colorScheme.tertiary.withValues(alpha: 0.4)
+                            : theme.colorScheme.outline.withValues(alpha: 0.2),
+                        width: intensity > 0.6 ? 1.5 : 1,
+                      ),
+                      boxShadow: intensity > 0.4
                           ? [
                               BoxShadow(
-                                color: theme.colorScheme.primary
-                                    .withValues(alpha: 0.2),
-                                blurRadius: 2,
-                                offset: const Offset(0, 1),
+                                color: getHeatmapColor(intensity, theme)
+                                    .withValues(alpha: 0.3),
+                                blurRadius: 3,
+                                offset: const Offset(0, 2),
                               ),
                             ]
                           : null,
                     ),
-                    child: percentage >
-                            3 // Show tooltip for hours with >3% activity
-                        ? Tooltip(
-                            message:
-                                '${hour == 0 ? '12 AM' : hour < 12 ? '$hour AM' : hour == 12 ? '12 PM' : '${hour - 12} PM'}\n${percentage.toStringAsFixed(1)}% of completions',
-                            child: const SizedBox.expand(),
-                          )
-                        : null,
+                    child: Tooltip(
+                      message:
+                          '${hour == 0 ? '12 AM' : hour < 12 ? '$hour AM' : hour == 12 ? '12 PM' : '${hour - 12} PM'}\n${percentage.toStringAsFixed(1)}% of completions\n${item['completions']} habit${item['completions'] == 1 ? '' : 's'}',
+                      child: const SizedBox.expand(),
+                    ),
                   ),
                 );
               }).toList(),
