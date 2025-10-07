@@ -192,6 +192,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
   @override
   void dispose() {
+    // CRITICAL: Remove listeners before disposing to prevent resource leak
+    _nameController.removeListener(_onHabitTextChanged);
+    _descriptionController.removeListener(_onHabitTextChanged);
     _nameController.dispose();
     _descriptionController.dispose();
     super.dispose();
