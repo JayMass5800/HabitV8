@@ -88,6 +88,8 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 val completionStatus = getHabitCompletionStatus(context)
                 val allComplete = completionStatus.first == completionStatus.second && completionStatus.second > 0
                 
+                Log.d("HabitTimelineWidget", "🔍 Widget state check: hasHabits=$hasHabits, completed=${completionStatus.first}, total=${completionStatus.second}, allComplete=$allComplete")
+                
                 if (hasHabits && allComplete) {
                     // Show celebration state when all habits are complete
                     views.setViewVisibility(R.id.habits_list, android.view.View.GONE)
@@ -112,12 +114,14 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                     views.setViewVisibility(R.id.habits_list, android.view.View.VISIBLE)
                     views.setViewVisibility(R.id.celebration_state, android.view.View.GONE)
                     views.setViewVisibility(R.id.empty_state, android.view.View.GONE)
+                    Log.d("HabitTimelineWidget", "📋 Showing normal habit list (not all complete)")
                 } else {
                     // Show empty state (no habits scheduled)
                     views.setViewVisibility(R.id.habits_list, android.view.View.GONE)
                     views.setViewVisibility(R.id.celebration_state, android.view.View.GONE)
                     views.setViewVisibility(R.id.empty_state, android.view.View.VISIBLE)
                     setupEmptyStateClickHandler(context, views, appWidgetId)
+                    Log.d("HabitTimelineWidget", "📭 Showing empty state (no habits)")
                 }
                 
                 appWidgetManager.updateAppWidget(appWidgetId, views)
@@ -249,21 +253,36 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                 var completedCount = 0
                 var totalCount = habitsArray.length()
                 
+                Log.d("HabitTimelineWidget", "📊 Checking completion status for ${habitsArray.length()} habits")
+                
                 for (i in 0 until habitsArray.length()) {
                     val habitObj = habitsArray.getJSONObject(i)
+                    val habitName = habitObj.optString("name", "Unknown")
                     val isCompleted = habitObj.optBoolean("isCompleted", false)
+                    val frequency = habitObj.optString("frequency", "unknown")
+                    
+                    // For hourly habits, check if all slots are completed
+                    if (frequency.contains("hourly", ignoreCase = true)) {
+                        val completedSlots = habitObj.optInt("completedSlots", 0)
+                        val totalSlots = habitObj.optInt("totalSlots", 0)
+                        Log.d("HabitTimelineWidget", "  📋 Hourly habit '$habitName': $completedSlots/$totalSlots slots, isCompleted=$isCompleted")
+                    } else {
+                        Log.d("HabitTimelineWidget", "  📋 Habit '$habitName': isCompleted=$isCompleted")
+                    }
+                    
                     if (isCompleted) {
                         completedCount++
                     }
                 }
                 
-                Log.d("HabitTimelineWidget", "Completion status: $completedCount/$totalCount")
+                Log.d("HabitTimelineWidget", "✅ Completion status: $completedCount/$totalCount")
                 return Pair(completedCount, totalCount)
             } else {
+                Log.d("HabitTimelineWidget", "⚠️ No habits data found in SharedPreferences")
                 return Pair(0, 0)
             }
         } catch (e: Exception) {
-            Log.e("HabitTimelineWidget", "Error getting habit completion status", e)
+            Log.e("HabitTimelineWidget", "❌ Error getting habit completion status", e)
             Pair(0, 0)
         }
     }

@@ -86,6 +86,8 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
                 val completionStatus = getHabitCompletionStatus(context)
                 val allComplete = completionStatus.first == completionStatus.second && completionStatus.second > 0
                 
+                Log.d("HabitCompactWidget", "🔍 Widget state check: hasHabits=$hasHabits, completed=${completionStatus.first}, total=${completionStatus.second}, allComplete=$allComplete")
+                
                 if (hasHabits && allComplete) {
                     // Show celebration state when all habits are complete
                     views.setViewVisibility(R.id.compact_habits_list, android.view.View.GONE)
@@ -110,6 +112,7 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
                     } else {
                         views.setViewVisibility(R.id.more_habits_indicator, android.view.View.GONE)
                     }
+                    Log.d("HabitCompactWidget", "📋 Showing normal habit list (not all complete)")
                 } else {
                     // Show empty state (no habits scheduled)
                     views.setViewVisibility(R.id.compact_habits_list, android.view.View.GONE)
@@ -117,6 +120,7 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
                     views.setViewVisibility(R.id.compact_empty_state, android.view.View.VISIBLE)
                     views.setViewVisibility(R.id.more_habits_indicator, android.view.View.GONE)
                     setupEmptyStateClickHandler(context, views, appWidgetId)
+                    Log.d("HabitCompactWidget", "📭 Showing empty state (no habits)")
                 }
                 
                 appWidgetManager.updateAppWidget(appWidgetId, views)

@@ -274,8 +274,32 @@ class WidgetIntegrationService {
           ? jsonEncode(_habitToJson(nextHabit, selectedDate))
           : null;
 
+      // Calculate completion status for logging
+      final completedCount =
+          habitsList.where((h) => h['isCompleted'] == true).length;
+      final totalCount = habitsList.length;
+      final allComplete = completedCount == totalCount && totalCount > 0;
+
       debugPrint(
           '🎯 Widget data prepared: ${habitsList.length} habits in list, JSON length: ${habitsJson.length}');
+      debugPrint(
+          '🎯 Completion status: $completedCount/$totalCount (allComplete: $allComplete)');
+
+      // Log each habit's completion status
+      for (final habit in habitsList) {
+        final name = habit['name'];
+        final isCompleted = habit['isCompleted'];
+        final frequency = habit['frequency'];
+        if (frequency.toString().contains('hourly')) {
+          final completedSlots = habit['completedSlots'] ?? 0;
+          final totalSlots = habit['totalSlots'] ?? 0;
+          debugPrint(
+              '  📋 $name (hourly): $completedSlots/$totalSlots slots, isCompleted=$isCompleted');
+        } else {
+          debugPrint('  📋 $name: isCompleted=$isCompleted');
+        }
+      }
+
       debugPrint(
           '🎯 First 200 chars of habits JSON: ${habitsJson.length > 200 ? habitsJson.substring(0, 200) : habitsJson}');
       debugPrint(
