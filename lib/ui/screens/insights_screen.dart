@@ -2820,7 +2820,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         // Hour labels with larger, more readable styling
         Container(
           height: 50,
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 2),
           child: Row(
             children: List.generate(24, (hour) {
               final shouldShowLabel =
@@ -2829,29 +2829,37 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 child: Center(
                   child: shouldShowLabel
                       ? Container(
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            maxWidth: 60,
+                          ),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 6),
+                              horizontal: 6, vertical: 4),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: theme.colorScheme.outline
                                   .withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
-                          child: Text(
-                            hour == 0
-                                ? '12AM'
-                                : hour < 12
-                                    ? '${hour}AM'
-                                    : hour == 12
-                                        ? '12PM'
-                                        : '${hour - 12}PM',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                              color: theme.colorScheme.onPrimaryContainer,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              hour == 0
+                                  ? '12AM'
+                                  : hour < 12
+                                      ? '${hour}AM'
+                                      : hour == 12
+                                          ? '12PM'
+                                          : '${hour - 12}PM',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 10,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         )
