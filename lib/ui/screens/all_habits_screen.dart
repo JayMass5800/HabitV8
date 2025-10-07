@@ -229,20 +229,61 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
         filtered.sort((a, b) => a.name.compareTo(b.name));
         break;
       case 'Completion Rate':
-        filtered.sort((a, b) => b.completionRate.compareTo(a.completionRate));
+        filtered.sort((a, b) {
+          // Primary: completion rate (descending)
+          final rateCompare = b.completionRate.compareTo(a.completionRate);
+          if (rateCompare != 0) return rateCompare;
+          // Secondary: alphabetical for ties
+          return a.name.compareTo(b.name);
+        });
         break;
       case 'Top Performers':
-        filtered.sort((a, b) => b.currentStreak.compareTo(a.currentStreak));
+        // Sort by completion rate (best performers = highest completion rate)
+        filtered.sort((a, b) {
+          // Primary: completion rate (descending)
+          final rateCompare = b.completionRate.compareTo(a.completionRate);
+          if (rateCompare != 0) return rateCompare;
+          // Secondary: current streak (descending)
+          final streakCompare = b.currentStreak.compareTo(a.currentStreak);
+          if (streakCompare != 0) return streakCompare;
+          // Tertiary: alphabetical
+          return a.name.compareTo(b.name);
+        });
         break;
       case 'Bottom Performers':
-        filtered.sort((a, b) => a.currentStreak.compareTo(b.currentStreak));
+        // Sort by completion rate (worst performers = lowest completion rate)
+        filtered.sort((a, b) {
+          // Primary: completion rate (ascending)
+          final rateCompare = a.completionRate.compareTo(b.completionRate);
+          if (rateCompare != 0) return rateCompare;
+          // Secondary: current streak (ascending)
+          final streakCompare = a.currentStreak.compareTo(b.currentStreak);
+          if (streakCompare != 0) return streakCompare;
+          // Tertiary: alphabetical
+          return a.name.compareTo(b.name);
+        });
         break;
       case 'Longest Streak':
-        filtered.sort((a, b) => b.longestStreak.compareTo(a.longestStreak));
+        filtered.sort((a, b) {
+          // Primary: longest streak (descending)
+          final longestCompare = b.longestStreak.compareTo(a.longestStreak);
+          if (longestCompare != 0) return longestCompare;
+          // Secondary: current streak (descending)
+          final currentCompare = b.currentStreak.compareTo(a.currentStreak);
+          if (currentCompare != 0) return currentCompare;
+          // Tertiary: alphabetical
+          return a.name.compareTo(b.name);
+        });
         break;
       case 'Recent':
       default:
-        filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        filtered.sort((a, b) {
+          // Primary: created date (descending)
+          final dateCompare = b.createdAt.compareTo(a.createdAt);
+          if (dateCompare != 0) return dateCompare;
+          // Secondary: alphabetical for same-day habits
+          return a.name.compareTo(b.name);
+        });
         break;
     }
 
