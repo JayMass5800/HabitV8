@@ -237,7 +237,8 @@ class NotificationActionHandlerIsar {
       // NO NEED FOR FLAGS - Isar streams update automatically!
 
       // The main isolate will automatically see this change via Isar's
-      // reactive streams - this is the POWER of Isar!
+      // reactive streams AND lazy watchers - this triggers instant updates
+      // across Timeline, All Habits, Stats, Widgets, and all other screens!
 
       // Update widget data
       try {

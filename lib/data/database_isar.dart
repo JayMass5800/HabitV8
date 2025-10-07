@@ -3,6 +3,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../domain/model/habit.dart';
 import '../services/logging_service.dart';
+import '../services/notification_service.dart';
 
 // Provider for Isar instance
 final isarProvider = FutureProvider<Isar>((ref) async {
@@ -23,11 +24,13 @@ final habitsStreamIsarProvider = StreamProvider.autoDispose<List<Habit>>((ref) {
     // Emit initial data
     final initialHabits = await habitService.getAllHabits();
     controller.add(initialHabits);
+    AppLogger.info('🔄 habitsStreamIsarProvider: Emitted initial data (${initialHabits.length} habits)');
 
     // Listen to Isar's watch stream for real-time updates
     final subscription = habitService.watchAllHabits().listen(
       (habits) {
-        AppLogger.info('🔔 Isar: Emitting ${habits.length} habits');
+        AppLogger.info('🔔 Isar: Emitting ${habits.length} habits to all screens');
+        AppLogger.info('📱 Timeline, All Habits, Stats screens will auto-refresh now!');
         controller.add(habits);
       },
       onError: (error) {
@@ -112,6 +115,18 @@ class HabitServiceIsar {
       await _isar.habits.put(habit);
     });
     AppLogger.info('✅ Habit added: ${habit.name}');
+
+    // Schedule notifications and alarms for the new habit
+    try {
+      if (habit.notificationsEnabled || habit.alarmEnabled) {
+        await NotificationService.scheduleHabitNotifications(habit,
+            isNewHabit: true);
+        AppLogger.info('✅ Notifications/alarms scheduled for: ${habit.name}');
+      }
+    } catch (e) {
+      AppLogger.error(
+          '❌ Error scheduling notifications/alarms for ${habit.name}', e);
+    }
   }
 
   /// Update existing habit
@@ -120,18 +135,47 @@ class HabitServiceIsar {
       await _isar.habits.put(habit);
     });
     AppLogger.info('✅ Habit updated: ${habit.name}');
+
+    // Reschedule notifications and alarms for the updated habit
+    try {
+      // Cancel and reschedule (NotificationService handles both notifications and alarms)
+      if (habit.notificationsEnabled || habit.alarmEnabled) {
+        await NotificationService.scheduleHabitNotifications(habit);
+        AppLogger.info('✅ Notifications/alarms rescheduled for: ${habit.name}');
+      } else {
+        // If both disabled, just cancel
+        await NotificationService.cancelHabitNotificationsByHabitId(habit.id);
+        AppLogger.info('✅ Notifications/alarms cancelled for: ${habit.name}');
+      }
+    } catch (e) {
+      AppLogger.error(
+          '❌ Error rescheduling notifications/alarms for ${habit.name}', e);
+    }
   }
 
   /// Delete habit
   Future<void> deleteHabit(String habitId) async {
+    String? habitName;
     await _isar.writeTxn(() async {
       final habit = await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
+        habitName = habit.name;
         await _isar.habits.delete(habit.isarId);
         AppLogger.info('✅ Habit deleted: ${habit.name}');
       }
     });
+
+    // Cancel notifications and alarms for the deleted habit
+    if (habitName != null) {
+      try {
+        await NotificationService.cancelHabitNotificationsByHabitId(habitId);
+        AppLogger.info('✅ Notifications/alarms cancelled for: $habitName');
+      } catch (e) {
+        AppLogger.error(
+            '❌ Error cancelling notifications/alarms for $habitName', e);
+      }
+    }
   }
 
   /// Mark habit as complete
@@ -184,6 +228,22 @@ class HabitServiceIsar {
         .idEqualTo(habitId)
         .watch(fireImmediately: true)
         .map((habits) => habits.isNotEmpty ? habits.first : null);
+  }
+
+  /// Watch for ANY habit changes (lazy - no data transfer)
+  /// Use this for notification triggers and widget updates
+  /// Emits void event whenever any habit is added, updated, or deleted
+  Stream<void> watchHabitsLazy() {
+    return _isar.habits.where().watchLazy(fireImmediately: false);
+  }
+
+  /// Watch for active habits changes (lazy)
+  /// Emits void event whenever active habits change
+  Stream<void> watchActiveHabitsLazy() {
+    return _isar.habits
+        .filter()
+        .isActiveEqualTo(true)
+        .watchLazy(fireImmediately: false);
   }
 
   /// Get habits by category

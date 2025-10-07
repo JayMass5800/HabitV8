@@ -23,6 +23,7 @@ import 'services/subscription_service.dart';
 import 'services/purchase_stream_service.dart';
 import 'services/widget_integration_service.dart';
 import 'services/widget_launch_handler.dart';
+import 'services/notification_update_coordinator.dart';
 import 'package:home_widget/home_widget.dart';
 import 'ui/screens/timeline_screen.dart';
 import 'ui/screens/all_habits_screen.dart';
@@ -139,6 +140,11 @@ void main() async {
   // Initialize widget integration service (non-blocking)
   _initializeWidgetService();
 
+  // ENHANCEMENT 4: Initialize notification update coordinator
+  // This listens for database changes and triggers updates across all screens
+  // Ensures completing habits from notification shade updates Timeline, All Habits, Stats, Widgets
+  _initializeNotificationUpdateCoordinator();
+
   // CRITICAL: Schedule notifications for all existing habits after Isar migration
   // This ensures notifications work immediately after app starts
   _scheduleAllHabitNotifications();
@@ -236,6 +242,20 @@ void _initializeWidgetService() async {
   } catch (e) {
     AppLogger.error('Error initializing widget integration service', e);
     // Don't block app startup if widget service fails
+  }
+}
+
+/// Initialize notification update coordinator (ENHANCEMENT 4)
+/// This enables instant UI updates across all screens when habits change
+void _initializeNotificationUpdateCoordinator() async {
+  try {
+    // Small delay to let database and widgets initialize first
+    await Future.delayed(const Duration(seconds: 3));
+    await NotificationUpdateCoordinator.instance.initialize();
+    AppLogger.info('✅ NotificationUpdateCoordinator initialized - instant updates enabled');
+  } catch (e) {
+    AppLogger.error('Error initializing notification update coordinator', e);
+    // Don't block app startup if coordinator fails
   }
 }
 
