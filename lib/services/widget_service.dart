@@ -49,18 +49,6 @@ class WidgetService {
       // Filter habits for the selected date
       final relevantHabits = _getHabitsForDate(habitsToUse, date);
 
-      // Calculate tomorrow's habit count for celebration message
-      final tomorrow = date.add(const Duration(days: 1));
-      final tomorrowHabits = _getHabitsForDate(habitsToUse, tomorrow);
-      final tomorrowCount = tomorrowHabits.length;
-
-      AppLogger.info(
-          'Widget update: date=$date, today habits=${relevantHabits.length}, tomorrow=$tomorrow, tomorrow habits=$tomorrowCount');
-      if (tomorrowCount > 0) {
-        AppLogger.info(
-            'Tomorrow habits: ${tomorrowHabits.map((h) => h.name).join(", ")}');
-      }
-
       // Get current time and next habit
       final now = DateTime.now();
       final nextHabit = _findNextHabit(relevantHabits, now);
@@ -76,8 +64,6 @@ class WidgetService {
             .toList(),
         'currentTime': now.millisecondsSinceEpoch,
         'selectedDate': date.millisecondsSinceEpoch,
-        'tomorrowHabitCount':
-            tomorrowCount, // Add tomorrow's count for celebration
         'nextHabit':
             nextHabit != null ? _habitToWidgetMap(nextHabit, date) : null,
         'themeMode': themeMode.name,
@@ -85,16 +71,11 @@ class WidgetService {
         'lastUpdate': DateTime.now().millisecondsSinceEpoch,
       };
 
-      AppLogger.info('Widget data prepared: tomorrowHabitCount=$tomorrowCount');
-
       // Store data for widget access
       await HomeWidget.saveWidgetData<String>(
         _habitsDataKey,
         jsonEncode(widgetData),
       );
-
-      AppLogger.info(
-          'Widget data saved to SharedPreferences with key: $_habitsDataKey');
 
       // Update widget UI
       await HomeWidget.updateWidget(

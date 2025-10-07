@@ -99,14 +99,8 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
                     // Update celebration text with actual count
                     views.setTextViewText(R.id.celebration_count, "${completionStatus.first}/${completionStatus.second}")
                     
-                    // Get tomorrow's habit count for encouragement message
-                    val tomorrowCount = getTomorrowHabitCount(context)
-                    val encouragementText = if (tomorrowCount > 0) {
-                        "Ready to tackle tomorrow's $tomorrowCount habit${if (tomorrowCount != 1) "s" else ""}"
-                    } else {
-                        "Great work! Keep up the momentum!"
-                    }
-                    views.setTextViewText(R.id.celebration_encouragement, encouragementText)
+                    // Set simple encouragement message
+                    views.setTextViewText(R.id.celebration_encouragement, "Great work! Keep up the momentum!")
                     
                     Log.d("HabitTimelineWidget", "🎉 All habits complete! Showing celebration state (${completionStatus.first}/${completionStatus.second})")
                 } else if (hasHabits) {
