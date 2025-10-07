@@ -672,7 +672,7 @@ class _HabitCard extends ConsumerWidget {
 
         if (confirmed == true) {
           // Use Riverpod to access the habitServiceIsarProvider
-          final habitServiceAsync = ref.watch(habitServiceIsarProvider);
+          final habitServiceAsync = ref.read(habitServiceIsarProvider);
 
           await habitServiceAsync.when(
             data: (habitService) async {
