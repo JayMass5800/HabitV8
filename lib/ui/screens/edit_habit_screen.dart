@@ -1678,7 +1678,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
       // Save to database
       final habitServiceAsync = ref.read(habitServiceIsarProvider);
-      final habitService = await habitServiceAsync.value;
+      final habitService = habitServiceAsync.value;
       if (habitService != null) {
         await habitService.updateHabit(widget.habit);
       }
