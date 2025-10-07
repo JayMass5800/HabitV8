@@ -49,6 +49,11 @@ class WidgetService {
       // Filter habits for the selected date
       final relevantHabits = _getHabitsForDate(habitsToUse, date);
 
+      // Calculate tomorrow's habit count for celebration message
+      final tomorrow = date.add(const Duration(days: 1));
+      final tomorrowHabits = _getHabitsForDate(habitsToUse, tomorrow);
+      final tomorrowCount = tomorrowHabits.length;
+
       // Get current time and next habit
       final now = DateTime.now();
       final nextHabit = _findNextHabit(relevantHabits, now);
@@ -64,6 +69,8 @@ class WidgetService {
             .toList(),
         'currentTime': now.millisecondsSinceEpoch,
         'selectedDate': date.millisecondsSinceEpoch,
+        'tomorrowHabitCount':
+            tomorrowCount, // Add tomorrow's count for celebration
         'nextHabit':
             nextHabit != null ? _habitToWidgetMap(nextHabit, date) : null,
         'themeMode': themeMode.name,

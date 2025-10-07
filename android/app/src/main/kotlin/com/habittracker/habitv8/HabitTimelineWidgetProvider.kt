@@ -288,18 +288,33 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun getTomorrowHabitCount(context: Context): Int {
-        // For now, return today's count as a simple estimate
-        // In the future, this could be enhanced to actually calculate tomorrow's scheduled habits
+        // Read pre-calculated tomorrow's habit count from Flutter widget data
+        // This uses the same frequency/schedule logic as the main app
         return try {
             val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            
+            // First try to get the pre-calculated count from widget data
+            val widgetDataJson = prefs.getString("habits_data", null)
+            if (!widgetDataJson.isNullOrEmpty()) {
+                val widgetData = org.json.JSONObject(widgetDataJson)
+                if (widgetData.has("tomorrowHabitCount")) {
+                    val count = widgetData.getInt("tomorrowHabitCount")
+                    Log.d("HabitTimelineWidget", "Tomorrow's habit count from widget data: $count")
+                    return count
+                }
+            }
+            
+            // Fallback: use today's count as estimate if tomorrow's count not available
             val habitsJson = prefs.getString("habits", null)
                 ?: prefs.getString("home_widget.string.habits", null)
-                ?: prefs.getString("habits_data", null)
             
             if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
                 val habitsArray = org.json.JSONArray(habitsJson)
-                habitsArray.length()
+                val count = habitsArray.length()
+                Log.d("HabitTimelineWidget", "Tomorrow's habit count (fallback to today): $count")
+                count
             } else {
+                Log.d("HabitTimelineWidget", "No habits found for tomorrow count")
                 0
             }
         } catch (e: Exception) {
