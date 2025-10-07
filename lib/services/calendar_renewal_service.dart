@@ -69,7 +69,8 @@ class CalendarRenewalService {
     return {
       'isActive': false,
       'deprecated': true,
-      'message': 'CalendarRenewalService is deprecated. Use MidnightHabitResetService instead.',
+      'message':
+          'CalendarRenewalService is deprecated. Use MidnightHabitResetService instead.',
     };
   }
 }
