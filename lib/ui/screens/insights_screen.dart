@@ -2828,7 +2828,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       children: [
         // Bars with labels underneath
         SizedBox(
-          height: 180,
+          height: 170,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final barWidth = (constraints.maxWidth - 32) / 24;
@@ -2946,10 +2946,12 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                                   fit: BoxFit.scaleDown,
                                   child: Text(
                                     formatHour(hour),
-                                    style: theme.textTheme.labelMedium?.copyWith(
+                                    style:
+                                        theme.textTheme.labelMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 11,
-                                      color: theme.colorScheme.onPrimaryContainer,
+                                      color:
+                                          theme.colorScheme.onPrimaryContainer,
                                       letterSpacing: 0,
                                     ),
                                     textAlign: TextAlign.center,
@@ -2968,7 +2970,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
 
         // Color intensity legend
         Container(
