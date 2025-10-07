@@ -2795,7 +2795,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   Widget _buildTimeOfDayHeatmap(
       List<Map<String, dynamic>> data, ThemeData theme) {
     if (data.isEmpty) return const SizedBox();
-    
+
     final maxPercentage = data
         .map((d) => d['percentage'] as double)
         .reduce((a, b) => a > b ? a : b);
@@ -2832,7 +2832,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           child: LayoutBuilder(
             builder: (context, constraints) {
               final barWidth = (constraints.maxWidth - 32) / 24;
-              
+
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
@@ -2842,28 +2842,33 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                     final percentage = item['percentage'] as double;
                     final hour = item['hour'] as int;
                     final completions = item['completions'] as int;
-                    final intensity = maxPercentage > 0 ? percentage / maxPercentage : 0.0;
+                    final intensity =
+                        maxPercentage > 0 ? percentage / maxPercentage : 0.0;
                     final barHeight = 140 * intensity;
 
                     return SizedBox(
                       width: barWidth,
                       child: GestureDetector(
-                        onTap: completions > 0 ? () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${formatHour(hour)}: ${percentage.toStringAsFixed(1)}% ($completions habit${completions == 1 ? '' : 's'})',
-                              ),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        } : null,
+                        onTap: completions > 0
+                            ? () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '${formatHour(hour)}: ${percentage.toStringAsFixed(1)}% ($completions habit${completions == 1 ? '' : 's'})',
+                                    ),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            : null,
                         child: Tooltip(
                           message: completions > 0
                               ? '${formatHour(hour)}\n${percentage.toStringAsFixed(1)}%\n$completions completion${completions == 1 ? '' : 's'}'
                               : '${formatHour(hour)}\nNo completions',
                           child: Container(
-                            height: barHeight < 4 && completions > 0 ? 4 : barHeight,
+                            height: barHeight < 4 && completions > 0
+                                ? 4
+                                : barHeight,
                             margin: const EdgeInsets.symmetric(horizontal: 0.5),
                             decoration: BoxDecoration(
                               gradient: completions > 0
@@ -2872,12 +2877,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                                       end: Alignment.topCenter,
                                       colors: [
                                         getHeatmapColor(intensity),
-                                        getHeatmapColor(intensity).withValues(alpha: 0.7),
+                                        getHeatmapColor(intensity)
+                                            .withValues(alpha: 0.7),
                                       ],
                                     )
                                   : null,
                               color: completions == 0
-                                  ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+                                  ? theme.colorScheme.surfaceContainerHighest
+                                      .withValues(alpha: 0.3)
                                   : null,
                               borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(3),
@@ -2904,39 +2911,51 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
         // Hour labels below bars
         SizedBox(
-          height: 40,
+          height: 50,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final barWidth = (constraints.maxWidth - 32) / 24;
-              
+
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: List.generate(24, (hour) {
                     // Show every 4th hour label
                     final showLabel = hour % 4 == 0;
-                    
+
                     return SizedBox(
                       width: barWidth,
                       child: showLabel
                           ? Center(
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 2,
+                                  horizontal: 6,
+                                  vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  formatHour(hour),
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 9,
-                                    color: theme.colorScheme.onPrimaryContainer,
+                                  color: theme.colorScheme.primaryContainer
+                                      .withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: theme.colorScheme.outline
+                                        .withValues(alpha: 0.3),
+                                    width: 0.5,
                                   ),
-                                  textAlign: TextAlign.center,
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    formatHour(hour),
+                                    style: theme.textTheme.labelMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                      color: theme.colorScheme.onPrimaryContainer,
+                                      letterSpacing: 0,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.visible,
+                                  ),
                                 ),
                               ),
                             )
@@ -2955,7 +2974,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            color: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
