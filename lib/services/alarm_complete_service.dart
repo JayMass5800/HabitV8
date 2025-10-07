@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'logging_service.dart';
 import '../data/database_isar.dart';
+import 'widget_integration_service.dart';
 
 /// Service to handle alarm completion callbacks from native Android
 class AlarmCompleteService {
@@ -80,7 +81,8 @@ class AlarmCompleteService {
       }
 
       // Get the habit service
-      final habitService = await _container!.read(habitServiceIsarProvider.future);
+      final habitService =
+          await _container!.read(habitServiceIsarProvider.future);
 
       // Get the habit
       final habit = await habitService.getHabitById(actualHabitId);
@@ -97,6 +99,15 @@ class AlarmCompleteService {
       );
 
       AppLogger.info('✅ Habit completed successfully: ${habit.name}');
+
+      // Update widgets immediately after completion
+      try {
+        await WidgetIntegrationService.instance.onHabitsChanged();
+        AppLogger.info('✅ Widget data updated after alarm completion');
+      } catch (e) {
+        AppLogger.error(
+            'Failed to update widget data after alarm completion', e);
+      }
     } catch (e, stackTrace) {
       AppLogger.error('Failed to complete habit $habitName', e);
       AppLogger.error('Stack trace: $stackTrace');
