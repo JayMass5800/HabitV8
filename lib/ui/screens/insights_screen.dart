@@ -2791,6 +2791,40 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     );
   }
 
+  /// Build hour label for time-of-day heatmap
+  Widget _buildHourLabel(int hour, ThemeData theme) {
+    String label;
+    if (hour == 0) {
+      label = '12AM';
+    } else if (hour < 12) {
+      label = '${hour}AM';
+    } else if (hour == 12) {
+      label = '12PM';
+    } else {
+      label = '${hour - 12}PM';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          color: theme.colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+
   /// Build time-of-day heatmap
   Widget _buildTimeOfDayHeatmap(
       List<Map<String, dynamic>> data, ThemeData theme) {
