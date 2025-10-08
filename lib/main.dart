@@ -22,6 +22,7 @@ import 'services/app_lifecycle_service.dart';
 import 'services/subscription_service.dart';
 import 'services/purchase_stream_service.dart';
 import 'services/widget_integration_service.dart';
+import 'services/widget_background_update_service.dart';
 import 'services/widget_launch_handler.dart';
 import 'services/notification_update_coordinator.dart';
 import 'package:home_widget/home_widget.dart';
@@ -138,6 +139,10 @@ void main() async {
   // Initialize widget integration service (non-blocking)
   _initializeWidgetService();
 
+  // Initialize widget background update service (CRITICAL for widget updates when app is closed)
+  // This must be called BEFORE runApp() to register the WorkManager callback
+  _initializeWidgetBackgroundService();
+
   // ENHANCEMENT 4: Initialize notification update coordinator
   // This listens for database changes and triggers updates across all screens
   // Ensures completing habits from notification shade updates Timeline, All Habits, Stats, Widgets
@@ -240,6 +245,28 @@ void _initializeWidgetService() async {
   } catch (e) {
     AppLogger.error('Error initializing widget integration service', e);
     // Don't block app startup if widget service fails
+  }
+}
+
+/// Initialize widget background update service
+/// This enables widgets to update even when the app is closed
+/// CRITICAL: Must be called BEFORE runApp() to register WorkManager callback
+void _initializeWidgetBackgroundService() async {
+  try {
+    AppLogger.info('🔧 Initializing widget background update service...');
+
+    // Initialize the service (registers the callback dispatcher)
+    await WidgetBackgroundUpdateService.initialize();
+
+    // Schedule periodic background updates (every 30 minutes as safety net)
+    await WidgetBackgroundUpdateService.schedulePeriodicUpdates();
+
+    AppLogger.info(
+        '✅ Widget background update service initialized successfully');
+    AppLogger.info('📅 Periodic widget updates scheduled (every 30 minutes)');
+  } catch (e) {
+    AppLogger.error('Error initializing widget background update service', e);
+    // Don't block app startup if background service fails
   }
 }
 
