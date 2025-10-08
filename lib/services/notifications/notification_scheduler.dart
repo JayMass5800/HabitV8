@@ -748,13 +748,18 @@ class NotificationScheduler {
     }
 
     final now = tz.TZDateTime.now(tz.local);
-    // Use frequency-aware scheduling window for optimal coverage
+    // PERFORMANCE FIX: Reduced scheduling window to prevent 20-30s save delays
+    // Schedule only near-term notifications - system will reschedule more as needed
+    // This matches the legacy frequency behavior (1-2 notifications per habit)
     final endDate = switch (habit.frequency) {
-      HabitFrequency.yearly =>
-        now.add(const Duration(days: 730)), // 2 years for yearly habits
-      HabitFrequency.monthly =>
-        now.add(const Duration(days: 365)), // 1 year for monthly habits
-      _ => now.add(const Duration(days: 84)), // 12 weeks for all others
+      HabitFrequency.yearly => now.add(const Duration(
+          days: 400)), // ~13 months for yearly (max 2 notifications)
+      HabitFrequency.monthly => now.add(const Duration(
+          days: 90)), // ~3 months for monthly (max 3 notifications)
+      HabitFrequency.weekly => now.add(const Duration(
+          days: 21)), // 3 weeks for weekly (max ~3 notifications)
+      _ => now.add(const Duration(
+          days: 14)), // 2 weeks for daily/hourly (max 14 notifications)
     };
 
     try {
@@ -809,7 +814,18 @@ class NotificationScheduler {
       const notificationBody =
           'Time to complete your habit! Don\'t break your streak.';
 
+      // PERFORMANCE: Limit max notifications to prevent extreme delays
+      // Midnight reset service will reschedule more as needed
+      const maxNotifications = 30;
+
       for (final occurrence in occurrences) {
+        // Stop if we've reached the limit
+        if (scheduledCount >= maxNotifications) {
+          AppLogger.info(
+              '⚠️ Reached max notification limit ($maxNotifications) for ${habit.name}, will reschedule more at midnight');
+          break;
+        }
+
         // Create TZDateTime for the notification
         final scheduledTime = tz.TZDateTime(
           tz.local,
