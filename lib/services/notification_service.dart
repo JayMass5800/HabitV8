@@ -6,6 +6,8 @@ import 'notifications/notification_helpers.dart';
 import 'notifications/notification_scheduler.dart';
 import 'notifications/notification_alarm_scheduler.dart';
 import 'notifications/notification_action_handler.dart';
+import 'notifications/notification_boot_rescheduler.dart';
+import 'notifications/scheduled_notification_storage.dart';
 
 /// Notification Service Facade - delegates to specialized modules
 class NotificationService {
@@ -13,6 +15,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
   static late final NotificationScheduler _scheduler;
   static late final NotificationAlarmScheduler _alarmScheduler;
+  static late final NotificationBootRescheduler _bootRescheduler;
 
   static Future<void> initialize() async {
     await NotificationCore.initialize(
@@ -22,6 +25,10 @@ class NotificationService {
     );
     _scheduler = NotificationScheduler(_notificationsPlugin);
     _alarmScheduler = NotificationAlarmScheduler.instance;
+    _bootRescheduler = NotificationBootRescheduler(_notificationsPlugin);
+
+    // Initialize notification storage for boot rescheduling
+    await ScheduledNotificationStorage.initialize();
   }
 
   static Future<void> recreateNotificationChannels() async {
@@ -272,5 +279,25 @@ class NotificationService {
       hour: hour,
       minute: minute,
     );
+  }
+
+  /// Reschedule all notifications after device reboot
+  ///
+  /// This method loads persisted notification data and reschedules
+  /// all pending notifications that were lost during reboot.
+  static Future<void> rescheduleNotificationsAfterBoot() async {
+    await _bootRescheduler.rescheduleAllNotifications();
+  }
+
+  /// Get statistics about stored notifications
+  ///
+  /// Returns a map with keys: total, pending, expired, alarms, regular
+  static Future<Map<String, int>> getNotificationStats() async {
+    return await _bootRescheduler.getNotificationStats();
+  }
+
+  /// Clean up old notification records from storage
+  static Future<void> cleanupOldNotificationRecords() async {
+    await ScheduledNotificationStorage.cleanupOldNotifications();
   }
 }

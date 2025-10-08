@@ -1,129 +1,97 @@
-The issue you're facing is common because background processes on mobile platforms (iOS and Android) are heavily restricted, and Flutter's standard listeners only work while the app is actively running or in the background for a short time. When the app is closed or killed, the listeners stop, and the Isar database is closed. Opening the app initializes everything again, which is why your widget updates.
 
-To get around this and ensure your homescreen widget updates in the morning even if the app hasn't been opened, you need to use Platform-Specific Background Tasks to run a headless Dart function that can open Isar, fetch the data, and update the widget.
+Scheduled local notifications are typically cleared by the operating system (OS) on device reboot as they are not persistent by default, which is why your notification didn't fire. This is a common behavior on both Android and iOS.
 
-Here is the general approach, which involves using a background execution package and coordinating it with your Isar database and widget package (like home_widget or flutter_widgetkit).
+To get around this limitation and ensure your notifications are rescheduled after a reboot, you need to implement a mechanism to listen for the device's boot-up event and then re-schedule all pending notifications using the data you've persistently stored in your Isar database.
 
-1. Implement Background Task Scheduling
-You need a package to schedule recurring tasks that run even when your app is terminated.
+Here are the steps to achieve this, primarily focusing on Android as it requires specific setup:
 
-For Recurring Tasks: Use a package like workmanager (for Android and iOS) or background_fetch (for more control over background fetch cycles). workmanager is often preferred for guaranteed periodic work.
+1. Add Android Permissions and Receiver
+You must inform the Android OS that your app needs to receive the "boot completed" broadcast so it can run code before the user launches the app.
 
-Workmanager Implementation (General Steps)
-Add Dependencies:
+In your android/app/src/main/AndroidManifest.xml file, ensure you have the following permission outside of the <application> tags:
 
-YAML
+XML
 
-dependencies:
-  workmanager: ^latest_version
-  # Your widget package (e.g., home_widget)
-  # isar and isar_flutter_libs
-Define the Headless Task:
-You must define a top-level static function that will run when the background task is triggered. This function is an entry point for your background process.
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+Also, within the <application> tags, the flutter_local_notifications plugin's receiver must be registered. If you're using the recommended setup, this is often handled automatically by the plugin, but for clarity, the receiver that handles the re-scheduling on boot should look like this (you should verify your current plugin setup includes this, it often is included by default):
 
+XML
+
+<receiver 
+    android:exported="false" 
+    android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+    <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+        <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+    </intent-filter>
+</receiver>
+2. Persistently Store Notification Data
+Since the OS clears all scheduled notifications on reboot, your app needs to know which notifications were pending so it can re-schedule them. You are already using an Isar database, which is the perfect tool for this.
+
+Before scheduling a notification, make sure you save all the necessary details to your Isar database:
+
+Notification ID (crucial for re-scheduling and cancellation).
+
+Title and Body.
+
+Scheduled Date/Time.
+
+When you initially schedule a notification with flutter_local_notifications, you would also write a record to your Isar database.
+
+3. Re-schedule Notifications on App Launch
+The flutter_local_notifications plugin's ScheduledNotificationBootReceiver (from Step 1) will trigger when the device reboots. This receiver automatically tries to handle re-scheduling. However, the most reliable cross-platform and developer-controlled way to ensure notifications are re-scheduled is to check for and re-schedule pending notifications every time your app starts.
+
+In your main() or initial widget's initState, you need to check if the app is launching after a reboot and re-schedule any pending notifications:
+
+Query Isar: Retrieve all the pending notification records from your Isar database.
+
+Filter/Validate: Iterate through the records. You may want to discard any that are already in the past (unless you want them to fire immediately upon launch).
+
+Re-schedule: For each valid record, call the flutter_local_notifications scheduling method (e.g., zonedSchedule) using the saved data.
+
+Clean Up: Once a notification is fired or cancelled, you should remove it from your Isar database to prevent it from being re-scheduled unnecessarily.
+
+Example Logic in Flutter (Conceptual)
 Dart
 
-// Must be a top-level function outside any class
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  Workmanager().executeTask((taskName, inputData) async {
-    // 1. Initialize Flutter and Isar
-    WidgetsFlutterBinding.ensureInitialized();
-    // You'll need to open Isar here, likely from a shared path.
-    final dir = await getApplicationSupportDirectory();
-    final isar = await Isar.open(
-      [YourSchema], 
-      directory: dir.path,
-      // You may need to use a dedicated Isar instance 
-      // that doesn't conflict with the main app's instance.
-    );
+Future<void> rescheduleNotificationsAfterReboot() async {
+    // 1. Get pending records from Isar (concept)
+    final pendingNotifications = await isar.notificationSchedules.where().findAll();
 
-    // 2. Fetch Data from Isar
-    final data = await isar.yourCollections.where().findFirst(); 
+    // 2. Clear old notifications from the OS queue (optional but good practice)
+    await flutterLocalNotificationsPlugin.cancelAll();
 
-    // 3. Update the Widget
-    if (data != null) {
-      // Use your chosen widget package to update the widget
-      await HomeWidget.saveWidgetData('isar_data', data.toJson()); 
-      await HomeWidget.updateWidget(
-        iOSName: 'YourWidgetName',
-        androidName: 'YourWidgetProviderName',
-      );
+    // 3. Re-schedule each one
+    for (final schedule in pendingNotifications) {
+        final now = tz.TZDateTime.now(tz.local);
+        final scheduledTime = schedule.scheduledTime; // Get from Isar
+
+        // Only re-schedule if it's in the future
+        if (scheduledTime.isAfter(now)) {
+            await flutterLocalNotificationsPlugin.zonedSchedule(
+                schedule.id, // Must be unique
+                schedule.title,
+                schedule.body,
+                scheduledTime,
+                // ... other NotificationDetails
+            );
+        } else {
+            // Option to delete past schedules from Isar
+            await isar.writeTxn(() async {
+                await isar.notificationSchedules.delete(schedule.id);
+            });
+        }
     }
-
-    // Return true to mark the task as successful
-    return Future.value(true);
-  });
 }
-Initialize Workmanager and Register the Task (in main.dart):
-
-Dart
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await HomeWidget.setAppGroupId('group.com.yourapp'); // Essential for widgets
-
-  Workmanager().initialize(
-    callbackDispatcher, // The top-level function defined above
-    isInDebugMode: true,
-  );
-
-  // Register the task to run every day (e.g., at 7:00 AM)
-  Workmanager().registerPeriodicTask(
-    "dailyUpdateTask",
-    "updateHomescreenWidget",
-    // The time should be close to the morning update time you want.
-    // For Android, this is an interval; the OS decides the exact time.
-    // For a specific time, you might need native alarms (more complex).
-    frequency: const Duration(hours: 24),
-    initialDelay: calculateInitialDelayForMorning(), // Custom function
-    // Constraints can be added here
-  );
-
-  runApp(MyApp());
+    WidgetsFlutterBinding.ensureInitialized();
+    // Initialize your Isar database here
+    // ...
+    // Call the re-scheduling function on startup
+    await rescheduleNotificationsAfterReboot(); 
+    runApp(const MyApp());
 }
-
-// A utility function to calculate the delay until the morning
-Duration calculateInitialDelayForMorning() {
-  final now = DateTime.now();
-  final desiredTime = DateTime(now.year, now.month, now.day, 7, 0, 0); // 7:00 AM
-
-  // If the desired time has already passed today, schedule for tomorrow
-  final nextRunTime = (now.isAfter(desiredTime))
-      ? desiredTime.add(const Duration(days: 1))
-      : desiredTime;
-
-  return nextRunTime.difference(now);
-}
-2. Isar Access in Background
-The main challenge is that Isar is not automatically available in your headless task. You need to ensure the Isar instance is opened correctly within your background function.
-
-Key Considerations for Isar
-Directory Path: You must use a consistent, accessible path for your Isar database, both in the main app and the background task. The path_provider package's getApplicationSupportDirectory() is generally reliable, but ensure the path is correctly resolved in the background context.
-
-App Groups (iOS): For iOS widgets and background tasks to share data (like the Isar database path or the widget data), you must configure App Groups in Xcode.
-
-Go to your app target and the widget extension target in Xcode.
-
-Under Signing & Capabilities, add the App Groups capability.
-
-Create and select a group identifier (e.g., group.com.yourapp).
-
-Isar Initialization: Your callbackDispatcher needs to call Isar.open to initialize and open the database before fetching data.
-
-3. Native Widget Configuration
-Remember that Flutter only handles the Dart logic for sending the update. The native side (the Widget Extension in iOS or the AppWidgetProvider in Android) must be configured to receive and display the data.
-
-Android
-In your AppWidgetProvider XML, you can set the android:updatePeriodMillis to a non-zero value (e.g., 3600000 for 1 hour) as a fallback, but the update from your background task will be the primary mechanism.
-
-The workmanager task will directly call the necessary native code to update the widget.
-
-iOS
-iOS widgets primarily use a TimelineProvider to determine when to refresh.
-
-When your background task runs and calls HomeWidget.updateWidget(), it signals the native widget extension to update its timeline.
-
-For time-based updates, you might need to combine workmanager with the native WidgetKit's timeline-setting capabilities to ensure the widget is updated even if the workmanager task is delayed by the OS. For instance, in the native iOS extension's getTimeline function, you can set a refresh date for the next morning.
-
-By using a package like workmanager, you move the logic to a secure, OS-scheduled background process, ensuring your data is fetched from Isar and your homescreen widget is updated independent of whether the user opens the main application.
+This is a video that shows how to set up scheduled local notifications in a Flutter app, which is the foundation for solving the reboot issue.
+Scheduled Notifications • Flutter Tutorial

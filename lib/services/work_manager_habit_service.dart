@@ -13,6 +13,8 @@ class WorkManagerHabitService {
   // Constants for WorkManager task names
   static const String _renewalTaskName = 'com.habitv8.HABIT_RENEWAL_TASK';
   static const String _alarmRenewalTaskName = 'com.habitv8.ALARM_RENEWAL_TASK';
+  static const String _bootRescheduleTaskName =
+      'com.habitv8.BOOT_RESCHEDULE_TASK';
   static const String _lastRenewalKey = 'last_habit_continuation_renewal';
   static const String _lastAlarmRenewalKey = 'last_alarm_renewal';
   static const String _renewalIntervalKey = 'habit_continuation_interval_hours';
@@ -44,9 +46,9 @@ class WorkManagerHabitService {
       // Check for boot completion and schedule alarm renewal if needed
       await _checkBootCompletionAndScheduleAlarmRenewal();
 
-      // REMOVED: Boot completion task registration to prevent Android 15+ conflicts
-      // The new Android15CompatBootReceiver handles boot completion safely
-      // await _registerBootCompletionTask();
+      // CRITICAL: Check if we need to schedule a boot reschedule task
+      // This allows notification rescheduling WITHOUT the app being open
+      await _checkAndScheduleBootReschedule();
 
       // Perform initial renewal check to ensure all habits are properly scheduled
       await _performRenewalCheck();
@@ -72,8 +74,11 @@ class WorkManagerHabitService {
           case _alarmRenewalTaskName:
             await _performAlarmRenewalCheck();
             break;
-          // REMOVED: Boot completion task to prevent Android 15+ conflicts
-          // Boot completion is now handled by Android15CompatBootReceiver
+          case _bootRescheduleTaskName:
+            // CRITICAL: This runs in the background WITHOUT the app being open
+            // This ensures notifications are rescheduled even if user never opens app
+            await _performBootReschedule();
+            break;
           default:
             AppLogger.warning('Unknown task name: $taskName');
         }
@@ -350,6 +355,46 @@ class WorkManagerHabitService {
     }
   }
 
+  /// Check if boot reschedule is needed and schedule the task
+  /// CRITICAL: This allows notification rescheduling WITHOUT the app being open
+  static Future<void> _checkAndScheduleBootReschedule() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final needsBootReschedule =
+          prefs.getBool('workmanager_boot_reschedule_needed') ?? false;
+
+      if (needsBootReschedule) {
+        AppLogger.info(
+            '🔄 Boot reschedule flag detected - scheduling background notification reschedule');
+
+        // Clear the flag immediately to prevent duplicate scheduling
+        await prefs.setBool('workmanager_boot_reschedule_needed', false);
+
+        // Schedule the boot reschedule task to run in background
+        await Workmanager().registerOneOffTask(
+          _bootRescheduleTaskName,
+          _bootRescheduleTaskName,
+          initialDelay:
+              const Duration(seconds: 30), // Small delay for system stability
+          constraints: Constraints(
+            networkType: NetworkType.notRequired,
+            requiresBatteryNotLow: false,
+            requiresCharging: false,
+            requiresDeviceIdle: false,
+          ),
+          existingWorkPolicy: ExistingWorkPolicy.replace,
+          backoffPolicy: BackoffPolicy.exponential,
+          backoffPolicyDelay: const Duration(minutes: 1),
+        );
+
+        AppLogger.info(
+            '✅ Boot reschedule task scheduled - will run in background to reschedule notifications');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error scheduling boot reschedule task', e);
+    }
+  }
+
   /// Schedule delayed alarm renewal to comply with Android 15+ restrictions
   static Future<void> _scheduleDelayedAlarmRenewal() async {
     try {
@@ -463,6 +508,79 @@ class WorkManagerHabitService {
           '✅ Automated alarm renewal completed: $renewedCount renewed, $errorCount errors');
     } catch (e) {
       AppLogger.error('❌ Error during automated alarm renewal', e);
+    }
+  }
+
+  /// Perform boot reschedule - reschedules ALL notifications after device reboot
+  /// CRITICAL: This runs in background via WorkManager WITHOUT the app being open
+  /// Ensures notifications are restored even if user never opens the app
+  static Future<void> _performBootReschedule() async {
+    try {
+      AppLogger.info(
+          '🔄 Starting boot notification rescheduling (WorkManager background task)');
+
+      // Initialize Isar database in background context
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
+
+      // Get all active habits
+      final habits = await habitService.getActiveHabits();
+
+      AppLogger.info(
+          '📋 Found ${habits.length} active habits to reschedule notifications');
+
+      int rescheduledCount = 0;
+      int skippedCount = 0;
+      int errorCount = 0;
+
+      // Reschedule notifications for each habit
+      for (final habit in habits) {
+        try {
+          if (habit.notificationsEnabled) {
+            // This will cancel existing and reschedule based on habit's current settings
+            // Handles all frequency types: daily, weekly, monthly, yearly, hourly, single, RRule
+            await NotificationService.scheduleHabitNotifications(habit);
+            rescheduledCount++;
+            AppLogger.debug('✅ Rescheduled notifications for: ${habit.name}');
+          } else {
+            skippedCount++;
+            AppLogger.debug(
+                '⏭️ Skipped (notifications disabled): ${habit.name}');
+          }
+        } catch (e) {
+          errorCount++;
+          AppLogger.error(
+              '❌ Error rescheduling notifications for ${habit.name}', e);
+        }
+      }
+
+      // Also reschedule alarms for habits with alarms enabled
+      final alarmHabits = habits.where((h) => h.alarmEnabled).toList();
+      int alarmRescheduledCount = 0;
+
+      for (final habit in alarmHabits) {
+        try {
+          await NotificationService.scheduleHabitAlarms(habit);
+          alarmRescheduledCount++;
+          AppLogger.debug('✅ Rescheduled alarms for: ${habit.name}');
+        } catch (e) {
+          AppLogger.error('❌ Error rescheduling alarms for ${habit.name}', e);
+        }
+      }
+
+      // Mark boot reschedule as completed
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          'last_boot_reschedule', DateTime.now().toIso8601String());
+      await prefs.setBool('needs_notification_reschedule_after_boot', false);
+
+      AppLogger.info('✅ Boot notification rescheduling complete (WorkManager): '
+          '$rescheduledCount notifications rescheduled, '
+          '$alarmRescheduledCount alarms rescheduled, '
+          '$skippedCount skipped, '
+          '$errorCount errors');
+    } catch (e) {
+      AppLogger.error('❌ Error during boot notification rescheduling', e);
     }
   }
 

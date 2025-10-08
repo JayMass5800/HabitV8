@@ -88,40 +88,33 @@ class BootCompletionWorker(
         return try {
             Log.i(TAG, "Starting boot completion work")
             
-            // Initialize FlutterEngine and trigger notification rescheduling
-            // This approach avoids starting foreground services from BOOT_COMPLETED
+            // Set boot completion timestamp and flag for tracking
             val sharedPrefs = applicationContext.getSharedPreferences(
                 "flutter.habitv8.preferences", 
                 Context.MODE_PRIVATE
             )
             
-            // Set a flag that the Flutter app can check on next startup
             sharedPrefs.edit()
                 .putBoolean("needs_notification_reschedule_after_boot", true)
                 .putLong("boot_completion_timestamp", System.currentTimeMillis())
+                .putBoolean("workmanager_boot_reschedule_needed", true) // Signal for WorkManager
                 .apply()
             
-            Log.i(TAG, "✅ Boot completion flag set for Flutter app")
+            Log.i(TAG, "✅ Boot completion flags set")
+            Log.i(TAG, "   - Flutter app will reschedule if opened")
+            Log.i(TAG, "   - WorkManager will trigger background reschedule")
             
             // Schedule periodic widget updates
             WidgetUpdateWorker.schedulePeriodicUpdates(applicationContext)
             
-            // Optionally trigger the Flutter app to start if needed
-            // This is safer than starting foreground services directly
-            try {
-                val launchIntent = applicationContext.packageManager
-                    .getLaunchIntentForPackage(applicationContext.packageName)
-                
-                if (launchIntent != null) {
-                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    launchIntent.putExtra("auto_start_reason", "boot_completion")
-                    applicationContext.startActivity(launchIntent)
-                    Log.i(TAG, "✅ Flutter app started for notification rescheduling")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Could not auto-start app after boot (this is normal): ${e.message}")
-                // This is not critical - the app will handle rescheduling on next manual start
-            }
+            // NOTE: The actual notification rescheduling will be triggered by:
+            // 1. Flutter WorkManager callback dispatcher (runs in background WITHOUT app open)
+            //    - Triggered by work_manager_habit_service.dart initialization
+            //    - Checks 'workmanager_boot_reschedule_needed' flag
+            //    - Calls _performBootReschedule() in background
+            // 2. Fallback: If user opens app before WorkManager runs
+            //    - main.dart checks 'needs_notification_reschedule_after_boot' flag
+            //    - Calls _rescheduleNotificationsAfterBoot()
             
             Result.success()
         } catch (e: Exception) {

@@ -901,7 +901,50 @@ Future<void> _rescheduleNotificationsAfterBoot() async {
   try {
     AppLogger.info('🔄 Starting notification rescheduling after boot');
 
-    // Use the midnight reset service which is already designed for this
+    // APPROACH: Regenerate all notifications from habit data instead of
+    // replaying stored notifications. This ensures:
+    // 1. All habit types are included (daily, weekly, monthly, RRule, etc.)
+    // 2. Notifications are current based on habit settings
+    // 3. Any changes to habits while device was off are reflected
+    // 4. We don't rely solely on persistent storage which may be incomplete
+
+    // Get all active habits and reschedule their notifications
+    AppLogger.info('🔔 Regenerating notifications from habit data');
+
+    final isar = await IsarDatabaseService.getInstance();
+    final habitService = HabitServiceIsar(isar);
+    final habits = await habitService.getActiveHabits();
+
+    AppLogger.info('📋 Found ${habits.length} active habits to reschedule');
+
+    int rescheduledCount = 0;
+    int skippedCount = 0;
+    int errorCount = 0;
+
+    for (final habit in habits) {
+      try {
+        if (habit.notificationsEnabled) {
+          // This will cancel existing and reschedule based on habit's current settings
+          await NotificationService.scheduleHabitNotifications(habit);
+          rescheduledCount++;
+          AppLogger.debug('✅ Rescheduled notifications for: ${habit.name}');
+        } else {
+          skippedCount++;
+          AppLogger.debug('⏭️ Skipped (disabled): ${habit.name}');
+        }
+      } catch (e) {
+        errorCount++;
+        AppLogger.error(
+            '❌ Error rescheduling notifications for ${habit.name}', e);
+      }
+    }
+
+    AppLogger.info('✅ Boot notification rescheduling complete: '
+        '$rescheduledCount rescheduled, '
+        '$skippedCount skipped, '
+        '$errorCount errors');
+
+    // Also trigger midnight reset to ensure all habits are up to date
     await MidnightHabitResetService.forceReset();
 
     AppLogger.info('✅ Notification rescheduling completed after boot');

@@ -4,8 +4,10 @@ import 'package:timezone/timezone.dart' as tz;
 import '../logging_service.dart';
 import '../rrule_service.dart';
 import '../../domain/model/habit.dart';
+import '../../domain/model/scheduled_notification.dart';
 import 'notification_core.dart';
 import 'notification_helpers.dart';
+import 'scheduled_notification_storage.dart';
 
 /// Notification scheduling functionality
 ///
@@ -141,6 +143,25 @@ class NotificationScheduler {
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
+
+    // Persist notification data for rescheduling after reboot
+    try {
+      final scheduledNotification = ScheduledNotification(
+        id: id,
+        habitId: habitId,
+        title: title,
+        body: body,
+        scheduledTimeMillis: scheduledTime.millisecondsSinceEpoch,
+        createdAtMillis: DateTime.now().millisecondsSinceEpoch,
+        isAlarm: false,
+      );
+      await ScheduledNotificationStorage.saveNotification(
+          scheduledNotification);
+      AppLogger.debug('💾 Persisted notification data for ID $id');
+    } catch (e) {
+      AppLogger.error('Error persisting notification data', e);
+      // Don't fail the whole operation if persistence fails
+    }
 
     AppLogger.info(
       '✅ Scheduled notification ID $id for habit $habitId at $tzScheduledTime',
@@ -648,12 +669,30 @@ class NotificationScheduler {
   /// Cancel a single notification by ID
   Future<void> cancelNotification(int id) async {
     await _plugin.cancel(id);
+
+    // Also remove from persistent storage
+    try {
+      await ScheduledNotificationStorage.deleteNotification(id);
+      AppLogger.debug('💾 Removed notification $id from persistent storage');
+    } catch (e) {
+      AppLogger.error('Error removing notification from storage', e);
+    }
+
     AppLogger.debug('Cancelled notification ID: $id');
   }
 
   /// Cancel all notifications
   Future<void> cancelAllNotifications() async {
     await _plugin.cancelAll();
+
+    // Also clear persistent storage
+    try {
+      await ScheduledNotificationStorage.clearAll();
+      AppLogger.info('💾 Cleared all notifications from persistent storage');
+    } catch (e) {
+      AppLogger.error('Error clearing notification storage', e);
+    }
+
     AppLogger.info('Cancelled all notifications');
   }
 
@@ -663,6 +702,15 @@ class NotificationScheduler {
   Future<void> cancelHabitNotifications(int baseId) async {
     // Cancel the main notification
     await _plugin.cancel(baseId);
+
+    // Also remove from persistent storage
+    try {
+      await ScheduledNotificationStorage.deleteNotification(baseId);
+      AppLogger.debug(
+          '💾 Removed notification $baseId from persistent storage');
+    } catch (e) {
+      AppLogger.error('Error removing notification from storage', e);
+    }
 
     AppLogger.debug('Cancelled notification with base ID: $baseId');
   }
@@ -715,6 +763,16 @@ class NotificationScheduler {
         if (cancelledCount <= 10) {
           AppLogger.debug('Cancelled IDs: ${cancelledIds.join(", ")}');
         }
+      }
+
+      // Also remove from persistent storage
+      try {
+        await ScheduledNotificationStorage.deleteNotificationsByHabitId(
+            habitId);
+        AppLogger.debug(
+            '💾 Removed notifications for habit $habitId from persistent storage');
+      } catch (e) {
+        AppLogger.error('Error removing notifications from storage', e);
       }
     } catch (e) {
       AppLogger.error('Error during optimized notification cancellation', e);
