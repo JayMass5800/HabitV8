@@ -4,7 +4,6 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:workmanager/workmanager.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
 import '../widget_integration_service.dart';
@@ -296,16 +295,15 @@ class NotificationActionHandlerIsar {
       // reactive streams AND lazy watchers - this triggers instant updates
       // across Timeline, All Habits, Stats, Widgets, and all other screens!
 
-      // CRITICAL FIX: Trigger immediate widget update using WorkManager
-      // This ensures widgets update even when the app is fully closed
-      // The WorkManager callback uses the same data format as the app
+      // CRITICAL FIX: Update widgets DIRECTLY in background
+      // This ensures widgets update instantly even when the app is fully closed
+      // We MUST update SharedPreferences immediately, not via WorkManager
       try {
-        AppLogger.info(
-            '🔄 Triggering immediate widget update via WorkManager...');
-        await _triggerWidgetUpdateViaWorkManager();
-        AppLogger.info('✅ Widget update triggered after background completion');
+        AppLogger.info('🔄 Updating widget data directly in background...');
+        await _updateWidgetDataDirectly(isar);
+        AppLogger.info('✅ Widget data updated after background completion');
       } catch (e) {
-        AppLogger.error('Failed to trigger widget update', e);
+        AppLogger.error('Failed to update widget data', e);
       }
 
       AppLogger.info('🎉 Background completion successful with Isar!');
@@ -518,41 +516,188 @@ class NotificationActionHandlerIsar {
     }
   }
 
-  /// Trigger immediate widget update via WorkManager
-  /// This uses the proper background callback that has the same data format as the app
-  static Future<void> _triggerWidgetUpdateViaWorkManager() async {
+  /// Update widget data DIRECTLY in background with correct format
+  /// This is called immediately after completing a habit in background
+  /// to ensure widgets update instantly even when app is closed
+  static Future<void> _updateWidgetDataDirectly(Isar isar) async {
     try {
-      AppLogger.info('🔄 Triggering widget update via WorkManager...');
+      AppLogger.info('� Preparing widget data with correct format...');
+      
+      // Get all active habits
+      final allHabits = await isar.habits.where().findAll();
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
 
-      // Schedule an immediate one-time WorkManager task
-      // This will execute the callbackDispatcher in widget_background_update_service.dart
-      // which uses the correct data format and includes all necessary fields
-      await Workmanager().registerOneOffTask(
-        'widget_update_after_completion_${DateTime.now().millisecondsSinceEpoch}',
-        'widget_background_update', // Must match the task name in WidgetBackgroundUpdateService
-        initialDelay: const Duration(
-            milliseconds: 100), // Small delay to ensure DB write completes
+      // Filter habits for today using the same logic as widget_background_update_service
+      final todayHabits = allHabits.where((habit) {
+        return _shouldShowHabitOnDate(habit, today);
+      }).toList();
+
+      AppLogger.info('📊 Found ${todayHabits.length} habits for today');
+
+      // Convert habits to JSON using the SAME format as widget_background_update_service
+      final habitsJson = jsonEncode(
+        todayHabits.map((h) => _habitToJsonForWidget(h, today)).toList(),
       );
 
-      AppLogger.info('✅ WorkManager widget update task registered');
-    } catch (e) {
-      AppLogger.error('Failed to register WorkManager widget update task', e);
+      AppLogger.info('📊 Generated JSON: ${habitsJson.length} characters');
 
-      // Fallback: try to update widgets directly if WorkManager fails
-      AppLogger.info('⚠️ Attempting direct widget update as fallback...');
-      try {
-        await HomeWidget.updateWidget(
-          name: 'HabitTimelineWidgetProvider',
-          androidName: 'HabitTimelineWidgetProvider',
-        );
-        await HomeWidget.updateWidget(
-          name: 'HabitCompactWidgetProvider',
-          androidName: 'HabitCompactWidgetProvider',
-        );
-        AppLogger.info('✅ Direct widget update completed');
-      } catch (e2) {
-        AppLogger.error('Direct widget update also failed', e2);
-      }
+      // Save to SharedPreferences via home_widget (CRITICAL: Must use exact keys)
+      await HomeWidget.saveWidgetData<String>('habits', habitsJson);
+      await HomeWidget.saveWidgetData<String>('today_habits', habitsJson);
+      await HomeWidget.saveWidgetData<int>(
+        'lastUpdate',
+        DateTime.now().millisecondsSinceEpoch,
+      );
+
+      AppLogger.info('✅ Widget data saved to SharedPreferences');
+
+      // CRITICAL: Add delay to ensure SharedPreferences write completes
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // Trigger widget UI refresh
+      await HomeWidget.updateWidget(
+        name: 'HabitTimelineWidgetProvider',
+        androidName: 'HabitTimelineWidgetProvider',
+      );
+
+      await HomeWidget.updateWidget(
+        name: 'HabitCompactWidgetProvider',
+        androidName: 'HabitCompactWidgetProvider',
+      );
+
+      AppLogger.info('✅ Widget refresh triggered successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to update widget data directly', e, stackTrace);
+    }
+  }
+
+  /// Check if a habit should be shown on a specific date
+  /// COPIED from widget_background_update_service.dart to ensure consistency
+  static bool _shouldShowHabitOnDate(Habit habit, DateTime date) {
+    if (!habit.isActive) return false;
+
+    // Use createdAt as start date
+    final startDate = DateTime(
+      habit.createdAt.year,
+      habit.createdAt.month,
+      habit.createdAt.day,
+    );
+
+    if (date.isBefore(startDate)) return false;
+
+    switch (habit.frequency) {
+      case HabitFrequency.daily:
+        return true;
+
+      case HabitFrequency.weekly:
+        if (habit.selectedWeekdays.isEmpty) return false;
+        final weekday = date.weekday % 7; // Convert to 0-6 (Sunday = 0)
+        return habit.selectedWeekdays.contains(weekday);
+
+      case HabitFrequency.monthly:
+        if (habit.selectedMonthDays.isEmpty) return false;
+        return habit.selectedMonthDays.contains(date.day);
+
+      case HabitFrequency.hourly:
+        return true; // Hourly habits show every day
+
+      case HabitFrequency.single:
+        if (habit.singleDateTime != null) {
+          final scheduledDate = DateTime(
+            habit.singleDateTime!.year,
+            habit.singleDateTime!.month,
+            habit.singleDateTime!.day,
+          );
+          return date.isAtSameMomentAs(scheduledDate);
+        }
+        return false;
+
+      case HabitFrequency.yearly:
+        return true; // Yearly habits show (simplified)
+    }
+  }
+
+  /// Convert habit to JSON for widget consumption
+  /// COPIED from widget_background_update_service.dart to ensure exact format match
+  static Map<String, dynamic> _habitToJsonForWidget(Habit habit, DateTime date) {
+    final isCompleted = _isHabitCompletedOnDate(habit, date);
+
+    return {
+      'id': habit.id,
+      'name': habit.name,
+      'category': habit.category,
+      'colorValue': habit.colorValue,
+      'isCompleted': isCompleted,
+      'status': isCompleted ? 'Completed' : 'Due',
+      'timeDisplay': _getHabitTimeDisplay(habit),
+      'frequency': habit.frequency.toString().split('.').last,
+      'streak': habit.currentStreak,
+      'completedSlots': habit.frequency == HabitFrequency.hourly
+          ? _getCompletedSlotsCount(habit, date)
+          : 0,
+      'totalSlots': habit.frequency == HabitFrequency.hourly
+          ? habit.hourlyTimes.length
+          : 0,
+    };
+  }
+
+  /// Check if habit is completed on a specific date
+  static bool _isHabitCompletedOnDate(Habit habit, DateTime date) {
+    if (habit.frequency == HabitFrequency.hourly) {
+      // For hourly habits, check if at least one slot is completed
+      return habit.completions.any((completion) {
+        return completion.year == date.year &&
+            completion.month == date.month &&
+            completion.day == date.day;
+      });
+    }
+
+    // For other frequencies, check for any completion on the date
+    return habit.completions.any((completion) {
+      final completionDate =
+          DateTime(completion.year, completion.month, completion.day);
+      return completionDate
+          .isAtSameMomentAs(DateTime(date.year, date.month, date.day));
+    });
+  }
+
+  /// Get completed slots count for hourly habits
+  static int _getCompletedSlotsCount(Habit habit, DateTime date) {
+    return habit.completions.where((completion) {
+      return completion.year == date.year &&
+          completion.month == date.month &&
+          completion.day == date.day;
+    }).length;
+  }
+
+  /// Get time display for habit
+  static String _getHabitTimeDisplay(Habit habit) {
+    switch (habit.frequency) {
+      case HabitFrequency.hourly:
+        if (habit.hourlyTimes.isNotEmpty) {
+          return habit.hourlyTimes.first;
+        }
+        return 'Hourly';
+
+      case HabitFrequency.daily:
+        if (habit.reminderTime != null) {
+          final time = habit.reminderTime!;
+          return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+        }
+        return 'Daily';
+
+      case HabitFrequency.weekly:
+        return 'Weekly';
+
+      case HabitFrequency.monthly:
+        return 'Monthly';
+
+      case HabitFrequency.yearly:
+        return 'Yearly';
+
+      case HabitFrequency.single:
+        return 'Single';
     }
   }
 }
