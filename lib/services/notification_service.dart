@@ -7,7 +7,6 @@ import 'notifications/notification_scheduler.dart';
 import 'notifications/notification_alarm_scheduler.dart';
 import 'notifications/notification_action_handler.dart';
 import 'notifications/notification_boot_rescheduler.dart';
-import 'notifications/scheduled_notification_storage.dart';
 
 /// Notification Service Facade - delegates to specialized modules
 class NotificationService {
@@ -26,9 +25,6 @@ class NotificationService {
     _scheduler = NotificationScheduler(_notificationsPlugin);
     _alarmScheduler = NotificationAlarmScheduler.instance;
     _bootRescheduler = NotificationBootRescheduler(_notificationsPlugin);
-
-    // Initialize notification storage for boot rescheduling
-    await ScheduledNotificationStorage.initialize();
   }
 
   static Future<void> recreateNotificationChannels() async {
@@ -297,7 +293,10 @@ class NotificationService {
   }
 
   /// Clean up old notification records from storage
+  /// Note: With Isar migration, notification scheduling is based on habit data
+  /// This method is deprecated and will be removed in a future version
   static Future<void> cleanupOldNotificationRecords() async {
-    await ScheduledNotificationStorage.cleanupOldNotifications();
+    // No-op: Notification data is now managed through Isar habit records
+    // Old Hive-based ScheduledNotificationStorage has been removed
   }
 }
