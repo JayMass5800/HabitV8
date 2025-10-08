@@ -101,20 +101,48 @@ class BootCompletionWorker(
                 .apply()
             
             Log.i(TAG, "✅ Boot completion flags set")
-            Log.i(TAG, "   - Flutter app will reschedule if opened")
-            Log.i(TAG, "   - WorkManager will trigger background reschedule")
             
             // Schedule periodic widget updates
             WidgetUpdateWorker.schedulePeriodicUpdates(applicationContext)
             
+            // CRITICAL: Try to launch the app in background to initialize WorkManager
+            // This requires AUTO-START permission on most devices
+            // Without it, notifications won't be rescheduled until user opens app
+            try {
+                val launchIntent = applicationContext.packageManager
+                    .getLaunchIntentForPackage(applicationContext.packageName)
+                
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                    launchIntent.addFlags(Intent.FLAG_FROM_BACKGROUND)
+                    launchIntent.putExtra("auto_start_reason", "boot_completion")
+                    launchIntent.putExtra("run_in_background", true)
+                    applicationContext.startActivity(launchIntent)
+                    
+                    Log.i(TAG, "✅ App auto-started in background for WorkManager initialization")
+                    Log.i(TAG, "   This allows notification rescheduling without user opening app")
+                    Log.i(TAG, "   Requires AUTO-START permission on Xiaomi/Huawei/Oppo/etc.")
+                } else {
+                    Log.w(TAG, "⚠️ Could not get launch intent for app")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "⚠️ Could not auto-start app after boot: ${e.message}")
+                Log.w(TAG, "   This is normal if AUTO-START permission is not granted")
+                Log.w(TAG, "   User must manually open app to reschedule notifications")
+                // This is not critical - fallback: user opens app, flag is checked, notifications rescheduled
+            }
+            
             // NOTE: The actual notification rescheduling will be triggered by:
-            // 1. Flutter WorkManager callback dispatcher (runs in background WITHOUT app open)
-            //    - Triggered by work_manager_habit_service.dart initialization
-            //    - Checks 'workmanager_boot_reschedule_needed' flag
-            //    - Calls _performBootReschedule() in background
-            // 2. Fallback: If user opens app before WorkManager runs
-            //    - main.dart checks 'needs_notification_reschedule_after_boot' flag
-            //    - Calls _rescheduleNotificationsAfterBoot()
+            // 1. App auto-starts (if AUTO-START permission granted)
+            //    → main.dart runs
+            //    → WorkManagerHabitService.initialize() called
+            //    → Checks 'workmanager_boot_reschedule_needed' flag
+            //    → Schedules BOOT_RESCHEDULE_TASK
+            //    → Task runs in background, reschedules all notifications
+            // 2. Fallback: User opens app manually
+            //    → main.dart checks 'needs_notification_reschedule_after_boot' flag
+            //    → _rescheduleNotificationsAfterBoot() called immediately
             
             Result.success()
         } catch (e: Exception) {
