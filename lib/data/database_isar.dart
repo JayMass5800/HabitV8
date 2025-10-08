@@ -282,17 +282,19 @@ class HabitServiceIsar {
   /// - You can fetch fresh data when needed instead of receiving it in every event
   ///
   /// Use this when you need to know THAT something changed, not WHAT changed
+  /// CRITICAL: fireImmediately: true ensures widgets update on app start
   Stream<void> watchHabitsLazy() {
-    return _isar.habits.where().watchLazy(fireImmediately: false);
+    return _isar.habits.where().watchLazy(fireImmediately: true);
   }
 
   /// Watch for active habits changes (lazy)
   /// Emits void event whenever active habits change
+  /// CRITICAL: fireImmediately: true ensures immediate updates
   Stream<void> watchActiveHabitsLazy() {
     return _isar.habits
         .filter()
         .isActiveEqualTo(true)
-        .watchLazy(fireImmediately: false);
+        .watchLazy(fireImmediately: true);
   }
 
   /// Get habits by category
