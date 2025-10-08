@@ -522,7 +522,7 @@ class NotificationActionHandlerIsar {
   static Future<void> _updateWidgetDataDirectly(Isar isar) async {
     try {
       AppLogger.info('� Preparing widget data with correct format...');
-      
+
       // Get all active habits
       final allHabits = await isar.habits.where().findAll();
       final now = DateTime.now();
@@ -620,7 +620,8 @@ class NotificationActionHandlerIsar {
 
   /// Convert habit to JSON for widget consumption
   /// COPIED from widget_background_update_service.dart to ensure exact format match
-  static Map<String, dynamic> _habitToJsonForWidget(Habit habit, DateTime date) {
+  static Map<String, dynamic> _habitToJsonForWidget(
+      Habit habit, DateTime date) {
     final isCompleted = _isHabitCompletedOnDate(habit, date);
 
     return {
