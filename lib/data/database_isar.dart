@@ -272,8 +272,16 @@ class HabitServiceIsar {
   }
 
   /// Watch for ANY habit changes (lazy - no data transfer)
-  /// Use this for notification triggers and widget updates
+  /// RECOMMENDED for notification triggers and widget updates
+  ///
   /// Emits void event whenever any habit is added, updated, or deleted
+  /// This is more efficient than watchAllHabits() because:
+  /// - No data transfer (just a signal that something changed)
+  /// - Lower memory usage
+  /// - Faster event delivery
+  /// - You can fetch fresh data when needed instead of receiving it in every event
+  ///
+  /// Use this when you need to know THAT something changed, not WHAT changed
   Stream<void> watchHabitsLazy() {
     return _isar.habits.where().watchLazy(fireImmediately: false);
   }

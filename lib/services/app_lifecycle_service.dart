@@ -152,6 +152,15 @@ class AppLifecycleService with WidgetsBindingObserver {
       // Ensure database is accessible after app resume
       _ensureDatabaseConnection();
 
+      // CRITICAL: Re-establish widget Isar listener to ensure it's still active
+      // The listener might have been interrupted if the app was killed in background
+      try {
+        await WidgetIntegrationService.instance.reestablishListener();
+        AppLogger.info('✅ Widget Isar listener re-established on app resume');
+      } catch (e) {
+        AppLogger.error('Error re-establishing widget listener on resume', e);
+      }
+
       // CRITICAL: Invalidate habits state to force refresh from database
       // This ensures UI picks up changes made by background notification actions
       if (_container != null) {

@@ -28,25 +28,45 @@ class WidgetUpdateWorker(
         /**
          * Schedule periodic widget updates using WorkManager
          * 
-         * BATTERY OPTIMIZATION: This method is now a NO-OP.
+         * HYBRID APPROACH: Combines event-driven updates with periodic safety net
          * Widget updates are handled by:
-         * 1. Isar database listeners (event-driven, instant updates)
-         * 2. Midnight reset service (daily habit resets)
-         * 3. Critical system broadcasts (DATE_CHANGED, TIMEZONE_CHANGED)
+         * 1. Isar database listeners (event-driven, instant updates) - PRIMARY
+         * 2. Periodic WorkManager (every 30 minutes) - SAFETY NET for race conditions
+         * 3. Midnight reset service (daily habit resets)
+         * 4. Critical system broadcasts (DATE_CHANGED, TIMEZONE_CHANGED)
          * 
-         * This eliminates 96+ wake-ups per day while maintaining 100% widget accuracy.
-         * Method kept for backward compatibility with existing code.
+         * The 30-minute periodic update catches any missed updates from race conditions
+         * while still being battery-friendly (only 48 wake-ups per day vs 96+).
          */
         fun schedulePeriodicUpdates(context: Context) {
             try {
-                // Cancel any existing periodic work to save battery
+                // Cancel any existing periodic work first
                 WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
                 WorkManager.getInstance(context).cancelUniqueWork("widget_fallback_work")
                 
-                Log.i(TAG, "✅ Periodic widget updates DISABLED for battery optimization")
-                Log.i(TAG, "   Widgets update via Isar listeners (event-driven) instead")
+                // Schedule periodic updates every 30 minutes as a safety net
+                val constraints = Constraints.Builder()
+                    .setRequiresBatteryNotLow(false) // Run even on low battery
+                    .build()
+                
+                val periodicWorkRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
+                    30, TimeUnit.MINUTES, // Run every 30 minutes
+                    5, TimeUnit.MINUTES   // Flex interval (can run 5 minutes early/late)
+                )
+                    .setConstraints(constraints)
+                    .addTag("widget_periodic_update")
+                    .build()
+                
+                WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                    WORK_NAME,
+                    ExistingPeriodicWorkPolicy.KEEP, // Keep existing if already scheduled
+                    periodicWorkRequest
+                )
+                
+                Log.i(TAG, "✅ Periodic widget updates scheduled (every 30 minutes as safety net)")
+                Log.i(TAG, "   Primary updates via Isar listeners (event-driven)")
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error canceling periodic widget updates", e)
+                Log.e(TAG, "❌ Error scheduling periodic widget updates", e)
             }
         }
         

@@ -57,8 +57,14 @@ class WidgetIntegrationService {
 
   /// Set up Isar listener for automatic widget updates when habits change
   /// PERFORMANCE: Event-driven updates instead of polling every 30 minutes
-  /// CRITICAL: Uses watchAllHabits() with fireImmediately for instant updates
+  /// CRITICAL: Uses watchHabitsLazy() for efficient change detection (no data transfer)
   /// LIFECYCLE: Subscription is kept alive until dispose() is called by AppLifecycleService
+  ///
+  /// WHY watchHabitsLazy() instead of watchAllHabits():
+  /// - watchHabitsLazy() only signals that a change occurred (void event)
+  /// - watchAllHabits() transfers ALL habit data on EVERY change (inefficient)
+  /// - We fetch fresh data in updateAllWidgets() anyway, so we don't need the data in the event
+  /// - This prevents performance issues and potential missed events from large data transfers
   Future<void> _setupHabitListener() async {
     try {
       // Cancel any existing subscription to prevent duplicates
@@ -68,25 +74,61 @@ class WidgetIntegrationService {
       final habitService = HabitServiceIsar(isar);
 
       // Listen to habit changes and update widgets automatically
-      // Using watchAllHabits() instead of watchHabitsLazy() for immediate data access
-      _habitWatchSubscription = habitService.watchAllHabits().listen(
-        (habits) {
+      // Using watchHabitsLazy() for efficient change detection (recommended by Isar docs)
+      // This emits a void event whenever ANY habit changes, without transferring data
+      _habitWatchSubscription = habitService.watchHabitsLazy().listen(
+        (_) async {
           final timestamp = DateTime.now().toIso8601String();
           debugPrint(
-              '🔔 [$timestamp] Isar listener fired: ${habits.length} habits detected');
+              '🔔 [$timestamp] Isar lazy listener fired: habit change detected');
           debugPrint('🔔 Updating widgets via Isar listener...');
-          updateAllWidgets(); // Uses existing debounced update method
-          debugPrint('🔔 Widget update triggered from Isar listener');
+
+          // Save widget data to SharedPreferences (fetches fresh data from Isar)
+          await updateAllWidgets();
+
+          // CRITICAL: Add delay to ensure SharedPreferences write completes
+          await Future.delayed(const Duration(milliseconds: 200));
+
+          // Trigger Android widget UI refresh
+          await _triggerAndroidWidgetUpdate();
+
+          debugPrint(
+              '🔔 Widget update completed from Isar listener (data + UI refresh)');
         },
         onError: (error) {
           debugPrint('❌ Error in Isar listener: $error');
+          // Try to re-establish the listener after a delay
+          Future.delayed(const Duration(seconds: 5), () {
+            debugPrint(
+                '🔄 Attempting to re-establish Isar listener after error...');
+            _setupHabitListener();
+          });
         },
         cancelOnError: false,
       );
 
-      debugPrint('✅ Widget Isar listener initialized with immediate updates');
+      debugPrint(
+          '✅ Widget Isar lazy listener initialized (efficient change detection)');
     } catch (e) {
       debugPrint('⚠️ Error setting up widget Isar listener: $e');
+      // Try to re-establish the listener after a delay
+      Future.delayed(const Duration(seconds: 5), () {
+        debugPrint(
+            '🔄 Attempting to re-establish Isar listener after setup error...');
+        _setupHabitListener();
+      });
+    }
+  }
+
+  /// Re-establish Isar listener (called when app resumes from background)
+  /// This ensures the listener is still active after the app was paused
+  Future<void> reestablishListener() async {
+    try {
+      debugPrint('🔄 Re-establishing Isar listener after app resume...');
+      await _setupHabitListener();
+      debugPrint('✅ Isar listener re-established successfully');
+    } catch (e) {
+      debugPrint('⚠️ Error re-establishing Isar listener: $e');
     }
   }
 
@@ -118,8 +160,12 @@ class WidgetIntegrationService {
       await updateAllWidgets();
       debugPrint('🧪 FORCE UPDATE: updateAllWidgets() completed');
 
+      // CRITICAL: Add delay to ensure SharedPreferences write completes
+      // Widget data must be fully written before triggering UI refresh
+      await Future.delayed(const Duration(milliseconds: 200));
+      debugPrint('🧪 FORCE UPDATE: Waited for data persistence');
+
       // Force explicit widget refresh using method channel to trigger onUpdate
-      // NO DELAY - immediate update!
       debugPrint('🧪 FORCE UPDATE: Triggering immediate widget refresh');
 
       try {
@@ -689,20 +735,21 @@ class WidgetIntegrationService {
 
   /// Schedule Android WorkManager updates for independent widget functionality
   ///
-  /// BATTERY OPTIMIZATION: As of the battery optimization update, this method
-  /// cancels any existing periodic WorkManager tasks instead of scheduling new ones.
-  /// Widget updates are now handled by:
-  /// 1. Isar database listeners (event-driven, instant updates)
-  /// 2. Midnight reset service (daily habit resets)
-  /// 3. Critical system broadcasts (DATE_CHANGED, TIMEZONE_CHANGED)
+  /// HYBRID APPROACH: Combines event-driven updates with periodic safety net
+  /// Widget updates are handled by:
+  /// 1. Isar database listeners (event-driven, instant updates) - PRIMARY
+  /// 2. Periodic WorkManager (every 30 minutes) - SAFETY NET for race conditions
+  /// 3. Midnight reset service (daily habit resets)
+  /// 4. Critical system broadcasts (DATE_CHANGED, TIMEZONE_CHANGED)
   ///
-  /// This eliminates 96+ wake-ups per day while maintaining 100% widget accuracy.
+  /// The 30-minute periodic update catches any missed updates from race conditions
+  /// while still being battery-friendly (only 48 wake-ups per day vs 96+).
   Future<void> _scheduleAndroidWidgetUpdates() async {
     try {
       const platform = MethodChannel('com.habittracker.habitv8/widget_update');
       await platform.invokeMethod('schedulePeriodicUpdates');
       debugPrint(
-          'Android WorkManager periodic updates disabled (battery optimization)');
+          '✅ Hybrid widget updates enabled: Isar listeners + 30-min safety net');
     } catch (e) {
       debugPrint('Error configuring Android widget updates: $e');
     }
