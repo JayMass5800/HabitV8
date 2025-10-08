@@ -3,6 +3,8 @@ package com.habittracker.habitv8
 import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.database.Cursor
@@ -365,21 +367,47 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "forceWidgetRefresh" -> {
                     try {
-                        // Force immediate widget refresh by directly updating both widget providers
-                        val compactIntent = Intent(this, HabitCompactWidgetProvider::class.java)
-                        compactIntent.action = "android.appwidget.action.APPWIDGET_UPDATE"
-                        sendBroadcast(compactIntent)
+                        android.util.Log.i("MainActivity", "🔄 Force widget refresh requested")
                         
+                        // Get AppWidgetManager
+                        val appWidgetManager = AppWidgetManager.getInstance(this)
+                        
+                        // Get all widget IDs for timeline widgets
+                        val timelineWidgetIds = appWidgetManager.getAppWidgetIds(
+                            ComponentName(this, HabitTimelineWidgetProvider::class.java)
+                        )
+                        
+                        // Get all widget IDs for compact widgets
+                        val compactWidgetIds = appWidgetManager.getAppWidgetIds(
+                            ComponentName(this, HabitCompactWidgetProvider::class.java)
+                        )
+                        
+                        android.util.Log.i("MainActivity", "Found ${timelineWidgetIds.size} timeline widgets, ${compactWidgetIds.size} compact widgets")
+                        
+                        // CRITICAL: Directly notify ListView to reload data (this calls onDataSetChanged)
+                        timelineWidgetIds.forEach { widgetId ->
+                            appWidgetManager.notifyAppWidgetViewDataChanged(widgetId, R.id.habits_list)
+                            android.util.Log.i("MainActivity", "✅ Notified timeline widget $widgetId to reload data")
+                        }
+                        
+                        compactWidgetIds.forEach { widgetId ->
+                            appWidgetManager.notifyAppWidgetViewDataChanged(widgetId, R.id.compact_habits_list)
+                            android.util.Log.i("MainActivity", "✅ Notified compact widget $widgetId to reload data")
+                        }
+                        
+                        // Also send broadcast to trigger onUpdate() for header/footer updates
                         val timelineIntent = Intent(this, HabitTimelineWidgetProvider::class.java)
                         timelineIntent.action = "android.appwidget.action.APPWIDGET_UPDATE"
+                        timelineIntent.putIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, timelineWidgetIds)
                         sendBroadcast(timelineIntent)
                         
-                        // Also trigger WorkManager update for good measure
-                        val updateRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
-                        WorkManager.getInstance(this).enqueue(updateRequest)
+                        val compactIntent = Intent(this, HabitCompactWidgetProvider::class.java)
+                        compactIntent.action = "android.appwidget.action.APPWIDGET_UPDATE"
+                        compactIntent.putIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, compactWidgetIds)
+                        sendBroadcast(compactIntent)
                         
                         result.success(true)
-                        android.util.Log.i("MainActivity", "Widget force refresh triggered for both compact and timeline widgets")
+                        android.util.Log.i("MainActivity", "✅ Widget force refresh completed successfully")
                     } catch (e: Exception) {
                         result.error("WIDGET_REFRESH_ERROR", "Failed to force widget refresh: ${e.message}", null)
                         android.util.Log.e("MainActivity", "Failed to force widget refresh", e)

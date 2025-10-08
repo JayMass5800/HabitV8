@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -555,18 +556,29 @@ class NotificationActionHandlerIsar {
       // CRITICAL: Add delay to ensure SharedPreferences write completes
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // Trigger widget UI refresh
-      await HomeWidget.updateWidget(
-        name: 'HabitTimelineWidgetProvider',
-        androidName: 'HabitTimelineWidgetProvider',
-      );
+      // Trigger widget UI refresh via platform channel
+      // This directly calls notifyAppWidgetViewDataChanged() on Android
+      try {
+        await const MethodChannel('com.habittracker.habitv8/widget_update')
+            .invokeMethod('forceWidgetRefresh');
+        AppLogger.info('✅ Platform channel widget refresh triggered');
+      } catch (e) {
+        AppLogger.info(
+            '⚠️ Platform channel failed, using HomeWidget fallback: $e');
 
-      await HomeWidget.updateWidget(
-        name: 'HabitCompactWidgetProvider',
-        androidName: 'HabitCompactWidgetProvider',
-      );
+        // Fallback to HomeWidget.updateWidget if method channel fails
+        await HomeWidget.updateWidget(
+          name: 'HabitTimelineWidgetProvider',
+          androidName: 'HabitTimelineWidgetProvider',
+        );
 
-      AppLogger.info('✅ Widget refresh triggered successfully');
+        await HomeWidget.updateWidget(
+          name: 'HabitCompactWidgetProvider',
+          androidName: 'HabitCompactWidgetProvider',
+        );
+      }
+
+      AppLogger.info('✅ Widget refresh completed');
     } catch (e, stackTrace) {
       AppLogger.error('Failed to update widget data directly', e, stackTrace);
     }
