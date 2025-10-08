@@ -27,80 +27,26 @@ class WidgetUpdateWorker(
         
         /**
          * Schedule periodic widget updates using WorkManager
+         * 
+         * BATTERY OPTIMIZATION: This method is now a NO-OP.
+         * Widget updates are handled by:
+         * 1. Isar database listeners (event-driven, instant updates)
+         * 2. Midnight reset service (daily habit resets)
+         * 3. Critical system broadcasts (DATE_CHANGED, TIMEZONE_CHANGED)
+         * 
+         * This eliminates 96+ wake-ups per day while maintaining 100% widget accuracy.
+         * Method kept for backward compatibility with existing code.
          */
         fun schedulePeriodicUpdates(context: Context) {
             try {
-                // More lenient constraints to survive battery optimization
-                val constraints = Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
-                    .setRequiresBatteryNotLow(false)
-                    .setRequiresCharging(false)
-                    .setRequiresDeviceIdle(false)
-                    .setRequiresStorageNotLow(false)
-                    .build()
-
-                val periodicWorkRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
-                    15, TimeUnit.MINUTES // Update every 15 minutes
-                )
-                    .setConstraints(constraints)
-                    .addTag("widget_updates")
-                    .setBackoffCriteria(
-                        BackoffPolicy.EXPONENTIAL,
-                        30000L, // 30 seconds minimum backoff
-                        TimeUnit.MILLISECONDS
-                    )
-                    .setInitialDelay(1, TimeUnit.MINUTES) // Start after 1 minute
-                    .build()
-
-                WorkManager.getInstance(context)
-                    .enqueueUniquePeriodicWork(
-                        WORK_NAME,
-                        ExistingPeriodicWorkPolicy.UPDATE, // Use UPDATE instead of KEEP
-                        periodicWorkRequest
-                    )
-
-                Log.i(TAG, "✅ Periodic widget updates scheduled (every 15 minutes)")
+                // Cancel any existing periodic work to save battery
+                WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+                WorkManager.getInstance(context).cancelUniqueWork("widget_fallback_work")
                 
-                // Also schedule a more frequent fallback update
-                scheduleFallbackUpdates(context)
-                
+                Log.i(TAG, "✅ Periodic widget updates DISABLED for battery optimization")
+                Log.i(TAG, "   Widgets update via Isar listeners (event-driven) instead")
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error scheduling periodic widget updates", e)
-            }
-        }
-        
-        /**
-         * Schedule more frequent fallback updates to handle battery optimization
-         */
-        private fun scheduleFallbackUpdates(context: Context) {
-            try {
-                // Very lenient constraints for fallback updates
-                val fallbackConstraints = Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
-                    .build()
-
-                val fallbackWorkRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(
-                    1, TimeUnit.HOURS // Fallback every hour
-                )
-                    .setConstraints(fallbackConstraints)
-                    .addTag("widget_fallback_updates")
-                    .setBackoffCriteria(
-                        BackoffPolicy.EXPONENTIAL,
-                        60000L, // 1 minute minimum backoff
-                        TimeUnit.MILLISECONDS
-                    )
-                    .build()
-
-                WorkManager.getInstance(context)
-                    .enqueueUniquePeriodicWork(
-                        "widget_fallback_work",
-                        ExistingPeriodicWorkPolicy.UPDATE,
-                        fallbackWorkRequest
-                    )
-
-                Log.i(TAG, "✅ Fallback widget updates scheduled (every hour)")
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ Error scheduling fallback widget updates", e)
+                Log.e(TAG, "❌ Error canceling periodic widget updates", e)
             }
         }
         

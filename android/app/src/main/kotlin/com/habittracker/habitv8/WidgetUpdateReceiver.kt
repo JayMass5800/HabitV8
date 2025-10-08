@@ -6,8 +6,19 @@ import android.content.Intent
 import android.util.Log
 
 /**
- * Broadcast receiver that triggers widget updates in response to system events
- * like time changes, date changes, and other relevant system broadcasts.
+ * Broadcast receiver that triggers widget updates in response to CRITICAL system events.
+ * 
+ * BATTERY OPTIMIZATION: Only responds to essential events:
+ * - Date/time/timezone changes (affects habit scheduling)
+ * - Custom update broadcasts (manual triggers)
+ * 
+ * Removed battery-draining broadcasts:
+ * - SCREEN_ON (fires dozens of times per day)
+ * - USER_PRESENT (fires every unlock)
+ * - DREAMING_STOPPED (not critical for habit tracking)
+ * - POWER_CONNECTED/DISCONNECTED (not relevant for habits)
+ * 
+ * Widget updates are primarily handled by Isar database listeners (event-driven).
  */
 class WidgetUpdateReceiver : BroadcastReceiver() {
 
@@ -20,42 +31,28 @@ class WidgetUpdateReceiver : BroadcastReceiver() {
             Log.d(TAG, "Received broadcast: ${intent.action}")
             
             when (intent.action) {
+                Intent.ACTION_DATE_CHANGED -> {
+                    Log.i(TAG, "Date changed, triggering widget update")
+                    // Date change is critical - habits need to reset for new day
+                    WidgetUpdateWorker.triggerImmediateUpdate(context)
+                }
+                Intent.ACTION_TIMEZONE_CHANGED -> {
+                    Log.i(TAG, "Timezone changed, triggering widget update")
+                    // Timezone change affects all time-based scheduling
+                    WidgetUpdateWorker.triggerImmediateUpdate(context)
+                }
                 Intent.ACTION_TIME_CHANGED,
-                Intent.ACTION_DATE_CHANGED,
-                Intent.ACTION_TIMEZONE_CHANGED,
                 "android.intent.action.TIME_SET" -> {
-                    Log.i(TAG, "Time/date changed, triggering widget update and rescheduling periodic updates")
-                    WidgetUpdateWorker.triggerImmediateUpdate(context)
-                    // Also reschedule periodic updates as the time change might affect scheduling
-                    WidgetUpdateWorker.schedulePeriodicUpdates(context)
-                }
-                Intent.ACTION_SCREEN_ON -> {
-                    Log.d(TAG, "Screen turned on, scheduling widget update")
-                    // Trigger immediate update and reschedule periodic updates
-                    WidgetUpdateWorker.triggerImmediateUpdate(context)
-                    // Also reschedule periodic updates in case they were killed
-                    WidgetUpdateWorker.schedulePeriodicUpdates(context)
-                }
-                Intent.ACTION_USER_PRESENT -> {
-                    Log.d(TAG, "User unlocked device, triggering widget update")
-                    // Trigger immediate update and reschedule periodic updates
-                    WidgetUpdateWorker.triggerImmediateUpdate(context)
-                    // Also reschedule periodic updates in case they were killed
-                    WidgetUpdateWorker.schedulePeriodicUpdates(context)
-                }
-                Intent.ACTION_DREAMING_STOPPED -> {
-                    Log.d(TAG, "Device stopped dreaming (screensaver), triggering widget update")
-                    WidgetUpdateWorker.triggerImmediateUpdate(context)
-                    WidgetUpdateWorker.schedulePeriodicUpdates(context)
-                }
-                Intent.ACTION_POWER_CONNECTED,
-                Intent.ACTION_POWER_DISCONNECTED -> {
-                    Log.d(TAG, "Power state changed, triggering widget update")
+                    Log.i(TAG, "Time changed, triggering widget update")
+                    // Time change might affect habit scheduling
                     WidgetUpdateWorker.triggerImmediateUpdate(context)
                 }
                 "com.habittracker.habitv8.UPDATE_WIDGETS" -> {
                     Log.i(TAG, "Custom widget update broadcast received")
                     WidgetUpdateWorker.triggerImmediateUpdate(context)
+                }
+                else -> {
+                    Log.d(TAG, "Ignoring non-critical broadcast: ${intent.action}")
                 }
             }
         } catch (e: Exception) {

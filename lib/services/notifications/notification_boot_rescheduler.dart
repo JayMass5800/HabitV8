@@ -20,7 +20,8 @@ class NotificationBootRescheduler {
   /// their notifications based on habit configuration.
   Future<void> rescheduleAllNotifications() async {
     try {
-      AppLogger.info('🔄 Starting notification rescheduling after reboot (using Isar)');
+      AppLogger.info(
+          '🔄 Starting notification rescheduling after reboot (using Isar)');
 
       // Get Isar database instance
       final isar = await IsarDatabaseService.getInstance();
@@ -59,7 +60,8 @@ class NotificationBootRescheduler {
           }
         } catch (e) {
           errorCount++;
-          AppLogger.error('Error rescheduling notifications for habit ${habit.name}', e);
+          AppLogger.error(
+              'Error rescheduling notifications for habit ${habit.name}', e);
         }
       }
 
@@ -111,11 +113,11 @@ class NotificationBootRescheduler {
   Future<Map<String, int>> getNotificationStats() async {
     try {
       final pendingNotifications = await _plugin.pendingNotificationRequests();
-      
+
       // Count notification types based on ID patterns
       int alarms = 0;
       int regular = 0;
-      
+
       for (final notification in pendingNotifications) {
         // Alarm notifications typically have different ID patterns
         // This is a simple heuristic - adjust based on your ID generation logic

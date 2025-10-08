@@ -127,21 +127,21 @@
             android:enabled="true"
             android:exported="false" />
         
-        <!-- Widget update receiver for system events -->
+        <!-- Widget update receiver for CRITICAL system events only -->
+        <!-- BATTERY OPTIMIZATION: Removed SCREEN_ON, USER_PRESENT, DREAMING_STOPPED, POWER_* -->
+        <!-- These events fire too frequently and drain battery unnecessarily -->
+        <!-- Widget updates are primarily handled by Isar database listeners (event-driven) -->
         <receiver
             android:name=".WidgetUpdateReceiver"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
+                <!-- Critical time/date events that affect habit scheduling -->
                 <action android:name="android.intent.action.TIME_CHANGED" />
                 <action android:name="android.intent.action.DATE_CHANGED" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.TIME_SET" />
-                <action android:name="android.intent.action.SCREEN_ON" />
-                <action android:name="android.intent.action.USER_PRESENT" />
-                <action android:name="android.intent.action.DREAMING_STOPPED" />
-                <action android:name="android.intent.action.POWER_CONNECTED" />
-                <action android:name="android.intent.action.POWER_DISCONNECTED" />
+                <!-- Custom update trigger for manual widget refreshes -->
                 <action android:name="com.habittracker.habitv8.UPDATE_WIDGETS" />
             </intent-filter>
         </receiver>
