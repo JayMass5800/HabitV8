@@ -22,8 +22,8 @@ class WidgetIntegrationService {
   static WidgetIntegrationService get instance =>
       _instance ??= WidgetIntegrationService._();
 
-  StreamSubscription<List<Habit>>?
-      _habitWatchSubscription; // Isar listener for habit changes
+  StreamSubscription<void>?
+      _habitWatchSubscription; // Isar lazy listener for habit changes (void events)
   Timer?
       _debounceTimer; // Debounce widget updates to prevent excessive refreshes
   bool _updatePending = false; // Track if an update is already scheduled
