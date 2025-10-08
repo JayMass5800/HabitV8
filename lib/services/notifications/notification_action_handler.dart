@@ -4,6 +4,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:workmanager/workmanager.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
 import '../widget_integration_service.dart';
@@ -295,12 +296,16 @@ class NotificationActionHandlerIsar {
       // reactive streams AND lazy watchers - this triggers instant updates
       // across Timeline, All Habits, Stats, Widgets, and all other screens!
 
-      // Update widget data DIRECTLY in background (app might not be running)
+      // CRITICAL FIX: Trigger immediate widget update using WorkManager
+      // This ensures widgets update even when the app is fully closed
+      // The WorkManager callback uses the same data format as the app
       try {
-        await _updateWidgetsInBackground(isar);
-        AppLogger.info('✅ Widget data updated after background completion');
+        AppLogger.info(
+            '🔄 Triggering immediate widget update via WorkManager...');
+        await _triggerWidgetUpdateViaWorkManager();
+        AppLogger.info('✅ Widget update triggered after background completion');
       } catch (e) {
-        AppLogger.error('Failed to update widget data', e);
+        AppLogger.error('Failed to trigger widget update', e);
       }
 
       AppLogger.info('🎉 Background completion successful with Isar!');
@@ -513,125 +518,41 @@ class NotificationActionHandlerIsar {
     }
   }
 
-  /// Update widgets directly in background when app is not running
-  /// This is called from background notification handler to ensure instant widget updates
-  static Future<void> _updateWidgetsInBackground(Isar isar) async {
+  /// Trigger immediate widget update via WorkManager
+  /// This uses the proper background callback that has the same data format as the app
+  static Future<void> _triggerWidgetUpdateViaWorkManager() async {
     try {
-      AppLogger.info('🔄 Updating widgets in background...');
+      AppLogger.info('🔄 Triggering widget update via WorkManager...');
 
-      // Get all active habits for today
-      final allHabits = await isar.habits.where().findAll();
-      final activeHabits = allHabits.where((h) => h.isActive).toList();
-      final today = DateTime.now();
-
-      // Filter habits for today (simplified - you can enhance this with RRule logic)
-      final todayHabits = activeHabits.where((habit) {
-        // Use simple logic for now - can be enhanced with full RRule support
-        if (habit.usesRRule && habit.rruleString != null) {
-          // For RRule habits, we'd need the full RRuleService logic
-          // For now, include all RRule habits (they'll be filtered by widget)
-          return true;
-        }
-
-        // Legacy frequency logic
-        switch (habit.frequency) {
-          case HabitFrequency.daily:
-            return true;
-          case HabitFrequency.weekly:
-            final dayOfWeek = today.weekday % 7; // 0 = Sunday
-            return habit.selectedWeekdays.contains(dayOfWeek);
-          case HabitFrequency.monthly:
-            return habit.selectedMonthDays.contains(today.day);
-          case HabitFrequency.hourly:
-            return habit.hourlyTimes.isNotEmpty;
-          case HabitFrequency.single:
-            if (habit.singleDateTime != null) {
-              final singleDate = DateTime(
-                habit.singleDateTime!.year,
-                habit.singleDateTime!.month,
-                habit.singleDateTime!.day,
-              );
-              final todayDate = DateTime(today.year, today.month, today.day);
-              return singleDate == todayDate;
-            }
-            return false;
-          case HabitFrequency.yearly:
-            return habit.selectedYearlyDates.any((dateStr) {
-              try {
-                final parts = dateStr.split('-');
-                if (parts.length >= 2) {
-                  final month = int.parse(parts[1]);
-                  final day = int.parse(parts[2]);
-                  return month == today.month && day == today.day;
-                }
-              } catch (e) {
-                // Ignore parse errors
-              }
-              return false;
-            });
-        }
-      }).toList();
-
-      // Prepare habit data as JSON
-      final habitsJson = jsonEncode(
-        todayHabits.map((h) => _habitToWidgetJson(h, today)).toList(),
+      // Schedule an immediate one-time WorkManager task
+      // This will execute the callbackDispatcher in widget_background_update_service.dart
+      // which uses the correct data format and includes all necessary fields
+      await Workmanager().registerOneOffTask(
+        'widget_update_after_completion_${DateTime.now().millisecondsSinceEpoch}',
+        'widget_background_update', // Must match the task name in WidgetBackgroundUpdateService
+        initialDelay: const Duration(
+            milliseconds: 100), // Small delay to ensure DB write completes
       );
 
-      // Save to HomeWidget preferences
-      await HomeWidget.saveWidgetData('habits', habitsJson);
-      await HomeWidget.saveWidgetData('today_habits', habitsJson);
-      await HomeWidget.saveWidgetData('habits_data', habitsJson);
-      await HomeWidget.saveWidgetData('habit_count', activeHabits.length);
-      await HomeWidget.saveWidgetData('today_habit_count', todayHabits.length);
-      await HomeWidget.saveWidgetData(
-        'last_update',
-        DateTime.now().toIso8601String(),
-      );
+      AppLogger.info('✅ WorkManager widget update task registered');
+    } catch (e) {
+      AppLogger.error('Failed to register WorkManager widget update task', e);
 
-      // Trigger widget UI update
-      await HomeWidget.updateWidget(
-        name: 'HabitTimelineWidgetProvider',
-        androidName: 'HabitTimelineWidgetProvider',
-      );
-      await HomeWidget.updateWidget(
-        name: 'HabitCompactWidgetProvider',
-        androidName: 'HabitCompactWidgetProvider',
-      );
-
-      AppLogger.info('✅ Widgets updated successfully in background');
-    } catch (e, stackTrace) {
-      AppLogger.error('Failed to update widgets in background', e, stackTrace);
+      // Fallback: try to update widgets directly if WorkManager fails
+      AppLogger.info('⚠️ Attempting direct widget update as fallback...');
+      try {
+        await HomeWidget.updateWidget(
+          name: 'HabitTimelineWidgetProvider',
+          androidName: 'HabitTimelineWidgetProvider',
+        );
+        await HomeWidget.updateWidget(
+          name: 'HabitCompactWidgetProvider',
+          androidName: 'HabitCompactWidgetProvider',
+        );
+        AppLogger.info('✅ Direct widget update completed');
+      } catch (e2) {
+        AppLogger.error('Direct widget update also failed', e2);
+      }
     }
-  }
-
-  /// Convert Habit to widget-compatible JSON
-  static Map<String, dynamic> _habitToWidgetJson(Habit habit, DateTime date) {
-    // Check if habit is completed today
-    final isCompleted = habit.completions.any((completionDate) {
-      return completionDate.year == date.year &&
-          completionDate.month == date.month &&
-          completionDate.day == date.day;
-    });
-
-    return {
-      'id': habit.id,
-      'name': habit.name,
-      'isActive': habit.isActive,
-      'isCompleted': isCompleted,
-      'frequency': habit.frequency.toString().split('.').last,
-      'notificationTime': habit.notificationTime?.toIso8601String(),
-      'selectedWeekdays': habit.selectedWeekdays,
-      'selectedMonthDays': habit.selectedMonthDays,
-      'selectedYearlyDates': habit.selectedYearlyDates,
-      'hourlyTimes': habit.hourlyTimes,
-      'singleDateTime': habit.singleDateTime?.toIso8601String(),
-      'difficulty': habit.difficulty.toString().split('.').last,
-      'category': habit.category,
-      'completionCount': habit.completions.length,
-      'currentStreak': habit.currentStreak,
-      'longestStreak': habit.longestStreak,
-      'usesRRule': habit.usesRRule,
-      'rruleString': habit.rruleString,
-    };
   }
 }
