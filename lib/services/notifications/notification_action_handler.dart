@@ -556,26 +556,40 @@ class NotificationActionHandlerIsar {
       // CRITICAL: Add delay to ensure SharedPreferences write completes
       await Future.delayed(const Duration(milliseconds: 200));
 
-      // Trigger widget UI refresh via platform channel
-      // This directly calls notifyAppWidgetViewDataChanged() on Android
+      // CRITICAL FIX: Send native broadcast to trigger widget update
+      // This works even when the app is completely closed because it uses
+      // native Android BroadcastReceiver instead of Flutter platform channels
       try {
+        AppLogger.info('📢 Sending habit completion broadcast...');
         await const MethodChannel('com.habittracker.habitv8/widget_update')
-            .invokeMethod('forceWidgetRefresh');
-        AppLogger.info('✅ Platform channel widget refresh triggered');
+            .invokeMethod('sendHabitCompletionBroadcast');
+        AppLogger.info('✅ Habit completion broadcast sent successfully');
       } catch (e) {
-        AppLogger.info(
-            '⚠️ Platform channel failed, using HomeWidget fallback: $e');
+        AppLogger.warning(
+            '⚠️ Failed to send broadcast, trying direct refresh: $e');
 
-        // Fallback to HomeWidget.updateWidget if method channel fails
-        await HomeWidget.updateWidget(
-          name: 'HabitTimelineWidgetProvider',
-          androidName: 'HabitTimelineWidgetProvider',
-        );
+        // Fallback: Try direct platform channel refresh
+        // (This only works if MainActivity is active)
+        try {
+          await const MethodChannel('com.habittracker.habitv8/widget_update')
+              .invokeMethod('forceWidgetRefresh');
+          AppLogger.info('✅ Platform channel widget refresh triggered');
+        } catch (e2) {
+          AppLogger.warning(
+              '⚠️ Platform channel failed, using HomeWidget fallback: $e2');
 
-        await HomeWidget.updateWidget(
-          name: 'HabitCompactWidgetProvider',
-          androidName: 'HabitCompactWidgetProvider',
-        );
+          // Last resort: HomeWidget.updateWidget
+          // (This also requires Flutter engine to be running)
+          await HomeWidget.updateWidget(
+            name: 'HabitTimelineWidgetProvider',
+            androidName: 'HabitTimelineWidgetProvider',
+          );
+
+          await HomeWidget.updateWidget(
+            name: 'HabitCompactWidgetProvider',
+            androidName: 'HabitCompactWidgetProvider',
+          );
+        }
       }
 
       AppLogger.info('✅ Widget refresh completed');

@@ -437,6 +437,21 @@ class MainActivity : FlutterFragmentActivity() {
                         android.util.Log.e("MainActivity", "Failed to trigger immediate update", e)
                     }
                 }
+                "sendHabitCompletionBroadcast" -> {
+                    try {
+                        android.util.Log.i("MainActivity", "📢 Sending habit completion broadcast from Dart")
+                        
+                        // Use the helper to send broadcast
+                        // This will trigger HabitCompletionReceiver which updates widgets
+                        WidgetUpdateHelper.sendHabitCompletionBroadcast(this)
+                        
+                        result.success(true)
+                        android.util.Log.i("MainActivity", "✅ Habit completion broadcast sent successfully")
+                    } catch (e: Exception) {
+                        result.error("BROADCAST_ERROR", "Failed to send habit completion broadcast: ${e.message}", null)
+                        android.util.Log.e("MainActivity", "Failed to send broadcast", e)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }

@@ -145,6 +145,17 @@
                 <action android:name="com.habittracker.habitv8.UPDATE_WIDGETS" />
             </intent-filter>
         </receiver>
+        
+        <!-- Habit completion receiver for triggering widget updates -->
+        <!-- This is triggered when habits are completed from notifications while app is closed -->
+        <receiver
+            android:name=".HabitCompletionReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.habittracker.habitv8.HABIT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name=".MainActivity"
