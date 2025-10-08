@@ -398,12 +398,12 @@ class MainActivity : FlutterFragmentActivity() {
                         // Also send broadcast to trigger onUpdate() for header/footer updates
                         val timelineIntent = Intent(this, HabitTimelineWidgetProvider::class.java)
                         timelineIntent.action = "android.appwidget.action.APPWIDGET_UPDATE"
-                        timelineIntent.putIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, timelineWidgetIds)
+                        timelineIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, timelineWidgetIds)
                         sendBroadcast(timelineIntent)
                         
                         val compactIntent = Intent(this, HabitCompactWidgetProvider::class.java)
                         compactIntent.action = "android.appwidget.action.APPWIDGET_UPDATE"
-                        compactIntent.putIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, compactWidgetIds)
+                        compactIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, compactWidgetIds)
                         sendBroadcast(compactIntent)
                         
                         result.success(true)
