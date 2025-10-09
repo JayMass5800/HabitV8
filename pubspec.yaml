@@ -75,6 +75,7 @@ dependencies:
   
   # Home Screen Widget dependencies
   home_widget: ^0.8.0 # Latest version for Flutter 3.24+ compatibility
+  android_intent_plus: ^5.1.0 # For sending broadcast intents from background isolates
   
 
 flutter_icons:
