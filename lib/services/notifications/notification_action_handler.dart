@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -554,41 +553,33 @@ class NotificationActionHandlerIsar {
       AppLogger.info('✅ Widget data saved to SharedPreferences');
 
       // CRITICAL: Add delay to ensure SharedPreferences write completes
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(const Duration(milliseconds: 300));
 
-      // CRITICAL FIX: Send native broadcast to trigger widget update
-      // This works even when the app is completely closed because it uses
-      // native Android BroadcastReceiver instead of Flutter platform channels
+      // CRITICAL FIX: Trigger widget update using HomeWidget
+      // The home_widget plugin is designed to work in background isolates
+      // and uses native Android AppWidgetManager APIs
       try {
-        AppLogger.info('📢 Sending habit completion broadcast...');
-        await const MethodChannel('com.habittracker.habitv8/widget_update')
-            .invokeMethod('sendHabitCompletionBroadcast');
-        AppLogger.info('✅ Habit completion broadcast sent successfully');
+        AppLogger.info('📢 Triggering widget update via HomeWidget...');
+
+        // Update both widget types
+        await HomeWidget.updateWidget(
+          name: 'HabitTimelineWidgetProvider',
+          androidName: 'HabitTimelineWidgetProvider',
+        );
+
+        await HomeWidget.updateWidget(
+          name: 'HabitCompactWidgetProvider',
+          androidName: 'HabitCompactWidgetProvider',
+        );
+
+        AppLogger.info('✅ Widget update triggered successfully');
       } catch (e) {
-        AppLogger.warning(
-            '⚠️ Failed to send broadcast, trying direct refresh: $e');
-
-        // Fallback: Try direct platform channel refresh
-        // (This only works if MainActivity is active)
+        AppLogger.error('❌ Failed to trigger widget update: $e');
+        // Set a flag for the app to retry when it opens
         try {
-          await const MethodChannel('com.habittracker.habitv8/widget_update')
-              .invokeMethod('forceWidgetRefresh');
-          AppLogger.info('✅ Platform channel widget refresh triggered');
+          await HomeWidget.saveWidgetData<bool>('widget_update_pending', true);
         } catch (e2) {
-          AppLogger.warning(
-              '⚠️ Platform channel failed, using HomeWidget fallback: $e2');
-
-          // Last resort: HomeWidget.updateWidget
-          // (This also requires Flutter engine to be running)
-          await HomeWidget.updateWidget(
-            name: 'HabitTimelineWidgetProvider',
-            androidName: 'HabitTimelineWidgetProvider',
-          );
-
-          await HomeWidget.updateWidget(
-            name: 'HabitCompactWidgetProvider',
-            androidName: 'HabitCompactWidgetProvider',
-          );
+          AppLogger.error('Failed to set pending update flag', e2);
         }
       }
 

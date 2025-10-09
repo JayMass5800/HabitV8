@@ -1,76 +1,244 @@
- If you've confirmed the data is being written to shared storage but the widgets aren't updating, the issue is almost certainly a missing trigger or a platform configuration problem, not a data race.
-
-The native home screen widget (Kotlin/Java on Android, Swift on iOS) and your Flutter app's Dart code run in separate processes and do not automatically monitor the shared storage for changes.
-
-A data race (a "race situation") is unlikely here because the write operation completes before the next step. The core problem is that the widget doesn't know when to read the data.
-
-Here are the most likely reasons the update isn't being triggered and the steps to fix them:
-
-1. Missing or Incorrect Native Update Trigger
-The crucial step after writing to shared storage is to manually notify the native platform to refresh the widget.
-
-For Flutter Widgets Using home_widget
-You must explicitly call the update function after saving the data:
-
-Dart
-
-// 1. Data is written to shared storage
-await HomeWidget.saveWidgetData<String>('my_data_key', jsonData);
-
-// 2. 🚨 This is the missing trigger!
-// You must call this to tell the OS to redraw the widget.
-await HomeWidget.updateWidget(
-  // This name MUST match the native provider/kind name exactly.
-  name: 'YourWidgetProviderName', 
-);
-Key Check: Provider Name Match
-The name parameter in HomeWidget.updateWidget() must exactly match the name of your native widget's entry point:
-
-Android: This is typically the name of your AppWidgetProvider class (e.g., MyAppWidgetProvider).
-
-iOS (WidgetKit): This is the kind identifier you defined in your Swift Widget Extension code.
-
-Solution: Double-check your native code and ensure the string passed to updateWidget(name: '...') is an exact match, including case.
-
-2. Platform-Specific Configuration Issues
-If the trigger is being called, the operating system might be blocking the communication.
-
-Android: Check the AppWidgetProvider
-When HomeWidget.updateWidget() is called, it sends an intent that should land in your native AppWidgetProvider.
-
-Ensure your native Android code's onUpdate method is actually reading the shared preference data and calling appWidgetManager.updateAppWidget(...) to redraw the RemoteViews.
-
-A common mistake is having the native widget read data only from a default shared preference file instead of the App Group/Shared Preferences file that the home_widget package is writing to.
-
-iOS: Check App Group Setup
-For iOS WidgetKit to share data with the main app, you must configure an App Group in Xcode:
-
-In your main Flutter Runner target settings, go to Signing & Capabilities.
-
-Add the App Groups capability.
-
-Create and check an App Group identifier (e.g., group.com.yourcompany.appname).
-
-Repeat steps 1-3 for your Widget Extension target.
-
-In your Dart code, you must initialize home_widget with this group ID:
-
-Dart
-
-await HomeWidget.setAppGroupId('group.com.yourcompany.appname');
-If this App Group is missing or mismatched, the Flutter app writes data to an inaccessible location, and the widget is updated with old (or empty) data.
-
-3. Widget UI Not Handling Stale Data
-If the update is being triggered, but the content looks the same, it means the native widget is likely not correctly reading the new data in its onUpdate or getTimeline methods.
-
-The native code must perform the read operation from the shared storage every single time the update is triggered. The update trigger only tells the widget to wake up; the widget must then do the work of fetching the latest cached data.
-
-In summary, the solution is almost always to confirm the following:
-
-Shared Storage is Working: (You confirmed this).
-
-Trigger is Called: HomeWidget.updateWidget() is called immediately after the data write.
-
-Names Match: The name parameter is an exact match for the native provider/kind.
-
-Native Read: The native widget's update logic (e.g., onUpdate) correctly reads the new data from the shared container.
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:71:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:93:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:71:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:90:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:71:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:86:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:149:17)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   AppLifecycleService._ensureDatabaseConnection (package:habitv8/services/app_lifecycle_service.dart:253:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:159:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:168:21)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   habitsStreamIsarProvider.<anonymous closure>.<anonymous closure>.<anonymous closure> (package:habitv8/data/database_isar.dart:48:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:171:21)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:176:21)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   habitsStreamIsarProvider.<anonymous closure>.<anonymous closure> (package:habitv8/data/database_isar.dart:29:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   habitsStreamIsarProvider.<anonymous closure>.<anonymous closure>.<anonymous closure> (package:habitv8/data/database_isar.dart:35:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   habitsStreamIsarProvider.<anonymous closure>.<anonymous closure>.<anonymous closure> (package:habitv8/data/database_isar.dart:37:19)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   AppLifecycleService._ensureDatabaseConnection.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:265:23)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:180:21)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:211:25)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:45:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:46:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:47:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationActionService.ensureCallbackRegistered (package:habitv8/services/notification_action_service.dart:58:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._processPendingActionsWithRetry (package:habitv8/services/app_lifecycle_service.dart:307:15)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   AppLifecycleService._refreshWidgetsOnResume (package:habitv8/services/app_lifecycle_service.dart:360:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._triggerWidgetRefreshOnResume (package:habitv8/services/app_lifecycle_service.dart:347:17)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   AppLifecycleService._checkMissedResetOnResume (package:habitv8/services/app_lifecycle_service.dart:382:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._handleAppResumed (package:habitv8/services/app_lifecycle_service.dart:243:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationActionHandlerIsar.processPendingActionsManually (package:habitv8/services/notifications/notification_action_handler.dart:442:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._processPendingActionsWithRetry.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:313:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._processPendingCompletions.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:337:19)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   MidnightHabitResetService.checkForMissedResetOnAppActive (package:habitv8/services/midnight_habit_reset_service.dart:273:17)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   MidnightHabitResetService._checkMissedReset (package:habitv8/services/midnight_habit_reset_service.dart:84:21)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   AppLifecycleService._checkMissedResetOnResume.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:389:21)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   AppLifecycleService._refreshWidgetsOnResume.<anonymous closure> (package:habitv8/services/app_lifecycle_service.dart:367:21)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._triggerWidgetRefreshOnResume (package:habitv8/services/app_lifecycle_service.dart:351:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   _CreateHabitScreenV2State._generateRRuleFromSimpleMode (package:habitv8/ui/screens/create_habit_screen_v2.dart:1705:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationUpdateCoordinator._onHabitsChanged (package:habitv8/services/notification_update_coordinator.dart:63:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationUpdateCoordinator._onHabitsChanged (package:habitv8/services/notification_update_coordinator.dart:64:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationUpdateCoordinator._onHabitsChanged (package:habitv8/services/notification_update_coordinator.dart:73:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   HabitServiceIsar.addHabit (package:habitv8/data/database_isar.dart:158:15)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationScheduler.cancelHabitNotificationsByHabitId (package:habitv8/services/notifications/notification_scheduler.dart:682:15)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationScheduler.scheduleHabitNotifications (package:habitv8/services/notifications/notification_scheduler.dart:210:15)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationScheduler.scheduleHabitNotifications (package:habitv8/services/notifications/notification_scheduler.dart:213:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationCore.ensureNotificationPermissions (package:habitv8/services/notifications/notification_core.dart:280:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   habitsStreamIsarProvider.<anonymous closure>.<anonymous closure>.<anonymous closure> (package:habitv8/data/database_isar.dart:35:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   habitsStreamIsarProvider.<anonymous closure>.<anonymous closure>.<anonymous closure> (package:habitv8/data/database_isar.dart:37:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationCore.ensureNotificationPermissions (package:habitv8/services/notifications/notification_core.dart:296:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   PermissionService.hasExactAlarmPermission (package:habitv8/services/permission_service.dart:143:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   PermissionService.hasExactAlarmPermission (package:habitv8/services/permission_service.dart:147:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationCore.ensureNotificationPermissions (package:habitv8/services/notifications/notification_core.dart:318:19)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationScheduler.scheduleHabitNotifications (package:habitv8/services/notifications/notification_scheduler.dart:270:17)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationScheduler.scheduleHabitNotifications (package:habitv8/services/notifications/notification_scheduler.dart:286:19)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationScheduler.scheduleHabitNotifications (package:habitv8/services/notifications/notification_scheduler.dart:293:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationScheduler._scheduleRRuleHabitNotifications (package:habitv8/services/notifications/notification_scheduler.dart:859:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationScheduler.scheduleHabitNotifications (package:habitv8/services/notifications/notification_scheduler.dart:330:17)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationAlarmScheduler.scheduleHabitAlarms (package:habitv8/services/notifications/notification_alarm_scheduler.dart:30:15)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationAlarmScheduler.scheduleHabitAlarms (package:habitv8/services/notifications/notification_alarm_scheduler.dart:31:15)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationAlarmScheduler.scheduleHabitAlarms (package:habitv8/services/notifications/notification_alarm_scheduler.dart:32:15)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationAlarmScheduler.scheduleHabitAlarms (package:habitv8/services/notifications/notification_alarm_scheduler.dart:33:15)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   NotificationAlarmScheduler.scheduleHabitAlarms (package:habitv8/services/notifications/notification_alarm_scheduler.dart:37:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationAlarmScheduler.scheduleHabitAlarms (package:habitv8/services/notifications/notification_alarm_scheduler.dart:38:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   HabitServiceIsar.addHabit (package:habitv8/data/database_isar.dart:165:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   _CreateHabitScreenV2State._saveHabit (package:habitv8/ui/screens/create_habit_screen_v2.dart:1489:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationUpdateCoordinator._updateWidgets (package:habitv8/services/notification_update_coordinator.dart:81:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:71:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:90:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:71:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:93:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:71:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:81:19)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   AppLifecycleService._performBackgroundCleanup (package:habitv8/services/app_lifecycle_service.dart:405:17)
+I/flutter (16382): Γöé #0   AppLogger.debug (package:habitv8/services/logging_service.dart:21:15)
+I/flutter (16382): Γöé #1   AppLifecycleService._performBackgroundCleanup (package:habitv8/services/app_lifecycle_service.dart:410:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:71:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService.didChangeAppLifecycleState (package:habitv8/services/app_lifecycle_service.dart:76:19)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:100:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   BackgroundTaskService.dispose (package:habitv8/services/background_task_service.dart:250:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   BackgroundTaskService.dispose (package:habitv8/services/background_task_service.dart:271:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationQueueProcessor.dispose (package:habitv8/services/notification_queue_processor.dart:120:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationQueueProcessor.dispose (package:habitv8/services/notification_queue_processor.dart:133:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:119:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   NotificationUpdateCoordinator.dispose (package:habitv8/services/notification_update_coordinator.dart:98:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:127:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:134:17)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:141:15)
+I/flutter (16382): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16382): Γöé #1   AppLifecycleService._disposeAllServices (package:habitv8/services/app_lifecycle_service.dart:143:15)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   onBackgroundNotificationResponseIsar (package:habitv8/services/notifications/notification_action_handler.dart:29:15)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   onBackgroundNotificationResponseIsar (package:habitv8/services/notifications/notification_action_handler.dart:30:15)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   onBackgroundNotificationResponseIsar (package:habitv8/services/notifications/notification_action_handler.dart:31:15)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   onBackgroundNotificationResponseIsar (package:habitv8/services/notifications/notification_action_handler.dart:39:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   onBackgroundNotificationResponseIsar (package:habitv8/services/notifications/notification_action_handler.dart:43:23)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   onBackgroundNotificationResponseIsar (package:habitv8/services/notifications/notification_action_handler.dart:71:25)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:189:17)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:207:17)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:212:19)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:215:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground.<anonymous closure> (package:habitv8/services/notifications/notification_action_handler.dart:283:21)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:290:17)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:303:19)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar._updateWidgetDataDirectly (package:habitv8/services/notifications/notification_action_handler.dart:525:17)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar._updateWidgetDataDirectly (package:habitv8/services/notifications/notification_action_handler.dart:537:17)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar._updateWidgetDataDirectly (package:habitv8/services/notifications/notification_action_handler.dart:544:17)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar._updateWidgetDataDirectly (package:habitv8/services/notifications/notification_action_handler.dart:554:17)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar._updateWidgetDataDirectly (package:habitv8/services/notifications/notification_action_handler.dart:563:19)
+I/flutter (16988): Γöé #0   AppLogger.warning (package:habitv8/services/logging_service.dart:30:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar._updateWidgetDataDirectly (package:habitv8/services/notifications/notification_action_handler.dart:568:19)
+I/flutter (16988): Γöé ! ! Failed to send broadcast, trying direct refresh: MissingPluginException(No implementation found for method sendHabitCompletionBroadcast on channel com.habittracker.habitv8/widget_update)
+I/flutter (16988): Γöé #0   AppLogger.warning (package:habitv8/services/logging_service.dart:30:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar._updateWidgetDataDirectly (package:habitv8/services/notifications/notification_action_handler.dart:578:21)
+I/flutter (16988): Γöé ! ! Platform channel failed, using HomeWidget fallback: MissingPluginException(No implementation found for method forceWidgetRefresh on channel com.habittracker.habitv8/widget_update)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar._updateWidgetDataDirectly (package:habitv8/services/notifications/notification_action_handler.dart:595:17)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:305:19)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   NotificationActionHandlerIsar.completeHabitInBackground (package:habitv8/services/notifications/notification_action_handler.dart:310:17)
+I/flutter (16988): Γöé #0   AppLogger.info (package:habitv8/services/logging_service.dart:26:13)
+I/flutter (16988): Γöé #1   onBackgroundNotificationResponseIsar (package:habitv8/services/notifications/notification_action_handler.dart:84:15)
