@@ -1,12 +1,10 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:android_intent_plus/android_intent.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
 import '../widget_integration_service.dart';
@@ -621,38 +619,22 @@ class NotificationActionHandlerIsar {
 
       // STEP 4: Trigger native widget redraw
       // This tells the Android system to refresh the widget UI
-      // CRITICAL: Uses broadcast intent which works even when app is fully closed
+      // Uses HomeWidget plugin which works even when app is fully closed
       try {
-        AppLogger.info(
-            '[WIDGET UPDATE] Triggering widget update via broadcast intent...');
+        AppLogger.info('[WIDGET UPDATE] Triggering widget update...');
 
-        if (Platform.isAndroid) {
-          // Send broadcast intent to trigger native widget update
-          // This bypasses Flutter method channels entirely and works
-          // even when the app is completely closed
-          // The broadcast is received by HabitCompletionReceiver which calls
-          // WidgetUpdateHelper.forceWidgetRefresh() using native Android APIs
-          final intent = AndroidIntent(
-            action: 'com.habittracker.habitv8.HABIT_COMPLETED',
-            package: 'com.habittracker.habitv8',
-            flags: <int>[0x01000000], // FLAG_INCLUDE_STOPPED_PACKAGES
-          );
+        // Use HomeWidget.updateWidget() - this works in background isolate
+        // The home_widget plugin handles the native Android widget update
+        await HomeWidget.updateWidget(
+          name: 'HabitTimelineWidgetProvider',
+          androidName: 'HabitTimelineWidgetProvider',
+        );
+        await HomeWidget.updateWidget(
+          name: 'HabitCompactWidgetProvider',
+          androidName: 'HabitCompactWidgetProvider',
+        );
 
-          await intent.launch();
-          AppLogger.info('[WIDGET UPDATE] Broadcast intent sent successfully');
-        } else {
-          // Fallback to HomeWidget for non-Android platforms
-          await HomeWidget.updateWidget(
-            name: 'HabitTimelineWidgetProvider',
-            androidName: 'HabitTimelineWidgetProvider',
-          );
-          await HomeWidget.updateWidget(
-            name: 'HabitCompactWidgetProvider',
-            androidName: 'HabitCompactWidgetProvider',
-          );
-          AppLogger.info(
-              '[WIDGET UPDATE] Widget update triggered via HomeWidget (non-Android)');
-        }
+        AppLogger.info('[WIDGET UPDATE] Widget update triggered successfully');
       } catch (e) {
         AppLogger.error('[WIDGET UPDATE] Failed to trigger widget update: $e');
         // Set a flag for the app to retry when it opens
