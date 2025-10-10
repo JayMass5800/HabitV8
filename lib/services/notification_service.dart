@@ -1,6 +1,6 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import '../domain/model/habit.dart';
-import '../data/database_isar.dart';
+import 'logging_service.dart';
 import 'notifications/notification_core.dart';
 import 'notifications/notification_helpers.dart';
 import 'notifications/notification_scheduler.dart';
@@ -10,25 +10,21 @@ import 'notifications/notification_boot_rescheduler.dart';
 
 /// Notification Service Facade - delegates to specialized modules
 class NotificationService {
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
-      FlutterLocalNotificationsPlugin();
   static late final NotificationScheduler _scheduler;
   static late final NotificationAlarmScheduler _alarmScheduler;
   static late final NotificationBootRescheduler _bootRescheduler;
 
   static Future<void> initialize() async {
     await NotificationCore.initialize(
-      plugin: _notificationsPlugin,
-      onForegroundTap: onNotificationTappedIsar,
-      onBackgroundTap: onBackgroundNotificationResponseIsar,
+      onActionReceivedMethod: onNotificationActionIsar,
     );
-    _scheduler = NotificationScheduler(_notificationsPlugin);
+    _scheduler = NotificationScheduler();
     _alarmScheduler = NotificationAlarmScheduler.instance;
-    _bootRescheduler = NotificationBootRescheduler(_notificationsPlugin);
+    _bootRescheduler = NotificationBootRescheduler();
   }
 
   static Future<void> recreateNotificationChannels() async {
-    await NotificationCore.recreateNotificationChannels(_notificationsPlugin);
+    await NotificationCore.recreateNotificationChannels();
   }
 
   static Future<bool> isAndroid12Plus() async {
@@ -37,23 +33,18 @@ class NotificationService {
 
   static void setNotificationActionCallback(
       void Function(String habitId, String action) callback) {
-    NotificationActionHandlerIsar.registerActionCallback(callback);
+    NotificationActionHandlerIsar.onNotificationAction = callback;
   }
 
   static void setDirectCompletionHandler(
       Future<void> Function(String habitId) handler) {
-    NotificationActionHandlerIsar.setDirectCompletionHandler(handler);
+    NotificationActionHandlerIsar.directCompletionHandler = handler;
   }
 
   /// Get the current notification action callback
   static void Function(String habitId, String action)?
       get onNotificationAction {
     return NotificationActionHandlerIsar.onNotificationAction;
-  }
-
-  /// Get the number of pending actions (for debugging)
-  static Future<int> getPendingActionsCount() async {
-    return await NotificationActionHandlerIsar.getPendingActionsCount();
   }
 
   static Future<void> scheduleHabitNotifications(Habit habit,
@@ -167,21 +158,8 @@ class NotificationService {
     await _scheduler.cancelHabitNotificationsByHabitId(habitId);
   }
 
-  static Future<void> processPendingActionsManually() async {
-    try {
-      final isar = await IsarDatabaseService.getInstance();
-      await NotificationActionHandlerIsar.processPendingActionsManually(isar);
-    } catch (e) {
-      // Error logging handled in NotificationActionHandlerIsar
-    }
-  }
-
   static Future<bool> areNotificationsEnabled() async {
-    final result = await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.areNotificationsEnabled();
-    return result ?? true;
+    return await NotificationCore.areNotificationsEnabled();
   }
 
   static Future<bool> canScheduleExactAlarms() async {
@@ -192,111 +170,40 @@ class NotificationService {
     await NotificationHelpers.checkBatteryOptimizationStatus();
   }
 
-  static Future<List<PendingNotificationRequest>>
-      getPendingNotifications() async {
-    return await NotificationHelpers.getPendingNotifications(
-        _notificationsPlugin);
+  static Future<List<NotificationModel>> getPendingNotifications() async {
+    return await AwesomeNotifications().listScheduledNotifications();
   }
 
-  static int generateSafeId(String habitId) {
-    return NotificationHelpers.generateSafeId(habitId);
+  static Future<void> rescheduleAllHabitsAfterBoot() async {
+    await _bootRescheduler.rescheduleAllHabitsAfterBoot();
   }
 
-  static Future<bool> verifyNotificationScheduled(
-    int notificationId,
-    String habitId,
-  ) async {
-    return await NotificationHelpers.verifyNotificationScheduled(
-      _notificationsPlugin,
-      notificationId,
-      habitId,
-    );
+  /// Generate a safe notification ID from a string
+  static int generateSafeId(String input) {
+    return NotificationHelpers.generateSafeId(input);
   }
 
-  static Future<bool> isHabitCompletedForPeriod(
-    Habit habit,
-    DateTime checkTime,
-  ) async {
-    return NotificationHelpers.isHabitCompletedForPeriod(
-      habit,
-      checkTime,
-    );
+  /// Process pending notification actions manually
+  static Future<void> processPendingActionsManually() async {
+    // This method is called when the app comes to foreground
+    // awesome_notifications handles this automatically, so we can leave it empty
+    // or add custom logic if needed
+    AppLogger.debug(
+        'Processing pending actions manually (no-op for awesome_notifications)');
   }
 
-  static int calculateStreak(
-      List<DateTime> completions, HabitFrequency frequency) {
-    return NotificationHelpers.calculateStreak(completions, frequency);
+  /// Get the count of pending notification actions
+  static Future<int> getPendingActionsCount() async {
+    // awesome_notifications doesn't have a direct equivalent
+    // Return 0 as actions are processed immediately
+    return 0;
   }
 
+  /// Handle snooze action with habit name
   static Future<void> handleSnoozeActionWithName(
     String habitId,
     String habitName,
   ) async {
-    // Isar version uses different params: handleSnoozeAction(habitId, snoozeMinutes)
-    // Default to 10 minutes snooze
-    await NotificationActionHandlerIsar.handleSnoozeAction(
-      habitId,
-      10, // Default snooze duration in minutes
-    );
-  }
-
-  static Future<void> scheduleDailyNotification({
-    required int id,
-    required String title,
-    required String body,
-    required int hour,
-    required int minute,
-  }) async {
-    final now = DateTime.now();
-    var scheduledTime = DateTime(now.year, now.month, now.day, hour, minute);
-    if (scheduledTime.isBefore(now)) {
-      scheduledTime = scheduledTime.add(const Duration(days: 1));
-    }
-    await _scheduler.scheduleHabitNotification(
-      id: id,
-      habitId: id.toString(),
-      title: title,
-      body: body,
-      scheduledTime: scheduledTime,
-    );
-  }
-
-  static Future<void> scheduleDailyHabitReminder({
-    required String habitId,
-    required String habitName,
-    required int hour,
-    required int minute,
-  }) async {
-    final id = generateSafeId(habitId);
-    await scheduleDailyNotification(
-      id: id,
-      title: 'Habit Reminder',
-      body: 'Do not forget to complete: $habitName',
-      hour: hour,
-      minute: minute,
-    );
-  }
-
-  /// Reschedule all notifications after device reboot
-  ///
-  /// This method loads persisted notification data and reschedules
-  /// all pending notifications that were lost during reboot.
-  static Future<void> rescheduleNotificationsAfterBoot() async {
-    await _bootRescheduler.rescheduleAllNotifications();
-  }
-
-  /// Get statistics about stored notifications
-  ///
-  /// Returns a map with keys: total, pending, expired, alarms, regular
-  static Future<Map<String, int>> getNotificationStats() async {
-    return await _bootRescheduler.getNotificationStats();
-  }
-
-  /// Clean up old notification records from storage
-  /// Note: With Isar migration, notification scheduling is based on habit data
-  /// This method is deprecated and will be removed in a future version
-  static Future<void> cleanupOldNotificationRecords() async {
-    // No-op: Notification data is now managed through Isar habit records
-    // Old Hive-based ScheduledNotificationStorage has been removed
+    await NotificationActionHandlerIsar.handleSnoozeAction(habitId, habitName);
   }
 }

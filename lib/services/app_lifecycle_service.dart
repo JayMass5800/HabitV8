@@ -332,8 +332,7 @@ class AppLifecycleService with WidgetsBindingObserver {
   static void _processPendingCompletions() {
     Future.delayed(const Duration(milliseconds: 1500), () async {
       try {
-        final isar = await IsarDatabaseService.getInstance();
-        await NotificationActionHandlerIsar.processPendingCompletions(isar);
+        await NotificationActionHandlerIsar.processPendingCompletions();
         AppLogger.info('✅ Pending completions processed successfully');
       } catch (e) {
         AppLogger.error('Error processing pending completions', e);

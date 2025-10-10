@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,7 +17,7 @@ import 'notification_scheduler.dart';
 // background notification system to work properly in release builds
 // ============================================================================
 
-/// Background notification response handler (TOP-LEVEL FUNCTION)
+/// Background notification action handler (TOP-LEVEL FUNCTION)
 /// This is called when the app is not running or in background
 /// MUST be a top-level function for background isolate to work!
 ///
@@ -30,30 +30,31 @@ import 'notification_scheduler.dart';
 /// 3. NO PERIODIC POLLING: Avoids WorkManager periodic tasks that wake device unnecessarily
 /// 4. INSTANT SHUTDOWN: No background services remain active after completion
 @pragma('vm:entry-point')
-Future<void> onBackgroundNotificationResponseIsar(
-    NotificationResponse response) async {
+Future<void> onBackgroundNotificationActionIsar(
+    ReceivedAction receivedAction) async {
   try {
-    AppLogger.info('🔔 BACKGROUND notification response received (Isar)');
-    AppLogger.info('Background action ID: ${response.actionId}');
-    AppLogger.info('Background payload: ${response.payload}');
+    AppLogger.info('🔔 BACKGROUND notification action received (Isar)');
+    AppLogger.info('Background action key: ${receivedAction.buttonKeyPressed}');
+    AppLogger.info('Background payload: ${receivedAction.payload}');
 
     // CRITICAL: Ensure Flutter binding is initialized for this background isolate
     // This allows us to use Flutter services (like path_provider) in the background
     WidgetsFlutterBinding.ensureInitialized();
     AppLogger.info('✅ Flutter binding initialized in background isolate');
 
-    if (response.payload != null) {
+    if (receivedAction.payload != null &&
+        receivedAction.payload!['data'] != null) {
       try {
-        final payload = jsonDecode(response.payload!);
+        final payload = jsonDecode(receivedAction.payload!['data']!);
         final rawHabitId = payload['habitId'] as String?;
 
         if (rawHabitId != null) {
           AppLogger.info('Extracted habitId from payload: $rawHabitId');
 
           // Process the action in background
-          if (response.actionId != null) {
+          if (receivedAction.buttonKeyPressed != null) {
             AppLogger.info(
-                'Processing background action: ${response.actionId}');
+                'Processing background action: ${receivedAction.buttonKeyPressed}');
 
             // CRITICAL FIX: Try to use callback first (app might be running)
             // Android sometimes routes action button taps to background handler
@@ -66,16 +67,16 @@ Future<void> onBackgroundNotificationResponseIsar(
               AppLogger.info('✅ Using callback handler (app is running)');
               // Extract base habitId for callback (callbacks expect base ID)
               final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
-                  response.payload!);
+                  receivedAction.payload!['data']!);
               if (baseHabitId != null) {
-                callback(baseHabitId, response.actionId!);
+                callback(baseHabitId, receivedAction.buttonKeyPressed!);
               }
             } else if (directHandler != null) {
               AppLogger.info(
                   '✅ Using direct completion handler (app is running)');
               // Extract base habitId for direct handler
               final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
-                  response.payload!);
+                  receivedAction.payload!['data']!);
               if (baseHabitId != null) {
                 await directHandler(baseHabitId);
               }
@@ -84,7 +85,7 @@ Future<void> onBackgroundNotificationResponseIsar(
                   '⚠️ No handlers available, using background Isar access');
               // Pass RAW habitId (with time slot for hourly habits) to background handler
               await NotificationActionHandlerIsar.completeHabitInBackground(
-                  rawHabitId, response.payload!);
+                  rawHabitId, receivedAction.payload!['data']!);
             }
           }
         }
@@ -93,39 +94,39 @@ Future<void> onBackgroundNotificationResponseIsar(
       }
     }
 
-    AppLogger.info('✅ Background notification response processed');
+    AppLogger.info('✅ Background notification action processed');
   } catch (e) {
     AppLogger.error('Error in background notification handler', e);
   }
 }
 
-/// Foreground notification tap handler (TOP-LEVEL FUNCTION)
-/// This is called when the app is running and notification is tapped
+/// Foreground notification action handler (TOP-LEVEL FUNCTION)
+/// This is called when the app is running and notification action is triggered
 /// MUST be a top-level function for proper notification handling!
 @pragma('vm:entry-point')
-Future<void> onNotificationTappedIsar(NotificationResponse response) async {
-  AppLogger.info('=== NOTIFICATION TAPPED (ISAR) - DETAILED DEBUG LOG ===');
-  AppLogger.info('📱 Notification Response Details:');
-  AppLogger.info('  - ID: ${response.id}');
-  AppLogger.info('  - Action ID: ${response.actionId}');
-  AppLogger.info('  - Payload: ${response.payload}');
-  AppLogger.info('  - Input: ${response.input}');
-  AppLogger.info('  - Notification Type: ${response.notificationResponseType}');
+Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
+  AppLogger.info('=== NOTIFICATION ACTION (ISAR) - DETAILED DEBUG LOG ===');
+  AppLogger.info('📱 Notification Action Details:');
+  AppLogger.info('  - ID: ${receivedAction.id}');
+  AppLogger.info('  - Button Key: ${receivedAction.buttonKeyPressed}');
+  AppLogger.info('  - Payload: ${receivedAction.payload}');
+  AppLogger.info('  - Action Type: ${receivedAction.actionType}');
   AppLogger.info('================================================');
 
-  if (response.payload != null) {
+  if (receivedAction.payload != null &&
+      receivedAction.payload!['data'] != null) {
     try {
       AppLogger.debug('🔍 DEBUG: Attempting to parse payload JSON');
-      final payload = jsonDecode(response.payload!);
+      final payload = jsonDecode(receivedAction.payload!['data']!);
       AppLogger.debug('🔍 DEBUG: Payload parsed successfully: $payload');
 
-      final habitId =
-          NotificationHelpers.extractHabitIdFromPayload(response.payload!);
+      final habitId = NotificationHelpers.extractHabitIdFromPayload(
+          receivedAction.payload!['data']!);
       AppLogger.debug('🔍 DEBUG: Extracted habitId: $habitId');
 
       if (habitId != null) {
-        AppLogger.debug('🔍 DEBUG: Checking if actionId is "complete"');
-        if (response.actionId == 'complete') {
+        AppLogger.debug('🔍 DEBUG: Checking if button key is "complete"');
+        if (receivedAction.buttonKeyPressed == 'complete') {
           AppLogger.info('✅ Complete action detected - calling handler');
           final callback = NotificationActionHandlerIsar.onNotificationAction;
           if (callback != null) {
@@ -136,15 +137,20 @@ Future<void> onNotificationTappedIsar(NotificationResponse response) async {
             AppLogger.warning(
                 '⚠️ WARNING: Callback is null, cannot process action');
           }
+        } else if (receivedAction.buttonKeyPressed == 'snooze') {
+          AppLogger.info('⏰ Snooze action detected - calling handler');
+          final callback = NotificationActionHandlerIsar.onNotificationAction;
+          if (callback != null) {
+            callback(habitId, 'snooze');
+          }
         } else {
-          AppLogger.info(
-              'ℹ️ Non-complete action or no action, just opening app');
+          AppLogger.info('ℹ️ Non-action button or no button, just opening app');
         }
       } else {
         AppLogger.warning('⚠️ WARNING: Could not extract habitId from payload');
       }
     } catch (e) {
-      AppLogger.error('Error processing notification tap', e);
+      AppLogger.error('Error processing notification action', e);
     }
   }
 }
@@ -153,633 +159,216 @@ Future<void> onNotificationTappedIsar(NotificationResponse response) async {
 // NOTIFICATION ACTION HANDLER CLASS
 // ============================================================================
 
+/// Handles notification actions (Complete, Snooze) with Isar database
+///
+/// This module handles:
+/// - Foreground and background notification action processing
+/// - Habit completion from notifications
+/// - Snooze functionality
+/// - Widget updates after actions
+/// - Background isolate communication
 class NotificationActionHandlerIsar {
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  // Callback for notification actions (set by NotificationService)
+  static Function(String habitId, String actionId)? onNotificationAction;
 
-  /// Callback for when a notification action is triggered in foreground
-  /// This is set by the main app to handle UI updates
-  static void Function(String habitId, String actionId)? onNotificationAction;
-
-  /// Direct completion handler (bypasses UI callback)
-  /// Used when app is running but we want to complete habit directly
+  // Direct completion handler (bypasses UI callback)
   static Future<void> Function(String habitId)? directCompletionHandler;
 
-  /// Register the notification action callback
-  static void registerActionCallback(
-      void Function(String habitId, String actionId) callback) {
-    onNotificationAction = callback;
-    AppLogger.info('✅ Notification action callback registered (Isar)');
-  }
-
-  /// Register direct completion handler
-  static void setDirectCompletionHandler(
-      Future<void> Function(String habitId) handler) {
-    directCompletionHandler = handler;
-    AppLogger.info('✅ Direct completion handler registered (Isar)');
-  }
-
-  /// Complete a habit in background when app is not running
-  /// Made public so it can be called from top-level background handler
+  /// Complete a habit from background notification action
   ///
-  /// ISAR VERSION - Multi-isolate safe! No complex workarounds needed!
-  ///
-  /// BATTERY EFFICIENCY APPROACH (as per error.md):
-  /// This function implements a battery-efficient background completion pattern:
-  /// 1. THE TRIGGER: User taps "Complete" button on notification
-  /// 2. THE BACKGROUND ISOLATE: This function runs in a separate Dart isolate
-  /// 3. FLUTTER INITIALIZATION: WidgetsFlutterBinding.ensureInitialized() in caller
-  /// 4. DATABASE ACCESS: Opens Isar in this background isolate (multi-isolate safe!)
-  /// 5. DATA UPDATE: Performs the habit completion in an Isar write transaction
-  /// 6. WIDGET UPDATE: Forces widget redraw by updating SharedPreferences + broadcast
-  /// 7. IMMEDIATE SHUTDOWN: Isolate terminates after completion (no persistent service)
-  ///
-  /// WHY THIS IS BATTERY EFFICIENT:
-  /// - ON-DEMAND: Only executes when user initiates action (no polling)
-  /// - MINIMAL EXECUTION TIME: Isolate runs for ~100-300ms then shuts down
-  /// - NO PERIODIC WORKMANAGER: Avoids waking device every N minutes
-  /// - NO BACKGROUND SERVICES: Nothing remains active after completion
-  ///
-  /// @param rawHabitId - The raw habitId from payload (may include time slot for hourly habits)
-  /// @param payload - The full notification payload JSON string
+  /// This method runs in a background isolate and has no access to the main app state.
+  /// It directly accesses the Isar database to mark the habit as complete.
   static Future<void> completeHabitInBackground(
-    String rawHabitId,
-    String payload,
-  ) async {
-    // Extract base habitId (without time slot) - declare outside try for error handler
-    final habitId = NotificationHelpers.extractHabitIdFromPayload(payload);
-    if (habitId == null) {
-      AppLogger.error('❌ Failed to extract base habitId from payload');
-      return;
-    }
-
+      String rawHabitId, String payloadJson) async {
     try {
-      AppLogger.info('⚙️ Completing habit in background (Isar): $habitId');
+      AppLogger.info(
+          '🔄 Starting background habit completion for: $rawHabitId');
 
-      // Extract time slot for hourly habits
-      final timeSlot = NotificationHelpers.extractTimeSlotFromPayload(payload);
-      if (timeSlot != null) {
-        AppLogger.info(
-          '⏰ Hourly habit detected - time slot: ${timeSlot['hour']}:${timeSlot['minute']}',
-        );
-      }
-
-      // REMOVED: _ensureAppIsRunning() call
-      // The background isolate should work without explicitly waking the app
-      // If it doesn't, we need a native solution, not a Dart broadcast
-
-      // Open Isar in background isolate - THIS WORKS PERFECTLY WITH ISAR!
+      // Initialize Isar in background isolate
       final dir = await getApplicationDocumentsDirectory();
       final isar = await Isar.open(
         [HabitSchema],
         directory: dir.path,
-        name: 'habitv8_db',
+        inspector: false,
       );
 
       AppLogger.info('✅ Isar opened in background isolate');
 
-      // DEBUG: Log all habits in the database
-      try {
-        final allHabits = await isar.habits.where().findAll();
-        AppLogger.info(
-            '🔍 DEBUG: Database contains ${allHabits.length} habits');
-        for (final h in allHabits) {
-          AppLogger.info('🔍 DEBUG: Habit in DB: id=${h.id}, name=${h.name}');
-        }
-      } catch (e) {
-        AppLogger.error('🔍 DEBUG: Failed to list habits', e);
+      // Extract base habit ID (remove time slot suffix for hourly habits)
+      final baseHabitId =
+          NotificationHelpers.extractHabitIdFromPayload(payloadJson);
+      if (baseHabitId == null) {
+        AppLogger.error('Failed to extract base habit ID from payload');
+        await isar.close();
+        return;
       }
 
-      // Get the habit
-      final habit = await isar.habits.filter().idEqualTo(habitId).findFirst();
+      // Find the habit
+      final habit =
+          await isar.habits.filter().idEqualTo(baseHabitId).findFirst();
 
       if (habit == null) {
-        AppLogger.warning('❌ Habit not found in background: $habitId');
-        AppLogger.info(
-            '🧹 This is likely an orphaned notification. Attempting to cancel it...');
-
-        // Try to cancel the orphaned notification
-        try {
-          final scheduler = NotificationScheduler(_notificationsPlugin);
-          await scheduler.cancelHabitNotificationsByHabitId(habitId);
-          AppLogger.info(
-              '✅ Cancelled orphaned notification for habit: $habitId');
-        } catch (e) {
-          AppLogger.error('Failed to cancel orphaned notification', e);
-        }
-
-        // Store the failed action for retry when app opens (in case it's a sync issue)
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          final pendingActions =
-              prefs.getStringList('pending_habit_completions') ?? [];
-          final actionData = jsonEncode({
-            'habitId': habitId,
-            'timestamp': DateTime.now().millisecondsSinceEpoch,
-          });
-          pendingActions.add(actionData);
-          await prefs.setStringList(
-              'pending_habit_completions', pendingActions);
-          AppLogger.info(
-              '📝 Stored pending completion for retry when app opens');
-        } catch (e) {
-          AppLogger.error('Failed to store pending completion', e);
-        }
-
+        AppLogger.error('Habit not found in background: $baseHabitId');
+        await isar.close();
         return;
       }
 
-      // Mark the habit as complete
-      // For hourly habits, use the specific time slot from the notification payload
-      // For other habits, use the current time
-      // Isar transaction - automatically synced across isolates!
-      await isar.writeTxn(() async {
-        DateTime completionTime;
+      AppLogger.info('✅ Found habit in background: ${habit.name}');
 
-        if (timeSlot != null && habit.frequency == HabitFrequency.hourly) {
-          // Use the specific time slot from the notification
-          final now = DateTime.now();
-          completionTime = DateTime(
-            now.year,
-            now.month,
-            now.day,
-            timeSlot['hour']!,
-            timeSlot['minute']!,
-          );
-          AppLogger.info(
-            '⏰ Hourly habit: Completing at time slot ${timeSlot['hour']}:${timeSlot['minute']}',
-          );
-        } else {
-          // For non-hourly habits, use current time
-          completionTime = DateTime.now();
-          AppLogger.info('✅ Regular habit: Completing at current time');
-        }
-
-        habit.completions.add(completionTime);
-        await isar.habits.put(habit);
-      });
-
-      AppLogger.info('✅ Habit completed in background: ${habit.name}');
-
-      // NO NEED FOR FLUSH - Isar handles this automatically!
-      // NO NEED FOR FLAGS - Isar streams update automatically!
-
-      // The main isolate will automatically see this change via Isar's
-      // reactive streams AND lazy watchers - this triggers instant updates
-      // across Timeline, All Habits, Stats, Widgets, and all other screens!
-
-      // CRITICAL FIX: Update widgets DIRECTLY in background
-      // This ensures widgets update instantly even when the app is fully closed
-      // We MUST update SharedPreferences immediately, not via WorkManager
-      try {
-        AppLogger.info('🔄 Updating widget data directly in background...');
-        await _updateWidgetDataDirectly(isar);
-        AppLogger.info('✅ Widget data updated after background completion');
-      } catch (e) {
-        AppLogger.error('Failed to update widget data', e);
-      }
-
-      AppLogger.info('🎉 Background completion successful with Isar!');
-    } catch (e, stackTrace) {
-      AppLogger.error('Error completing habit in background', e, stackTrace);
-
-      // Store the failed action for retry
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final pendingActions =
-            prefs.getStringList('pending_habit_completions') ?? [];
-        final actionData = jsonEncode({
-          'habitId': habitId,
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-          'error': e.toString(),
-        });
-        pendingActions.add(actionData);
-        await prefs.setStringList('pending_habit_completions', pendingActions);
-        AppLogger.info('📝 Stored failed completion for retry');
-      } catch (e2) {
-        AppLogger.error('Failed to store failed completion', e2);
-      }
-    }
-  }
-
-  /// Handle snooze action
-  static Future<void> handleSnoozeAction(
-    String habitId,
-    int snoozeMinutes,
-  ) async {
-    try {
-      AppLogger.info('⏰ Handling snooze for habit: $habitId');
-
-      // Schedule a new notification after snooze delay
-      final scheduler = NotificationScheduler(_notificationsPlugin);
-      final snoozeTime = DateTime.now().add(Duration(minutes: snoozeMinutes));
-
-      // Open Isar to get habit details
-      final dir = await getApplicationDocumentsDirectory();
-      final isar = await Isar.open(
-        [HabitSchema],
-        directory: dir.path,
-        name: 'habitv8_db',
-      );
-
-      final habit = await isar.habits.filter().idEqualTo(habitId).findFirst();
-
-      if (habit != null) {
-        // REMOVED: _ensureAppIsRunning() call
-        // Not needed for snooze functionality
-
-        await scheduler.scheduleHabitNotification(
-          id: habitId.hashCode + snoozeTime.millisecondsSinceEpoch ~/ 1000,
-          habitId: habit.id,
-          scheduledTime: snoozeTime,
-          title: '⏰ Snoozed Reminder',
-          body: 'Time to complete: ${habit.name}',
-        );
-
-        AppLogger.info(
-            '✅ Snoozed notification scheduled for ${snoozeTime.toString()}');
-      }
-    } catch (e) {
-      AppLogger.error('Error handling snooze action', e);
-    }
-  }
-
-  /// Process pending completions (called when app starts)
-  static Future<void> processPendingCompletions(Isar isar) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final pendingActions =
-          prefs.getStringList('pending_habit_completions') ?? [];
-
-      if (pendingActions.isEmpty) {
-        return;
-      }
-
-      AppLogger.info(
-          '🔄 Processing ${pendingActions.length} pending completions');
-
-      final processedActions = <String>[];
-
-      for (final actionJson in pendingActions) {
-        try {
-          final action = jsonDecode(actionJson) as Map<String, dynamic>;
-          final habitId = action['habitId'] as String;
-          final timestamp = action['timestamp'] as int;
-          final completionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-
-          // Get the habit
-          final habit =
-              await isar.habits.filter().idEqualTo(habitId).findFirst();
-
-          if (habit != null) {
-            // Complete the habit
-            await isar.writeTxn(() async {
-              habit.completions.add(completionTime);
-              await isar.habits.put(habit);
-            });
-
-            AppLogger.info('✅ Processed pending completion for: ${habit.name}');
-            processedActions.add(actionJson);
-          } else {
-            AppLogger.warning(
-                '⚠️ Habit not found for pending completion: $habitId');
-            processedActions.add(actionJson); // Remove it anyway
-          }
-        } catch (e) {
-          AppLogger.error('Error processing pending completion', e);
-          // Don't add to processedActions - will retry next time
-        }
-      }
-
-      // Remove processed actions
-      if (processedActions.isNotEmpty) {
-        pendingActions
-            .removeWhere((action) => processedActions.contains(action));
-        await prefs.setStringList('pending_habit_completions', pendingActions);
-        AppLogger.info(
-            '✅ Removed ${processedActions.length} processed actions');
-      }
-    } catch (e) {
-      AppLogger.error('Error processing pending completions', e);
-    }
-  }
-
-  /// Process pending habit completions that failed during background execution
-  /// This is called when the app opens to retry failed completions
-  /// Enhanced version for public API with better error handling and widget updates
-  static Future<void> processPendingActionsManually(Isar isar) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final pendingActions =
-          prefs.getStringList('pending_habit_completions') ?? [];
-
-      if (pendingActions.isEmpty) {
-        AppLogger.info('✅ No pending habit completions to process');
-        return;
-      }
-
-      AppLogger.info(
-          '🔄 Processing ${pendingActions.length} pending completions...');
-
-      int successCount = 0;
-      int failCount = 0;
-      final failedActions = <String>[];
-
-      for (final actionJson in pendingActions) {
-        try {
-          final action = jsonDecode(actionJson) as Map<String, dynamic>;
-          final habitId = action['habitId'] as String;
-          final timestamp = action['timestamp'] as int;
-          final completionTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-
-          // Attempt to complete the habit
-          final habit =
-              await isar.habits.filter().idEqualTo(habitId).findFirst();
-
-          if (habit == null) {
-            AppLogger.warning(
-                '⚠️ Habit not found for pending action: $habitId');
-            failCount++;
-            continue; // Don't retry, habit was probably deleted
-          }
-
-          // Complete the habit with the original timestamp
-          await isar.writeTxn(() async {
-            habit.completions.add(completionTime);
-            await isar.habits.put(habit);
-          });
-
-          AppLogger.info('✅ Processed pending completion: ${habit.name}');
-          successCount++;
-        } catch (e) {
-          AppLogger.error('❌ Failed to process pending action', e);
-          failedActions.add(actionJson);
-          failCount++;
-        }
-      }
-
-      // Update SharedPreferences with only failed actions
-      await prefs.setStringList('pending_habit_completions', failedActions);
-
-      AppLogger.info(
-        '📊 Pending actions processed: $successCount succeeded, $failCount failed',
-      );
-
-      if (successCount > 0) {
-        // Trigger widget update after processing completions
-        try {
-          await WidgetIntegrationService.instance.onHabitsChanged();
-          AppLogger.info('✅ Widgets updated after pending completions');
-        } catch (e) {
-          AppLogger.error('Failed to update widgets', e);
-        }
-      }
-    } catch (e) {
-      AppLogger.error('Error processing pending actions', e);
-    }
-  }
-
-  /// Get count of pending actions (for debugging and monitoring)
-  static Future<int> getPendingActionsCount() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final pendingActions =
-          prefs.getStringList('pending_habit_completions') ?? [];
-      return pendingActions.length;
-    } catch (e) {
-      AppLogger.error('Error getting pending actions count', e);
-      return 0;
-    }
-  }
-
-  /// Update widget data DIRECTLY in background with correct format
-  /// This is called immediately after completing a habit in background
-  /// to ensure widgets update instantly even when app is closed
-  ///
-  /// BATTERY EFFICIENCY DESIGN:
-  /// This function is part of a battery-efficient architecture:
-  /// 1. Reads latest data from Isar (already open in this isolate)
-  /// 2. Converts to widget-friendly JSON format
-  /// 3. Writes to SharedPreferences (shared storage accessible by widgets)
-  /// 4. Triggers native widget redraw via broadcast intent
-  /// 5. Isolate terminates immediately after - NO persistent background service
-  ///
-  /// WHY THIS IS BATTERY EFFICIENT:
-  /// - Only runs when user explicitly taps "Complete" (on-demand execution)
-  /// - Execution time: ~100-300ms (minimal CPU usage)
-  /// - No periodic WorkManager tasks (avoids waking device every N minutes)
-  /// - No long-running background services
-  /// - Widget updates are instant and user-initiated, not polling-based
-  ///
-  /// @param isar - The Isar database instance (already open in background isolate)
-  static Future<void> _updateWidgetDataDirectly(Isar isar) async {
-    try {
-      AppLogger.info('[WIDGET UPDATE] Starting background widget update...');
-      AppLogger.info(
-          '[WIDGET UPDATE] Preparing widget data with correct format...');
-
-      // STEP 1: Read the latest data from Isar
-      // This is efficient because Isar is already open in this isolate
-      final allHabits = await isar.habits.where().findAll();
+      // Mark habit as complete for today
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
 
-      // Filter habits for today using the same logic as widget_background_update_service
-      final todayHabits = allHabits.where((habit) {
-        return _shouldShowHabitOnDate(habit, today);
-      }).toList();
-
-      AppLogger.info(
-          '[WIDGET UPDATE] Found ${todayHabits.length} habits for today');
-
-      // STEP 2: Convert to widget-friendly JSON format
-      // This format matches what the native Android widget expects
-      final habitsJson = jsonEncode(
-        todayHabits.map((h) => _habitToJsonForWidget(h, today)).toList(),
-      );
-
-      AppLogger.info(
-          '[WIDGET UPDATE] Generated JSON: ${habitsJson.length} characters');
-
-      // STEP 3: Write to SharedPreferences (shared storage)
-      // The native widget reads from SharedPreferences to display data
-      // CRITICAL: Must use exact keys that the widget expects
-      await HomeWidget.saveWidgetData<String>('habits', habitsJson);
-      await HomeWidget.saveWidgetData<String>('today_habits', habitsJson);
-      await HomeWidget.saveWidgetData<int>(
-        'lastUpdate',
-        DateTime.now().millisecondsSinceEpoch,
-      );
-
-      AppLogger.info('[WIDGET UPDATE] Widget data saved to SharedPreferences');
-
-      // CRITICAL: Add delay to ensure SharedPreferences write completes
-      // SharedPreferences writes are async at the OS level
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // STEP 4: Trigger native widget redraw
-      // This tells the Android system to refresh the widget UI
-      // Uses HomeWidget plugin which works even when app is fully closed
-      try {
-        AppLogger.info('[WIDGET UPDATE] Triggering widget update...');
-
-        // Use HomeWidget.updateWidget() - this works in background isolate
-        // The home_widget plugin handles the native Android widget update
-        await HomeWidget.updateWidget(
-          name: 'HabitTimelineWidgetProvider',
-          androidName: 'HabitTimelineWidgetProvider',
+      // Check if already completed today
+      final alreadyCompleted = habit.completions.any((completion) {
+        final completionDate = DateTime(
+          completion.year,
+          completion.month,
+          completion.day,
         );
-        await HomeWidget.updateWidget(
-          name: 'HabitCompactWidgetProvider',
-          androidName: 'HabitCompactWidgetProvider',
-        );
+        return completionDate.isAtSameMomentAs(today);
+      });
 
-        AppLogger.info('[WIDGET UPDATE] Widget update triggered successfully');
-      } catch (e) {
-        AppLogger.error('[WIDGET UPDATE] Failed to trigger widget update: $e');
-        // Set a flag for the app to retry when it opens
-        try {
-          await HomeWidget.saveWidgetData<bool>('widget_update_pending', true);
-        } catch (e2) {
-          AppLogger.error(
-              '[WIDGET UPDATE] Failed to set pending update flag', e2);
+      if (!alreadyCompleted) {
+        // Add completion
+        habit.completions.add(now);
+
+        // Update streak
+        habit.currentStreak = _calculateStreak(habit.completions);
+        if (habit.currentStreak > habit.longestStreak) {
+          habit.longestStreak = habit.currentStreak;
         }
+
+        // Save to database
+        await isar.writeTxn(() async {
+          await isar.habits.put(habit);
+        });
+
+        AppLogger.info(
+            '✅ Habit completed in background: ${habit.name} (Streak: ${habit.currentStreak})');
+
+        // Update widget
+        try {
+          await HomeWidget.saveWidgetData(
+              'last_update', DateTime.now().millisecondsSinceEpoch.toString());
+          await HomeWidget.updateWidget(
+            name: 'HabitTimelineWidgetProvider',
+            iOSName: 'HabitTimelineWidget',
+          );
+          await HomeWidget.updateWidget(
+            name: 'HabitCompactWidgetProvider',
+            iOSName: 'HabitCompactWidget',
+          );
+          AppLogger.info('✅ Widget updated from background');
+        } catch (e) {
+          AppLogger.error('Failed to update widget from background', e);
+        }
+      } else {
+        AppLogger.info('Habit already completed today: ${habit.name}');
       }
 
-      AppLogger.info(
-          '[WIDGET UPDATE] Widget refresh completed - isolate will now terminate');
-    } catch (e, stackTrace) {
-      AppLogger.error('Failed to update widget data directly', e, stackTrace);
+      await isar.close();
+      AppLogger.info('✅ Background habit completion finished');
+    } catch (e) {
+      AppLogger.error('Error completing habit in background', e);
     }
   }
 
-  /// Check if a habit should be shown on a specific date
-  /// COPIED from widget_background_update_service.dart to ensure consistency
-  static bool _shouldShowHabitOnDate(Habit habit, DateTime date) {
-    if (!habit.isActive) return false;
+  /// Calculate current streak from completions
+  static int _calculateStreak(List<DateTime> completions) {
+    if (completions.isEmpty) return 0;
 
-    // Use createdAt as start date
-    final startDate = DateTime(
-      habit.createdAt.year,
-      habit.createdAt.month,
-      habit.createdAt.day,
-    );
+    // Sort completions in descending order
+    final sorted = List<DateTime>.from(completions)
+      ..sort((a, b) => b.compareTo(a));
 
-    if (date.isBefore(startDate)) return false;
+    int streak = 0;
+    final today = DateTime.now();
+    DateTime checkDate = DateTime(today.year, today.month, today.day);
 
-    switch (habit.frequency) {
-      case HabitFrequency.daily:
-        return true;
+    for (final completion in sorted) {
+      final completionDate = DateTime(
+        completion.year,
+        completion.month,
+        completion.day,
+      );
 
-      case HabitFrequency.weekly:
-        if (habit.selectedWeekdays.isEmpty) return false;
-        final weekday = date.weekday % 7; // Convert to 0-6 (Sunday = 0)
-        return habit.selectedWeekdays.contains(weekday);
-
-      case HabitFrequency.monthly:
-        if (habit.selectedMonthDays.isEmpty) return false;
-        return habit.selectedMonthDays.contains(date.day);
-
-      case HabitFrequency.hourly:
-        return true; // Hourly habits show every day
-
-      case HabitFrequency.single:
-        if (habit.singleDateTime != null) {
-          final scheduledDate = DateTime(
-            habit.singleDateTime!.year,
-            habit.singleDateTime!.month,
-            habit.singleDateTime!.day,
-          );
-          return date.isAtSameMomentAs(scheduledDate);
-        }
-        return false;
-
-      case HabitFrequency.yearly:
-        return true; // Yearly habits show (simplified)
-    }
-  }
-
-  /// Convert habit to JSON for widget consumption
-  /// COPIED from widget_background_update_service.dart to ensure exact format match
-  static Map<String, dynamic> _habitToJsonForWidget(
-      Habit habit, DateTime date) {
-    final isCompleted = _isHabitCompletedOnDate(habit, date);
-
-    return {
-      'id': habit.id,
-      'name': habit.name,
-      'category': habit.category,
-      'colorValue': habit.colorValue,
-      'isCompleted': isCompleted,
-      'status': isCompleted ? 'Completed' : 'Due',
-      'timeDisplay': _getHabitTimeDisplay(habit),
-      'frequency': habit.frequency.toString().split('.').last,
-      'streak': habit.currentStreak,
-      'completedSlots': habit.frequency == HabitFrequency.hourly
-          ? _getCompletedSlotsCount(habit, date)
-          : 0,
-      'totalSlots': habit.frequency == HabitFrequency.hourly
-          ? habit.hourlyTimes.length
-          : 0,
-    };
-  }
-
-  /// Check if habit is completed on a specific date
-  static bool _isHabitCompletedOnDate(Habit habit, DateTime date) {
-    if (habit.frequency == HabitFrequency.hourly) {
-      // For hourly habits, check if at least one slot is completed
-      return habit.completions.any((completion) {
-        return completion.year == date.year &&
-            completion.month == date.month &&
-            completion.day == date.day;
-      });
+      if (completionDate.isAtSameMomentAs(checkDate)) {
+        streak++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      } else if (completionDate.isBefore(checkDate)) {
+        break;
+      }
     }
 
-    // For other frequencies, check for any completion on the date
-    return habit.completions.any((completion) {
-      final completionDate =
-          DateTime(completion.year, completion.month, completion.day);
-      return completionDate
-          .isAtSameMomentAs(DateTime(date.year, date.month, date.day));
-    });
+    return streak;
   }
 
-  /// Get completed slots count for hourly habits
-  static int _getCompletedSlotsCount(Habit habit, DateTime date) {
-    return habit.completions.where((completion) {
-      return completion.year == date.year &&
-          completion.month == date.month &&
-          completion.day == date.day;
-    }).length;
+  /// Initialize the notification action handler
+  static Future<void> initialize({
+    required Function(String habitId, String actionId) onAction,
+    required Future<void> Function(String habitId) onDirectCompletion,
+  }) async {
+    onNotificationAction = onAction;
+    directCompletionHandler = onDirectCompletion;
+
+    AppLogger.info('✅ NotificationActionHandlerIsar initialized');
   }
 
-  /// Get time display for habit
-  static String _getHabitTimeDisplay(Habit habit) {
-    switch (habit.frequency) {
-      case HabitFrequency.hourly:
-        if (habit.hourlyTimes.isNotEmpty) {
-          return habit.hourlyTimes.first;
-        }
-        return 'Hourly';
+  /// Reset the handler (for testing)
+  static void reset() {
+    onNotificationAction = null;
+    directCompletionHandler = null;
+  }
 
-      case HabitFrequency.daily:
-        if (habit.reminderTime != null) {
-          final time = habit.reminderTime!;
-          return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
-        }
-        return 'Daily';
+  /// Process pending completions (no-op for awesome_notifications)
+  /// awesome_notifications processes actions immediately, so there's nothing to process
+  static Future<void> processPendingCompletions() async {
+    AppLogger.debug(
+        'Processing pending completions (no-op for awesome_notifications)');
+  }
 
-      case HabitFrequency.weekly:
-        return 'Weekly';
+  /// Handle snooze action for a habit
+  static Future<void> handleSnoozeAction(
+      String habitId, String habitName) async {
+    try {
+      AppLogger.info('⏰ Handling snooze action for habit: $habitName');
 
-      case HabitFrequency.monthly:
-        return 'Monthly';
+      // Schedule a new notification 10 minutes from now
+      final snoozeTime = DateTime.now().add(const Duration(minutes: 10));
+      final snoozeId =
+          NotificationHelpers.generateSnoozeNotificationId(habitId);
 
-      case HabitFrequency.yearly:
-        return 'Yearly';
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: snoozeId,
+          channelKey: 'habit_reminders',
+          title: 'Snoozed: $habitName',
+          body: 'Time to complete your habit!',
+          category: NotificationCategory.Reminder,
+          notificationLayout: NotificationLayout.Default,
+          payload: {
+            'data': jsonEncode({'habitId': habitId})
+          },
+        ),
+        actionButtons: [
+          NotificationActionButton(
+            key: 'complete',
+            label: 'Complete',
+            actionType: ActionType.Default,
+          ),
+          NotificationActionButton(
+            key: 'snooze',
+            label: 'Snooze',
+            actionType: ActionType.Default,
+          ),
+        ],
+        schedule: NotificationCalendar.fromDate(date: snoozeTime),
+      );
 
-      case HabitFrequency.single:
-        return 'Single';
+      AppLogger.info('✅ Snooze notification scheduled for: $snoozeTime');
+    } catch (e) {
+      AppLogger.error('Error handling snooze action', e);
     }
   }
 }

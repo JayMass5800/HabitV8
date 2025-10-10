@@ -1,4 +1,4 @@
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import '../logging_service.dart';
 import '../../data/database_isar.dart';
 import '../notification_service.dart';
@@ -10,9 +10,7 @@ import '../notification_service.dart';
 /// - Reschedules notifications for habits with notifications enabled
 /// - Uses Isar habit data as source of truth (no separate notification storage)
 class NotificationBootRescheduler {
-  final FlutterLocalNotificationsPlugin _plugin;
-
-  NotificationBootRescheduler(this._plugin);
+  NotificationBootRescheduler();
 
   /// Reschedule all pending notifications after device reboot
   ///
@@ -38,7 +36,7 @@ class NotificationBootRescheduler {
 
       // Clear all existing scheduled notifications from the OS
       // This prevents duplicates and ensures a clean slate
-      await _plugin.cancelAll();
+      await AwesomeNotifications().cancelAll();
       AppLogger.info('🧹 Cleared all existing OS notifications');
 
       int rescheduledCount = 0;
@@ -74,6 +72,11 @@ class NotificationBootRescheduler {
     } catch (e) {
       AppLogger.error('❌ Error during notification rescheduling', e);
     }
+  }
+
+  /// Reschedule all habits after boot (alias for rescheduleAllNotifications)
+  Future<void> rescheduleAllHabitsAfterBoot() async {
+    await rescheduleAllNotifications();
   }
 
   /// Reschedule notifications for a specific habit
@@ -112,16 +115,16 @@ class NotificationBootRescheduler {
   /// Useful for debugging and monitoring notification state.
   Future<Map<String, int>> getNotificationStats() async {
     try {
-      final pendingNotifications = await _plugin.pendingNotificationRequests();
+      final pendingNotifications =
+          await AwesomeNotifications().listScheduledNotifications();
 
-      // Count notification types based on ID patterns
+      // Count notification types based on channel keys
       int alarms = 0;
       int regular = 0;
 
       for (final notification in pendingNotifications) {
-        // Alarm notifications typically have different ID patterns
-        // This is a simple heuristic - adjust based on your ID generation logic
-        if (notification.payload?.contains('"isAlarm":true') ?? false) {
+        // Alarm notifications use the alarm channel
+        if (notification.content?.channelKey == 'habit_alarm_default') {
           alarms++;
         } else {
           regular++;

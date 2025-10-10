@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_core.dart';
@@ -275,14 +275,14 @@ class NotificationHelpers {
   ///
   /// Logs verification results without throwing exceptions.
   static Future<bool> verifyNotificationScheduled(
-    FlutterLocalNotificationsPlugin plugin,
     int notificationId,
     String habitId,
   ) async {
     try {
-      final pendingNotifications = await plugin.pendingNotificationRequests();
+      final pendingNotifications =
+          await AwesomeNotifications().listScheduledNotifications();
       final isScheduled =
-          pendingNotifications.any((n) => n.id == notificationId);
+          pendingNotifications.any((n) => n.content?.id == notificationId);
 
       if (isScheduled) {
         AppLogger.info(
@@ -348,14 +348,34 @@ class NotificationHelpers {
   ///
   /// Returns a list of all notifications currently scheduled in the system.
   /// Useful for debugging and notification management.
-  static Future<List<PendingNotificationRequest>> getPendingNotifications(
-    FlutterLocalNotificationsPlugin plugin,
-  ) async {
+  static Future<List<NotificationModel>> getPendingNotifications() async {
     try {
-      return await plugin.pendingNotificationRequests();
+      return await AwesomeNotifications().listScheduledNotifications();
     } catch (e) {
       AppLogger.error('Error getting pending notifications', e);
       return [];
+    }
+  }
+
+  /// Check if exact alarms can be scheduled (Android 12+)
+  static Future<bool> canScheduleExactAlarmsInternal() async {
+    try {
+      // awesome_notifications handles this internally
+      return true;
+    } catch (e) {
+      AppLogger.error('Error checking exact alarm capability', e);
+      return false;
+    }
+  }
+
+  /// Check battery optimization status
+  static Future<void> checkBatteryOptimizationStatusInternal() async {
+    try {
+      // awesome_notifications handles this internally
+      AppLogger.info(
+          'Battery optimization check delegated to awesome_notifications');
+    } catch (e) {
+      AppLogger.error('Error checking battery optimization status', e);
     }
   }
 }

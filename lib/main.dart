@@ -73,7 +73,7 @@ void main() async {
     // Continue with app startup even if timezone fails
   }
 
-  // Initialize notification service
+  // Initialize notification service with awesome_notifications
   try {
     await NotificationService.initialize();
 

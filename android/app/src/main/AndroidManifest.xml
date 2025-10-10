@@ -72,22 +72,6 @@
             android:name="billing_product_premium_lifetime_access"
             android:value="@string/product_premium_lifetime_access" />
 
-        <!-- Notification receivers for scheduled notifications -->
-        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
-        
-        <!-- DISABLED: flutter_local_notifications BootReceiver (causes Android 15+ crashes) -->
-        <!-- The plugin's boot receiver tries to start foreground services from BOOT_COMPLETED which is restricted in Android 15+ -->
-        <!--
-        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </receiver>
-        -->
-        
         <!-- Custom boot receiver that uses WorkManager instead of foreground services -->
         <receiver android:exported="false" android:name=".Android15CompatBootReceiver">
             <intent-filter>
@@ -97,23 +81,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
-        
-        <!-- Custom notification action pre-warmer (HIGHER PRIORITY) -->
-        <!-- This receiver intercepts notification actions BEFORE flutter_local_notifications -->
-        <!-- It pre-warms the Flutter engine to ensure background execution works when app is killed -->
-        <receiver 
-            android:name=".NotificationActionReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter android:priority="999">
-                <action android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver.ACTION" />
-            </intent-filter>
-        </receiver>
-        
-        <!-- Notification action receiver for handling button presses -->
-        <!-- This is the flutter_local_notifications receiver that executes Dart code -->
-        <!-- Priority is lower (default) so our pre-warmer runs first -->
-        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
         
         <!-- Custom Alarm Service for continuous alarm playback -->
         <!-- Changed from mediaPlayback to specialUse to comply with Android 15+ restrictions -->
