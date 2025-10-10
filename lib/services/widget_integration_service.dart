@@ -793,6 +793,12 @@ class WidgetIntegrationService {
       debugPrint(
           '  - ${habit.name}: ${habit.frequency.toString()} -> ${isScheduled ? "INCLUDED" : "EXCLUDED"}');
     }
+
+    if (filtered.length == habits.length && habits.isNotEmpty) {
+      debugPrint(
+          '⚠️ All ${habits.length} habits passed the date filter for ${_formatDateForWidget(date)} — investigate widget fallback data or schedule mismatches.');
+    }
+
     debugPrint('Result: ${filtered.length} habits for today');
 
     // Sort habits chronologically by time
