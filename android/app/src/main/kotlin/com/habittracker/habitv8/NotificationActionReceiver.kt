@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.os.Handler
+import android.os.Looper
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.view.FlutterCallbackInformation
@@ -56,6 +58,30 @@ class NotificationActionReceiver : BroadcastReceiver() {
             Log.e(TAG, "⚠️ Failed to initialize Flutter engine: ${e.message}", e)
             // Non-critical - flutter_local_notifications will try to start its own engine
         }
+        
+        // CRITICAL FIX: Schedule widget update AFTER Dart background handler completes
+        // Give the Flutter background handler time to complete the habit in the database
+        // Then force widget refresh using native Android APIs (works even when app is killed)
+        val actionId = intent.getStringExtra("actionId")
+        Log.d(TAG, "Extracted actionId: $actionId")
+        
+        // Update widgets for any notification action (complete, snooze, etc.)
+        // The Dart code will handle the action, we just need to refresh widgets afterwards
+        Log.d(TAG, "📱 Notification action detected - scheduling widget update...")
+        
+        // Schedule widget refresh after 2 seconds (gives Dart code time to complete)
+        Handler(Looper.getMainLooper()).postDelayed({
+            try {
+                Log.d(TAG, "🔄 Triggering widget refresh after notification action...")
+                WidgetUpdateHelper.forceWidgetRefresh(context)
+                Log.d(TAG, "✅ Widget refresh completed successfully")
+                
+                // Clean up engine cache after update completes
+                engineCache = null
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to refresh widgets: ${e.message}", e)
+            }
+        }, 2000) // 2 second delay
         
         // DO NOT call abortBroadcast() - let the flutter_local_notifications
         // ActionBroadcastReceiver also receive this intent to execute the Dart handler
