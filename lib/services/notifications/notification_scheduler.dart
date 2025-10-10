@@ -58,6 +58,8 @@ class NotificationScheduler {
         AndroidNotificationAction(
           'complete',
           'COMPLETE',
+          // Keep as false - the native NotificationActionReceiver.kt handles
+          // starting Flutter engine in background without opening the app UI
           showsUserInterface: false,
         ),
         AndroidNotificationAction(
@@ -789,6 +791,8 @@ class NotificationScheduler {
           AndroidNotificationAction(
             'complete',
             'COMPLETE',
+            // Keep as false - the native NotificationActionReceiver.kt handles
+            // starting Flutter engine in background without opening the app UI
             showsUserInterface: false,
           ),
           AndroidNotificationAction(

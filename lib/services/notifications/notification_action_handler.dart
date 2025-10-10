@@ -181,38 +181,6 @@ class NotificationActionHandlerIsar {
     AppLogger.info('✅ Direct completion handler registered (Isar)');
   }
 
-  /// Ensures the app process is running in the background before processing actions
-  /// This prevents the system from killing the process mid-operation on Android
-  /// Uses a silent broadcast to wake the process without showing UI
-  static Future<void> _ensureAppIsRunning() async {
-    try {
-      if (Platform.isAndroid) {
-        AppLogger.info('📱 Waking app process in background (no UI)...');
-
-        // Send a broadcast intent to wake the app process without showing UI
-        // This triggers a receiver which ensures the process is alive
-        // FLAG_INCLUDE_STOPPED_PACKAGES (0x01000000) - Wake app even if stopped
-        final intent = AndroidIntent(
-          action: 'com.habittracker.habitv8.WAKE_PROCESS',
-          package: 'com.habittracker.habitv8',
-          flags: <int>[
-            0x01000000, // FLAG_INCLUDE_STOPPED_PACKAGES
-          ],
-        );
-
-        await intent.launch();
-        AppLogger.info('✅ Background process wake signal sent');
-
-        // Small delay to ensure the broadcast is processed
-        await Future.delayed(const Duration(milliseconds: 50));
-      }
-    } catch (e) {
-      AppLogger.warning(
-          '⚠️ Could not wake background process (non-critical): $e');
-      // Non-critical error - Isar background isolate should work regardless
-    }
-  }
-
   /// Complete a habit in background when app is not running
   /// Made public so it can be called from top-level background handler
   ///
@@ -258,8 +226,9 @@ class NotificationActionHandlerIsar {
         );
       }
 
-      // Ensure app process is alive on Android before doing work
-      await _ensureAppIsRunning();
+      // REMOVED: _ensureAppIsRunning() call
+      // The background isolate should work without explicitly waking the app
+      // If it doesn't, we need a native solution, not a Dart broadcast
 
       // Open Isar in background isolate - THIS WORKS PERFECTLY WITH ISAR!
       final dir = await getApplicationDocumentsDirectory();
@@ -418,7 +387,8 @@ class NotificationActionHandlerIsar {
       final habit = await isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
-        await _ensureAppIsRunning();
+        // REMOVED: _ensureAppIsRunning() call
+        // Not needed for snooze functionality
 
         await scheduler.scheduleHabitNotification(
           id: habitId.hashCode + snoozeTime.millisecondsSinceEpoch ~/ 1000,
