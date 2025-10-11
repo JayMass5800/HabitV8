@@ -5,6 +5,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../logging_service.dart';
 import '../permission_service.dart';
+import 'notification_action_handler.dart';
 
 /// Core notification functionality: initialization, permissions, and channels
 ///
@@ -27,8 +28,11 @@ class NotificationCore {
   ///
   /// This must be called before any notification operations.
   /// Sets up platform-specific settings and handlers.
+  ///
+  /// CRITICAL: The action handler is hardcoded to onBackgroundNotificationActionIsar
+  /// which is a top-level static function with @pragma('vm:entry-point') annotation.
+  /// This is required for background actions to work when the app is terminated.
   static Future<void> initialize({
-    required Function(ReceivedAction) onActionReceivedMethod,
     Function()? onPeriodicCleanup,
   }) async {
     if (_isInitialized) {
@@ -106,16 +110,27 @@ class NotificationCore {
       debug: false,
     );
 
-    // Set up action listeners
+    // CRITICAL: Set up action listener for both foreground and background
+    // According to awesome_notifications documentation, there is ONE handler that
+    // receives all actions. The ActionType (e.g., SilentBackgroundAction) determines
+    // whether it runs in foreground or background isolate.
+    //
+    // IMPORTANT: For background actions (ActionType.SilentBackgroundAction), the handler
+    // MUST be a top-level static function with @pragma('vm:entry-point') annotation.
+    // It cannot be a lambda or instance method because it runs in a separate isolate.
     AwesomeNotifications().setListeners(
-      onActionReceivedMethod: (ReceivedAction receivedAction) async {
-        await onActionReceivedMethod(receivedAction);
-      },
+      // This handler receives ALL actions (foreground and background)
+      // For ActionType.SilentBackgroundAction, it runs in a background isolate
+      // For other ActionTypes, it runs in the foreground
+      onActionReceivedMethod: onBackgroundNotificationActionIsar,
     );
 
     // Add debug logging to verify initialization
-    AppLogger.info('🔔 Notification plugin initialized with handlers:');
-    AppLogger.info('  - Action handler: registered');
+    AppLogger.info('🔔 Notification plugin initialized with action handler');
+    AppLogger.info(
+        '  - Handler supports both foreground and background actions');
+    AppLogger.info(
+        '  - Background actions use ActionType.SilentBackgroundAction');
 
     // Request permissions for Android 13+
     if (Platform.isAndroid) {

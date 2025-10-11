@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:android_intent_plus/android_intent.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_helpers.dart';
@@ -242,10 +244,13 @@ class NotificationActionHandlerIsar {
         AppLogger.info(
             '✅ Habit completed in background: ${habit.name} (Streak: ${habit.currentStreak})');
 
-        // Update widget
+        // Update widget - CRITICAL for homescreen widget updates when app is closed
         try {
+          // Save widget data
           await HomeWidget.saveWidgetData(
               'last_update', DateTime.now().millisecondsSinceEpoch.toString());
+
+          // Update widgets using home_widget package
           await HomeWidget.updateWidget(
             name: 'HabitTimelineWidgetProvider',
             iOSName: 'HabitTimelineWidget',
@@ -254,6 +259,38 @@ class NotificationActionHandlerIsar {
             name: 'HabitCompactWidgetProvider',
             iOSName: 'HabitCompactWidget',
           );
+
+          // CRITICAL: On Android, send broadcast intent to force widget refresh
+          // This ensures widgets update even when app is fully closed
+          if (Platform.isAndroid) {
+            try {
+              // Send broadcast to HabitTimelineWidgetProvider
+              final timelineIntent = AndroidIntent(
+                action: 'android.appwidget.action.APPWIDGET_UPDATE',
+                package: 'com.habittracker.habitv8',
+                componentName:
+                    'com.habittracker.habitv8.HabitTimelineWidgetProvider',
+              );
+              await timelineIntent.launch();
+
+              // Send broadcast to HabitCompactWidgetProvider
+              final compactIntent = AndroidIntent(
+                action: 'android.appwidget.action.APPWIDGET_UPDATE',
+                package: 'com.habittracker.habitv8',
+                componentName:
+                    'com.habittracker.habitv8.HabitCompactWidgetProvider',
+              );
+              await compactIntent.launch();
+
+              AppLogger.info(
+                  '✅ Android broadcast intents sent for widget update');
+            } catch (e) {
+              AppLogger.warning(
+                  '⚠️ Failed to send Android broadcast intent: $e');
+              // Continue anyway - HomeWidget.updateWidget might still work
+            }
+          }
+
           AppLogger.info('✅ Widget updated from background');
         } catch (e) {
           AppLogger.error('Failed to update widget from background', e);
@@ -337,11 +374,12 @@ class NotificationActionHandlerIsar {
       await AwesomeNotifications().createNotification(
         content: NotificationContent(
           id: snoozeId,
-          channelKey: 'habit_reminders',
+          channelKey: 'habit_scheduled_channel',
           title: 'Snoozed: $habitName',
           body: 'Time to complete your habit!',
           category: NotificationCategory.Reminder,
           notificationLayout: NotificationLayout.Default,
+          wakeUpScreen: true,
           payload: {
             'data': jsonEncode({'habitId': habitId})
           },
@@ -350,12 +388,14 @@ class NotificationActionHandlerIsar {
           NotificationActionButton(
             key: 'complete',
             label: 'Complete',
-            actionType: ActionType.Default,
+            actionType: ActionType.SilentBackgroundAction,
+            autoDismissible: true,
           ),
           NotificationActionButton(
             key: 'snooze',
             label: 'Snooze',
-            actionType: ActionType.Default,
+            actionType: ActionType.SilentBackgroundAction,
+            autoDismissible: true,
           ),
         ],
         schedule: NotificationCalendar.fromDate(date: snoozeTime),

@@ -16,8 +16,10 @@ class NotificationService {
 
   static Future<void> initialize() async {
     await NotificationCore.initialize(
-      onActionReceivedMethod: onNotificationActionIsar,
-    );
+        // Action handler is registered directly in NotificationCore.initialize()
+        // as onBackgroundNotificationActionIsar (top-level function with @pragma annotation)
+        // This is CRITICAL for notification shade buttons to work when app is fully closed
+        );
     _scheduler = NotificationScheduler();
     _alarmScheduler = NotificationAlarmScheduler.instance;
     _bootRescheduler = NotificationBootRescheduler();

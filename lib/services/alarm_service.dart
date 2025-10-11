@@ -68,7 +68,7 @@ class AlarmService {
     AppLogger.info('  - Sound: $alarmSoundName');
 
     try {
-      // Use flutter_local_notifications for scheduling
+      // Use awesome_notifications for scheduling
       await _scheduleNotificationAlarm(
         alarmId: alarmId,
         habitName: habitName,
@@ -322,13 +322,13 @@ class AlarmService {
         NotificationActionButton(
           key: 'complete',
           label: '✅ COMPLETE',
-          actionType: ActionType.Default,
+          actionType: ActionType.SilentBackgroundAction,
           autoDismissible: true,
         ),
         NotificationActionButton(
           key: 'snooze_alarm',
           label: snoozeText,
-          actionType: ActionType.Default,
+          actionType: ActionType.SilentBackgroundAction,
           autoDismissible: false,
         ),
       ],
@@ -491,13 +491,13 @@ class AlarmService {
           NotificationActionButton(
             key: 'complete',
             label: '✅ COMPLETE',
-            actionType: ActionType.Default,
+            actionType: ActionType.SilentBackgroundAction,
             autoDismissible: true,
           ),
           NotificationActionButton(
             key: 'snooze_alarm',
             label: snoozeText,
-            actionType: ActionType.Default,
+            actionType: ActionType.SilentBackgroundAction,
             autoDismissible: true,
           ),
         ],
