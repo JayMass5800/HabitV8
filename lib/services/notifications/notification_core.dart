@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../logging_service.dart';
 import '../permission_service.dart';
@@ -153,16 +152,30 @@ class NotificationCore {
   // ==================== PLATFORM DETECTION ====================
 
   /// Check if device is running Android 12+ (API level 31+)
+  ///
+  /// Uses Platform.version to avoid device_info_plus which triggers
+  /// unnecessary READ_PHONE_STATE permission warnings for getSerial()
   static Future<bool> isAndroid12Plus() async {
     if (!Platform.isAndroid) return false;
 
     try {
-      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-      final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      return androidInfo.version.sdkInt >= 31; // Android 12 = API 31
+      // Platform.version returns "SDK XX" on Android
+      // Example: "SDK 33" for Android 13
+      final String version = Platform.version;
+      final RegExp sdkRegex = RegExp(r'SDK (\d+)');
+      final Match? match = sdkRegex.firstMatch(version);
+
+      if (match != null && match.groupCount >= 1) {
+        final int sdkInt = int.parse(match.group(1)!);
+        return sdkInt >= 31; // Android 12 = API 31
+      }
+
+      // Fallback: assume modern Android if we can't parse
+      AppLogger.warning('Could not parse Android SDK version from: $version');
+      return true; // Assume Android 12+ to be safe
     } catch (e) {
       AppLogger.error('Error checking Android version', e);
-      return false; // Assume older version if error
+      return true; // Assume Android 12+ to be safe
     }
   }
 

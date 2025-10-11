@@ -53,22 +53,48 @@ if ($debugInstalled) {
 # 4. Service Declarations
 Write-Host ""
 Write-Host "4. Critical Service Declarations" -ForegroundColor Yellow
-$services = adb shell dumpsys package $packageName | Select-String "Service|Receiver"
 
-$foregroundService = $services | Select-String "ForegroundService"
-if ($foregroundService) {
-    Write-Host "   ✅ ForegroundService declared" -ForegroundColor Green
+# Get the APK path and extract manifest to check services
+$apkPath = (adb shell pm path $packageName) -replace "package:", ""
+if ($apkPath) {
+    Write-Host "   Checking installed APK manifest..." -ForegroundColor Gray
+    
+    # Find aapt in Android SDK
+    $androidHome = $env:ANDROID_HOME
+    if (-not $androidHome) {
+        $androidHome = "C:\Users\$env:USERNAME\AppData\Local\Android\Sdk"
+    }
+    
+    $aapt = Get-ChildItem -Path "$androidHome\build-tools" -Recurse -Filter "aapt.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    
+    if ($aapt) {
+        # Pull APK and check manifest
+        adb pull $apkPath "$env:TEMP\installed_app.apk" 2>&1 | Out-Null
+        $manifest = & $aapt.FullName dump xmltree "$env:TEMP\installed_app.apk" AndroidManifest.xml 2>&1
+        
+        # Check for ForegroundService (from awesome_notifications)
+        $foregroundService = $manifest | Select-String "awesome_notifications.*ForegroundService"
+        if ($foregroundService) {
+            Write-Host "   ✅ ForegroundService declared (awesome_notifications)" -ForegroundColor Green
+        } else {
+            Write-Host "   ❌ ForegroundService MISSING (CRITICAL!)" -ForegroundColor Red
+            Write-Host "   Check AndroidManifest.xml" -ForegroundColor Yellow
+        }
+        
+        # Check for NotificationActionReceiver (from awesome_notifications)
+        $actionReceiver = $manifest | Select-String "NotificationActionReceiver"
+        if ($actionReceiver) {
+            Write-Host "   ✅ NotificationActionReceiver declared" -ForegroundColor Green
+        } else {
+            Write-Host "   ❌ NotificationActionReceiver MISSING (CRITICAL!)" -ForegroundColor Red
+            Write-Host "   Check AndroidManifest.xml" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "   ⚠️  aapt not found - cannot verify services" -ForegroundColor Yellow
+        Write-Host "   Install Android SDK build-tools" -ForegroundColor Gray
+    }
 } else {
-    Write-Host "   ❌ ForegroundService MISSING (CRITICAL!)" -ForegroundColor Red
-    Write-Host "   Check AndroidManifest.xml" -ForegroundColor Yellow
-}
-
-$actionReceiver = $services | Select-String "NotificationActionReceiver"
-if ($actionReceiver) {
-    Write-Host "   ✅ NotificationActionReceiver declared" -ForegroundColor Green
-} else {
-    Write-Host "   ❌ NotificationActionReceiver MISSING (CRITICAL!)" -ForegroundColor Red
-    Write-Host "   Check AndroidManifest.xml" -ForegroundColor Yellow
+    Write-Host "   ❌ Could not find APK path" -ForegroundColor Red
 }
 
 # 5. Notification Permissions
