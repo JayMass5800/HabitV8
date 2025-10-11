@@ -12,10 +12,16 @@ Write-Host ""
 # 1. Device Connection
 Write-Host "1. Device Connection" -ForegroundColor Yellow
 $devices = adb devices
-if ($devices -match "device$") {
+if ($devices -match "device") {
     Write-Host "   ✅ Device connected" -ForegroundColor Green
+    # Extract device model
+    $deviceModel = adb shell getprop ro.product.model
+    if ($deviceModel) {
+        Write-Host "   📱 Device: $deviceModel" -ForegroundColor Gray
+    }
 } else {
     Write-Host "   ❌ No device connected" -ForegroundColor Red
+    Write-Host "   Run: adb devices" -ForegroundColor Yellow
     exit 1
 }
 

@@ -9,11 +9,15 @@ Write-Host ""
 # Check device
 Write-Host "Checking device connection..." -ForegroundColor Yellow
 $devices = adb devices
-if ($devices -notmatch "device$") {
+if ($devices -notmatch "device") {
     Write-Host "❌ No device connected!" -ForegroundColor Red
     exit 1
 }
 Write-Host "✅ Device connected" -ForegroundColor Green
+$deviceModel = adb shell getprop ro.product.model
+if ($deviceModel) {
+    Write-Host "📱 Device: $deviceModel" -ForegroundColor Gray
+}
 Write-Host ""
 
 # Check if app is installed
