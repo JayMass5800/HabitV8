@@ -58,25 +58,37 @@ Write-Host ""
 Write-Host "1. Create a test habit with notification enabled" -ForegroundColor White
 Write-Host "2. Set notification time to 1-2 minutes from now" -ForegroundColor White
 Write-Host "3. Wait for notification to appear" -ForegroundColor White
-Write-Host "4. Press Enter when notification appears..." -ForegroundColor Yellow
+Write-Host ""
+Write-Host "4. Press Enter when notification appears (DON'T tap it yet!)..." -ForegroundColor Yellow
 Read-Host
 
 Write-Host ""
 Write-Host "5. Force stopping app to simulate terminated state..." -ForegroundColor Yellow
 adb shell am force-stop com.habittracker.habitv8
+Start-Sleep -Seconds 1
 Write-Host "✅ App force stopped (terminated state)" -ForegroundColor Green
+Write-Host "   Note: Notification should still be visible!" -ForegroundColor Gray
 
 Write-Host ""
 Write-Host "6. Starting log monitoring..." -ForegroundColor Yellow
 Write-Host "   Watching for background notification handler..." -ForegroundColor Gray
 Write-Host ""
-Write-Host "Now tap the 'Complete' button on the notification!" -ForegroundColor Cyan
-Write-Host "Press Ctrl+C to stop monitoring" -ForegroundColor Gray
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "NOW TAP THE 'COMPLETE' BUTTON!" -ForegroundColor Green
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Looking for these success indicators:" -ForegroundColor White
+Write-Host "  ✅ BACKGROUND notification action received" -ForegroundColor Gray
+Write-Host "  ✅ Flutter binding initialized" -ForegroundColor Gray
+Write-Host "  ✅ Isar opened in background isolate" -ForegroundColor Gray
+Write-Host "  ✅ Habit completed in background" -ForegroundColor Gray
+Write-Host ""
+Write-Host "Press Ctrl+C to stop monitoring" -ForegroundColor Yellow
 Write-Host ""
 
 # Monitor logs for notification action
 adb logcat -c  # Clear logs
-adb logcat | Select-String "HabitV8|NotificationAction|Isar|BACKGROUND|Flutter binding"
+adb logcat | Select-String "HabitV8|NotificationAction|Isar|BACKGROUND|Flutter binding|awesome_notifications"
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
