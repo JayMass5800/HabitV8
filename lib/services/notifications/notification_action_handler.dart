@@ -182,10 +182,12 @@ class NotificationActionHandlerIsar {
           '🔄 Starting background habit completion for: $rawHabitId');
 
       // Initialize Isar in background isolate
+      // CRITICAL: Must use same database name as main app ('habitv8_db')
       final dir = await getApplicationDocumentsDirectory();
       final isar = await Isar.open(
         [HabitSchema],
         directory: dir.path,
+        name: 'habitv8_db', // MUST match database name in database_isar.dart
         inspector: false,
       );
 
@@ -200,12 +202,14 @@ class NotificationActionHandlerIsar {
         return;
       }
 
-      // Find the habit
+      AppLogger.info('🔍 Searching for habit with string ID: $baseHabitId');
+
+      // Find the habit by string ID field (not isarId)
       final habit =
           await isar.habits.filter().idEqualTo(baseHabitId).findFirst();
 
       if (habit == null) {
-        AppLogger.error('Habit not found in background: $baseHabitId');
+        AppLogger.error('❌ Habit not found in background: $baseHabitId');
         await isar.close();
         return;
       }

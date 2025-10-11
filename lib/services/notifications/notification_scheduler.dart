@@ -66,9 +66,15 @@ class NotificationScheduler {
       );
     }
 
-    if (timeDiff.inDays > 1) {
+    // Only log warning if scheduling very far in the future (>30 days)
+    // This is normal for recurring habits with RRule, so we use debug level for <30 days
+    if (timeDiff.inDays > 30) {
       AppLogger.warning(
-        '⚠️ Warning: Scheduling time is more than 1 day in the future (${timeDiff.inDays} days)',
+        '⚠️ Warning: Scheduling time is more than 30 days in the future (${timeDiff.inDays} days)',
+      );
+    } else if (timeDiff.inDays > 1) {
+      AppLogger.debug(
+        'Scheduling notification ${timeDiff.inDays} days in the future (normal for recurring habits)',
       );
     }
 
