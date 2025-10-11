@@ -8,7 +8,12 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'data/database_isar.dart'; // CRITICAL: Import Isar database for notification scheduling
-import 'domain/model/habit.dart'; // CRITICAL: Explicit import prevents tree-shaking of HabitSchema in release builds
+// CRITICAL: Explicit imports prevent tree-shaking of Isar schemas in release builds
+// These are used by background isolates and must be imported here
+// ignore: unused_import
+import 'domain/model/habit.dart' as habit_model;
+// ignore: unused_import
+import 'domain/model/scheduled_notification.dart' as notification_model;
 import 'services/notification_service.dart';
 import 'services/notification_action_service.dart';
 import 'services/alarm_manager_service.dart';

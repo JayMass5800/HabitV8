@@ -4,6 +4,9 @@ import 'package:home_widget/home_widget.dart';
 import 'package:workmanager/workmanager.dart';
 import '../data/database_isar.dart';
 import '../domain/model/habit.dart';
+// CRITICAL: Import prevents tree-shaking of ScheduledNotificationSchema in release builds
+// ignore: unused_import
+import '../domain/model/scheduled_notification.dart' as notification_model;
 
 /// Background service for updating widgets when app is closed
 ///

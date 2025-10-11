@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../domain/model/habit.dart';
+import '../domain/model/scheduled_notification.dart';
 import '../services/logging_service.dart';
 import '../services/notification_service.dart';
 
@@ -100,7 +101,7 @@ class IsarDatabaseService {
     final dir = await getApplicationDocumentsDirectory();
 
     _isar = await Isar.open(
-      [HabitSchema],
+      [HabitSchema, ScheduledNotificationSchema],
       directory: dir.path,
       name: 'habitv8_db',
       inspector: true, // Enable Isar Inspector for debugging
@@ -334,4 +335,11 @@ class HabitServiceIsar {
   bool isHabitCompletedForCurrentPeriod(Habit habit) {
     return habit.isCompletedForCurrentPeriod;
   }
+}
+
+/// Simple IsarDatabase class for background isolates
+/// This provides a clean API for accessing Isar in background contexts
+class IsarDatabase {
+  /// Get Isar instance (delegates to IsarDatabaseService)
+  static Future<Isar> get instance => IsarDatabaseService.getInstance();
 }

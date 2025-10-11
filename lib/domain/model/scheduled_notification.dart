@@ -1,42 +1,40 @@
-import 'package:hive/hive.dart';
+import 'package:isar/isar.dart';
 
 part 'scheduled_notification.g.dart';
 
 /// Model for storing scheduled notification data persistently
 /// This allows us to reschedule notifications after device reboot
-@HiveType(
-    typeId: 3) // typeId 0-2 reserved for Habit models, 3 is next available
-class ScheduledNotification extends HiveObject {
-  /// Unique notification ID
-  @HiveField(0)
-  final int id;
+@collection
+class ScheduledNotification {
+  /// Unique notification ID (used as Isar ID)
+  Id id = Isar.autoIncrement;
+
+  /// Notification ID used by the notification system
+  late int notificationId;
 
   /// Associated habit ID
-  @HiveField(1)
-  final String habitId;
+  @Index()
+  late String habitId;
 
   /// Notification title
-  @HiveField(2)
-  final String title;
+  late String title;
 
   /// Notification body
-  @HiveField(3)
-  final String body;
+  late String body;
 
   /// Scheduled date/time (stored as milliseconds since epoch)
-  @HiveField(4)
-  final int scheduledTimeMillis;
+  @Index()
+  late int scheduledTimeMillis;
 
   /// When this notification record was created (for cleanup)
-  @HiveField(5)
-  final int createdAtMillis;
+  late int createdAtMillis;
 
   /// Whether this is an alarm notification (vs regular notification)
-  @HiveField(6)
-  final bool isAlarm;
+  late bool isAlarm;
 
   ScheduledNotification({
-    required this.id,
+    this.id = Isar.autoIncrement,
+    required this.notificationId,
     required this.habitId,
     required this.title,
     required this.body,
@@ -61,7 +59,8 @@ class ScheduledNotification extends HiveObject {
 
   /// Create a copy with updated fields
   ScheduledNotification copyWith({
-    int? id,
+    Id? id,
+    int? notificationId,
     String? habitId,
     String? title,
     String? body,
@@ -71,6 +70,7 @@ class ScheduledNotification extends HiveObject {
   }) {
     return ScheduledNotification(
       id: id ?? this.id,
+      notificationId: notificationId ?? this.notificationId,
       habitId: habitId ?? this.habitId,
       title: title ?? this.title,
       body: body ?? this.body,
@@ -82,6 +82,6 @@ class ScheduledNotification extends HiveObject {
 
   @override
   String toString() {
-    return 'ScheduledNotification(id: $id, habitId: $habitId, scheduledTime: $scheduledTime, isAlarm: $isAlarm)';
+    return 'ScheduledNotification(id: $id, notificationId: $notificationId, habitId: $habitId, scheduledTime: $scheduledTime, isAlarm: $isAlarm)';
   }
 }

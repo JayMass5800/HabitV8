@@ -10,6 +10,7 @@ import 'package:home_widget/home_widget.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
+import '../../domain/model/scheduled_notification.dart';
 import 'notification_helpers.dart';
 
 // ============================================================================
@@ -186,9 +187,10 @@ class NotificationActionHandlerIsar {
       // Initialize Isar in background isolate
       // CRITICAL: Must use same database name as main app ('habitv8_db')
       // CRITICAL: Must use same inspector setting as main app for multi-isolate compatibility
+      // CRITICAL: Must include ALL schemas used by the app
       final dir = await getApplicationDocumentsDirectory();
       final isar = await Isar.open(
-        [HabitSchema],
+        [HabitSchema, ScheduledNotificationSchema],
         directory: dir.path,
         name: 'habitv8_db', // MUST match database name in database_isar.dart
         inspector: true, // MUST match inspector setting in database_isar.dart

@@ -1,43 +1,20 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:isar/isar.dart';
 import '../../domain/model/scheduled_notification.dart';
+import '../../data/database_isar.dart';
 import '../logging_service.dart';
 
-/// Service for persisting scheduled notification data
+/// Service for persisting scheduled notification data using Isar
 /// This allows rescheduling notifications after device reboot
 class ScheduledNotificationStorage {
-  static const String _boxName = 'scheduled_notifications';
-  static Box<ScheduledNotification>? _box;
-
-  /// Initialize the storage
-  static Future<void> initialize() async {
-    try {
-      if (_box != null && _box!.isOpen) {
-        AppLogger.debug('ScheduledNotificationStorage already initialized');
-        return;
-      }
-
-      // Register adapter if not already registered
-      if (!Hive.isAdapterRegistered(3)) {
-        Hive.registerAdapter(ScheduledNotificationAdapter());
-      }
-
-      _box = await Hive.openBox<ScheduledNotification>(_boxName);
-      AppLogger.info(
-          '✅ ScheduledNotificationStorage initialized with ${_box!.length} stored notifications');
-    } catch (e) {
-      AppLogger.error('Error initializing ScheduledNotificationStorage', e);
-      rethrow;
-    }
-  }
-
   /// Save a scheduled notification
   static Future<void> saveNotification(
       ScheduledNotification notification) async {
     try {
-      await _ensureInitialized();
+      final isar = await IsarDatabase.instance;
 
-      // Use notification ID as key for easy lookup and updates
-      await _box!.put(notification.id, notification);
+      await isar.writeTxn(() async {
+        await isar.scheduledNotifications.put(notification);
+      });
 
       AppLogger.debug('✅ Saved scheduled notification: $notification');
     } catch (e) {
@@ -49,13 +26,11 @@ class ScheduledNotificationStorage {
   static Future<void> saveNotifications(
       List<ScheduledNotification> notifications) async {
     try {
-      await _ensureInitialized();
+      final isar = await IsarDatabase.instance;
 
-      final Map<int, ScheduledNotification> notificationMap = {
-        for (var notification in notifications) notification.id: notification
-      };
-
-      await _box!.putAll(notificationMap);
+      await isar.writeTxn(() async {
+        await isar.scheduledNotifications.putAll(notifications);
+      });
 
       AppLogger.info('✅ Saved ${notifications.length} scheduled notifications');
     } catch (e) {
@@ -63,11 +38,16 @@ class ScheduledNotificationStorage {
     }
   }
 
-  /// Get a scheduled notification by ID
-  static Future<ScheduledNotification?> getNotification(int id) async {
+  /// Get a scheduled notification by notification ID
+  static Future<ScheduledNotification?> getNotification(
+      int notificationId) async {
     try {
-      await _ensureInitialized();
-      return _box!.get(id);
+      final isar = await IsarDatabase.instance;
+
+      return await isar.scheduledNotifications
+          .filter()
+          .notificationIdEqualTo(notificationId)
+          .findFirst();
     } catch (e) {
       AppLogger.error('Error getting scheduled notification', e);
       return null;
@@ -77,8 +57,8 @@ class ScheduledNotificationStorage {
   /// Get all scheduled notifications
   static Future<List<ScheduledNotification>> getAllNotifications() async {
     try {
-      await _ensureInitialized();
-      return _box!.values.toList();
+      final isar = await IsarDatabase.instance;
+      return await isar.scheduledNotifications.where().findAll();
     } catch (e) {
       AppLogger.error('Error getting all scheduled notifications', e);
       return [];
@@ -89,8 +69,12 @@ class ScheduledNotificationStorage {
   static Future<List<ScheduledNotification>> getNotificationsByHabitId(
       String habitId) async {
     try {
-      await _ensureInitialized();
-      return _box!.values.where((n) => n.habitId == habitId).toList();
+      final isar = await IsarDatabase.instance;
+
+      return await isar.scheduledNotifications
+          .filter()
+          .habitIdEqualTo(habitId)
+          .findAll();
     } catch (e) {
       AppLogger.error('Error getting notifications for habit $habitId', e);
       return [];
@@ -100,21 +84,36 @@ class ScheduledNotificationStorage {
   /// Get all future (pending) notifications
   static Future<List<ScheduledNotification>> getPendingNotifications() async {
     try {
-      await _ensureInitialized();
-      final now = DateTime.now();
-      return _box!.values.where((n) => n.scheduledTime.isAfter(now)).toList();
+      final isar = await IsarDatabase.instance;
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      return await isar.scheduledNotifications
+          .filter()
+          .scheduledTimeMillisGreaterThan(now)
+          .findAll();
     } catch (e) {
       AppLogger.error('Error getting pending notifications', e);
       return [];
     }
   }
 
-  /// Delete a scheduled notification by ID
-  static Future<void> deleteNotification(int id) async {
+  /// Delete a scheduled notification by notification ID
+  static Future<void> deleteNotification(int notificationId) async {
     try {
-      await _ensureInitialized();
-      await _box!.delete(id);
-      AppLogger.debug('🗑️ Deleted scheduled notification: $id');
+      final isar = await IsarDatabase.instance;
+
+      await isar.writeTxn(() async {
+        final notification = await isar.scheduledNotifications
+            .filter()
+            .notificationIdEqualTo(notificationId)
+            .findFirst();
+
+        if (notification != null) {
+          await isar.scheduledNotifications.delete(notification.id);
+          AppLogger.debug(
+              '🗑️ Deleted scheduled notification: $notificationId');
+        }
+      });
     } catch (e) {
       AppLogger.error('Error deleting scheduled notification', e);
     }
@@ -123,15 +122,19 @@ class ScheduledNotificationStorage {
   /// Delete all notifications for a specific habit
   static Future<void> deleteNotificationsByHabitId(String habitId) async {
     try {
-      await _ensureInitialized();
-      final keysToDelete = _box!.values
-          .where((n) => n.habitId == habitId)
-          .map((n) => n.id)
-          .toList();
+      final isar = await IsarDatabase.instance;
 
-      await _box!.deleteAll(keysToDelete);
-      AppLogger.info(
-          '🗑️ Deleted ${keysToDelete.length} notifications for habit $habitId');
+      await isar.writeTxn(() async {
+        final notifications = await isar.scheduledNotifications
+            .filter()
+            .habitIdEqualTo(habitId)
+            .findAll();
+
+        final ids = notifications.map((n) => n.id).toList();
+        final count = await isar.scheduledNotifications.deleteAll(ids);
+
+        AppLogger.info('🗑️ Deleted $count notifications for habit $habitId');
+      });
     } catch (e) {
       AppLogger.error('Error deleting notifications for habit', e);
     }
@@ -140,18 +143,24 @@ class ScheduledNotificationStorage {
   /// Clean up old notifications (past scheduled time by more than 24 hours)
   static Future<void> cleanupOldNotifications() async {
     try {
-      await _ensureInitialized();
-      final cutoffTime = DateTime.now().subtract(const Duration(hours: 24));
-      final keysToDelete = _box!.values
-          .where((n) => n.scheduledTime.isBefore(cutoffTime))
-          .map((n) => n.id)
-          .toList();
+      final isar = await IsarDatabase.instance;
+      final cutoffTime = DateTime.now()
+          .subtract(const Duration(hours: 24))
+          .millisecondsSinceEpoch;
 
-      if (keysToDelete.isNotEmpty) {
-        await _box!.deleteAll(keysToDelete);
-        AppLogger.info(
-            '🧹 Cleaned up ${keysToDelete.length} old notifications');
-      }
+      await isar.writeTxn(() async {
+        final oldNotifications = await isar.scheduledNotifications
+            .filter()
+            .scheduledTimeMillisLessThan(cutoffTime)
+            .findAll();
+
+        final ids = oldNotifications.map((n) => n.id).toList();
+
+        if (ids.isNotEmpty) {
+          final count = await isar.scheduledNotifications.deleteAll(ids);
+          AppLogger.info('🧹 Cleaned up $count old notifications');
+        }
+      });
     } catch (e) {
       AppLogger.error('Error cleaning up old notifications', e);
     }
@@ -160,10 +169,13 @@ class ScheduledNotificationStorage {
   /// Clear all stored notifications
   static Future<void> clearAll() async {
     try {
-      await _ensureInitialized();
-      final count = _box!.length;
-      await _box!.clear();
-      AppLogger.info('🗑️ Cleared all $count scheduled notifications');
+      final isar = await IsarDatabase.instance;
+
+      await isar.writeTxn(() async {
+        final count = await isar.scheduledNotifications.count();
+        await isar.scheduledNotifications.clear();
+        AppLogger.info('🗑️ Cleared all $count scheduled notifications');
+      });
     } catch (e) {
       AppLogger.error('Error clearing all notifications', e);
     }
@@ -172,31 +184,11 @@ class ScheduledNotificationStorage {
   /// Get count of stored notifications
   static Future<int> getCount() async {
     try {
-      await _ensureInitialized();
-      return _box!.length;
+      final isar = await IsarDatabase.instance;
+      return await isar.scheduledNotifications.count();
     } catch (e) {
       AppLogger.error('Error getting notification count', e);
       return 0;
-    }
-  }
-
-  /// Ensure the storage is initialized
-  static Future<void> _ensureInitialized() async {
-    if (_box == null || !_box!.isOpen) {
-      await initialize();
-    }
-  }
-
-  /// Close the storage
-  static Future<void> close() async {
-    try {
-      if (_box != null && _box!.isOpen) {
-        await _box!.close();
-        _box = null;
-        AppLogger.info('ScheduledNotificationStorage closed');
-      }
-    } catch (e) {
-      AppLogger.error('Error closing ScheduledNotificationStorage', e);
     }
   }
 }
