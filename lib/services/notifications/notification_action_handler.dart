@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:isar/isar.dart';
@@ -250,11 +252,25 @@ class NotificationActionHandlerIsar {
 
         // Update widget - CRITICAL for homescreen widget updates when app is closed
         try {
-          // Save widget data
+          // Save widget data with timestamp
           await HomeWidget.saveWidgetData(
               'last_update', DateTime.now().millisecondsSinceEpoch.toString());
 
-          // Update widgets using home_widget package
+          AppLogger.info('📱 Triggering widget update from background...');
+
+          // STRATEGY 1: Try method channel first (most reliable when app is running)
+          try {
+            const widgetUpdateChannel =
+                MethodChannel('com.habittracker.habitv8/widget_update');
+            await widgetUpdateChannel.invokeMethod('forceWidgetRefresh');
+            AppLogger.info('✅ Widget updated via method channel');
+          } catch (e) {
+            AppLogger.info(
+                '⚠️ Method channel unavailable (app may be closed): $e');
+            // Continue to fallback strategies
+          }
+
+          // STRATEGY 2: Use home_widget package update
           await HomeWidget.updateWidget(
             name: 'HabitTimelineWidgetProvider',
             iOSName: 'HabitTimelineWidget',
@@ -263,26 +279,35 @@ class NotificationActionHandlerIsar {
             name: 'HabitCompactWidgetProvider',
             iOSName: 'HabitCompactWidget',
           );
+          AppLogger.info('✅ Widget update called via home_widget package');
 
-          // CRITICAL: On Android, send broadcast intent to force widget refresh
+          // STRATEGY 3: On Android, send broadcast intent to force widget refresh
           // This ensures widgets update even when app is fully closed
           if (Platform.isAndroid) {
             try {
+              // Determine package name based on build mode
+              // In debug mode, package is com.habittracker.habitv8.debug
+              // In release/profile mode, package is com.habittracker.habitv8
+              final packageName = kDebugMode
+                  ? 'com.habittracker.habitv8.debug'
+                  : 'com.habittracker.habitv8';
+
+              AppLogger.info(
+                  '📦 Using package name for widget update: $packageName');
+
               // Send broadcast to HabitTimelineWidgetProvider
               final timelineIntent = AndroidIntent(
                 action: 'android.appwidget.action.APPWIDGET_UPDATE',
-                package: 'com.habittracker.habitv8',
-                componentName:
-                    'com.habittracker.habitv8.HabitTimelineWidgetProvider',
+                package: packageName,
+                componentName: '$packageName.HabitTimelineWidgetProvider',
               );
               await timelineIntent.launch();
 
               // Send broadcast to HabitCompactWidgetProvider
               final compactIntent = AndroidIntent(
                 action: 'android.appwidget.action.APPWIDGET_UPDATE',
-                package: 'com.habittracker.habitv8',
-                componentName:
-                    'com.habittracker.habitv8.HabitCompactWidgetProvider',
+                package: packageName,
+                componentName: '$packageName.HabitCompactWidgetProvider',
               );
               await compactIntent.launch();
 
@@ -291,11 +316,12 @@ class NotificationActionHandlerIsar {
             } catch (e) {
               AppLogger.warning(
                   '⚠️ Failed to send Android broadcast intent: $e');
-              // Continue anyway - HomeWidget.updateWidget might still work
+              // Continue anyway - other strategies may have worked
             }
           }
 
-          AppLogger.info('✅ Widget updated from background');
+          AppLogger.info(
+              '✅ Widget update completed from background (all strategies attempted)');
         } catch (e) {
           AppLogger.error('Failed to update widget from background', e);
         }

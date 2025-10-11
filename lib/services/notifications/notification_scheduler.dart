@@ -105,7 +105,12 @@ class NotificationScheduler {
           autoDismissible: true,
         ),
       ],
-      schedule: NotificationCalendar.fromDate(date: localScheduledTime),
+      schedule: NotificationCalendar.fromDate(
+        date: localScheduledTime,
+        preciseAlarm:
+            true, // Enable precise timing (requires exact alarm permission)
+        allowWhileIdle: true, // Allow notification even in doze mode
+      ),
     );
 
     // Note: Notification persistence removed - now using Isar habit data for rescheduling
@@ -665,10 +670,15 @@ class NotificationScheduler {
     }
 
     try {
-      // Get next 30 occurrences from RRule
+      // CRITICAL FIX: Reduced from 90 days to 14 days to prevent hitting Android's
+      // 500 concurrent alarm limit. For daily habits, 90 days = 90 alarms per habit.
+      // With multiple habits, this quickly exceeds 500 alarms total.
+      // 14 days provides good coverage while staying well under the limit.
+      // The midnight reset service will reschedule notifications daily.
       final now = DateTime.now();
       final startDate = habit.dtStart ?? now;
-      final rangeEnd = now.add(const Duration(days: 90)); // Look ahead 90 days
+      final rangeEnd =
+          now.add(const Duration(days: 14)); // Look ahead 14 days (was 90)
 
       final occurrences = RRuleService.getOccurrences(
         rruleString: habit.rruleString!,
