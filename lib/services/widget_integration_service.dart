@@ -143,7 +143,14 @@ class WidgetIntegrationService {
       await prefs.remove('widget_auto_refresh');
       await prefs.remove('widget_refresh_interval');
 
-      debugPrint('Old widget preferences cleaned up');
+      // CRITICAL: Remove stale fallback keys that might contain unfiltered habits
+      // These keys were causing widgets to show ALL habits instead of today's habits
+      await prefs.remove('flutter.habits_data');
+      await prefs.remove('flutter.habits');
+      await prefs.remove('flutter.today_habits');
+      await prefs.remove('habits_data');
+
+      debugPrint('Old widget preferences and stale fallback keys cleaned up');
     } catch (e) {
       debugPrint('Error cleaning up old widget preferences: $e');
     }

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:path_provider/path_provider.dart';
 import '../native_alarm_service.dart';
 import 'logging_service.dart';
@@ -17,8 +17,6 @@ class AlarmManagerService {
   static const MethodChannel _systemSoundChannel = MethodChannel(
     'com.habittracker.habitv8/system_sound',
   );
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
-      FlutterLocalNotificationsPlugin();
 
   /// Initialize the alarm manager service
   static Future<void> initialize() async {
@@ -28,12 +26,10 @@ class AlarmManagerService {
       // Initialize native alarm service
       AppLogger.debug('Initializing native alarm service...');
 
-      // Initialize notifications plugin for fallback notifications
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      const InitializationSettings initializationSettings =
-          InitializationSettings(android: initializationSettingsAndroid);
-      await _notificationsPlugin.initialize(initializationSettings);
+      // Verify AwesomeNotifications is initialized (should be done by NotificationCore)
+      if (!await AwesomeNotifications().isNotificationAllowed()) {
+        await AwesomeNotifications().requestPermissionToSendNotifications();
+      }
 
       AppLogger.info('🔄 AlarmManagerService initialized successfully');
       _isInitialized = true;
@@ -351,28 +347,19 @@ class AlarmManagerService {
   /// Show alarm notification
   static Future<void> _showAlarmNotification(String habitName) async {
     try {
-      const AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails(
-        'habit_alarms',
-        'Habit Alarms',
-        channelDescription: 'Alarm notifications for habit reminders',
-        importance: Importance.max,
-        priority: Priority.high,
-        fullScreenIntent: false,
-        category: AndroidNotificationCategory.alarm,
-        playSound: false, // Sound is handled by native code
-        enableVibration: true,
-      );
-
-      const NotificationDetails platformChannelSpecifics = NotificationDetails(
-        android: androidPlatformChannelSpecifics,
-      );
-
-      await _notificationsPlugin.show(
-        999999, // Use a high ID for alarm notifications
-        '🚨 HABIT ALARM: $habitName',
-        'Time to complete your habit!',
-        platformChannelSpecifics,
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: 999999, // Use a high ID for alarm notifications
+          channelKey: 'habit_alarms',
+          title: '🚨 HABIT ALARM: $habitName',
+          body: 'Time to complete your habit!',
+          category: NotificationCategory.Alarm,
+          notificationLayout: NotificationLayout.Default,
+          fullScreenIntent: true,
+          wakeUpScreen: true,
+          criticalAlert: true,
+          // Sound is handled by native code, so no customSound specified
+        ),
       );
     } catch (e) {
       AppLogger.error('Failed to show alarm notification', e);
@@ -387,66 +374,35 @@ class AlarmManagerService {
     String? alarmSoundName,
   }) async {
     try {
-      AndroidNotificationDetails androidPlatformChannelSpecifics;
-
       final bool hasUri = alarmSoundUri != null &&
           alarmSoundUri.isNotEmpty &&
           alarmSoundUri != 'default';
       final bool hasName =
           alarmSoundName != null && alarmSoundName != 'default';
 
+      String? customSound;
       if (hasUri) {
-        androidPlatformChannelSpecifics = AndroidNotificationDetails(
-          'habit_alarms',
-          'Habit Alarms',
-          channelDescription: 'Alarm notifications for habit reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-          fullScreenIntent: false,
-          category: AndroidNotificationCategory.alarm,
-          playSound: true,
-          enableVibration: true,
-          sound: UriAndroidNotificationSound(alarmSoundUri),
-        );
+        // Use the provided URI
+        customSound = alarmSoundUri;
       } else if (hasName) {
-        androidPlatformChannelSpecifics = AndroidNotificationDetails(
-          'habit_alarms',
-          'Habit Alarms',
-          channelDescription: 'Alarm notifications for habit reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-          fullScreenIntent: false,
-          category: AndroidNotificationCategory.alarm,
-          playSound: true,
-          enableVibration: true,
-          sound: UriAndroidNotificationSound(alarmSoundName),
-        );
-      } else {
-        androidPlatformChannelSpecifics = const AndroidNotificationDetails(
-          'habit_alarms',
-          'Habit Alarms',
-          channelDescription: 'Alarm notifications for habit reminders',
-          importance: Importance.max,
-          priority: Priority.high,
-          fullScreenIntent: false,
-          category: AndroidNotificationCategory.alarm,
-          playSound: true,
-          enableVibration: true,
-          sound: UriAndroidNotificationSound(
-            'content://settings/system/alarm_alert',
-          ),
-        );
+        // Convert sound name to resource format
+        customSound = 'resource://raw/${alarmSoundName.replaceAll('.mp3', '')}';
       }
+      // If neither, use default (null = channel default)
 
-      final NotificationDetails platformChannelSpecifics = NotificationDetails(
-        android: androidPlatformChannelSpecifics,
-      );
-
-      await _notificationsPlugin.show(
-        999998, // Use a different ID for sound fallback notifications
-        '🔊 HABIT ALARM: $habitName',
-        'Time to complete your habit! (Sound fallback)',
-        platformChannelSpecifics,
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: 999998, // Use a different ID for sound fallback notifications
+          channelKey: 'habit_alarms',
+          title: '🔊 HABIT ALARM: $habitName',
+          body: 'Time to complete your habit! (Sound fallback)',
+          category: NotificationCategory.Alarm,
+          notificationLayout: NotificationLayout.Default,
+          fullScreenIntent: true,
+          wakeUpScreen: true,
+          criticalAlert: true,
+          customSound: customSound,
+        ),
       );
 
       AppLogger.info('✅ Sound fallback notification shown for: $habitName');

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
 import '../logging_service.dart';
 import '../rrule_service.dart';
 import '../../domain/model/habit.dart';

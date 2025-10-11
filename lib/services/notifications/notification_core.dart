@@ -71,7 +71,7 @@ class NotificationCore {
           enableVibration: true,
           criticalAlerts: false,
         ),
-        // Alarm notification channel
+        // Alarm notification channel (default)
         NotificationChannel(
           channelKey: 'habit_alarm_default',
           channelName: 'Habit Alarms (Default)',
@@ -84,6 +84,23 @@ class NotificationCore {
           playSound: true,
           enableVibration: true,
           criticalAlerts: true,
+        ),
+        // High-priority alarm channel (for time-critical habits)
+        NotificationChannel(
+          channelKey: 'habit_alarms',
+          channelName: 'Habit Alarms',
+          channelDescription: 'High-priority alarms for time-critical habits',
+          importance: NotificationImportance.Max,
+          defaultColor: const Color(0xFF9C27B0),
+          ledColor: Colors.red,
+          playSound: true,
+          enableVibration: true,
+          enableLights: true,
+          locked: true, // Prevent user from dismissing
+          defaultPrivacy: NotificationPrivacy.Public,
+          criticalAlerts: true, // iOS critical alerts
+          channelShowBadge: true,
+          onlyAlertOnce: false,
         ),
       ],
       debug: false,
@@ -290,8 +307,9 @@ class NotificationCore {
       if (!Platform.isAndroid) return true; // iOS always supports exact timing
 
       final bool isAndroid12Plus = await NotificationCore.isAndroid12Plus();
-      if (!isAndroid12Plus)
+      if (!isAndroid12Plus) {
         return true; // Older Android versions don't need permission
+      }
 
       // Check if we have exact alarm permission
       return await PermissionService.hasExactAlarmPermission();

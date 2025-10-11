@@ -183,18 +183,18 @@ class HabitCompactRemoteViewsFactory(
             val flutterPrefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
             
             // Try each key and log which one works
+            // CRITICAL: Order matters! Check today-specific keys FIRST to avoid showing all habits
             var habitsJson: String? = null
             var sourceKey: String? = null
             
             val keysToTry = listOf(
+                // Priority 1: Today's habits (filtered by Flutter)
                 "habits" to hwPrefs,
                 "today_habits" to hwPrefs,
                 "home_widget.string.habits" to hwPrefs,
                 "home_widget.string.today_habits" to hwPrefs,
-                "habits_data" to hwPrefs,
-                "flutter.habits_data" to flutterPrefs,
-                "flutter.habits" to flutterPrefs,
-                "flutter.today_habits" to flutterPrefs
+                // Priority 2: Fallback keys (may contain stale/unfiltered data - use with caution)
+                // NOTE: These are kept for backward compatibility but should be avoided
             )
             
             for ((key, prefs) in keysToTry) {

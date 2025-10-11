@@ -3,15 +3,12 @@ import 'dart:io';
 import 'package:flutter_ringtone_manager/flutter_ringtone_manager.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'dart:convert';
 import 'logging_service.dart';
 
 @pragma('vm:entry-point')
 class AlarmService {
-  static final FlutterLocalNotificationsPlugin _notificationsPlugin =
-      FlutterLocalNotificationsPlugin();
   static final AudioPlayer _audioPlayer = AudioPlayer();
 
   static bool _isInitialized = false;
@@ -22,14 +19,10 @@ class AlarmService {
     if (_isInitialized) return;
 
     try {
-      // Initialize notifications plugin
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-
-      const InitializationSettings initializationSettings =
-          InitializationSettings(android: initializationSettingsAndroid);
-
-      await _notificationsPlugin.initialize(initializationSettings);
+      // Verify AwesomeNotifications is initialized (should be done by NotificationCore)
+      if (!await AwesomeNotifications().isNotificationAllowed()) {
+        await AwesomeNotifications().requestPermissionToSendNotifications();
+      }
 
       AppLogger.info('🚨 AlarmService initialized successfully');
       _isInitialized = true;
@@ -140,7 +133,7 @@ class AlarmService {
   static Future<void> cancelAlarm(int alarmId) async {
     try {
       // Cancel the scheduled notification
-      await _notificationsPlugin.cancel(alarmId);
+      await AwesomeNotifications().cancel(alarmId);
 
       // Clean up stored alarm data
       final prefs = await SharedPreferences.getInstance();
@@ -173,7 +166,7 @@ class AlarmService {
             if (alarmData['habitId'] == habitId) {
               final alarmId = int.tryParse(key.substring(_alarmDataKey.length));
               if (alarmId != null) {
-                await _notificationsPlugin.cancel(alarmId);
+                await AwesomeNotifications().cancel(alarmId);
                 await prefs.remove(key);
                 cancelledCount++;
               }
@@ -304,50 +297,46 @@ class AlarmService {
       }
     }
 
-    final AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'habit_alarm_default',
-      'Habit Alarms',
-      channelDescription: 'High-priority alarm notifications for habits',
-      importance: Importance.max,
-      priority: Priority.max,
-      fullScreenIntent: false,
-      category: AndroidNotificationCategory.alarm,
-      visibility: NotificationVisibility.public,
-      playSound: true,
-      enableVibration: true,
-      enableLights: true,
-      ongoing: true,
-      autoCancel: false,
-      actions: [
-        const AndroidNotificationAction(
-          'complete',
-          '✅ COMPLETE',
-          showsUserInterface: true,
-          cancelNotification: true,
+    // Prepare custom sound if provided
+    String? customSound;
+    if (alarmSoundName != null && alarmSoundName != 'default') {
+      // Convert sound name to resource format (remove .mp3 extension)
+      customSound = 'resource://raw/${alarmSoundName.replaceAll('.mp3', '')}';
+    }
+
+    await AwesomeNotifications().createNotification(
+      content: NotificationContent(
+        id: alarmId,
+        channelKey: 'habit_alarms',
+        title: '🚨 HABIT ALARM: $habitName',
+        body: 'Time to complete your habit! Tap to mark as complete or snooze.',
+        category: NotificationCategory.Alarm,
+        notificationLayout: NotificationLayout.Default,
+        fullScreenIntent: true,
+        wakeUpScreen: true,
+        criticalAlert: true,
+        locked: true,
+        customSound: customSound,
+      ),
+      actionButtons: [
+        NotificationActionButton(
+          key: 'complete',
+          label: '✅ COMPLETE',
+          actionType: ActionType.Default,
+          autoDismissible: true,
         ),
-        AndroidNotificationAction(
-          'snooze_alarm',
-          snoozeText,
-          showsUserInterface: false,
-          cancelNotification: true,
+        NotificationActionButton(
+          key: 'snooze_alarm',
+          label: snoozeText,
+          actionType: ActionType.Default,
+          autoDismissible: false,
         ),
       ],
-    );
-
-    final NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-    );
-
-    await _notificationsPlugin.zonedSchedule(
-      alarmId,
-      '🚨 HABIT ALARM: $habitName',
-      'Time to complete your habit! Tap to mark as complete or snooze.',
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
+      schedule: NotificationCalendar.fromDate(
+        date: scheduledTime,
+        allowWhileIdle: true,
+        preciseAlarm: true,
+      ),
     );
   }
 
@@ -455,15 +444,6 @@ class AlarmService {
     required int snoozeDelayMinutes,
   }) async {
     try {
-      // Initialize notifications if needed
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-
-      const InitializationSettings initializationSettings =
-          InitializationSettings(android: initializationSettingsAndroid);
-
-      await _notificationsPlugin.initialize(initializationSettings);
-
       // Create snooze text
       String snoozeText = '⏰ Snooze ';
       if (snoozeDelayMinutes < 60) {
@@ -478,40 +458,11 @@ class AlarmService {
         }
       }
 
-      final AndroidNotificationDetails androidPlatformChannelSpecifics =
-          AndroidNotificationDetails(
-        'habit_alarm_default',
-        'Habit Alarms',
-        channelDescription: 'High-priority alarm notifications for habits',
-        importance: Importance.max,
-        priority: Priority.max,
-        fullScreenIntent: false,
-        category: AndroidNotificationCategory.alarm,
-        visibility: NotificationVisibility.public,
-        playSound: true,
-        enableVibration: true,
-        enableLights: true,
-        ongoing: true, // Make it persistent until user interacts
-        autoCancel: false,
-        actions: [
-          const AndroidNotificationAction(
-            'complete',
-            '✅ COMPLETE',
-            showsUserInterface: true,
-            cancelNotification: true,
-          ),
-          AndroidNotificationAction(
-            'snooze_alarm',
-            snoozeText,
-            showsUserInterface: true,
-            cancelNotification: true,
-          ),
-        ],
-      );
-
-      final NotificationDetails platformChannelSpecifics = NotificationDetails(
-        android: androidPlatformChannelSpecifics,
-      );
+      // Prepare custom sound if provided
+      String? customSound;
+      if (alarmSoundName != null && alarmSoundName != 'default') {
+        customSound = 'resource://raw/${alarmSoundName.replaceAll('.mp3', '')}';
+      }
 
       final payload = jsonEncode({
         'habitId': habitId,
@@ -520,12 +471,36 @@ class AlarmService {
         'alarmSoundName': alarmSoundName,
       });
 
-      await _notificationsPlugin.show(
-        alarmId,
-        '🚨 HABIT ALARM: $habitName',
-        'Time to complete your habit! Tap to mark as complete or snooze.',
-        platformChannelSpecifics,
-        payload: payload,
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: alarmId,
+          channelKey: 'habit_alarms',
+          title: '🚨 HABIT ALARM: $habitName',
+          body:
+              'Time to complete your habit! Tap to mark as complete or snooze.',
+          category: NotificationCategory.Alarm,
+          notificationLayout: NotificationLayout.Default,
+          fullScreenIntent: true,
+          wakeUpScreen: true,
+          criticalAlert: true,
+          locked: true,
+          customSound: customSound,
+          payload: {'data': payload},
+        ),
+        actionButtons: [
+          NotificationActionButton(
+            key: 'complete',
+            label: '✅ COMPLETE',
+            actionType: ActionType.Default,
+            autoDismissible: true,
+          ),
+          NotificationActionButton(
+            key: 'snooze_alarm',
+            label: snoozeText,
+            actionType: ActionType.Default,
+            autoDismissible: true,
+          ),
+        ],
       );
 
       AppLogger.info('🚨 Alarm notification shown for: $habitName');

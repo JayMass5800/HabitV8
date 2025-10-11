@@ -3,13 +3,10 @@ import 'package:flutter/widgets.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:home_widget/home_widget.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
-import '../widget_integration_service.dart';
 import 'notification_helpers.dart';
-import 'notification_scheduler.dart';
 
 // ============================================================================
 // TOP-LEVEL FUNCTIONS - Required for background isolate communication
@@ -52,41 +49,39 @@ Future<void> onBackgroundNotificationActionIsar(
           AppLogger.info('Extracted habitId from payload: $rawHabitId');
 
           // Process the action in background
-          if (receivedAction.buttonKeyPressed != null) {
-            AppLogger.info(
-                'Processing background action: ${receivedAction.buttonKeyPressed}');
+          final buttonKey = receivedAction.buttonKeyPressed;
+          AppLogger.info('Processing background action: $buttonKey');
 
-            // CRITICAL FIX: Try to use callback first (app might be running)
-            // Android sometimes routes action button taps to background handler
-            // even when app is in foreground
-            final callback = NotificationActionHandlerIsar.onNotificationAction;
-            final directHandler =
-                NotificationActionHandlerIsar.directCompletionHandler;
+          // CRITICAL FIX: Try to use callback first (app might be running)
+          // Android sometimes routes action button taps to background handler
+          // even when app is in foreground
+          final callback = NotificationActionHandlerIsar.onNotificationAction;
+          final directHandler =
+              NotificationActionHandlerIsar.directCompletionHandler;
 
-            if (callback != null) {
-              AppLogger.info('✅ Using callback handler (app is running)');
-              // Extract base habitId for callback (callbacks expect base ID)
-              final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
-                  receivedAction.payload!['data']!);
-              if (baseHabitId != null) {
-                callback(baseHabitId, receivedAction.buttonKeyPressed!);
-              }
-            } else if (directHandler != null) {
-              AppLogger.info(
-                  '✅ Using direct completion handler (app is running)');
-              // Extract base habitId for direct handler
-              final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
-                  receivedAction.payload!['data']!);
-              if (baseHabitId != null) {
-                await directHandler(baseHabitId);
-              }
-            } else {
-              AppLogger.info(
-                  '⚠️ No handlers available, using background Isar access');
-              // Pass RAW habitId (with time slot for hourly habits) to background handler
-              await NotificationActionHandlerIsar.completeHabitInBackground(
-                  rawHabitId, receivedAction.payload!['data']!);
+          if (callback != null) {
+            AppLogger.info('✅ Using callback handler (app is running)');
+            // Extract base habitId for callback (callbacks expect base ID)
+            final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
+                receivedAction.payload!['data']!);
+            if (baseHabitId != null) {
+              callback(baseHabitId, buttonKey);
             }
+          } else if (directHandler != null) {
+            AppLogger.info(
+                '✅ Using direct completion handler (app is running)');
+            // Extract base habitId for direct handler
+            final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
+                receivedAction.payload!['data']!);
+            if (baseHabitId != null) {
+              await directHandler(baseHabitId);
+            }
+          } else {
+            AppLogger.info(
+                '⚠️ No handlers available, using background Isar access');
+            // Pass RAW habitId (with time slot for hourly habits) to background handler
+            await NotificationActionHandlerIsar.completeHabitInBackground(
+                rawHabitId, receivedAction.payload!['data']!);
           }
         }
       } catch (e) {
