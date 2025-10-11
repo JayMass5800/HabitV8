@@ -185,12 +185,13 @@ class NotificationActionHandlerIsar {
 
       // Initialize Isar in background isolate
       // CRITICAL: Must use same database name as main app ('habitv8_db')
+      // CRITICAL: Must use same inspector setting as main app for multi-isolate compatibility
       final dir = await getApplicationDocumentsDirectory();
       final isar = await Isar.open(
         [HabitSchema],
         directory: dir.path,
         name: 'habitv8_db', // MUST match database name in database_isar.dart
-        inspector: false,
+        inspector: true, // MUST match inspector setting in database_isar.dart
       );
 
       AppLogger.info('✅ Isar opened in background isolate');
@@ -337,6 +338,10 @@ class NotificationActionHandlerIsar {
   }
 
   /// Calculate current streak from completions
+  ///
+  /// CRITICAL: @pragma annotation prevents tree-shaking in release builds
+  /// This method is called from completeHabitInBackground() which runs in background isolate
+  @pragma('vm:entry-point')
   static int _calculateStreak(List<DateTime> completions) {
     if (completions.isEmpty) return 0;
 

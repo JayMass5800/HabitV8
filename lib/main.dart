@@ -8,6 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'data/database_isar.dart'; // CRITICAL: Import Isar database for notification scheduling
+import 'domain/model/habit.dart'; // CRITICAL: Explicit import prevents tree-shaking of HabitSchema in release builds
 import 'services/notification_service.dart';
 import 'services/notification_action_service.dart';
 import 'services/alarm_manager_service.dart';

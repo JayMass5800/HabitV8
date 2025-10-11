@@ -73,6 +73,10 @@ class NotificationHelpers {
   /// - Hourly: {"habitId": "abc123|14:30"}
   ///
   /// Returns null if payload is invalid or habitId is missing.
+  ///
+  /// CRITICAL: @pragma annotation prevents tree-shaking in release builds
+  /// This method is called from background isolate in notification_action_handler.dart
+  @pragma('vm:entry-point')
   static String? extractHabitIdFromPayload(String? payload) {
     if (payload == null || payload.isEmpty) {
       return null;

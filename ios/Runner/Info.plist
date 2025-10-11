@@ -54,6 +54,17 @@
 	<key>NSUserNotificationUsageDescription</key>
 	<string>This app sends notifications to remind you about your habits and celebrate your achievements.</string>
 
+	<!-- Background modes for notification handling -->
+	<!-- NOTE: iOS does NOT support local notification action execution in terminated state -->
+	<!-- These modes only work when app is in background (not terminated) -->
+	<!-- For true terminated-state execution, remote notifications (APNs) are required -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+		<string>remote-notification</string>
+	</array>
+
 	<!-- Camera and photo library for habit progress photos -->
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs camera access to let you take progress photos for your habits.</string>
