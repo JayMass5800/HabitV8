@@ -128,6 +128,17 @@
             android:enabled="true"
             android:exported="false" />
         
+        <!-- Notification Widget Bridge - intercepts notification actions to trigger widget updates -->
+        <!-- This runs BEFORE the Dart background handler and works even when app is fully closed -->
+        <receiver
+            android:name=".NotificationWidgetBridge"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter android:priority="999">
+                <action android:name="me.carda.awesome_notifications.NOTIFICATION_ACTION" />
+            </intent-filter>
+        </receiver>
+        
         <!-- Widget update receiver for CRITICAL system events only -->
         <!-- BATTERY OPTIMIZATION: Removed SCREEN_ON, USER_PRESENT, DREAMING_STOPPED, POWER_* -->
         <!-- These events fire too frequently and drain battery unnecessarily -->

@@ -104,59 +104,70 @@ class WidgetBackgroundUpdateService {
 ///
 /// CRITICAL: This function runs in a separate isolate with no access to the main app state.
 /// It must initialize its own Isar instance and read data independently.
+///
+/// HANDLES MULTIPLE TASK TYPES:
+/// - 'widget_background_update': Periodic background updates (every 30 min)
+/// - 'widgetUpdate': Immediate updates triggered from notification actions
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
       debugPrint('🔄 [Background] Widget update task started: $task');
 
-      // Initialize Isar in the background isolate
-      final isar = await IsarDatabaseService.getInstance();
-      final habitService = HabitServiceIsar(isar);
+      // Handle both task types - they both do the same thing: update widgets
+      if (task == 'widget_background_update' || task == 'widgetUpdate') {
+        // Initialize Isar in the background isolate
+        final isar = await IsarDatabaseService.getInstance();
+        final habitService = HabitServiceIsar(isar);
 
-      // Get fresh habit data from database
-      final allHabits = await habitService.getAllHabits();
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
+        // Get fresh habit data from database
+        final allHabits = await habitService.getAllHabits();
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
 
-      // Filter habits for today
-      final todayHabits = allHabits.where((habit) {
-        return _shouldShowHabitOnDate(habit, today);
-      }).toList();
+        // Filter habits for today
+        final todayHabits = allHabits.where((habit) {
+          return _shouldShowHabitOnDate(habit, today);
+        }).toList();
 
-      debugPrint(
-          '🔄 [Background] Found ${allHabits.length} total habits, ${todayHabits.length} for today');
+        debugPrint(
+            '🔄 [Background] Found ${allHabits.length} total habits, ${todayHabits.length} for today');
 
-      // Convert habits to JSON
-      final habitsJson = jsonEncode(
-        todayHabits.map((h) => _habitToJson(h, today)).toList(),
-      );
+        // Convert habits to JSON
+        final habitsJson = jsonEncode(
+          todayHabits.map((h) => _habitToJson(h, today)).toList(),
+        );
 
-      // Save to SharedPreferences via home_widget
-      await HomeWidget.saveWidgetData<String>('habits', habitsJson);
-      await HomeWidget.saveWidgetData<String>('today_habits', habitsJson);
-      await HomeWidget.saveWidgetData<int>(
-        'lastUpdate',
-        DateTime.now().millisecondsSinceEpoch,
-      );
+        // Save to SharedPreferences via home_widget
+        await HomeWidget.saveWidgetData<String>('habits', habitsJson);
+        await HomeWidget.saveWidgetData<String>('today_habits', habitsJson);
+        await HomeWidget.saveWidgetData<int>(
+          'lastUpdate',
+          DateTime.now().millisecondsSinceEpoch,
+        );
 
-      debugPrint(
-          '🔄 [Background] Saved widget data: ${habitsJson.length} characters');
+        debugPrint(
+            '🔄 [Background] Saved widget data: ${habitsJson.length} characters');
 
-      // Trigger widget UI refresh
-      await HomeWidget.updateWidget(
-        name: 'HabitTimelineWidgetProvider',
-        androidName: 'HabitTimelineWidgetProvider',
-      );
+        // Trigger widget UI refresh
+        await HomeWidget.updateWidget(
+          name: 'HabitTimelineWidgetProvider',
+          androidName: 'HabitTimelineWidgetProvider',
+        );
 
-      await HomeWidget.updateWidget(
-        name: 'HabitCompactWidgetProvider',
-        androidName: 'HabitCompactWidgetProvider',
-      );
+        await HomeWidget.updateWidget(
+          name: 'HabitCompactWidgetProvider',
+          androidName: 'HabitCompactWidgetProvider',
+        );
 
-      debugPrint('✅ [Background] Widget update completed successfully');
+        debugPrint(
+            '✅ [Background] Widget update completed successfully for task: $task');
 
-      return Future.value(true);
+        return Future.value(true);
+      } else {
+        debugPrint('⚠️ [Background] Unknown task type: $task');
+        return Future.value(false);
+      }
     } catch (e, stackTrace) {
       debugPrint('❌ [Background] Error updating widgets: $e');
       debugPrint('❌ [Background] Stack trace: $stackTrace');

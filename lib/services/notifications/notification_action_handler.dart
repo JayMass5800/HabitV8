@@ -8,6 +8,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:android_intent_plus/android_intent.dart';
+import 'package:workmanager/workmanager.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
 import '../../domain/model/scheduled_notification.dart';
@@ -307,19 +308,51 @@ class NotificationActionHandlerIsar {
 
           AppLogger.info('📱 Triggering widget update from background...');
 
-          // STRATEGY 1: Try method channel first (most reliable when app is running)
-          try {
-            const widgetUpdateChannel =
-                MethodChannel('com.habittracker.habitv8/widget_update');
-            await widgetUpdateChannel.invokeMethod('forceWidgetRefresh');
-            AppLogger.info('✅ Widget updated via method channel');
-          } catch (e) {
-            AppLogger.info(
-                '⚠️ Method channel unavailable (app may be closed): $e');
-            // Continue to fallback strategies
+          // STRATEGY 1: Use Workmanager to trigger immediate native widget update
+          // This is the MOST RELIABLE method because Workmanager runs in native Android context
+          // and doesn't depend on Flutter engine or method channels
+          //
+          // CRITICAL FIX: Task name 'widgetUpdate' is handled by callbackDispatcher() in
+          // widget_background_update_service.dart which is registered in main.dart.
+          // The callback handles both 'widgetUpdate' (immediate) and 'widget_background_update' (periodic).
+          if (Platform.isAndroid) {
+            try {
+              await Workmanager().registerOneOffTask(
+                'widget-update-${DateTime.now().millisecondsSinceEpoch}',
+                'widgetUpdate', // Handled by widget_background_update_service.dart callback
+                initialDelay: Duration.zero, // Execute immediately
+                constraints: Constraints(
+                  networkType: NetworkType.not_required,
+                ),
+              );
+              AppLogger.info(
+                  '✅ Widget update scheduled via Workmanager (PRIMARY METHOD)');
+            } catch (e) {
+              AppLogger.warning('⚠️ Workmanager scheduling failed: $e');
+            }
           }
 
-          // STRATEGY 2: Use home_widget package update
+          // STRATEGY 2: Try method channels (works when app is running or in background)
+          try {
+            const backgroundWidgetChannel = MethodChannel(
+                'com.habittracker.habitv8/background_widget_update');
+            await backgroundWidgetChannel.invokeMethod('updateWidgets');
+            AppLogger.info('✅ Widget updated via background plugin');
+          } catch (e) {
+            AppLogger.info('⚠️ Background widget plugin unavailable: $e');
+
+            // FALLBACK: Try main widget update channel
+            try {
+              const widgetUpdateChannel =
+                  MethodChannel('com.habittracker.habitv8/widget_update');
+              await widgetUpdateChannel.invokeMethod('forceWidgetRefresh');
+              AppLogger.info('✅ Widget updated via main method channel');
+            } catch (e2) {
+              AppLogger.info('⚠️ Main method channel unavailable: $e2');
+            }
+          }
+
+          // STRATEGY 3: Use home_widget package update as additional backup
           await HomeWidget.updateWidget(
             name: 'HabitTimelineWidgetProvider',
             iOSName: 'HabitTimelineWidget',
@@ -329,59 +362,6 @@ class NotificationActionHandlerIsar {
             iOSName: 'HabitCompactWidget',
           );
           AppLogger.info('✅ Widget update called via home_widget package');
-
-          // STRATEGY 3: On Android, send HABIT_COMPLETED broadcast to trigger HabitCompletionReceiver
-          // This is the MOST RELIABLE method for updating widgets when app is fully closed
-          // because it uses native Android BroadcastReceiver that works independently of Flutter
-          if (Platform.isAndroid) {
-            try {
-              // Determine package name based on build mode
-              final packageName = kDebugMode
-                  ? 'com.habittracker.habitv8.debug'
-                  : 'com.habittracker.habitv8';
-
-              AppLogger.info(
-                  '📦 Using package name for widget update: $packageName');
-
-              // PRIORITY 1: Send HABIT_COMPLETED broadcast to HabitCompletionReceiver
-              // This triggers the native receiver that's specifically designed for habit completions
-              try {
-                final habitCompletionIntent = AndroidIntent(
-                  action: 'com.habittracker.habitv8.HABIT_COMPLETED',
-                  package: packageName,
-                  componentName: '$packageName.HabitCompletionReceiver',
-                );
-                await habitCompletionIntent.launch();
-                AppLogger.info(
-                    '✅ HABIT_COMPLETED broadcast sent to HabitCompletionReceiver');
-              } catch (e) {
-                AppLogger.warning(
-                    '⚠️ Failed to send HABIT_COMPLETED broadcast: $e');
-              }
-
-              // FALLBACK: Send generic APPWIDGET_UPDATE broadcasts as backup
-              final timelineIntent = AndroidIntent(
-                action: 'android.appwidget.action.APPWIDGET_UPDATE',
-                package: packageName,
-                componentName: '$packageName.HabitTimelineWidgetProvider',
-              );
-              await timelineIntent.launch();
-
-              final compactIntent = AndroidIntent(
-                action: 'android.appwidget.action.APPWIDGET_UPDATE',
-                package: packageName,
-                componentName: '$packageName.HabitCompactWidgetProvider',
-              );
-              await compactIntent.launch();
-
-              AppLogger.info(
-                  '✅ All Android broadcast intents sent for widget update');
-            } catch (e) {
-              AppLogger.warning(
-                  '⚠️ Failed to send Android broadcast intent: $e');
-              // Continue anyway - other strategies may have worked
-            }
-          }
 
           AppLogger.info(
               '✅ Widget update completed from background (all strategies attempted)');

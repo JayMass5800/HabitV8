@@ -164,6 +164,32 @@ class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
+        // Background widget update channel - works from background isolates
+        // This channel uses application context, not activity context, so it works
+        // even when the app is fully closed and a background isolate is running
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.habittracker.habitv8/background_widget_update").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "updateWidgets" -> {
+                    try {
+                        android.util.Log.i("BackgroundWidget", "🔄 Widget update requested from background isolate")
+                        
+                        // Use application context to update widgets
+                        // This works even when MainActivity is not running
+                        val context = applicationContext
+                        WidgetUpdateHelper.forceWidgetRefresh(context)
+                        WidgetUpdateWorker.triggerImmediateUpdate(context)
+                        
+                        android.util.Log.i("BackgroundWidget", "✅ Widget update completed from background")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        android.util.Log.e("BackgroundWidget", "❌ Failed to update widgets from background", e)
+                        result.error("WIDGET_UPDATE_ERROR", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
         // Android Resources channel for accessing string resources and billing configuration
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, ANDROID_RESOURCES_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
