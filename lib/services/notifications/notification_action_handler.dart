@@ -84,9 +84,16 @@ Future<void> onBackgroundNotificationActionIsar(
           } else {
             AppLogger.info(
                 '⚠️ No handlers available, using background Isar access');
-            // Pass RAW habitId (with time slot for hourly habits) to background handler
-            await NotificationActionHandlerIsar.completeHabitInBackground(
-                rawHabitId, receivedAction.payload!['data']!);
+            // Handle different actions in background
+            if (buttonKey == 'complete') {
+              // Pass RAW habitId (with time slot for hourly habits) to background handler
+              await NotificationActionHandlerIsar.completeHabitInBackground(
+                  rawHabitId, receivedAction.payload!['data']!);
+            } else if (buttonKey == 'snooze' || buttonKey == 'snooze_alarm') {
+              // Handle snooze in background
+              await NotificationActionHandlerIsar.snoozeAlarmInBackground(
+                  rawHabitId, receivedAction.payload!['data']!);
+            }
           }
         }
       } catch (e) {
@@ -142,6 +149,12 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
           final callback = NotificationActionHandlerIsar.onNotificationAction;
           if (callback != null) {
             callback(habitId, 'snooze');
+          }
+        } else if (receivedAction.buttonKeyPressed == 'snooze_alarm') {
+          AppLogger.info('⏰ Alarm snooze action detected - calling handler');
+          final callback = NotificationActionHandlerIsar.onNotificationAction;
+          if (callback != null) {
+            callback(habitId, 'snooze_alarm');
           }
         } else {
           AppLogger.info('ℹ️ Non-action button or no button, just opening app');
@@ -350,6 +363,135 @@ class NotificationActionHandlerIsar {
       AppLogger.info('✅ Background habit completion finished');
     } catch (e) {
       AppLogger.error('Error completing habit in background', e);
+    }
+  }
+
+  /// Snooze an alarm from background notification action
+  ///
+  /// This method runs in a background isolate and schedules a new alarm notification.
+  /// It directly accesses the Isar database to get habit details for the snooze.
+  @pragma('vm:entry-point')
+  static Future<void> snoozeAlarmInBackground(
+      String rawHabitId, String payloadJson) async {
+    try {
+      AppLogger.info('⏰ Starting background alarm snooze for: $rawHabitId');
+
+      // Initialize Isar in background isolate
+      final dir = await getApplicationDocumentsDirectory();
+      final isar = await Isar.open(
+        [HabitSchema, ScheduledNotificationSchema],
+        directory: dir.path,
+        name: 'habitv8_db',
+        inspector: true,
+      );
+
+      AppLogger.info('✅ Isar opened in background isolate for snooze');
+
+      // Extract base habit ID
+      final baseHabitId =
+          NotificationHelpers.extractHabitIdFromPayload(payloadJson);
+      if (baseHabitId == null) {
+        AppLogger.error('Failed to extract base habit ID from payload');
+        await isar.close();
+        return;
+      }
+
+      // Find the habit to get snooze settings
+      final habit =
+          await isar.habits.filter().idEqualTo(baseHabitId).findFirst();
+
+      if (habit == null) {
+        AppLogger.error('❌ Habit not found in background: $baseHabitId');
+        await isar.close();
+        return;
+      }
+
+      AppLogger.info('✅ Found habit for snooze: ${habit.name}');
+      AppLogger.info('   Snooze delay: ${habit.snoozeDelayMinutes} minutes');
+
+      // Parse payload to get alarm details
+      final payload = jsonDecode(payloadJson);
+      final alarmSoundName = payload['alarmSoundName'] as String?;
+      final snoozeDelayMinutes = habit.snoozeDelayMinutes;
+
+      // Schedule snooze alarm
+      final snoozeTime = DateTime.now().add(
+        Duration(minutes: snoozeDelayMinutes),
+      );
+      final snoozeId =
+          NotificationHelpers.generateSnoozeNotificationId(baseHabitId);
+
+      // Create snooze text
+      String snoozeText = '⏰ Snooze ';
+      if (snoozeDelayMinutes < 60) {
+        snoozeText += '${snoozeDelayMinutes}min';
+      } else {
+        final hours = snoozeDelayMinutes ~/ 60;
+        final minutes = snoozeDelayMinutes % 60;
+        if (minutes == 0) {
+          snoozeText += '${hours}h';
+        } else {
+          snoozeText += '${hours}h ${minutes}min';
+        }
+      }
+
+      // Prepare custom sound if provided
+      String? customSound;
+      if (alarmSoundName != null && alarmSoundName != 'default') {
+        customSound = 'resource://raw/${alarmSoundName.replaceAll('.mp3', '')}';
+      }
+
+      // Create the snooze alarm notification
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: snoozeId,
+          channelKey: 'habit_alarms',
+          title: '🚨 HABIT ALARM: ${habit.name}',
+          body:
+              'Time to complete your habit! Tap to mark as complete or snooze.',
+          category: NotificationCategory.Alarm,
+          notificationLayout: NotificationLayout.Default,
+          fullScreenIntent: true,
+          wakeUpScreen: true,
+          criticalAlert: true,
+          locked: true,
+          customSound: customSound,
+          payload: {
+            'data': jsonEncode({
+              'habitId': baseHabitId,
+              'alarmSoundName': alarmSoundName,
+              'snoozeDelayMinutes': snoozeDelayMinutes,
+            })
+          },
+        ),
+        actionButtons: [
+          NotificationActionButton(
+            key: 'complete',
+            label: '✅ COMPLETE',
+            actionType: ActionType.SilentBackgroundAction,
+            autoDismissible: true,
+          ),
+          NotificationActionButton(
+            key: 'snooze_alarm',
+            label: snoozeText,
+            actionType: ActionType.SilentBackgroundAction,
+            autoDismissible: false,
+          ),
+        ],
+        schedule: NotificationCalendar.fromDate(
+          date: snoozeTime,
+          allowWhileIdle: true,
+          preciseAlarm: true,
+        ),
+      );
+
+      AppLogger.info(
+          '✅ Snooze alarm scheduled in background for: ${habit.name} at $snoozeTime');
+
+      await isar.close();
+      AppLogger.info('✅ Background alarm snooze finished');
+    } catch (e) {
+      AppLogger.error('Error snoozing alarm in background', e);
     }
   }
 
