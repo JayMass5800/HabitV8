@@ -234,23 +234,53 @@ class NotificationActionHandlerIsar {
 
       AppLogger.info('✅ Found habit in background: ${habit.name}');
 
-      // Mark habit as complete for today
+      // Determine completion time based on habit frequency
       final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
+      DateTime completionTime = now;
 
-      // Check if already completed today
-      final alreadyCompleted = habit.completions.any((completion) {
-        final completionDate = DateTime(
-          completion.year,
-          completion.month,
-          completion.day,
-        );
-        return completionDate.isAtSameMomentAs(today);
-      });
+      // For hourly habits, extract the specific time slot from payload
+      if (habit.frequency == HabitFrequency.hourly) {
+        final timeSlot =
+            NotificationHelpers.extractTimeSlotFromPayload(payloadJson);
+        if (timeSlot != null) {
+          final hour = timeSlot['hour']!;
+          final minute = timeSlot['minute']!;
+          completionTime = DateTime(now.year, now.month, now.day, hour, minute);
+          AppLogger.info(
+              '📅 Hourly habit - using time slot: ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
+        } else {
+          AppLogger.warning(
+              '⚠️ Hourly habit but no time slot in payload, using current time');
+        }
+      }
+
+      // Check if already completed for this specific time
+      bool alreadyCompleted = false;
+      if (habit.frequency == HabitFrequency.hourly) {
+        // For hourly habits, check if this specific time slot is already completed
+        alreadyCompleted = habit.completions.any((completion) {
+          return completion.year == completionTime.year &&
+              completion.month == completionTime.month &&
+              completion.day == completionTime.day &&
+              completion.hour == completionTime.hour &&
+              completion.minute == completionTime.minute;
+        });
+      } else {
+        // For non-hourly habits, check if completed today
+        final today = DateTime(now.year, now.month, now.day);
+        alreadyCompleted = habit.completions.any((completion) {
+          final completionDate = DateTime(
+            completion.year,
+            completion.month,
+            completion.day,
+          );
+          return completionDate.isAtSameMomentAs(today);
+        });
+      }
 
       if (!alreadyCompleted) {
-        // Add completion
-        habit.completions.add(now);
+        // Add completion with the correct time
+        habit.completions.add(completionTime);
 
         // Update streak
         habit.currentStreak = _calculateStreak(habit.completions);
@@ -263,8 +293,11 @@ class NotificationActionHandlerIsar {
           await isar.habits.put(habit);
         });
 
+        final timeInfo = habit.frequency == HabitFrequency.hourly
+            ? ' at ${completionTime.hour.toString().padLeft(2, '0')}:${completionTime.minute.toString().padLeft(2, '0')}'
+            : '';
         AppLogger.info(
-            '✅ Habit completed in background: ${habit.name} (Streak: ${habit.currentStreak})');
+            '✅ Habit completed in background: ${habit.name}$timeInfo (Streak: ${habit.currentStreak})');
 
         // Update widget - CRITICAL for homescreen widget updates when app is closed
         try {
@@ -356,7 +389,10 @@ class NotificationActionHandlerIsar {
           AppLogger.error('Failed to update widget from background', e);
         }
       } else {
-        AppLogger.info('Habit already completed today: ${habit.name}');
+        final timeInfo = habit.frequency == HabitFrequency.hourly
+            ? ' for time slot ${completionTime.hour.toString().padLeft(2, '0')}:${completionTime.minute.toString().padLeft(2, '0')}'
+            : ' today';
+        AppLogger.info('Habit already completed$timeInfo: ${habit.name}');
       }
 
       await isar.close();
