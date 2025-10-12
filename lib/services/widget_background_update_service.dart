@@ -134,9 +134,16 @@ void callbackDispatcher() {
             '🔄 [Background] Found ${allHabits.length} total habits, ${todayHabits.length} for today');
 
         // Convert habits to JSON
-        final habitsJson = jsonEncode(
-          todayHabits.map((h) => _habitToJson(h, today)).toList(),
-        );
+        final habitsList =
+            todayHabits.map((h) => _habitToJson(h, today)).toList();
+        final habitsJson = jsonEncode(habitsList);
+
+        debugPrint(
+            '🔄 [Background] Preparing to save ${habitsList.length} habits (${habitsJson.length} chars)');
+        debugPrint(
+            '🔄 [Background] Habit names: ${habitsList.map((h) => h['name']).join(', ')}');
+        debugPrint(
+            '🔄 [Background] JSON preview: ${habitsJson.length > 200 ? habitsJson.substring(0, 200) : habitsJson}');
 
         // Save to SharedPreferences via home_widget
         await HomeWidget.saveWidgetData<String>('habits', habitsJson);
@@ -147,7 +154,7 @@ void callbackDispatcher() {
         );
 
         debugPrint(
-            '🔄 [Background] Saved widget data: ${habitsJson.length} characters');
+            '✅ [Background] Saved widget data: ${habitsList.length} habits, ${habitsJson.length} characters');
 
         // Trigger widget UI refresh
         await HomeWidget.updateWidget(

@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:home_widget/home_widget.dart';
 import 'package:workmanager/workmanager.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
@@ -300,71 +298,29 @@ class NotificationActionHandlerIsar {
 
         // Update widget - CRITICAL for homescreen widget updates when app is closed
         try {
-          // Save widget data with timestamp
-          await HomeWidget.saveWidgetData(
-              'last_update', DateTime.now().millisecondsSinceEpoch.toString());
-
           AppLogger.info('📱 Triggering widget update from background...');
 
-          // STRATEGY 1: Use Workmanager to trigger immediate native widget update
+          // Use Workmanager to trigger immediate native widget update
           // This is the MOST RELIABLE method because Workmanager runs in native Android context
-          // and doesn't depend on Flutter engine or method channels
+          // and doesn't depend on Flutter engine or method channels.
           //
-          // CRITICAL FIX: Task name 'widgetUpdate' is handled by callbackDispatcher() in
+          // Task name 'widgetUpdate' is handled by callbackDispatcher() in
           // widget_background_update_service.dart which is registered in main.dart.
           // The callback handles both 'widgetUpdate' (immediate) and 'widget_background_update' (periodic).
           if (Platform.isAndroid) {
-            try {
-              await Workmanager().registerOneOffTask(
-                'widget-update-${DateTime.now().millisecondsSinceEpoch}',
-                'widgetUpdate', // Handled by widget_background_update_service.dart callback
-                initialDelay: Duration.zero, // Execute immediately
-                constraints: Constraints(
-                  networkType: NetworkType.notRequired,
-                ),
-              );
-              AppLogger.info(
-                  '✅ Widget update scheduled via Workmanager (PRIMARY METHOD)');
-            } catch (e) {
-              AppLogger.warning('⚠️ Workmanager scheduling failed: $e');
-            }
+            await Workmanager().registerOneOffTask(
+              'widget-update-${DateTime.now().millisecondsSinceEpoch}',
+              'widgetUpdate', // Handled by widget_background_update_service.dart callback
+              initialDelay: Duration.zero, // Execute immediately
+              constraints: Constraints(
+                networkType: NetworkType.notRequired,
+              ),
+            );
+            AppLogger.info('✅ Widget update scheduled via Workmanager');
           }
-
-          // STRATEGY 2: Try method channels (works when app is running or in background)
-          try {
-            const backgroundWidgetChannel = MethodChannel(
-                'com.habittracker.habitv8/background_widget_update');
-            await backgroundWidgetChannel.invokeMethod('updateWidgets');
-            AppLogger.info('✅ Widget updated via background plugin');
-          } catch (e) {
-            AppLogger.info('⚠️ Background widget plugin unavailable: $e');
-
-            // FALLBACK: Try main widget update channel
-            try {
-              const widgetUpdateChannel =
-                  MethodChannel('com.habittracker.habitv8/widget_update');
-              await widgetUpdateChannel.invokeMethod('forceWidgetRefresh');
-              AppLogger.info('✅ Widget updated via main method channel');
-            } catch (e2) {
-              AppLogger.info('⚠️ Main method channel unavailable: $e2');
-            }
-          }
-
-          // STRATEGY 3: Use home_widget package update as additional backup
-          await HomeWidget.updateWidget(
-            name: 'HabitTimelineWidgetProvider',
-            iOSName: 'HabitTimelineWidget',
-          );
-          await HomeWidget.updateWidget(
-            name: 'HabitCompactWidgetProvider',
-            iOSName: 'HabitCompactWidget',
-          );
-          AppLogger.info('✅ Widget update called via home_widget package');
-
-          AppLogger.info(
-              '✅ Widget update completed from background (all strategies attempted)');
         } catch (e) {
-          AppLogger.error('Failed to update widget from background', e);
+          AppLogger.error(
+              'Failed to schedule widget update from background', e);
         }
       } else {
         final timeInfo = habit.frequency == HabitFrequency.hourly
