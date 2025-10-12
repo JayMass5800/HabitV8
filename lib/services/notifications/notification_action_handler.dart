@@ -284,13 +284,12 @@ class NotificationActionHandlerIsar {
           );
           AppLogger.info('✅ Widget update called via home_widget package');
 
-          // STRATEGY 3: On Android, send broadcast intent to force widget refresh
-          // This ensures widgets update even when app is fully closed
+          // STRATEGY 3: On Android, send HABIT_COMPLETED broadcast to trigger HabitCompletionReceiver
+          // This is the MOST RELIABLE method for updating widgets when app is fully closed
+          // because it uses native Android BroadcastReceiver that works independently of Flutter
           if (Platform.isAndroid) {
             try {
               // Determine package name based on build mode
-              // In debug mode, package is com.habittracker.habitv8.debug
-              // In release/profile mode, package is com.habittracker.habitv8
               final packageName = kDebugMode
                   ? 'com.habittracker.habitv8.debug'
                   : 'com.habittracker.habitv8';
@@ -298,7 +297,23 @@ class NotificationActionHandlerIsar {
               AppLogger.info(
                   '📦 Using package name for widget update: $packageName');
 
-              // Send broadcast to HabitTimelineWidgetProvider
+              // PRIORITY 1: Send HABIT_COMPLETED broadcast to HabitCompletionReceiver
+              // This triggers the native receiver that's specifically designed for habit completions
+              try {
+                final habitCompletionIntent = AndroidIntent(
+                  action: 'com.habittracker.habitv8.HABIT_COMPLETED',
+                  package: packageName,
+                  componentName: '$packageName.HabitCompletionReceiver',
+                );
+                await habitCompletionIntent.launch();
+                AppLogger.info(
+                    '✅ HABIT_COMPLETED broadcast sent to HabitCompletionReceiver');
+              } catch (e) {
+                AppLogger.warning(
+                    '⚠️ Failed to send HABIT_COMPLETED broadcast: $e');
+              }
+
+              // FALLBACK: Send generic APPWIDGET_UPDATE broadcasts as backup
               final timelineIntent = AndroidIntent(
                 action: 'android.appwidget.action.APPWIDGET_UPDATE',
                 package: packageName,
@@ -306,7 +321,6 @@ class NotificationActionHandlerIsar {
               );
               await timelineIntent.launch();
 
-              // Send broadcast to HabitCompactWidgetProvider
               final compactIntent = AndroidIntent(
                 action: 'android.appwidget.action.APPWIDGET_UPDATE',
                 package: packageName,
@@ -315,7 +329,7 @@ class NotificationActionHandlerIsar {
               await compactIntent.launch();
 
               AppLogger.info(
-                  '✅ Android broadcast intents sent for widget update');
+                  '✅ All Android broadcast intents sent for widget update');
             } catch (e) {
               AppLogger.warning(
                   '⚠️ Failed to send Android broadcast intent: $e');

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/database_isar.dart';
 import '../domain/model/habit.dart';
@@ -10,6 +11,8 @@ import 'widget_integration_service.dart';
 /// Service to handle notification actions and connect them to habit management
 class NotificationActionService {
   static ProviderContainer? _container;
+  static const MethodChannel _widgetUpdateChannel =
+      MethodChannel('com.habittracker.habitv8/widget_update');
 
   /// Initialize the notification action service with a provider container
   static void initialize(ProviderContainer container) {
@@ -58,6 +61,20 @@ class NotificationActionService {
       AppLogger.info('✅ Notification action callback is properly registered');
     } else {
       AppLogger.error('❌ Container is null - cannot register callback');
+    }
+  }
+
+  /// Send native Android broadcast to trigger widget update
+  /// This works even when the Flutter engine is not running (app fully closed)
+  static Future<void> _sendWidgetUpdateBroadcast() async {
+    try {
+      AppLogger.info(
+          '📢 Sending native Android broadcast for widget update...');
+      await _widgetUpdateChannel.invokeMethod('sendHabitCompletionBroadcast');
+      AppLogger.info('✅ Native widget update broadcast sent successfully');
+    } catch (e) {
+      AppLogger.error('❌ Failed to send native widget update broadcast', e);
+      // Don't throw - this is a non-critical enhancement
     }
   }
 
@@ -261,11 +278,15 @@ class NotificationActionService {
             AppLogger.info(
                 '🔄 Updating widgets after notification completion...');
 
-            // Use force update to ensure widgets refresh immediately
+            // FIRST: Send native Android broadcast for widget update
+            // This works even when the Flutter engine is not running (app fully closed)
+            await _sendWidgetUpdateBroadcast();
+
+            // SECOND: Use Flutter widget update as backup (only works when app is running)
             await WidgetIntegrationService.instance.forceWidgetUpdate();
 
             AppLogger.info(
-                '✅ Widgets force-updated successfully after notification completion');
+                '✅ Widgets updated successfully (native broadcast + Flutter update)');
           } catch (e) {
             AppLogger.error(
                 '❌ Failed to update widgets after notification completion', e);
