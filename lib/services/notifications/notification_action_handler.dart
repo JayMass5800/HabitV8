@@ -63,21 +63,15 @@ Future<void> onBackgroundNotificationActionIsar(
 
           if (callback != null) {
             AppLogger.info('✅ Using callback handler (app is running)');
-            // Extract base habitId for callback (callbacks expect base ID)
-            final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
-                receivedAction.payload!['data']!);
-            if (baseHabitId != null) {
-              callback(baseHabitId, buttonKey);
-            }
+            // CRITICAL: Pass RAW habitId (with time slot for hourly habits)
+            // The callback handler needs the full "habitId|HH:mm" format to properly
+            // identify which time slot to complete for hourly habits
+            callback(rawHabitId, buttonKey);
           } else if (directHandler != null) {
             AppLogger.info(
                 '✅ Using direct completion handler (app is running)');
-            // Extract base habitId for direct handler
-            final baseHabitId = NotificationHelpers.extractHabitIdFromPayload(
-                receivedAction.payload!['data']!);
-            if (baseHabitId != null) {
-              await directHandler(baseHabitId);
-            }
+            // CRITICAL: Pass RAW habitId (with time slot for hourly habits)
+            await directHandler(rawHabitId);
           } else {
             AppLogger.info(
                 '⚠️ No handlers available, using background Isar access');
@@ -124,11 +118,12 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
       final payload = jsonDecode(receivedAction.payload!['data']!);
       AppLogger.debug('🔍 DEBUG: Payload parsed successfully: $payload');
 
-      final habitId = NotificationHelpers.extractHabitIdFromPayload(
-          receivedAction.payload!['data']!);
-      AppLogger.debug('🔍 DEBUG: Extracted habitId: $habitId');
+      // CRITICAL: Get RAW habitId (with time slot for hourly habits)
+      // For hourly habits, this will be in format "habitId|HH:mm"
+      final rawHabitId = payload['habitId'] as String?;
+      AppLogger.debug('🔍 DEBUG: Raw habitId from payload: $rawHabitId');
 
-      if (habitId != null) {
+      if (rawHabitId != null) {
         AppLogger.debug('🔍 DEBUG: Checking if button key is "complete"');
         if (receivedAction.buttonKeyPressed == 'complete') {
           AppLogger.info('✅ Complete action detected - calling handler');
@@ -136,7 +131,8 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
           if (callback != null) {
             AppLogger.debug(
                 '🔍 DEBUG: Callback is not null, invoking callback');
-            callback(habitId, 'complete');
+            // Pass RAW habitId to preserve time slot for hourly habits
+            callback(rawHabitId, 'complete');
           } else {
             AppLogger.warning(
                 '⚠️ WARNING: Callback is null, cannot process action');
@@ -145,13 +141,15 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
           AppLogger.info('⏰ Snooze action detected - calling handler');
           final callback = NotificationActionHandlerIsar.onNotificationAction;
           if (callback != null) {
-            callback(habitId, 'snooze');
+            // Pass RAW habitId to preserve time slot for hourly habits
+            callback(rawHabitId, 'snooze');
           }
         } else if (receivedAction.buttonKeyPressed == 'snooze_alarm') {
           AppLogger.info('⏰ Alarm snooze action detected - calling handler');
           final callback = NotificationActionHandlerIsar.onNotificationAction;
           if (callback != null) {
-            callback(habitId, 'snooze_alarm');
+            // Pass RAW habitId to preserve time slot for hourly habits
+            callback(rawHabitId, 'snooze_alarm');
           }
         } else {
           AppLogger.info('ℹ️ Non-action button or no button, just opening app');
