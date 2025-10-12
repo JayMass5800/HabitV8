@@ -237,6 +237,9 @@ class NotificationActionHandlerIsar {
 
       // For hourly habits, extract the specific time slot from payload
       if (habit.frequency == HabitFrequency.hourly) {
+        AppLogger.info('🕐 Processing HOURLY habit: ${habit.name}');
+        AppLogger.info('🕐 Payload JSON: $payloadJson');
+
         final timeSlot =
             NotificationHelpers.extractTimeSlotFromPayload(payloadJson);
         if (timeSlot != null) {
@@ -245,23 +248,37 @@ class NotificationActionHandlerIsar {
           completionTime = DateTime(now.year, now.month, now.day, hour, minute);
           AppLogger.info(
               '📅 Hourly habit - using time slot: ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
+          AppLogger.info('📅 Completion time set to: $completionTime');
         } else {
           AppLogger.warning(
               '⚠️ Hourly habit but no time slot in payload, using current time');
+          AppLogger.warning('⚠️ This may cause incorrect completion tracking!');
         }
       }
 
       // Check if already completed for this specific time
       bool alreadyCompleted = false;
       if (habit.frequency == HabitFrequency.hourly) {
+        AppLogger.info('🕐 Checking if time slot already completed...');
+        AppLogger.info(
+            '🕐 Total completions for this habit: ${habit.completions.length}');
+
         // For hourly habits, check if this specific time slot is already completed
         alreadyCompleted = habit.completions.any((completion) {
-          return completion.year == completionTime.year &&
+          final matches = completion.year == completionTime.year &&
               completion.month == completionTime.month &&
               completion.day == completionTime.day &&
               completion.hour == completionTime.hour &&
               completion.minute == completionTime.minute;
+
+          if (matches) {
+            AppLogger.info('🕐 Found existing completion at: $completion');
+          }
+
+          return matches;
         });
+
+        AppLogger.info('🕐 Already completed: $alreadyCompleted');
       } else {
         // For non-hourly habits, check if completed today
         final today = DateTime(now.year, now.month, now.day);
@@ -276,19 +293,25 @@ class NotificationActionHandlerIsar {
       }
 
       if (!alreadyCompleted) {
+        AppLogger.info('💾 Saving new completion...');
+
         // Add completion with the correct time
         habit.completions.add(completionTime);
+        AppLogger.info(
+            '💾 Completion added to list. New total: ${habit.completions.length}');
 
         // Update streak
         habit.currentStreak = _calculateStreak(habit.completions);
         if (habit.currentStreak > habit.longestStreak) {
           habit.longestStreak = habit.currentStreak;
         }
+        AppLogger.info('💾 Streak updated: ${habit.currentStreak}');
 
         // Save to database
         await isar.writeTxn(() async {
           await isar.habits.put(habit);
         });
+        AppLogger.info('💾 Saved to Isar database');
 
         final timeInfo = habit.frequency == HabitFrequency.hourly
             ? ' at ${completionTime.hour.toString().padLeft(2, '0')}:${completionTime.minute.toString().padLeft(2, '0')}'
