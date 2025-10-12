@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:workmanager/workmanager.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
@@ -322,7 +320,7 @@ class NotificationActionHandlerIsar {
                 'widgetUpdate', // Handled by widget_background_update_service.dart callback
                 initialDelay: Duration.zero, // Execute immediately
                 constraints: Constraints(
-                  networkType: NetworkType.not_required,
+                  networkType: NetworkType.notRequired,
                 ),
               );
               AppLogger.info(
