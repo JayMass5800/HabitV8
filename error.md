@@ -1,363 +1,167 @@
-IsAnimationCallback=true, mOverrideBehavior=0}
-10-10 23:41:35.493  1463  3053 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.500  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.513  1463  3053 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.528  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.540  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.553  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.565  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.577  1463  5300 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.584  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.633  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.640  1463  4963 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.679  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.684  1463  4963 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.728  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.731  1463  5300 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.739  1463  5300 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.752  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.768  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.830  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.839  1463  5300 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.863  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.876  1463  5300 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.879  9210 24931 I Finsky  : [397] com.habittracker.habitv8: Account from first account -
-[8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
-10-10 23:41:35.880  9210 24931 I Finsky  : [397] Billing preferred account via installer for
-com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
-10-10 23:41:35.882  9210 24931 I Finsky  : [397] com.habittracker.habitv8: Account from first account -
-[8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
-10-10 23:41:35.882  9210 24931 I Finsky  : [397] Billing preferred account via installer for
-com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
-10-10 23:41:35.891  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.897  9210 24931 I Finsky  : [397] com.habittracker.habitv8: Account from first account -
-[8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
-10-10 23:41:35.898  9210 24931 I Finsky  : [397] Billing preferred account via installer for
-com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
-10-10 23:41:35.899  9210 16779 I Finsky  : [337] com.habittracker.habitv8: Account from first account -
-[8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
-10-10 23:41:35.899  9210 16779 I Finsky  : [337] Billing preferred account via installer for
-com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
-10-10 23:41:35.911  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.926  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:35.943  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.012  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.111  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.119  1463  4963 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.135  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.149  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.166  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.248  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.254  1463  4963 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.271  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.284  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.301  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.317  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.329  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.344  1463  5300 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.424  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.491 27489 27489 I ImeTracker: com.habittracker.habitv8:d4d5d4c6: onRequestShow at ORIGIN_CLIENT 
-reason SHOW_SOFT_INPUT fromUser false
-10-10 23:41:36.508  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1345
-onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=8001,
-inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true,
-imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0,
-initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null,
-extras=Bundle[mParcelledData.dataSize=168], hintText=null, hintLocales=[]}}, false)
-10-10 23:41:36.509  1463  5324 W PackageConfigPersister: App-specific configuration not found for packageName:     
-com.habittracker.habitv8 and userId: 0
-10-10 23:41:36.510  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():1438        
-onStartInputView(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=8001,
-inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true,
-imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0,
-initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null,
-extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null,   
-hintLocales=[]}}, false)
-10-10 23:41:36.517  4185  4185 I AndroidIME: AbstractIme.onActivate():96 LatinIme.onActivate() : EditorInfo =      
-EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect],
-enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null,
-actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2,   
-fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}],  
-hintText=null, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
-10-10 23:41:36.535  1463  5324 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.541  1463  2002 D CoreBackPreview: Window{e6e444f u0
-com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback
-OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@4dbbdaf, mPriority=0,
-mIsAnimationCallback=true, mOverrideBehavior=0}
-10-10 23:41:36.543  1463  3053 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.551  4185 25983 I KeyboardEventHandler: KeyboardEventHandler.handleFieldChangedEvent():457
-Handling FieldChangedEvent: fgPkg=com.habittracker.habitv8, fieldType=3.3e+04, interactionType=FIELD_CHANGE [SD]   
-10-10 23:41:36.558  1463  3049 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.571 27489 27489 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. 
-enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.habittracker.habitv8
-10-10 23:41:36.574  1463  3053 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.589  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.602  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.618  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.639  1463  3053 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.659  1463  5324 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.680  1463  5324 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.698  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.711  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.725  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.744  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.769  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.841  1463  5324 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.850  1463  2002 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.869 27489 27489 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
-10-10 23:41:36.876  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.880 27489 27489 I ImeTracker: com.habittracker.habitv8:d4d5d4c6: onShown
-10-10 23:41:36.895  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.896 27489 27521 I WM-WorkerWrapper: Worker result SUCCESS for Work [
-id=6808abc3-27da-461f-97ea-5e60b51eeb13, tags={
-com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
-10-10 23:41:36.909  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.925  1463  5324 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.938  1463  5324 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.945  1463  5324 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.960  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.976  1463  5324 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:36.989  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:37.005  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:37.026  1463  4963 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:37.041  1463  2002 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:37.073  1463  5324 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:37.243 27489 27489 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
-10-10 23:41:37.268 27489 27521 I WM-WorkerWrapper: Worker result SUCCESS for Work [ 
-id=ad131c8f-0b20-4bbe-a22a-b7dc9885c369, tags={
-com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
-10-10 23:41:38.466 27489 27601 D ProfileInstaller: Installing profile for com.habittracker.habitv8
-10-10 23:41:42.570 27489 27489 I ImeTracker: com.habittracker.habitv8:acd1cb58: onRequestHide at ORIGIN_CLIENT 
-reason HIDE_SOFT_INPUT fromUser false
-10-10 23:41:42.572  1463  2003 D CoreBackPreview: Window{e6e444f u0
-com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback
-OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@6960b03, mPriority=0,
-mIsAnimationCallback=true, mOverrideBehavior=0}
-10-10 23:41:48.480 27489 27489 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
-10-10 23:41:48.498  1463  2001 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.505 27489 27508 I WM-WorkerWrapper: Worker result SUCCESS for Work [
-id=04f8fa0e-53a0-43d5-9be1-cb7043c67458, tags={
-com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
-10-10 23:41:48.508  1463  2003 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.525  1463  2003 W JobScheduler: Job didn't exist in JobStore: f543455 
-{androidx.work.systemjobscheduler} #u0a559/101 #WidgetUpdateWorker#@androidx.work.systemjobscheduler@com.habittrac 
-ker.habitv8/androidx.work.impl.background.systemjob.SystemJobService
-10-10 23:41:48.530  1463  2003 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.554  1463  3049 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.570  1463  3049 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.583  1463  4551 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.601  1463  4551 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.622  1463  3049 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.643  1463  3049 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.663  1463  2003 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.684  1463  4551 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.705  1463  3049 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.720  1463  3049 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.738  1463  4551 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.753  1463  3049 W TelephonyPermissions:
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.769  1463  4551 W TelephonyPermissions: 
-reportAccessDeniedToReadIdentifiers:com.habittracker.habitv8:getSerial:-1
-10-10 23:41:48.791  1463  3049 D CoreBackPreview: Window{e6e444f u0 
-com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback 
-OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@9691d88, mPriority=-1,        
-mIsAnimationCallback=false, mOverrideBehavior=0}
-10-10 23:41:49.239 27489 27489 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
-10-10 23:41:49.269 27489 27508 I WM-WorkerWrapper: Worker result SUCCESS for Work [ 
-id=26020232-2737-49c2-acbd-a9295530e7c0, tags={ 
-com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
-10-10 23:41:50.073 18026 18026 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk 
-Display ID=-1, Tasks=[id=197 winMode=fullscreen visReq=true vis=true excluded=false 
-baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
-10-10 23:41:50.073 18026 18026 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk     
-ID= -1, Desk Display ID=-1, Tasks=[id=197 winMode=fullscreen visReq=true vis=true excluded=false
-baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
-10-10 23:41:50.106  1463  1714 V WindowManager:         {WCT{RemoteToken{e3d1976 Task{80c72c6 #197 type=standard 
-I=com.habittracker.habitv8/.MainActivity}}} m=TO_BACK f=NONE leash=Surface(name=Task=197)/@0x395dc38 sb=Rect(0, 0 
-- 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
-10-10 23:41:50.122 18026 18026 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk
-Display ID=-1, Tasks=[id=197 winMode=fullscreen visReq=false vis=false excluded=false
-baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
-10-10 23:41:50.122 18026 18026 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk     
-ID= -1, Desk Display ID=-1, Tasks=[id=197 winMode=fullscreen visReq=false vis=false excluded=false
-baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
-10-10 23:41:50.122  1463  3049 I InputDispatcher: Channel [Gesture Monitor] swipe-up is stealing input gesture     
-for device 3 from [e6e444f com.habittracker.habitv8/com.habittracker.habitv8.MainActivity, [Gesture Monitor]       
-edge-swipe]
-10-10 23:41:51.178  1463  3049 D CoreBackPreview: Window{e6e444f u0 
-com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback null
-10-10 23:41:51.181 27489 27489 I ImeTracker: com.habittracker.habitv8:e4393569: onRequestHide at ORIGIN_CLIENT     
-reason HIDE_SOFT_INPUT_CLOSE_CURRENT_SESSION fromUser false
-10-10 23:41:51.182 27489 27489 I ImeTracker: com.habittracker.habitv8:e4393569: onCancelled at
-PHASE_CLIENT_ALREADY_HIDDEN
-10-10 23:41:51.313  1463  1717 I ActivityManager: Killing 27489:com.habittracker.habitv8/u0a559 (adj 905): remove 
-task
-10-10 23:41:51.409  1463  5331 I MediaSessionStack: removeSession | record: 
-com.habittracker.habitv8/PUSH_MEDIA/103 (userId=0)
-10-10 23:41:51.410  1463  5331 D MediaSessionService: destroySessionLocked:
-record=com.habittracker.habitv8/PUSH_MEDIA/103 (userId=0)
-10-10 23:41:51.411  1463  2142 D MediaSessionService: setFgsIfNoSessionIsLinkedToNotification:
-record=com.habittracker.habitv8/PUSH_MEDIA/103 (userId=0)
-10-10 23:41:52.572  1463  2050 I ImeTracker: com.habittracker.habitv8:acd1cb58: setFinished at 
-PHASE_CLIENT_ANIMATION_CANCEL with STATUS_TIMEOUT
-10-10 23:42:00.060  1463  1730 I ActivityManager: Start proc 27713:com.habittracker.habitv8/u0a559 for broadcast 
-{com.habittracker.habitv8/me.carda.awesome_notifications.DartScheduledNotificationReceiver}
-10-10 23:42:00.071 27713 27713 I Zygote  : Process 27713 crated for com.habittracker.habitv8
-10-10 23:42:00.072 27713 27713 I tracker.habitv8: Using CollectorTypeCMC GC.
-10-10 23:42:00.076 27713 27713 E tracker.habitv8: Not starting debugger since process cannot load the jdwp agent.  
-10-10 23:42:00.118 27713 27713 D nativeloader: Configuring clns-9 for other apk 
-/data/app/~~0wE_4m3YELaEcz-W72JFZQ==/com.habittracker.habitv8-ibj7qxPfxGXxt-ObkHPZhw==/base.apk. 
-target_sdk_version=36, uses_libraries=, library_path=/data/app/~~0wE_4m3YELaEcz-W72JFZQ==/com.habittracker.habitv8 
--ibj7qxPfxGXxt-ObkHPZhw==/lib/arm64:/data/app/~~0wE_4m3YELaEcz-W72JFZQ==/com.habittracker.habitv8-ibj7qxPfxGXxt-Ob 
-kHPZhw==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.habittracker.habitv8
-10-10 23:42:00.129 27713 27713 V GraphicsEnvironment: com.habittracker.habitv8 is not listed in per-application    
-setting
-10-10 23:42:00.129 27713 27713 V GraphicsEnvironment: com.habittracker.habitv8 is not listed in ANGLE allowlist    
-or settings, returning default
-10-10 23:42:00.467 13974 14366 E music   : Blocked onNotificationPosted 
-StatusBarNotification(pkg=com.habittracker.habitv8 user=UserHandle{0} id=12575428 tag=null 
-key=0|com.habittracker.habitv8|12575428|null|10559: Notification(channel=habit_scheduled_channel shortcut=null     
-contentView=null vibrate=null sound=null tick defaults=0 flags=SHOW_LIGHTS|AUTO_CANCEL color=0xff9d50dd
-category=reminder actions=2 vis=PRIVATE))
-10-10 23:42:00.468 18026 18026 I NotificationListener: received notification posted event -
-com.habittracker.habitv8#UserHandle{0},category=-1
-10-10 23:42:05.508 27713 27743 D ProfileInstaller: Installing profile for com.habittracker.habitv8
-10-10 23:42:16.418 27713 27713 W JobInfo : Job 
-'com.habittracker.habitv8/me.carda.awesome_notifications.DartBackgroundService#42' has a deadline with no 
-functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
-10-10 23:42:16.419  1463  2243 W JobInfo : Job
-'com.habittracker.habitv8/me.carda.awesome_notifications.DartBackgroundService#42' has a deadline with no
-functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
-10-10 23:42:16.428 18026 18026 I NotificationListener: received notification removed event -
-com.habittracker.habitv8#UserHandle{0},category=-1
-10-10 23:42:16.529 27713 27758 D nativeloader: Load /data/app/~~0wE_4m3YELaEcz-W72JFZQ==/com.habittracker.habitv8-
-ibj7qxPfxGXxt-ObkHPZhw==/base.apk!/lib/arm64-v8a/libflutter.so using class loader ns clns-9 
-(caller=/data/app/~~0wE_4m3YELaEcz-W72JFZQ==/com.habittracker.habitv8-ibj7qxPfxGXxt-ObkHPZhw==/base.apk): ok       
-10-10 23:42:16.565 27713 27713 W tracker.habitv8: type=1400 audit(0.0:29358): avc:  denied  { read } for  
-name="max_map_count" dev="proc" ino=11057402 scontext=u:r:untrusted_app:s0:c47,c258,c512,c768 
-tcontext=u:object_r:proc_max_map_count:s0 tclass=file permissive=0 app=com.habittracker.habitv8
-10-10 23:42:16.603 27713 27760 D vulkan  : searching for layers in 
-'/data/app/~~0wE_4m3YELaEcz-W72JFZQ==/com.habittracker.habitv8-ibj7qxPfxGXxt-ObkHPZhw==/lib/arm64'
-10-10 23:42:16.604 27713 27760 D vulkan  : searching for layers in
-'/data/app/~~0wE_4m3YELaEcz-W72JFZQ==/com.habittracker.habitv8-ibj7qxPfxGXxt-ObkHPZhw==/base.apk!/lib/arm64-v8a'   
-10-10 23:42:16.623  1463  2001 I MediaSessionStack: addSession to bottom of stack | record: 
-com.habittracker.habitv8/PUSH_MEDIA/104 (userId=0)
-10-10 23:42:16.677  1463  2001 I MediaSessionStack: addSession to bottom of stack | record: 
-com.habittracker.habitv8/PUSH_MEDIA/105 (userId=0)
-10-10 23:42:16.825 27713 27713 W isarworker: type=1400 audit(0.0:29359): avc:  denied  { search } for  
-name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c47,c258,c512,c768 
-tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
-10-10 23:42:16.825 27713 27713 W isarworker: type=1400 audit(0.0:29360): avc:  denied  { getattr } for
-path="/mnt/vm" dev="tmpfs" ino=1 scontext=u:r:untrusted_app:s0:c47,c258,c512,c768
-tcontext=u:object_r:vm_data_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
-10-10 23:42:16.825 27713 27713 W isarworker: type=1400 audit(0.0:29361): avc:  denied  { search } for
-name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c47,c258,c512,c768
-tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
-10-10 23:42:16.825 27713 27713 W isarworker: type=1400 audit(0.0:29362): avc:  denied  { search } for
-name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c47,c258,c512,c768
-tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
-10-10 23:42:16.825 27713 27713 W isarworker: type=1400 audit(0.0:29363): avc:  denied  { search } for
-name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c47,c258,c512,c768
-tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
-10-10 23:42:16.825 27713 27713 W isarworker: type=1400 audit(0.0:29364): avc:  denied  { search } for
-name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c47,c258,c512,c768
-tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
-10-10 23:42:16.825 27713 27713 W isarworker: type=1400 audit(0.0:29365): avc:  denied  { getattr } for
-path="/metadata" dev="sda10" ino=3 scontext=u:r:untrusted_app:s0:c47,c258,c512,c768
-tcontext=u:object_r:metadata_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
-10-10 23:42:16.910 27713 27713 V IntentSender: Sending intent Intent { 
-act=android.appwidget.action.APPWIDGET_UPDATE cmp=com.habittracker.habitv8/.HabitTimelineWidgetProvider (has 
-extras) }
-10-10 23:42:16.913  1463  2001 I ActivityTaskManager: START u0 {act=android.appwidget.action.APPWIDGET_UPDATE      
-flg=0x10000000 xflg=0x4 cmp=com.habittracker.habitv8/.HabitTimelineWidgetProvider (has extras)} with
-LAUNCH_MULTIPLE from uid 10559 (com.habittracker.habitv8) result code=-92
-10-10 23:42:16.930 13974 14366 E music   : onNotificationRemoved... 
-StatusBarNotification(pkg=com.habittracker.habitv8 user=UserHandle{0} id=12575428 tag=null
-key=0|com.habittracker.habitv8|12575428|null|10559: Notification(channel=habit_scheduled_channel shortcut=null     
-contentView=null vibrate=null sound=null tick defaults=0 flags=SHOW_LIGHTS|AUTO_CANCEL color=0xff9d50dd
-category=reminder actions=2 vis=PRIVATE))
+PS C:\HabitV8> adb logcat | findstr com.habittracker.habitv8
+10-11 19:39:16.008  1463  1729 D ActivityManager: sync unfroze 21488 com.habittracker.habitv8 for 3
+10-11 19:39:16.022 21488 21537 W Looper  : Slow delivery took 272399ms android.bg app=com.habittracker.habitv8 main=false group=BACKGROUND h=android.os.Handler c=android.appwidget.AppWidgetManager$ServiceCollectionCache$ConnectionTask$$ExternalSyntheticLambda5@fae7c6c m=0
+10-11 19:39:16.175  1463  3049 I MediaSessionStack: addSession to bottom of stack | record: com.habittracker.habitv8/PUSH_MEDIA/235 (userId=0)
+10-11 19:40:06.787  1463  2023 D ActivityManager: freezing 21488 com.habittracker.habitv8
+10-11 20:03:12.331  1463  5331 V WindowManager: DesktopModeLaunchParamsModifier: phase= 0 task=null activity=ActivityRecord{127703992 u0 com.habittracker.habitv8/.MainActivity display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 task null, skipping
+10-11 20:03:12.331  1463  5331 V WindowManager: TaskLaunchParamsModifier:phase=0 task=null activity=ActivityRecord{127703992 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937
+10-11 20:03:12.331  1463  5331 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{8e07d04 #254 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{127703992 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 not entering desktop mode, skipping
+10-11 20:03:12.332  1463  5331 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{8e07d04 #254 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{127703992 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@190145937 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+10-11 20:03:12.333  1463  5331 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{8e07d04 #254 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{127703992 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 not entering desktop mode, skipping
+10-11 20:03:12.333  1463  5331 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{8e07d04 #254 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{127703992 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@190145937 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+10-11 20:03:12.336  1463  5331 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 xflg=0x4 cmp=com.habittracker.habitv8/.MainActivity bnds=[218,385][408,598]} with LAUNCH_SINGLE_TOP from uid 10263 (com.google.android.apps.nexuslauncher) (sr=183411075) (BAL_ALLOW_VISIBLE_WINDOW) result code=2
+10-11 20:03:12.338  2204  2233 V WindowManagerShell: Transition requested (#2201): android.os.BinderProxy@1ae9448 TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=254 effectiveUid=10629 displayId=0 isRunning=true baseIntent=Intent { flg=0x14000000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=267352532 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.os.BinderProxy@4496951} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{3342e1 com.habittracker.habitv8.MainActivity} launchCookies=[android.os.BinderProxy@f3a3806] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@37fdec7, appThread = android.app.IApplicationThread$Stub$Proxy@83cacf4, debugName = QuickstepLaunch }, displayChange = null, flags = 0, debugId = 2201 }
+10-11 20:03:12.341  2204  2233 D WindowManagerShell: onActivityRestartAttempt: topActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}, wasVisible=false
+10-11 20:03:12.347  1463  1717 D ActivityManager: sync unfroze 21488 com.habittracker.habitv8 for 1
+10-11 20:03:12.351 21488 21537 W Looper  : Slow delivery took 441785ms android.bg app=com.habittracker.habitv8 main=false group=TOP_APP h=android.os.Handler c=android.appwidget.AppWidgetManager$ServiceCollectionCache$ConnectionTask$$ExternalSyntheticLambda5@7ea6ea9 m=0
+10-11 20:03:12.361  1463  1714 V WindowManager: Sent Transition (#2201) createdAt=10-11 20:03:12.331 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=254 effectiveUid=10629 displayId=0 isRunning=true baseIntent=Intent { flg=0x14000000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=267352532 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{a21215d Task{8e07d04 #254 type=standard I=com.habittracker.habitv8/.MainActivity}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{333bad2 com.habittracker.habitv8.MainActivity} launchCookies=[android.os.BinderProxy@ed77ef] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@18112fc, appThread = android.app.IApplicationThread$Stub$Proxy@2a60d85, debugName = QuickstepLaunch }, displayChange = null, flags = 0, debugId = 2201 }
+10-11 20:03:12.361  1463  1714 V WindowManager:         {WCT{RemoteToken{a21215d Task{8e07d04 #254 type=standard I=com.habittracker.habitv8/.MainActivity}}} m=TO_FRONT f=MOVE_TO_TOP leash=Surface(name=Task=254)/@0xd136421 sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+10-11 20:03:12.492  1463  2050 I ImeTracker: com.habittracker.habitv8:fb7d3225: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+10-11 20:03:12.494 21488 21488 I ImeTracker: com.habittracker.habitv8:fb7d3225: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+10-11 20:03:12.505  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1345 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+10-11 20:03:12.507  1463  5329 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+10-11 20:03:12.508  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():1438 onStartInputView(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+10-11 20:03:12.517  4185  4185 I AndroidIME: AbstractIme.onActivate():96 PasswordIme.onActivate() : EditorInfo = EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+10-11 20:03:12.543  4185 16210 I KeyboardEventHandler: KeyboardEventHandler.handleFieldChangedEvent():457 Handling FieldChangedEvent: fgPkg=com.habittracker.habitv8, fieldType=0, interactionType=FIELD_CHANGE [SD]
+10-11 20:03:12.544  1463  5300 D CoreBackPreview: Window{dc7f3cf u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@7d6f143, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+10-11 20:03:12.545  1463  5335 D CoreBackPreview: Window{dc7f3cf u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@d953c0, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+10-11 20:03:13.173 21488 21488 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+10-11 20:03:13.185 21488 21511 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=44fa040d-4f34-4820-a900-b68aecf063b3, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
+10-11 20:03:15.279 21488 21488 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+10-11 20:03:15.305 21488 21511 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=de72dea1-28b4-4e87-a1a2-5f857f6ee670, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
+10-11 20:03:16.746  1463  5321 D CoreBackPreview: Window{dc7f3cf u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f52a5d5, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+10-11 20:03:18.000 21488 21488 I ImeTracker: com.habittracker.habitv8:36449ddb: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+10-11 20:03:18.012  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1345 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=null, hintLocales=[]}}, false)
+10-11 20:03:18.014  1463  5332 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+10-11 20:03:18.019  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():1438 onStartInputView(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}}, false)
+10-11 20:03:18.023  4185  4185 I AndroidIME: AbstractIme.onActivate():96 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=0, initialSelEnd=0, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+10-11 20:03:18.049  1463  5326 D CoreBackPreview: Window{dc7f3cf u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@e555284, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+10-11 20:03:18.056  4185 16309 I KeyboardEventHandler: KeyboardEventHandler.handleFieldChangedEvent():457 Handling FieldChangedEvent: fgPkg=com.habittracker.habitv8, fieldType=3.3e+04, interactionType=FIELD_CHANGE [SD]
+10-11 20:03:18.091 21488 21488 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.habittracker.habitv8
+10-11 20:03:18.389 21488 21488 I ImeTracker: com.habittracker.habitv8:36449ddb: onShown
+10-11 20:03:28.063 21488 21488 I ImeTracker: com.habittracker.habitv8:1698f816: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+10-11 20:03:28.064  1463  5335 D CoreBackPreview: Window{dc7f3cf u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@75462e4, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+10-11 20:03:33.877  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1345 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=4, initialSelEnd=4, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[mParcelledData.dataSize=168], hintText=null, hintLocales=[]}}, true)
+10-11 20:03:33.877 21488 21488 I ImeTracker: com.habittracker.habitv8:24720d6e: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+10-11 20:03:33.878  1463  5300 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+10-11 20:03:33.890  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():1438 onStartInputView(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=4, initialSelEnd=4, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}}, false)
+10-11 20:03:33.895  4185  4185 I AndroidIME: AbstractIme.onActivate():96 LatinIme.onActivate() : EditorInfo = EditorInfo{packageName=com.habittracker.habitv8, inputType=8001, inputTypeString=Normal[AutoCorrect], enableLearning=true, autoCorrection=true, autoComplete=true, imeOptions=2000006, privateImeOptions=null, actionName=DONE, actionLabel=null, initialSelStart=4, initialSelEnd=4, initialCapsMode=0, label=null, fieldId=2, fieldName=null, extras=Bundle[{androidx.core.view.inputmethod.EditorInfoCompat.STYLUS_HANDWRITING_ENABLED=true}], hintText=null, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+10-11 20:03:33.914  1463  5331 D CoreBackPreview: Window{dc7f3cf u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@acb8201, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+10-11 20:03:33.921  4185 16307 I KeyboardEventHandler: KeyboardEventHandler.handleFieldChangedEvent():457 Handling FieldChangedEvent: fgPkg=com.habittracker.habitv8, fieldType=3.3e+04, interactionType=FIELD_CHANGE [SD]
+10-11 20:03:34.241 21488 21488 I ImeTracker: com.habittracker.habitv8:24720d6e: onShown
+10-11 20:03:38.068  1463  2050 I ImeTracker: com.habittracker.habitv8:1698f816: setFinished at PHASE_CLIENT_ANIMATION_CANCEL with STATUS_TIMEOUT
+10-11 20:03:41.916 21488 21488 I ImeTracker: com.habittracker.habitv8:2f6777f7: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+10-11 20:03:41.916  1463  5300 D CoreBackPreview: Window{dc7f3cf u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@934bb9, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+10-11 20:03:41.938  1463  5331 D CoreBackPreview: Window{dc7f3cf u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@8e56f5f, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+10-11 20:03:41.960 21488 21488 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+10-11 20:03:41.968 21488 21514 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=78fcea2b-eb18-4357-aa91-ab60f34ef618, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
+10-11 20:03:42.263 21488 21488 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+10-11 20:03:42.293 21488 21517 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=0d24790a-9368-4df4-9c06-b24e8945030a, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
+10-11 20:03:43.492  8849  8849 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=254 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+10-11 20:03:43.493  8849  8849 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=254 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+10-11 20:03:43.529  1463  1714 V WindowManager:         {WCT{RemoteToken{a21215d Task{8e07d04 #254 type=standard I=com.habittracker.habitv8/.MainActivity}}} m=TO_BACK f=NONE leash=Surface(name=Task=254)/@0xd136421 sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+10-11 20:03:43.691  8849  8849 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=254 winMode=fullscreen visReq=false vis=false excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+10-11 20:03:43.691  8849  8849 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=254 winMode=fullscreen visReq=false vis=false excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+10-11 20:03:43.691  1463  5329 I InputDispatcher: Channel [Gesture Monitor] swipe-up is stealing input gesture for device 3 from [dc7f3cf com.habittracker.habitv8/com.habittracker.habitv8.MainActivity, [Gesture Monitor] edge-swipe]
+10-11 20:03:45.474  1463  5324 D CoreBackPreview: Window{dc7f3cf u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback null
+10-11 20:03:45.494 21488 21488 I ImeTracker: com.habittracker.habitv8:28a7b9bb: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_CLOSE_CURRENT_SESSION fromUser false
+10-11 20:03:45.497 21488 21488 I ImeTracker: com.habittracker.habitv8:28a7b9bb: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN    
+10-11 20:03:45.630  1463  1717 I ActivityManager: Killing 21488:com.habittracker.habitv8/u0a629 (adj 905): remove task
+10-11 20:03:45.729  1463  5324 I MediaSessionStack: removeSession | record: com.habittracker.habitv8/PUSH_MEDIA/209 (userId=0)
+10-11 20:03:45.729  1463  5324 D MediaSessionService: destroySessionLocked: record=com.habittracker.habitv8/PUSH_MEDIA/209 (userId=0)
+10-11 20:03:45.730  1463  2142 D MediaSessionService: setFgsIfNoSessionIsLinkedToNotification: record=com.habittracker.habitv8/PUSH_MEDIA/209 (userId=0)
+10-11 20:03:45.730  1463  5331 I MediaSessionStack: removeSession | record: com.habittracker.habitv8/PUSH_MEDIA/210 (userId=0)
+10-11 20:03:45.730  1463  5331 D MediaSessionService: destroySessionLocked: record=com.habittracker.habitv8/PUSH_MEDIA/210 (userId=0)
+10-11 20:03:45.730  1463  5324 I MediaSessionStack: removeSession | record: com.habittracker.habitv8/PUSH_MEDIA/214 (userId=0)
+10-11 20:03:45.730  1463  5324 D MediaSessionService: destroySessionLocked: record=com.habittracker.habitv8/PUSH_MEDIA/214 (userId=0)
+10-11 20:03:45.731  1463  2142 D MediaSessionService: setFgsIfNoSessionIsLinkedToNotification: record=com.habittracker.habitv8/PUSH_MEDIA/210 (userId=0)
+10-11 20:03:45.731  1463  2142 D MediaSessionService: setFgsIfNoSessionIsLinkedToNotification: record=com.habittracker.habitv8/PUSH_MEDIA/214 (userId=0)
+10-11 20:03:45.731  1463  1699 I MediaSessionStack: removeSession | record: com.habittracker.habitv8/PUSH_MEDIA/226 (userId=0)
+10-11 20:03:45.732  1463  1699 D MediaSessionService: destroySessionLocked: record=com.habittracker.habitv8/PUSH_MEDIA/226 (userId=0)
+10-11 20:03:45.732  1463  2002 I MediaSessionStack: removeSession | record: com.habittracker.habitv8/PUSH_MEDIA/235 (userId=0)
+10-11 20:03:45.732  1463  2002 D MediaSessionService: destroySessionLocked: record=com.habittracker.habitv8/PUSH_MEDIA/235 (userId=0)
+10-11 20:03:45.739  1463  2142 D MediaSessionService: setFgsIfNoSessionIsLinkedToNotification: record=com.habittracker.habitv8/PUSH_MEDIA/226 (userId=0)
+10-11 20:03:45.739  1463  2142 D MediaSessionService: setFgsIfNoSessionIsLinkedToNotification: record=com.habittracker.habitv8/PUSH_MEDIA/235 (userId=0)
+10-11 20:03:51.918  1463  2050 I ImeTracker: com.habittracker.habitv8:2f6777f7: setFinished at PHASE_CLIENT_ANIMATION_CANCEL with STATUS_TIMEOUT
+10-11 20:04:21.828  1463  1730 I ActivityManager: Start proc 16846:com.habittracker.habitv8/u0a629 for service {com.habittracker.habitv8/com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService}
+10-11 20:04:21.850 16846 16846 I Zygote  : Process 16846 crated for com.habittracker.habitv8
+10-11 20:04:21.898 16846 16846 D nativeloader: Configuring clns-9 for other apk /data/app/~~tXb4x4cht_gRaGbuE3YSlw==/com.habittracker.habitv8-wvuYrrNsqOyMQ8yyhp9DYw==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~tXb4x4cht_gRaGbuE3YSlw==/com.habittracker.habitv8-wvuYrrNsqOyMQ8yyhp9DYw==/lib/arm64:/data/app/~~tXb4x4cht_gRaGbuE3YSlw==/com.habittracker.habitv8-wvuYrrNsqOyMQ8yyhp9DYw==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.habittracker.habitv8
+10-11 20:04:21.909 16846 16846 V GraphicsEnvironment: com.habittracker.habitv8 is not listed in per-application setting
+10-11 20:04:21.909 16846 16846 V GraphicsEnvironment: com.habittracker.habitv8 is not listed in ANGLE allowlist or settings, returning default
+10-11 20:04:21.924  1463  2011 W JobServiceContext: Sending onNetworkChanged for a job that isn't started. JobStatus{a93b9db #u0a629/-325376341 com.habittracker.habitv8/com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService u=0 s=10629 TIME=-6s402ms:none NET READY}
+10-11 20:04:27.765 16846 17124 D ProfileInstaller: Installing profile for com.habittracker.habitv8
+10-11 20:04:36.388  1463  2023 D ActivityManager: freezing 16846 com.habittracker.habitv8
+10-11 20:05:00.021  1463  1729 D ActivityManager: sync unfroze 16846 com.habittracker.habitv8 for 3
+10-11 20:05:00.158  1463  3049 I PowerManagerService: Allowing device wake-up without android.permission.TURN_SCREEN_ON for com.habittracker.habitv8
+10-11 20:05:00.489  8849  8849 I NotificationListener: received notification posted event - com.habittracker.habitv8#UserHandle{0},category=-1
+10-11 20:05:00.493 13974 14366 E music   : Blocked onNotificationPosted StatusBarNotification(pkg=com.habittracker.habitv8 user=UserHandle{0} id=15671218 tag=null key=0|com.habittracker.habitv8|15671218|null|10629: Notification(channel=habit_scheduled_channel shortcut=null contentView=null vibrate=null sound=null tick defaults=0 flags=SHOW_LIGHTS|AUTO_CANCEL color=0xff9d50dd category=reminder actions=2 vis=PRIVATE))
+10-11 20:05:00.612  2204  2204 E StackScroll: Heads up view appearing 0|com.habittracker.habitv8|15671218|null|10629 for ANIMATION_TYPE_ADD
+10-11 20:05:06.731  8849  8849 I NotificationListener: Handling notification state refresh for com.habittracker.habitv8#0
+10-11 20:05:12.104 16846 16846 W JobInfo : Job 'com.habittracker.habitv8/me.carda.awesome_notifications.DartBackgroundService#42' has a deadline with no functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
+10-11 20:05:12.105  1463  5300 W JobInfo : Job 'com.habittracker.habitv8/me.carda.awesome_notifications.DartBackgroundService#42' has a deadline with no functional constraints. The deadline won't improve job execution latency. Consider removing the deadline.
+10-11 20:05:12.129  8849  8849 I NotificationListener: received notification removed event - com.habittracker.habitv8#UserHandle{0},category=-1
+10-11 20:05:12.220 16846 17592 D nativeloader: Load /data/app/~~tXb4x4cht_gRaGbuE3YSlw==/com.habittracker.habitv8-wvuYrrNsqOyMQ8yyhp9DYw==/base.apk!/lib/arm64-v8a/libflutter.so using class loader ns clns-9 (caller=/data/app/~~tXb4x4cht_gRaGbuE3YSlw==/com.habittracker.habitv8-wvuYrrNsqOyMQ8yyhp9DYw==/base.apk): ok
+10-11 20:05:12.265 16846 16846 W tracker.habitv8: type=1400 audit(0.0:39036): avc:  denied  { read } for  name="max_map_count" dev="proc" ino=15041251 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:proc_max_map_count:s0 tclass=file permissive=0 app=com.habittracker.habitv8
+10-11 20:05:12.300 16846 17594 D vulkan  : searching for layers in '/data/app/~~tXb4x4cht_gRaGbuE3YSlw==/com.habittracker.habitv8-wvuYrrNsqOyMQ8yyhp9DYw==/lib/arm64'
+10-11 20:05:12.303 16846 17594 D vulkan  : searching for layers in '/data/app/~~tXb4x4cht_gRaGbuE3YSlw==/com.habittracker.habitv8-wvuYrrNsqOyMQ8yyhp9DYw==/base.apk!/lib/arm64-v8a'
+10-11 20:05:12.317  1463  5329 I MediaSessionStack: addSession to bottom of stack | record: com.habittracker.habitv8/PUSH_MEDIA/243 (userId=0)
+10-11 20:05:12.368  1463  5300 I MediaSessionStack: addSession to bottom of stack | record: com.habittracker.habitv8/PUSH_MEDIA/244 (userId=0)
+10-11 20:05:12.626 13974 14366 E music   : onNotificationRemoved... StatusBarNotification(pkg=com.habittracker.habitv8 user=UserHandle{0} id=15671218 tag=null key=0|com.habittracker.habitv8|15671218|null|10629: Notification(channel=habit_scheduled_channel shortcut=null contentView=null vibrate=null sound=null tick defaults=0 flags=SHOW_LIGHTS|AUTO_CANCEL color=0xff9d50dd category=reminder actions=2 vis=PRIVATE))
+10-11 20:05:12.645 16846 16846 W isarworker: type=1400 audit(0.0:39037): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:12.645 16846 16846 W isarworker: type=1400 audit(0.0:39038): avc:  denied  { getattr } for  path="/mnt/vm" dev="tmpfs" ino=1 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:vm_data_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:12.645 16846 16846 W isarworker: type=1400 audit(0.0:39039): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:12.645 16846 16846 W isarworker: type=1400 audit(0.0:39040): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:12.645 16846 16846 W isarworker: type=1400 audit(0.0:39041): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:12.645 16846 16846 W isarworker: type=1400 audit(0.0:39042): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:12.645 16846 16846 W isarworker: type=1400 audit(0.0:39043): avc:  denied  { getattr } for  path="/metadata" dev="sda10" ino=3 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:metadata_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:12.730 16846 16846 V IntentSender: Sending intent Intent { act=android.appwidget.action.APPWIDGET_UPDATE cmp=com.habittracker.habitv8/.HabitTimelineWidgetProvider (has extras) }
+10-11 20:05:12.734  1463  1984 I ActivityTaskManager: START u0 {act=android.appwidget.action.APPWIDGET_UPDATE flg=0x10000000 xflg=0x4 cmp=com.habittracker.habitv8/.HabitTimelineWidgetProvider (has extras)} with LAUNCH_MULTIPLE from uid 10629 (com.habittracker.habitv8) result code=-92
+10-11 20:05:28.468  1463  5332 V WindowManager: DesktopModeLaunchParamsModifier: phase= 0 task=null activity=ActivityRecord{39650415 u0 com.habittracker.habitv8/.MainActivity display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 task null, skipping
+10-11 20:05:28.468  1463  5332 V WindowManager: TaskLaunchParamsModifier:phase=0 task=null activity=ActivityRecord{39650415 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937
+10-11 20:05:28.468  1463  5332 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=null activity=ActivityRecord{39650415 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 task null, skipping
+10-11 20:05:28.468  1463  5332 V WindowManager: TaskLaunchParamsModifier:phase=3 task=null activity=ActivityRecord{39650415 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@190145937 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+10-11 20:05:28.470  1463  5332 V WindowManager: DesktopModeLaunchParamsModifier: phase= 3 task=Task{5cee57c #279 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{39650415 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 not entering desktop mode, skipping
+10-11 20:05:28.472  1463  5332 V WindowManager: TaskLaunchParamsModifier:phase=3 task=Task{5cee57c #279 type=standard I=com.habittracker.habitv8/.MainActivity} activity=ActivityRecord{39650415 u0 com.habittracker.habitv8/.MainActivity t-1} display-from-option=0 display-id=0 task-display-area-windowing-mode=1 suggested-display-area=DefaultTaskDisplayArea@190145937 inherit-from-source=fullscreen non-freeform-task-display-area display-area=DefaultTaskDisplayArea@190145937 default-portrait freeform-size-mismatch=Rect(256, 665 - 753, 1673)
+10-11 20:05:28.475  1463  5332 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 xflg=0x4 cmp=com.habittracker.habitv8/.MainActivity bnds=[218,385][408,598]} with LAUNCH_SINGLE_TOP from uid 10263 (com.google.android.apps.nexuslauncher) (sr=183411075) (BAL_ALLOW_VISIBLE_WINDOW) result code=0
+10-11 20:05:28.476  2204  2233 V WindowManagerShell: Transition requested (#2205): android.os.BinderProxy@d429db TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=279 effectiveUid=10629 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=276198947 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{android.os.BinderProxy@978bc78} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{ea4ff51 com.habittracker.habitv8.MainActivity} launchCookies=[android.os.BinderProxy@bb193b6] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@a6188b7, appThread = android.app.IApplicationThread$Stub$Proxy@7b92824, debugName = QuickstepLaunch }, displayChange = null, flags = 0, debugId = 2205 }    
+10-11 20:05:28.500  1463  1714 V WindowManager: Sent Transition (#2205) createdAt=10-11 20:05:28.467 via request=TransitionRequestInfo { type = OPEN, triggerTask = TaskInfo{userId=0 taskId=279 effectiveUid=10629 displayId=0 isRunning=true baseIntent=Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.habittracker.habitv8/.MainActivity } baseActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} topActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} origActivity=null realActivity=ComponentInfo{com.habittracker.habitv8/com.habittracker.habitv8.MainActivity} numActivities=1 lastActiveTime=276198947 supportsMultiWindow=true resizeMode=1 isResizeable=true minWidth=-1 minHeight=-1 defaultMinSize=220 token=WCT{RemoteToken{815820a Task{5cee57c #279 type=standard I=com.habittracker.habitv8/.MainActivity}}} topActivityType=1 pictureInPictureParams=null shouldDockBigOverlays=false launchIntoPipHostTaskId=-1 lastParentTaskIdBeforePip=-1 displayCutoutSafeInsets=Rect(0, 149 - 0, 0) topActivityInfo=ActivityInfo{c839a7b com.habittracker.habitv8.MainActivity} launchCookies=[android.os.BinderProxy@33c7098] positionInParent=Point(0, 0) parentTaskId=-1 isFocused=false isVisible=false isVisibleRequested=false isTopActivityNoDisplay=false isSleeping=false locusId=null displayAreaFeatureId=1 isTopActivityTransparent=false isActivityStackTransparent=false lastNonFullscreenBounds=Rect(256, 665 - 753, 1673) capturedLink=null capturedLinkTimestamp=0 requestedVisibleTypes=-9 topActivityRequestOpenInBrowserEducationTimestamp=0 appCompatTaskInfo=AppCompatTaskInfo { topActivityInSizeCompat=false eligibleForLetterboxEducation= false isLetterboxEducationEnabled= false isLetterboxDoubleTapEnabled= false eligibleForUserAspectRatioButton= false topActivityBoundsLetterboxed= false isFromLetterboxDoubleTap= false topActivityLetterboxVerticalPosition= -1 topActivityLetterboxHorizontalPosition= -1 topActivityLetterboxWidth=-1 topActivityLetterboxHeight=-1 topActivityAppBounds=Rect(0, 0 - 1008, 2244) isUserFullscreenOverrideEnabled=false isSystemFullscreenOverrideEnabled=false hasMinAspectRatioOverride=false topActivityLetterboxBounds=null cameraCompatTaskInfo=CameraCompatTaskInfo { freeformCameraCompatMode=inactiveundefined} topNonResizableActivityAspectRatio=-1.0} topActivityMainWindowFrame=null isAppBubble=false}, pipChange = null, remoteTransition = RemoteTransition { remoteTransition = android.window.IRemoteTransition$Stub$Proxy@89a70f1, appThread = android.app.IApplicationThread$Stub$Proxy@391b4d6, debugName = QuickstepLaunch }, displayChange = null, flags = 0, debugId = 2205 }
+10-11 20:05:28.500  1463  1714 V WindowManager:         {WCT{RemoteToken{815820a Task{5cee57c #279 type=standard I=com.habittracker.habitv8/.MainActivity}}} m=OPEN f=NONE leash=Surface(name=Task=279)/@0xf54a5ac sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+10-11 20:05:28.520  1463  5324 I MediaSessionStack: addSession to bottom of stack | record: com.habittracker.habitv8/PUSH_MEDIA/246 (userId=0)
+10-11 20:05:28.550  1463  5324 D CoreBackPreview: Window{a042fe0 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@713eea4, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+10-11 20:05:28.621 16846 16846 D WindowLayoutComponentImpl: Register WindowLayoutInfoListener on Context=com.habittracker.habitv8.MainActivity@aabeead, of which baseContext=android.app.ContextImpl@911c7ab
+10-11 20:05:29.149  1463  1714 I ActivityTaskManager: Displayed com.habittracker.habitv8/.MainActivity for user 0: +682ms
+10-11 20:05:29.170  1463  2050 I ImeTracker: com.habittracker.habitv8:f86e1066: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+10-11 20:05:29.172 16846 16846 I ImeTracker: com.habittracker.habitv8:f86e1066: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN    
+10-11 20:05:29.178  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1345 onStartInput(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+10-11 20:05:29.179  1463  5338 W PackageConfigPersister: App-specific configuration not found for packageName: com.habittracker.habitv8 and userId: 0
+10-11 20:05:29.181  4185  4185 I GoogleInputMethodService: GoogleInputMethodService.onStartInputView():1438 onStartInputView(EditorInfo{EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+10-11 20:05:29.185 16846 16846 W isarworker: type=1400 audit(0.0:39059): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:29.185 16846 16846 W isarworker: type=1400 audit(0.0:39060): avc:  denied  { getattr } for  path="/mnt/vm" dev="tmpfs" ino=1 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:vm_data_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:29.185 16846 16846 W isarworker: type=1400 audit(0.0:39061): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:29.185 16846 16846 W isarworker: type=1400 audit(0.0:39062): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:29.185 16846 16846 W isarworker: type=1400 audit(0.0:39063): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:29.185 16846 16846 W isarworker: type=1400 audit(0.0:39064): avc:  denied  { search } for  name="vendor" dev="tmpfs" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:mnt_vendor_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:29.185 16846 16846 W isarworker: type=1400 audit(0.0:39065): avc:  denied  { getattr } for  path="/metadata" dev="sda10" ino=3 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:metadata_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:29.185 16846 16846 W isarworker: type=1400 audit(0.0:39066): avc:  denied  { getattr } for  path="/system_dlkm" dev="dm-11" ino=2 scontext=u:r:untrusted_app:s0:c117,c258,c512,c768 tcontext=u:object_r:system_dlkm_file:s0 tclass=dir permissive=0 app=com.habittracker.habitv8
+10-11 20:05:29.190  4185  4185 I AndroidIME: AbstractIme.onActivate():96 PasswordIme.onActivate() : EditorInfo = EditorInfo{packageName=com.habittracker.habitv8, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}, IncognitoMode = false, DeviceLocked = false
+10-11 20:05:29.211  1463  5324 D CoreBackPreview: Window{a042fe0 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@f0590b7, mPriority=0, mIsAnimationCallback=true, mOverrideBehavior=0}
+10-11 20:05:29.214  4185 16209 I KeyboardEventHandler: KeyboardEventHandler.handleFieldChangedEvent():457 Handling FieldChangedEvent: fgPkg=com.habittracker.habitv8, fieldType=0, interactionType=FIELD_CHANGE [SD]
+10-11 20:05:29.221  1463  2738 D CoreBackPreview: Window{a042fe0 u0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity}: Setting back callback OnBackInvokedCallbackInfo{mCallback=android.window.IOnBackInvokedCallback$Stub$Proxy@c009024, mPriority=-1, mIsAnimationCallback=false, mOverrideBehavior=0}
+10-11 20:05:31.203  8849  8849 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=279 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+10-11 20:05:31.203  8849  8849 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=279 winMode=fullscreen visReq=true vis=true excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+10-11 20:05:31.233  1463  1714 V WindowManager:         {WCT{RemoteToken{815820a Task{5cee57c #279 type=standard I=com.habittracker.habitv8/.MainActivity}}} m=TO_BACK f=NONE leash=Surface(name=Task=279)/@0xf54a5ac sb=Rect(0, 0 - 1008, 2244) eb=Rect(0, 0 - 1008, 2244) epz=Point(1008, 2244) d=0 taskParent=-1 winMode=1},
+10-11 20:05:31.240 10723 10882 I Finsky  : [382] com.habittracker.habitv8: Account from first account - [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+10-11 20:05:31.243 10723 10882 I Finsky  : [382] Billing preferred account via installer for com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+10-11 20:05:31.248 10723 10882 I Finsky  : [382] com.habittracker.habitv8: Account from first account - [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+10-11 20:05:31.248 10723 10882 I Finsky  : [382] Billing preferred account via installer for com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+10-11 20:05:31.259  1463  5338 I InputDispatcher: Channel [Gesture Monitor] swipe-up is stealing input gesture for device 3 from [a042fe0 com.habittracker.habitv8/com.habittracker.habitv8.MainActivity, [Gesture Monitor] edge-swipe]
+10-11 20:05:31.259  8849  8849 D RecentsView: onGestureAnimationStart - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=279 winMode=fullscreen visReq=false vis=false excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+10-11 20:05:31.259  8849  8849 D RecentsView: showCurrentTask(onGestureAnimationStart) - groupedTaskInfo: Desk ID= -1, Desk Display ID=-1, Tasks=[id=279 winMode=fullscreen visReq=false vis=false excluded=false baseIntent=com.habittracker.habitv8/.MainActivity], Type=FULLSCREEN, Minimized Task IDs=null
+10-11 20:05:31.277 10723 31036 I Finsky  : [428] com.habittracker.habitv8: Account from first account - [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+10-11 20:05:31.277 10723 31036 I Finsky  : [428] Billing preferred account via installer for com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+10-11 20:05:31.278 10723 10882 I Finsky  : [382] com.habittracker.habitv8: Account from first account - [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+10-11 20:05:31.278 10723 10882 I Finsky  : [382] Billing preferred account via installer for com.habittracker.habitv8: [8DUGGjGn99T3W-gOX302YqJ_g3M2V2QPdemDm6X9qnU]
+10-11 20:05:32.390 16846 16846 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+10-11 20:05:32.433 16846 16934 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=37a2d770-0b6e-465a-bfb9-71f9f202df89, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
+10-11 20:05:32.674 16846 16846 D WM-WorkerWrapper: Starting work for com.habittracker.habitv8.WidgetUpdateWorker
+10-11 20:05:32.734 16846 16931 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=633f5409-988c-49ff-9604-228dc553420e, tags={ com.habittracker.habitv8.WidgetUpdateWorker,immediate_widget_update } ]
