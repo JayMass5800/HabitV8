@@ -226,9 +226,18 @@ class HabitServiceIsar {
       final habit = await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
+        // Add completion
         habit.completions.add(completionTime);
+
+        // Update streak (same logic as notification handler)
+        habit.currentStreak = _calculateStreak(habit.completions);
+        if (habit.currentStreak > habit.longestStreak) {
+          habit.longestStreak = habit.currentStreak;
+        }
+
         await _isar.habits.put(habit);
-        AppLogger.info('✅ Habit completed: ${habit.name}');
+        AppLogger.info(
+            '✅ Habit completed: ${habit.name} (Streak: ${habit.currentStreak})');
       }
     });
   }
@@ -252,8 +261,13 @@ class HabitServiceIsar {
           );
           return completionDay.isAtSameMomentAs(targetDay);
         });
+
+        // Recalculate streak after removing completion
+        habit.currentStreak = _calculateStreak(habit.completions);
+
         await _isar.habits.put(habit);
-        AppLogger.info('✅ Habit uncompleted: ${habit.name}');
+        AppLogger.info(
+            '✅ Habit uncompleted: ${habit.name} (Streak: ${habit.currentStreak})');
       }
     });
   }
@@ -334,6 +348,37 @@ class HabitServiceIsar {
   /// Check if habit is completed for current period
   bool isHabitCompletedForCurrentPeriod(Habit habit) {
     return habit.isCompletedForCurrentPeriod;
+  }
+
+  /// Calculate current streak from completions
+  /// Same logic as notification handler to ensure consistency
+  int _calculateStreak(List<DateTime> completions) {
+    if (completions.isEmpty) return 0;
+
+    // Sort completions in descending order
+    final sorted = List<DateTime>.from(completions)
+      ..sort((a, b) => b.compareTo(a));
+
+    int streak = 0;
+    final today = DateTime.now();
+    DateTime checkDate = DateTime(today.year, today.month, today.day);
+
+    for (final completion in sorted) {
+      final completionDate = DateTime(
+        completion.year,
+        completion.month,
+        completion.day,
+      );
+
+      if (completionDate.isAtSameMomentAs(checkDate)) {
+        streak++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      } else if (completionDate.isBefore(checkDate)) {
+        break;
+      }
+    }
+
+    return streak;
   }
 }
 
