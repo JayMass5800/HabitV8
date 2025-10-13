@@ -869,7 +869,10 @@ class WidgetIntegrationService {
       case HabitFrequency.daily:
         return true;
       case HabitFrequency.weekly:
-        return habit.selectedWeekdays.contains(date.weekday);
+        // CRITICAL: Convert weekday to 0-6 format (Sunday = 0) to match selectedWeekdays storage
+        final weekday =
+            date.weekday % 7; // Monday=1 becomes 1, Sunday=7 becomes 0
+        return habit.selectedWeekdays.contains(weekday);
       case HabitFrequency.monthly:
         // Check if the date's day matches ANY of the selected month days
         if (habit.selectedMonthDays.isEmpty) {
