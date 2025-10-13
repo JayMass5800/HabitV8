@@ -82,32 +82,7 @@
             </intent-filter>
         </receiver>
         
-        <!-- Custom Alarm Service for continuous alarm playback -->
-        <!-- Changed from mediaPlayback to specialUse to comply with Android 15+ restrictions -->
-        <service
-            android:name=".AlarmService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            
-            <!-- Required property declaration for specialUse foreground service type -->
-            <property 
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="alarm_clock" />
-        </service>
-            
-        <!-- Alarm receiver for handling alarm broadcasts -->
-        <receiver
-            android:name=".AlarmReceiver"
-            android:enabled="true"
-            android:exported="false" />
-        
-        <!-- Alarm action receiver for handling alarm notification actions (Complete/Snooze) -->
-        <receiver
-            android:name=".AlarmActionReceiver"
-            android:enabled="true"
-            android:exported="false" />
-        
+
         <!-- CRITICAL: Awesome Notifications Background Service -->
         <!-- Required for notification action buttons to work when app is terminated -->
         <service

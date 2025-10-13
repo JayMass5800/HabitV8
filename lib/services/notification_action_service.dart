@@ -5,7 +5,7 @@ import '../data/database_isar.dart';
 import '../domain/model/habit.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
-import 'alarm_manager_service.dart';
+import 'alarm_service.dart';
 import 'widget_integration_service.dart';
 
 /// Service to handle notification actions and connect them to habit management
@@ -388,17 +388,10 @@ class NotificationActionService {
           );
           AppLogger.info('Alarm sound: ${habit.alarmSoundName}');
 
-          // Schedule snooze alarm using AlarmManagerService
-          final snoozeTime =
-              DateTime.now().add(Duration(minutes: habit.snoozeDelayMinutes));
-          await AlarmManagerService.scheduleSnoozeAlarm(
-            alarmId: AlarmManagerService.generateHabitAlarmId(actualHabitId,
-                suffix: 'snooze'),
-            originalAlarmId:
-                AlarmManagerService.generateHabitAlarmId(actualHabitId),
+          // Schedule snooze alarm using AlarmService (awesome_notifications)
+          await AlarmService.scheduleSnoozeAlarm(
             habitId: actualHabitId,
             habitName: habit.name,
-            snoozeTime: snoozeTime,
             snoozeDelayMinutes: habit.snoozeDelayMinutes,
             alarmSoundName: habit.alarmSoundName,
           );
