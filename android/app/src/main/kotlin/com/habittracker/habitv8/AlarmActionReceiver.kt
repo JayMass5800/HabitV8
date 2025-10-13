@@ -5,6 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
@@ -39,20 +43,41 @@ class AlarmActionReceiver : BroadcastReceiver() {
                     // Stop the alarm service
                     stopAlarmService(context, alarmId)
                     
-                    // Store completion data for Flutter to pick up
-                    val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-                    prefs.edit().apply {
-                        putString("flutter.complete_alarm_pending_$habitId", habitId)
-                        putString("flutter.complete_alarm_name_$habitId", habitName)
-                        putLong("flutter.complete_alarm_time_$habitId", System.currentTimeMillis())
-                        apply()
-                    }
-                    
-                    // Try to notify Flutter via method channel if app is running
+                    // Use WorkManager to process completion in background
+                    // This works even when app is fully closed and avoids Android's
+                    // background activity launch restrictions
                     try {
-                        notifyFlutterComplete(context, habitId, habitName)
+                        // CRITICAL: The task name must match what the Flutter callback expects
+                        // The callbackDispatcher in widget_background_update_service.dart
+                        // handles the 'alarmComplete' task type
+                        val inputData = Data.Builder()
+                            .putString("be.tramckrijte.workmanager.INPUT_DATA", """{"habitId":"$habitId","habitName":"$habitName"}""")
+                            .putString("be.tramckrijte.workmanager.DART_TASK", "alarmComplete")
+                            .build()
+                        
+                        val workRequest = OneTimeWorkRequestBuilder<be.tramckrijte.workmanager.BackgroundWorker>()
+                            .setInputData(inputData)
+                            .addTag("alarmComplete")
+                            .build()
+                        
+                        WorkManager.getInstance(context).enqueueUniqueWork(
+                            "alarm_complete_$habitId",
+                            ExistingWorkPolicy.REPLACE,
+                            workRequest
+                        )
+                        
+                        Log.i(TAG, "✅ Alarm completion scheduled via WorkManager for: $habitName")
                     } catch (e: Exception) {
-                        Log.w(TAG, "Could not notify Flutter immediately, will be picked up on next launch", e)
+                        Log.e(TAG, "Failed to schedule alarm completion via WorkManager", e)
+                        
+                        // Fallback: Store completion data for Flutter to pick up on next launch
+                        val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                        prefs.edit().apply {
+                            putString("flutter.complete_alarm_pending_$habitId", habitId)
+                            putString("flutter.complete_alarm_name_$habitId", habitName)
+                            putLong("flutter.complete_alarm_time_$habitId", System.currentTimeMillis())
+                            apply()
+                        }
                     }
                 }
                 

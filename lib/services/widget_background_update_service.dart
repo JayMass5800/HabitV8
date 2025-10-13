@@ -109,11 +109,17 @@ class WidgetBackgroundUpdateService {
 /// HANDLES MULTIPLE TASK TYPES:
 /// - 'widget_background_update': Periodic background updates (every 30 min)
 /// - 'widgetUpdate': Immediate updates triggered from notification actions
+/// - 'alarmComplete': Alarm completion triggered from AlarmActionReceiver
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
       debugPrint('🔄 [Background] Widget update task started: $task');
+
+      // Handle alarm completion task
+      if (task == 'alarmComplete') {
+        return await _handleAlarmCompletion(inputData);
+      }
 
       // Handle both task types - they both do the same thing: update widgets
       if (task == 'widget_background_update' || task == 'widgetUpdate') {
@@ -182,6 +188,118 @@ void callbackDispatcher() {
       return Future.value(false);
     }
   });
+}
+
+/// Handle alarm completion in background
+///
+/// This function processes alarm completions that were triggered from AlarmActionReceiver.
+/// It reads the habit ID from inputData, completes the habit in Isar, and updates widgets.
+@pragma('vm:entry-point')
+Future<bool> _handleAlarmCompletion(Map<String, dynamic>? inputData) async {
+  try {
+    debugPrint('🔔 [Background] Processing alarm completion');
+    debugPrint('🔔 [Background] Input data: $inputData');
+
+    if (inputData == null) {
+      debugPrint('❌ [Background] No input data provided for alarm completion');
+      return false;
+    }
+
+    // Extract habitId and habitName from inputData
+    // The data comes from AlarmActionReceiver as a JSON string
+    String? habitId;
+    String? habitName;
+
+    // Try to get data directly from inputData map
+    if (inputData.containsKey('habitId')) {
+      habitId = inputData['habitId'] as String?;
+      habitName = inputData['habitName'] as String?;
+    } else {
+      // Data might be in a nested structure from Workmanager
+      debugPrint('🔔 [Background] Trying to parse nested data structure');
+      for (var key in inputData.keys) {
+        debugPrint('🔔 [Background] Key: $key, Value: ${inputData[key]}');
+      }
+
+      // Workmanager might pass data in different formats
+      if (inputData.containsKey('habitId')) {
+        habitId = inputData['habitId'] as String?;
+      }
+      if (inputData.containsKey('habitName')) {
+        habitName = inputData['habitName'] as String?;
+      }
+    }
+
+    if (habitId == null) {
+      debugPrint('❌ [Background] No habitId in alarm completion data');
+      debugPrint('❌ [Background] Available keys: ${inputData.keys.join(', ')}');
+      return false;
+    }
+
+    debugPrint('🔔 [Background] Completing habit: $habitName (ID: $habitId)');
+
+    // Initialize Isar in the background isolate
+    final isar = await IsarDatabaseService.getInstance();
+    final habitService = HabitServiceIsar(isar);
+
+    // Get the habit
+    final habit = await habitService.getHabitById(habitId);
+
+    if (habit == null) {
+      debugPrint('❌ [Background] Habit not found: $habitId');
+      return false;
+    }
+
+    // Complete the habit for now
+    final completionTime = DateTime.now();
+    await habitService.markHabitComplete(habitId, completionTime);
+
+    debugPrint(
+        '✅ [Background] Habit completed: ${habit.name} (Streak: ${habit.currentStreak})');
+
+    // Update widgets with fresh data
+    final allHabits = await habitService.getAllHabits();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Filter habits for today
+    final todayHabits = allHabits.where((habit) {
+      return _shouldShowHabitOnDate(habit, today);
+    }).toList();
+
+    // Convert habits to JSON
+    final habitsList = todayHabits.map((h) => _habitToJson(h, today)).toList();
+    final habitsJson = jsonEncode(habitsList);
+
+    // Save to SharedPreferences via home_widget
+    await HomeWidget.saveWidgetData<String>('habits', habitsJson);
+    await HomeWidget.saveWidgetData<String>('today_habits', habitsJson);
+    await HomeWidget.saveWidgetData<int>(
+      'lastUpdate',
+      DateTime.now().millisecondsSinceEpoch,
+    );
+
+    debugPrint('✅ [Background] Widget data updated after alarm completion');
+
+    // Trigger widget UI refresh
+    await HomeWidget.updateWidget(
+      name: 'HabitTimelineWidgetProvider',
+      androidName: 'HabitTimelineWidgetProvider',
+    );
+
+    await HomeWidget.updateWidget(
+      name: 'HabitCompactWidgetProvider',
+      androidName: 'HabitCompactWidgetProvider',
+    );
+
+    debugPrint('✅ [Background] Alarm completion processed successfully');
+
+    return true;
+  } catch (e, stackTrace) {
+    debugPrint('❌ [Background] Error processing alarm completion: $e');
+    debugPrint('❌ [Background] Stack trace: $stackTrace');
+    return false;
+  }
 }
 
 /// Check if a habit should be shown on a specific date
