@@ -1,16 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter_ringtone_manager/flutter_ringtone_manager.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'dart:convert';
 import 'logging_service.dart';
+import 'ringtone_service.dart';
 
 @pragma('vm:entry-point')
 class AlarmService {
-  static final AudioPlayer _audioPlayer = AudioPlayer();
-
   static bool _isInitialized = false;
   static const String _alarmDataKey = 'alarm_data_';
 
@@ -183,42 +181,50 @@ class AlarmService {
   }
 
   /// Get available system alarm sounds
+  /// Returns all system ringtones from the device (Android only)
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
-    return [
-      // System sounds
-      {'name': 'Default System Alarm', 'uri': 'default', 'type': 'system'},
-      {'name': 'System Alarm', 'uri': 'alarm', 'type': 'system'},
-      {'name': 'System Ringtone', 'uri': 'ringtone', 'type': 'system'},
-      {'name': 'System Notification', 'uri': 'notification', 'type': 'system'},
+    if (!Platform.isAndroid) {
+      // For non-Android platforms, return basic system sounds
+      return [
+        {'name': 'Default System Alarm', 'uri': 'default', 'type': 'system'},
+      ];
+    }
 
-      // Custom sounds (only include sounds that actually exist)
-      {
-        'name': 'Gentle Chime',
-        'uri': 'assets/sounds/gentle_chime.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Morning Bell',
-        'uri': 'assets/sounds/morning_bell.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Nature Birds',
-        'uri': 'assets/sounds/nature_birds.mp3',
-        'type': 'custom',
-      },
-      {
-        'name': 'Digital Beep',
-        'uri': 'assets/sounds/digital_beep.mp3',
-        'type': 'custom',
-      },
-      // Note: The following sounds are referenced in README.md but files don't exist:
-      // - zen_gong.mp3
-      // - upbeat_melody.mp3
-      // - soft_piano.mp3
-      // - ocean_waves.mp3
-      // Uncomment and add the files if you want to include them
-    ];
+    try {
+      // Get all system ringtones from the native Android API
+      final systemRingtones = await RingtoneService.getSystemRingtones();
+
+      if (systemRingtones.isEmpty) {
+        AppLogger.warning('No system ringtones found, using fallback');
+        // Fallback to basic system sounds if native call fails
+        return [
+          {'name': 'Default System Alarm', 'uri': 'default', 'type': 'system'},
+          {'name': 'System Alarm', 'uri': 'alarm', 'type': 'system'},
+          {'name': 'System Ringtone', 'uri': 'ringtone', 'type': 'system'},
+          {
+            'name': 'System Notification',
+            'uri': 'notification',
+            'type': 'system'
+          },
+        ];
+      }
+
+      AppLogger.info('Loaded ${systemRingtones.length} system alarm sounds');
+      return systemRingtones;
+    } catch (e) {
+      AppLogger.error('Failed to get system ringtones, using fallback', e);
+      // Fallback to basic system sounds on error
+      return [
+        {'name': 'Default System Alarm', 'uri': 'default', 'type': 'system'},
+        {'name': 'System Alarm', 'uri': 'alarm', 'type': 'system'},
+        {'name': 'System Ringtone', 'uri': 'ringtone', 'type': 'system'},
+        {
+          'name': 'System Notification',
+          'uri': 'notification',
+          'type': 'system'
+        },
+      ];
+    }
   }
 
   /// Play alarm sound preview
@@ -227,33 +233,15 @@ class AlarmService {
       // Stop any currently playing sound
       await stopAlarmSoundPreview();
 
-      if (soundUri.startsWith('assets/')) {
-        // Play custom sound using audioplayers
-        await _audioPlayer.play(
-          AssetSource(soundUri.replaceFirst('assets/', '')),
-        );
-        AppLogger.info('Playing custom sound preview: $soundUri');
+      if (Platform.isAndroid) {
+        // Use RingtoneService for all system sounds on Android
+        await RingtoneService.previewRingtone(soundUri);
+        AppLogger.info('Playing system sound preview: $soundUri');
       } else {
-        // Play system sound using flutter_ringtone_manager
-        if (Platform.isAndroid) {
-          final ringtoneManager = FlutterRingtoneManager();
-
-          switch (soundUri) {
-            case 'default':
-            case 'alarm':
-              await ringtoneManager.playAlarm();
-              break;
-            case 'ringtone':
-              await ringtoneManager.playRingtone();
-              break;
-            case 'notification':
-              await ringtoneManager.playNotification();
-              break;
-            default:
-              await ringtoneManager.playAlarm();
-          }
-          AppLogger.info('Playing system sound preview: $soundUri');
-        }
+        // Fallback for non-Android platforms
+        final ringtoneManager = FlutterRingtoneManager();
+        await ringtoneManager.playAlarm();
+        AppLogger.info('Playing fallback alarm sound');
       }
     } catch (e) {
       AppLogger.error('Failed to play alarm sound preview: $soundUri', e);
@@ -263,11 +251,11 @@ class AlarmService {
   /// Stop alarm sound preview
   static Future<void> stopAlarmSoundPreview() async {
     try {
-      // Stop audioplayers
-      await _audioPlayer.stop();
-
-      // Stop system ringtone manager
+      // Stop system ringtone preview
       if (Platform.isAndroid) {
+        await RingtoneService.stopPreview();
+      } else {
+        // Fallback for non-Android platforms
         final ringtoneManager = FlutterRingtoneManager();
         await ringtoneManager.stop();
       }
