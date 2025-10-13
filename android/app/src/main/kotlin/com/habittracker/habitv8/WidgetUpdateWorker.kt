@@ -124,19 +124,15 @@ class WidgetUpdateWorker(
                 Context.MODE_PRIVATE
             )
             
-            // Try to get habits data from HomeWidgetPreferences first (Flutter's home_widget plugin saves here)
+            // Try to get habits data from HomeWidgetPreferences ONLY
+            // CRITICAL: Do NOT fall back to FlutterSharedPreferences as it may contain unfiltered/stale data
+            // Flutter's home_widget plugin saves filtered today's habits to HomeWidgetPreferences
             var habitsJson = widgetPrefs.getString("habits", null)
                 ?: widgetPrefs.getString("today_habits", null)
                 ?: widgetPrefs.getString("habits_data", null)
+                ?: "[]"
             
-            // If not found in HomeWidget prefs, try FlutterSharedPreferences as fallback
-            if (habitsJson.isNullOrBlank() || habitsJson == "[]") {
-                habitsJson = flutterPrefs.getString("flutter.habits_data", null)
-                    ?: flutterPrefs.getString("flutter.habits", null)
-                    ?: "[]"
-            }
-            
-            Log.d(TAG, "Widget data loaded: ${habitsJson.length} characters")
+            Log.d(TAG, "Widget data loaded from HomeWidgetPreferences: ${habitsJson.length} characters")
             
             // Process and update widget-specific data
             processHabitDataForWidgets(habitsJson, flutterPrefs)
@@ -156,35 +152,24 @@ class WidgetUpdateWorker(
             
             val editor = widgetPrefs.edit()
             
-            // Only update habits data if we have actual data (don't overwrite with empty data)
-            if (habitsJson.isNotEmpty() && habitsJson != "[]") {
-                editor.putString("habits", habitsJson)
-                editor.putString("habits_data", habitsJson)
-                Log.d(TAG, "Updating habits data: ${habitsJson.length} characters")
-            } else {
-                // Don't overwrite - keep existing data
-                Log.d(TAG, "Skipping habits update - no new data to write (would be empty array)")
-            }
-            
-            // Process habits for today's display
+            // IMPORTANT: habitsJson already contains ONLY today's habits (filtered by Flutter)
+            // We just need to save it to the appropriate keys for widgets to read
             if (habitsJson.isNotEmpty() && habitsJson != "[]") {
                 val gson = Gson()
                 val type = object : TypeToken<List<Map<String, Any>>>() {}.type
                 val habitsList: List<Map<String, Any>> = gson.fromJson(habitsJson, type) ?: emptyList()
                 
-                // Filter and process habits for today
-                val todayHabits = filterHabitsForToday(habitsList)
-                val processedHabitsJson = gson.toJson(todayHabits)
-                
-                editor.putString("today_habits", processedHabitsJson)
+                // Save today's habits to all relevant keys (no filtering needed - already filtered by Flutter)
+                editor.putString("habits", habitsJson)
+                editor.putString("habits_data", habitsJson)
+                editor.putString("today_habits", habitsJson)
                 editor.putInt("habit_count", habitsList.size)
-                editor.putInt("today_habit_count", todayHabits.size)
+                editor.putInt("today_habit_count", habitsList.size)
                 
-                Log.d(TAG, "Processed ${habitsList.size} total habits, ${todayHabits.size} for today")
+                Log.d(TAG, "✅ Updated widget data with ${habitsList.size} today's habits (pre-filtered by Flutter)")
             } else {
-                editor.putString("today_habits", "[]")
-                editor.putInt("habit_count", 0)
-                editor.putInt("today_habit_count", 0)
+                // Don't overwrite with empty data - keep existing data
+                Log.d(TAG, "⏭️ Skipping widget update - no habit data to write (empty array)")
             }
             
             // Copy theme settings from Flutter preferences
@@ -200,98 +185,8 @@ class WidgetUpdateWorker(
         }
     }
     
-    private fun filterHabitsForToday(habitsList: List<Map<String, Any>>): List<Map<String, Any>> {
-        val today = Calendar.getInstance()
-        val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(today.time)
-        
-        return habitsList.filter { habit ->
-            shouldShowHabitToday(habit, today, todayDateString)
-        }
-    }
-    
-    private fun shouldShowHabitToday(habit: Map<String, Any>, today: Calendar, todayDateString: String): Boolean {
-        try {
-            // Check if habit is active and should be shown today
-            val isActive = habit["isActive"] as? Boolean ?: true
-            if (!isActive) return false
-            
-            // Check frequency and scheduling
-            val frequency = habit["frequency"] as? String ?: "daily"
-            
-            return when (frequency.lowercase()) {
-                "daily" -> true
-                "weekly" -> {
-                    // Check if today matches the weekly schedule
-                    val selectedWeekdays = habit["selectedWeekdays"] as? List<*>
-                    val todayOfWeek = today.get(Calendar.DAY_OF_WEEK) - 1 // 0 = Sunday
-                    selectedWeekdays?.contains(todayOfWeek) ?: true
-                }
-                "monthly" -> {
-                    // Check if today matches the monthly schedule
-                    val selectedMonthDays = habit["selectedMonthDays"] as? List<*>
-                    val todayOfMonth = today.get(Calendar.DAY_OF_MONTH)
-                    selectedMonthDays?.contains(todayOfMonth) ?: true
-                }
-                "yearly" -> {
-                    // Check if today matches the yearly schedule
-                    val selectedYearlyDates = habit["selectedYearlyDates"] as? List<*>
-                    if (selectedYearlyDates.isNullOrEmpty()) {
-                        // If no specific dates selected, show by default
-                        true
-                    } else {
-                        // Check if today's date (MM-dd format) matches any selected yearly dates
-                        selectedYearlyDates.any { dateStr ->
-                            try {
-                                val yearlyDate = dateStr.toString()
-                                // Extract MM-dd from yyyy-MM-dd format
-                                if (yearlyDate.length >= 10) {
-                                    val monthDay = yearlyDate.substring(5) // Get MM-dd part
-                                    val todayMonthDay = String.format("%02d-%02d", 
-                                        today.get(Calendar.MONTH) + 1, 
-                                        today.get(Calendar.DAY_OF_MONTH))
-                                    monthDay == todayMonthDay
-                                } else {
-                                    false
-                                }
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Error parsing yearly date: $dateStr", e)
-                                false
-                            }
-                        }
-                    }
-                }
-                "hourly" -> {
-                    // Hourly habits should show if they have times scheduled for today
-                    val hourlyTimes = habit["hourlyTimes"] as? List<*>
-                    hourlyTimes?.isNotEmpty() == true
-                }
-                "single" -> {
-                    // Single habits should show if their scheduled date is today
-                    val singleDateTime = habit["singleDateTime"] as? String
-                    if (singleDateTime != null) {
-                        try {
-                            val singleDate = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(singleDateTime)
-                            if (singleDate != null) {
-                                val singleDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(singleDate)
-                                singleDateString == todayDateString
-                            } else {
-                                false
-                            }
-                        } catch (e: Exception) {
-                            Log.w(TAG, "Error parsing single date: $singleDateTime", e)
-                            false
-                        }
-                    } else {
-                        false
-                    }
-                }
-                else -> true // Show other frequencies by default
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Error filtering habit for today: ${habit["name"]}", e)
-            return true // Show by default if there's an error
-        }
-    }
+    // NOTE: Filtering logic removed - Flutter now handles all habit filtering
+    // The worker receives pre-filtered today's habits from Flutter via HomeWidgetPreferences
     
     private fun copyThemeSettings(flutterPrefs: SharedPreferences, widgetEditor: SharedPreferences.Editor) {
         try {
