@@ -7,6 +7,7 @@ import '../domain/model/habit.dart';
 // CRITICAL: Import prevents tree-shaking of ScheduledNotificationSchema in release builds
 // ignore: unused_import
 import '../domain/model/scheduled_notification.dart' as notification_model;
+import 'rrule_service.dart';
 
 /// Background service for updating widgets when app is closed
 ///
@@ -187,6 +188,17 @@ void callbackDispatcher() {
 bool _shouldShowHabitOnDate(Habit habit, DateTime date) {
   if (!habit.isActive) return false;
 
+  // CRITICAL: Check if habit uses RRule system first
+  // Many habits use RRule for scheduling, and we must respect that
+  if (habit.usesRRule && habit.rruleString != null) {
+    return RRuleService.isDueOnDate(
+      rruleString: habit.rruleString!,
+      startDate: habit.dtStart ?? habit.createdAt,
+      checkDate: date,
+    );
+  }
+
+  // Legacy frequency-based logic for old habits
   // Use createdAt as start date
   final startDate = DateTime(
     habit.createdAt.year,
@@ -225,8 +237,16 @@ bool _shouldShowHabitOnDate(Habit habit, DateTime date) {
       return false;
 
     case HabitFrequency.yearly:
-      // For yearly frequency, show all habits (simplified)
-      return true;
+      // FIXED: Check if today matches any of the yearly dates
+      // Previously this always returned true, causing yearly habits to show every day!
+      return habit.selectedYearlyDates.any((yearlyDateString) {
+        try {
+          final yearlyDate = DateTime.parse(yearlyDateString);
+          return date.month == yearlyDate.month && date.day == yearlyDate.day;
+        } catch (e) {
+          return false;
+        }
+      });
   }
 }
 
