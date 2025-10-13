@@ -58,12 +58,13 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
             val minRefreshInterval = 30000L // 30 seconds minimum between refresh attempts
             
             if (timeSinceLastRefresh > minRefreshInterval) {
-                Log.w("HabitTimelineWidget", "No habit data found, attempting fallback refresh (last attempt was ${timeSinceLastRefresh}ms ago)")
+                Log.w("HabitTimelineWidget", "No habit data found, triggering Flutter update (last attempt was ${timeSinceLastRefresh}ms ago)")
                 
                 // Record this refresh attempt to prevent immediate re-triggering
                 widgetData.edit().putLong("last_refresh_attempt", currentTime).apply()
                 
-                refreshWidgetDataFromFlutter(context, widgetData)
+                // CRITICAL FIX: Do NOT call refreshWidgetDataFromFlutter() as it reads unfiltered data from FlutterSharedPreferences
+                // Only trigger Flutter's background update service to populate HomeWidgetPreferences with properly filtered data
                 WidgetUpdateWorker.triggerImmediateUpdate(context)
             } else {
                 Log.d("HabitTimelineWidget", "Skipping refresh - too soon since last attempt (${timeSinceLastRefresh}ms ago, need ${minRefreshInterval}ms)")
@@ -455,55 +456,6 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         }
     }
     
-    /**
-     * Fallback method to refresh widget data directly from Flutter preferences
-     * when WorkManager updates fail or are delayed
-     */
-    private fun refreshWidgetDataFromFlutter(context: Context, widgetData: SharedPreferences) {
-        try {
-            Log.d("HabitTimelineWidget", "Attempting fallback data refresh from Flutter preferences")
-            
-            // Read current habit data from Flutter shared preferences
-            val flutterPrefs = context.getSharedPreferences(
-                "FlutterSharedPreferences", 
-                Context.MODE_PRIVATE
-            )
-            
-            // Get habits data
-            val habitsJson = flutterPrefs.getString("flutter.habits_data", null)
-                ?: flutterPrefs.getString("flutter.habits", null)
-            
-            if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
-                // Update BOTH widget preferences and HomeWidgetPreferences with fresh data
-                // This ensures both the widget provider and ListView services have the data
-                
-                // Update the passed widgetData
-                val widgetEditor = widgetData.edit()
-                widgetEditor.putString("habits", habitsJson)
-                widgetEditor.putString("habits_data", habitsJson)
-                widgetEditor.putLong("last_update", System.currentTimeMillis())
-                
-                // Also update HomeWidgetPreferences (used by ListView services)
-                val homeWidgetPrefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-                val homeEditor = homeWidgetPrefs.edit()
-                homeEditor.putString("habits", habitsJson)
-                homeEditor.putString("habits_data", habitsJson)
-                homeEditor.putLong("last_update", System.currentTimeMillis())
-                
-                // DON'T override theme data in fallback - let the proper widget integration service handle theme
-                // This prevents the fallback from overriding correct theme data with stale or incorrect theme data
-                Log.d("HabitTimelineWidget", "Skipping theme data in fallback refresh - letting widget integration service handle theme")
-                
-                // Apply both updates (only habit data, not theme)
-                widgetEditor.apply()
-                homeEditor.apply()
-                
-                Log.d("HabitTimelineWidget", "✅ Fallback data refresh successful (updated habit data only, preserved theme data)")
-            } else {
-                Log.w("HabitTimelineWidget", "No habit data found in Flutter preferences for fallback")
-            }
-        } catch (e: Exception) {
-            Log.e("HabitTimelineWidget", "❌ Error during fallback data refresh", e)
-        }
-    }
+    // NOTE: refreshWidgetDataFromFlutter() removed - it was loading unfiltered data from FlutterSharedPreferences
+    // Widgets now ONLY read from HomeWidgetPreferences which is populated by Flutter's home_widget plugin with filtered data
 }

@@ -241,16 +241,16 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
 
     private fun getHabitCount(context: Context): Int {
         return try {
-            val prefs = context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            val habitsJson = prefs.getString("flutter.habits_data", null)
+            // CRITICAL: Read from HomeWidgetPreferences which contains TODAY'S filtered habits
+            // NOT from FlutterSharedPreferences which contains ALL habits (unfiltered)
+            val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val habitsJson = prefs.getString("habits", null)
+                ?: prefs.getString("home_widget.string.habits", null)
+                ?: prefs.getString("habits_data", null)
+            
             if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
-                val gson = com.google.gson.Gson()
-                val type = com.google.gson.reflect.TypeToken.getParameterized(
-                    java.util.List::class.java,
-                    Map::class.java
-                ).type
-                val habitsList: List<Map<String, Any>> = gson.fromJson(habitsJson, type) ?: emptyList()
-                habitsList.size
+                val habitsArray = org.json.JSONArray(habitsJson)
+                habitsArray.length()
             } else {
                 0
             }
@@ -423,55 +423,6 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         }
     }
     
-    /**
-     * Fallback method to refresh widget data directly from Flutter preferences
-     * when WorkManager updates fail or are delayed
-     */
-    private fun refreshWidgetDataFromFlutter(context: Context, widgetData: SharedPreferences) {
-        try {
-            Log.d("HabitCompactWidget", "Attempting fallback data refresh from Flutter preferences")
-            
-            // Read current habit data from Flutter shared preferences
-            val flutterPrefs = context.getSharedPreferences(
-                "FlutterSharedPreferences", 
-                Context.MODE_PRIVATE
-            )
-            
-            // Get habits data
-            val habitsJson = flutterPrefs.getString("flutter.habits_data", null)
-                ?: flutterPrefs.getString("flutter.habits", null)
-            
-            if (!habitsJson.isNullOrEmpty() && habitsJson != "[]") {
-                // Update BOTH widget preferences and HomeWidgetPreferences with fresh data
-                // This ensures both the widget provider and ListView services have the data
-                
-                // Update the passed widgetData
-                val widgetEditor = widgetData.edit()
-                widgetEditor.putString("habits", habitsJson)
-                widgetEditor.putString("habits_data", habitsJson)
-                widgetEditor.putLong("last_update", System.currentTimeMillis())
-                
-                // Also update HomeWidgetPreferences (used by ListView services)
-                val homeWidgetPrefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
-                val homeEditor = homeWidgetPrefs.edit()
-                homeEditor.putString("habits", habitsJson)
-                homeEditor.putString("habits_data", habitsJson)
-                homeEditor.putLong("last_update", System.currentTimeMillis())
-                
-                // DON'T override theme data in fallback - let the proper widget integration service handle theme
-                // This prevents the fallback from overriding correct theme data with stale or incorrect theme data
-                Log.d("HabitCompactWidget", "Skipping theme data in fallback refresh - letting widget integration service handle theme")
-                
-                // Apply both updates (only habit data, not theme)
-                widgetEditor.apply()
-                homeEditor.apply()
-                
-                Log.d("HabitCompactWidget", "✅ Fallback data refresh successful (updated habit data only, preserved theme data)")
-            } else {
-                Log.w("HabitCompactWidget", "No habit data found in Flutter preferences for fallback")
-            }
-        } catch (e: Exception) {
-            Log.e("HabitCompactWidget", "❌ Error during fallback data refresh", e)
-        }
-    }
+    // NOTE: refreshWidgetDataFromFlutter() removed - it was loading unfiltered data from FlutterSharedPreferences
+    // Widgets now ONLY read from HomeWidgetPreferences which is populated by Flutter's home_widget plugin with filtered data
 }
