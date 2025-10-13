@@ -71,6 +71,7 @@ class AlarmService {
       // Use awesome_notifications for scheduling
       await _scheduleNotificationAlarm(
         alarmId: alarmId,
+        habitId: habitId,
         habitName: habitName,
         scheduledTime: scheduledTime,
         alarmSoundName: alarmSoundName,
@@ -278,6 +279,7 @@ class AlarmService {
   /// Schedule notification-based alarm
   static Future<void> _scheduleNotificationAlarm({
     required int alarmId,
+    required String habitId,
     required String habitName,
     required DateTime scheduledTime,
     String? alarmSoundName,
@@ -304,6 +306,14 @@ class AlarmService {
       customSound = 'resource://raw/${alarmSoundName.replaceAll('.mp3', '')}';
     }
 
+    // CRITICAL: Create payload with habitId so the notification action handler
+    // can process the completion. This matches the format used by regular notifications.
+    final payloadData = jsonEncode({
+      'habitId': habitId,
+      'habitName': habitName,
+      'type': 'alarm',
+    });
+
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: alarmId,
@@ -317,6 +327,7 @@ class AlarmService {
         criticalAlert: true,
         locked: true,
         customSound: customSound,
+        payload: {'data': payloadData},
       ),
       actionButtons: [
         NotificationActionButton(
@@ -366,6 +377,106 @@ class AlarmService {
     AppLogger.info(
       '⏰ Scheduled snooze alarm for $habitName in $snoozeDelayMinutes minutes',
     );
+  }
+
+  /// Schedule habit alarm (simplified API for habit_continuation_service)
+  /// This is a convenience method that generates the alarm ID automatically
+  static Future<void> scheduleHabitAlarm({
+    required String habitId,
+    required String habitName,
+    required DateTime scheduledTime,
+    String? alarmSoundName,
+    int snoozeDelayMinutes = 10,
+    String frequency = 'daily',
+  }) async {
+    // Generate alarm ID based on habitId and scheduled time
+    final alarmId = generateHabitAlarmId(
+      habitId,
+      suffix: '${scheduledTime.millisecondsSinceEpoch}',
+    );
+
+    await scheduleExactAlarm(
+      alarmId: alarmId,
+      habitId: habitId,
+      habitName: habitName,
+      scheduledTime: scheduledTime,
+      frequency: frequency,
+      alarmSoundName: alarmSoundName,
+      snoozeDelayMinutes: snoozeDelayMinutes,
+    );
+  }
+
+  /// Get system ringtones (Android only)
+  static Future<List<Map<String, String>>> getSystemRingtones() async {
+    if (!Platform.isAndroid) {
+      return [];
+    }
+
+    try {
+      // Note: flutter_ringtone_manager doesn't provide a list method
+      // Return predefined system sound options
+      return [
+        {'name': 'Default Alarm', 'uri': 'default', 'type': 'system'},
+        {'name': 'System Alarm', 'uri': 'alarm', 'type': 'system'},
+        {'name': 'System Ringtone', 'uri': 'ringtone', 'type': 'system'},
+        {
+          'name': 'System Notification',
+          'uri': 'notification',
+          'type': 'system'
+        },
+      ];
+    } catch (e) {
+      AppLogger.error('Failed to get system ringtones', e);
+      return [];
+    }
+  }
+
+  /// Open system ringtone picker (Android only)
+  /// Returns the selected ringtone URI or null if cancelled
+  static Future<String?> openSystemRingtonePicker() async {
+    if (!Platform.isAndroid) {
+      AppLogger.warning('Ringtone picker only available on Android');
+      return null;
+    }
+
+    try {
+      // Note: flutter_ringtone_manager doesn't have a picker
+      // This would require a custom platform channel implementation
+      // For now, return null and users can select from predefined sounds
+      AppLogger.warning('System ringtone picker not implemented yet');
+      return null;
+    } catch (e) {
+      AppLogger.error('Failed to open ringtone picker', e);
+      return null;
+    }
+  }
+
+  /// Test/preview a system sound
+  static Future<void> testSystemSound([String? soundUri]) async {
+    await playAlarmSoundPreview(soundUri ?? 'default');
+  }
+
+  /// Stop any playing system sound
+  static Future<void> stopSystemSound() async {
+    await stopAlarmSoundPreview();
+  }
+
+  /// Schedule hourly habit alarms (compatibility method)
+  /// This is handled by the notification scheduler, but kept for API compatibility
+  static Future<void> scheduleHourlyHabitAlarms(dynamic habit) async {
+    AppLogger.debug(
+        'scheduleHourlyHabitAlarms called - delegating to notification scheduler');
+    // This method exists for API compatibility with AlarmManagerService
+    // The actual scheduling is done by NotificationAlarmScheduler
+  }
+
+  /// Schedule daily habit alarm (compatibility method)
+  /// This is handled by the notification scheduler, but kept for API compatibility
+  static Future<void> scheduleDailyHabitAlarm(dynamic habit) async {
+    AppLogger.debug(
+        'scheduleDailyHabitAlarm called - delegating to notification scheduler');
+    // This method exists for API compatibility with AlarmManagerService
+    // The actual scheduling is done by NotificationAlarmScheduler
   }
 
   /// Generate unique alarm ID for habit

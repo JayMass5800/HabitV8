@@ -6,7 +6,7 @@ import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/comprehensive_habit_suggestions_service.dart';
-import '../../services/alarm_manager_service.dart';
+import '../../services/alarm_service.dart';
 import '../../services/logging_service.dart';
 import '../widgets/rrule_builder_widget.dart';
 
@@ -1949,7 +1949,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
   // ==================== ALARM SELECTION ====================
 
   Future<void> _selectAlarmSound() async {
-    final availableSounds = await AlarmManagerService.getAvailableAlarmSounds();
+    final availableSounds = await AlarmService.getAvailableAlarmSounds();
 
     if (!mounted) return;
 
@@ -2026,16 +2026,14 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
                               ),
                               onPressed: () async {
                                 if (isPlaying) {
-                                  await AlarmManagerService
-                                      .stopAlarmSoundPreview();
+                                  await AlarmService.stopAlarmSoundPreview();
                                   setDialogState(() {
                                     currentlyPlaying = null;
                                   });
                                 } else {
-                                  await AlarmManagerService
-                                      .stopAlarmSoundPreview();
-                                  await AlarmManagerService
-                                      .playAlarmSoundPreview(soundUri);
+                                  await AlarmService.stopAlarmSoundPreview();
+                                  await AlarmService.playAlarmSoundPreview(
+                                      soundUri);
                                   setDialogState(() {
                                     currentlyPlaying = soundUri;
                                   });
@@ -2044,7 +2042,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
                                   Future.delayed(
                                     const Duration(seconds: 4),
                                     () async {
-                                      await AlarmManagerService
+                                      await AlarmService
                                           .stopAlarmSoundPreview();
                                       try {
                                         setDialogState(() {
@@ -2095,7 +2093,7 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
     }
 
     // Stop any playing sound when dialog closes
-    await AlarmManagerService.stopAlarmSoundPreview();
+    await AlarmService.stopAlarmSoundPreview();
   }
 }
 

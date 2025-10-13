@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/model/habit.dart';
 import '../data/database_isar.dart';
 import 'notification_service.dart';
-import 'alarm_manager_service.dart';
+import 'alarm_service.dart';
 import 'logging_service.dart';
 
 /// DEPRECATED: Service responsible for ensuring habits continue to work indefinitely
@@ -211,7 +211,7 @@ class HabitContinuationService {
       AppLogger.debug('🚨 Renewing alarms for habit: ${habit.name}');
 
       // Cancel existing alarms first
-      await AlarmManagerService.cancelHabitAlarms(habit.id);
+      await AlarmService.cancelHabitAlarms(habit.id);
 
       // Schedule new alarms based on frequency with extended duration
       switch (habit.frequency) {
@@ -585,19 +585,11 @@ class HabitContinuationService {
             DateTime(date.year, date.month, date.day, hour, minute);
 
         if (alarmTime.isAfter(now)) {
-          final alarmId = AlarmManagerService.generateHabitAlarmId(
-            habit.id,
-            suffix: 'hourly_${date.day}_${hour}_$minute',
-          );
-
-          await AlarmManagerService.scheduleExactAlarm(
-            alarmId: alarmId,
+          await AlarmService.scheduleHabitAlarm(
             habitId: habit.id,
             habitName: habit.name,
             scheduledTime: alarmTime,
-            frequency: 'hourly',
             alarmSoundName: habit.alarmSoundName,
-            alarmSoundUri: habit.alarmSoundUri,
             snoozeDelayMinutes: habit.snoozeDelayMinutes,
           );
 
@@ -630,19 +622,11 @@ class HabitContinuationService {
       );
 
       if (alarmTime.isAfter(now)) {
-        final alarmId = AlarmManagerService.generateHabitAlarmId(
-          habit.id,
-          suffix: 'daily_${targetDate.day}_${targetDate.month}',
-        );
-
-        await AlarmManagerService.scheduleExactAlarm(
-          alarmId: alarmId,
+        await AlarmService.scheduleHabitAlarm(
           habitId: habit.id,
           habitName: habit.name,
           scheduledTime: alarmTime,
-          frequency: 'daily',
           alarmSoundName: habit.alarmSoundName,
-          alarmSoundUri: habit.alarmSoundUri,
           snoozeDelayMinutes: habit.snoozeDelayMinutes,
         );
 
@@ -678,19 +662,11 @@ class HabitContinuationService {
         );
 
         if (alarmTime.isAfter(now)) {
-          final alarmId = AlarmManagerService.generateHabitAlarmId(
-            habit.id,
-            suffix: 'weekly_${date.day}_${date.month}_${date.weekday}',
-          );
-
-          await AlarmManagerService.scheduleExactAlarm(
-            alarmId: alarmId,
+          await AlarmService.scheduleHabitAlarm(
             habitId: habit.id,
             habitName: habit.name,
             scheduledTime: alarmTime,
-            frequency: 'weekly',
             alarmSoundName: habit.alarmSoundName,
-            alarmSoundUri: habit.alarmSoundUri,
             snoozeDelayMinutes: habit.snoozeDelayMinutes,
           );
 
@@ -729,19 +705,11 @@ class HabitContinuationService {
           );
 
           if (alarmTime.isAfter(now)) {
-            final alarmId = AlarmManagerService.generateHabitAlarmId(
-              habit.id,
-              suffix: 'monthly_${targetMonth.month}_$monthDay',
-            );
-
-            await AlarmManagerService.scheduleExactAlarm(
-              alarmId: alarmId,
+            await AlarmService.scheduleHabitAlarm(
               habitId: habit.id,
               habitName: habit.name,
               scheduledTime: alarmTime,
-              frequency: 'monthly',
               alarmSoundName: habit.alarmSoundName,
-              alarmSoundUri: habit.alarmSoundUri,
               snoozeDelayMinutes: habit.snoozeDelayMinutes,
             );
 
@@ -784,19 +752,11 @@ class HabitContinuationService {
             );
 
             if (alarmTime.isAfter(now)) {
-              final alarmId = AlarmManagerService.generateHabitAlarmId(
-                habit.id,
-                suffix: 'yearly_${targetYear}_${month}_$day',
-              );
-
-              await AlarmManagerService.scheduleExactAlarm(
-                alarmId: alarmId,
+              await AlarmService.scheduleHabitAlarm(
                 habitId: habit.id,
                 habitName: habit.name,
                 scheduledTime: alarmTime,
-                frequency: 'yearly',
                 alarmSoundName: habit.alarmSoundName,
-                alarmSoundUri: habit.alarmSoundUri,
                 snoozeDelayMinutes: habit.snoozeDelayMinutes,
               );
 
@@ -835,19 +795,11 @@ class HabitContinuationService {
     }
 
     try {
-      final alarmId = AlarmManagerService.generateHabitAlarmId(
-        habit.id,
-        suffix: 'single_${singleDateTime.millisecondsSinceEpoch}',
-      );
-
-      await AlarmManagerService.scheduleExactAlarm(
-        alarmId: alarmId,
+      await AlarmService.scheduleHabitAlarm(
         habitId: habit.id,
         habitName: habit.name,
         scheduledTime: singleDateTime,
-        frequency: 'single',
         alarmSoundName: habit.alarmSoundName,
-        alarmSoundUri: habit.alarmSoundUri,
         snoozeDelayMinutes: habit.snoozeDelayMinutes,
       );
 

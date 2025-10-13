@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/alarm_manager_service.dart';
+import '../services/alarm_service.dart';
 
 class AlarmTestWidget extends StatefulWidget {
   const AlarmTestWidget({super.key});
@@ -20,7 +20,7 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
 
   Future<void> _initializeService() async {
     try {
-      await AlarmManagerService.initialize();
+      await AlarmService.initialize();
       setState(() {
         _isInitialized = true;
         _status = 'Service initialized successfully';
@@ -35,7 +35,7 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
   Future<void> _testSystemSound() async {
     try {
       setState(() => _status = 'Testing system sound...');
-      await AlarmManagerService.testSystemSound('Early Twilight');
+      await AlarmService.testSystemSound('Early Twilight');
       setState(() => _status = 'System sound test completed');
     } catch (e) {
       setState(() => _status = 'Sound test failed: $e');
@@ -44,7 +44,7 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
 
   Future<void> _stopSystemSound() async {
     try {
-      await AlarmManagerService.stopSystemSound();
+      await AlarmService.stopSystemSound();
       setState(() => _status = 'System sound stopped');
     } catch (e) {
       setState(() => _status = 'Failed to stop sound: $e');
@@ -57,13 +57,12 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
 
       final alarmTime = DateTime.now().add(const Duration(seconds: 10));
 
-      await AlarmManagerService.scheduleExactAlarm(
-        alarmId: 999,
+      await AlarmService.scheduleHabitAlarm(
         habitId: 'test_habit',
         habitName: 'Test Alarm',
         scheduledTime: alarmTime,
-        frequency: 'daily',
         alarmSoundName: 'Early Twilight',
+        snoozeDelayMinutes: 10,
       );
 
       setState(
@@ -75,7 +74,7 @@ class _AlarmTestWidgetState extends State<AlarmTestWidget> {
 
   Future<void> _cancelTestAlarm() async {
     try {
-      await AlarmManagerService.cancelAlarm(999);
+      await AlarmService.cancelHabitAlarms('test_habit');
       setState(() => _status = 'Test alarm cancelled');
     } catch (e) {
       setState(() => _status = 'Failed to cancel alarm: $e');

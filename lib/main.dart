@@ -16,7 +16,7 @@ import 'domain/model/habit.dart' as habit_model;
 import 'domain/model/scheduled_notification.dart' as notification_model;
 import 'services/notification_service.dart';
 import 'services/notification_action_service.dart';
-import 'services/alarm_manager_service.dart';
+import 'services/alarm_service.dart';
 import 'services/alarm_snooze_service.dart';
 import 'services/alarm_complete_service.dart';
 import 'services/permission_service.dart';
@@ -89,11 +89,11 @@ void main() async {
     // Continue with app startup even if notifications fail
   }
 
-  // Initialize hybrid alarm service (handles both notification and system alarms)
+  // Initialize alarm service (uses awesome_notifications for alarms)
   try {
-    await AlarmManagerService.initialize();
+    await AlarmService.initialize();
   } catch (e) {
-    AppLogger.error('Error initializing hybrid alarm service', e);
+    AppLogger.error('Error initializing alarm service', e);
     // Continue with app startup even if alarm service fails
   }
 

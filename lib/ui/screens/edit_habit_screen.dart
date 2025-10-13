@@ -7,7 +7,7 @@ import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/category_suggestion_service.dart';
-import '../../services/alarm_manager_service.dart';
+import '../../services/alarm_service.dart';
 import '../widgets/rrule_builder_widget.dart';
 
 class EditHabitScreen extends ConsumerStatefulWidget {
@@ -1330,7 +1330,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   }
 
   Future<void> _selectAlarmSound() async {
-    final availableSounds = await AlarmManagerService.getAvailableAlarmSounds();
+    final availableSounds = await AlarmService.getAvailableAlarmSounds();
 
     if (!mounted) return;
 
@@ -1408,16 +1408,13 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                               ),
                               onPressed: () async {
                                 if (isPlaying) {
-                                  await AlarmManagerService
-                                      .stopAlarmSoundPreview();
+                                  await AlarmService.stopAlarmSoundPreview();
                                   setDialogState(() {
                                     currentlyPlaying = null;
                                   });
                                 } else {
-                                  await AlarmManagerService
-                                      .stopAlarmSoundPreview();
-                                  await AlarmManagerService
-                                      .playAlarmSoundPreview(
+                                  await AlarmService.stopAlarmSoundPreview();
+                                  await AlarmService.playAlarmSoundPreview(
                                     soundUri,
                                   );
                                   setDialogState(() {
@@ -1428,7 +1425,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                                   Future.delayed(
                                     const Duration(seconds: 4),
                                     () async {
-                                      await AlarmManagerService
+                                      await AlarmService
                                           .stopAlarmSoundPreview();
                                       if (mounted) {
                                         setDialogState(() {
@@ -1499,7 +1496,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                await AlarmManagerService.stopAlarmSoundPreview();
+                await AlarmService.stopAlarmSoundPreview();
                 if (context.mounted) {
                   Navigator.of(context).pop();
                 }
@@ -1512,7 +1509,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     );
 
     // Stop any playing sound when dialog closes
-    await AlarmManagerService.stopAlarmSoundPreview();
+    await AlarmService.stopAlarmSoundPreview();
 
     if (selected != null) {
       setState(() {

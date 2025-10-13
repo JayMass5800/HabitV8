@@ -137,6 +137,10 @@ void callbackDispatcher() {
           return _shouldShowHabitOnDate(habit, today);
         }).toList();
 
+        // Sort habits chronologically by time (same as foreground service)
+        todayHabits.sort(
+            (a, b) => _getHabitSortTime(a).compareTo(_getHabitSortTime(b)));
+
         debugPrint(
             '🔄 [Background] Found ${allHabits.length} total habits, ${todayHabits.length} for today');
 
@@ -267,6 +271,10 @@ Future<bool> _handleAlarmCompletion(Map<String, dynamic>? inputData) async {
       return _shouldShowHabitOnDate(habit, today);
     }).toList();
 
+    // Sort habits chronologically by time (same as foreground service)
+    todayHabits
+        .sort((a, b) => _getHabitSortTime(a).compareTo(_getHabitSortTime(b)));
+
     // Convert habits to JSON
     final habitsList = todayHabits.map((h) => _habitToJson(h, today)).toList();
     final habitsJson = jsonEncode(habitsList);
@@ -369,25 +377,60 @@ bool _shouldShowHabitOnDate(Habit habit, DateTime date) {
 }
 
 /// Convert habit to JSON for widget consumption
+/// CRITICAL: Must match widget_integration_service.dart exactly for consistency
 Map<String, dynamic> _habitToJson(Habit habit, DateTime date) {
   final isCompleted = _isHabitCompletedOnDate(habit, date);
+  final status = _getHabitStatus(habit, date);
+  final timeDisplay = _getHabitTimeDisplay(habit);
 
-  return {
+  final json = <String, dynamic>{
     'id': habit.id,
     'name': habit.name,
     'category': habit.category,
     'colorValue': habit.colorValue,
     'isCompleted': isCompleted,
-    'status': isCompleted ? 'Completed' : 'Due',
-    'timeDisplay': _getHabitTimeDisplay(habit),
-    'frequency': habit.frequency.toString().split('.').last,
-    'streak': habit.currentStreak,
-    'completedSlots': habit.frequency == HabitFrequency.hourly
-        ? _getCompletedSlotsCount(habit, date)
-        : 0,
-    'totalSlots':
-        habit.frequency == HabitFrequency.hourly ? habit.hourlyTimes.length : 0,
+    'status': status,
+    'timeDisplay': timeDisplay,
+    'frequency': habit.frequency.toString(),
   };
+
+  // For hourly habits, include detailed time slot information
+  // This matches the foreground service implementation exactly
+  if (habit.frequency == HabitFrequency.hourly &&
+      habit.hourlyTimes.isNotEmpty) {
+    final timeSlots = <Map<String, dynamic>>[];
+
+    for (final timeStr in habit.hourlyTimes) {
+      final timeParts = timeStr.split(':');
+      if (timeParts.length == 2) {
+        final hour = int.tryParse(timeParts[0]);
+        final minute = int.tryParse(timeParts[1]);
+
+        if (hour != null && minute != null) {
+          // Check if this specific time slot is completed
+          final isSlotCompleted =
+              _isHourlySlotCompleted(habit, date, hour, minute);
+
+          timeSlots.add({
+            'time': timeStr,
+            'hour': hour,
+            'minute': minute,
+            'isCompleted': isSlotCompleted,
+          });
+        }
+      }
+    }
+
+    json['hourlySlots'] = timeSlots;
+    json['completedSlots'] =
+        timeSlots.where((slot) => slot['isCompleted'] == true).length;
+    json['totalSlots'] = timeSlots.length;
+
+    // Override isCompleted for hourly habits - only true if ALL slots are completed
+    json['isCompleted'] = json['completedSlots'] == json['totalSlots'];
+  }
+
+  return json;
 }
 
 /// Check if habit is completed on a specific date
@@ -410,21 +453,47 @@ bool _isHabitCompletedOnDate(Habit habit, DateTime date) {
   });
 }
 
-/// Get completed slots count for hourly habits
-int _getCompletedSlotsCount(Habit habit, DateTime date) {
-  return habit.completions.where((completion) {
-    return completion.year == date.year &&
-        completion.month == date.month &&
-        completion.day == date.day;
-  }).length;
-}
-
 /// Get time display for habit
+/// CRITICAL: Must match widget_integration_service.dart exactly
 String _getHabitTimeDisplay(Habit habit) {
   switch (habit.frequency) {
     case HabitFrequency.hourly:
       if (habit.hourlyTimes.isNotEmpty) {
-        return habit.hourlyTimes.first;
+        // For hourly habits, show the next upcoming time or current time
+        final now = DateTime.now();
+
+        // Find the next time that hasn't passed yet
+        String? nextTime;
+        for (final timeStr in habit.hourlyTimes) {
+          final timeParts = timeStr.split(':');
+          final habitHour = int.parse(timeParts[0]);
+          final habitMinute = int.parse(timeParts[1]);
+          final habitDateTime =
+              DateTime(now.year, now.month, now.day, habitHour, habitMinute);
+
+          if (habitDateTime.isAfter(now) ||
+              habitDateTime.isAtSameMomentAs(DateTime(
+                  now.year, now.month, now.day, now.hour, now.minute))) {
+            nextTime = timeStr;
+            break;
+          }
+        }
+
+        if (nextTime != null) {
+          // Show next time with indicator of additional times
+          if (habit.hourlyTimes.length == 1) {
+            return nextTime;
+          } else {
+            return '$nextTime (+${habit.hourlyTimes.length - 1})';
+          }
+        } else {
+          // All times have passed, show first time for tomorrow
+          if (habit.hourlyTimes.length == 1) {
+            return '${habit.hourlyTimes.first} (tomorrow)';
+          } else {
+            return '${habit.hourlyTimes.first} (+${habit.hourlyTimes.length - 1})';
+          }
+        }
       }
       return 'Hourly';
 
@@ -445,6 +514,78 @@ String _getHabitTimeDisplay(Habit habit) {
       return 'Yearly';
 
     case HabitFrequency.single:
+      if (habit.singleDateTime != null) {
+        final time = habit.singleDateTime!;
+        return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+      }
       return 'Single';
   }
+}
+
+/// Get the sort time for a habit (for chronological ordering)
+DateTime _getHabitSortTime(Habit habit) {
+  // Handle single habits with specific date/time
+  if (habit.singleDateTime != null) {
+    return habit.singleDateTime!;
+  }
+
+  // Handle hourly habits with multiple times
+  if (habit.frequency == HabitFrequency.hourly &&
+      habit.hourlyTimes.isNotEmpty) {
+    // Use the earliest time from hourly times for sorting
+    final earliestTime = habit.hourlyTimes.first;
+    final timeParts = earliestTime.split(':');
+    final hour = int.parse(timeParts[0]);
+    final minute = int.parse(timeParts[1]);
+
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, hour, minute);
+  }
+
+  // Handle recurring habits with notification time
+  if (habit.notificationTime != null) {
+    // Create a DateTime with today's date and the habit's notification time
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+      habit.notificationTime!.hour,
+      habit.notificationTime!.minute,
+    );
+  }
+
+  // If no time is set, put it at the end of the day
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day, 23, 59);
+}
+
+/// Get habit status for a date
+String _getHabitStatus(Habit habit, DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final selectedDay = DateTime(date.year, date.month, date.day);
+
+  if (_isHabitCompletedOnDate(habit, date)) {
+    return 'Completed';
+  }
+
+  if (selectedDay.isBefore(today)) {
+    return 'Missed';
+  } else if (selectedDay.isAfter(today)) {
+    return 'Upcoming';
+  } else {
+    return 'Due';
+  }
+}
+
+/// Check if a specific hourly slot is completed
+bool _isHourlySlotCompleted(Habit habit, DateTime date, int hour, int minute) {
+  return habit.completions.any((completion) {
+    return completion.year == date.year &&
+        completion.month == date.month &&
+        completion.day == date.day &&
+        completion.hour == hour;
+    // Note: We only check hour, not minute, because completions are recorded per hour
+  });
 }

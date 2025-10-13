@@ -1,6 +1,6 @@
 import 'package:timezone/timezone.dart' as tz;
 import '../logging_service.dart';
-import '../alarm_manager_service.dart';
+import '../alarm_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_helpers.dart';
 import 'notification_core.dart';
@@ -8,7 +8,7 @@ import 'notification_core.dart';
 /// System alarm scheduling functionality
 ///
 /// This module handles:
-/// - System alarm scheduling via AlarmManagerService
+/// - System alarm scheduling via AlarmService (awesome_notifications)
 /// - Frequency-specific alarm scheduling (daily, weekly, monthly, yearly, hourly, single)
 /// - Alarm cancellation
 /// - Weekday calculations for recurring alarms
@@ -53,8 +53,8 @@ class NotificationAlarmScheduler {
       // The foreground service should still work even without notification permission
     }
 
-    // Initialize AlarmManagerService to use system alarms for this habit
-    await AlarmManagerService.initialize();
+    // Initialize AlarmService to use awesome_notifications alarms for this habit
+    await AlarmService.initialize();
 
     // For non-hourly, non-single habits, require notification time
     if (habit.frequency != HabitFrequency.hourly &&
@@ -79,7 +79,7 @@ class NotificationAlarmScheduler {
 
     try {
       // Cancel any existing alarms for this habit first
-      await AlarmManagerService.cancelHabitAlarms(habit.id);
+      await AlarmService.cancelHabitAlarms(habit.id);
       AppLogger.debug('Cancelled existing alarms for habit ID: ${habit.id}');
 
       // Route to frequency-specific alarm scheduler
@@ -150,14 +150,13 @@ class NotificationAlarmScheduler {
     }
 
     try {
-      await AlarmManagerService.scheduleExactAlarm(
+      await AlarmService.scheduleExactAlarm(
         alarmId: NotificationHelpers.generateSafeId('${habit.id}_daily'),
         habitId: habit.id.toString(),
         habitName: habit.name,
         scheduledTime: nextAlarm,
         frequency: 'daily',
         alarmSoundName: habit.alarmSoundName,
-        alarmSoundUri: habit.alarmSoundUri,
         snoozeDelayMinutes: 10,
       );
 
@@ -190,7 +189,7 @@ class NotificationAlarmScheduler {
           _getNextWeekdayDateTime(baseTime, weekday, hour, minute);
 
       try {
-        await AlarmManagerService.scheduleExactAlarm(
+        await AlarmService.scheduleExactAlarm(
           alarmId:
               NotificationHelpers.generateSafeId('${habit.id}_weekly_$weekday'),
           habitId: habit.id.toString(),
@@ -198,7 +197,6 @@ class NotificationAlarmScheduler {
           scheduledTime: nextAlarm,
           frequency: 'weekly',
           alarmSoundName: habit.alarmSoundName,
-          alarmSoundUri: habit.alarmSoundUri,
           snoozeDelayMinutes: 10,
         );
 
@@ -242,7 +240,7 @@ class NotificationAlarmScheduler {
       }
 
       try {
-        await AlarmManagerService.scheduleExactAlarm(
+        await AlarmService.scheduleExactAlarm(
           alarmId:
               NotificationHelpers.generateSafeId('${habit.id}_monthly_$day'),
           habitId: habit.id.toString(),
@@ -250,7 +248,6 @@ class NotificationAlarmScheduler {
           scheduledTime: nextAlarm,
           frequency: 'monthly',
           alarmSoundName: habit.alarmSoundName,
-          alarmSoundUri: habit.alarmSoundUri,
           snoozeDelayMinutes: 10,
         );
 
@@ -301,7 +298,7 @@ class NotificationAlarmScheduler {
           nextAlarm = DateTime(now.year + 1, month, day, hour, minute);
         }
 
-        await AlarmManagerService.scheduleExactAlarm(
+        await AlarmService.scheduleExactAlarm(
           alarmId: NotificationHelpers.generateSafeId(
               '${habit.id}_yearly_${month}_$day'),
           habitId: habit.id.toString(),
@@ -309,7 +306,6 @@ class NotificationAlarmScheduler {
           scheduledTime: nextAlarm,
           frequency: 'yearly',
           alarmSoundName: habit.alarmSoundName,
-          alarmSoundUri: habit.alarmSoundUri,
           snoozeDelayMinutes: 10,
         );
 
@@ -351,7 +347,7 @@ class NotificationAlarmScheduler {
     }
 
     try {
-      await AlarmManagerService.scheduleExactAlarm(
+      await AlarmService.scheduleExactAlarm(
         alarmId: NotificationHelpers.generateSafeId(
           '${habit.id}_single_${singleDateTime.millisecondsSinceEpoch}',
         ),
@@ -360,7 +356,6 @@ class NotificationAlarmScheduler {
         scheduledTime: singleDateTime,
         frequency: 'single',
         alarmSoundName: habit.alarmSoundName,
-        alarmSoundUri: habit.alarmSoundUri,
         snoozeDelayMinutes: 10,
       );
 
@@ -408,7 +403,7 @@ class NotificationAlarmScheduler {
           }
         }
 
-        await AlarmManagerService.scheduleExactAlarm(
+        await AlarmService.scheduleExactAlarm(
           alarmId:
               NotificationHelpers.generateSafeId('${habit.id}_hourly_$hour'),
           habitId: '${habit.id}|$hour:00',
@@ -416,7 +411,6 @@ class NotificationAlarmScheduler {
           scheduledTime: nextAlarm,
           frequency: 'hourly',
           alarmSoundName: habit.alarmSoundName,
-          alarmSoundUri: habit.alarmSoundUri,
           snoozeDelayMinutes: 10,
         );
       }
@@ -470,7 +464,7 @@ class NotificationAlarmScheduler {
           }
         }
 
-        await AlarmManagerService.scheduleExactAlarm(
+        await AlarmService.scheduleExactAlarm(
           alarmId: NotificationHelpers.generateSafeId(
               '${habit.id}_hourly_${hour}_$minute'),
           habitId: '${habit.id}|$hour:${minute.toString().padLeft(2, '0')}',
@@ -478,7 +472,6 @@ class NotificationAlarmScheduler {
           scheduledTime: nextAlarm,
           frequency: 'hourly',
           alarmSoundName: habit.alarmSoundName,
-          alarmSoundUri: habit.alarmSoundUri,
           snoozeDelayMinutes: 10,
         );
 

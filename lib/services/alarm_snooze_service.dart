@@ -1,13 +1,11 @@
-import 'package:flutter/services.dart';
 import 'logging_service.dart';
-import 'alarm_manager_service.dart';
+import 'alarm_service.dart';
 
-/// Service to handle alarm snooze callbacks from native Android
+/// Service to handle alarm snooze functionality
+///
+/// NOTE: With awesome_notifications migration, snooze is now handled via
+/// notification action buttons. This service provides the snooze scheduling logic.
 class AlarmSnoozeService {
-  static const MethodChannel _channel = MethodChannel(
-    'com.habittracker.habitv8/alarm_snooze',
-  );
-
   static bool _isInitialized = false;
 
   /// Initialize the alarm snooze service
@@ -17,8 +15,8 @@ class AlarmSnoozeService {
     try {
       AppLogger.info('Initializing AlarmSnoozeService...');
 
-      // Set up method call handler for snooze callbacks
-      _channel.setMethodCallHandler(_handleMethodCall);
+      // With awesome_notifications, snooze is handled via notification actions
+      // No need for method channel setup
 
       _isInitialized = true;
       AppLogger.info('✅ AlarmSnoozeService initialized successfully');
@@ -28,61 +26,26 @@ class AlarmSnoozeService {
     }
   }
 
-  /// Handle method calls from native Android
-  static Future<dynamic> _handleMethodCall(MethodCall call) async {
-    try {
-      AppLogger.info('Received method call: ${call.method}');
-
-      switch (call.method) {
-        case 'onAlarmSnooze':
-          final args = call.arguments as Map<Object?, Object?>;
-          final habitId = args['habitId'] as String?;
-          final habitName = args['habitName'] as String?;
-          final soundUri = args['soundUri'] as String?;
-
-          if (habitId != null && habitName != null) {
-            await _handleSnooze(habitId, habitName, soundUri);
-          } else {
-            AppLogger.warning(
-                'Missing habitId or habitName in snooze callback');
-          }
-          break;
-
-        default:
-          AppLogger.warning('Unknown method call: ${call.method}');
-      }
-    } catch (e) {
-      AppLogger.error('Error handling method call: ${call.method}', e);
-    }
-  }
-
   /// Handle the snooze action by scheduling a new alarm
-  static Future<void> _handleSnooze(
+  /// This is called from the notification action handler
+  static Future<void> handleSnooze(
     String habitId,
     String habitName,
-    String? soundUri,
-  ) async {
+    int snoozeDelayMinutes, {
+    String? alarmSoundName,
+  }) async {
     try {
       AppLogger.info('📅 Scheduling snooze alarm for: $habitName');
 
-      // Default snooze delay is 10 minutes
-      const snoozeDelayMinutes = 10;
       final snoozeTime =
-          DateTime.now().add(const Duration(minutes: snoozeDelayMinutes));
+          DateTime.now().add(Duration(minutes: snoozeDelayMinutes));
 
-      // Generate a unique snooze alarm ID
-      final snoozeAlarmId = AlarmManagerService.generateHabitAlarmId(
-        habitId,
-        suffix: 'snooze',
-      );
-
-      // Schedule the snooze alarm
-      await AlarmManagerService.scheduleSnoozeAlarm(
-        alarmId: snoozeAlarmId,
+      // Schedule the snooze alarm using AlarmService
+      await AlarmService.scheduleHabitAlarm(
         habitId: habitId,
         habitName: habitName,
-        snoozeTime: snoozeTime,
-        alarmSoundUri: soundUri,
+        scheduledTime: snoozeTime,
+        alarmSoundName: alarmSoundName,
         snoozeDelayMinutes: snoozeDelayMinutes,
       );
 
@@ -91,6 +54,7 @@ class AlarmSnoozeService {
       );
     } catch (e) {
       AppLogger.error('Failed to schedule snooze alarm for $habitName', e);
+      rethrow;
     }
   }
 }
