@@ -524,10 +524,17 @@ class NotificationScheduler {
         nextNotification = nextNotification.add(const Duration(days: 1));
       }
 
+      // CRITICAL FIX: Include time slot in habitId for hourly habits
+      // This allows the notification action handler to identify which specific
+      // time slot was completed, preventing all slots from being marked complete
+      // Format: "habitId|HH:mm" (same format as alarm scheduler)
+      final habitIdWithTimeSlot =
+          '${habit.id}|$timeHour:${timeMinute.toString().padLeft(2, '0')}';
+
       await scheduleHabitNotification(
         id: NotificationHelpers.generateSafeId(
             '${habit.id}_${timeHour}_$timeMinute'),
-        habitId: habit.id,
+        habitId: habitIdWithTimeSlot,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your habit!',
         scheduledTime: nextNotification,
