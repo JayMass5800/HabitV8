@@ -6,7 +6,6 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
 import '../logging_service.dart';
-import '../alarm_sound_player.dart';
 import '../../domain/model/habit.dart';
 import '../../domain/model/scheduled_notification.dart';
 import 'notification_helpers.dart';
@@ -178,57 +177,14 @@ Future<void> onNotificationDisplayed(
     AppLogger.info('   Channel: ${receivedNotification.channelKey}');
     AppLogger.info('   Category: ${receivedNotification.category}');
 
-    // Check if this is an alarm notification
-    final isAlarm = receivedNotification.channelKey == 'habit_alarms' ||
-        receivedNotification.category == NotificationCategory.Alarm;
+    // REMOVED: Conflicting AlarmSoundPlayer
+    // The notification channel is configured with DefaultRingtoneType.Alarm
+    // which automatically plays the system alarm sound when the notification is shown.
+    // We do NOT need a separate sound player - it creates race conditions and conflicts.
+    // Awesome Notifications handles the alarm sound automatically via the channel config.
 
-    if (!isAlarm) {
-      AppLogger.info('   Not an alarm notification, skipping sound playback');
-      return;
-    }
-
-    AppLogger.info('🔊 Alarm notification detected, starting looping sound...');
-
-    // Extract habit ID from payload to calculate alarm ID
-    if (receivedNotification.payload != null &&
-        receivedNotification.payload!['data'] != null) {
-      try {
-        final payload = jsonDecode(receivedNotification.payload!['data']!);
-        final rawHabitId = payload['habitId'] as String?;
-        final alarmSoundName = payload['alarmSoundName'] as String?;
-
-        if (rawHabitId != null) {
-          // Extract base habit ID (remove time slot suffix for hourly habits)
-          final baseHabitId =
-              NotificationHelpers.extractHabitIdFromPayload(payload);
-
-          if (baseHabitId != null) {
-            // Calculate alarm ID using the same method as alarm_service.dart
-            final alarmId = baseHabitId.hashCode.abs();
-
-            AppLogger.info('   Habit ID: $baseHabitId');
-            AppLogger.info('   Alarm ID: $alarmId');
-            AppLogger.info('   Sound: ${alarmSoundName ?? 'default'}');
-
-            // Start the looping alarm sound
-            await AlarmSoundPlayer.startAlarmSound(
-              alarmId: alarmId,
-              soundName: alarmSoundName,
-            );
-            AppLogger.info('✅ Alarm sound started successfully');
-          } else {
-            AppLogger.warning(
-                '⚠️ Could not extract base habit ID from payload');
-          }
-        } else {
-          AppLogger.warning('⚠️ No habitId in payload');
-        }
-      } catch (e) {
-        AppLogger.error('Error starting alarm sound', e);
-      }
-    } else {
-      AppLogger.warning('⚠️ No payload data in notification');
-    }
+    AppLogger.info(
+        '✅ Alarm notification displayed - sound handled by channel config');
   } catch (e) {
     AppLogger.error('Error in onNotificationDisplayed', e);
   }

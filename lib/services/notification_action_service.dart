@@ -6,7 +6,6 @@ import '../domain/model/habit.dart';
 import 'notification_service.dart';
 import 'logging_service.dart';
 import 'alarm_service.dart';
-import 'alarm_sound_player.dart';
 import 'widget_integration_service.dart';
 
 /// Service to handle notification actions and connect them to habit management
@@ -145,17 +144,9 @@ class NotificationActionService {
         );
       }
 
-      // CRITICAL: Stop any alarm sound that might be playing for this habit
-      // The alarm ID is based on the habit ID hash code
-      try {
-        final alarmId = actualHabitId.hashCode.abs();
-        await AlarmSoundPlayer.stopAlarmSound(alarmId);
-        AppLogger.info(
-            '🔇 Stopped alarm sound for habit: $actualHabitId (alarm ID: $alarmId)');
-      } catch (e) {
-        AppLogger.warning('Failed to stop alarm sound: $e');
-        // Don't fail the completion if sound stop fails
-      }
+      // REMOVED: AlarmSoundPlayer.stopAlarmSound()
+      // Awesome Notifications handles alarm sound automatically via channel config.
+      // When the notification is dismissed (via action button), the sound stops automatically.
 
       // Get the habit service from the provider and wait for it to be ready
       AppLogger.info('Waiting for habit service to be ready...');
@@ -385,17 +376,9 @@ class NotificationActionService {
         );
       }
 
-      // CRITICAL: Stop any alarm sound that might be playing for this habit
-      // The alarm ID is based on the habit ID hash code
-      try {
-        final alarmId = actualHabitId.hashCode.abs();
-        await AlarmSoundPlayer.stopAlarmSound(alarmId);
-        AppLogger.info(
-            '🔇 Stopped alarm sound for habit: $actualHabitId (alarm ID: $alarmId)');
-      } catch (e) {
-        AppLogger.warning('Failed to stop alarm sound: $e');
-        // Don't fail the snooze if sound stop fails
-      }
+      // REMOVED: AlarmSoundPlayer.stopAlarmSound()
+      // Awesome Notifications handles alarm sound automatically via channel config.
+      // When the notification is dismissed (via action button), the sound stops automatically.
 
       // Get the habit service from the provider to get habit details
       AppLogger.info(

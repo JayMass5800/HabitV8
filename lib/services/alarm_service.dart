@@ -288,12 +288,14 @@ class AlarmService {
       }
     }
 
-    // Prepare custom sound if provided
-    String? customSound;
-    if (alarmSoundName != null && alarmSoundName != 'default') {
-      // Convert sound name to resource format (remove .mp3 extension)
-      customSound = 'resource://raw/${alarmSoundName.replaceAll('.mp3', '')}';
-    }
+    // CRITICAL: Awesome Notifications cannot use Android content:// URIs (system ringtones)
+    // The channel is configured with DefaultRingtoneType.Alarm which uses system alarm sound
+    // Custom sounds would need to be in android/app/src/main/res/raw/ and use resource://raw/
+    // For now, we ignore alarmSoundName and always use the system default alarm sound
+    // via the channel configuration
+
+    AppLogger.debug(
+        'Alarm sound setting: ${alarmSoundName ?? "default system alarm"}');
 
     // CRITICAL: Create payload with habitId so the notification action handler
     // can process the completion. This matches the format used by regular notifications.
@@ -316,7 +318,7 @@ class AlarmService {
         criticalAlert: true,
         locked: false, // Allow dismissal via action buttons
         autoDismissible: false, // Prevent swipe-to-dismiss
-        customSound: customSound,
+        // DO NOT set customSound - let channel's DefaultRingtoneType.Alarm handle it
         payload: {'data': payloadData},
         // CRITICAL: These settings ensure alarm continues until user interacts
         backgroundColor: const Color(0xFFFF0000),

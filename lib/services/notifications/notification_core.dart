@@ -94,7 +94,7 @@ class NotificationCore {
           channelName: 'Habit Alarms',
           channelDescription: 'High-priority alarms for time-critical habits',
           importance: NotificationImportance.Max,
-          defaultColor: const Color(0xFF9C27B0),
+          defaultColor: const Color(0xFFFF0000),
           ledColor: Colors.red,
           playSound: true,
           enableVibration: true,
@@ -104,7 +104,9 @@ class NotificationCore {
           criticalAlerts: true, // iOS critical alerts
           channelShowBadge: true,
           onlyAlertOnce: false, // Allow sound to repeat
-          soundSource: 'resource://raw/alarm', // Use alarm sound
+          // Use system default alarm sound - no custom sound source needed
+          // Custom sounds are set per-notification, not per-channel
+          defaultRingtoneType: DefaultRingtoneType.Alarm,
         ),
       ],
       debug: false,
