@@ -318,11 +318,13 @@ class AlarmService {
         criticalAlert: true,
         locked: false, // Allow dismissal via action buttons
         autoDismissible: false, // Prevent swipe-to-dismiss
-        // DO NOT set customSound - let channel's DefaultRingtoneType.Alarm handle it
+        // Sound is controlled by channel's DefaultRingtoneType.Alarm setting
         payload: {'data': payloadData},
         // CRITICAL: These settings ensure alarm continues until user interacts
         backgroundColor: const Color(0xFFFF0000),
         largeIcon: 'resource://drawable/ic_launcher',
+        actionType:
+            ActionType.KeepOnTop, // Keep notification visible when tapped
       ),
       actionButtons: [
         NotificationActionButton(
