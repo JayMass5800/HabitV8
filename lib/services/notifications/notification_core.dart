@@ -99,11 +99,12 @@ class NotificationCore {
           playSound: true,
           enableVibration: true,
           enableLights: true,
-          locked: true, // Prevent user from dismissing
+          locked: false, // Allow dismissal via action buttons only
           defaultPrivacy: NotificationPrivacy.Public,
           criticalAlerts: true, // iOS critical alerts
           channelShowBadge: true,
-          onlyAlertOnce: false,
+          onlyAlertOnce: false, // Allow sound to repeat
+          soundSource: 'resource://raw/alarm', // Use alarm sound
         ),
       ],
       debug: false,
@@ -122,6 +123,9 @@ class NotificationCore {
       // For ActionType.SilentBackgroundAction, it runs in a background isolate
       // For other ActionTypes, it runs in the foreground
       onActionReceivedMethod: onBackgroundNotificationActionIsar,
+      // This handler is called when a notification is displayed
+      // Used to start alarm sounds that loop until dismissed
+      onNotificationDisplayedMethod: onNotificationDisplayed,
     );
 
     // Add debug logging to verify initialization

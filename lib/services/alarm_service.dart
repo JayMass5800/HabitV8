@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_ringtone_manager/flutter_ringtone_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
@@ -313,28 +314,33 @@ class AlarmService {
         fullScreenIntent: true,
         wakeUpScreen: true,
         criticalAlert: true,
-        locked: true,
+        locked: false, // Allow dismissal via action buttons
+        autoDismissible: false, // Prevent swipe-to-dismiss
         customSound: customSound,
         payload: {'data': payloadData},
+        // CRITICAL: These settings ensure alarm continues until user interacts
+        backgroundColor: const Color(0xFFFF0000),
+        largeIcon: 'resource://drawable/ic_launcher',
       ),
       actionButtons: [
         NotificationActionButton(
           key: 'complete',
           label: '✅ COMPLETE',
           actionType: ActionType.SilentBackgroundAction,
-          autoDismissible: true,
+          autoDismissible: true, // Dismiss when completed
         ),
         NotificationActionButton(
           key: 'snooze_alarm',
           label: snoozeText,
           actionType: ActionType.SilentBackgroundAction,
-          autoDismissible: false,
+          autoDismissible: true, // Dismiss when snoozed
         ),
       ],
       schedule: NotificationCalendar.fromDate(
         date: scheduledTime,
         allowWhileIdle: true,
         preciseAlarm: true,
+        repeats: false,
       ),
     );
   }

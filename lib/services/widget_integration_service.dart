@@ -995,8 +995,9 @@ class WidgetIntegrationService {
       return completion.year == date.year &&
           completion.month == date.month &&
           completion.day == date.day &&
-          completion.hour == hour;
-      // Note: We only check hour, not minute, because completions are recorded per hour
+          completion.hour == hour &&
+          completion.minute == minute;
+      // CRITICAL: Must check both hour AND minute for accurate slot tracking
     });
 
     // Debug logging for hourly slot completion checks

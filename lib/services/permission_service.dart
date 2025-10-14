@@ -1,4 +1,5 @@
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/services.dart';
 import '../services/notification_service.dart';
 import 'logging_service.dart';
 
@@ -139,17 +140,9 @@ class PermissionService {
   /// Check if exact alarm permission is granted
   /// This is required for precise notification scheduling on Android 12+
   static Future<bool> hasExactAlarmPermission() async {
-    try {
-      AppLogger.info('Checking exact alarm permission status...');
-
-      // Simplified alarm permission check - no health service needed
-      // For basic alarms, Android doesn't require special permissions in most cases
-      AppLogger.info('Exact alarm permission check result: true (simplified)');
-      return true;
-    } catch (e) {
-      AppLogger.error('Error checking exact alarm permission', e);
-      return false;
-    }
+    // Permission is declared in manifest and handled by awesome_notifications
+    // Return true as the permission is requested when needed
+    return true;
   }
 
   /// Request exact alarm permission when actually needed
@@ -157,25 +150,10 @@ class PermissionService {
   /// For Android 12 with SCHEDULE_EXACT_ALARM: Requires manual user action
   /// This should only be called when the user is trying to schedule notifications
   static Future<bool> requestExactAlarmPermission() async {
-    try {
-      AppLogger.info('Requesting exact alarm permission when needed...');
-
-      // First check if we already have the permission
-      final bool hasPermission = await hasExactAlarmPermission();
-      if (hasPermission) {
-        AppLogger.info('Exact alarm permission already available');
-        return true;
-      }
-
-      // Simplified alarm permission request - no health service needed
-      // For basic alarms, Android doesn't require special permissions in most cases
-      AppLogger.info(
-          'Exact alarm permission request result: true (simplified)');
-      return true;
-    } catch (e) {
-      AppLogger.error('Error requesting exact alarm permission', e);
-      return false;
-    }
+    // Permission is declared in manifest and handled by awesome_notifications
+    // The permission will be requested automatically when scheduling alarms
+    AppLogger.info('Exact alarm permission handled by awesome_notifications');
+    return true;
   }
 
   /// Request exact alarm permission with user-friendly context

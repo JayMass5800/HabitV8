@@ -19,10 +19,10 @@
     <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     
-    <!-- Exact alarm permissions for Android 16+ (automatically granted) -->
+    <!-- Exact alarm permissions for Android 14+ (API 34+) - automatically granted -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     
-    <!-- Backward compatibility for older Android versions -->
+    <!-- Exact alarm permission for Android 12+ (API 31+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
     
     <!-- Android Alarm Manager Plus permissions -->
@@ -74,6 +74,20 @@
 
         <!-- Custom boot receiver that uses WorkManager instead of foreground services -->
         <receiver android:exported="false" android:name=".Android15CompatBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+        
+        <!-- Notification boot receiver for rescheduling notifications after reboot -->
+        <!-- This receiver specifically handles notification rescheduling -->
+        <receiver 
+            android:name=".NotificationBootReceiver"
+            android:enabled="true"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>

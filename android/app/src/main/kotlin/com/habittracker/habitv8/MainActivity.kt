@@ -514,7 +514,15 @@ class MainActivity : FlutterFragmentActivity() {
         try {
             stopPreview()
             val uri = Uri.parse(uriStr)
-            previewRingtone = RingtoneManager.getRingtone(applicationContext, uri)
+            
+            // Use context with attribution tag for Android 11+ (API 30+)
+            val context = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                applicationContext.createAttributionContext("alarm_sound_preview")
+            } else {
+                applicationContext
+            }
+            
+            previewRingtone = RingtoneManager.getRingtone(context, uri)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 previewRingtone?.audioAttributes = AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
@@ -522,7 +530,8 @@ class MainActivity : FlutterFragmentActivity() {
                     .build()
             }
             previewRingtone?.play()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error previewing ringtone: ${e.message}", e)
         }
     }
 
@@ -565,7 +574,14 @@ class MainActivity : FlutterFragmentActivity() {
             
             android.util.Log.i("MainActivity", "Final URI: $uri")
             
-            alarmRingtone = RingtoneManager.getRingtone(applicationContext, uri)
+            // Use context with attribution tag for Android 11+ (API 30+)
+            val context = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                applicationContext.createAttributionContext("alarm_sound")
+            } else {
+                applicationContext
+            }
+            
+            alarmRingtone = RingtoneManager.getRingtone(context, uri)
             
             if (alarmRingtone == null) {
                 android.util.Log.e("MainActivity", "❌ FAILED: RingtoneManager.getRingtone returned null!")
@@ -740,8 +756,15 @@ class MainActivity : FlutterFragmentActivity() {
         if (requestCode == RINGTONE_PICKER_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             val uri: Uri? = data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
             if (uri != null) {
-                val ringtone = RingtoneManager.getRingtone(applicationContext, uri)
-                val name = ringtone.getTitle(applicationContext)
+                // Use context with attribution tag for Android 11+ (API 30+)
+                val context = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    applicationContext.createAttributionContext("alarm_sound_picker")
+                } else {
+                    applicationContext
+                }
+                
+                val ringtone = RingtoneManager.getRingtone(context, uri)
+                val name = ringtone.getTitle(context)
                 val resultData = mapOf("uri" to uri.toString(), "name" to name)
                 methodChannelResult?.success(resultData)
             } else {

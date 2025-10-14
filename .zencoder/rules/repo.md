@@ -41,8 +41,6 @@ HabitV8 is a Flutter-based habit tracking application that allows users to creat
 - permission_handler: ^12.0.1
 - isar: ^3.1.0+1 (primary database)
 - isar_flutter_libs: ^3.1.0+1
-- hive: ^2.2.3 (legacy support)
-- hive_flutter: ^1.1.0 (legacy support)
 - flutter_riverpod: ^2.4.10
 - provider: ^6.1.2
 - go_router: ^16.1.0
@@ -71,7 +69,6 @@ HabitV8 is a Flutter-based habit tracking application that allows users to creat
 **Development Dependencies**:
 - flutter_test: SDK
 - flutter_lints: ^6.0.0
-- hive_generator: ^2.0.1
 - isar_generator: ^3.1.0+1
 - build_runner: ^2.4.13
 
