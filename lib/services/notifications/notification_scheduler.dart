@@ -531,6 +531,10 @@ class NotificationScheduler {
       final habitIdWithTimeSlot =
           '${habit.id}|$timeHour:${timeMinute.toString().padLeft(2, '0')}';
 
+      AppLogger.debug(
+        'Scheduling hourly notification for ${habit.name} at $timeHour:${timeMinute.toString().padLeft(2, '0')} with habitId: $habitIdWithTimeSlot',
+      );
+
       await scheduleHabitNotification(
         id: NotificationHelpers.generateSafeId(
             '${habit.id}_${timeHour}_$timeMinute'),

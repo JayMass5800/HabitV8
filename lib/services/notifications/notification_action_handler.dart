@@ -236,6 +236,7 @@ class NotificationActionHandlerIsar {
       // For hourly habits, extract the specific time slot from payload
       if (habit.frequency == HabitFrequency.hourly) {
         AppLogger.info('🕐 Processing HOURLY habit: ${habit.name}');
+        AppLogger.info('🕐 Raw habitId from payload: $rawHabitId');
         AppLogger.info('🕐 Payload JSON: $payloadJson');
 
         final timeSlot =
@@ -245,11 +246,12 @@ class NotificationActionHandlerIsar {
           final minute = timeSlot['minute']!;
           completionTime = DateTime(now.year, now.month, now.day, hour, minute);
           AppLogger.info(
-              '📅 Hourly habit - using time slot: ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
-          AppLogger.info('📅 Completion time set to: $completionTime');
+              '✅ Hourly habit - extracted time slot: ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
+          AppLogger.info('✅ Completion time set to: $completionTime');
         } else {
           AppLogger.warning(
               '⚠️ Hourly habit but no time slot in payload, using current time');
+          AppLogger.warning('⚠️ Raw habitId: $rawHabitId');
           AppLogger.warning('⚠️ This may cause incorrect completion tracking!');
         }
       }

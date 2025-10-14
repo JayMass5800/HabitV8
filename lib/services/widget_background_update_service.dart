@@ -581,11 +581,17 @@ String _getHabitStatus(Habit habit, DateTime date) {
 
 /// Check if a specific hourly slot is completed
 bool _isHourlySlotCompleted(Habit habit, DateTime date, int hour, int minute) {
-  return habit.completions.any((completion) {
+  final isCompleted = habit.completions.any((completion) {
     return completion.year == date.year &&
         completion.month == date.month &&
         completion.day == date.day &&
         completion.hour == hour;
     // Note: We only check hour, not minute, because completions are recorded per hour
   });
+
+  // Debug logging for hourly slot completion checks
+  print(
+      '🔍 [Widget BG] Checking slot ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} for ${habit.name}: $isCompleted');
+
+  return isCompleted;
 }
