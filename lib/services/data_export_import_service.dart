@@ -305,8 +305,8 @@ class DataExportImportService {
       }
 
       // Save imported habits to database
-      final habitService =
-          await IsarDatabaseService.getInstance().then((isar) => HabitServiceIsar(isar));
+      final habitService = await IsarDatabaseService.getInstance()
+          .then((isar) => HabitServiceIsar(isar));
       int duplicateCount = 0;
       int importedCount = 0;
 
@@ -435,8 +435,8 @@ class DataExportImportService {
       }
 
       // Save imported habits to database
-      final habitService =
-          await IsarDatabaseService.getInstance().then((isar) => HabitServiceIsar(isar));
+      final habitService = await IsarDatabaseService.getInstance()
+          .then((isar) => HabitServiceIsar(isar));
       int duplicateCount = 0;
       int importedCount = 0;
 
@@ -617,13 +617,32 @@ class DataExportImportService {
     habit.weeklySchedule = (json['weeklySchedule'] as List?)?.cast<int>() ?? [];
     habit.monthlySchedule =
         (json['monthlySchedule'] as List?)?.cast<int>() ?? [];
-    habit.selectedWeekdays =
-        (json['selectedWeekdays'] as List?)?.cast<int>() ?? [];
-    habit.selectedMonthDays =
-        (json['selectedMonthDays'] as List?)?.cast<int>() ?? [];
-    habit.hourlyTimes = (json['hourlyTimes'] as List?)?.cast<String>() ?? [];
-    habit.selectedYearlyDates =
-        (json['selectedYearlyDates'] as List?)?.cast<String>() ?? [];
+    habit.selectedWeekdays = (json['selectedWeekdays'] as List?)
+            ?.cast<int>()
+            .where((e) => e > 0)
+            .toSet() // Remove duplicates
+            .toList() ??
+        [];
+    habit.selectedMonthDays = (json['selectedMonthDays'] as List?)
+            ?.cast<int>()
+            .where((e) => e > 0)
+            .toSet() // Remove duplicates
+            .toList() ??
+        [];
+    habit.hourlyTimes = (json['hourlyTimes'] as List?)
+            ?.cast<String>()
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toSet() // Remove duplicates
+            .toList() ??
+        [];
+    habit.selectedYearlyDates = (json['selectedYearlyDates'] as List?)
+            ?.cast<String>()
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toSet() // Remove duplicates
+            .toList() ??
+        [];
 
     // Parse alarm fields
     habit.alarmEnabled = json['alarmEnabled'] as bool? ?? false;
@@ -722,18 +741,44 @@ class DataExportImportService {
         case 'Selected Weekdays':
           habit.selectedWeekdays = value.isEmpty
               ? []
-              : value.split(';').map((e) => int.tryParse(e) ?? 0).toList();
+              : value
+                  .split(';')
+                  .map((e) => int.tryParse(e.trim()))
+                  .where((e) => e != null && e > 0)
+                  .cast<int>()
+                  .toSet() // Remove duplicates
+                  .toList();
           break;
         case 'Selected Month Days':
           habit.selectedMonthDays = value.isEmpty
               ? []
-              : value.split(';').map((e) => int.tryParse(e) ?? 0).toList();
+              : value
+                  .split(';')
+                  .map((e) => int.tryParse(e.trim()))
+                  .where((e) => e != null && e > 0)
+                  .cast<int>()
+                  .toSet() // Remove duplicates
+                  .toList();
           break;
         case 'Hourly Times':
-          habit.hourlyTimes = value.isEmpty ? [] : value.split(';');
+          habit.hourlyTimes = value.isEmpty
+              ? []
+              : value
+                  .split(';')
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .toSet() // Remove duplicates
+                  .toList();
           break;
         case 'Yearly Dates':
-          habit.selectedYearlyDates = value.isEmpty ? [] : value.split(';');
+          habit.selectedYearlyDates = value.isEmpty
+              ? []
+              : value
+                  .split(';')
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .toSet() // Remove duplicates
+                  .toList();
           break;
         case 'Alarm Enabled':
           habit.alarmEnabled = value.toLowerCase() == 'true';
