@@ -6,6 +6,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
 import '../logging_service.dart';
+import '../alarm_sound_player.dart';
 import '../../domain/model/habit.dart';
 import '../../domain/model/scheduled_notification.dart';
 import 'notification_helpers.dart';
@@ -35,6 +36,15 @@ Future<void> onBackgroundNotificationActionIsar(
     AppLogger.info('🔔 BACKGROUND notification action received (Isar)');
     AppLogger.info('Background action key: ${receivedAction.buttonKeyPressed}');
     AppLogger.info('Background payload: ${receivedAction.payload}');
+
+    // CRITICAL: Stop alarm sound immediately when action is received
+    if (receivedAction.buttonKeyPressed == 'complete' ||
+        receivedAction.buttonKeyPressed == 'snooze' ||
+        receivedAction.buttonKeyPressed == 'snooze_alarm') {
+      AppLogger.info(
+          '🔇 Stopping alarm sound for background action ${receivedAction.id}');
+      await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+    }
 
     // CRITICAL: Ensure Flutter binding is initialized for this background isolate
     // This allows us to use Flutter services (like path_provider) in the background
@@ -125,6 +135,16 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
 
       if (rawHabitId != null) {
         AppLogger.debug('🔍 DEBUG: Checking if button key is "complete"');
+
+        // CRITICAL: Stop alarm sound immediately when user takes action
+        if (receivedAction.buttonKeyPressed == 'complete' ||
+            receivedAction.buttonKeyPressed == 'snooze' ||
+            receivedAction.buttonKeyPressed == 'snooze_alarm') {
+          AppLogger.info(
+              '🔇 Stopping alarm sound for notification ${receivedAction.id}');
+          await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+        }
+
         if (receivedAction.buttonKeyPressed == 'complete') {
           AppLogger.info('✅ Complete action detected - calling handler');
           final callback = NotificationActionHandlerIsar.onNotificationAction;
@@ -177,16 +197,60 @@ Future<void> onNotificationDisplayed(
     AppLogger.info('   Channel: ${receivedNotification.channelKey}');
     AppLogger.info('   Category: ${receivedNotification.category}');
 
-    // REMOVED: Conflicting AlarmSoundPlayer
-    // The notification channel is configured with DefaultRingtoneType.Alarm
-    // which automatically plays the system alarm sound when the notification is shown.
-    // We do NOT need a separate sound player - it creates race conditions and conflicts.
-    // Awesome Notifications handles the alarm sound automatically via the channel config.
+    // For ALARM notifications, start playing the custom alarm sound
+    if (receivedNotification.channelKey == 'habit_alarms') {
+      AppLogger.info('🚨 Alarm notification detected - starting alarm sound');
 
-    AppLogger.info(
-        '✅ Alarm notification displayed - sound handled by channel config');
+      // Extract alarm sound from payload
+      String? alarmSoundUri;
+      if (receivedNotification.payload != null &&
+          receivedNotification.payload!['data'] != null) {
+        try {
+          final payload = jsonDecode(receivedNotification.payload!['data']!);
+          alarmSoundUri = payload['alarmSoundUri'] as String?;
+          AppLogger.info('   Alarm sound URI from payload: $alarmSoundUri');
+        } catch (e) {
+          AppLogger.error('Failed to parse payload for alarm sound', e);
+        }
+      }
+
+      // Start the alarm sound (will loop until dismissed)
+      await AlarmSoundPlayer.startAlarmSound(
+        alarmId: receivedNotification.id!,
+        soundUri: alarmSoundUri,
+        volume: 1.0,
+      );
+
+      AppLogger.info(
+          '✅ Alarm sound started for notification ${receivedNotification.id}');
+    } else {
+      AppLogger.info('ℹ️ Non-alarm notification - no sound');
+    }
   } catch (e) {
     AppLogger.error('Error in onNotificationDisplayed', e);
+  }
+}
+
+/// Notification dismissed handler (TOP-LEVEL FUNCTION)
+/// This is called when a notification is dismissed/swiped away
+/// MUST be a top-level function for background isolate to work!
+///
+/// This handler stops the alarm sound when the user dismisses the notification.
+@pragma('vm:entry-point')
+Future<void> onNotificationDismissed(ReceivedAction receivedAction) async {
+  try {
+    AppLogger.info('🗑️ Notification dismissed: ${receivedAction.id}');
+    AppLogger.info('   Channel: ${receivedAction.channelKey}');
+
+    // Stop the alarm sound if it's playing
+    if (receivedAction.id != null) {
+      AppLogger.info(
+          '🔇 Stopping alarm sound for dismissed notification ${receivedAction.id}');
+      await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+      AppLogger.info('✅ Alarm sound stopped');
+    }
+  } catch (e) {
+    AppLogger.error('Error in onNotificationDismissed', e);
   }
 }
 

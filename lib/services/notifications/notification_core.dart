@@ -96,7 +96,7 @@ class NotificationCore {
           importance: NotificationImportance.Max,
           defaultColor: const Color(0xFFFF0000),
           ledColor: Colors.red,
-          playSound: true,
+          playSound: false, // Sound is handled by AlarmSoundPlayer separately
           enableVibration: true,
           enableLights: true,
           locked: false, // Allow dismissal via action buttons only
@@ -104,9 +104,8 @@ class NotificationCore {
           criticalAlerts: true, // iOS critical alerts
           channelShowBadge: true,
           onlyAlertOnce: false, // Allow sound to repeat
-          // Use system default alarm sound - no custom sound source needed
-          // Custom sounds are set per-notification, not per-channel
-          defaultRingtoneType: DefaultRingtoneType.Alarm,
+          // NO defaultRingtoneType - custom sounds are played via AlarmSoundPlayer
+          // This prevents conflicts between system alarm sound and custom sounds
         ),
       ],
       debug: false,
@@ -128,6 +127,9 @@ class NotificationCore {
       // This handler is called when a notification is displayed
       // Used to start alarm sounds that loop until dismissed
       onNotificationDisplayedMethod: onNotificationDisplayed,
+      // This handler is called when a notification is dismissed (swiped away)
+      // Used to stop alarm sounds when user dismisses the notification
+      onDismissActionReceivedMethod: onNotificationDismissed,
     );
 
     // Add debug logging to verify initialization

@@ -302,12 +302,82 @@ class AlarmService {
       // Stop any currently playing sound
       await stopAlarmSoundPreview();
 
-      _previewPlayer = AudioPlayer();
-      await _previewPlayer!.play(AssetSource(soundUri));
+      AppLogger.info('🔊 Attempting to play preview: $soundUri');
+      AppLogger.info('🔊 Asset path that will be used: $soundUri');
 
-      AppLogger.info('Playing alarm sound preview: $soundUri');
-    } catch (e) {
-      AppLogger.error('Failed to play alarm sound preview: $soundUri', e);
+      _previewPlayer = AudioPlayer();
+
+      // Configure audio context for proper playback
+      await _previewPlayer!.setAudioContext(
+        AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: {AVAudioSessionOptions.mixWithOthers},
+          ),
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: false,
+            stayAwake: false,
+            contentType: AndroidContentType.music,
+            usageType: AndroidUsageType.media,
+            audioFocus: AndroidAudioFocus.gain,
+          ),
+        ),
+      );
+
+      // Listen for player state changes (consolidated listener)
+      _previewPlayer!.onPlayerStateChanged.listen(
+        (state) {
+          AppLogger.info('🎵 Player state changed: $state');
+          if (state == PlayerState.stopped) {
+            AppLogger.info(
+                '🎵 Player stopped - may indicate error or completion');
+          } else if (state == PlayerState.playing) {
+            AppLogger.info(
+                '✅ Player successfully playing - audio focus should be maintained');
+          } else if (state == PlayerState.paused) {
+            AppLogger.info('⏸️ Player paused');
+          } else if (state == PlayerState.completed) {
+            AppLogger.info('✅ Player completed successfully');
+          }
+        },
+        onError: (error) {
+          AppLogger.error('❌ Player stream error', error);
+        },
+      );
+
+      // Listen for completion
+      _previewPlayer!.onPlayerComplete.listen((event) {
+        AppLogger.info('🎵 Playback completed normally');
+      });
+
+      // Set player mode for better reliability
+      await _previewPlayer!.setReleaseMode(ReleaseMode.stop);
+      await _previewPlayer!.setVolume(1.0);
+
+      AppLogger.info('🔊 About to call play() with AssetSource("$soundUri")');
+      AppLogger.info(
+          '🔊 Player configured with: volume=1.0, releaseMode=stop, audioFocus=gain');
+
+      // Play the sound from assets
+      // Note: soundUri should be in format "ringtones/Alarm.mp3"
+      // matching the declaration in pubspec.yaml
+      final result = await _previewPlayer!.play(AssetSource(soundUri));
+
+      AppLogger.info('🔊 play() returned, checking result...');
+      if (result == 1) {
+        AppLogger.info('✅ play() succeeded (returned 1)');
+      } else {
+        AppLogger.warning('⚠️ play() returned unexpected value: $result');
+      }
+
+      AppLogger.info(
+          '✅ Successfully started playing alarm sound preview: $soundUri');
+    } catch (e, stackTrace) {
+      AppLogger.error('❌ Failed to play alarm sound preview: $soundUri', e);
+      AppLogger.error('❌ Error details: ${e.toString()}', null);
+      AppLogger.error('❌ Stack trace:', null);
+      AppLogger.error('$stackTrace', null);
+      rethrow;
     }
   }
 
@@ -356,10 +426,12 @@ class AlarmService {
 
     // CRITICAL: Create payload with habitId so the notification action handler
     // can process the completion. This matches the format used by regular notifications.
+    // ALSO include alarmSoundUri so onNotificationDisplayed can play the correct custom sound
     final payloadData = jsonEncode({
       'habitId': habitId,
       'habitName': habitName,
       'type': 'alarm',
+      'alarmSoundUri': alarmSoundName ?? 'ringtones/Alarm.mp3',
     });
 
     await AwesomeNotifications().createNotification(
@@ -374,8 +446,10 @@ class AlarmService {
         wakeUpScreen: true,
         criticalAlert: true,
         locked: false, // Allow dismissal via action buttons
-        autoDismissible: false, // Prevent swipe-to-dismiss
-        // Sound is controlled by channel's DefaultRingtoneType.Alarm setting
+        autoDismissible:
+            true, // Allow swipe-to-dismiss so onNotificationDismissed is called
+        // Sound is handled separately by AlarmSoundPlayer in onNotificationDisplayed
+        // (Channel already configured with playSound: false)
         payload: {'data': payloadData},
         // CRITICAL: These settings ensure alarm continues until user interacts
         backgroundColor: const Color(0xFFFF0000),

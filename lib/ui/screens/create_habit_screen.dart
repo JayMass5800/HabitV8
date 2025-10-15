@@ -2057,31 +2057,56 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                     currentlyPlaying = null;
                                   });
                                 } else {
-                                  await AlarmService.stopAlarmSoundPreview();
-                                  await AlarmService.playAlarmSoundPreview(
-                                    soundUri,
-                                  );
-                                  setDialogState(() {
-                                    currentlyPlaying = soundUri;
-                                  });
+                                  try {
+                                    await AlarmService.stopAlarmSoundPreview();
 
-                                  // Auto-stop after 4 seconds
-                                  Future.delayed(
-                                    const Duration(seconds: 4),
-                                    () async {
-                                      await AlarmService
-                                          .stopAlarmSoundPreview();
-                                      // Check if the dialog's StatefulBuilder is still mounted
-                                      // by using a try-catch around setDialogState
-                                      try {
-                                        setDialogState(() {
-                                          currentlyPlaying = null;
-                                        });
-                                      } catch (e) {
-                                        // Dialog was closed, ignore the error
-                                      }
-                                    },
-                                  );
+                                    AppLogger.info(
+                                        '🎵 UI: About to play sound: $soundUri');
+                                    await AlarmService.playAlarmSoundPreview(
+                                      soundUri,
+                                    );
+                                    AppLogger.info(
+                                        '🎵 UI: Play command completed successfully');
+
+                                    setDialogState(() {
+                                      currentlyPlaying = soundUri;
+                                    });
+
+                                    // Auto-stop after 4 seconds
+                                    Future.delayed(
+                                      const Duration(seconds: 4),
+                                      () async {
+                                        await AlarmService
+                                            .stopAlarmSoundPreview();
+                                        // Check if the dialog's StatefulBuilder is still mounted
+                                        // by using a try-catch around setDialogState
+                                        try {
+                                          setDialogState(() {
+                                            currentlyPlaying = null;
+                                          });
+                                        } catch (e) {
+                                          // Dialog was closed, ignore the error
+                                        }
+                                      },
+                                    );
+                                  } catch (e, stackTrace) {
+                                    AppLogger.error(
+                                        '❌ UI: Failed to play preview', e);
+                                    AppLogger.error(
+                                        'Stack trace: $stackTrace', null);
+
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content:
+                                              Text('Failed to play sound: $e'),
+                                          backgroundColor: Colors.red,
+                                          duration: const Duration(seconds: 3),
+                                        ),
+                                      );
+                                    }
+                                  }
                                 }
                               },
                             ),

@@ -156,7 +156,7 @@ class NotificationAlarmScheduler {
         habitName: habit.name,
         scheduledTime: nextAlarm,
         frequency: 'daily',
-        alarmSoundName: habit.alarmSoundName,
+        alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
         snoozeDelayMinutes: 10,
       );
 
@@ -196,7 +196,7 @@ class NotificationAlarmScheduler {
           habitName: habit.name,
           scheduledTime: nextAlarm,
           frequency: 'weekly',
-          alarmSoundName: habit.alarmSoundName,
+          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
           snoozeDelayMinutes: 10,
         );
 
@@ -247,7 +247,7 @@ class NotificationAlarmScheduler {
           habitName: habit.name,
           scheduledTime: nextAlarm,
           frequency: 'monthly',
-          alarmSoundName: habit.alarmSoundName,
+          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
           snoozeDelayMinutes: 10,
         );
 
@@ -305,7 +305,7 @@ class NotificationAlarmScheduler {
           habitName: habit.name,
           scheduledTime: nextAlarm,
           frequency: 'yearly',
-          alarmSoundName: habit.alarmSoundName,
+          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
           snoozeDelayMinutes: 10,
         );
 
@@ -355,7 +355,7 @@ class NotificationAlarmScheduler {
         habitName: habit.name,
         scheduledTime: singleDateTime,
         frequency: 'single',
-        alarmSoundName: habit.alarmSoundName,
+        alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
         snoozeDelayMinutes: 10,
       );
 
@@ -410,7 +410,7 @@ class NotificationAlarmScheduler {
           habitName: habit.name,
           scheduledTime: nextAlarm,
           frequency: 'hourly',
-          alarmSoundName: habit.alarmSoundName,
+          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
           snoozeDelayMinutes: 10,
         );
       }
@@ -471,7 +471,7 @@ class NotificationAlarmScheduler {
           habitName: habit.name,
           scheduledTime: nextAlarm,
           frequency: 'hourly',
-          alarmSoundName: habit.alarmSoundName,
+          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
           snoozeDelayMinutes: 10,
         );
 

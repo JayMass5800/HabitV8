@@ -55,8 +55,16 @@ class AlarmSoundPlayer {
     double volume,
   ) async {
     try {
+      AppLogger.info(
+          '🔊 Attempting to play alarm sound for alarm $alarmId: $soundUri');
+
       final player = AudioPlayer();
       _activePlayers[alarmId] = player;
+
+      // Listen for player state changes
+      player.onPlayerStateChanged.listen((state) {
+        AppLogger.info('🎵 Alarm $alarmId player state: $state');
+      });
 
       // Set release mode to loop
       await player.setReleaseMode(ReleaseMode.loop);
@@ -66,9 +74,10 @@ class AlarmSoundPlayer {
       await player.play(AssetSource(soundUri));
 
       AppLogger.info(
-          '🔊 Playing alarm sound (looping) for alarm $alarmId: $soundUri');
-    } catch (e) {
-      AppLogger.error('Failed to play alarm sound for alarm $alarmId', e);
+          '✅ Successfully started playing alarm sound (looping) for alarm $alarmId: $soundUri');
+    } catch (e, stackTrace) {
+      AppLogger.error('❌ Failed to play alarm sound for alarm $alarmId', e);
+      AppLogger.error('Stack trace: $stackTrace', null);
       rethrow;
     }
   }

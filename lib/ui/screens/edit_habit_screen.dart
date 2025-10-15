@@ -8,6 +8,7 @@ import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/alarm_service.dart';
+import '../../services/logging_service.dart';
 import '../widgets/rrule_builder_widget.dart';
 
 class EditHabitScreen extends ConsumerStatefulWidget {
@@ -1385,27 +1386,52 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                                     currentlyPlaying = null;
                                   });
                                 } else {
-                                  await AlarmService.stopAlarmSoundPreview();
-                                  await AlarmService.playAlarmSoundPreview(
-                                    soundUri,
-                                  );
-                                  setDialogState(() {
-                                    currentlyPlaying = soundUri;
-                                  });
+                                  try {
+                                    await AlarmService.stopAlarmSoundPreview();
 
-                                  // Auto-stop after 4 seconds
-                                  Future.delayed(
-                                    const Duration(seconds: 4),
-                                    () async {
-                                      await AlarmService
-                                          .stopAlarmSoundPreview();
-                                      if (mounted) {
-                                        setDialogState(() {
-                                          currentlyPlaying = null;
-                                        });
-                                      }
-                                    },
-                                  );
+                                    AppLogger.info(
+                                        '🎵 UI: About to play sound: $soundUri');
+                                    await AlarmService.playAlarmSoundPreview(
+                                      soundUri,
+                                    );
+                                    AppLogger.info(
+                                        '🎵 UI: Play command completed successfully');
+
+                                    setDialogState(() {
+                                      currentlyPlaying = soundUri;
+                                    });
+
+                                    // Auto-stop after 4 seconds
+                                    Future.delayed(
+                                      const Duration(seconds: 4),
+                                      () async {
+                                        await AlarmService
+                                            .stopAlarmSoundPreview();
+                                        if (mounted) {
+                                          setDialogState(() {
+                                            currentlyPlaying = null;
+                                          });
+                                        }
+                                      },
+                                    );
+                                  } catch (e, stackTrace) {
+                                    AppLogger.error(
+                                        '❌ UI: Failed to play preview', e);
+                                    AppLogger.error(
+                                        'Stack trace: $stackTrace', null);
+
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content:
+                                              Text('Failed to play sound: $e'),
+                                          backgroundColor: Colors.red,
+                                          duration: const Duration(seconds: 3),
+                                        ),
+                                      );
+                                    }
+                                  }
                                 }
                               },
                             ),
