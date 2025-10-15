@@ -455,11 +455,8 @@ class NotificationActionHandlerIsar {
         }
       }
 
-      // Prepare custom sound if provided
-      String? customSound;
-      if (alarmSoundName != null && alarmSoundName != 'default') {
-        customSound = 'resource://raw/${alarmSoundName.replaceAll('.mp3', '')}';
-      }
+      // Custom alarm sounds are not supported in notifications
+      // Sounds are played separately via AlarmSoundPlayer
 
       // Create the snooze alarm notification
       await AwesomeNotifications().createNotification(
@@ -475,11 +472,10 @@ class NotificationActionHandlerIsar {
           wakeUpScreen: true,
           criticalAlert: true,
           locked: true,
-          customSound: customSound,
           payload: {
             'data': jsonEncode({
               'habitId': baseHabitId,
-              'alarmSoundName': alarmSoundName,
+              'alarmSoundUri': alarmSoundName,
               'snoozeDelayMinutes': snoozeDelayMinutes,
             })
           },

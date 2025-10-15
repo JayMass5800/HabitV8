@@ -1294,39 +1294,11 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   }
 
   String _getSoundTypeDisplay(String soundType) {
-    switch (soundType) {
-      case 'system_alarm':
-        return 'System Alarm';
-      case 'system_ringtone':
-        return 'System Ringtone';
-      case 'system_notification':
-        return 'System Notification';
-      case 'custom':
-        return 'Custom Sound';
-      case 'system':
-        return 'System Sound';
-      default:
-        return soundType.startsWith('system_')
-            ? 'System Sound'
-            : 'Custom Sound';
-    }
+    return 'Alarm Sound';
   }
 
   Color _getSoundTypeColor(String soundType) {
-    switch (soundType) {
-      case 'system_alarm':
-        return Colors.red;
-      case 'system_ringtone':
-        return Colors.blue;
-      case 'system_notification':
-        return Colors.orange;
-      case 'custom':
-        return Colors.green;
-      case 'system':
-        return Colors.blue;
-      default:
-        return soundType.startsWith('system_') ? Colors.blue : Colors.green;
-    }
+    return _selectedColor;
   }
 
   Future<void> _selectAlarmSound() async {
@@ -1367,7 +1339,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          'Tap the play button to preview sounds. System alarms are recommended for best reliability.',
+                          'Tap the play button to preview alarm sounds.',
                           style: TextStyle(fontSize: 12),
                         ),
                       ),

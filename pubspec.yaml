@@ -56,7 +56,6 @@ dependencies:
   url_launcher: ^6.2.5
   table_calendar: ^3.0.9 # Calendar integration for habit events
   device_calendar: ^4.3.3 # Device calendar integration
-  flutter_ringtone_manager: ^1.0.0 # For system alarm sounds
   audioplayers: ^6.1.0 # For playing custom alarm sounds
   workmanager: ^0.9.0+3 # For reliable background tasks on Android
   
@@ -106,6 +105,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/sounds/
+    - ringtones/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

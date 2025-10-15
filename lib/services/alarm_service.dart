@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_ringtone_manager/flutter_ringtone_manager.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'dart:convert';
 import 'logging_service.dart';
-import 'ringtone_service.dart';
 
 @pragma('vm:entry-point')
 class AlarmService {
@@ -181,52 +180,121 @@ class AlarmService {
     AppLogger.info('✅ Cancelled $cancelledCount alarms for habit: $habitId');
   }
 
-  /// Get available system alarm sounds
-  /// Returns all system ringtones from the device (Android only)
+  /// Get available alarm sounds from app assets
+  /// Returns all custom alarm sounds bundled with the app
   static Future<List<Map<String, String>>> getAvailableAlarmSounds() async {
-    if (!Platform.isAndroid) {
-      // For non-Android platforms, return basic system sounds
-      return [
-        {'name': 'Default System Alarm', 'uri': 'default', 'type': 'system'},
-      ];
-    }
+    // All custom alarm sounds from ringtones folder
+    final customSounds = [
+      {
+        'name': 'Classmate',
+        'uri': 'ringtones/01_Classmate.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Small Spring',
+        'uri': 'ringtones/02_Small_Spring.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Whistling Wizard',
+        'uri': 'ringtones/03_Whistling_Wizard.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Morning Dew',
+        'uri': 'ringtones/04_Morning_Dew.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Surf the Groove',
+        'uri': 'ringtones/05_Surf_the_Groove.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Urban Beat',
+        'uri': 'ringtones/06_Urban_Beat.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Cute Weather',
+        'uri': 'ringtones/07_Cute_Weather.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Acapella Good Morning',
+        'uri': 'ringtones/08_Acapella_Good_Morning.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Sporting Spork',
+        'uri': 'ringtones/09_Sporting_Spork.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Step Beep',
+        'uri': 'ringtones/10_Step_Beep.mp3',
+        'type': 'custom'
+      },
+      {'name': '3D Bomb', 'uri': 'ringtones/3d_Bomb.mp3', 'type': 'custom'},
+      {'name': 'Alarm', 'uri': 'ringtones/Alarm.mp3', 'type': 'custom'},
+      {'name': 'Alarm 1', 'uri': 'ringtones/Alarm_1.mp3', 'type': 'custom'},
+      {'name': 'Alarm 2', 'uri': 'ringtones/Alarm_2.mp3', 'type': 'custom'},
+      {'name': 'Alarm 3', 'uri': 'ringtones/Alarm_3.mp3', 'type': 'custom'},
+      {'name': 'Alarm 4', 'uri': 'ringtones/Alarm_4.mp3', 'type': 'custom'},
+      {'name': 'Alarm Mix', 'uri': 'ringtones/Alarm_Mix.mp3', 'type': 'custom'},
+      {'name': 'Alarm Pro', 'uri': 'ringtones/Alarm_pro.mp3', 'type': 'custom'},
+      {
+        'name': 'Army Alarm',
+        'uri': 'ringtones/Army_Alarm.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Auto Alarm',
+        'uri': 'ringtones/Auto_Alarm.mp3',
+        'type': 'custom'
+      },
+      {'name': 'Beeps', 'uri': 'ringtones/Beeps.mp3', 'type': 'custom'},
+      {'name': 'Bell', 'uri': 'ringtones/Bell.mp3', 'type': 'custom'},
+      {
+        'name': 'Best Alarm',
+        'uri': 'ringtones/Best_Alarm.mp3',
+        'type': 'custom'
+      },
+      {'name': 'Bubble', 'uri': 'ringtones/Bubble.mp3', 'type': 'custom'},
+      {'name': 'Classic', 'uri': 'ringtones/Classic.mp3', 'type': 'custom'},
+      {'name': 'Dreamy', 'uri': 'ringtones/Dreamy.mp3', 'type': 'custom'},
+      {'name': 'Fade In', 'uri': 'ringtones/Fade_In.mp3', 'type': 'custom'},
+      {'name': 'Instance', 'uri': 'ringtones/Instance.mp3', 'type': 'custom'},
+      {'name': 'Light', 'uri': 'ringtones/Light.mp3', 'type': 'custom'},
+      {
+        'name': 'Musical Alarm',
+        'uri': 'ringtones/Musical_Alarm.mp3',
+        'type': 'custom'
+      },
+      {'name': 'New Day', 'uri': 'ringtones/NewDay.mp3', 'type': 'custom'},
+      {'name': 'Positive', 'uri': 'ringtones/Positive.mp3', 'type': 'custom'},
+      {
+        'name': 'Smoke Alarm',
+        'uri': 'ringtones/Smoke_Alarm.mp3',
+        'type': 'custom'
+      },
+      {'name': 'Snooze', 'uri': 'ringtones/Snooze.mp3', 'type': 'custom'},
+      {'name': 'Snoozer', 'uri': 'ringtones/Snoozer.mp3', 'type': 'custom'},
+      {'name': 'Trrrrrrrr', 'uri': 'ringtones/Trrrrrrrr.mp3', 'type': 'custom'},
+      {'name': 'Wake Up', 'uri': 'ringtones/Wake_Up.mp3', 'type': 'custom'},
+      {
+        'name': 'Wake Up Wake Up',
+        'uri': 'ringtones/Wake_Up_Wake_Up.mp3',
+        'type': 'custom'
+      },
+    ];
 
-    try {
-      // Get all system ringtones from the native Android API
-      final systemRingtones = await RingtoneService.getSystemRingtones();
-
-      if (systemRingtones.isEmpty) {
-        AppLogger.warning('No system ringtones found, using fallback');
-        // Fallback to basic system sounds if native call fails
-        return [
-          {'name': 'Default System Alarm', 'uri': 'default', 'type': 'system'},
-          {'name': 'System Alarm', 'uri': 'alarm', 'type': 'system'},
-          {'name': 'System Ringtone', 'uri': 'ringtone', 'type': 'system'},
-          {
-            'name': 'System Notification',
-            'uri': 'notification',
-            'type': 'system'
-          },
-        ];
-      }
-
-      AppLogger.info('Loaded ${systemRingtones.length} system alarm sounds');
-      return systemRingtones;
-    } catch (e) {
-      AppLogger.error('Failed to get system ringtones, using fallback', e);
-      // Fallback to basic system sounds on error
-      return [
-        {'name': 'Default System Alarm', 'uri': 'default', 'type': 'system'},
-        {'name': 'System Alarm', 'uri': 'alarm', 'type': 'system'},
-        {'name': 'System Ringtone', 'uri': 'ringtone', 'type': 'system'},
-        {
-          'name': 'System Notification',
-          'uri': 'notification',
-          'type': 'system'
-        },
-      ];
-    }
+    AppLogger.info('Loaded ${customSounds.length} custom alarm sounds');
+    return customSounds;
   }
+
+  // Audio player for previewing sounds
+  static AudioPlayer? _previewPlayer;
 
   /// Play alarm sound preview
   static Future<void> playAlarmSoundPreview(String soundUri) async {
@@ -234,16 +302,10 @@ class AlarmService {
       // Stop any currently playing sound
       await stopAlarmSoundPreview();
 
-      if (Platform.isAndroid) {
-        // Use RingtoneService for all system sounds on Android
-        await RingtoneService.previewRingtone(soundUri);
-        AppLogger.info('Playing system sound preview: $soundUri');
-      } else {
-        // Fallback for non-Android platforms
-        final ringtoneManager = FlutterRingtoneManager();
-        await ringtoneManager.playAlarm();
-        AppLogger.info('Playing fallback alarm sound');
-      }
+      _previewPlayer = AudioPlayer();
+      await _previewPlayer!.play(AssetSource(soundUri));
+
+      AppLogger.info('Playing alarm sound preview: $soundUri');
     } catch (e) {
       AppLogger.error('Failed to play alarm sound preview: $soundUri', e);
     }
@@ -252,13 +314,10 @@ class AlarmService {
   /// Stop alarm sound preview
   static Future<void> stopAlarmSoundPreview() async {
     try {
-      // Stop system ringtone preview
-      if (Platform.isAndroid) {
-        await RingtoneService.stopPreview();
-      } else {
-        // Fallback for non-Android platforms
-        final ringtoneManager = FlutterRingtoneManager();
-        await ringtoneManager.stop();
+      if (_previewPlayer != null) {
+        await _previewPlayer!.stop();
+        await _previewPlayer!.dispose();
+        _previewPlayer = null;
       }
     } catch (e) {
       AppLogger.error('Failed to stop alarm sound preview', e);
@@ -288,14 +347,12 @@ class AlarmService {
       }
     }
 
-    // CRITICAL: Awesome Notifications cannot use Android content:// URIs (system ringtones)
-    // The channel is configured with DefaultRingtoneType.Alarm which uses system alarm sound
-    // Custom sounds would need to be in android/app/src/main/res/raw/ and use resource://raw/
-    // For now, we ignore alarmSoundName and always use the system default alarm sound
-    // via the channel configuration
+    // Custom alarm sounds are played separately via AlarmSoundPlayer
+    // The notification channel uses a default system alarm sound for the notification itself
+    // AlarmSoundPlayer will play the selected custom alarm sound with looping
 
     AppLogger.debug(
-        'Alarm sound setting: ${alarmSoundName ?? "default system alarm"}');
+        'Alarm sound setting: ${alarmSoundName ?? "ringtones/Alarm.mp3"}');
 
     // CRITICAL: Create payload with habitId so the notification action handler
     // can process the completion. This matches the format used by regular notifications.
@@ -402,61 +459,6 @@ class AlarmService {
       alarmSoundName: alarmSoundName,
       snoozeDelayMinutes: snoozeDelayMinutes,
     );
-  }
-
-  /// Get system ringtones (Android only)
-  static Future<List<Map<String, String>>> getSystemRingtones() async {
-    if (!Platform.isAndroid) {
-      return [];
-    }
-
-    try {
-      // Note: flutter_ringtone_manager doesn't provide a list method
-      // Return predefined system sound options
-      return [
-        {'name': 'Default Alarm', 'uri': 'default', 'type': 'system'},
-        {'name': 'System Alarm', 'uri': 'alarm', 'type': 'system'},
-        {'name': 'System Ringtone', 'uri': 'ringtone', 'type': 'system'},
-        {
-          'name': 'System Notification',
-          'uri': 'notification',
-          'type': 'system'
-        },
-      ];
-    } catch (e) {
-      AppLogger.error('Failed to get system ringtones', e);
-      return [];
-    }
-  }
-
-  /// Open system ringtone picker (Android only)
-  /// Returns the selected ringtone URI or null if cancelled
-  static Future<String?> openSystemRingtonePicker() async {
-    if (!Platform.isAndroid) {
-      AppLogger.warning('Ringtone picker only available on Android');
-      return null;
-    }
-
-    try {
-      // Note: flutter_ringtone_manager doesn't have a picker
-      // This would require a custom platform channel implementation
-      // For now, return null and users can select from predefined sounds
-      AppLogger.warning('System ringtone picker not implemented yet');
-      return null;
-    } catch (e) {
-      AppLogger.error('Failed to open ringtone picker', e);
-      return null;
-    }
-  }
-
-  /// Test/preview a system sound
-  static Future<void> testSystemSound([String? soundUri]) async {
-    await playAlarmSoundPreview(soundUri ?? 'default');
-  }
-
-  /// Stop any playing system sound
-  static Future<void> stopSystemSound() async {
-    await stopAlarmSoundPreview();
   }
 
   /// Schedule hourly habit alarms (compatibility method)
