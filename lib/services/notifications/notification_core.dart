@@ -96,7 +96,7 @@ class NotificationCore {
           importance: NotificationImportance.Max,
           defaultColor: const Color(0xFFFF0000),
           ledColor: Colors.red,
-          playSound: false, // Sound is handled by AlarmSoundPlayer separately
+          playSound: true, // Enable custom sounds through customSound parameter
           enableVibration: true,
           enableLights: true,
           locked: false, // Allow dismissal via action buttons only
@@ -104,8 +104,8 @@ class NotificationCore {
           criticalAlerts: true, // iOS critical alerts
           channelShowBadge: true,
           onlyAlertOnce: false, // Allow sound to repeat
-          // NO defaultRingtoneType - custom sounds are played via AlarmSoundPlayer
-          // This prevents conflicts between system alarm sound and custom sounds
+          // Custom sounds are set via NotificationContent.customSound parameter
+          // and referenced from android/app/src/main/res/raw/ directory
         ),
       ],
       debug: false,

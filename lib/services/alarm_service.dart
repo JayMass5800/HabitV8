@@ -361,17 +361,10 @@ class AlarmService {
       // Play the sound from assets
       // Note: soundUri should be in format "ringtones/Alarm.mp3"
       // matching the declaration in pubspec.yaml
-      final result = await _previewPlayer!.play(AssetSource(soundUri));
+      await _previewPlayer!.play(AssetSource(soundUri));
 
-      AppLogger.info('🔊 play() returned, checking result...');
-      if (result == 1) {
-        AppLogger.info('✅ play() succeeded (returned 1)');
-      } else {
-        AppLogger.warning('⚠️ play() returned unexpected value: $result');
-      }
-
-      AppLogger.info(
-          '✅ Successfully started playing alarm sound preview: $soundUri');
+      AppLogger.info('✅ play() call completed without throwing error');
+      AppLogger.info('✅ Started playing alarm sound preview: $soundUri');
     } catch (e, stackTrace) {
       AppLogger.error('❌ Failed to play alarm sound preview: $soundUri', e);
       AppLogger.error('❌ Error details: ${e.toString()}', null);
@@ -644,9 +637,18 @@ class AlarmService {
       }
 
       // Prepare custom sound if provided
+      // Sound files must be in android/app/src/main/res/raw/ directory
+      // with lowercase names and underscores only (Android resource naming rules)
       String? customSound;
       if (alarmSoundName != null && alarmSoundName != 'default') {
-        customSound = 'resource://raw/${alarmSoundName.replaceAll('.mp3', '')}';
+        // Convert filename to Android resource format: lowercase with underscores
+        final resourceName = alarmSoundName
+            .replaceAll('.mp3', '')
+            .toLowerCase()
+            .replaceAll(' ', '_')
+            .replaceAll('-', '_');
+        customSound = 'resource://raw/$resourceName';
+        AppLogger.info('🔊 Using custom alarm sound: $customSound');
       }
 
       final payload = jsonEncode({
