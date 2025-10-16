@@ -642,11 +642,21 @@ class AlarmService {
       String? customSound;
       if (alarmSoundName != null && alarmSoundName != 'default') {
         // Convert filename to Android resource format: lowercase with underscores
-        final resourceName = alarmSoundName
+        // Also remove number prefixes (e.g., "01_" -> "") and handle special cases
+        String resourceName = alarmSoundName
             .replaceAll('.mp3', '')
             .toLowerCase()
             .replaceAll(' ', '_')
             .replaceAll('-', '_');
+
+        // Remove leading number prefixes (e.g., "01_classmate" -> "classmate")
+        resourceName = resourceName.replaceFirst(RegExp(r'^\d+_'), '');
+
+        // Handle special case: 3d_bomb -> bomb_3d
+        if (resourceName == '3d_bomb') {
+          resourceName = 'bomb_3d';
+        }
+
         customSound = 'resource://raw/$resourceName';
         AppLogger.info('🔊 Using custom alarm sound: $customSound');
       }

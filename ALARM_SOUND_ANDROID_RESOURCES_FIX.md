@@ -12,11 +12,16 @@ The app had two separate systems:
 
 ### 1. Copied Sound Files to Android Resources
 All 38 MP3 files from `ringtones/` folder copied to `android/app/src/main/res/raw/` with proper Android resource naming:
+- **Must start with a letter** (not a number)
 - Converted to lowercase
 - Replaced spaces with underscores
 - Replaced hyphens with underscores
+- Removed number prefixes (e.g., `01_`, `02_`)
 
-Example: `Wake_Up.mp3` → `wake_up.mp3`
+Examples:
+- `01_Classmate.mp3` → `classmate.mp3`
+- `Wake_Up.mp3` → `wake_up.mp3`
+- `3d_Bomb.mp3` → `bomb_3d.mp3`
 
 ### 2. Updated Notification Channel (notification_core.dart)
 ```dart
@@ -26,13 +31,24 @@ playSound: true, // Changed from false - enables custom sounds
 ### 3. Enhanced Resource Name Conversion (alarm_service.dart)
 Added proper conversion logic to transform Flutter asset names to Android resource format:
 ```dart
-final resourceName = alarmSoundName
+String resourceName = alarmSoundName
     .replaceAll('.mp3', '')
     .toLowerCase()
     .replaceAll(' ', '_')
     .replaceAll('-', '_');
+
+// Remove leading number prefixes (e.g., "01_classmate" -> "classmate")
+resourceName = resourceName.replaceFirst(RegExp(r'^\d+_'), '');
+
+// Handle special case: 3d_bomb -> bomb_3d
+if (resourceName == '3d_bomb') {
+  resourceName = 'bomb_3d';
+}
+
 customSound = 'resource://raw/$resourceName';
 ```
+
+This ensures all resource names comply with Android requirements (must start with a letter).
 
 ## Testing Instructions
 
