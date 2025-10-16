@@ -500,6 +500,19 @@ class NotificationScheduler {
       return;
     }
 
+    // CRITICAL FIX: Check if weekdays are selected for hourly habits
+    // Hourly habits must respect their selected weekdays
+    final selectedWeekdays = habit.selectedWeekdays.isNotEmpty
+        ? habit.selectedWeekdays
+        : habit.weeklySchedule;
+
+    if (selectedWeekdays.isEmpty) {
+      AppLogger.warning(
+        'No weekdays selected for hourly habit: ${habit.name}',
+      );
+      return;
+    }
+
     final now = DateTime.now();
 
     for (final timeStr in hourlyTimes) {
@@ -511,42 +524,35 @@ class NotificationScheduler {
       final timeMinute = int.tryParse(parts[1]);
       if (timeHour == null || timeMinute == null) continue;
 
-      DateTime nextNotification = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        timeHour,
-        timeMinute,
-      );
+      // Schedule notification for each selected weekday
+      for (final weekday in selectedWeekdays) {
+        DateTime nextNotification =
+            _getNextWeekday(now, weekday, timeHour, timeMinute);
 
-      // If the time has passed today, schedule for tomorrow
-      if (nextNotification.isBefore(now)) {
-        nextNotification = nextNotification.add(const Duration(days: 1));
+        // CRITICAL FIX: Include time slot in habitId for hourly habits
+        // This allows the notification action handler to identify which specific
+        // time slot was completed, preventing all slots from being marked complete
+        // Format: "habitId|HH:mm" (same format as alarm scheduler)
+        final habitIdWithTimeSlot =
+            '${habit.id}|$timeHour:${timeMinute.toString().padLeft(2, '0')}';
+
+        AppLogger.debug(
+          'Scheduling hourly notification for ${habit.name} on weekday $weekday at $timeHour:${timeMinute.toString().padLeft(2, '0')} with habitId: $habitIdWithTimeSlot',
+        );
+
+        await scheduleHabitNotification(
+          id: NotificationHelpers.generateSafeId(
+              '${habit.id}_${weekday}_${timeHour}_$timeMinute'),
+          habitId: habitIdWithTimeSlot,
+          title: '🎯 ${habit.name}',
+          body: 'Time to complete your habit!',
+          scheduledTime: nextNotification,
+        );
       }
-
-      // CRITICAL FIX: Include time slot in habitId for hourly habits
-      // This allows the notification action handler to identify which specific
-      // time slot was completed, preventing all slots from being marked complete
-      // Format: "habitId|HH:mm" (same format as alarm scheduler)
-      final habitIdWithTimeSlot =
-          '${habit.id}|$timeHour:${timeMinute.toString().padLeft(2, '0')}';
-
-      AppLogger.debug(
-        'Scheduling hourly notification for ${habit.name} at $timeHour:${timeMinute.toString().padLeft(2, '0')} with habitId: $habitIdWithTimeSlot',
-      );
-
-      await scheduleHabitNotification(
-        id: NotificationHelpers.generateSafeId(
-            '${habit.id}_${timeHour}_$timeMinute'),
-        habitId: habitIdWithTimeSlot,
-        title: '🎯 ${habit.name}',
-        body: 'Time to complete your habit!',
-        scheduledTime: nextNotification,
-      );
     }
 
     AppLogger.debug(
-      'Hourly notifications scheduled for ${habit.name} at ${hourlyTimes.length} times',
+      'Hourly notifications scheduled for ${habit.name} at ${hourlyTimes.length} times on ${selectedWeekdays.length} days',
     );
   }
 

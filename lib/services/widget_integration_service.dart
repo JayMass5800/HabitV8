@@ -901,7 +901,12 @@ class WidgetIntegrationService {
         }
         return false;
       case HabitFrequency.hourly:
-        return true;
+        // CRITICAL FIX: Hourly habits must respect selected weekdays
+        // Use date.weekday (1=Monday, 7=Sunday) to match selectedWeekdays storage
+        final weekday = date.weekday;
+        // Check both old and new fields for backward compatibility
+        return habit.selectedWeekdays.contains(weekday) ||
+            habit.weeklySchedule.contains(weekday);
     }
   }
 

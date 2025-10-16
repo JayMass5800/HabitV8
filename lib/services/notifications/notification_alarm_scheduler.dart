@@ -419,9 +419,18 @@ class NotificationAlarmScheduler {
       return;
     }
 
+    // CRITICAL FIX: Check if weekdays are selected for hourly habits
+    // Hourly habits must respect their selected weekdays
+    if (selectedWeekdays.isEmpty) {
+      AppLogger.warning(
+        'No weekdays selected for hourly habit: ${habit.name}',
+      );
+      return;
+    }
+
     // Schedule alarms for specific times
     AppLogger.debug(
-      'Scheduling hourly alarms for specific times: $hourlyTimes',
+      'Scheduling hourly alarms for specific times: $hourlyTimes on weekdays: $selectedWeekdays',
     );
 
     for (String timeString in hourlyTimes) {
@@ -433,51 +442,27 @@ class NotificationAlarmScheduler {
         final hour = int.parse(timeParts[0]);
         final minute = int.parse(timeParts[1]);
 
-        // Check if weekdays are specified and if today matches
-        if (selectedWeekdays.isNotEmpty &&
-            !selectedWeekdays.contains(now.weekday)) {
-          AppLogger.debug(
-            'Skipping hourly alarm for ${habit.name} - today (weekday ${now.weekday}) is not in selected weekdays',
+        // Schedule alarm for each selected weekday
+        for (final weekday in selectedWeekdays) {
+          tz.TZDateTime baseTime = tz.TZDateTime.now(tz.local);
+          tz.TZDateTime nextAlarm =
+              _getNextWeekdayDateTime(baseTime, weekday, hour, minute);
+
+          await AlarmService.scheduleExactAlarm(
+            alarmId: NotificationHelpers.generateSafeId(
+                '${habit.id}_hourly_${weekday}_${hour}_$minute'),
+            habitId: '${habit.id}|$hour:${minute.toString().padLeft(2, '0')}',
+            habitName: habit.name,
+            scheduledTime: nextAlarm,
+            frequency: 'hourly',
+            alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+            snoozeDelayMinutes: 10,
           );
-          continue;
+
+          AppLogger.debug(
+            'Scheduled hourly alarm for ${habit.name} on weekday $weekday at $timeString -> $nextAlarm',
+          );
         }
-
-        DateTime nextAlarm = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          hour,
-          minute,
-        );
-
-        // If the time has passed today, schedule for tomorrow
-        if (nextAlarm.isBefore(now)) {
-          nextAlarm = nextAlarm.add(const Duration(days: 1));
-
-          // Check weekday constraint for next day
-          if (selectedWeekdays.isNotEmpty &&
-              !selectedWeekdays.contains(nextAlarm.weekday)) {
-            AppLogger.debug(
-              'Skipping hourly alarm for ${habit.name} - next day (weekday ${nextAlarm.weekday}) is not in selected weekdays',
-            );
-            continue;
-          }
-        }
-
-        await AlarmService.scheduleExactAlarm(
-          alarmId: NotificationHelpers.generateSafeId(
-              '${habit.id}_hourly_${hour}_$minute'),
-          habitId: '${habit.id}|$hour:${minute.toString().padLeft(2, '0')}',
-          habitName: habit.name,
-          scheduledTime: nextAlarm,
-          frequency: 'hourly',
-          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
-          snoozeDelayMinutes: 10,
-        );
-
-        AppLogger.debug(
-          'Scheduled hourly alarm for $timeString at $nextAlarm',
-        );
       } catch (e) {
         AppLogger.error(
           'Error parsing hourly time "$timeString" for habit ${habit.name}',
@@ -487,7 +472,7 @@ class NotificationAlarmScheduler {
     }
 
     AppLogger.debug(
-      'Scheduled ${hourlyTimes.length} hourly alarms for ${habit.name}',
+      'Scheduled ${hourlyTimes.length} hourly alarms for ${habit.name} on ${selectedWeekdays.length} weekdays',
     );
   }
 
