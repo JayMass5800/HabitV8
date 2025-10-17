@@ -347,19 +347,51 @@ class AlarmService {
       }
     }
 
-    // Convert alarm sound path to proper Android resource format
-    String? soundSource;
+    // Convert alarm sound path to just the filename without extension
+    // The channel's sound property handles the actual sound playback
+    // We only need to create a new channel if using a custom sound
+    String channelKey = 'habit_alarms';
+
     if (alarmSoundName != null && alarmSoundName != 'default') {
-      // Convert "sounds/Alarm.mp3" to "resource://raw/alarm"
-      // Strip sounds/ prefix and .mp3 extension
+      // Convert "sounds/Alarm.mp3" to just "alarm"
       final soundName = alarmSoundName
           .replaceAll('sounds/', '')
           .replaceAll('.mp3', '')
           .toLowerCase()
           .replaceAll(' ', '_')
           .replaceAll('-', '_');
-      soundSource = 'resource://raw/$soundName';
-      AppLogger.debug('Converted sound path: $alarmSoundName -> $soundSource');
+
+      // Create a unique channel for this custom sound
+      channelKey = 'habit_alarm_$soundName';
+
+      // Check if this channel already exists, if not create it
+      try {
+        await AwesomeNotifications().setChannel(
+          NotificationChannel(
+            channelKey: channelKey,
+            channelName: 'Habit Alarm - $soundName',
+            channelDescription: 'Alarm channel with custom sound',
+            importance: NotificationImportance.Max,
+            defaultColor: const Color(0xFFFF0000),
+            ledColor: Colors.red,
+            playSound: true,
+            sound: soundName, // Just the filename without extension
+            enableVibration: true,
+            enableLights: true,
+            locked: true,
+            defaultPrivacy: NotificationPrivacy.Public,
+            criticalAlerts: true,
+            channelShowBadge: true,
+            onlyAlertOnce: false,
+          ),
+        );
+        AppLogger.debug(
+            'Created custom alarm channel: $channelKey with sound: $soundName');
+      } catch (e) {
+        AppLogger.warning(
+            'Failed to create custom alarm channel, using default: $e');
+        channelKey = 'habit_alarms'; // Fallback to default
+      }
     }
 
     final payloadData = jsonEncode({
@@ -371,7 +403,8 @@ class AlarmService {
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: alarmId,
-        channelKey: 'habit_alarms',
+        channelKey:
+            channelKey, // Use the appropriate channel with sound configured
         title: '🚨 HABIT ALARM: $habitName',
         body: 'Time to complete your habit! Tap buttons below.',
         category: NotificationCategory.Alarm,
@@ -386,8 +419,7 @@ class AlarmService {
         largeIcon: 'resource://drawable/ic_launcher',
         // Use Default action type so tapping opens app
         actionType: ActionType.Default,
-        // Set custom sound if provided
-        customSound: soundSource,
+        // No customSound here - let the channel handle it
       ),
       actionButtons: [
         NotificationActionButton(

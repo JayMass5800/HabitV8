@@ -30,7 +30,6 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     private val RINGTONE_CHANNEL = "com.habittracker.habitv8/ringtones"
     private val SYSTEM_SOUND_CHANNEL = "com.habittracker.habitv8/system_sound"
-    private val NATIVE_ALARM_CHANNEL = "com.habittracker.habitv8/native_alarm"
     private val ANDROID_RESOURCES_CHANNEL = "habitv8/android_resources"
     private val WIDGET_UPDATE_CHANNEL = "com.habittracker.habitv8/widget_update"
     private val RINGTONE_PICKER_REQUEST_CODE = 1
@@ -41,8 +40,6 @@ class MainActivity : FlutterFragmentActivity() {
     // Keep a static reference to the alarm ringtone to control it
     companion object {
         private var alarmRingtone: Ringtone? = null
-        // CRITICAL FIX: Track looping timers to restart alarms
-        private val alarmLoopingTimers = mutableMapOf<Int, android.os.Handler>()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -317,69 +314,6 @@ class MainActivity : FlutterFragmentActivity() {
                         result.success(getSystemRingtones())
                     } catch (e: Exception) {
                         result.error("RINGTONE_ERROR", "Failed to get system ringtones: ", null)
-                    }
-                }
-                else -> result.notImplemented()
-            }
-        }
-        
-        // CRITICAL: Native alarm sound handler for proper alarm playback
-        // This bypasses AudioPlayer and uses Android's RingtoneManager directly
-        // which properly handles alarm audio streams and audio focus
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NATIVE_ALARM_CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "playAlarmSound" -> {
-                    val alarmId: Int? = call.argument("alarmId")
-                    val soundUri: String? = call.argument("soundUri")
-                    val volume: Double? = call.argument("volume")
-                    
-                    if (alarmId == null) {
-                        result.error("MISSING_ARG", "alarmId is required", null)
-                        return@setMethodCallHandler
-                    }
-                    
-                    try {
-                        android.util.Log.i("NativeAlarm", "🚨 Playing native alarm sound for ID: $alarmId, URI: $soundUri")
-                        playNativeAlarmSound(alarmId, soundUri, volume ?: 1.0)
-                        result.success(true)
-                    } catch (e: Exception) {
-                        android.util.Log.e("NativeAlarm", "❌ Failed to play native alarm: ${e.message}", e)
-                        result.error("ALARM_ERROR", "Failed to play alarm: ${e.message}", null)
-                    }
-                }
-                "stopAlarmSound" -> {
-                    val alarmId: Int? = call.argument("alarmId")
-                    
-                    if (alarmId == null) {
-                        result.error("MISSING_ARG", "alarmId is required", null)
-                        return@setMethodCallHandler
-                    }
-                    
-                    try {
-                        android.util.Log.i("NativeAlarm", "🔇 Stopping native alarm sound for ID: $alarmId")
-                        android.util.Log.i("NativeAlarm", "   Active alarms: ${activeAlarmRingtones.keys}")
-                        stopNativeAlarmSound(alarmId)
-                        android.util.Log.i("NativeAlarm", "   Remaining active alarms: ${activeAlarmRingtones.keys}")
-                        result.success(true)
-                    } catch (e: Exception) {
-                        android.util.Log.e("NativeAlarm", "❌ Failed to stop alarm: ${e.message}", e)
-                        result.error("STOP_ERROR", "Failed to stop alarm: ${e.message}", null)
-                    }
-                }
-                "stopAllAlarms" -> {
-                    // EMERGENCY STOP - stops ALL active alarms
-                    try {
-                        android.util.Log.e("NativeAlarm", "🚨 EMERGENCY STOP - stopping ALL alarms!")
-                        android.util.Log.e("NativeAlarm", "   Active alarms before stop: ${activeAlarmRingtones.keys}")
-                        val alarmIds = activeAlarmRingtones.keys.toList()
-                        for (id in alarmIds) {
-                            stopNativeAlarmSound(id)
-                        }
-                        android.util.Log.i("NativeAlarm", "✅ All alarms stopped")
-                        result.success(true)
-                    } catch (e: Exception) {
-                        android.util.Log.e("NativeAlarm", "❌ Failed to stop all alarms: ${e.message}", e)
-                        result.error("STOP_ALL_ERROR", "Failed to stop all alarms: ${e.message}", null)
                     }
                 }
                 else -> result.notImplemented()
@@ -735,180 +669,9 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     // ==================== NATIVE ALARM SOUND HANDLERS ====================
-    
-    /// Map to track active alarm ringtones per alarm ID
-    private val activeAlarmRingtones = mutableMapOf<Int, Ringtone>()
-    
-    /// Play alarm sound using native Android Ringtone API
-    /// This properly handles:
-    /// - Alarm audio stream (bypasses silent mode)
-    /// - Audio focus (maintains during device interactions)
-    /// - Speaker routing (plays through speaker)
-    private fun playNativeAlarmSound(alarmId: Int, soundUri: String?, volume: Double) {
-        try {
-            // Stop any existing alarm for this ID
-            stopNativeAlarmSound(alarmId)
-            
-            val uri = when {
-                soundUri != null && soundUri != "default" -> {
-                    // Check if this is an asset path (e.g., "sounds/Alarm.mp3")
-                    if (soundUri.startsWith("sounds/") || !soundUri.contains("://")) {
-                        getAssetUri(soundUri)
-                    } else {
-                        // Try to parse as a URI
-                        try {
-                            Uri.parse(soundUri)
-                        } catch (e: Exception) {
-                            android.util.Log.w("NativeAlarm", "Failed to parse URI, using default: $soundUri")
-                            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                        }
-                    }
-                }
-                else -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            }
-            
-            val ringtone = RingtoneManager.getRingtone(applicationContext, uri)
-            
-            // Set audio attributes for ALARM stream
-            // This is critical - it makes the alarm bypass silent/vibrate modes
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                val audioAttributes = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-                ringtone.audioAttributes = audioAttributes
-            }
-            
-            // CRITICAL FIX: Implement looping since Ringtone API doesn't support it natively
-            // Android's Ringtone.play() only plays once, so we need to restart it automatically
-            activeAlarmRingtones[alarmId] = ringtone
-            
-            // Initial play
-            ringtone.play()
-            android.util.Log.i("NativeAlarm", "✅ Started native alarm sound for ID: $alarmId")
-            
-            // Setup looping mechanism using Handler
-            // Restart the alarm every 3 seconds so it loops continuously
-            val handler = android.os.Handler(android.os.Looper.getMainLooper())
-            val runnable = object : Runnable {
-                override fun run() {
-                    try {
-                        // Check if alarm is still active
-                        if (activeAlarmRingtones.containsKey(alarmId)) {
-                            // Restart the ringtone
-                            if (!ringtone.isPlaying) {
-                                ringtone.play()
-                                android.util.Log.d("NativeAlarm", "🔄 Restarted looping alarm for ID: $alarmId")
-                            }
-                            // Schedule next loop in 3 seconds
-                            handler.postDelayed(this, 3000)
-                        } else {
-                            // Alarm was stopped, remove the handler
-                            alarmLoopingTimers.remove(alarmId)
-                            android.util.Log.d("NativeAlarm", "⏸️ Stopped looping handler for ID: $alarmId")
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.e("NativeAlarm", "Error in looping handler: ${e.message}")
-                    }
-                }
-            }
-            
-            handler.postDelayed(runnable, 3000)
-            alarmLoopingTimers[alarmId] = handler
-            
-            android.util.Log.i("NativeAlarm", "🔔 Alarm looping setup complete for ID: $alarmId")
-            android.util.Log.i("NativeAlarm", "   URI: $uri")
-            android.util.Log.i("NativeAlarm", "   Volume: $volume")
-            
-        } catch (e: Exception) {
-            android.util.Log.e("NativeAlarm", "❌ Failed to play native alarm: ${e.message}", e)
-            throw e
-        }
-    }
-    
-    /// Convert asset path to playable URI
-    /// Extracts asset file to cache directory and returns file:// URI
-    private fun getAssetUri(assetPath: String): Uri {
-        return try {
-            // Normalize the path (remove leading "sounds/")
-            val normalizedPath = if (assetPath.startsWith("sounds/")) {
-                assetPath.substring(7)  // Remove "sounds/" prefix
-            } else {
-                assetPath
-            }
-            
-            android.util.Log.d("NativeAlarm", "🔍 Loading asset: $normalizedPath")
-            
-            // Get the asset file descriptor
-            val assetManager = applicationContext.assets
-            
-            // Try to open the asset
-            var inputStream: java.io.InputStream? = null
-            try {
-                inputStream = assetManager.open(normalizedPath)
-                android.util.Log.d("NativeAlarm", "✅ Asset opened successfully: $normalizedPath")
-            } catch (e: java.io.IOException) {
-                android.util.Log.e("NativeAlarm", "❌ Failed to open asset: $normalizedPath - ${e.message}")
-                // List available assets for debugging
-                try {
-                    val list = assetManager.list("sounds") ?: emptyArray()
-                    android.util.Log.e("NativeAlarm", "Available sounds: ${list.joinToString(", ")}")
-                } catch (e2: Exception) {
-                    android.util.Log.e("NativeAlarm", "Could not list sounds directory")
-                }
-                throw e
-            }
-            
-            // Create cache file with proper cleanup
-            val cacheDir = applicationContext.cacheDir
-            val cacheFile = java.io.File(cacheDir, "alarm_${System.currentTimeMillis()}_${normalizedPath.hashCode()}.mp3")
-            
-            android.util.Log.d("NativeAlarm", "📁 Extracting to: ${cacheFile.absolutePath}")
-            
-            // Copy asset to cache
-            inputStream.use { input ->
-                cacheFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            
-            android.util.Log.i("NativeAlarm", "✅ Asset extracted successfully: ${cacheFile.absolutePath} (${cacheFile.length()} bytes)")
-            
-            // Return file:// URI
-            Uri.fromFile(cacheFile)
-        } catch (e: Exception) {
-            android.util.Log.e("NativeAlarm", "❌ FAILED to load asset $assetPath: ${e.message}", e)
-            android.util.Log.w("NativeAlarm", "🔔 Falling back to system alarm sound")
-            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-        }
-    }
-    
-    /// Stop alarm sound for a specific alarm ID
-    private fun stopNativeAlarmSound(alarmId: Int) {
-        try {
-            // CRITICAL FIX: Also stop the looping handler
-            val handler = alarmLoopingTimers[alarmId]
-            if (handler != null) {
-                handler.removeCallbacksAndMessages(null)
-                alarmLoopingTimers.remove(alarmId)
-                android.util.Log.d("NativeAlarm", "🔇 Stopped looping handler for alarm ID: $alarmId")
-            }
-            
-            val ringtone = activeAlarmRingtones[alarmId]
-            if (ringtone != null && ringtone.isPlaying) {
-                ringtone.stop()
-                activeAlarmRingtones.remove(alarmId)
-                android.util.Log.i("NativeAlarm", "✅ Stopped native alarm sound for ID: $alarmId")
-            } else {
-                android.util.Log.d("NativeAlarm", "ℹ️ No active alarm for ID: $alarmId")
-                activeAlarmRingtones.remove(alarmId)
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("NativeAlarm", "❌ Error stopping alarm for ID: $alarmId: ${e.message}", e)
-            activeAlarmRingtones.remove(alarmId)
-            alarmLoopingTimers.remove(alarmId)
-        }
-    }
+    // Removed: Native alarm sound handlers are no longer needed.
+    // Alarm sounds are now handled by Awesome Notifications natively using Android resources.
+    // See: ALARM_PROPER_IMPLEMENTATION_FIX.md for details.
 
     private fun getSystemRingtones(): List<Map<String, String>> {
         val out = mutableListOf<Map<String, String>>()
