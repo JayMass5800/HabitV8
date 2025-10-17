@@ -1949,176 +1949,241 @@ class _CreateHabitScreenV2State extends ConsumerState<CreateHabitScreenV2> {
   // ==================== ALARM SELECTION ====================
 
   Future<void> _selectAlarmSound() async {
-    final availableSounds = await AlarmService.getAvailableAlarmSounds();
+    try {
+      final availableSounds = await AlarmService.getAvailableAlarmSounds();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    String? currentlyPlaying;
+      // Validate sounds list
+      if (availableSounds.isEmpty) {
+        AppLogger.error('No alarm sounds available', null);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No alarm sounds found. Please check app setup.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
 
-    final selected = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.music_note, color: _selectedColor),
-              const SizedBox(width: 8),
-              const Text('Select Alarm Sound'),
-            ],
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 500,
-            child: Column(
+      String? currentlyPlaying;
+
+      final selected = await showDialog<Map<String, String>>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _selectedColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _selectedColor.withValues(alpha: 0.3),
+                Icon(Icons.music_note, color: _selectedColor),
+                const SizedBox(width: 8),
+                const Text('Select Alarm Sound'),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 500,
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _selectedColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _selectedColor.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: _selectedColor, size: 20),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Tap the play button to preview sounds.',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: _selectedColor, size: 20),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Tap the play button to preview sounds.',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: availableSounds.length,
-                    itemBuilder: (context, index) {
-                      final sound = availableSounds[index];
-                      final soundName = sound['name']!;
-                      final soundUri = sound['uri']!;
-                      final isSelected = soundName == _selectedAlarmSoundName;
-                      final isPlaying = currentlyPlaying == soundUri;
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        elevation: isSelected ? 3 : 1,
-                        color: isSelected
-                            ? _selectedColor.withValues(alpha: 0.1)
-                            : null,
-                        child: ListTile(
-                          leading: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isPlaying
-                                  ? Colors.red.withValues(alpha: 0.1)
-                                  : Colors.blue.withValues(alpha: 0.1),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: availableSounds.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.music_note_outlined,
+                                  size: 48,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No sounds available',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: IconButton(
-                              icon: Icon(
-                                isPlaying ? Icons.stop : Icons.play_arrow,
-                                color: isPlaying ? Colors.red : Colors.blue,
-                              ),
-                              onPressed: () async {
-                                if (isPlaying) {
-                                  await AlarmService.stopAlarmSoundPreview();
-                                  setDialogState(() {
-                                    currentlyPlaying = null;
-                                  });
-                                } else {
-                                  try {
-                                    await AlarmService.stopAlarmSoundPreview();
+                          )
+                        : ListView.builder(
+                            shrinkWrap: false,
+                            itemCount: availableSounds.length,
+                            itemBuilder: (context, index) {
+                              final sound = availableSounds[index];
+                              final soundName =
+                                  sound['name'] ?? 'Unknown Sound';
+                              final soundUri = sound['uri'] ?? '';
+                              final isSelected =
+                                  soundName == _selectedAlarmSoundName;
+                              final isPlaying = currentlyPlaying == soundUri;
 
-                                    AppLogger.info(
-                                        '🎵 UI: About to play sound: $soundUri');
-                                    await AlarmService.playAlarmSoundPreview(
-                                        soundUri);
-                                    AppLogger.info(
-                                        '🎵 UI: Play command completed successfully');
-
-                                    setDialogState(() {
-                                      currentlyPlaying = soundUri;
-                                    });
-
-                                    // Auto-stop after 4 seconds
-                                    Future.delayed(
-                                      const Duration(seconds: 4),
-                                      () async {
-                                        await AlarmService
-                                            .stopAlarmSoundPreview();
-                                        try {
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                elevation: isSelected ? 3 : 1,
+                                color: isSelected
+                                    ? _selectedColor.withValues(alpha: 0.1)
+                                    : null,
+                                child: ListTile(
+                                  leading: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isPlaying
+                                          ? Colors.red.withValues(alpha: 0.1)
+                                          : Colors.blue.withValues(alpha: 0.1),
+                                    ),
+                                    child: IconButton(
+                                      icon: Icon(
+                                        isPlaying
+                                            ? Icons.stop
+                                            : Icons.play_arrow,
+                                        color: isPlaying
+                                            ? Colors.red
+                                            : Colors.blue,
+                                      ),
+                                      onPressed: () async {
+                                        if (isPlaying) {
+                                          await AlarmService
+                                              .stopAlarmSoundPreview();
                                           setDialogState(() {
                                             currentlyPlaying = null;
                                           });
-                                        } catch (e) {
-                                          // Dialog was closed, ignore
+                                        } else {
+                                          try {
+                                            await AlarmService
+                                                .stopAlarmSoundPreview();
+
+                                            AppLogger.info(
+                                                '🎵 UI: About to play sound: $soundUri');
+                                            await AlarmService
+                                                .playAlarmSoundPreview(
+                                                    soundUri);
+                                            AppLogger.info(
+                                                '🎵 UI: Play command completed successfully');
+
+                                            setDialogState(() {
+                                              currentlyPlaying = soundUri;
+                                            });
+
+                                            // Auto-stop after 4 seconds
+                                            Future.delayed(
+                                              const Duration(seconds: 4),
+                                              () async {
+                                                await AlarmService
+                                                    .stopAlarmSoundPreview();
+                                                try {
+                                                  setDialogState(() {
+                                                    currentlyPlaying = null;
+                                                  });
+                                                } catch (e) {
+                                                  // Dialog was closed, ignore
+                                                }
+                                              },
+                                            );
+                                          } catch (e, stackTrace) {
+                                            AppLogger.error(
+                                                '❌ UI: Failed to play preview',
+                                                e);
+                                            AppLogger.error(
+                                                'Stack trace: $stackTrace',
+                                                null);
+
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                      'Failed to play sound: $e'),
+                                                  backgroundColor: Colors.red,
+                                                  duration: const Duration(
+                                                      seconds: 3),
+                                                ),
+                                              );
+                                            }
+                                          }
                                         }
                                       },
-                                    );
-                                  } catch (e, stackTrace) {
-                                    AppLogger.error(
-                                        '❌ UI: Failed to play preview', e);
-                                    AppLogger.error(
-                                        'Stack trace: $stackTrace', null);
-
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content:
-                                              Text('Failed to play sound: $e'),
-                                          backgroundColor: Colors.red,
-                                          duration: const Duration(seconds: 3),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                }
-                              },
-                            ),
+                                    ),
+                                  ),
+                                  title: Text(soundName),
+                                  trailing: isSelected
+                                      ? Icon(Icons.check_circle,
+                                          color: _selectedColor)
+                                      : null,
+                                  onTap: () {
+                                    Navigator.of(context).pop({
+                                      'name': soundName,
+                                      'uri': soundUri,
+                                    });
+                                  },
+                                ),
+                              );
+                            },
                           ),
-                          title: Text(soundName),
-                          trailing: isSelected
-                              ? Icon(Icons.check_circle, color: _selectedColor)
-                              : null,
-                          onTap: () {
-                            Navigator.of(context).pop({
-                              'name': soundName,
-                              'uri': soundUri,
-                            });
-                          },
-                        ),
-                      );
-                    },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
         ),
-      ),
-    );
+      );
 
-    if (selected != null && mounted) {
-      setState(() {
-        _selectedAlarmSoundName = selected['name'];
-        _selectedAlarmSoundUri = selected['uri'];
-      });
+      if (selected != null && mounted) {
+        setState(() {
+          _selectedAlarmSoundName = selected['name'];
+          _selectedAlarmSoundUri = selected['uri'];
+        });
+      }
+
+      // Stop any playing sound when dialog closes
+      await AlarmService.stopAlarmSoundPreview();
+    } catch (e, stackTrace) {
+      AppLogger.error('Error loading alarm sounds dialog', e);
+      AppLogger.error('Stack trace: $stackTrace', null);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading sounds: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
-
-    // Stop any playing sound when dialog closes
-    await AlarmService.stopAlarmSoundPreview();
   }
 }
 
