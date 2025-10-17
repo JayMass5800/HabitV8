@@ -64,7 +64,57 @@ class AlarmSoundPlayer {
       // Listen for player state changes
       player.onPlayerStateChanged.listen((state) {
         AppLogger.info('🎵 Alarm $alarmId player state: $state');
+
+        // CRITICAL: If the player unexpectedly stops/pauses, restart it
+        // This handles audio focus loss or other interruptions
+        if (state == PlayerState.stopped || state == PlayerState.paused) {
+          AppLogger.warning(
+              '⚠️ Alarm $alarmId stopped/paused unexpectedly! Attempting to restart...');
+
+          // Restart the alarm sound after a short delay
+          Future.delayed(const Duration(milliseconds: 500), () async {
+            try {
+              if (_activePlayers.containsKey(alarmId)) {
+                await player.resume();
+                AppLogger.info('✅ Alarm $alarmId restarted successfully');
+              }
+            } catch (e) {
+              AppLogger.error('Failed to restart alarm $alarmId', e);
+            }
+          });
+        }
       });
+
+      // Listen for unexpected completion (should never happen with loop mode)
+      player.onPlayerComplete.listen((_) {
+        AppLogger.warning(
+            '⚠️ Alarm $alarmId completed unexpectedly! Restarting loop...');
+        // Restart if still in active alarms
+        if (_activePlayers.containsKey(alarmId)) {
+          player.play(AssetSource(soundUri));
+        }
+      });
+
+      // CRITICAL: Set audio context for ALARM so it bypasses mute switch
+      // This is essential for alarms to work when device is silenced
+      await player.setAudioContext(
+        AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: const {AVAudioSessionOptions.duckOthers},
+          ),
+          android: AudioContextAndroid(
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.alarm,
+            // CRITICAL: Use 'gain' not 'gainTransient'!
+            // gainTransient = temporary focus that gets released when notification drawer opens
+            // gain = permanent focus that persists until explicitly released
+            audioFocus: AndroidAudioFocus.gain,
+            isSpeakerphoneOn: true,
+            stayAwake: true,
+          ),
+        ),
+      );
 
       // Set release mode to loop
       await player.setReleaseMode(ReleaseMode.loop);

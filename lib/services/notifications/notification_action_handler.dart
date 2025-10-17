@@ -235,20 +235,18 @@ Future<void> onNotificationDisplayed(
 /// This is called when a notification is dismissed/swiped away
 /// MUST be a top-level function for background isolate to work!
 ///
-/// This handler stops the alarm sound when the user dismisses the notification.
+/// IMPORTANT: Do NOT stop alarm sound on dismiss!
+/// The alarm should only stop when user taps Complete/Snooze buttons.
+/// If we stop on dismiss, tapping the notification to open the app would stop the alarm.
 @pragma('vm:entry-point')
 Future<void> onNotificationDismissed(ReceivedAction receivedAction) async {
   try {
     AppLogger.info('🗑️ Notification dismissed: ${receivedAction.id}');
     AppLogger.info('   Channel: ${receivedAction.channelKey}');
-
-    // Stop the alarm sound if it's playing
-    if (receivedAction.id != null) {
-      AppLogger.info(
-          '🔇 Stopping alarm sound for dismissed notification ${receivedAction.id}');
-      await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
-      AppLogger.info('✅ Alarm sound stopped');
-    }
+    AppLogger.info(
+        'ℹ️ NOT stopping alarm sound on dismiss - only stop on button press');
+    // DO NOT stop the alarm sound here!
+    // The alarm should continue playing until user explicitly taps Complete/Snooze
   } catch (e) {
     AppLogger.error('Error in onNotificationDismissed', e);
   }
