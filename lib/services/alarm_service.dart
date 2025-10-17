@@ -401,6 +401,20 @@ class AlarmService {
       'type': 'alarm',
     });
 
+    // Determine the custom sound for this notification
+    String? notificationSound;
+    if (alarmSoundName != null && alarmSoundName != 'default') {
+      final soundName = alarmSoundName
+          .replaceAll('sounds/', '')
+          .replaceAll('.mp3', '')
+          .toLowerCase()
+          .replaceAll(' ', '_')
+          .replaceAll('-', '_');
+      notificationSound = 'resource://raw/$soundName';
+    } else {
+      notificationSound = 'resource://raw/alarm'; // Default alarm sound
+    }
+
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: alarmId,
@@ -418,9 +432,10 @@ class AlarmService {
         payload: {'data': payloadData},
         backgroundColor: const Color(0xFFFF0000),
         largeIcon: 'resource://drawable/ic_launcher',
+        customSound:
+            notificationSound, // CRITICAL: Set sound on notification itself
         // Use Default action type so tapping opens app
         actionType: ActionType.Default,
-        // No customSound here - let the channel handle it
       ),
       actionButtons: [
         NotificationActionButton(
