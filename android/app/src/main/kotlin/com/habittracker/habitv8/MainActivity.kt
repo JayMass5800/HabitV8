@@ -731,12 +731,17 @@ class MainActivity : FlutterFragmentActivity() {
             
             val uri = when {
                 soundUri != null && soundUri != "default" -> {
-                    // Try to parse custom sound URI
-                    try {
-                        Uri.parse(soundUri)
-                    } catch (e: Exception) {
-                        android.util.Log.w("NativeAlarm", "Failed to parse URI, using default: $soundUri")
-                        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    // Check if this is an asset path (e.g., "sounds/Alarm.mp3")
+                    if (soundUri.startsWith("sounds/") || !soundUri.contains("://")) {
+                        getAssetUri(soundUri)
+                    } else {
+                        // Try to parse as a URI
+                        try {
+                            Uri.parse(soundUri)
+                        } catch (e: Exception) {
+                            android.util.Log.w("NativeAlarm", "Failed to parse URI, using default: $soundUri")
+                            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                        }
                     }
                 }
                 else -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
@@ -765,6 +770,45 @@ class MainActivity : FlutterFragmentActivity() {
         } catch (e: Exception) {
             android.util.Log.e("NativeAlarm", "❌ Failed to play native alarm: ${e.message}", e)
             throw e
+        }
+    }
+    
+    /// Convert asset path to playable URI
+    /// Extracts asset file to cache directory and returns file:// URI
+    private fun getAssetUri(assetPath: String): Uri {
+        return try {
+            // Normalize the path (remove leading "sounds/")
+            val normalizedPath = if (assetPath.startsWith("sounds/")) {
+                assetPath.substring(7)  // Remove "sounds/" prefix
+            } else {
+                assetPath
+            }
+            
+            android.util.Log.d("NativeAlarm", "Loading asset: $normalizedPath")
+            
+            // Get the asset file descriptor
+            val assetManager = applicationContext.assets
+            val inputStream = assetManager.open(normalizedPath)
+            
+            // Create cache file
+            val cacheDir = applicationContext.cacheDir
+            val cacheFile = java.io.File(cacheDir, "alarm_${System.currentTimeMillis()}.mp3")
+            
+            // Copy asset to cache
+            inputStream.use { input ->
+                cacheFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            
+            android.util.Log.i("NativeAlarm", "Asset extracted to: ${cacheFile.absolutePath}")
+            
+            // Return file:// URI
+            Uri.fromFile(cacheFile)
+        } catch (e: Exception) {
+            android.util.Log.w("NativeAlarm", "Failed to load asset $assetPath: ${e.message}")
+            android.util.Log.w("NativeAlarm", "Falling back to system alarm sound")
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
         }
     }
     
