@@ -187,104 +187,176 @@ class AlarmService {
     final customSounds = [
       {
         'name': 'Classmate',
-        'uri': 'ringtones/01_Classmate.mp3',
+        'uri': 'assets/ringtones/01_Classmate.mp3',
         'type': 'custom'
       },
       {
         'name': 'Small Spring',
-        'uri': 'ringtones/02_Small_Spring.mp3',
+        'uri': 'assets/ringtones/02_Small_Spring.mp3',
         'type': 'custom'
       },
       {
         'name': 'Whistling Wizard',
-        'uri': 'ringtones/03_Whistling_Wizard.mp3',
+        'uri': 'assets/ringtones/03_Whistling_Wizard.mp3',
         'type': 'custom'
       },
       {
         'name': 'Morning Dew',
-        'uri': 'ringtones/04_Morning_Dew.mp3',
+        'uri': 'assets/ringtones/04_Morning_Dew.mp3',
         'type': 'custom'
       },
       {
         'name': 'Surf the Groove',
-        'uri': 'ringtones/05_Surf_the_Groove.mp3',
+        'uri': 'assets/ringtones/05_Surf_the_Groove.mp3',
         'type': 'custom'
       },
       {
         'name': 'Urban Beat',
-        'uri': 'ringtones/06_Urban_Beat.mp3',
+        'uri': 'assets/ringtones/06_Urban_Beat.mp3',
         'type': 'custom'
       },
       {
         'name': 'Cute Weather',
-        'uri': 'ringtones/07_Cute_Weather.mp3',
+        'uri': 'assets/ringtones/07_Cute_Weather.mp3',
         'type': 'custom'
       },
       {
         'name': 'Acapella Good Morning',
-        'uri': 'ringtones/08_Acapella_Good_Morning.mp3',
+        'uri': 'assets/ringtones/08_Acapella_Good_Morning.mp3',
         'type': 'custom'
       },
       {
         'name': 'Sporting Spork',
-        'uri': 'ringtones/09_Sporting_Spork.mp3',
+        'uri': 'assets/ringtones/09_Sporting_Spork.mp3',
         'type': 'custom'
       },
       {
         'name': 'Step Beep',
-        'uri': 'ringtones/10_Step_Beep.mp3',
+        'uri': 'assets/ringtones/10_Step_Beep.mp3',
         'type': 'custom'
       },
-      {'name': '3D Bomb', 'uri': 'ringtones/3d_Bomb.mp3', 'type': 'custom'},
-      {'name': 'Alarm', 'uri': 'ringtones/Alarm.mp3', 'type': 'custom'},
-      {'name': 'Alarm 1', 'uri': 'ringtones/Alarm_1.mp3', 'type': 'custom'},
-      {'name': 'Alarm 2', 'uri': 'ringtones/Alarm_2.mp3', 'type': 'custom'},
-      {'name': 'Alarm 3', 'uri': 'ringtones/Alarm_3.mp3', 'type': 'custom'},
-      {'name': 'Alarm 4', 'uri': 'ringtones/Alarm_4.mp3', 'type': 'custom'},
-      {'name': 'Alarm Mix', 'uri': 'ringtones/Alarm_Mix.mp3', 'type': 'custom'},
-      {'name': 'Alarm Pro', 'uri': 'ringtones/Alarm_pro.mp3', 'type': 'custom'},
+      {
+        'name': '3D Bomb',
+        'uri': 'assets/ringtones/3d_Bomb.mp3',
+        'type': 'custom'
+      },
+      {'name': 'Alarm', 'uri': 'assets/ringtones/Alarm.mp3', 'type': 'custom'},
+      {
+        'name': 'Alarm 1',
+        'uri': 'assets/ringtones/Alarm_1.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Alarm 2',
+        'uri': 'assets/ringtones/Alarm_2.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Alarm 3',
+        'uri': 'assets/ringtones/Alarm_3.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Alarm 4',
+        'uri': 'assets/ringtones/Alarm_4.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Alarm Mix',
+        'uri': 'assets/ringtones/Alarm_Mix.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Alarm Pro',
+        'uri': 'assets/ringtones/Alarm_pro.mp3',
+        'type': 'custom'
+      },
       {
         'name': 'Army Alarm',
-        'uri': 'ringtones/Army_Alarm.mp3',
+        'uri': 'assets/ringtones/Army_Alarm.mp3',
         'type': 'custom'
       },
       {
         'name': 'Auto Alarm',
-        'uri': 'ringtones/Auto_Alarm.mp3',
+        'uri': 'assets/ringtones/Auto_Alarm.mp3',
         'type': 'custom'
       },
-      {'name': 'Beeps', 'uri': 'ringtones/Beeps.mp3', 'type': 'custom'},
-      {'name': 'Bell', 'uri': 'ringtones/Bell.mp3', 'type': 'custom'},
+      {'name': 'Beeps', 'uri': 'assets/ringtones/Beeps.mp3', 'type': 'custom'},
+      {'name': 'Bell', 'uri': 'assets/ringtones/Bell.mp3', 'type': 'custom'},
       {
         'name': 'Best Alarm',
-        'uri': 'ringtones/Best_Alarm.mp3',
+        'uri': 'assets/ringtones/Best_Alarm.mp3',
         'type': 'custom'
       },
-      {'name': 'Bubble', 'uri': 'ringtones/Bubble.mp3', 'type': 'custom'},
-      {'name': 'Classic', 'uri': 'ringtones/Classic.mp3', 'type': 'custom'},
-      {'name': 'Dreamy', 'uri': 'ringtones/Dreamy.mp3', 'type': 'custom'},
-      {'name': 'Fade In', 'uri': 'ringtones/Fade_In.mp3', 'type': 'custom'},
-      {'name': 'Instance', 'uri': 'ringtones/Instance.mp3', 'type': 'custom'},
-      {'name': 'Light', 'uri': 'ringtones/Light.mp3', 'type': 'custom'},
+      {
+        'name': 'Bubble',
+        'uri': 'assets/ringtones/Bubble.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Classic',
+        'uri': 'assets/ringtones/Classic.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Dreamy',
+        'uri': 'assets/ringtones/Dreamy.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Fade In',
+        'uri': 'assets/ringtones/Fade_In.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Instance',
+        'uri': 'assets/ringtones/Instance.mp3',
+        'type': 'custom'
+      },
+      {'name': 'Light', 'uri': 'assets/ringtones/Light.mp3', 'type': 'custom'},
       {
         'name': 'Musical Alarm',
-        'uri': 'ringtones/Musical_Alarm.mp3',
+        'uri': 'assets/ringtones/Musical_Alarm.mp3',
         'type': 'custom'
       },
-      {'name': 'New Day', 'uri': 'ringtones/NewDay.mp3', 'type': 'custom'},
-      {'name': 'Positive', 'uri': 'ringtones/Positive.mp3', 'type': 'custom'},
+      {
+        'name': 'New Day',
+        'uri': 'assets/ringtones/NewDay.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Positive',
+        'uri': 'assets/ringtones/Positive.mp3',
+        'type': 'custom'
+      },
       {
         'name': 'Smoke Alarm',
-        'uri': 'ringtones/Smoke_Alarm.mp3',
+        'uri': 'assets/ringtones/Smoke_Alarm.mp3',
         'type': 'custom'
       },
-      {'name': 'Snooze', 'uri': 'ringtones/Snooze.mp3', 'type': 'custom'},
-      {'name': 'Snoozer', 'uri': 'ringtones/Snoozer.mp3', 'type': 'custom'},
-      {'name': 'Trrrrrrrr', 'uri': 'ringtones/Trrrrrrrr.mp3', 'type': 'custom'},
-      {'name': 'Wake Up', 'uri': 'ringtones/Wake_Up.mp3', 'type': 'custom'},
+      {
+        'name': 'Snooze',
+        'uri': 'assets/ringtones/Snooze.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Snoozer',
+        'uri': 'assets/ringtones/Snoozer.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Trrrrrrrr',
+        'uri': 'assets/ringtones/Trrrrrrrr.mp3',
+        'type': 'custom'
+      },
+      {
+        'name': 'Wake Up',
+        'uri': 'assets/ringtones/Wake_Up.mp3',
+        'type': 'custom'
+      },
       {
         'name': 'Wake Up Wake Up',
-        'uri': 'ringtones/Wake_Up_Wake_Up.mp3',
+        'uri': 'assets/ringtones/Wake_Up_Wake_Up.mp3',
         'type': 'custom'
       },
     ];
@@ -359,7 +431,7 @@ class AlarmService {
           '🔊 Player configured with: volume=1.0, releaseMode=stop, audioFocus=gain');
 
       // Play the sound from assets
-      // Note: soundUri should be in format "ringtones/Alarm.mp3"
+      // Note: soundUri should be in format "assets/ringtones/Alarm.mp3"
       // matching the declaration in pubspec.yaml
       await _previewPlayer!.play(AssetSource(soundUri));
 
@@ -415,7 +487,7 @@ class AlarmService {
     // AlarmSoundPlayer will play the selected custom alarm sound with looping
 
     AppLogger.debug(
-        'Alarm sound setting: ${alarmSoundName ?? "ringtones/Alarm.mp3"}');
+        'Alarm sound setting: ${alarmSoundName ?? "assets/ringtones/Alarm.mp3"}');
 
     // CRITICAL: Create payload with habitId so the notification action handler
     // can process the completion. This matches the format used by regular notifications.
@@ -424,7 +496,7 @@ class AlarmService {
       'habitId': habitId,
       'habitName': habitName,
       'type': 'alarm',
-      'alarmSoundUri': alarmSoundName ?? 'ringtones/Alarm.mp3',
+      'alarmSoundUri': alarmSoundName ?? 'assets/ringtones/Alarm.mp3',
     });
 
     await AwesomeNotifications().createNotification(
