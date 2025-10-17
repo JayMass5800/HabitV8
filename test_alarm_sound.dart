@@ -33,10 +33,11 @@ class _AlarmSoundTestScreenState extends State<AlarmSoundTestScreen> {
   bool _isPlaying = false;
 
   final List<String> _testSounds = [
-    'ringtones/Alarm.mp3',
-    'ringtones/Alarm_1.mp3',
-    'ringtones/Wake_Up.mp3',
-    'ringtones/01_Classmate.mp3',
+    'sounds/Alarm.mp3',
+    'sounds/Alarm_1.mp3',
+    'sounds/Wake_Up.mp3',
+    'sounds/Bell.mp3',
+    'sounds/Best_Alarm.mp3',
   ];
 
   @override

@@ -25,7 +25,7 @@ class AlarmSoundPlayer {
   /// Start playing an alarm sound continuously
   ///
   /// [alarmId] - Unique identifier for this alarm
-  /// [soundUri] - Path to the sound file in assets (e.g., 'ringtones/Alarm.mp3')
+  /// [soundUri] - Path to the sound file in assets (e.g., 'sounds/Alarm.mp3')
   /// [volume] - Volume level (0.0 to 1.0), defaults to 1.0
   static Future<void> startAlarmSound({
     required int alarmId,
@@ -37,7 +37,7 @@ class AlarmSoundPlayer {
       await stopAlarmSound(alarmId);
 
       // Default to the basic Alarm sound if none specified
-      final sound = soundUri ?? 'ringtones/Alarm.mp3';
+      final sound = soundUri ?? 'sounds/Alarm.mp3';
 
       AppLogger.info('🔊 Starting alarm sound for alarm $alarmId: $sound');
 
