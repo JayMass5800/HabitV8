@@ -375,7 +375,8 @@ class AlarmService {
             defaultColor: const Color(0xFFFF0000),
             ledColor: Colors.red,
             playSound: true,
-            sound: soundName, // Just the filename without extension
+            soundSource:
+                'resource://raw/$soundName', // Custom sound for this channel
             enableVibration: true,
             enableLights: true,
             locked: true,

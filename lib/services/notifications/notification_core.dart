@@ -85,8 +85,7 @@ class NotificationCore {
           importance: NotificationImportance.Max,
           channelShowBadge: true,
           playSound: true,
-          sound:
-              'alarm', // Default alarm sound (just filename without extension)
+          soundSource: 'resource://raw/alarm', // Default alarm sound
           enableVibration: true,
           criticalAlerts: true,
           locked: true, // Cannot be dismissed by swiping
@@ -100,9 +99,8 @@ class NotificationCore {
           importance: NotificationImportance.Max,
           defaultColor: const Color(0xFFFF0000),
           ledColor: Colors.red,
-          playSound: true, // Let system handle sound properly
-          sound:
-              'alarm', // Default alarm sound (just filename without extension or path)
+          playSound: true,
+          soundSource: 'resource://raw/alarm', // Default alarm sound
           enableVibration: true,
           enableLights: true,
           locked: true, // Cannot be dismissed by swiping, must use buttons

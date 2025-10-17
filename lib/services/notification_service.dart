@@ -1,7 +1,6 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import '../domain/model/habit.dart';
 import 'logging_service.dart';
-import 'alarm_sound_player.dart';
 import 'notifications/notification_core.dart';
 import 'notifications/notification_helpers.dart';
 import 'notifications/notification_scheduler.dart';
@@ -16,9 +15,6 @@ class NotificationService {
   static late final NotificationBootRescheduler _bootRescheduler;
 
   static Future<void> initialize() async {
-    // Initialize alarm sound player first
-    await AlarmSoundPlayer.initialize();
-
     await NotificationCore.initialize(
         // Action handler is registered directly in NotificationCore.initialize()
         // as onBackgroundNotificationActionIsar (top-level function with @pragma annotation)

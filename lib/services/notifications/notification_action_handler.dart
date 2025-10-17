@@ -6,8 +6,6 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
 import '../logging_service.dart';
-import '../alarm_sound_player.dart';
-import '../alarm_sound_player_native.dart';
 import '../../domain/model/habit.dart';
 import '../../domain/model/scheduled_notification.dart';
 import 'notification_helpers.dart';
