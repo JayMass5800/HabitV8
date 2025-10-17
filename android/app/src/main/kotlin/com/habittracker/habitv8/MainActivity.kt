@@ -754,11 +754,6 @@ class MainActivity : FlutterFragmentActivity() {
                 ringtone.audioAttributes = audioAttributes
             }
             
-            // Set volume if supported
-            if (ringtone.hasVibrate()) {
-                android.util.Log.i("NativeAlarm", "Ringtone supports vibration")
-            }
-            
             // Play the alarm - it will loop indefinitely until stopped
             ringtone.play()
             activeAlarmRingtones[alarmId] = ringtone
