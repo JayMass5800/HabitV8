@@ -321,8 +321,50 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
         
-        // Note: Native alarm scheduling channel removed - now using awesome_notifications
-        // The NATIVE_ALARM_CHANNEL constant is kept for reference but no longer used
+        // CRITICAL: Native alarm sound handler for proper alarm playback
+        // This bypasses AudioPlayer and uses Android's RingtoneManager directly
+        // which properly handles alarm audio streams and audio focus
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NATIVE_ALARM_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "playAlarmSound" -> {
+                    val alarmId: Int? = call.argument("alarmId")
+                    val soundUri: String? = call.argument("soundUri")
+                    val volume: Double? = call.argument("volume")
+                    
+                    if (alarmId == null) {
+                        result.error("MISSING_ARG", "alarmId is required", null)
+                        return@setMethodCallHandler
+                    }
+                    
+                    try {
+                        android.util.Log.i("NativeAlarm", "🚨 Playing native alarm sound for ID: $alarmId, URI: $soundUri")
+                        playNativeAlarmSound(alarmId, soundUri, volume ?: 1.0)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        android.util.Log.e("NativeAlarm", "❌ Failed to play native alarm: ${e.message}", e)
+                        result.error("ALARM_ERROR", "Failed to play alarm: ${e.message}", null)
+                    }
+                }
+                "stopAlarmSound" -> {
+                    val alarmId: Int? = call.argument("alarmId")
+                    
+                    if (alarmId == null) {
+                        result.error("MISSING_ARG", "alarmId is required", null)
+                        return@setMethodCallHandler
+                    }
+                    
+                    try {
+                        android.util.Log.i("NativeAlarm", "🔇 Stopping native alarm sound for ID: $alarmId")
+                        stopNativeAlarmSound(alarmId)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        android.util.Log.e("NativeAlarm", "❌ Failed to stop alarm: ${e.message}", e)
+                        result.error("STOP_ERROR", "Failed to stop alarm: ${e.message}", null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
         
         // Widget update channel for triggering WorkManager updates
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_UPDATE_CHANNEL).setMethodCallHandler { call, result ->
@@ -669,6 +711,83 @@ class MainActivity : FlutterFragmentActivity() {
             android.util.Log.e("MainActivity", "❌ Error stopping system sound: ${e.message}")
             // Don't rethrow - try to continue gracefully
             alarmRingtone = null
+        }
+    }
+
+    // ==================== NATIVE ALARM SOUND HANDLERS ====================
+    
+    /// Map to track active alarm ringtones per alarm ID
+    private val activeAlarmRingtones = mutableMapOf<Int, Ringtone>()
+    
+    /// Play alarm sound using native Android Ringtone API
+    /// This properly handles:
+    /// - Alarm audio stream (bypasses silent mode)
+    /// - Audio focus (maintains during device interactions)
+    /// - Speaker routing (plays through speaker)
+    private fun playNativeAlarmSound(alarmId: Int, soundUri: String?, volume: Double) {
+        try {
+            // Stop any existing alarm for this ID
+            stopNativeAlarmSound(alarmId)
+            
+            val uri = when {
+                soundUri != null && soundUri != "default" -> {
+                    // Try to parse custom sound URI
+                    try {
+                        Uri.parse(soundUri)
+                    } catch (e: Exception) {
+                        android.util.Log.w("NativeAlarm", "Failed to parse URI, using default: $soundUri")
+                        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    }
+                }
+                else -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            }
+            
+            val ringtone = RingtoneManager.getRingtone(applicationContext, uri)
+            
+            // Set audio attributes for ALARM stream
+            // This is critical - it makes the alarm bypass silent/vibrate modes
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                val audioAttributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                ringtone.audioAttributes = audioAttributes
+            }
+            
+            // Set volume if supported
+            if (ringtone.hasVibrate()) {
+                android.util.Log.i("NativeAlarm", "Ringtone supports vibration")
+            }
+            
+            // Play the alarm - it will loop indefinitely until stopped
+            ringtone.play()
+            activeAlarmRingtones[alarmId] = ringtone
+            
+            android.util.Log.i("NativeAlarm", "✅ Started native alarm sound for ID: $alarmId")
+            android.util.Log.i("NativeAlarm", "   URI: $uri")
+            android.util.Log.i("NativeAlarm", "   Volume: $volume")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("NativeAlarm", "❌ Failed to play native alarm: ${e.message}", e)
+            throw e
+        }
+    }
+    
+    /// Stop alarm sound for a specific alarm ID
+    private fun stopNativeAlarmSound(alarmId: Int) {
+        try {
+            val ringtone = activeAlarmRingtones[alarmId]
+            if (ringtone != null && ringtone.isPlaying) {
+                ringtone.stop()
+                activeAlarmRingtones.remove(alarmId)
+                android.util.Log.i("NativeAlarm", "✅ Stopped native alarm sound for ID: $alarmId")
+            } else {
+                android.util.Log.d("NativeAlarm", "ℹ️ No active alarm for ID: $alarmId")
+                activeAlarmRingtones.remove(alarmId)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("NativeAlarm", "❌ Error stopping alarm for ID: $alarmId: ${e.message}", e)
+            activeAlarmRingtones.remove(alarmId)
         }
     }
 

@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
 import '../logging_service.dart';
 import '../alarm_sound_player.dart';
+import '../alarm_sound_player_native.dart';
 import '../../domain/model/habit.dart';
 import '../../domain/model/scheduled_notification.dart';
 import 'notification_helpers.dart';
@@ -43,6 +44,9 @@ Future<void> onBackgroundNotificationActionIsar(
         receivedAction.buttonKeyPressed == 'snooze_alarm') {
       AppLogger.info(
           '🔇 Stopping alarm sound for background action ${receivedAction.id}');
+      // Try native alarm first (Android native Ringtone API)
+      await NativeAlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+      // Fallback to audio player in case both are playing
       await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
     }
 
@@ -142,6 +146,9 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
             receivedAction.buttonKeyPressed == 'snooze_alarm') {
           AppLogger.info(
               '🔇 Stopping alarm sound for notification ${receivedAction.id}');
+          // Try native alarm first (Android native Ringtone API)
+          await NativeAlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+          // Fallback to audio player in case both are playing
           await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
         }
 
@@ -214,15 +221,32 @@ Future<void> onNotificationDisplayed(
         }
       }
 
-      // Start the alarm sound (will loop until dismissed)
-      await AlarmSoundPlayer.startAlarmSound(
-        alarmId: receivedNotification.id!,
-        soundUri: alarmSoundUri,
-        volume: 1.0,
-      );
-
-      AppLogger.info(
-          '✅ Alarm sound started for notification ${receivedNotification.id}');
+      // CRITICAL: Use native alarm sound player (Android Ringtone API)
+      // This properly handles audio focus and bypasses silent mode
+      try {
+        await NativeAlarmSoundPlayer.startAlarmSound(
+          alarmId: receivedNotification.id!,
+          soundUri: alarmSoundUri,
+          volume: 1.0,
+        );
+        AppLogger.info(
+            '✅ Native alarm sound started for notification ${receivedNotification.id}');
+      } catch (e) {
+        AppLogger.error(
+            'Failed to start native alarm sound, trying fallback', e);
+        // Fallback to AudioPlayer if native fails
+        try {
+          await AlarmSoundPlayer.startAlarmSound(
+            alarmId: receivedNotification.id!,
+            soundUri: alarmSoundUri,
+            volume: 1.0,
+          );
+          AppLogger.info(
+              '✅ Fallback alarm sound started for notification ${receivedNotification.id}');
+        } catch (e2) {
+          AppLogger.error('Both native and fallback alarm sound failed', e2);
+        }
+      }
     } else {
       AppLogger.info('ℹ️ Non-alarm notification - no sound');
     }
