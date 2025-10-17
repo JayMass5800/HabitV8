@@ -355,11 +355,29 @@ class MainActivity : FlutterFragmentActivity() {
                     
                     try {
                         android.util.Log.i("NativeAlarm", "🔇 Stopping native alarm sound for ID: $alarmId")
+                        android.util.Log.i("NativeAlarm", "   Active alarms: ${activeAlarmRingtones.keys}")
                         stopNativeAlarmSound(alarmId)
+                        android.util.Log.i("NativeAlarm", "   Remaining active alarms: ${activeAlarmRingtones.keys}")
                         result.success(true)
                     } catch (e: Exception) {
                         android.util.Log.e("NativeAlarm", "❌ Failed to stop alarm: ${e.message}", e)
                         result.error("STOP_ERROR", "Failed to stop alarm: ${e.message}", null)
+                    }
+                }
+                "stopAllAlarms" -> {
+                    // EMERGENCY STOP - stops ALL active alarms
+                    try {
+                        android.util.Log.e("NativeAlarm", "🚨 EMERGENCY STOP - stopping ALL alarms!")
+                        android.util.Log.e("NativeAlarm", "   Active alarms before stop: ${activeAlarmRingtones.keys}")
+                        val alarmIds = activeAlarmRingtones.keys.toList()
+                        for (id in alarmIds) {
+                            stopNativeAlarmSound(id)
+                        }
+                        android.util.Log.i("NativeAlarm", "✅ All alarms stopped")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        android.util.Log.e("NativeAlarm", "❌ Failed to stop all alarms: ${e.message}", e)
+                        result.error("STOP_ALL_ERROR", "Failed to stop all alarms: ${e.message}", null)
                     }
                 }
                 else -> result.notImplemented()
@@ -784,15 +802,33 @@ class MainActivity : FlutterFragmentActivity() {
                 assetPath
             }
             
-            android.util.Log.d("NativeAlarm", "Loading asset: $normalizedPath")
+            android.util.Log.d("NativeAlarm", "🔍 Loading asset: $normalizedPath")
             
             // Get the asset file descriptor
             val assetManager = applicationContext.assets
-            val inputStream = assetManager.open(normalizedPath)
             
-            // Create cache file
+            // Try to open the asset
+            var inputStream: java.io.InputStream? = null
+            try {
+                inputStream = assetManager.open(normalizedPath)
+                android.util.Log.d("NativeAlarm", "✅ Asset opened successfully: $normalizedPath")
+            } catch (e: java.io.IOException) {
+                android.util.Log.e("NativeAlarm", "❌ Failed to open asset: $normalizedPath - ${e.message}")
+                // List available assets for debugging
+                try {
+                    val list = assetManager.list("sounds") ?: emptyArray()
+                    android.util.Log.e("NativeAlarm", "Available sounds: ${list.joinToString(", ")}")
+                } catch (e2: Exception) {
+                    android.util.Log.e("NativeAlarm", "Could not list sounds directory")
+                }
+                throw e
+            }
+            
+            // Create cache file with proper cleanup
             val cacheDir = applicationContext.cacheDir
-            val cacheFile = java.io.File(cacheDir, "alarm_${System.currentTimeMillis()}.mp3")
+            val cacheFile = java.io.File(cacheDir, "alarm_${System.currentTimeMillis()}_${normalizedPath.hashCode()}.mp3")
+            
+            android.util.Log.d("NativeAlarm", "📁 Extracting to: ${cacheFile.absolutePath}")
             
             // Copy asset to cache
             inputStream.use { input ->
@@ -801,13 +837,13 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
             
-            android.util.Log.i("NativeAlarm", "Asset extracted to: ${cacheFile.absolutePath}")
+            android.util.Log.i("NativeAlarm", "✅ Asset extracted successfully: ${cacheFile.absolutePath} (${cacheFile.length()} bytes)")
             
             // Return file:// URI
             Uri.fromFile(cacheFile)
         } catch (e: Exception) {
-            android.util.Log.w("NativeAlarm", "Failed to load asset $assetPath: ${e.message}")
-            android.util.Log.w("NativeAlarm", "Falling back to system alarm sound")
+            android.util.Log.e("NativeAlarm", "❌ FAILED to load asset $assetPath: ${e.message}", e)
+            android.util.Log.w("NativeAlarm", "🔔 Falling back to system alarm sound")
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
         }
     }

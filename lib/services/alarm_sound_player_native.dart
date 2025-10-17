@@ -57,19 +57,22 @@ class NativeAlarmSoundPlayer {
   /// Stop alarm sound for a specific alarm
   static Future<void> stopAlarmSound(int alarmId) async {
     try {
-      if (_activeSounds.containsKey(alarmId)) {
-        AppLogger.info('🔇 Stopping native alarm sound for alarm $alarmId');
+      AppLogger.info('🔇 Stopping native alarm sound for alarm $alarmId');
+      AppLogger.info('   Active sounds before stop: ${_activeSounds.keys}');
 
-        await platform.invokeMethod('stopAlarmSound', {
-          'alarmId': alarmId,
-        });
+      final result = await platform.invokeMethod('stopAlarmSound', {
+        'alarmId': alarmId,
+      });
 
-        _activeSounds.remove(alarmId);
-        AppLogger.info('✅ Native alarm sound stopped for alarm $alarmId');
-      }
+      _activeSounds.remove(alarmId);
+      AppLogger.info(
+          '✅ Native alarm sound stopped for alarm $alarmId (result: $result)');
+      AppLogger.info('   Active sounds after stop: ${_activeSounds.keys}');
     } catch (e) {
       AppLogger.error(
           'Failed to stop native alarm sound for alarm $alarmId', e);
+      // Force remove from tracking if method call fails
+      _activeSounds.remove(alarmId);
     }
   }
 

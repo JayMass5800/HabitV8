@@ -42,12 +42,25 @@ Future<void> onBackgroundNotificationActionIsar(
     if (receivedAction.buttonKeyPressed == 'complete' ||
         receivedAction.buttonKeyPressed == 'snooze' ||
         receivedAction.buttonKeyPressed == 'snooze_alarm') {
-      AppLogger.info(
-          '🔇 Stopping alarm sound for background action ${receivedAction.id}');
-      // Try native alarm first (Android native Ringtone API)
-      await NativeAlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
-      // Fallback to audio player in case both are playing
-      await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+      AppLogger.warning(
+          '🚨 BACKGROUND: STOPPING ALARM ON ACTION - notification ID: ${receivedAction.id}');
+      AppLogger.warning('   Action: ${receivedAction.buttonKeyPressed}');
+
+      try {
+        // Try native alarm first (Android native Ringtone API)
+        await NativeAlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+        AppLogger.warning('✅ Background: Native alarm stop called');
+      } catch (e) {
+        AppLogger.error('Background: Failed to stop native alarm', e);
+      }
+
+      try {
+        // Fallback to audio player
+        await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+        AppLogger.warning('✅ Background: Fallback alarm stop called');
+      } catch (e) {
+        AppLogger.error('Background: Failed to stop fallback alarm', e);
+      }
     }
 
     // CRITICAL: Ensure Flutter binding is initialized for this background isolate
@@ -144,12 +157,27 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
         if (receivedAction.buttonKeyPressed == 'complete' ||
             receivedAction.buttonKeyPressed == 'snooze' ||
             receivedAction.buttonKeyPressed == 'snooze_alarm') {
-          AppLogger.info(
-              '🔇 Stopping alarm sound for notification ${receivedAction.id}');
+          AppLogger.warning(
+              '🚨 CRITICAL: STOPPING ALARM ON ACTION - notification ID: ${receivedAction.id}');
+          AppLogger.warning('   Action: ${receivedAction.buttonKeyPressed}');
+          AppLogger.warning(
+              '   Notification ID type: ${receivedAction.id.runtimeType}');
+
           // Try native alarm first (Android native Ringtone API)
-          await NativeAlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+          try {
+            await NativeAlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+            AppLogger.warning('✅ Native alarm stop called successfully');
+          } catch (e) {
+            AppLogger.error('Failed to stop native alarm', e);
+          }
+
           // Fallback to audio player in case both are playing
-          await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+          try {
+            await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
+            AppLogger.warning('✅ Fallback alarm stop called successfully');
+          } catch (e) {
+            AppLogger.error('Failed to stop fallback alarm', e);
+          }
         }
 
         if (receivedAction.buttonKeyPressed == 'complete') {
