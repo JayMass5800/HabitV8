@@ -38,29 +38,12 @@ Future<void> onBackgroundNotificationActionIsar(
     AppLogger.info('Background action key: ${receivedAction.buttonKeyPressed}');
     AppLogger.info('Background payload: ${receivedAction.payload}');
 
-    // CRITICAL: Stop alarm sound immediately when action is received
+    // When user taps action button, notification is auto-dismissed
+    // System automatically stops the alarm sound when notification is dismissed
     if (receivedAction.buttonKeyPressed == 'complete' ||
         receivedAction.buttonKeyPressed == 'snooze' ||
         receivedAction.buttonKeyPressed == 'snooze_alarm') {
-      AppLogger.warning(
-          '🚨 BACKGROUND: STOPPING ALARM ON ACTION - notification ID: ${receivedAction.id}');
-      AppLogger.warning('   Action: ${receivedAction.buttonKeyPressed}');
-
-      try {
-        // Try native alarm first (Android native Ringtone API)
-        await NativeAlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
-        AppLogger.warning('✅ Background: Native alarm stop called');
-      } catch (e) {
-        AppLogger.error('Background: Failed to stop native alarm', e);
-      }
-
-      try {
-        // Fallback to audio player
-        await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
-        AppLogger.warning('✅ Background: Fallback alarm stop called');
-      } catch (e) {
-        AppLogger.error('Background: Failed to stop fallback alarm', e);
-      }
+      AppLogger.info('✅ Alarm action received - notification auto-dismissing');
     }
 
     // CRITICAL: Ensure Flutter binding is initialized for this background isolate
@@ -153,31 +136,11 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
       if (rawHabitId != null) {
         AppLogger.debug('🔍 DEBUG: Checking if button key is "complete"');
 
-        // CRITICAL: Stop alarm sound immediately when user takes action
+        // System automatically stops alarm sound when notification is dismissed via button
         if (receivedAction.buttonKeyPressed == 'complete' ||
             receivedAction.buttonKeyPressed == 'snooze' ||
             receivedAction.buttonKeyPressed == 'snooze_alarm') {
-          AppLogger.warning(
-              '🚨 CRITICAL: STOPPING ALARM ON ACTION - notification ID: ${receivedAction.id}');
-          AppLogger.warning('   Action: ${receivedAction.buttonKeyPressed}');
-          AppLogger.warning(
-              '   Notification ID type: ${receivedAction.id.runtimeType}');
-
-          // Try native alarm first (Android native Ringtone API)
-          try {
-            await NativeAlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
-            AppLogger.warning('✅ Native alarm stop called successfully');
-          } catch (e) {
-            AppLogger.error('Failed to stop native alarm', e);
-          }
-
-          // Fallback to audio player in case both are playing
-          try {
-            await AlarmSoundPlayer.stopAlarmSound(receivedAction.id!);
-            AppLogger.warning('✅ Fallback alarm stop called successfully');
-          } catch (e) {
-            AppLogger.error('Failed to stop fallback alarm', e);
-          }
+          AppLogger.info('✅ Alarm action - notification auto-dismissing');
         }
 
         if (receivedAction.buttonKeyPressed == 'complete') {
@@ -222,8 +185,8 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
 /// This is called when a notification is displayed on the screen
 /// MUST be a top-level function for background isolate to work!
 ///
-/// This handler starts the alarm sound looping when an alarm notification is displayed.
-/// The sound will continue until the user taps Complete or Snooze.
+/// With proper Awesome Notifications alarm setup, the system handles sound playback.
+/// We don't need to manually play sounds anymore.
 @pragma('vm:entry-point')
 Future<void> onNotificationDisplayed(
     ReceivedNotification receivedNotification) async {
@@ -232,51 +195,10 @@ Future<void> onNotificationDisplayed(
     AppLogger.info('   Channel: ${receivedNotification.channelKey}');
     AppLogger.info('   Category: ${receivedNotification.category}');
 
-    // For ALARM notifications, start playing the custom alarm sound
+    // System now handles alarm sound via channel configuration
     if (receivedNotification.channelKey == 'habit_alarms') {
-      AppLogger.info('🚨 Alarm notification detected - starting alarm sound');
-
-      // Extract alarm sound from payload
-      String? alarmSoundUri;
-      if (receivedNotification.payload != null &&
-          receivedNotification.payload!['data'] != null) {
-        try {
-          final payload = jsonDecode(receivedNotification.payload!['data']!);
-          alarmSoundUri = payload['alarmSoundUri'] as String?;
-          AppLogger.info('   Alarm sound URI from payload: $alarmSoundUri');
-        } catch (e) {
-          AppLogger.error('Failed to parse payload for alarm sound', e);
-        }
-      }
-
-      // CRITICAL: Use native alarm sound player (Android Ringtone API)
-      // This properly handles audio focus and bypasses silent mode
-      try {
-        await NativeAlarmSoundPlayer.startAlarmSound(
-          alarmId: receivedNotification.id!,
-          soundUri: alarmSoundUri,
-          volume: 1.0,
-        );
-        AppLogger.info(
-            '✅ Native alarm sound started for notification ${receivedNotification.id}');
-      } catch (e) {
-        AppLogger.error(
-            'Failed to start native alarm sound, trying fallback', e);
-        // Fallback to AudioPlayer if native fails
-        try {
-          await AlarmSoundPlayer.startAlarmSound(
-            alarmId: receivedNotification.id!,
-            soundUri: alarmSoundUri,
-            volume: 1.0,
-          );
-          AppLogger.info(
-              '✅ Fallback alarm sound started for notification ${receivedNotification.id}');
-        } catch (e2) {
-          AppLogger.error('Both native and fallback alarm sound failed', e2);
-        }
-      }
-    } else {
-      AppLogger.info('ℹ️ Non-alarm notification - no sound');
+      AppLogger.info(
+          '🚨 Alarm notification displayed - sound handled by system');
     }
   } catch (e) {
     AppLogger.error('Error in onNotificationDisplayed', e);
@@ -287,18 +209,16 @@ Future<void> onNotificationDisplayed(
 /// This is called when a notification is dismissed/swiped away
 /// MUST be a top-level function for background isolate to work!
 ///
-/// IMPORTANT: Do NOT stop alarm sound on dismiss!
-/// The alarm should only stop when user taps Complete/Snooze buttons.
-/// If we stop on dismiss, tapping the notification to open the app would stop the alarm.
+/// With locked=true on alarms, this won't be called for alarm dismissals.
+/// Alarms can only be dismissed via action buttons.
 @pragma('vm:entry-point')
 Future<void> onNotificationDismissed(ReceivedAction receivedAction) async {
   try {
     AppLogger.info('🗑️ Notification dismissed: ${receivedAction.id}');
     AppLogger.info('   Channel: ${receivedAction.channelKey}');
-    AppLogger.info(
-        'ℹ️ NOT stopping alarm sound on dismiss - only stop on button press');
-    // DO NOT stop the alarm sound here!
-    // The alarm should continue playing until user explicitly taps Complete/Snooze
+
+    // Alarm notifications are locked and cannot be swiped away
+    // This handler only fires for non-alarm notifications
   } catch (e) {
     AppLogger.error('Error in onNotificationDismissed', e);
   }

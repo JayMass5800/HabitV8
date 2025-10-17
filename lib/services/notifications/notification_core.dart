@@ -96,18 +96,15 @@ class NotificationCore {
           importance: NotificationImportance.Max,
           defaultColor: const Color(0xFFFF0000),
           ledColor: Colors.red,
-          playSound:
-              false, // CRITICAL: Sound is handled by AlarmSoundPlayer (custom looping)
+          playSound: true, // Let system handle sound properly
+          soundSource: 'resource://raw/alarm', // Default alarm sound
           enableVibration: true,
           enableLights: true,
-          locked: false, // Allow dismissal via action buttons only
+          locked: true, // Cannot be dismissed by swiping, must use buttons
           defaultPrivacy: NotificationPrivacy.Public,
           criticalAlerts: true, // iOS critical alerts
           channelShowBadge: true,
           onlyAlertOnce: false, // Allow multiple notifications
-          // IMPORTANT: This channel does NOT play sounds directly
-          // Instead, AlarmSoundPlayer handles custom looping sounds via AudioPlayer
-          // This prevents conflicts between notification sounds and custom alarm sounds
         ),
       ],
       debug: false,

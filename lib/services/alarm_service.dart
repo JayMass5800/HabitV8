@@ -347,21 +347,25 @@ class AlarmService {
       }
     }
 
-    // Custom alarm sounds are played separately via AlarmSoundPlayer
-    // The notification channel uses a default system alarm sound for the notification itself
-    // AlarmSoundPlayer will play the selected custom alarm sound with looping
+    // Convert alarm sound path to proper Android resource format
+    String? soundSource;
+    if (alarmSoundName != null && alarmSoundName != 'default') {
+      // Convert "sounds/Alarm.mp3" to "resource://raw/alarm"
+      // Strip sounds/ prefix and .mp3 extension
+      final soundName = alarmSoundName
+          .replaceAll('sounds/', '')
+          .replaceAll('.mp3', '')
+          .toLowerCase()
+          .replaceAll(' ', '_')
+          .replaceAll('-', '_');
+      soundSource = 'resource://raw/$soundName';
+      AppLogger.debug('Converted sound path: $alarmSoundName -> $soundSource');
+    }
 
-    AppLogger.debug(
-        'Alarm sound setting: ${alarmSoundName ?? "sounds/Alarm.mp3"}');
-
-    // CRITICAL: Create payload with habitId so the notification action handler
-    // can process the completion. This matches the format used by regular notifications.
-    // ALSO include alarmSoundUri so onNotificationDisplayed can play the correct custom sound
     final payloadData = jsonEncode({
       'habitId': habitId,
       'habitName': habitName,
       'type': 'alarm',
-      'alarmSoundUri': alarmSoundName ?? 'sounds/Alarm.mp3',
     });
 
     await AwesomeNotifications().createNotification(
@@ -369,36 +373,36 @@ class AlarmService {
         id: alarmId,
         channelKey: 'habit_alarms',
         title: '🚨 HABIT ALARM: $habitName',
-        body: 'Time to complete your habit! Tap to mark as complete or snooze.',
+        body: 'Time to complete your habit! Tap buttons below.',
         category: NotificationCategory.Alarm,
         notificationLayout: NotificationLayout.Default,
         fullScreenIntent: true,
         wakeUpScreen: true,
         criticalAlert: true,
-        locked: false, // Allow dismissal via action buttons
-        autoDismissible:
-            true, // Allow swipe-to-dismiss so onNotificationDismissed is called
-        // Sound is handled separately by AlarmSoundPlayer in onNotificationDisplayed
-        // (Channel already configured with playSound: false)
+        locked: true, // Cannot swipe away - must use buttons
+        autoDismissible: false, // Prevent accidental dismissal
         payload: {'data': payloadData},
-        // CRITICAL: These settings ensure alarm continues until user interacts
         backgroundColor: const Color(0xFFFF0000),
         largeIcon: 'resource://drawable/ic_launcher',
-        actionType:
-            ActionType.KeepOnTop, // Keep notification visible when tapped
+        // Use Default action type so tapping opens app
+        actionType: ActionType.Default,
+        // Set custom sound if provided
+        customSound: soundSource,
       ),
       actionButtons: [
         NotificationActionButton(
           key: 'complete',
           label: '✅ COMPLETE',
-          actionType: ActionType.SilentBackgroundAction,
-          autoDismissible: true, // Dismiss when completed
+          actionType: ActionType.Default, // Dismiss and process
+          autoDismissible: true,
+          isDangerousOption: false,
         ),
         NotificationActionButton(
           key: 'snooze_alarm',
           label: snoozeText,
-          actionType: ActionType.SilentBackgroundAction,
-          autoDismissible: true, // Dismiss when snoozed
+          actionType: ActionType.Default, // Dismiss and process
+          autoDismissible: true,
+          isDangerousOption: false,
         ),
       ],
       schedule: NotificationCalendar.fromDate(
