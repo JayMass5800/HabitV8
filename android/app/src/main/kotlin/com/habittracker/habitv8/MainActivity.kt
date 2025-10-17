@@ -41,6 +41,8 @@ class MainActivity : FlutterFragmentActivity() {
     // Keep a static reference to the alarm ringtone to control it
     companion object {
         private var alarmRingtone: Ringtone? = null
+        // CRITICAL FIX: Track looping timers to restart alarms
+        private val alarmLoopingTimers = mutableMapOf<Int, android.os.Handler>()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -777,11 +779,44 @@ class MainActivity : FlutterFragmentActivity() {
                 ringtone.audioAttributes = audioAttributes
             }
             
-            // Play the alarm - it will loop indefinitely until stopped
-            ringtone.play()
+            // CRITICAL FIX: Implement looping since Ringtone API doesn't support it natively
+            // Android's Ringtone.play() only plays once, so we need to restart it automatically
             activeAlarmRingtones[alarmId] = ringtone
             
+            // Initial play
+            ringtone.play()
             android.util.Log.i("NativeAlarm", "✅ Started native alarm sound for ID: $alarmId")
+            
+            // Setup looping mechanism using Handler
+            // Restart the alarm every 3 seconds so it loops continuously
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            val runnable = object : Runnable {
+                override fun run() {
+                    try {
+                        // Check if alarm is still active
+                        if (activeAlarmRingtones.containsKey(alarmId)) {
+                            // Restart the ringtone
+                            if (!ringtone.isPlaying) {
+                                ringtone.play()
+                                android.util.Log.d("NativeAlarm", "🔄 Restarted looping alarm for ID: $alarmId")
+                            }
+                            // Schedule next loop in 3 seconds
+                            handler.postDelayed(this, 3000)
+                        } else {
+                            // Alarm was stopped, remove the handler
+                            alarmLoopingTimers.remove(alarmId)
+                            android.util.Log.d("NativeAlarm", "⏸️ Stopped looping handler for ID: $alarmId")
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("NativeAlarm", "Error in looping handler: ${e.message}")
+                    }
+                }
+            }
+            
+            handler.postDelayed(runnable, 3000)
+            alarmLoopingTimers[alarmId] = handler
+            
+            android.util.Log.i("NativeAlarm", "🔔 Alarm looping setup complete for ID: $alarmId")
             android.util.Log.i("NativeAlarm", "   URI: $uri")
             android.util.Log.i("NativeAlarm", "   Volume: $volume")
             
@@ -851,6 +886,14 @@ class MainActivity : FlutterFragmentActivity() {
     /// Stop alarm sound for a specific alarm ID
     private fun stopNativeAlarmSound(alarmId: Int) {
         try {
+            // CRITICAL FIX: Also stop the looping handler
+            val handler = alarmLoopingTimers[alarmId]
+            if (handler != null) {
+                handler.removeCallbacksAndMessages(null)
+                alarmLoopingTimers.remove(alarmId)
+                android.util.Log.d("NativeAlarm", "🔇 Stopped looping handler for alarm ID: $alarmId")
+            }
+            
             val ringtone = activeAlarmRingtones[alarmId]
             if (ringtone != null && ringtone.isPlaying) {
                 ringtone.stop()
@@ -863,6 +906,7 @@ class MainActivity : FlutterFragmentActivity() {
         } catch (e: Exception) {
             android.util.Log.e("NativeAlarm", "❌ Error stopping alarm for ID: $alarmId: ${e.message}", e)
             activeAlarmRingtones.remove(alarmId)
+            alarmLoopingTimers.remove(alarmId)
         }
     }
 

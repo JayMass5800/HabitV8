@@ -150,13 +150,16 @@ class NotificationAlarmScheduler {
     }
 
     try {
+      // CRITICAL FIX: Convert alarm sound name to full asset path
+      final alarmSoundUri = _normalizeAlarmSoundUri(habit);
+
       await AlarmService.scheduleExactAlarm(
         alarmId: NotificationHelpers.generateSafeId('${habit.id}_daily'),
         habitId: habit.id.toString(),
         habitName: habit.name,
         scheduledTime: nextAlarm,
         frequency: 'daily',
-        alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+        alarmSoundName: alarmSoundUri,
         snoozeDelayMinutes: 10,
       );
 
@@ -183,6 +186,9 @@ class NotificationAlarmScheduler {
       return;
     }
 
+    // CRITICAL FIX: Convert alarm sound name to full asset path
+    final alarmSoundUri = _normalizeAlarmSoundUri(habit);
+
     for (int weekday in selectedWeekdays) {
       tz.TZDateTime baseTime = tz.TZDateTime.now(tz.local);
       tz.TZDateTime nextAlarm =
@@ -196,7 +202,7 @@ class NotificationAlarmScheduler {
           habitName: habit.name,
           scheduledTime: nextAlarm,
           frequency: 'weekly',
-          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+          alarmSoundName: alarmSoundUri,
           snoozeDelayMinutes: 10,
         );
 
@@ -231,6 +237,9 @@ class NotificationAlarmScheduler {
       return;
     }
 
+    // CRITICAL FIX: Convert alarm sound name to full asset path
+    final alarmSoundUri = _normalizeAlarmSoundUri(habit);
+
     for (int day in selectedMonthDays) {
       DateTime nextAlarm = DateTime(now.year, now.month, day, hour, minute);
 
@@ -247,7 +256,7 @@ class NotificationAlarmScheduler {
           habitName: habit.name,
           scheduledTime: nextAlarm,
           frequency: 'monthly',
-          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+          alarmSoundName: alarmSoundUri,
           snoozeDelayMinutes: 10,
         );
 
@@ -282,6 +291,9 @@ class NotificationAlarmScheduler {
       return;
     }
 
+    // CRITICAL FIX: Convert alarm sound name to full asset path
+    final alarmSoundUri = _normalizeAlarmSoundUri(habit);
+
     for (String dateString in selectedYearlyDates) {
       try {
         // Parse "yyyy-MM-dd" format
@@ -305,7 +317,7 @@ class NotificationAlarmScheduler {
           habitName: habit.name,
           scheduledTime: nextAlarm,
           frequency: 'yearly',
-          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+          alarmSoundName: alarmSoundUri,
           snoozeDelayMinutes: 10,
         );
 
@@ -347,6 +359,9 @@ class NotificationAlarmScheduler {
     }
 
     try {
+      // CRITICAL FIX: Convert alarm sound name to full asset path
+      final alarmSoundUri = _normalizeAlarmSoundUri(habit);
+
       await AlarmService.scheduleExactAlarm(
         alarmId: NotificationHelpers.generateSafeId(
           '${habit.id}_single_${singleDateTime.millisecondsSinceEpoch}',
@@ -355,7 +370,7 @@ class NotificationAlarmScheduler {
         habitName: habit.name,
         scheduledTime: singleDateTime,
         frequency: 'single',
-        alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+        alarmSoundName: alarmSoundUri,
         snoozeDelayMinutes: 10,
       );
 
@@ -373,6 +388,9 @@ class NotificationAlarmScheduler {
     final now = DateTime.now();
     final selectedWeekdays = habit.selectedWeekdays;
     final hourlyTimes = habit.hourlyTimes;
+
+    // CRITICAL FIX: Convert alarm sound name to full asset path
+    final alarmSoundUri = _normalizeAlarmSoundUri(habit);
 
     if (hourlyTimes.isEmpty) {
       // Fallback: schedule every hour during active hours (8 AM - 10 PM)
@@ -410,7 +428,7 @@ class NotificationAlarmScheduler {
           habitName: habit.name,
           scheduledTime: nextAlarm,
           frequency: 'hourly',
-          alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+          alarmSoundName: alarmSoundUri,
           snoozeDelayMinutes: 10,
         );
       }
@@ -455,7 +473,7 @@ class NotificationAlarmScheduler {
             habitName: habit.name,
             scheduledTime: nextAlarm,
             frequency: 'hourly',
-            alarmSoundName: habit.alarmSoundUri ?? habit.alarmSoundName,
+            alarmSoundName: alarmSoundUri,
             snoozeDelayMinutes: 10,
           );
 
@@ -510,5 +528,36 @@ class NotificationAlarmScheduler {
     }
 
     return scheduled.add(Duration(days: daysUntilTarget));
+  }
+
+  /// Normalize alarm sound URI to full asset path
+  ///
+  /// CRITICAL FIX: Converts alarm sound names to full asset paths.
+  /// - If alarmSoundUri is already set and starts with "sounds/", returns it as-is
+  /// - If alarmSoundName is set and doesn't start with "sounds/", converts it to "sounds/name.mp3"
+  /// - Otherwise returns default "sounds/Alarm.mp3"
+  String _normalizeAlarmSoundUri(Habit habit) {
+    // If alarmSoundUri is already properly set, use it
+    if (habit.alarmSoundUri != null && habit.alarmSoundUri!.isNotEmpty) {
+      if (habit.alarmSoundUri!.startsWith('sounds/')) {
+        return habit.alarmSoundUri!;
+      }
+    }
+
+    // If alarmSoundName is set, convert it to full path
+    if (habit.alarmSoundName != null && habit.alarmSoundName!.isNotEmpty) {
+      final name = habit.alarmSoundName!;
+
+      // If it already has .mp3 extension, just prepend "sounds/"
+      if (name.endsWith('.mp3')) {
+        return 'sounds/$name';
+      }
+
+      // Otherwise add both "sounds/" prefix and ".mp3" extension
+      return 'sounds/$name.mp3';
+    }
+
+    // Default to system alarm sound
+    return 'sounds/Alarm.mp3';
   }
 }
