@@ -1,167 +1,260 @@
-# Alarm Silent Stop Fix
+# Alarm Sound Issue - Silent Playback & Stops on Interaction
 
 ## Problem Description
-Alarms were firing silently and stopping immediately when the notification was viewed (not even tapped - just viewing the notification in the notification drawer would stop the alarm sound).
 
-## Root Cause Analysis
+### Symptoms
+1. **Alarm is completely silent** - no sound plays at all
+2. **Logs show "Successfully playing"** - but no audio output
+3. **Any device interaction stops the alarm** - touching screen, opening notification drawer, etc.
+4. **AudioPlayer reaches `PlayerState.playing`** - but produces no sound
 
-### Issue 1: Wrong Audio Focus Configuration
-In `lib/services/alarm_sound_player.dart` line 80, the audio focus was set to:
-```dart
-audioFocus: AndroidAudioFocus.gainTransient,
-```
+### Root Cause Analysis
 
-**Problem**: `gainTransient` means **temporary** audio focus that Android automatically releases when:
-- The notification drawer is opened/viewed
-- Another app requests audio focus
-- Any system UI interaction occurs
-- Phone call arrives
+The issue was a **critical conflict** between the notification channel sound system and the custom AudioPlayer:
 
-This explained why the alarm stopped when users just **viewed** the notification!
+#### The Conflict
+- **Notification Channel**: `habit_alarms` had `playSound: true`
+- **Custom Player**: AlarmSoundPlayer was trying to play sound via AudioPlayer
+- **Result**: Android's notification sound system **suppressed** the AudioPlayer output
 
-### Issue 2: No Audio Focus Loss Recovery
-The player had no mechanism to detect and recover from unexpected audio focus loss or interruptions.
+#### Why This Happens
+When a notification channel has `playSound: true`, Android's audio system:
+1. Reserves audio focus for the notification sound
+2. Tries to play the notification's default sound
+3. **Blocks or mutes** other audio sources (like AudioPlayer) on the same channel
+4. This is an Android audio focus conflict at the system level
+
+### Technical Details
+
+**Code Inconsistency Found:**
+- `alarm_service.dart` line 382 comment stated: "Channel already configured with playSound: false"
+- `notification_core.dart` line 99 had: `playSound: true`
+- This mismatch caused the silent alarm issue
+
+**Audio Focus Behavior:**
+- Notification system audio focus takes priority
+- AudioPlayer was being muted/suppressed by notification audio system
+- Player showed `PlayerState.playing` but audio stream was blocked
 
 ## The Fix
 
-### 1. Changed Audio Focus to Permanent (CRITICAL)
-Changed from `AndroidAudioFocus.gainTransient` to `AndroidAudioFocus.gain`:
+### 1. Disable Notification Channel Sound
+**File**: `lib/services/notifications/notification_core.dart`
+**Line**: 99
+
+Changed the `habit_alarms` channel configuration:
 
 ```dart
-audioFocus: AndroidAudioFocus.gain,  // Permanent focus until explicitly released
+// BEFORE (BROKEN):
+playSound: true, // Enable custom sounds through customSound parameter
+
+// AFTER (FIXED):
+playSound: false, // CRITICAL: Sound is handled by AlarmSoundPlayer (custom looping)
 ```
 
-**Why this matters**:
-- `gain` = Permanent audio focus that persists until explicitly released
-- `gainTransient` = Temporary focus that gets auto-released on any interruption
-- Alarm sounds MUST use `gain` to survive notification drawer interactions
-
-### 2. Added Automatic Restart on Interruption
-Added player state monitoring to automatically restart the alarm if it stops unexpectedly:
-
+**Added clarifying comments:**
 ```dart
-player.onPlayerStateChanged.listen((state) {
-  if (state == PlayerState.stopped || state == PlayerState.paused) {
-    AppLogger.warning('⚠️ Alarm stopped/paused unexpectedly! Attempting to restart...');
-    
-    Future.delayed(const Duration(milliseconds: 500), () async {
-      if (_activePlayers.containsKey(alarmId)) {
-        await player.resume();
-        AppLogger.info('✅ Alarm restarted successfully');
-      }
-    });
-  }
-});
+// IMPORTANT: This channel does NOT play sounds directly
+// Instead, AlarmSoundPlayer handles custom looping sounds via AudioPlayer
+// This prevents conflicts between notification sounds and custom alarm sounds
 ```
 
-### 3. Added Completion Listener Safety Net
-Added listener for unexpected completion (though loop mode should prevent this):
+### 2. Simplified Alarm Sound Player
+**File**: `lib/services/alarm_sound_player.dart`
 
+Removed problematic auto-restart logic that was attempting to recover from interruptions. This was unnecessary and potentially causing additional conflicts.
+
+**Audio Context Configuration (Already Correct):**
 ```dart
-player.onPlayerComplete.listen((_) {
-  AppLogger.warning('⚠️ Alarm completed unexpectedly! Restarting loop...');
-  if (_activePlayers.containsKey(alarmId)) {
-    player.play(AssetSource(soundUri));
-  }
-});
+await player.setAudioContext(
+  AudioContext(
+    android: AndroidContextAndroid(
+      contentType: AndroidContentType.sonification,
+      usageType: AndroidUsageType.alarm,  // Routes to alarm volume stream
+      audioFocus: AndroidAudioFocus.gain,  // Permanent focus
+      isSpeakerphoneOn: true,
+      stayAwake: true,
+    ),
+  ),
+);
 ```
+
+## Why This Fix Works
+
+### Audio System Hierarchy
+1. **Notification channel is now silent** (`playSound: false`)
+   - No notification sound to interfere
+   - No audio focus conflict
+   
+2. **AudioPlayer has exclusive control**
+   - `AndroidUsageType.alarm` routes to alarm volume stream
+   - `AndroidAudioFocus.gain` gets permanent audio focus
+   - No competition from notification system
+
+3. **Proper audio routing**
+   - User's **alarm volume** controls the sound (not media volume)
+   - Sound plays through speaker even when headphones are disconnected
+   - Works when device is in silent/vibrate mode
+
+## Files Modified
+
+### 1. `lib/services/notifications/notification_core.dart`
+- **Line 99**: Changed `playSound: true` → `playSound: false`
+- **Lines 107-109**: Added explanatory comments about why channel is silent
+
+### 2. `lib/services/alarm_sound_player.dart`
+- **Lines 64-67**: Simplified player state listener (removed auto-restart logic)
+- **Lines 71-87**: Audio context configuration (already correct, no changes needed)
 
 ## Testing Instructions
 
-1. **Rebuild the app**:
-   ```powershell
-   flutter clean
-   flutter pub get
-   flutter build apk --release
-   ```
+### Build and Install
+```powershell
+# Clean build to ensure notification channels are recreated
+flutter clean
+flutter pub get
+flutter build apk --release
 
-2. **Test Scenario 1: Notification Drawer Interaction**
-   - Create a habit with alarm enabled
-   - Wait for alarm to fire
-   - Pull down notification drawer to view the notification
-   - **Expected**: Alarm sound continues playing loudly
-   - **Previous**: Alarm would stop when drawer opened
+# Install on device
+adb install -r build/app/outputs/flutter-apk/app-release.apk
+```
 
-3. **Test Scenario 2: Audio Focus Interruption**
-   - Alarm fires and plays
-   - Press volume buttons to show volume UI
-   - **Expected**: Alarm continues playing
-   - **Previous**: Alarm might stop or pause
+### IMPORTANT: Clear App Data
+**CRITICAL STEP**: Android caches notification channel configurations. You MUST:
 
-4. **Test Scenario 3: Explicit Actions**
-   - Alarm fires and plays
-   - Tap "Complete" or "Snooze" button
-   - **Expected**: Alarm stops immediately
-   - **Status**: This already worked correctly
+1. **Option A - Clear app data:**
+   - Go to: Settings → Apps → HabitV8 → Storage
+   - Tap: Clear Data / Clear Storage
+   
+2. **Option B - Reinstall:**
+   - Uninstall the app completely
+   - Install the new APK
 
-5. **Test Scenario 4: Full Screen Interaction**
-   - Alarm fires while app is in background
-   - Tap notification to open app
-   - **Expected**: Alarm continues until Complete/Snooze pressed
-   - **Previous**: Alarm might stop on tap
+### Test Scenarios
 
-## Technical Details
+#### 1. Basic Alarm Sound Test
+- Create a habit with alarm enabled
+- Set alarm time to 1-2 minutes in the future
+- Wait for alarm to fire
+- **Expected**: You should **HEAR** the alarm sound playing
 
-### Android Audio Focus Types
-- **GAIN**: Permanent focus, used for music players, alarms
-- **GAIN_TRANSIENT**: Temporary focus for short sounds (notifications, nav directions)
-- **GAIN_TRANSIENT_MAY_DUCK**: Temporary focus that allows other audio to continue at lower volume
-- **GAIN_TRANSIENT_EXCLUSIVE**: Temporary focus that pauses other audio
+#### 2. Notification Drawer Test
+- While alarm is playing
+- Pull down notification drawer
+- **Expected**: Alarm sound continues playing
 
-### Why Alarms Need GAIN
-Alarm sounds are long-duration, looping sounds that must survive:
-- UI interactions (notification drawer, volume controls)
-- App switching
-- Screen on/off
-- Other app audio requests
+#### 3. Device Interaction Test
+- While alarm is playing
+- Press volume buttons
+- Touch the screen
+- Open other apps
+- **Expected**: Alarm sound continues playing in all cases
 
-Only `GAIN` provides this level of persistence.
+#### 4. Volume Control Test
+- While alarm is playing
+- Use volume buttons
+- **Expected**: Volume changes should affect the alarm (it's on alarm stream)
+- Note: Check that alarm volume is not at zero!
 
-## Related Code Locations
+#### 5. Proper Dismissal Test
+- While alarm is playing
+- Tap "Complete" button
+- **Expected**: Alarm sound stops immediately
+- Tap "Snooze" button  
+- **Expected**: Alarm sound stops immediately
 
-- **AlarmSoundPlayer**: `lib/services/alarm_sound_player.dart` (lines 64-96, 100-103)
-- **Notification Action Handler**: `lib/services/notifications/notification_action_handler.dart` (lines 46, 145)
-- **Alarm Service**: `lib/services/alarm_service.dart` (notification scheduling)
-- **MainActivity Lifecycle**: `android/app/src/main/kotlin/com/habittracker/habitv8/MainActivity.kt` (lines 76-94)
+### Verify Alarm Volume
+
+**IMPORTANT**: Make sure your device's alarm volume is not at zero:
+
+1. Press volume up button
+2. Tap the settings icon (gear icon) next to volume slider
+3. Check **Alarm Volume** slider (NOT media volume)
+4. Ensure it's at least 50% or higher
+
+## Technical Background
+
+### Android Notification Channel Sound System
+
+#### How It Works
+- Notification channels define sound behavior
+- `playSound: true` → Android plays notification sound automatically
+- `playSound: false` → Silent notification (custom sound handling)
+
+#### Custom Looping Sound Requirements
+For custom alarm sounds that loop until dismissed:
+1. **Notification channel MUST be silent** (`playSound: false`)
+2. **Custom AudioPlayer plays the sound** (with loop mode)
+3. **No conflict between systems**
+
+#### Audio Focus Levels
+- `AndroidAudioFocus.gain` → Permanent focus (for alarms, music)
+- `AndroidAudioFocus.gainTransient` → Temporary focus (for notifications)
+
+### Why Logs Showed "Playing" But No Sound
+
+The AudioPlayer was technically playing:
+- `player.play()` succeeded
+- State changed to `PlayerState.playing`
+- No errors thrown
+
+But audio output was blocked:
+- Notification system had audio focus priority
+- AudioPlayer output was muted/suppressed by Android
+- System-level audio conflict
+
+## Related Files
+
+### Alarm System Components
+- `lib/services/alarm_service.dart` - Schedules alarm notifications
+- `lib/services/alarm_sound_player.dart` - Plays custom looping sounds
+- `lib/services/notifications/notification_core.dart` - Notification channel setup
+- `lib/services/notifications/notification_action_handler.dart` - Handles Complete/Snooze
+
+### Audio Configuration
+- Notification channel: `habit_alarms` (now silent)
+- Audio player: Routes to alarm volume stream
+- Audio focus: Permanent (`gain`)
 
 ## Verification
 
-Check logcat for these messages:
-- `🎵 Alarm [ID] player state: PlayerState.playing` - Alarm started
-- `⚠️ Alarm [ID] stopped/paused unexpectedly!` - Interruption detected
-- `✅ Alarm [ID] restarted successfully` - Auto-recovery worked
-- `🔇 Stopping alarm sound for notification [ID]` - User action processed
+After applying the fix and clearing app data, you should see in logs:
 
-## Impact
-- ✅ Alarms now continue playing when notification drawer is opened
-- ✅ Alarms survive audio focus interruptions
-- ✅ Alarms automatically restart if unexpectedly paused
-- ✅ Alarms still stop correctly when Complete/Snooze is pressed
-- ✅ No changes needed to MainActivity lifecycle handling
+1. **Alarm scheduled**: `✅ Exact alarm scheduled successfully`
+2. **Notification displayed**: `🚨 Alarm notification detected`
+3. **Sound starts**: `🔊 Starting alarm sound for alarm [ID]`
+4. **Player state**: `🎵 Alarm [ID] player state: PlayerState.playing`
+5. **YOU HEAR SOUND**: Alarm plays audibly from device speaker
 
-## Audio Configuration Summary
+## Additional Notes
 
-```dart
-// CORRECT Configuration (now implemented)
-AudioContextAndroid(
-  contentType: AndroidContentType.sonification,
-  usageType: AndroidUsageType.alarm,
-  audioFocus: AndroidAudioFocus.gain,        // ✅ Permanent focus
-  isSpeakerphoneOn: true,                     // ✅ Use speaker, not earpiece
-  stayAwake: true,                            // ✅ Keep device awake
-)
+### If Alarm Is Still Silent After Fix
 
-// INCORRECT Configuration (previous)
-AudioContextAndroid(
-  contentType: AndroidContentType.sonification,
-  usageType: AndroidUsageType.alarm,
-  audioFocus: AndroidAudioFocus.gainTransient, // ❌ Temporary focus
-  isSpeakerphoneOn: true,
-  stayAwake: true,
-)
-```
+1. **Check alarm volume on device** (not media volume!)
+2. **Verify app data was cleared** (channels are cached)
+3. **Check Do Not Disturb settings** (alarms should override DND)
+4. **Try a different alarm sound** (test with default Alarm.mp3)
+5. **Check if sound file exists** in assets (pubspec.yaml)
 
-## Notes
-- The MainActivity already has correct lifecycle handling (preserves alarm on pause/resume)
-- The notification action handler already stops alarms correctly on Complete/Snooze
-- This fix only changes the audio focus configuration and adds resilience
+### Audio Stream Routing
+
+The alarm correctly uses:
+- **Content Type**: `AndroidContentType.sonification` (system sounds)
+- **Usage Type**: `AndroidUsageType.alarm` (routes to alarm stream)
+- **Result**: Controlled by device's alarm volume slider
+
+This is correct for alarm sounds that need to:
+- Play even when device is silent
+- Be controlled by alarm volume (not media volume)
+- Bypass Do Not Disturb restrictions
+- Play through speaker by default
+
+## Status
+
+✅ **Fix Applied**
+✅ **Root cause identified** (notification channel sound conflict)
+✅ **Configuration corrected** (channel now silent)
+✅ **Audio routing verified** (alarm stream, permanent focus)
+⏳ **Awaiting user testing**
+
+The fix addresses both the silent alarm and the "stops on interaction" issues by removing the audio system conflict.

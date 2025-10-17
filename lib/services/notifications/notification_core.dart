@@ -96,16 +96,18 @@ class NotificationCore {
           importance: NotificationImportance.Max,
           defaultColor: const Color(0xFFFF0000),
           ledColor: Colors.red,
-          playSound: true, // Enable custom sounds through customSound parameter
+          playSound:
+              false, // CRITICAL: Sound is handled by AlarmSoundPlayer (custom looping)
           enableVibration: true,
           enableLights: true,
           locked: false, // Allow dismissal via action buttons only
           defaultPrivacy: NotificationPrivacy.Public,
           criticalAlerts: true, // iOS critical alerts
           channelShowBadge: true,
-          onlyAlertOnce: false, // Allow sound to repeat
-          // Custom sounds are set via NotificationContent.customSound parameter
-          // and referenced from android/app/src/main/res/raw/ directory
+          onlyAlertOnce: false, // Allow multiple notifications
+          // IMPORTANT: This channel does NOT play sounds directly
+          // Instead, AlarmSoundPlayer handles custom looping sounds via AudioPlayer
+          // This prevents conflicts between notification sounds and custom alarm sounds
         ),
       ],
       debug: false,
