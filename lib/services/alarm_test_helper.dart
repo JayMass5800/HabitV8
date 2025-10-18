@@ -21,7 +21,7 @@ class AlarmTestHelper {
         habitName: 'TEST HABIT - Check Your Logs!',
         scheduledTime: testTime,
         frequency: 'test',
-        alarmSoundName: 'sounds/Alarm.mp3',
+        alarmSoundName: 'sounds/alarm.mp3',
         snoozeDelayMinutes: 5,
       );
 

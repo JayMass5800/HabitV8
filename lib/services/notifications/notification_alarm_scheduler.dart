@@ -535,7 +535,8 @@ class NotificationAlarmScheduler {
   /// CRITICAL FIX: Converts alarm sound names to full asset paths.
   /// - If alarmSoundUri is already set and starts with "sounds/", returns it as-is
   /// - If alarmSoundName is set and doesn't start with "sounds/", converts it to "sounds/name.mp3"
-  /// - Otherwise returns default "sounds/Alarm.mp3"
+  /// - Otherwise returns default "sounds/alarm.mp3"
+  /// - NOTE: File names must be lowercase to match Android resource naming conventions
   String _normalizeAlarmSoundUri(Habit habit) {
     // If alarmSoundUri is already properly set, use it
     if (habit.alarmSoundUri != null && habit.alarmSoundUri!.isNotEmpty) {
@@ -558,6 +559,6 @@ class NotificationAlarmScheduler {
     }
 
     // Default to system alarm sound
-    return 'sounds/Alarm.mp3';
+    return 'sounds/alarm.mp3';
   }
 }
