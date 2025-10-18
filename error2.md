@@ -181,3 +181,85 @@ Future<void> createCustomSoundAlarm() async {
   
   print('Alarm scheduled for $interval seconds from now on the "alarm_channel".');
 }
+
+The awesome_notifications package in Flutter allows you to schedule a notification to act as an alarm using the schedule property with either NotificationInterval or NotificationCalendar. You should also set wakeUpScreen: true and category: NotificationCategory.Alarm in the NotificationContent for proper alarm-like behavior on some platforms.
+
+Here is an example using NotificationInterval to schedule a notification five seconds from the moment the code runs, with an emphasis on alarm-like settings:
+
+Dart
+
+import 'package:awesome_notifications/awesome_notifications.dart';
+
+Future<void> scheduleAlarmNotification() async {
+  // Get the local time zone identifier for the schedule
+  String localTimeZone = await AwesomeNotifications().getLocalTimeZoneIdentifier();
+
+  await AwesomeNotifications().createNotification(
+    content: NotificationContent(
+      id: 1, // Unique ID for the notification
+      channelKey: 'basic_channel', // Must match one of your initialized channels
+      title: 'Alarm! ⏰',
+      body: 'Time to wake up or check something!',
+      // Set properties for alarm-like behavior
+      wakeUpScreen: true,
+      category: NotificationCategory.Alarm,
+      // You can also add a custom sound in the channel initialization
+    ),
+    // Schedule the notification to fire after a specific interval
+    schedule: NotificationInterval(
+      interval: 5, // The notification will fire after 5 seconds
+      timeZone: localTimeZone,
+      preciseAlarm: true, // For more precise timing
+    ),
+  );
+}
+
+// You must initialize AwesomeNotifications in your main() function:
+// void main() {
+//   AwesomeNotifications().initialize(
+//     null, // Set to null for default app icon, or a resource string
+//     [
+//       NotificationChannel(
+//         channelKey: 'basic_channel',
+//         channelName: 'Basic notifications',
+//         channelDescription: 'Notification channel for tests',
+//         importance: NotificationImportance.Max, // Max importance often helps for alarms
+//         playSound: true,
+//         criticalAlerts: true,
+//         // You can define a custom sound here: sound: 'resource_name',
+//       ),
+//     ],
+//     debug: true,
+//   );
+//   runApp(const MyApp());
+// }
+You can also use NotificationCalendar to set a notification for a specific date and time, and set repeats: true for recurring alarms.
+
+Dart
+
+// Example for a daily repeating alarm at 8:00 AM
+// (Requires proper channel setup and time zone handling)
+await AwesomeNotifications().createNotification(
+    content: NotificationContent(
+        id: 2,
+        channelKey: 'basic_channel',
+        title: 'Daily Reminder',
+        body: 'It is 8 AM!',
+        category: NotificationCategory.Alarm,
+        wakeUpScreen: true,
+    ),
+    schedule: NotificationCalendar(
+        hour: 8,
+        minute: 0,
+        second: 0,
+        repeats: true, // Set to true for a daily repeating alarm
+        timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
+        preciseAlarm: true,
+    ),
+);
+The video provides a comprehensive tutorial on implementing various types of notifications, including scheduled ones, using the Awesome Notifications package.
+
+Flutter Awesome Notification - YouTube
+
+Flutter Awesome Notification - YouTube
+Coding Orbit · 33K views
