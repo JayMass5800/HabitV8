@@ -425,21 +425,23 @@ class AlarmService {
         largeIcon: 'resource://drawable/ic_launcher',
         customSound:
             notificationSound, // CRITICAL: Set sound on notification itself
-        // Use Default action type so tapping opens app
-        actionType: ActionType.Default,
+        // Use KeepOnTop so notification stays visible and sound continues
+        actionType: ActionType.KeepOnTop,
       ),
       actionButtons: [
         NotificationActionButton(
           key: 'complete',
           label: '✅ COMPLETE',
-          actionType: ActionType.Default, // Dismiss and process
+          actionType:
+              ActionType.SilentBackgroundAction, // Process in background
           autoDismissible: true,
           isDangerousOption: false,
         ),
         NotificationActionButton(
           key: 'snooze_alarm',
           label: snoozeText,
-          actionType: ActionType.Default, // Dismiss and process
+          actionType:
+              ActionType.SilentBackgroundAction, // Process in background
           autoDismissible: true,
           isDangerousOption: false,
         ),
