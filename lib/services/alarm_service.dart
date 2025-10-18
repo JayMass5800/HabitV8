@@ -347,36 +347,30 @@ class AlarmService {
       }
     }
 
-    // Convert alarm sound path to just the filename without extension
-    // The channel's sound property handles the actual sound playback
-    // We only need to create a new channel if using a custom sound
-    String channelKey = 'habit_alarms';
+    // Convert alarm sound path to raw resource name
+    // Maps "sounds/Alarm.mp3" → "alarm" (normalized to Android raw resource name)
+    String normalizedSoundName =
+        _normalizeAlarmSoundName(alarmSoundName ?? 'default');
 
-    if (alarmSoundName != null && alarmSoundName != 'default') {
-      // Convert "sounds/Alarm.mp3" to just "alarm"
-      final soundName = alarmSoundName
-          .replaceAll('sounds/', '')
-          .replaceAll('.mp3', '')
-          .toLowerCase()
-          .replaceAll(' ', '_')
-          .replaceAll('-', '_');
+    // Create a unique channel for this sound (or use default)
+    String channelKey = normalizedSoundName == 'default'
+        ? 'habit_alarms'
+        : 'habit_alarm_$normalizedSoundName';
 
-      // Create a unique channel for this custom sound
-      channelKey = 'habit_alarm_$soundName';
-
-      // Check if this channel already exists, if not create it
+    if (normalizedSoundName != 'default') {
+      // Create a custom channel with the selected sound
       try {
         await AwesomeNotifications().setChannel(
           NotificationChannel(
             channelKey: channelKey,
-            channelName: 'Habit Alarm - $soundName',
+            channelName: 'Habit Alarm - $normalizedSoundName',
             channelDescription: 'Alarm channel with custom sound',
             importance: NotificationImportance.Max,
             defaultColor: const Color(0xFFFF0000),
             ledColor: Colors.red,
             playSound: true,
             soundSource:
-                'resource://raw/$soundName', // Custom sound for this channel
+                'resource://raw/$normalizedSoundName', // Custom sound for this channel
             enableVibration: true,
             enableLights: true,
             locked: true,
@@ -387,11 +381,12 @@ class AlarmService {
           ),
         );
         AppLogger.debug(
-            'Created custom alarm channel: $channelKey with sound: $soundName');
+            'Created custom alarm channel: $channelKey with sound: $normalizedSoundName');
       } catch (e) {
         AppLogger.warning(
             'Failed to create custom alarm channel, using default: $e');
         channelKey = 'habit_alarms'; // Fallback to default
+        normalizedSoundName = 'default';
       }
     }
 
@@ -399,18 +394,13 @@ class AlarmService {
       'habitId': habitId,
       'habitName': habitName,
       'type': 'alarm',
+      'alarmSoundName': alarmSoundName ?? 'default',
     });
 
     // Determine the custom sound for this notification
     String? notificationSound;
-    if (alarmSoundName != null && alarmSoundName != 'default') {
-      final soundName = alarmSoundName
-          .replaceAll('sounds/', '')
-          .replaceAll('.mp3', '')
-          .toLowerCase()
-          .replaceAll(' ', '_')
-          .replaceAll('-', '_');
-      notificationSound = 'resource://raw/$soundName';
+    if (normalizedSoundName != 'default') {
+      notificationSound = 'resource://raw/$normalizedSoundName';
     } else {
       notificationSound = 'resource://raw/alarm'; // Default alarm sound
     }
@@ -460,6 +450,31 @@ class AlarmService {
         repeats: false,
       ),
     );
+  }
+
+  /// Normalize alarm sound name to match Android raw resource filename
+  /// Maps display names to lowercase underscore format
+  /// Examples:
+  ///   "sounds/Alarm.mp3" → "alarm"
+  ///   "sounds/Alarm_1.mp3" → "alarm_1"
+  ///   "sounds/Army_Alarm.mp3" → "army_alarm"
+  ///   "default" → "default"
+  static String _normalizeAlarmSoundName(String? soundName) {
+    if (soundName == null || soundName.isEmpty || soundName == 'default') {
+      return 'default';
+    }
+
+    // Extract filename from path and remove extension
+    String filename =
+        soundName.contains('/') ? soundName.split('/').last : soundName;
+
+    // Remove .mp3 extension if present
+    if (filename.endsWith('.mp3')) {
+      filename = filename.substring(0, filename.length - 4);
+    }
+
+    // Convert to lowercase and normalize spaces/hyphens to underscores
+    return filename.toLowerCase().replaceAll(' ', '_').replaceAll('-', '_');
   }
 
   /// Schedule snooze alarm

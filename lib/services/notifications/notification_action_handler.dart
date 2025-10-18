@@ -207,16 +207,45 @@ Future<void> onNotificationDisplayed(
 /// This is called when a notification is dismissed/swiped away
 /// MUST be a top-level function for background isolate to work!
 ///
-/// With locked=true on alarms, this won't be called for alarm dismissals.
-/// Alarms can only be dismissed via action buttons.
+/// Called when a notification is dismissed (swiped away or cleared from notification shade)
+/// For alarm notifications, this cancels the sound if user swipes away the notification
 @pragma('vm:entry-point')
 Future<void> onNotificationDismissed(ReceivedAction receivedAction) async {
   try {
     AppLogger.info('🗑️ Notification dismissed: ${receivedAction.id}');
     AppLogger.info('   Channel: ${receivedAction.channelKey}');
 
-    // Alarm notifications are locked and cannot be swiped away
-    // This handler only fires for non-alarm notifications
+    // Even though alarms are locked with locked=true, some Android versions
+    // may still allow swiping. In that case, we should stop the alarm.
+    // Check if this is an alarm notification by checking the channel
+    if (receivedAction.channelKey?.contains('alarm') ?? false) {
+      AppLogger.info('🛑 Alarm notification dismissed - canceling alarm');
+
+      // Try to extract habitId from payload to properly cancel the alarm
+      if (receivedAction.payload != null &&
+          receivedAction.payload!['data'] != null) {
+        try {
+          final payload = jsonDecode(receivedAction.payload!['data']!);
+          final baseHabitId = payload['habitId'] as String?;
+
+          if (baseHabitId != null) {
+            // Cancel the notification to stop the sound
+            final baseAlarmId =
+                NotificationHelpers.generateSafeId('${baseHabitId}_daily');
+            await AwesomeNotifications().cancel(baseAlarmId);
+            AppLogger.info('✅ Cancelled alarm notification on dismissal');
+          }
+        } catch (e) {
+          AppLogger.warning(
+              'Failed to parse payload in onNotificationDismissed: $e');
+          // Fall back to canceling by ID
+          await AwesomeNotifications().cancel(receivedAction.id ?? 0);
+        }
+      } else {
+        // Fall back to canceling by ID
+        await AwesomeNotifications().cancel(receivedAction.id ?? 0);
+      }
+    }
   } catch (e) {
     AppLogger.error('Error in onNotificationDismissed', e);
   }
@@ -372,6 +401,20 @@ class NotificationActionHandlerIsar {
         });
         AppLogger.info('💾 Saved to Isar database');
 
+        // CRITICAL: Cancel all alarms for this habit to stop the notification sound
+        try {
+          // Import AlarmService if available, otherwise use AwesomeNotifications directly
+          // We need to cancel the notification that was just displayed
+          // Get all possible alarm IDs for this habit and cancel them
+          final baseAlarmId =
+              NotificationHelpers.generateSafeId('${baseHabitId}_daily');
+          await AwesomeNotifications().cancel(baseAlarmId);
+          AppLogger.info(
+              '✅ Cancelled alarm notification for habit: $baseHabitId');
+        } catch (e) {
+          AppLogger.warning('Failed to cancel alarm notification: $e');
+        }
+
         final timeInfo = habit.frequency == HabitFrequency.hourly
             ? ' at ${completionTime.hour.toString().padLeft(2, '0')}:${completionTime.minute.toString().padLeft(2, '0')}'
             : '';
@@ -487,14 +530,66 @@ class NotificationActionHandlerIsar {
         }
       }
 
-      // Custom alarm sounds are not supported in notifications
-      // Sounds are played separately via AlarmSoundPlayer
+      // CRITICAL: Cancel the current alarm notification to stop the sound
+      try {
+        final baseAlarmId =
+            NotificationHelpers.generateSafeId('${baseHabitId}_daily');
+        await AwesomeNotifications().cancel(baseAlarmId);
+        AppLogger.info('✅ Cancelled current alarm before snooze');
+      } catch (e) {
+        AppLogger.warning('Failed to cancel alarm before snooze: $e');
+      }
 
-      // Create the snooze alarm notification
+      // Determine the custom sound for the snooze notification
+      String normalizedSoundName =
+          _normalizeAlarmSoundNameForSnooze(alarmSoundName);
+      String channelKey = normalizedSoundName == 'default'
+          ? 'habit_alarms'
+          : 'habit_alarm_$normalizedSoundName';
+
+      // Create a custom channel for snooze with the same sound
+      if (normalizedSoundName != 'default') {
+        try {
+          await AwesomeNotifications().setChannel(
+            NotificationChannel(
+              channelKey: channelKey,
+              channelName: 'Habit Alarm - $normalizedSoundName',
+              channelDescription: 'Alarm channel with custom sound',
+              importance: NotificationImportance.Max,
+              defaultColor: const Color(0xFFFF0000),
+              ledColor: Colors.red,
+              playSound: true,
+              soundSource:
+                  'resource://raw/$normalizedSoundName', // Custom sound for snooze
+              enableVibration: true,
+              enableLights: true,
+              locked: true,
+              defaultPrivacy: NotificationPrivacy.Public,
+              criticalAlerts: true,
+              channelShowBadge: true,
+              onlyAlertOnce: false,
+            ),
+          );
+        } catch (e) {
+          AppLogger.warning(
+              'Failed to create snooze channel with custom sound: $e');
+          channelKey = 'habit_alarms';
+        }
+      }
+
+      // Determine custom sound URI
+      String? customSound;
+      if (normalizedSoundName != 'default') {
+        customSound = 'resource://raw/$normalizedSoundName';
+      } else {
+        customSound = 'resource://raw/alarm';
+      }
+
+      // Create the snooze alarm notification with the same custom sound
       await AwesomeNotifications().createNotification(
         content: NotificationContent(
           id: snoozeId,
-          channelKey: 'habit_alarms',
+          channelKey: channelKey,
           title: '🚨 HABIT ALARM: ${habit.name}',
           body:
               'Time to complete your habit! Tap to mark as complete or snooze.',
@@ -504,10 +599,12 @@ class NotificationActionHandlerIsar {
           wakeUpScreen: true,
           criticalAlert: true,
           locked: true,
+          customSound:
+              customSound, // Use the same custom sound as original alarm
           payload: {
             'data': jsonEncode({
               'habitId': baseHabitId,
-              'alarmSoundUri': alarmSoundName,
+              'alarmSoundName': alarmSoundName,
               'snoozeDelayMinutes': snoozeDelayMinutes,
             })
           },
@@ -534,7 +631,7 @@ class NotificationActionHandlerIsar {
       );
 
       AppLogger.info(
-          '✅ Snooze alarm scheduled in background for: ${habit.name} at $snoozeTime');
+          '✅ Snooze alarm scheduled in background for: ${habit.name} at $snoozeTime with custom sound: $normalizedSoundName');
 
       await isar.close();
       AppLogger.info('✅ Background alarm snooze finished');
@@ -575,6 +672,27 @@ class NotificationActionHandlerIsar {
     }
 
     return streak;
+  }
+
+  /// Normalize alarm sound name for snooze notifications
+  /// Converts display names to lowercase underscore format for Android raw resource lookup
+  @pragma('vm:entry-point')
+  static String _normalizeAlarmSoundNameForSnooze(String? soundName) {
+    if (soundName == null || soundName.isEmpty || soundName == 'default') {
+      return 'default';
+    }
+
+    // Extract filename from path and remove extension
+    String filename =
+        soundName.contains('/') ? soundName.split('/').last : soundName;
+
+    // Remove .mp3 extension if present
+    if (filename.endsWith('.mp3')) {
+      filename = filename.substring(0, filename.length - 4);
+    }
+
+    // Convert to lowercase and normalize spaces/hyphens to underscores
+    return filename.toLowerCase().replaceAll(' ', '_').replaceAll('-', '_');
   }
 
   /// Initialize the notification action handler
