@@ -206,7 +206,7 @@ Future<void> onNotificationDisplayed(
       try {
         final payload = receivedNotification.payload;
         if (payload != null && payload['data'] != null) {
-          final dataMap = jsonDecode(payload['data']);
+          final dataMap = jsonDecode(payload['data']!);
           alarmSoundName = dataMap['alarmSoundName'];
         }
       } catch (e) {
