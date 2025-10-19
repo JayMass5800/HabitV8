@@ -5,6 +5,7 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:workmanager/workmanager.dart';
+import '../alarm_service.dart';
 import '../logging_service.dart';
 import '../../domain/model/habit.dart';
 import '../../domain/model/scheduled_notification.dart';
@@ -134,10 +135,12 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
       if (rawHabitId != null) {
         AppLogger.debug('🔍 DEBUG: Checking if button key is "complete"');
 
-        // System automatically stops alarm sound when notification is dismissed via button
+        // Stop alarm audio when user presses Complete or Snooze button
         if (receivedAction.buttonKeyPressed == 'complete' ||
             receivedAction.buttonKeyPressed == 'snooze' ||
             receivedAction.buttonKeyPressed == 'snooze_alarm') {
+          AppLogger.info('🔇 Stopping alarm audio due to user action');
+          await AlarmService.stopAlarmAudio(alarmId: receivedAction.id);
           AppLogger.info('✅ Alarm action - notification auto-dismissing');
         }
 
@@ -183,8 +186,8 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
 /// This is called when a notification is displayed on the screen
 /// MUST be a top-level function for background isolate to work!
 ///
-/// With proper Awesome Notifications alarm setup, the system handles sound playback.
-/// We don't need to manually play sounds anymore.
+/// CRITICAL: For alarm notifications, we start a looping audio player here
+/// because Awesome Notifications doesn't natively support looping sounds.
 @pragma('vm:entry-point')
 Future<void> onNotificationDisplayed(
     ReceivedNotification receivedNotification) async {
@@ -193,10 +196,31 @@ Future<void> onNotificationDisplayed(
     AppLogger.info('   Channel: ${receivedNotification.channelKey}');
     AppLogger.info('   Category: ${receivedNotification.category}');
 
-    // System now handles alarm sound via channel configuration
+    // For alarm notifications, start looping audio
     if (receivedNotification.channelKey == 'habit_alarms') {
       AppLogger.info(
-          '🚨 Alarm notification displayed - sound handled by system');
+          '🚨 Alarm notification displayed - starting looping audio');
+
+      // Extract alarm sound name from payload if available
+      String? alarmSoundName;
+      try {
+        final payload = receivedNotification.payload;
+        if (payload != null && payload['data'] != null) {
+          final dataMap = jsonDecode(payload['data']);
+          alarmSoundName = dataMap['alarmSoundName'];
+        }
+      } catch (e) {
+        AppLogger.warning(
+            'Could not extract alarm sound name from payload: $e');
+      }
+
+      // Import AlarmService and start the looping audio
+      await AlarmService.startAlarmAudio(
+        alarmId: receivedNotification.id!,
+        alarmSoundName: alarmSoundName,
+      );
+
+      AppLogger.info('🚨 Looping alarm audio started successfully');
     }
   } catch (e) {
     AppLogger.error('Error in onNotificationDisplayed', e);
@@ -207,26 +231,21 @@ Future<void> onNotificationDisplayed(
 /// This is called when a notification is dismissed/swiped away
 /// MUST be a top-level function for background isolate to work!
 ///
-/// CRITICAL FIX (v9.0.1+37):
-/// Do NOT cancel alarm notifications on dismissal. The alarm should keep playing
-/// even if the notification is viewed or accidentally dismissed. The alarm should
-/// ONLY be stopped when the user explicitly clicks "Complete" or "Snooze" buttons.
-///
-/// Notifications with locked=true and autoDismissible=false cannot be swiped away
-/// by users on most Android versions. If a dismissal event occurs, it's usually
-/// from system actions (like opening the app) not user intent to stop the alarm.
+/// For alarm notifications: Stop the looping audio when dismissed.
+/// Although alarms have locked=true and shouldn't be dismissible by swipe,
+/// this handler provides a safety net in case the system dismisses it.
 @pragma('vm:entry-point')
 Future<void> onNotificationDismissed(ReceivedAction receivedAction) async {
   try {
     AppLogger.info('🗑️ Notification dismissed: ${receivedAction.id}');
     AppLogger.info('   Channel: ${receivedAction.channelKey}');
-    AppLogger.info(
-        'ℹ️ Note: Alarm sound continues - alarms only stop via Complete/Snooze buttons');
 
-    // CRITICAL: Do NOT cancel alarm notifications here!
-    // The alarm should keep playing until user explicitly completes or snoozes.
-    // Dismissal events can be triggered by system actions (opening phone, etc.)
-    // not just user intent to stop the alarm.
+    // If it's an alarm notification, stop the looping audio
+    if (receivedAction.channelKey == 'habit_alarms') {
+      AppLogger.info('🔇 Stopping alarm audio due to notification dismissal');
+      await AlarmService.stopAlarmAudio(alarmId: receivedAction.id);
+      AppLogger.info('✅ Alarm audio stopped');
+    }
   } catch (e) {
     AppLogger.error('Error in onNotificationDismissed', e);
   }

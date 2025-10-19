@@ -235,6 +235,112 @@ class AlarmService {
   // Audio player for previewing sounds
   static AudioPlayer? _previewPlayer;
 
+  // Audio player for active alarm (looping until dismissed)
+  static AudioPlayer? _activeAlarmPlayer;
+  static int? _activeAlarmId;
+
+  /// Start looping alarm audio for a notification
+  static Future<void> startAlarmAudio({
+    required int alarmId,
+    String? alarmSoundName,
+  }) async {
+    try {
+      // Stop any existing alarm first
+      await stopAlarmAudio();
+
+      AppLogger.info('🔊 Starting looping alarm audio for alarm ID: $alarmId');
+      AppLogger.info('🔊 Alarm sound: ${alarmSoundName ?? 'default'}');
+
+      _activeAlarmId = alarmId;
+      _activeAlarmPlayer = AudioPlayer();
+
+      // Determine the sound file to use
+      String soundPath = 'sounds/alarm.ogg'; // Default
+      if (alarmSoundName != null && alarmSoundName != 'default') {
+        // Normalize the sound name to match asset path
+        String normalizedName = alarmSoundName;
+        if (normalizedName.startsWith('sounds/')) {
+          normalizedName = normalizedName.substring(7);
+        }
+        if (normalizedName.endsWith('.ogg') ||
+            normalizedName.endsWith('.mp3')) {
+          normalizedName =
+              normalizedName.substring(0, normalizedName.length - 4);
+        }
+        soundPath = 'sounds/$normalizedName.ogg';
+      }
+
+      AppLogger.info('🔊 Using sound path: $soundPath');
+
+      // Configure audio context for ALARM playback with maximum priority
+      await _activeAlarmPlayer!.setAudioContext(
+        AudioContext(
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: {
+              AVAudioSessionOptions.duckOthers,
+            },
+          ),
+          android: AudioContextAndroid(
+            isSpeakerphoneOn: true,
+            stayAwake: true,
+            contentType: AndroidContentType.sonification,
+            usageType: AndroidUsageType.alarm, // CRITICAL: Use alarm usage type
+            audioFocus: AndroidAudioFocus.gain, // Gain full audio focus
+          ),
+        ),
+      );
+
+      // Set to LOOP mode - this is the key to continuous playback
+      await _activeAlarmPlayer!.setReleaseMode(ReleaseMode.loop);
+      await _activeAlarmPlayer!.setVolume(1.0);
+
+      AppLogger.info(
+          '🔊 Audio player configured: loop=true, volume=1.0, usageType=ALARM');
+
+      // Play the sound from assets
+      await _activeAlarmPlayer!.play(AssetSource(soundPath));
+
+      AppLogger.info(
+          '✅ Alarm audio started successfully and will loop until stopped');
+    } catch (e, stackTrace) {
+      AppLogger.error('❌ Failed to start alarm audio', e);
+      AppLogger.error('Stack trace: $stackTrace', null);
+      _activeAlarmPlayer = null;
+      _activeAlarmId = null;
+    }
+  }
+
+  /// Stop looping alarm audio
+  static Future<void> stopAlarmAudio({int? alarmId}) async {
+    try {
+      if (_activeAlarmPlayer != null) {
+        // If alarmId is specified, only stop if it matches
+        if (alarmId != null && _activeAlarmId != alarmId) {
+          AppLogger.info(
+              '⏭️ Not stopping alarm audio - ID mismatch (active: $_activeAlarmId, requested: $alarmId)');
+          return;
+        }
+
+        AppLogger.info('🔇 Stopping alarm audio for alarm ID: $_activeAlarmId');
+        await _activeAlarmPlayer!.stop();
+        await _activeAlarmPlayer!.dispose();
+        _activeAlarmPlayer = null;
+        _activeAlarmId = null;
+        AppLogger.info('✅ Alarm audio stopped successfully');
+      }
+    } catch (e) {
+      AppLogger.error('Failed to stop alarm audio', e);
+      _activeAlarmPlayer = null;
+      _activeAlarmId = null;
+    }
+  }
+
+  /// Check if alarm audio is currently playing
+  static bool isAlarmAudioPlaying() {
+    return _activeAlarmPlayer != null && _activeAlarmId != null;
+  }
+
   /// Play alarm sound preview
   static Future<void> playAlarmSoundPreview(String soundUri) async {
     try {
