@@ -207,45 +207,26 @@ Future<void> onNotificationDisplayed(
 /// This is called when a notification is dismissed/swiped away
 /// MUST be a top-level function for background isolate to work!
 ///
-/// Called when a notification is dismissed (swiped away or cleared from notification shade)
-/// For alarm notifications, this cancels the sound if user swipes away the notification
+/// CRITICAL FIX (v9.0.1+37):
+/// Do NOT cancel alarm notifications on dismissal. The alarm should keep playing
+/// even if the notification is viewed or accidentally dismissed. The alarm should
+/// ONLY be stopped when the user explicitly clicks "Complete" or "Snooze" buttons.
+///
+/// Notifications with locked=true and autoDismissible=false cannot be swiped away
+/// by users on most Android versions. If a dismissal event occurs, it's usually
+/// from system actions (like opening the app) not user intent to stop the alarm.
 @pragma('vm:entry-point')
 Future<void> onNotificationDismissed(ReceivedAction receivedAction) async {
   try {
     AppLogger.info('🗑️ Notification dismissed: ${receivedAction.id}');
     AppLogger.info('   Channel: ${receivedAction.channelKey}');
+    AppLogger.info(
+        'ℹ️ Note: Alarm sound continues - alarms only stop via Complete/Snooze buttons');
 
-    // Even though alarms are locked with locked=true, some Android versions
-    // may still allow swiping. In that case, we should stop the alarm.
-    // Check if this is an alarm notification by checking the channel
-    if (receivedAction.channelKey?.contains('alarm') ?? false) {
-      AppLogger.info('🛑 Alarm notification dismissed - canceling alarm');
-
-      // Try to extract habitId from payload to properly cancel the alarm
-      if (receivedAction.payload != null &&
-          receivedAction.payload!['data'] != null) {
-        try {
-          final payload = jsonDecode(receivedAction.payload!['data']!);
-          final baseHabitId = payload['habitId'] as String?;
-
-          if (baseHabitId != null) {
-            // Cancel the notification to stop the sound
-            final baseAlarmId =
-                NotificationHelpers.generateSafeId('${baseHabitId}_daily');
-            await AwesomeNotifications().cancel(baseAlarmId);
-            AppLogger.info('✅ Cancelled alarm notification on dismissal');
-          }
-        } catch (e) {
-          AppLogger.warning(
-              'Failed to parse payload in onNotificationDismissed: $e');
-          // Fall back to canceling by ID
-          await AwesomeNotifications().cancel(receivedAction.id ?? 0);
-        }
-      } else {
-        // Fall back to canceling by ID
-        await AwesomeNotifications().cancel(receivedAction.id ?? 0);
-      }
-    }
+    // CRITICAL: Do NOT cancel alarm notifications here!
+    // The alarm should keep playing until user explicitly completes or snoozes.
+    // Dismissal events can be triggered by system actions (opening phone, etc.)
+    // not just user intent to stop the alarm.
   } catch (e) {
     AppLogger.error('Error in onNotificationDismissed', e);
   }
