@@ -534,8 +534,10 @@ class NotificationAlarmScheduler {
   ///
   /// CRITICAL FIX: Converts alarm sound names to full asset paths.
   /// - If alarmSoundUri is already set and starts with "sounds/", returns it as-is
-  /// - If alarmSoundName is set and doesn't start with "sounds/", converts it to "sounds/name.mp3"
-  /// - Otherwise returns default "sounds/alarm.mp3"
+  /// - If alarmSoundName is set and doesn't start with "sounds/", converts it to "sounds/name.ogg"
+  /// - Otherwise returns default "sounds/alarm.ogg"
+  /// - NOTE: Flutter assets are in OGG format. Android raw resources normalization happens
+  ///   in AlarmService._normalizeAlarmSoundName() which handles the resource name conversion.
   /// - NOTE: File names must be lowercase to match Android resource naming conventions
   String _normalizeAlarmSoundUri(Habit habit) {
     // If alarmSoundUri is already properly set, use it
@@ -549,16 +551,18 @@ class NotificationAlarmScheduler {
     if (habit.alarmSoundName != null && habit.alarmSoundName!.isNotEmpty) {
       final name = habit.alarmSoundName!;
 
-      // If it already has .mp3 extension, just prepend "sounds/"
-      if (name.endsWith('.mp3')) {
+      // If it already has .ogg or .mp3 extension, just prepend "sounds/"
+      if (name.endsWith('.ogg') || name.endsWith('.mp3')) {
         return 'sounds/$name';
       }
 
-      // Otherwise add both "sounds/" prefix and ".mp3" extension
-      return 'sounds/$name.mp3';
+      // Otherwise add both "sounds/" prefix and ".ogg" extension
+      // Note: Flutter assets are in .ogg format, and alarm_service will
+      // normalize this to Android raw resource names (without extension)
+      return 'sounds/$name.ogg';
     }
 
-    // Default to system alarm sound
-    return 'sounds/alarm.mp3';
+    // Default to system alarm sound (OGG format to match Flutter assets)
+    return 'sounds/alarm.ogg';
   }
 }

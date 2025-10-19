@@ -298,7 +298,7 @@ class AlarmService {
           '🔊 Player configured with: volume=1.0, releaseMode=stop, audioFocus=gain');
 
       // Play the sound from assets
-      // Note: soundUri should be in format "sounds/Alarm.mp3"
+      // Note: soundUri should be in format "sounds/alarm.ogg" (OGG Vorbis format)
       // AssetSource will automatically prepend "assets/"
       await _previewPlayer!.play(AssetSource(soundUri));
 
@@ -350,7 +350,7 @@ class AlarmService {
     }
 
     // Convert alarm sound path to raw resource name
-    // Maps "sounds/Alarm.mp3" → "alarm" (normalized to Android raw resource name)
+    // Maps "sounds/alarm.ogg" → "alarm" (normalized to Android raw resource name)
     String normalizedSoundName =
         _normalizeAlarmSoundName(alarmSoundName ?? 'default');
 
@@ -457,11 +457,12 @@ class AlarmService {
   }
 
   /// Normalize alarm sound name to match Android raw resource filename
-  /// Maps display names to lowercase underscore format
+  /// Maps display names to lowercase underscore format, removing extensions
   /// Examples:
-  ///   "sounds/Alarm.mp3" → "alarm"
-  ///   "sounds/Alarm_1.mp3" → "alarm_1"
-  ///   "sounds/Army_Alarm.mp3" → "army_alarm"
+  ///   "sounds/alarm.ogg" → "alarm"
+  ///   "sounds/alarm_1.ogg" → "alarm_1"
+  ///   "sounds/army_alarm.ogg" → "army_alarm"
+  ///   "alarm.mp3" → "alarm" (for backward compatibility)
   ///   "default" → "default"
   static String _normalizeAlarmSoundName(String? soundName) {
     if (soundName == null || soundName.isEmpty || soundName == 'default') {
@@ -472,9 +473,11 @@ class AlarmService {
     String filename =
         soundName.contains('/') ? soundName.split('/').last : soundName;
 
-    // Remove .mp3 extension if present
+    // Remove file extensions (.mp3, .ogg) if present
     if (filename.endsWith('.mp3')) {
-      filename = filename.substring(0, filename.length - 4);
+      filename = filename.substring(0, filename.length - 4); // Remove .mp3
+    } else if (filename.endsWith('.ogg')) {
+      filename = filename.substring(0, filename.length - 4); // Remove .ogg
     }
 
     // Convert to lowercase and normalize spaces/hyphens to underscores
