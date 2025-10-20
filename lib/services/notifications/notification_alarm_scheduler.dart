@@ -1,6 +1,7 @@
 import 'package:timezone/timezone.dart' as tz;
 import '../logging_service.dart';
 import '../alarm_service.dart';
+import '../rrule_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_helpers.dart';
 import 'notification_core.dart';
@@ -82,37 +83,43 @@ class NotificationAlarmScheduler {
       await AlarmService.cancelHabitAlarms(habit.id);
       AppLogger.debug('Cancelled existing alarms for habit ID: ${habit.id}');
 
-      // Route to frequency-specific alarm scheduler
-      switch (habit.frequency) {
-        case HabitFrequency.daily:
-          AppLogger.debug('Scheduling daily alarms');
-          await _scheduleDailyHabitAlarms(habit, hour, minute);
-          break;
+      // Use RRule-based scheduling if habit uses RRule
+      if (habit.usesRRule && habit.rruleString != null) {
+        AppLogger.debug('Scheduling RRule-based alarms');
+        await _scheduleRRuleHabitAlarms(habit, hour, minute);
+      } else {
+        // Route to legacy frequency-specific alarm scheduler
+        switch (habit.frequency) {
+          case HabitFrequency.daily:
+            AppLogger.debug('Scheduling daily alarms');
+            await _scheduleDailyHabitAlarms(habit, hour, minute);
+            break;
 
-        case HabitFrequency.weekly:
-          AppLogger.debug('Scheduling weekly alarms');
-          await _scheduleWeeklyHabitAlarms(habit, hour, minute);
-          break;
+          case HabitFrequency.weekly:
+            AppLogger.debug('Scheduling weekly alarms');
+            await _scheduleWeeklyHabitAlarms(habit, hour, minute);
+            break;
 
-        case HabitFrequency.monthly:
-          AppLogger.debug('Scheduling monthly alarms');
-          await _scheduleMonthlyHabitAlarms(habit, hour, minute);
-          break;
+          case HabitFrequency.monthly:
+            AppLogger.debug('Scheduling monthly alarms');
+            await _scheduleMonthlyHabitAlarms(habit, hour, minute);
+            break;
 
-        case HabitFrequency.yearly:
-          AppLogger.debug('Scheduling yearly alarms');
-          await _scheduleYearlyHabitAlarms(habit, hour, minute);
-          break;
+          case HabitFrequency.yearly:
+            AppLogger.debug('Scheduling yearly alarms');
+            await _scheduleYearlyHabitAlarms(habit, hour, minute);
+            break;
 
-        case HabitFrequency.single:
-          AppLogger.debug('Scheduling single habit alarm');
-          await _scheduleSingleHabitAlarms(habit, hour, minute);
-          break;
+          case HabitFrequency.single:
+            AppLogger.debug('Scheduling single habit alarm');
+            await _scheduleSingleHabitAlarms(habit, hour, minute);
+            break;
 
-        case HabitFrequency.hourly:
-          AppLogger.debug('Scheduling hourly alarms');
-          await _scheduleHourlyHabitAlarms(habit);
-          break;
+          case HabitFrequency.hourly:
+            AppLogger.debug('Scheduling hourly alarms');
+            await _scheduleHourlyHabitAlarms(habit);
+            break;
+        }
       }
 
       AppLogger.info(
@@ -528,6 +535,99 @@ class NotificationAlarmScheduler {
     }
 
     return scheduled.add(Duration(days: daysUntilTarget));
+  }
+
+  /// Schedule alarms using RRule (respects start/end dates)
+  ///
+  /// This method properly handles RRule-based habits by:
+  /// - Respecting dtStart (start date) from the RRule
+  /// - Respecting UNTIL (end date) if present in the RRule
+  /// - Only scheduling alarms for valid occurrences within the date range
+  Future<void> _scheduleRRuleHabitAlarms(
+    Habit habit,
+    int hour,
+    int minute,
+  ) async {
+    if (habit.rruleString == null) {
+      AppLogger.error('Habit ${habit.name} has no RRule string');
+      return;
+    }
+
+    try {
+      // Use the same 14-day look-ahead as notification scheduler
+      // to prevent hitting Android's 500 concurrent alarm limit
+      final now = DateTime.now();
+      final startDate = habit.dtStart ?? now;
+      final rangeEnd = now.add(const Duration(days: 14));
+
+      // CRITICAL: Use RRuleService to get valid occurrences
+      // This respects both dtStart and UNTIL from the RRule
+      final occurrences = RRuleService.getOccurrences(
+        rruleString: habit.rruleString!,
+        startDate: startDate,
+        rangeStart: now,
+        rangeEnd: rangeEnd,
+      );
+
+      if (occurrences.isEmpty) {
+        AppLogger.info(
+          'No valid alarm occurrences found for habit: ${habit.name} '
+          '(start: ${startDate.toIso8601String()}, range: ${now.toIso8601String()} to ${rangeEnd.toIso8601String()})',
+        );
+        return;
+      }
+
+      // CRITICAL FIX: Convert alarm sound name to full asset path
+      final alarmSoundUri = _normalizeAlarmSoundUri(habit);
+
+      // Schedule alarm for each valid occurrence
+      int scheduledCount = 0;
+      for (final occurrence in occurrences) {
+        final scheduledTime = tz.TZDateTime(
+          tz.local,
+          occurrence.year,
+          occurrence.month,
+          occurrence.day,
+          hour,
+          minute,
+        );
+
+        // Only schedule if the time is in the future
+        if (scheduledTime.isAfter(tz.TZDateTime.now(tz.local))) {
+          try {
+            await AlarmService.scheduleExactAlarm(
+              alarmId: NotificationHelpers.generateSafeId(
+                '${habit.id}_${occurrence.toIso8601String()}',
+              ),
+              habitId: habit.id.toString(),
+              habitName: habit.name,
+              scheduledTime: scheduledTime,
+              frequency: 'rrule',
+              alarmSoundName: alarmSoundUri,
+              snoozeDelayMinutes: habit.snoozeDelayMinutes,
+            );
+            scheduledCount++;
+
+            AppLogger.debug(
+              'Scheduled RRule alarm for ${habit.name} at $scheduledTime',
+            );
+          } catch (e) {
+            AppLogger.error(
+              'Error scheduling RRule alarm for ${habit.name} at $scheduledTime',
+              e,
+            );
+          }
+        }
+      }
+
+      AppLogger.info(
+        '✅ Scheduled $scheduledCount RRule-based alarms for ${habit.name} '
+        '(${occurrences.length} valid occurrences found)',
+      );
+    } catch (e) {
+      AppLogger.error('Failed to schedule RRule alarms for ${habit.name}', e);
+      rethrow;
+    }
   }
 
   /// Normalize alarm sound URI to full asset path
