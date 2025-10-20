@@ -611,7 +611,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   subtitle: Row(
                     children: [
-                      const Text('v9.0.2'),
+                      const Text('v9.0.3'),
                       const SizedBox(width: 8),
                       Text(
                         'DapperCatsInc',
