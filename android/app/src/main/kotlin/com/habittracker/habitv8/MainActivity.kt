@@ -14,6 +14,7 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
 import androidx.work.OneTimeWorkRequestBuilder
@@ -32,6 +33,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val SYSTEM_SOUND_CHANNEL = "com.habittracker.habitv8/system_sound"
     private val ANDROID_RESOURCES_CHANNEL = "habitv8/android_resources"
     private val WIDGET_UPDATE_CHANNEL = "com.habittracker.habitv8/widget_update"
+    private val FULL_SCREEN_INTENT_CHANNEL = "com.habittracker.habitv8/full_screen_intent"
     private val RINGTONE_PICKER_REQUEST_CODE = 1
 
     private var previewRingtone: Ringtone? = null
@@ -162,6 +164,9 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // Setup full screen intent permission channel
+        setupFullScreenIntentChannel(flutterEngine)
 
         // Background widget update channel - works from background isolates
         // This channel uses application context, not activity context, so it works
@@ -786,6 +791,55 @@ class MainActivity : FlutterFragmentActivity() {
             android.util.Log.e("MainActivity", "Error during cleanup: ${e.message}")
         }
         super.onDestroy()
+    }
+    
+    // Full Screen Intent Permission methods (Android 14+)
+    // These methods check and request the USE_FULL_SCREEN_INTENT permission
+    // which is required for alarms to show on the lock screen
+    private fun setupFullScreenIntentChannel(flutterEngine: FlutterEngine) {
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, FULL_SCREEN_INTENT_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "canUseFullScreenIntent" -> {
+                    try {
+                        val canUse = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                            // Android 14+ (API 34+) requires manual permission grant
+                            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                            notificationManager.canUseFullScreenIntent()
+                        } else {
+                            // Android 13 and below - permission is automatically granted
+                            true
+                        }
+                        android.util.Log.i("FullScreenIntent", "Can use full screen intent: $canUse (API ${Build.VERSION.SDK_INT})")
+                        result.success(canUse)
+                    } catch (e: Exception) {
+                        android.util.Log.e("FullScreenIntent", "Error checking permission: ${e.message}", e)
+                        result.error("CHECK_ERROR", "Failed to check full screen intent permission: ${e.message}", null)
+                    }
+                }
+                "openFullScreenIntentSettings" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                            // Android 14+ - open the specific settings page for full screen intent
+                            android.util.Log.i("FullScreenIntent", "Opening full screen intent settings")
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                                data = Uri.parse("package:$packageName")
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            startActivity(intent)
+                            result.success(true)
+                        } else {
+                            // Android 13 and below - permission is automatically granted, no settings needed
+                            android.util.Log.i("FullScreenIntent", "Full screen intent settings not needed for API ${Build.VERSION.SDK_INT}")
+                            result.success(false)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("FullScreenIntent", "Error opening settings: ${e.message}", e)
+                        result.error("SETTINGS_ERROR", "Failed to open full screen intent settings: ${e.message}", null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
     
     // Note: Native alarm scheduling methods (scheduleNativeAlarm, cancelNativeAlarm) removed

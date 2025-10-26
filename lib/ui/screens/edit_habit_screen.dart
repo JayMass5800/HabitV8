@@ -9,6 +9,7 @@ import '../../services/notification_service.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/alarm_service.dart';
 import '../../services/logging_service.dart';
+import '../../services/permission_service.dart';
 import '../widgets/rrule_builder_widget.dart';
 
 class EditHabitScreen extends ConsumerStatefulWidget {
@@ -1211,14 +1212,57 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                     : 'Alarms are more persistent than notifications and will wake the device',
               ),
               value: _alarmEnabled,
-              onChanged: (value) {
-                setState(() {
-                  _alarmEnabled = value;
-                  if (value) {
+              onChanged: (value) async {
+                if (value) {
+                  // Check if full screen intent permission is granted (Android 14+)
+                  final hasPermission =
+                      await PermissionService.canUseFullScreenIntent();
+
+                  if (!hasPermission && mounted) {
+                    // Show dialog explaining the permission requirement
+                    final shouldEnable = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Alarm Permission Required'),
+                        content: const Text(
+                          'To show alarms on your lock screen, you need to grant the "Display over other apps" permission.\n\n'
+                          'This is required on Android 14+ for alarms to work properly.\n\n'
+                          'After granting the permission, come back and enable alarms.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          FilledButton(
+                            onPressed: () async {
+                              Navigator.of(context).pop(true);
+                              // Open settings
+                              await PermissionService
+                                  .openFullScreenIntentSettings();
+                            },
+                            child: const Text('Open Settings'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldEnable != true) {
+                      // User cancelled - don't enable alarms
+                      return;
+                    }
+                  }
+
+                  setState(() {
+                    _alarmEnabled = true;
                     // When enabling alarms, disable notifications (mutually exclusive)
                     _notificationsEnabled = false;
-                  }
-                });
+                  });
+                } else {
+                  setState(() {
+                    _alarmEnabled = false;
+                  });
+                }
               },
               thumbColor: WidgetStateProperty.resolveWith<Color?>(
                 (Set<WidgetState> states) {
@@ -1245,25 +1289,25 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Colors.orange.withValues(alpha: 0.3),
+                    color: Colors.blue.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
                   children: [
                     const Icon(
-                      Icons.warning_amber,
-                      color: Colors.orange,
+                      Icons.info_outline,
+                      color: Colors.blue,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Alarms require exact alarm permissions on Android 12+. The app will request this permission when needed.',
+                        'Alarms require special permissions on Android 14+ to show on the lock screen. You can grant this in system settings if prompted.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.orange.shade700,
+                              color: Colors.blue.shade700,
                             ),
                       ),
                     ),
