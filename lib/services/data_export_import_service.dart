@@ -112,6 +112,7 @@ class DataExportImportService {
         'Selected Month Days',
         'Hourly Times',
         'Yearly Dates',
+        'Single Date Time',
         'Alarm Enabled',
         'Alarm Sound',
         'Snooze Delay (min)',
@@ -158,6 +159,7 @@ class DataExportImportService {
           habit.selectedMonthDays.join(';'),
           habit.hourlyTimes.join(';'),
           habit.selectedYearlyDates.join(';'),
+          habit.singleDateTime?.toIso8601String() ?? '',
           habit.alarmEnabled.toString(),
           habit.alarmSoundName ?? '',
           habit.snoozeDelayMinutes.toString(),
@@ -644,6 +646,11 @@ class DataExportImportService {
             .toList() ??
         [];
 
+    // Parse single date time field
+    if (json['singleDateTime'] != null) {
+      habit.singleDateTime = DateTime.parse(json['singleDateTime'] as String);
+    }
+
     // Parse alarm fields
     habit.alarmEnabled = json['alarmEnabled'] as bool? ?? false;
     habit.alarmSoundName = json['alarmSoundName'] as String?;
@@ -779,6 +786,11 @@ class DataExportImportService {
                   .where((e) => e.isNotEmpty)
                   .toSet() // Remove duplicates
                   .toList();
+          break;
+        case 'Single Date Time':
+          if (value.isNotEmpty) {
+            habit.singleDateTime = DateTime.parse(value);
+          }
           break;
         case 'Alarm Enabled':
           habit.alarmEnabled = value.toLowerCase() == 'true';
