@@ -326,15 +326,24 @@ class NotificationScheduler {
         'Scheduling daily notification with habit ID: "${habit.id}"');
 
     try {
-      await scheduleHabitNotification(
-        id: NotificationHelpers.generateSafeId(habit.id),
-        habitId: habit.id,
-        title: '🎯 ${habit.name}',
-        body: 'Time to complete your daily habit! Keep your streak going.',
-        scheduledTime: nextNotification,
-      );
+      // Schedule 3 days ahead for redundancy
+      // This provides a buffer in case midnight reset fails or is delayed
+      int scheduledCount = 0;
+      for (int i = 0; i < 3; i++) {
+        final futureNotification = nextNotification.add(Duration(days: i));
+        
+        await scheduleHabitNotification(
+          id: NotificationHelpers.generateSafeId('${habit.id}_day$i'),
+          habitId: habit.id,
+          title: '🎯 ${habit.name}',
+          body: 'Time to complete your daily habit! Keep your streak going.',
+          scheduledTime: futureNotification,
+        );
+        scheduledCount++;
+      }
+      
       AppLogger.debug(
-        'Daily notification scheduled for ${habit.name} at $nextNotification',
+        'Daily notifications scheduled for ${habit.name}: $scheduledCount days ahead (${nextNotification.toIso8601String()})',
       );
     } catch (e) {
       AppLogger.error('Failed to schedule daily notification', e);

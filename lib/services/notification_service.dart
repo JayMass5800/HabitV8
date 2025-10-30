@@ -51,14 +51,105 @@ class NotificationService {
 
   static Future<void> scheduleHabitNotifications(Habit habit,
       {bool isNewHabit = false}) async {
-    await cancelHabitNotificationsByHabitId(habit.id);
-    await _scheduler.scheduleHabitNotifications(habit, isNewHabit: isNewHabit);
-    await _alarmScheduler.scheduleHabitAlarms(habit);
+    try {
+      // Get count of currently scheduled notifications for this habit before making changes
+      final allPending = await getPendingNotifications();
+      final existingCount = allPending.where((n) {
+        final payload = n.content?.payload?['data'];
+        return payload != null && payload.contains(habit.id);
+      }).length;
+
+      AppLogger.debug(
+        'Scheduling notifications and alarms for ${habit.name}: $existingCount existing',
+      );
+
+      // Cancel existing notifications
+      await cancelHabitNotificationsByHabitId(habit.id);
+
+      // Schedule new notifications
+      await _scheduler.scheduleHabitNotifications(habit, isNewHabit: isNewHabit);
+
+      // Schedule alarms
+      await _alarmScheduler.scheduleHabitAlarms(habit);
+
+      // Verify at least one notification was successfully scheduled (if notifications enabled)
+      if (habit.notificationsEnabled) {
+        final newPending = await getPendingNotifications();
+        final newCount = newPending.where((n) {
+          final payload = n.content?.payload?['data'];
+          return payload != null && payload.contains(habit.id);
+        }).length;
+
+        if (newCount == 0 && !habit.alarmEnabled) {
+          AppLogger.error(
+            'Failed to schedule any notifications for ${habit.name} - no notifications found after scheduling attempt',
+          );
+          throw Exception(
+            'Notification scheduling verification failed: no notifications were created',
+          );
+        }
+
+        AppLogger.info(
+          'Successfully scheduled notifications for ${habit.name}: $existingCount → $newCount',
+        );
+      }
+    } catch (e) {
+      AppLogger.error(
+        'Failed to schedule notifications/alarms for habit: ${habit.name}',
+        e,
+      );
+      rethrow;
+    }
   }
 
   static Future<void> scheduleHabitNotificationsOnly(Habit habit) async {
-    await cancelHabitNotificationsByHabitId(habit.id);
-    await _scheduler.scheduleHabitNotifications(habit);
+    try {
+      // Get count of currently scheduled notifications for this habit before making changes
+      final allPending = await getPendingNotifications();
+      final existingCount = allPending.where((n) {
+        final payload = n.content?.payload?['data'];
+        return payload != null && payload.contains(habit.id);
+      }).length;
+
+      AppLogger.debug(
+        'Rescheduling notifications for ${habit.name}: $existingCount existing',
+      );
+
+      // Cancel existing notifications first
+      await cancelHabitNotificationsByHabitId(habit.id);
+
+      // Attempt to schedule new notifications
+      await _scheduler.scheduleHabitNotifications(habit);
+
+      // Verify at least one notification was successfully scheduled
+      final newPending = await getPendingNotifications();
+      final newCount = newPending.where((n) {
+        final payload = n.content?.payload?['data'];
+        return payload != null && payload.contains(habit.id);
+      }).length;
+
+      if (newCount == 0) {
+        AppLogger.error(
+          'Failed to schedule any notifications for ${habit.name} - no notifications found after scheduling attempt',
+        );
+        throw Exception(
+          'Notification scheduling verification failed: no notifications were created',
+        );
+      }
+
+      AppLogger.info(
+        'Successfully rescheduled notifications for ${habit.name}: $existingCount → $newCount',
+      );
+    } catch (e) {
+      AppLogger.error(
+        'Failed to reschedule notifications for habit: ${habit.name}',
+        e,
+      );
+      // Rethrow to notify caller that scheduling failed
+      // Note: Old notifications have already been cancelled at this point
+      // This is a known limitation - consider this a critical failure
+      rethrow;
+    }
   }
 
   static Future<void> scheduleHabitAlarms(Habit habit) async {
