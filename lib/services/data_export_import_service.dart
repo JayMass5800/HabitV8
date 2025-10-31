@@ -107,7 +107,9 @@ class DataExportImportService {
         'Total Completions',
         'Last Completion',
         'Completion Rate (%)',
-        'Completions History', // NEW: All completion timestamps
+        'Completions History',
+        'Weekly Schedule',
+        'Monthly Schedule',
         'Selected Weekdays',
         'Selected Month Days',
         'Hourly Times',
@@ -115,10 +117,11 @@ class DataExportImportService {
         'Single Date Time',
         'Alarm Enabled',
         'Alarm Sound',
+        'Alarm Sound URI',
         'Snooze Delay (min)',
-        'RRule String', // RRule recurrence pattern
-        'DT Start', // RRule start date
-        'Uses RRule', // Flag indicating RRule usage
+        'RRule String',
+        'DT Start',
+        'Uses RRule',
       ]);
 
       // Add habit data rows
@@ -153,8 +156,9 @@ class DataExportImportService {
               ? ''
               : habit.completions.last.toIso8601String(),
           completionRate.toStringAsFixed(2),
-          // Export all completion timestamps separated by semicolons
           habit.completions.map((c) => c.toIso8601String()).join(';'),
+          habit.weeklySchedule.join(';'),
+          habit.monthlySchedule.join(';'),
           habit.selectedWeekdays.join(';'),
           habit.selectedMonthDays.join(';'),
           habit.hourlyTimes.join(';'),
@@ -162,10 +166,11 @@ class DataExportImportService {
           habit.singleDateTime?.toIso8601String() ?? '',
           habit.alarmEnabled.toString(),
           habit.alarmSoundName ?? '',
+          habit.alarmSoundUri ?? '',
           habit.snoozeDelayMinutes.toString(),
-          habit.rruleString ?? '', // RRule recurrence pattern
-          habit.dtStart?.toIso8601String() ?? '', // RRule start date
-          habit.usesRRule.toString(), // RRule usage flag
+          habit.rruleString ?? '',
+          habit.dtStart?.toIso8601String() ?? '',
+          habit.usesRRule.toString(),
         ]);
       }
 
@@ -745,6 +750,26 @@ class DataExportImportService {
             habit.completions = [];
           }
           break;
+        case 'Weekly Schedule':
+          habit.weeklySchedule = value.isEmpty
+              ? []
+              : value
+                  .split(';')
+                  .map((e) => int.tryParse(e.trim()))
+                  .where((e) => e != null)
+                  .cast<int>()
+                  .toList();
+          break;
+        case 'Monthly Schedule':
+          habit.monthlySchedule = value.isEmpty
+              ? []
+              : value
+                  .split(';')
+                  .map((e) => int.tryParse(e.trim()))
+                  .where((e) => e != null)
+                  .cast<int>()
+                  .toList();
+          break;
         case 'Selected Weekdays':
           habit.selectedWeekdays = value.isEmpty
               ? []
@@ -797,6 +822,9 @@ class DataExportImportService {
           break;
         case 'Alarm Sound':
           habit.alarmSoundName = value.isEmpty ? null : value;
+          break;
+        case 'Alarm Sound URI':
+          habit.alarmSoundUri = value.isEmpty ? null : value;
           break;
         case 'Snooze Delay (min)':
           habit.snoozeDelayMinutes = int.tryParse(value) ?? 10;
