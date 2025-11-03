@@ -234,12 +234,13 @@ void _initializeMidnightReset() async {
   try {
     // Small delay to let the app finish initializing
     await Future.delayed(const Duration(seconds: 4));
-    
+
     // NEW: Use ReliableSchedulingService instead of MidnightHabitResetService
     // This provides multi-layered resilient scheduling for production reliability
     await ReliableSchedulingService.initialize();
-    
-    AppLogger.info('✅ Reliable scheduling service initialized (replaces old midnight reset)');
+
+    AppLogger.info(
+        '✅ Reliable scheduling service initialized (replaces old midnight reset)');
   } catch (e) {
     AppLogger.error('Error initializing reliable scheduling service', e);
     // Don't block app startup if midnight reset fails
@@ -983,7 +984,8 @@ Future<void> _rescheduleNotificationsAfterBoot() async {
         '$errorCount errors');
 
     // Also trigger reliable scheduling service force reset to ensure all habits are up to date
-    await ReliableSchedulingService.forceReset(reason: 'Post-boot synchronization');
+    await ReliableSchedulingService.forceReset(
+        reason: 'Post-boot synchronization');
 
     AppLogger.info('✅ Notification rescheduling completed after boot');
   } catch (e) {

@@ -53,9 +53,12 @@ class ReliableSchedulingService {
   static const String _lastResetKey = 'reliable_scheduling_last_reset';
   static const String _lastResetMethodKey = 'reliable_scheduling_last_method';
   static const String _resetCountKey = 'reliable_scheduling_reset_count';
-  static const String _timerSuccessCountKey = 'reliable_scheduling_timer_success';
-  static const String _workmanagerSuccessCountKey = 'reliable_scheduling_workmanager_success';
-  static const String _catchupSuccessCountKey = 'reliable_scheduling_catchup_success';
+  static const String _timerSuccessCountKey =
+      'reliable_scheduling_timer_success';
+  static const String _workmanagerSuccessCountKey =
+      'reliable_scheduling_workmanager_success';
+  static const String _catchupSuccessCountKey =
+      'reliable_scheduling_catchup_success';
   static const String _lastTimezoneKey = 'reliable_scheduling_last_timezone';
 
   // State
@@ -71,7 +74,8 @@ class ReliableSchedulingService {
     }
 
     try {
-      AppLogger.info('⏰ Initializing ReliableSchedulingService (Resilient Chain Architecture)');
+      AppLogger.info(
+          '⏰ Initializing ReliableSchedulingService (Resilient Chain Architecture)');
 
       // Get current timezone for tracking
       _currentTimezone = DateTime.now().timeZoneName;
@@ -106,12 +110,12 @@ class ReliableSchedulingService {
 
       if (lastResetStr != null) {
         final lastReset = DateTime.parse(lastResetStr);
-        final lastResetDate = DateTime(lastReset.year, lastReset.month, lastReset.day);
+        final lastResetDate =
+            DateTime(lastReset.year, lastReset.month, lastReset.day);
 
         if (currentDate.isAfter(lastResetDate)) {
           final daysMissed = currentDate.difference(lastResetDate).inDays;
-          AppLogger.warning(
-              '⚠️ SAFETY NET TRIGGERED: Missed reset detected! '
+          AppLogger.warning('⚠️ SAFETY NET TRIGGERED: Missed reset detected! '
               'Last reset: ${lastResetDate.toIso8601String()}, '
               'Current: ${currentDate.toIso8601String()}, '
               'Days missed: $daysMissed');
@@ -145,7 +149,8 @@ class ReliableSchedulingService {
   /// Layer 1: Schedule OS-backed task (WorkManager on Android, BGTaskScheduler on iOS)
   static Future<void> _scheduleOSBackedTask() async {
     try {
-      AppLogger.info('🏗️ Layer 1: Scheduling OS-backed midnight reset task...');
+      AppLogger.info(
+          '🏗️ Layer 1: Scheduling OS-backed midnight reset task...');
 
       final nextMidnightUtc = _calculateNextMidnightUtc();
       final now = DateTime.now().toUtc();
@@ -164,7 +169,8 @@ class ReliableSchedulingService {
         await _scheduleIOSBackgroundTask(nextMidnightUtc);
         AppLogger.info('✅ BGTaskScheduler midnight reset task scheduled');
       } else {
-        AppLogger.warning('⚠️ Platform not supported for OS-backed tasks: ${Platform.operatingSystem}');
+        AppLogger.warning(
+            '⚠️ Platform not supported for OS-backed tasks: ${Platform.operatingSystem}');
       }
     } catch (e) {
       AppLogger.error('❌ Error scheduling OS-backed task', e);
@@ -184,8 +190,7 @@ class ReliableSchedulingService {
       final nextMidnight = DateTime(now.year, now.month, now.day + 1, 0, 0, 0);
       final delay = nextMidnight.difference(now);
 
-      AppLogger.info(
-          '⏰ Next local midnight: ${nextMidnight.toIso8601String()} '
+      AppLogger.info('⏰ Next local midnight: ${nextMidnight.toIso8601String()} '
           '(${delay.inHours}h ${delay.inMinutes % 60}m from now)');
 
       // Schedule one-time timer
@@ -212,7 +217,8 @@ class ReliableSchedulingService {
   static DateTime _calculateNextMidnightUtc() {
     // Get next midnight in LOCAL timezone
     final now = DateTime.now();
-    final nextMidnightLocal = DateTime(now.year, now.month, now.day + 1, 0, 0, 0);
+    final nextMidnightLocal =
+        DateTime(now.year, now.month, now.day + 1, 0, 0, 0);
 
     // Convert to UTC for scheduling
     final nextMidnightUtc = nextMidnightLocal.toUtc();
@@ -238,8 +244,7 @@ class ReliableSchedulingService {
   }) async {
     try {
       final now = DateTime.now();
-      AppLogger.info(
-          '🌙 PERFORMING MIDNIGHT RESET at ${now.toIso8601String()} '
+      AppLogger.info('🌙 PERFORMING MIDNIGHT RESET at ${now.toIso8601String()} '
           'via $method: $reason');
 
       // Check for timezone change
@@ -251,7 +256,8 @@ class ReliableSchedulingService {
       final habits = await habitService.getAllHabits();
       final activeHabits = habits.where((habit) => habit.isActive).toList();
 
-      AppLogger.info('🔄 Processing ${activeHabits.length} active habits for reset');
+      AppLogger.info(
+          '🔄 Processing ${activeHabits.length} active habits for reset');
 
       int resetCount = 0;
       int errorCount = 0;
@@ -275,8 +281,7 @@ class ReliableSchedulingService {
       // Record successful reset
       await _recordResetSuccess(method, now);
 
-      AppLogger.info(
-          '✅ Midnight reset completed via $method: '
+      AppLogger.info('✅ Midnight reset completed via $method: '
           '$resetCount reset, $errorCount errors');
     } catch (e) {
       AppLogger.error('❌ Error during midnight reset', e);
@@ -292,8 +297,7 @@ class ReliableSchedulingService {
       final lastTz = prefs.getString(_lastTimezoneKey);
 
       if (lastTz != null && lastTz != currentTz) {
-        AppLogger.warning(
-            '🌍 TIMEZONE CHANGE DETECTED: $lastTz → $currentTz');
+        AppLogger.warning('🌍 TIMEZONE CHANGE DETECTED: $lastTz → $currentTz');
         AppLogger.info('🔄 Rescheduling tasks for new timezone...');
 
         // Reschedule all tasks for new timezone
@@ -392,7 +396,8 @@ class ReliableSchedulingService {
   }
 
   /// Record successful reset for diagnostics
-  static Future<void> _recordResetSuccess(String method, DateTime timestamp) async {
+  static Future<void> _recordResetSuccess(
+      String method, DateTime timestamp) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -420,7 +425,8 @@ class ReliableSchedulingService {
           break;
       }
 
-      AppLogger.debug('📊 Reset statistics updated: method=$method, total=$totalResets');
+      AppLogger.debug(
+          '📊 Reset statistics updated: method=$method, total=$totalResets');
     } catch (e) {
       AppLogger.error('❌ Error recording reset success', e);
     }
@@ -460,14 +466,17 @@ class ReliableSchedulingService {
       AppLogger.info('📊 RELIABLE SCHEDULING DIAGNOSTICS:');
       AppLogger.info('   Platform: ${diag['platform']}');
       AppLogger.info('   Timezone: ${diag['currentTimezone']}');
-      AppLogger.info('   Last Reset: ${diag['lastReset']} via ${diag['lastResetMethod']}');
+      AppLogger.info(
+          '   Last Reset: ${diag['lastReset']} via ${diag['lastResetMethod']}');
       AppLogger.info('   Next Reset: ${diag['nextScheduledReset']}');
       AppLogger.info('   Time Until: ${diag['timeUntilNextReset']}');
       AppLogger.info('   Statistics:');
       AppLogger.info('     Total Resets: ${diag['totalResets']}');
       AppLogger.info('     Timer Successes: ${diag['timerSuccesses']}');
-      AppLogger.info('     WorkManager Successes: ${diag['workmanagerSuccesses']}');
-      AppLogger.info('     Safety Net Activations: ${diag['safetyNetSuccesses']}');
+      AppLogger.info(
+          '     WorkManager Successes: ${diag['workmanagerSuccesses']}');
+      AppLogger.info(
+          '     Safety Net Activations: ${diag['safetyNetSuccesses']}');
       AppLogger.info('   Timer Active: ${diag['timerActive']}');
     } catch (e) {
       AppLogger.error('❌ Error logging diagnostics', e);
@@ -478,7 +487,7 @@ class ReliableSchedulingService {
   static Future<void> forceReset({String reason = 'Manual force reset'}) async {
     AppLogger.info('🔄 Force reset requested: $reason');
     await _performReset(method: 'manual', reason: reason);
-    
+
     // Reschedule both layers
     await _scheduleOSBackedTask();
     await _scheduleOptimisticTimer();
@@ -506,13 +515,13 @@ class ReliableSchedulingService {
   static Future<void> onAppResume() async {
     try {
       AppLogger.debug('📱 App resumed - verifying scheduled tasks...');
-      
+
       // Check if timer is still active
       if (_optimisticTimer == null || !_optimisticTimer!.isActive) {
         AppLogger.warning('⚠️ Timer not active after resume - rescheduling');
         await _scheduleOptimisticTimer();
       }
-      
+
       // Run safety net check
       await _performSafetyNetCheck();
     } catch (e) {

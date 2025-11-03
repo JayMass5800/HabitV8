@@ -3,7 +3,7 @@ import 'logging_service.dart';
 
 /// iOS Background Tasks Service
 /// Implements BGTaskScheduler integration for iOS background execution
-/// 
+///
 /// This service provides iOS-specific background task scheduling using
 /// Apple's BGTaskScheduler framework (iOS 13+).
 ///
@@ -19,7 +19,7 @@ import 'logging_service.dart';
 /// 2. Implement Swift code in AppDelegate:
 ///    ```swift
 ///    import BackgroundTasks
-///    
+///
 ///    func registerBackgroundTasks() {
 ///      BGTaskScheduler.shared.register(
 ///        forTaskWithIdentifier: "com.habittracker.habitv8.midnightReset",
@@ -30,12 +30,13 @@ import 'logging_service.dart';
 ///    }
 ///    ```
 class IOSBackgroundTasksService {
-  static const String _taskIdentifier = 'com.habittracker.habitv8.midnightReset';
+  static const String _taskIdentifier =
+      'com.habittracker.habitv8.midnightReset';
   static const MethodChannel _channel =
       MethodChannel('com.habittracker.habitv8/ios_background_tasks');
 
   /// Schedule midnight reset task on iOS
-  /// 
+  ///
   /// Uses BGTaskScheduler to schedule a background app refresh task
   /// that will execute at or after the specified target time.
   ///
@@ -77,19 +78,21 @@ class IOSBackgroundTasksService {
       });
       AppLogger.info('✅ iOS background task cancelled');
     } on PlatformException catch (e) {
-      AppLogger.warning('⚠️ Platform exception cancelling iOS background task: $e');
+      AppLogger.warning(
+          '⚠️ Platform exception cancelling iOS background task: $e');
     } catch (e) {
       AppLogger.warning('⚠️ Error cancelling iOS background task: $e');
     }
   }
 
   /// Handle background task execution (called from iOS native code)
-  /// 
+  ///
   /// This method should be invoked via method channel when the iOS
   /// background task actually executes.
   static Future<bool> handleBackgroundTaskExecution() async {
     try {
-      AppLogger.info('🍎 iOS background task executing - setting completion flag');
+      AppLogger.info(
+          '🍎 iOS background task executing - setting completion flag');
 
       // Set flag for ReliableSchedulingService to detect
       // (Similar to WorkManager approach)

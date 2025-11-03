@@ -15,7 +15,8 @@ class WorkManagerHabitService {
   static const String _alarmRenewalTaskName = 'com.habitv8.ALARM_RENEWAL_TASK';
   static const String _bootRescheduleTaskName =
       'com.habitv8.BOOT_RESCHEDULE_TASK';
-  static const String _midnightResetTaskName = 'com.habitv8.MIDNIGHT_RESET_TASK';
+  static const String _midnightResetTaskName =
+      'com.habitv8.MIDNIGHT_RESET_TASK';
   static const String _lastRenewalKey = 'last_habit_continuation_renewal';
   static const String _lastAlarmRenewalKey = 'last_alarm_renewal';
   static const String _renewalIntervalKey = 'habit_continuation_interval_hours';
@@ -1052,9 +1053,11 @@ class WorkManagerHabitService {
         backoffPolicyDelay: const Duration(minutes: 1),
       );
 
-      AppLogger.info('✅ WorkManager midnight reset task scheduled successfully');
+      AppLogger.info(
+          '✅ WorkManager midnight reset task scheduled successfully');
     } catch (e) {
-      AppLogger.error('❌ Failed to schedule WorkManager midnight reset task', e);
+      AppLogger.error(
+          '❌ Failed to schedule WorkManager midnight reset task', e);
       rethrow;
     }
   }
@@ -1068,12 +1071,14 @@ class WorkManagerHabitService {
       // Import the reliable scheduling service dynamically to avoid circular dependency
       // We'll use SharedPreferences to signal that WorkManager performed the reset
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('workmanager_midnight_reset_flag', DateTime.now().toIso8601String());
+      await prefs.setString(
+          'workmanager_midnight_reset_flag', DateTime.now().toIso8601String());
 
       // The actual reset logic will be performed by ReliableSchedulingService
       // when it detects this flag, to avoid code duplication
-      
-      AppLogger.info('✅ WorkManager midnight reset task completed - flag set for ReliableSchedulingService');
+
+      AppLogger.info(
+          '✅ WorkManager midnight reset task completed - flag set for ReliableSchedulingService');
     } catch (e) {
       AppLogger.error('❌ Error in WorkManager midnight reset task', e);
       rethrow;
