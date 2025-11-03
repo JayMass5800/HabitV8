@@ -15,6 +15,7 @@ class WorkManagerHabitService {
   static const String _alarmRenewalTaskName = 'com.habitv8.ALARM_RENEWAL_TASK';
   static const String _bootRescheduleTaskName =
       'com.habitv8.BOOT_RESCHEDULE_TASK';
+  static const String _midnightResetTaskName = 'com.habitv8.MIDNIGHT_RESET_TASK';
   static const String _lastRenewalKey = 'last_habit_continuation_renewal';
   static const String _lastAlarmRenewalKey = 'last_alarm_renewal';
   static const String _renewalIntervalKey = 'habit_continuation_interval_hours';
@@ -78,6 +79,10 @@ class WorkManagerHabitService {
             // CRITICAL: This runs in the background WITHOUT the app being open
             // This ensures notifications are rescheduled even if user never opens app
             await _performBootReschedule();
+            break;
+          case _midnightResetTaskName:
+            // RESILIENT CHAIN: Midnight reset task from ReliableSchedulingService
+            await _performMidnightResetFromWorkManager();
             break;
           default:
             AppLogger.warning('Unknown task name: $taskName');
@@ -1019,5 +1024,59 @@ class WorkManagerHabitService {
   static Future<void> restart() async {
     await stop();
     await initialize();
+  }
+
+  /// Schedule midnight reset task (Resilient Chain Pattern)
+  /// This is the PRIMARY mechanism for reliable midnight resets
+  static Future<void> scheduleMidnightResetTask(Duration delay) async {
+    try {
+      AppLogger.info(
+          '🌙 Scheduling WorkManager midnight reset task with delay: ${delay.inHours}h ${delay.inMinutes % 60}m');
+
+      // Cancel any existing midnight reset task
+      await Workmanager().cancelByUniqueName(_midnightResetTaskName);
+
+      // Schedule one-time task for next midnight
+      await Workmanager().registerOneOffTask(
+        _midnightResetTaskName,
+        _midnightResetTaskName,
+        initialDelay: delay,
+        constraints: Constraints(
+          networkType: NetworkType.notRequired,
+          requiresBatteryNotLow: false,
+          requiresCharging: false,
+          requiresDeviceIdle: false,
+        ),
+        existingWorkPolicy: ExistingWorkPolicy.replace,
+        backoffPolicy: BackoffPolicy.exponential,
+        backoffPolicyDelay: const Duration(minutes: 1),
+      );
+
+      AppLogger.info('✅ WorkManager midnight reset task scheduled successfully');
+    } catch (e) {
+      AppLogger.error('❌ Failed to schedule WorkManager midnight reset task', e);
+      rethrow;
+    }
+  }
+
+  /// Perform midnight reset from WorkManager background task
+  /// This is called by the WorkManager callback dispatcher
+  static Future<void> _performMidnightResetFromWorkManager() async {
+    try {
+      AppLogger.info('🌙 WORKMANAGER MIDNIGHT RESET TASK EXECUTING');
+
+      // Import the reliable scheduling service dynamically to avoid circular dependency
+      // We'll use SharedPreferences to signal that WorkManager performed the reset
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('workmanager_midnight_reset_flag', DateTime.now().toIso8601String());
+
+      // The actual reset logic will be performed by ReliableSchedulingService
+      // when it detects this flag, to avoid code duplication
+      
+      AppLogger.info('✅ WorkManager midnight reset task completed - flag set for ReliableSchedulingService');
+    } catch (e) {
+      AppLogger.error('❌ Error in WorkManager midnight reset task', e);
+      rethrow;
+    }
   }
 }

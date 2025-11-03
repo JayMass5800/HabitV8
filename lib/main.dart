@@ -23,7 +23,7 @@ import 'services/permission_service.dart';
 import 'services/theme_service.dart';
 import 'services/logging_service.dart';
 import 'services/onboarding_service.dart';
-import 'services/midnight_habit_reset_service.dart';
+import 'services/reliable_scheduling_service.dart';
 import 'services/app_lifecycle_service.dart';
 import 'services/subscription_service.dart';
 import 'services/purchase_stream_service.dart';
@@ -234,9 +234,14 @@ void _initializeMidnightReset() async {
   try {
     // Small delay to let the app finish initializing
     await Future.delayed(const Duration(seconds: 4));
-    await MidnightHabitResetService.initialize();
+    
+    // NEW: Use ReliableSchedulingService instead of MidnightHabitResetService
+    // This provides multi-layered resilient scheduling for production reliability
+    await ReliableSchedulingService.initialize();
+    
+    AppLogger.info('✅ Reliable scheduling service initialized (replaces old midnight reset)');
   } catch (e) {
-    AppLogger.error('Error initializing midnight habit reset service', e);
+    AppLogger.error('Error initializing reliable scheduling service', e);
     // Don't block app startup if midnight reset fails
   }
 }
@@ -977,8 +982,8 @@ Future<void> _rescheduleNotificationsAfterBoot() async {
         '$skippedCount skipped, '
         '$errorCount errors');
 
-    // Also trigger midnight reset to ensure all habits are up to date
-    await MidnightHabitResetService.forceReset();
+    // Also trigger reliable scheduling service force reset to ensure all habits are up to date
+    await ReliableSchedulingService.forceReset(reason: 'Post-boot synchronization');
 
     AppLogger.info('✅ Notification rescheduling completed after boot');
   } catch (e) {
