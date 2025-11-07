@@ -66,7 +66,7 @@ class Habit {
 
   String? alarmSoundUri;
 
-  int snoozeDelayMinutes = 10;
+  int snoozeDelayMinutes = 15;
 
   // RRule fields
   String? rruleString;
@@ -102,7 +102,7 @@ class Habit {
     bool alarmEnabled = false,
     String? alarmSoundName,
     String? alarmSoundUri,
-    int snoozeDelayMinutes = 10,
+    int snoozeDelayMinutes = 15,
   }) {
     return Habit()
       ..id = DateTime.now().millisecondsSinceEpoch.toString()
@@ -610,7 +610,7 @@ class Habit {
       ..alarmEnabled = json['alarmEnabled'] as bool? ?? false
       ..alarmSoundName = json['alarmSoundName'] as String?
       ..alarmSoundUri = json['alarmSoundUri'] as String?
-      ..snoozeDelayMinutes = json['snoozeDelayMinutes'] as int? ?? 10
+      ..snoozeDelayMinutes = json['snoozeDelayMinutes'] as int? ?? 15
       ..rruleString = json['rruleString'] as String?
       ..dtStart = json['dtStart'] != null
           ? DateTime.parse(json['dtStart'] as String)

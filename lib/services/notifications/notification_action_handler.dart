@@ -725,10 +725,53 @@ class NotificationActionHandlerIsar {
     try {
       AppLogger.info('⏰ Handling snooze action for habit: $habitName');
 
-      // Schedule a new notification 10 minutes from now
-      final snoozeTime = DateTime.now().add(const Duration(minutes: 10));
+      // Get habit from database to read snoozeDelayMinutes setting
+      int snoozeDelayMinutes = 15; // Default fallback
+      try {
+        // Initialize Isar to get habit settings
+        final dir = await getApplicationDocumentsDirectory();
+        final isar = await Isar.open(
+          [HabitSchema, ScheduledNotificationSchema],
+          directory: dir.path,
+          name: 'habitv8_db',
+          inspector: true,
+        );
+
+        final habit = await isar.habits.filter().idEqualTo(habitId).findFirst();
+        if (habit != null) {
+          snoozeDelayMinutes = habit.snoozeDelayMinutes;
+          AppLogger.info(
+              '✅ Using habit snooze delay: $snoozeDelayMinutes minutes');
+        } else {
+          AppLogger.warning(
+              '⚠️ Habit not found, using default snooze delay: $snoozeDelayMinutes minutes');
+        }
+
+        await isar.close();
+      } catch (e) {
+        AppLogger.warning(
+            'Failed to get habit snooze settings, using default: $e');
+      }
+
+      // Schedule a new notification with the habit's snooze delay
+      final snoozeTime =
+          DateTime.now().add(Duration(minutes: snoozeDelayMinutes));
       final snoozeId =
           NotificationHelpers.generateSnoozeNotificationId(habitId);
+
+      // Create snooze text
+      String snoozeText = '⏰ Snooze ';
+      if (snoozeDelayMinutes < 60) {
+        snoozeText += '${snoozeDelayMinutes}min';
+      } else {
+        final hours = snoozeDelayMinutes ~/ 60;
+        final minutes = snoozeDelayMinutes % 60;
+        if (minutes == 0) {
+          snoozeText += '${hours}h';
+        } else {
+          snoozeText += '${hours}h ${minutes}min';
+        }
+      }
 
       await AwesomeNotifications().createNotification(
         content: NotificationContent(
@@ -746,21 +789,22 @@ class NotificationActionHandlerIsar {
         actionButtons: [
           NotificationActionButton(
             key: 'complete',
-            label: 'Complete',
+            label: '✅ COMPLETE',
             actionType: ActionType.SilentBackgroundAction,
             autoDismissible: true,
           ),
           NotificationActionButton(
             key: 'snooze',
-            label: 'Snooze',
+            label: snoozeText,
             actionType: ActionType.SilentBackgroundAction,
-            autoDismissible: true,
+            autoDismissible: false,
           ),
         ],
         schedule: NotificationCalendar.fromDate(date: snoozeTime),
       );
 
-      AppLogger.info('✅ Snooze notification scheduled for: $snoozeTime');
+      AppLogger.info(
+          '✅ Snooze notification scheduled for: $snoozeTime ($snoozeDelayMinutes minutes)');
     } catch (e) {
       AppLogger.error('Error handling snooze action', e);
     }
