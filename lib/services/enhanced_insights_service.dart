@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import '../domain/model/habit.dart';
 import 'insights_service.dart';
@@ -20,8 +21,15 @@ class EnhancedInsightsService {
     bool useAI = true,
     String? preferredAIProvider,
   }) async {
+    // VERY FIRST LINE - synchronous print before ANY async operations
+    debugPrint('🚨 METHOD ENTRY: generateComprehensiveInsights called with ${habits.length} habits');
+    debugPrint('🚨 useAI=$useAI, preferredAIProvider=$preferredAIProvider');
+    
+    // Synchronous log to confirm method is called
+    _logger.i('🔍 🚀 SYNC: generateComprehensiveInsights ENTRY POINT - Method called');
     _logger.i('🔍 EnhancedInsightsService.generateComprehensiveInsights START');
-    _logger.i('🔍 Parameters: habits=${habits.length}, useAI=$useAI, provider=$preferredAIProvider');
+    _logger.i(
+        '🔍 Parameters: habits=${habits.length}, useAI=$useAI, provider=$preferredAIProvider');
     final insights = <Map<String, dynamic>>[];
 
     // Always get rule-based insights as a baseline with error handling
@@ -30,7 +38,8 @@ class EnhancedInsightsService {
       final ruleBasedInsights = _insightsService.generateAIInsights(habits);
       insights.addAll(ruleBasedInsights);
       _logger.i('Generated ${ruleBasedInsights.length} rule-based insights');
-      _logger.i('🔍 Rule-based insights generated: ${ruleBasedInsights.length}');
+      _logger
+          .i('🔍 Rule-based insights generated: ${ruleBasedInsights.length}');
     } catch (e) {
       _logger.e('🔍 ERROR generating rule-based insights: $e');
       _logger.e('Failed to generate rule-based insights: $e');
@@ -45,38 +54,60 @@ class EnhancedInsightsService {
     }
 
     // Initialize AI service and check if configured
+    // Force sync check first to see if we even have an API key
+    final hasApiKeySynchronously = _aiService.isConfigured;
+    debugPrint('🚨 SYNC CHECK: hasApiKey=$hasApiKeySynchronously');
+    
     _logger.i('🔍 About to call isConfiguredAsync...');
     bool aiConfigured = false;
-    try {
-      aiConfigured = await _aiService.isConfiguredAsync.timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          _logger.w('🔍 ⚠️ isConfiguredAsync TIMED OUT after 5 seconds!');
-          return false;
-        },
-      );
-      _logger.i('🔍 isConfiguredAsync returned: $aiConfigured');
-    } catch (e, stackTrace) {
-      _logger.e('🔍 ❌ ERROR in isConfiguredAsync: $e');
-      _logger.e('🔍 StackTrace: $stackTrace');
+    
+    // If we don't have API key synchronously, skip the async check
+    if (!hasApiKeySynchronously) {
+      debugPrint('🚨 No API key found synchronously, skipping AI');
       aiConfigured = false;
+    } else {
+      try {
+        aiConfigured = await _aiService.isConfiguredAsync.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            debugPrint('🚨 isConfiguredAsync TIMED OUT after 5 seconds!');
+            _logger.w('🔍 ⚠️ isConfiguredAsync TIMED OUT after 5 seconds!');
+            return false;
+          },
+        );
+        debugPrint('🚨 isConfiguredAsync returned: $aiConfigured');
+        _logger.i('🔍 isConfiguredAsync returned: $aiConfigured');
+      } catch (e, stackTrace) {
+        debugPrint('🚨 ERROR in isConfiguredAsync: $e');
+        _logger.e('🔍 ❌ ERROR in isConfiguredAsync: $e');
+        _logger.e('🔍 StackTrace: $stackTrace');
+        aiConfigured = false;
+      }
     }
+    
+    debugPrint('🚨 FINAL: aiConfigured=$aiConfigured, useAI=$useAI, willGenerateAI=${useAI && aiConfigured}');
     _logger.i('🔍 After await block, aiConfigured=$aiConfigured');
     _logger.i('AI configured: $aiConfigured, useAI: $useAI');
 
     // Add AI insights if enabled and configured
     if (useAI && aiConfigured) {
+      debugPrint('🚨 ENTERING AI BLOCK - about to generate AI insights');
       _logger.i('🔍 Entering AI insights generation block');
       try {
+        debugPrint('🚨 Inside AI try block');
         List<Map<String, dynamic>> aiInsights;
+        debugPrint('🚨 About to call availableProvidersAsync...');
         _logger.i('🔍 About to call availableProvidersAsync...');
-        final availableProviders = await _aiService.availableProvidersAsync.timeout(
+        final availableProviders =
+            await _aiService.availableProvidersAsync.timeout(
           const Duration(seconds: 5),
           onTimeout: () {
+            debugPrint('🚨 availableProvidersAsync TIMED OUT!');
             _logger.w('🔍 ⚠️ availableProvidersAsync TIMED OUT!');
             return <String>[];
           },
         );
+        debugPrint('🚨 availableProvidersAsync returned: $availableProviders');
         _logger.i('🔍 availableProvidersAsync returned: $availableProviders');
 
         _logger.i(
@@ -133,6 +164,7 @@ class EnhancedInsightsService {
 
     _logger.i(
         'Returning ${finalInsights.length} total insights (AI configured: $aiConfigured)');
+    debugPrint('🚨 METHOD EXIT: Returning ${finalInsights.length} insights (AI=$aiConfigured)');
 
     // Ensure we always return at least one insight
     if (finalInsights.isEmpty) {

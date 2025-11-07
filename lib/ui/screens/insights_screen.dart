@@ -121,13 +121,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   /// Load AI insights only when requested (lazy loading)
   void _loadAIInsights() {
-    print('🔍 _loadAIInsights() called - Current state: _aiInsightsRequested=$_aiInsightsRequested, _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
+    print(
+        '🔍 _loadAIInsights() called - Current state: _aiInsightsRequested=$_aiInsightsRequested, _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
     if (!_aiInsightsRequested && mounted) {
       setState(() {
         _aiInsightsRequested = true;
         _aiInsightsFuture = null; // Force new generation
       });
-      print('🔍 State updated: _aiInsightsRequested=true, _aiInsightsFuture set to null');
+      print(
+          '🔍 State updated: _aiInsightsRequested=true, _aiInsightsFuture set to null');
     }
   }
 
@@ -317,7 +319,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Builder(
                 builder: (context) {
-                  print('🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
+                  print(
+                      '🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
                   final useAI = _isAIEnabled && _isAIAvailable;
                   print('🔍 Will use AI insights: $useAI');
                   return useAI
@@ -993,14 +996,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildAIInsights(List<Habit> habits, ThemeData theme) {
-    print('🔍 _buildAIInsights called - _aiInsightsRequested=$_aiInsightsRequested, _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
+    print(
+        '🔍 _buildAIInsights called - _aiInsightsRequested=$_aiInsightsRequested, _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
     final activeHabits = habits.where((h) => h.isActive).toList();
     final totalCompletions =
         activeHabits.fold<int>(0, (sum, h) => sum + h.completions.length);
 
     // If AI insights haven't been requested yet, show a helpful message
     if (!_aiInsightsRequested) {
-      print('🔍 _buildAIInsights: returning early - _aiInsightsRequested is false');
+      print(
+          '🔍 _buildAIInsights: returning early - _aiInsightsRequested is false');
       return Column(
         children: [
           _buildAIInsightsHeader(theme),
@@ -1054,10 +1059,27 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     }
 
     // Initialize the future if not already done
-    print('🔍 Building AI insights - _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
+    print(
+        '🔍 Building AI insights - _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
     print('🔍 Number of habits for AI analysis: ${habits.length}');
-    _aiInsightsFuture ??=
-        _enhancedInsightsService.generateComprehensiveInsights(habits);
+    print('🔍 About to call generateComprehensiveInsights...');
+    
+    if (_aiInsightsFuture == null) {
+      print('🔍 _aiInsightsFuture IS NULL, calling generateComprehensiveInsights');
+      _aiInsightsFuture =
+          _enhancedInsightsService.generateComprehensiveInsights(habits)
+            ..then((value) {
+              print('🔍 ✅ Future completed with ${value.length} insights');
+              return value;
+            }).catchError((error) {
+              print('🔍 ❌ Future error: $error');
+              throw error;
+            });
+      print('🔍 Called generateComprehensiveInsights, future assigned');
+    } else {
+      print('🔍 _aiInsightsFuture is NOT NULL, reusing existing future');
+    }
+    print('🔍 After assignment, _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
 
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _aiInsightsFuture,
@@ -3152,7 +3174,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   /// Build backup analysis when AI is not available
   Widget _buildBackupAnalysis(List<Habit> habits, ThemeData theme) {
-    print('🔍 _buildBackupAnalysis called instead of AI insights - _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
+    print(
+        '🔍 _buildBackupAnalysis called instead of AI insights - _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
     // Use rule-based insights from the insights service
     final allInsights = _insightsService.generateAIInsights(habits);
 
