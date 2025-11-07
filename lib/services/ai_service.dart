@@ -578,8 +578,9 @@ ${_getRecentTrends(activeHabits)}
     }
 
     final totalCompletions = weekdayCompletions + weekendCompletions;
-    if (totalCompletions == 0)
+    if (totalCompletions == 0) {
       return 'Insufficient data for temporal analysis.';
+    }
 
     final weekdayRate =
         (weekdayCompletions / totalCompletions * 100).toStringAsFixed(1);
@@ -723,8 +724,9 @@ ${_getRecentTrends(activeHabits)}
 
   /// Analyze correlations between habits (simple co-occurrence analysis)
   String _analyzeHabitCorrelations(List<Habit> habits) {
-    if (habits.length < 2)
+    if (habits.length < 2) {
       return 'Need multiple habits for correlation analysis.';
+    }
 
     final now = DateTime.now();
     final last14Days = now.subtract(const Duration(days: 14));
