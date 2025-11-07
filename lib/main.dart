@@ -39,7 +39,6 @@ import 'ui/screens/stats_screen.dart';
 import 'ui/screens/insights_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/create_habit_screen.dart';
-import 'ui/screens/create_habit_screen_v2.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/purchase_screen.dart';
 import 'ui/widgets/app_lock_wrapper.dart';
@@ -658,7 +657,7 @@ final GoRouter _router = GoRouter(
       path: '/create-habit-v2',
       builder: (context, state) {
         final extra = state.extra as Map<String, dynamic>?;
-        return CreateHabitScreenV2(prefilledData: extra);
+        return CreateHabitScreen(prefilledData: extra);
       },
     ),
     GoRoute(

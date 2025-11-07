@@ -2,16 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:timezone/timezone.dart' as tz;
 import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
-import '../../services/notification_service.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/comprehensive_habit_suggestions_service.dart';
-import '../../services/logging_service.dart';
 import '../../services/alarm_service.dart';
+import '../../services/logging_service.dart';
+import '../../services/permission_service.dart';
 import '../widgets/rrule_builder_widget.dart';
 
+/// Streamlined Create Habit Screen
+///
+/// Features:
+/// - Uses RRule for daily through yearly frequencies
+/// - Keeps old hourly system for hourly frequency
+/// - Uses table_calendar consistently
+/// - Conditional UI based on selected frequency
+/// - Advanced mode toggle only for complex patterns
 class CreateHabitScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? prefilledData;
 
@@ -26,6 +33,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
 
+  // Basic settings
   HabitFrequency _selectedFrequency = HabitFrequency.daily;
   String _selectedCategory = 'Health';
   Color _selectedColor = Colors.blue;
@@ -33,34 +41,36 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   TimeOfDay? _notificationTime;
   bool _isSaving = false;
 
-  // RRule integration
-  bool _useAdvancedScheduling = false;
+  // RRule integration (for daily through yearly)
+  bool _useAdvancedMode = false;
   String? _rruleString;
   DateTime _rruleStartDate = DateTime.now();
 
-  // Alarm-related fields
-  bool _alarmEnabled = false;
-  String? _selectedAlarmSoundName;
-  String? _selectedAlarmSoundUri;
+  // Hourly frequency (legacy system)
+  final List<TimeOfDay> _hourlyTimes = [];
   final List<int> _selectedWeekdays = [];
-  final List<int> _selectedMonthDays = [];
-  final List<TimeOfDay> _hourlyTimes =
-      []; // New: Multiple times for hourly habits
-  final Set<DateTime> _selectedYearlyDates =
-      {}; // New: Selected dates for yearly habits
-  DateTime _focusedMonth = DateTime.now(); // New: For calendar navigation
+
+  // Simple mode selections (converted to RRule on save)
+  final Set<int> _simpleWeekdays = {}; // For weekly
+  final Set<int> _simpleMonthDays = {}; // For monthly
+  DateTime _focusedMonth = DateTime.now(); // For calendar navigation
+  final Set<DateTime> _simpleYearlyDates = {}; // For yearly
 
   // Single habit date/time
   DateTime? _singleDateTime;
 
+  // Alarm settings
+  bool _alarmEnabled = false;
+  String? _selectedAlarmSoundName;
+  String? _selectedAlarmSoundUri;
+
+  // Habit suggestions
   List<HabitSuggestion> _habitSuggestions = [];
   bool _loadingSuggestions = false;
   bool _showSuggestions = false;
 
-  // Comprehensive categories from the category suggestion service
-  List<String> get _categories {
-    return CategorySuggestionService.getAllCategories();
-  }
+  // Categories
+  List<String> get _categories => CategorySuggestionService.getAllCategories();
 
   final List<Color> _colors = [
     Colors.blue,
@@ -90,7 +100,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     if (widget.prefilledData != null) {
       final data = widget.prefilledData!;
 
-      // Set basic information
       if (data['name'] != null) {
         _nameController.text = data['name'];
       }
@@ -101,7 +110,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         _selectedCategory = data['category'];
       }
 
-      // Set difficulty-based frequency (smart defaults)
+      // Set frequency based on difficulty
       if (data['difficulty'] != null) {
         switch (data['difficulty'].toString().toLowerCase()) {
           case 'easy':
@@ -116,7 +125,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         }
       }
 
-      // Set notification time based on suggested time
+      // Set notification time
       if (data['suggestedTime'] != null) {
         _notificationsEnabled = true;
         final timeString = data['suggestedTime'].toString();
@@ -130,7 +139,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
 
   TimeOfDay? _parseTimeString(String timeString) {
     try {
-      // Handle various time formats like "9:00 AM", "09:00", "morning", etc.
       if (timeString.toLowerCase().contains('morning')) {
         return const TimeOfDay(hour: 8, minute: 0);
       } else if (timeString.toLowerCase().contains('afternoon')) {
@@ -141,7 +149,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return const TimeOfDay(hour: 21, minute: 0);
       }
 
-      // Try to parse specific time formats
       final timeRegex = RegExp(
         r'(\d{1,2}):(\d{2})(?:\s*(AM|PM))?',
         caseSensitive: false,
@@ -162,9 +169,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         return TimeOfDay(hour: hour, minute: minute);
       }
     } catch (e) {
-      // If parsing fails, return a default time
+      // If parsing fails, return default
     }
-    return const TimeOfDay(hour: 9, minute: 0); // Default to 9 AM
+    return TimeOfDay.now();
   }
 
   Color _getCategoryColor(String category) {
@@ -230,68 +237,64 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Show recommendation banner if this is from a recommendation
+            // Recommendation banner
             if (widget.prefilledData != null) ...[
-              Card(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.lightbulb,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Recommended Habit',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimaryContainer,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            Text(
-                              'This habit has been pre-filled based on our recommendations. Feel free to customize it!',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimaryContainer,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildRecommendationBanner(),
               const SizedBox(height: 16),
             ],
             _buildBasicInfoSection(),
             const SizedBox(height: 24),
-            // Health suggestions section
+            // Habit suggestions section
             if (_habitSuggestions.isNotEmpty) ...[
               _buildHabitSuggestionsDropdown(),
               const SizedBox(height: 24),
             ],
             _buildFrequencySection(),
             const SizedBox(height: 24),
-            _buildNotificationSection(), // Moved notifications below frequency
+            _buildNotificationSection(),
             const SizedBox(height: 24),
-            _buildCustomizationSection(), // Moved color picker to bottom
+            _buildCustomizationSection(),
             const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendationBanner() {
+    return Card(
+      color: Theme.of(context).colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.lightbulb,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recommended Habit',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  Text(
+                    'Pre-filled based on recommendations. Customize as needed!',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -307,9 +310,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           children: [
             Text(
               'Basic Information',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: _selectedColor,
                   ),
@@ -340,109 +341,50 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-            _buildCategorySection(),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedCategory,
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                border: OutlineInputBorder(),
+              ),
+              items: _categories.map((category) {
+                return DropdownMenuItem(value: category, child: Text(category));
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedCategory = value!;
+                });
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCategorySection() {
-    final suggestions = _getCategorySuggestions();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DropdownButtonFormField<String>(
-          // ignore: deprecated_member_use
-          value: _selectedCategory,
-          decoration: const InputDecoration(
-            labelText: 'Category',
-            border: OutlineInputBorder(),
-          ),
-          items: _categories.map((category) {
-            return DropdownMenuItem(value: category, child: Text(category));
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedCategory = value!;
-            });
-          },
-        ),
-        if (suggestions.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Suggested categories:',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: suggestions.take(3).map((suggestion) {
-              final isSelected = _selectedCategory == suggestion;
-              return ActionChip(
-                label: Text(suggestion),
-                onPressed: () {
-                  setState(() {
-                    _selectedCategory = suggestion;
-                  });
-                },
-                backgroundColor: isSelected
-                    ? Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.2)
-                    : null,
-                side: isSelected
-                    ? BorderSide(color: Theme.of(context).colorScheme.primary)
-                    : null,
-              );
-            }).toList(),
-          ),
-        ],
-      ],
-    );
-  }
-
   Widget _buildFrequencySection() {
-    AppLogger.debug(
-      'Building frequency section, current frequency: $_selectedFrequency',
-    );
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with toggle
+            // Header with mode toggle
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    _useAdvancedScheduling
-                        ? 'Advanced Scheduling'
-                        : 'Frequency',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(
+                    'Schedule',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: _selectedColor,
                         ),
                   ),
                 ),
-                // Info button
-                IconButton(
-                  icon: const Icon(Icons.info_outline),
-                  tooltip: 'Learn about scheduling modes',
-                  onPressed: _showSchedulingInfoDialog,
-                ),
-                // Toggle button
+                // Mode toggle at top level
                 Container(
                   decoration: BoxDecoration(
-                    color: _useAdvancedScheduling
+                    color: _useAdvancedMode
                         ? Theme.of(context).colorScheme.primaryContainer
                         : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(20),
@@ -450,19 +392,19 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                   child: TextButton.icon(
                     onPressed: () {
                       setState(() {
-                        _useAdvancedScheduling = !_useAdvancedScheduling;
+                        _useAdvancedMode = !_useAdvancedMode;
                       });
                     },
                     icon: Icon(
-                      _useAdvancedScheduling ? Icons.tune : Icons.auto_awesome,
+                      _useAdvancedMode ? Icons.light_mode : Icons.tune,
                       size: 18,
                     ),
                     label: Text(
-                      _useAdvancedScheduling ? 'Simple' : 'Advanced',
+                      _useAdvancedMode ? 'Simple' : 'Custom Schedules',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: _useAdvancedScheduling
+                        color: _useAdvancedMode
                             ? Theme.of(context).colorScheme.onPrimaryContainer
                             : Theme.of(context).colorScheme.onSurface,
                       ),
@@ -477,308 +419,30 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-
-            // Mode explanation banner
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _useAdvancedScheduling
-                    ? Theme.of(context)
-                        .colorScheme
-                        .primaryContainer
-                        .withValues(alpha: 0.3)
-                    : Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest
-                        .withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: _useAdvancedScheduling
-                      ? Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.3)
-                      : Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _useAdvancedScheduling
-                        ? Icons.auto_awesome
-                        : Icons.calendar_today,
-                    size: 20,
-                    color: _useAdvancedScheduling
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.secondary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _useAdvancedScheduling
-                          ? 'Advanced mode: Create complex patterns like "every other week" or "2nd Tuesday of each month"'
-                          : 'Simple mode: Quick setup for daily, weekly, monthly, or yearly habits',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            height: 1.3,
-                          ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 16),
 
-            // Content - either simple or advanced
-            if (_useAdvancedScheduling)
-              Column(
-                children: [
-                  RRuleBuilderWidget(
-                    initialRRuleString: _rruleString,
-                    initialStartDate: _rruleStartDate,
-                    initialFrequency: _selectedFrequency,
-                    onRRuleChanged: (rruleString, startDate) {
-                      setState(() {
-                        _rruleString = rruleString;
-                        _rruleStartDate = startDate;
-                      });
-                    },
-                  ),
-                  // Hybrid approach: Show hourly times selector for hourly frequency
-                  if (_selectedFrequency == HabitFrequency.hourly) ...[
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .secondaryContainer
-                            .withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .secondary
-                              .withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 20,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Hourly habits require specific times since RRule doesn\'t support multiple times per day',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                    height: 1.3,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Select times throughout the day:',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildHourlyTimeSelector(),
-                  ],
-                ],
-              )
+            // Mode-specific UI
+            if (_useAdvancedMode)
+              _buildAdvancedModeUI()
             else
-              _buildSimpleFrequencyUI(),
+              _buildSimpleModeWithFrequencySelector(),
           ],
         ),
       ),
     );
   }
 
-  void _showSchedulingInfoDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.help_outline, size: 28),
-            SizedBox(width: 12),
-            Text('Scheduling Modes'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildInfoSection(
-                icon: Icons.calendar_today,
-                title: 'Simple Mode',
-                description: 'Perfect for most habits',
-                examples: [
-                  '• Every day',
-                  '• Specific days of the week',
-                  '• Specific days of the month',
-                  '• Once a year on a date',
-                ],
-                color: Colors.green,
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 20),
-              _buildInfoSection(
-                icon: Icons.auto_awesome,
-                title: 'Advanced Mode',
-                description: 'For complex scheduling patterns',
-                examples: [
-                  '• Every other day/week/month',
-                  '• 2nd Tuesday of each month',
-                  '• Last Friday of every month',
-                  '• Every 3 weeks',
-                  '• Repeat until a specific date',
-                  '• Repeat a set number of times',
-                  '• Hourly habits with custom times',
-                ],
-                color: Colors.blue,
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.lightbulb_outline,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Tip: Start with Simple mode. Switch to Advanced only if you need complex patterns.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontStyle: FontStyle.italic,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it!'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoSection({
-    required IconData icon,
-    required String title,
-    required String description,
-    required List<String> examples,
-    required Color color,
-  }) {
+  Widget _buildSimpleModeWithFrequencySelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+        Text(
+          'Frequency',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
               ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
-                  Text(
-                    description,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: color.withValues(alpha: 0.2),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Examples:',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              ...examples.map((example) => Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      example,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  )),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSimpleFrequencyUI() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+        const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -790,10 +454,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 if (selected) {
                   setState(() {
                     _selectedFrequency = frequency;
-                    _selectedWeekdays.clear();
-                    _selectedMonthDays.clear();
+                    // Clear selections when changing frequency
+                    _simpleWeekdays.clear();
+                    _simpleMonthDays.clear();
+                    _simpleYearlyDates.clear();
                     _hourlyTimes.clear();
-                    _selectedYearlyDates.clear();
+                    _selectedWeekdays.clear();
                     _singleDateTime = null;
                   });
                 }
@@ -801,146 +467,339 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             );
           }).toList(),
         ),
-        // Enhanced Hourly Habits - Multiple time picker
-        if (_selectedFrequency == HabitFrequency.hourly) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Select times throughout the day:',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          _buildHourlyTimeSelector(),
-          const SizedBox(height: 16),
-          Text(
-            'Select days of the week:',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          _buildWeekdaySelector(),
-        ],
-        if (_selectedFrequency == HabitFrequency.weekly) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Select days of the week:',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          _buildWeekdaySelector(),
-        ],
-        // Enhanced Monthly Reminders - True calendar view
-        if (_selectedFrequency == HabitFrequency.monthly) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Select days of the month:',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          _buildMonthDaySelector(),
-        ],
-        // Enhanced Yearly Habits - Calendar-style date picker
-        if (_selectedFrequency == HabitFrequency.yearly) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Select dates throughout the year:',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          _buildYearlyCalendarSelector(),
-        ],
-        // Single Habit - One-time date and time picker
-        if (_selectedFrequency == HabitFrequency.single) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Select the date and time for this one-time habit:',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          _buildSingleDateTimeSelector(),
-        ],
         const SizedBox(height: 16),
-        // Remove the target count section completely
+        // Show frequency-specific UI
+        _buildSimpleModeUI(),
       ],
     );
   }
 
-  // New: Enhanced hourly time selector
-  Widget _buildHourlyTimeSelector() {
+  String _getFrequencyDisplayName(HabitFrequency frequency) {
+    switch (frequency) {
+      case HabitFrequency.hourly:
+        return 'Hourly';
+      case HabitFrequency.daily:
+        return 'Daily';
+      case HabitFrequency.weekly:
+        return 'Weekly';
+      case HabitFrequency.monthly:
+        return 'Monthly';
+      case HabitFrequency.yearly:
+        return 'Yearly';
+      case HabitFrequency.single:
+        return 'One-time';
+    }
+  }
+
+  Widget _buildSimpleModeUI() {
+    switch (_selectedFrequency) {
+      case HabitFrequency.hourly:
+        return _buildHourlyUI();
+      case HabitFrequency.daily:
+        return _buildDailyUI();
+      case HabitFrequency.weekly:
+        return _buildWeeklyUI();
+      case HabitFrequency.monthly:
+        return _buildMonthlyUI();
+      case HabitFrequency.yearly:
+        return _buildYearlyUI();
+      case HabitFrequency.single:
+        return _buildSingleUI();
+    }
+  }
+
+  Widget _buildAdvancedModeUI() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            color: Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+            ),
           ),
-          child: Column(
+          child: Row(
             children: [
-              if (_hourlyTimes.isEmpty)
-                Text(
-                  'No times selected',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontStyle: FontStyle.italic,
-                  ),
-                )
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _hourlyTimes.map((time) {
-                    return Chip(
-                      label: Text(time.format(context)),
-                      deleteIcon: const Icon(Icons.close, size: 18),
-                      onDeleted: () {
-                        setState(() {
-                          _hourlyTimes.remove(time);
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-              const SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: _addHourlyTime,
-                icon: const Icon(Icons.add_alarm),
-                label: const Text('Add Time'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 40),
+              Icon(
+                Icons.auto_awesome,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Create custom schedules: Choose your frequency (daily/weekly/monthly/yearly), set intervals like "every 2 weeks" or "every 3 days", pick specific days, and see a preview of your pattern.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.3,
+                      ),
                 ),
               ),
             ],
           ),
         ),
-        if (_hourlyTimes.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            '${_hourlyTimes.length} times selected',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.green.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
-          ),
-        ],
+        const SizedBox(height: 16),
+        RRuleBuilderWidget(
+          initialRRuleString: _rruleString,
+          initialStartDate: _rruleStartDate,
+          initialFrequency: _selectedFrequency,
+          forceAdvancedMode:
+              true, // Show all advanced options immediately (no nested toggle)
+          onRRuleChanged: (rruleString, startDate) {
+            setState(() {
+              _rruleString = rruleString;
+              _rruleStartDate = startDate;
+            });
+          },
+        ),
       ],
     );
   }
 
-  // Enhanced monthly calendar selector using table_calendar with timezone support
-  Widget _buildMonthDaySelector() {
-    final now = tz.TZDateTime.now(tz.local);
+  // ==================== FREQUENCY-SPECIFIC UI ====================
+
+  Widget _buildHourlyUI() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select times throughout the day:',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 8),
+        _buildHourlyTimeSelector(),
+        const SizedBox(height: 16),
+        Text(
+          'Select days of the week:',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 8),
+        _buildWeekdaySelector(),
+      ],
+    );
+  }
+
+  Widget _buildDailyUI() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.check_circle,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'This habit will repeat every day',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyUI() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select days of the week:',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 8),
+        _buildWeekdaySelectorSimple(),
+      ],
+    );
+  }
+
+  Widget _buildMonthlyUI() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select days of the month:',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 8),
+        _buildMonthDayCalendar(),
+      ],
+    );
+  }
+
+  Widget _buildYearlyUI() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select dates throughout the year:',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 8),
+        _buildYearlyCalendar(),
+      ],
+    );
+  }
+
+  Widget _buildSingleUI() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select the date and time for this one-time habit:',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 8),
+        _buildSingleDateTimeSelector(),
+      ],
+    );
+  }
+
+  // ==================== UI COMPONENTS ====================
+
+  Widget _buildHourlyTimeSelector() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          if (_hourlyTimes.isEmpty)
+            Text(
+              'No times selected',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _hourlyTimes.map((time) {
+                return Chip(
+                  label: Text(time.format(context)),
+                  deleteIcon: const Icon(Icons.close, size: 18),
+                  onDeleted: () {
+                    setState(() {
+                      _hourlyTimes.remove(time);
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: _addHourlyTime,
+            icon: const Icon(Icons.add_alarm),
+            label: const Text('Add Time'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 40),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addHourlyTime() async {
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (time != null) {
+      setState(() {
+        if (!_hourlyTimes.contains(time)) {
+          _hourlyTimes.add(time);
+          _hourlyTimes.sort((a, b) {
+            if (a.hour != b.hour) return a.hour.compareTo(b.hour);
+            return a.minute.compareTo(b.minute);
+          });
+        }
+      });
+    }
+  }
+
+  Widget _buildWeekdaySelector() {
+    // For hourly habits (legacy system)
+    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: List.generate(7, (index) {
+        final dayNumber = index + 1;
+        final isSelected = _selectedWeekdays.contains(dayNumber);
+        return FilterChip(
+          label: Text(weekdays[index]),
+          selected: isSelected,
+          onSelected: (selected) {
+            setState(() {
+              if (selected) {
+                _selectedWeekdays.add(dayNumber);
+              } else {
+                _selectedWeekdays.remove(dayNumber);
+              }
+            });
+          },
+        );
+      }),
+    );
+  }
+
+  Widget _buildWeekdaySelectorSimple() {
+    // For weekly habits (RRule system)
+    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: List.generate(7, (index) {
+        final dayNumber = index + 1;
+        final isSelected = _simpleWeekdays.contains(dayNumber);
+        return FilterChip(
+          label: Text(weekdays[index]),
+          selected: isSelected,
+          onSelected: (selected) {
+            setState(() {
+              if (selected) {
+                _simpleWeekdays.add(dayNumber);
+              } else {
+                _simpleWeekdays.remove(dayNumber);
+              }
+            });
+          },
+        );
+      }),
+    );
+  }
+
+  Widget _buildMonthDayCalendar() {
+    final now = DateTime.now();
     final focusedDay = DateTime(now.year, now.month, 1);
 
     return Container(
@@ -957,10 +816,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             child: Text(
-              'Select days of the month for your habit',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+              'Tap days to select them for your monthly habit',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
           ),
           TableCalendar<int>(
@@ -990,35 +849,23 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               defaultTextStyle: TextStyle(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
-              selectedDecoration: BoxDecoration(
-                color: _selectedColor,
-                shape: BoxShape.circle,
-              ),
-              todayDecoration: BoxDecoration(
-                color: _selectedColor.withValues(alpha: 0.3),
-                shape: BoxShape.circle,
-              ),
-              markerDecoration: BoxDecoration(
-                color: _selectedColor,
-                shape: BoxShape.circle,
-              ),
             ),
             selectedDayPredicate: (day) {
-              return _selectedMonthDays.contains(day.day);
+              return _simpleMonthDays.contains(day.day);
             },
             onDaySelected: (selectedDay, focusedDay) {
               setState(() {
                 final dayNumber = selectedDay.day;
-                if (_selectedMonthDays.contains(dayNumber)) {
-                  _selectedMonthDays.remove(dayNumber);
+                if (_simpleMonthDays.contains(dayNumber)) {
+                  _simpleMonthDays.remove(dayNumber);
                 } else {
-                  _selectedMonthDays.add(dayNumber);
+                  _simpleMonthDays.add(dayNumber);
                 }
               });
             },
             calendarBuilders: CalendarBuilders(
               defaultBuilder: (context, day, focusedDay) {
-                final isSelected = _selectedMonthDays.contains(day.day);
+                final isSelected = _simpleMonthDays.contains(day.day);
                 return Container(
                   margin: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -1047,12 +894,14 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               },
             ),
           ),
-          if (_selectedMonthDays.isNotEmpty) ...[
+          if (_simpleMonthDays.isNotEmpty) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(8),
               child: Text(
-                'Selected days: ${_selectedMonthDays.map((d) => d.toString()).join(', ')}',
+                'Selected days: ${_simpleMonthDays.toList()
+                  ..sort()
+                  ..map((d) => d.toString()).join(', ')}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.green.shade700,
                       fontWeight: FontWeight.w500,
@@ -1065,9 +914,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     );
   }
 
-  // Enhanced yearly calendar selector using table_calendar with timezone support
-  Widget _buildYearlyCalendarSelector() {
-    final now = tz.TZDateTime.now(tz.local);
+  Widget _buildYearlyCalendar() {
+    final now = DateTime.now();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1086,10 +934,10 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 child: Text(
-                  'Select specific dates throughout the year',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                  'Navigate months and tap dates to select them',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
               ),
               TableCalendar<DateTime>(
@@ -1125,25 +973,13 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                   defaultTextStyle: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  selectedDecoration: BoxDecoration(
-                    color: _selectedColor,
-                    shape: BoxShape.circle,
-                  ),
-                  todayDecoration: BoxDecoration(
-                    color: _selectedColor.withValues(alpha: 0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  markerDecoration: BoxDecoration(
-                    color: _selectedColor,
-                    shape: BoxShape.circle,
-                  ),
                 ),
                 selectedDayPredicate: (day) {
-                  return _selectedYearlyDates.any(
-                    (selectedDate) =>
-                        selectedDate.year == day.year &&
-                        selectedDate.month == day.month &&
-                        selectedDate.day == day.day,
+                  return _simpleYearlyDates.any(
+                    (d) =>
+                        d.year == day.year &&
+                        d.month == day.month &&
+                        d.day == day.day,
                   );
                 },
                 onDaySelected: (selectedDay, focusedDay) {
@@ -1153,10 +989,19 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                       selectedDay.month,
                       selectedDay.day,
                     );
-                    if (_selectedYearlyDates.contains(normalizedDate)) {
-                      _selectedYearlyDates.remove(normalizedDate);
+
+                    final existingDate = _simpleYearlyDates.firstWhere(
+                      (d) =>
+                          d.year == normalizedDate.year &&
+                          d.month == normalizedDate.month &&
+                          d.day == normalizedDate.day,
+                      orElse: () => DateTime(1900),
+                    );
+
+                    if (existingDate.year != 1900) {
+                      _simpleYearlyDates.remove(existingDate);
                     } else {
-                      _selectedYearlyDates.add(normalizedDate);
+                      _simpleYearlyDates.add(normalizedDate);
                     }
                   });
                 },
@@ -1167,25 +1012,19 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                 },
                 calendarBuilders: CalendarBuilders(
                   defaultBuilder: (context, day, focusedDay) {
-                    final isSelected = _selectedYearlyDates.any(
-                      (selectedDate) =>
-                          selectedDate.year == day.year &&
-                          selectedDate.month == day.month &&
-                          selectedDate.day == day.day,
+                    final isSelected = _simpleYearlyDates.any(
+                      (d) =>
+                          d.year == day.year &&
+                          d.month == day.month &&
+                          d.day == day.day,
                     );
-                    final isToday = _isSameDay(day, now);
-
                     return Container(
-                      margin: const EdgeInsets.all(2),
+                      margin: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? _selectedColor
-                            : isToday
-                                ? _selectedColor.withValues(alpha: 0.3)
-                                : null,
+                        color: isSelected ? _selectedColor : null,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: isSelected || isToday
+                          color: isSelected
                               ? Colors.transparent
                               : Theme.of(context).brightness == Brightness.dark
                                   ? Colors.grey.shade600
@@ -1199,9 +1038,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                             fontWeight: FontWeight.w500,
                             color: isSelected
                                 ? Colors.white
-                                : isToday
-                                    ? _selectedColor
-                                    : Theme.of(context).colorScheme.onSurface,
+                                : Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -1209,291 +1046,59 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                   },
                 ),
               ),
+              if (_simpleYearlyDates.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    'Selected dates: ${_simpleYearlyDates.map((d) => '${d.month}/${d.day}').join(', ')}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.green.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
-        if (_selectedYearlyDates.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Text(
-            'Selected dates (${_selectedYearlyDates.length}):',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 80,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: _selectedYearlyDates.map((date) {
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: Chip(
-                    label: Text(
-                      '${_getMonthName(date.month)} ${date.day}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () {
-                      setState(() {
-                        _selectedYearlyDates.remove(date);
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
       ],
     );
   }
 
-  String _getMonthName(int month) {
-    const monthNames = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return monthNames[month - 1];
-  }
-
-  bool _isSameDay(DateTime date1, DateTime date2) {
-    return date1.year == date2.year &&
-        date1.month == date2.month &&
-        date1.day == date2.day;
-  }
-
-  // Build single date/time selector for one-off habits
   Widget _buildSingleDateTimeSelector() {
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey.shade600
-              : Colors.grey.shade300,
-        ),
+        border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            child: Text(
-              'Select the date and time for this one-time habit',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_singleDateTime == null)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey.shade600
-                            : Colors.grey.shade300,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.event_available,
-                          color: _selectedColor,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No date and time selected',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tap the button below to select when this habit should remind you',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey.shade600,
-                                  ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton.icon(
-                          onPressed: _selectSingleDateTime,
-                          icon: const Icon(Icons.calendar_today),
-                          label: const Text('Select Date & Time'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _selectedColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: _selectedColor.withValues(alpha: 0.1),
-                      border: Border.all(color: _selectedColor),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.event_available,
-                              color: _selectedColor,
-                              size: 32,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Selected Date & Time',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: _selectedColor,
-                                  ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _selectedColor.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.calendar_month,
-                                    color: _selectedColor,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '${_getMonthName(_singleDateTime!.month)} ${_singleDateTime!.day}, ${_singleDateTime!.year}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.schedule,
-                                    color: _selectedColor,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '${_singleDateTime!.hour.toString().padLeft(2, '0')}:${_singleDateTime!.minute.toString().padLeft(2, '0')}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: _selectedColor,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: _selectSingleDateTime,
-                              icon: const Icon(Icons.edit, size: 18),
-                              label: const Text('Change'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _selectedColor,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 10,
-                                ),
-                              ),
-                            ),
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                setState(() {
-                                  _singleDateTime = null;
-                                });
-                              },
-                              icon: const Icon(Icons.clear, size: 18),
-                              label: const Text('Clear'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.red,
-                                side: const BorderSide(color: Colors.red),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 10,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+          if (_singleDateTime == null)
+            Text(
+              'No date/time selected',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            )
+          else
+            Text(
+              'Selected: ${_formatDateTime(_singleDateTime!)}',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: _selectedColor,
                   ),
-              ],
+            ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: _selectSingleDateTime,
+            icon: const Icon(Icons.calendar_today),
+            label:
+                Text(_singleDateTime == null ? 'Select Date & Time' : 'Change'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 40),
             ),
           ),
         ],
@@ -1501,228 +1106,40 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     );
   }
 
-  // Helper method for selecting single date/time
+  String _formatDateTime(DateTime dateTime) {
+    final date = '${dateTime.month}/${dateTime.day}/${dateTime.year}';
+    final time = TimeOfDay.fromDateTime(dateTime).format(context);
+    return '$date at $time';
+  }
+
   Future<void> _selectSingleDateTime() async {
-    // Use timezone-aware date handling for consistency with other frequencies
-    final now = tz.TZDateTime.now(tz.local);
-    final currentLocalDate = DateTime(now.year, now.month, now.day);
-
-    // First select date
-    final DateTime? pickedDate = await showDatePicker(
+    final date = await showDatePicker(
       context: context,
-      initialDate:
-          _singleDateTime ?? currentLocalDate.add(const Duration(days: 1)),
-      firstDate: currentLocalDate,
-      lastDate: currentLocalDate
-          .add(const Duration(days: 365 * 5)), // 5 years into future
-      helpText: 'Select the date for this habit',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            datePickerTheme: DatePickerThemeData(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              headerBackgroundColor: _selectedColor,
-              headerForegroundColor: Colors.white,
-              dayForegroundColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return Colors.white;
-                }
-                return Theme.of(context).colorScheme.onSurface;
-              }),
-              dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return _selectedColor;
-                }
-                return null;
-              }),
-            ),
-          ),
-          child: child!,
-        );
-      },
+      initialDate: _singleDateTime ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
     );
 
-    if (pickedDate == null) return;
+    if (date != null && mounted) {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: _singleDateTime != null
+            ? TimeOfDay.fromDateTime(_singleDateTime!)
+            : TimeOfDay.now(),
+      );
 
-    if (!mounted) return;
-
-    // Then select time
-    final TimeOfDay? pickedTime = await showTimePicker(
-      context: context,
-      initialTime: _singleDateTime != null
-          ? TimeOfDay.fromDateTime(_singleDateTime!)
-          : const TimeOfDay(hour: 9, minute: 0),
-      helpText: 'Select the time for this habit',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            timePickerTheme: TimePickerThemeData(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              hourMinuteTextColor: Theme.of(context).colorScheme.onSurface,
-              dayPeriodTextColor: Theme.of(context).colorScheme.onSurface,
-              dialHandColor: Theme.of(context).colorScheme.primary,
-              dialTextColor: Theme.of(context).colorScheme.onSurface,
-              entryModeIconColor: Theme.of(context).colorScheme.onSurface,
-              helpTextStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (pickedTime != null && mounted) {
-      // Create timezone-aware DateTime for consistency with other frequencies
-      final now = tz.TZDateTime.now(tz.local);
-      setState(() {
-        _singleDateTime = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-        // Ensure the created DateTime is in local timezone context
-        AppLogger.debug('Single habit date/time created: $_singleDateTime');
-        AppLogger.debug('Timezone context used: ${now.timeZoneName}');
-      });
-    }
-  }
-
-  // Helper method for adding hourly times
-  Future<void> _addHourlyTime() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      helpText: 'Select a time for hourly reminders',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            timePickerTheme: TimePickerThemeData(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              hourMinuteTextColor: Theme.of(context).colorScheme.onSurface,
-              dayPeriodTextColor: Theme.of(context).colorScheme.onSurface,
-              dialHandColor: Theme.of(context).colorScheme.primary,
-              dialTextColor: Theme.of(context).colorScheme.onSurface,
-              entryModeIconColor: Theme.of(context).colorScheme.onSurface,
-              helpTextStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && mounted) {
-      setState(() {
-        // Check if time is not already added
-        bool timeExists = _hourlyTimes.any(
-          (time) => time.hour == picked.hour && time.minute == picked.minute,
-        );
-
-        if (!timeExists) {
-          _hourlyTimes.add(picked);
-          // Sort times in chronological order
-          _hourlyTimes.sort((a, b) {
-            final aMinutes = a.hour * 60 + a.minute;
-            final bMinutes = b.hour * 60 + b.minute;
-            return aMinutes.compareTo(bMinutes);
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('This time is already selected'),
-              duration: Duration(seconds: 2),
-            ),
+      if (time != null) {
+        setState(() {
+          _singleDateTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time.hour,
+            time.minute,
           );
-        }
-      });
+        });
+      }
     }
-  }
-
-  Widget _buildWeekdaySelector() {
-    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: List.generate(7, (index) {
-        final dayNumber = index + 1;
-        return FilterChip(
-          label: Text(weekdays[index]),
-          selected: _selectedWeekdays.contains(dayNumber),
-          onSelected: (selected) {
-            setState(() {
-              if (selected) {
-                _selectedWeekdays.add(dayNumber);
-              } else {
-                _selectedWeekdays.remove(dayNumber);
-              }
-            });
-          },
-        );
-      }),
-    );
-  }
-
-  Widget _buildCustomizationSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Customization',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: _selectedColor,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Choose a color:',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _colors.map((color) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedColor = color;
-                    });
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: _selectedColor == color
-                          ? Border.all(color: Colors.black, width: 3)
-                          : null,
-                    ),
-                    child: _selectedColor == color
-                        ? const Icon(Icons.check, color: Colors.white)
-                        : null,
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildNotificationSection() {
@@ -1733,110 +1150,118 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Notifications',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: _selectedColor,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Enable Notifications'),
-              subtitle: Text(
-                _selectedFrequency == HabitFrequency.hourly
-                    ? 'Get reminded at your selected times throughout the day'
-                    : 'Get reminded to complete your habit',
-              ),
-              value: _notificationsEnabled,
-              onChanged: (value) {
-                setState(() {
-                  _notificationsEnabled = value;
-                  if (!value) {
-                    _notificationTime = null;
-                  }
-                });
-              },
-            ),
-            // Show time picker for non-hourly, non-single habits when notifications OR alarms are enabled
-            if ((_notificationsEnabled || _alarmEnabled) &&
-                _selectedFrequency != HabitFrequency.hourly &&
-                _selectedFrequency != HabitFrequency.single) ...[
-              const SizedBox(height: 8),
-              ListTile(
-                title: Text(_alarmEnabled ? 'Alarm Time' : 'Notification Time'),
-                subtitle: Text(
-                  _notificationTime != null
-                      ? _notificationTime!.format(context)
-                      : 'Not set',
-                ),
-                trailing: const Icon(Icons.access_time),
-                onTap: _selectNotificationTime,
-              ),
-            ],
-            // Show info for single habits
-            if ((_notificationsEnabled || _alarmEnabled) &&
-                _selectedFrequency == HabitFrequency.single) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _selectedColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: _selectedColor.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: _selectedColor, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Single habits will send a notification/alarm at the exact date and time you selected above',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodySmall?.copyWith(color: _selectedColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            // Alarm Settings Section
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 16),
-            Text(
-              'Alarm Settings',
+              'Notifications & Alarms',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: _selectedColor,
                   ),
             ),
             const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Enable Alarms'),
-              subtitle: Text(
-                _alarmEnabled
-                    ? 'Use system alarms instead of notifications (more persistent)'
-                    : 'Alarms are more persistent than notifications and will wake the device',
+
+            // Time selector - shown first for all frequencies except hourly and single
+            if (_selectedFrequency != HabitFrequency.hourly &&
+                _selectedFrequency != HabitFrequency.single) ...[
+              ListTile(
+                title: Text(
+                  _alarmEnabled ? 'Alarm Time' : 'Notification Time',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                subtitle: Text(
+                  _notificationTime != null
+                      ? _notificationTime!.format(context)
+                      : 'Tap to set time',
+                ),
+                trailing: const Icon(Icons.access_time),
+                onTap: _selectNotificationTime,
               ),
-              value: _alarmEnabled,
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+            ],
+
+            // Notification/Alarm toggles
+            SwitchListTile(
+              title: const Text('Enable Notifications'),
+              subtitle: const Text('Get reminded about your habit'),
+              value: _notificationsEnabled,
               onChanged: (value) {
                 setState(() {
-                  _alarmEnabled = value;
+                  _notificationsEnabled = value;
                   if (value) {
-                    // When enabling alarms, disable notifications (mutually exclusive)
-                    _notificationsEnabled = false;
+                    // Disable alarms when enabling notifications
+                    _alarmEnabled = false;
                   }
                 });
               },
             ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('Enable Alarms'),
+              subtitle: Text(
+                _alarmEnabled
+                    ? 'System alarms are more persistent than notifications'
+                    : 'Use system alarms instead of notifications',
+              ),
+              value: _alarmEnabled,
+              onChanged: (value) async {
+                if (value) {
+                  // Check if full screen intent permission is granted (Android 14+)
+                  final hasPermission =
+                      await PermissionService.canUseFullScreenIntent();
+
+                  if (!hasPermission && mounted) {
+                    // Show dialog explaining the permission requirement
+                    final shouldEnable = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Alarm Permission Required'),
+                        content: const Text(
+                          'To show alarms on your lock screen, you need to grant the "Display over other apps" permission.\n\n'
+                          'This is required on Android 14+ for alarms to work properly.\n\n'
+                          'After granting the permission, come back and enable alarms.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          FilledButton(
+                            onPressed: () async {
+                              Navigator.of(context).pop(true);
+                              // Open settings
+                              await PermissionService
+                                  .openFullScreenIntentSettings();
+                            },
+                            child: const Text('Open Settings'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldEnable != true) {
+                      // User cancelled - don't enable alarms
+                      return;
+                    }
+                  }
+
+                  setState(() {
+                    _alarmEnabled = true;
+                    // Disable notifications when enabling alarms
+                    _notificationsEnabled = false;
+                  });
+                } else {
+                  setState(() {
+                    _alarmEnabled = false;
+                  });
+                }
+              },
+            ),
+
+            // Alarm-specific settings
             if (_alarmEnabled) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
               ListTile(
                 title: const Text('Alarm Sound'),
                 subtitle: Text(
@@ -1849,25 +1274,25 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Colors.orange.withValues(alpha: 0.3),
+                    color: Colors.blue.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
                   children: [
                     const Icon(
-                      Icons.warning_amber,
-                      color: Colors.orange,
+                      Icons.info_outline,
+                      color: Colors.blue,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Alarms require exact alarm permissions on Android 12+. The app will request this permission when needed.',
+                        'Alarms require special permissions on Android 14+ to show on the lock screen. You can grant this in system settings if prompted.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.orange.shade700,
+                              color: Colors.blue.shade700,
                             ),
                       ),
                     ),
@@ -1881,101 +1306,694 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     );
   }
 
-  String _getFrequencyDisplayName(HabitFrequency frequency) {
-    switch (frequency) {
-      case HabitFrequency.hourly:
-        return 'Hourly';
-      case HabitFrequency.daily:
-        return 'Daily';
-      case HabitFrequency.weekly:
-        return 'Weekly';
-      case HabitFrequency.monthly:
-        return 'Monthly';
-      case HabitFrequency.yearly:
-        return 'Yearly';
-      case HabitFrequency.single:
-        return 'Single';
-    }
-  }
-
   Future<void> _selectNotificationTime() async {
-    final TimeOfDay? picked = await showTimePicker(
+    final time = await showTimePicker(
       context: context,
       initialTime: _notificationTime ?? TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            timePickerTheme: TimePickerThemeData(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              hourMinuteTextColor: Theme.of(context).colorScheme.onSurface,
-              dayPeriodTextColor: Theme.of(context).colorScheme.onSurface,
-              dialHandColor: Theme.of(context).colorScheme.primary,
-              dialTextColor: Theme.of(context).colorScheme.onSurface,
-              entryModeIconColor: Theme.of(context).colorScheme.onSurface,
-              helpTextStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
-    if (picked != null && mounted) {
+
+    if (time != null) {
       setState(() {
-        _notificationTime = picked;
+        _notificationTime = time;
       });
     }
   }
 
-  String _getSoundTypeDisplay(String soundType) {
-    switch (soundType) {
-      case 'system_alarm':
-        return 'System Alarm';
-      case 'system_ringtone':
-        return 'System Ringtone';
-      case 'system_notification':
-        return 'System Notification';
-      case 'custom':
-        return 'Custom Sound';
-      case 'system':
-        return 'System Sound';
-      default:
-        return soundType.startsWith('system_')
-            ? 'System Sound'
-            : 'Custom Sound';
+  Widget _buildCustomizationSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Customization',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _selectedColor,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Color',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _colors.map((color) {
+                final isSelected = _selectedColor == color;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedColor = color;
+                    });
+                  },
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected ? Colors.black : Colors.transparent,
+                        width: 3,
+                      ),
+                    ),
+                    child: isSelected
+                        ? const Icon(Icons.check, color: Colors.white)
+                        : null,
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== SAVE LOGIC ====================
+
+  Future<void> _saveHabit() async {
+    if (_isSaving || !_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // Validate frequency-specific requirements
+      if (!_validateFrequencyRequirements()) {
+        setState(() {
+          _isSaving = false;
+        });
+        return;
+      }
+
+      final databaseAsync = ref.read(isarProvider);
+      final database = databaseAsync.value;
+
+      if (database == null) {
+        _showError('Database not available');
+        setState(() {
+          _isSaving = false;
+        });
+        return;
+      }
+
+      // Convert TimeOfDay to DateTime if notification time is set
+      DateTime? notificationDateTime;
+      if (_notificationTime != null) {
+        final now = DateTime.now();
+        notificationDateTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          _notificationTime!.hour,
+          _notificationTime!.minute,
+        );
+      }
+
+      // Create habit - V1 style with proper data structure
+      final habit = Habit.create(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        category: _selectedCategory,
+        colorValue: _selectedColor.toARGB32(),
+        frequency: _selectedFrequency,
+        targetCount: 1,
+        notificationsEnabled: _notificationsEnabled,
+        notificationTime: notificationDateTime,
+        selectedWeekdays: _selectedFrequency == HabitFrequency.hourly
+            ? _selectedWeekdays
+            : _simpleWeekdays.toList(), // Use simple weekdays for weekly habits
+        selectedMonthDays: _simpleMonthDays.toList(), // From simple mode
+        hourlyTimes: _hourlyTimes
+            .map(
+              (time) =>
+                  '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+            )
+            .toList(),
+        selectedYearlyDates: _simpleYearlyDates
+            .map(
+              (date) =>
+                  '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+            )
+            .toList(),
+        singleDateTime: _singleDateTime,
+        alarmEnabled: _alarmEnabled,
+        alarmSoundName: _selectedAlarmSoundName,
+        alarmSoundUri: _selectedAlarmSoundUri,
+      );
+
+      // Apply RRule based on mode and frequency
+      if (_useAdvancedMode && _rruleString != null) {
+        // Advanced mode: Use the RRule from the builder
+        habit.rruleString = _rruleString;
+        habit.dtStart = _rruleStartDate;
+        habit.usesRRule = true;
+        AppLogger.info('✅ Using advanced RRule scheduling: $_rruleString');
+      } else if (_selectedFrequency != HabitFrequency.hourly &&
+          _selectedFrequency != HabitFrequency.single) {
+        // Simple mode: Generate RRule from simple selections
+        _generateRRuleFromSimpleMode(habit);
+      }
+
+      // Get HabitService
+      final habitServiceAsync = ref.read(habitServiceIsarProvider);
+      final habitService = habitServiceAsync.value;
+
+      if (habitService == null) {
+        setState(() {
+          _isSaving = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Habit service not available'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Save habit with V1's retry logic
+      try {
+        await habitService.addHabit(habit);
+      } catch (e) {
+        // If it's a database connection error, try to refresh the provider and retry once
+        if (e.toString().contains('Database box is closed') ||
+            e.toString().contains('Database connection lost')) {
+          AppLogger.info(
+              'Database connection lost, refreshing providers and retrying...');
+
+          // Invalidate the providers to force refresh
+          ref.invalidate(isarProvider);
+          ref.invalidate(habitServiceIsarProvider);
+
+          // Wait a moment for providers to refresh
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Try to get fresh service and retry
+          try {
+            final freshServiceAsync = ref.read(habitServiceIsarProvider);
+            final freshService = freshServiceAsync.value;
+
+            if (freshService == null) {
+              throw StateError(
+                  'Could not obtain fresh habit service after refresh');
+            }
+
+            AppLogger.info(
+                'Retrying habit creation with fresh database connection...');
+            await freshService.addHabit(habit);
+            AppLogger.info('✅ Habit created successfully on retry');
+          } catch (retryError) {
+            AppLogger.error('Retry failed: $retryError');
+            rethrow; // Rethrow the retry error
+          }
+        } else {
+          rethrow; // Re-throw other errors
+        }
+      }
+
+      // NOTE: Notification/alarm scheduling is handled by addHabit() in database.dart
+      // to avoid double scheduling. Removed from here to fix performance issue.
+
+      // Log the habit creation
+      if (mounted) {
+        AppLogger.info('Habit created: ${habit.name}');
+      }
+
+      // Show success message - V1 style
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Habit "${habit.name}" created successfully!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Navigate back
+      if (mounted) {
+        context.pop();
+      }
+    } catch (e) {
+      AppLogger.error('Failed to save habit: $e');
+      _showError('Failed to save habit: ${e.toString()}');
+      setState(() {
+        _isSaving = false;
+      });
     }
   }
 
-  Color _getSoundTypeColor(String soundType) {
-    switch (soundType) {
-      case 'system_alarm':
-        return Colors.red;
-      case 'system_ringtone':
-        return Colors.blue;
-      case 'system_notification':
-        return Colors.orange;
-      case 'custom':
-        return Colors.green;
-      case 'system':
-        return Colors.blue;
-      default:
-        return soundType.startsWith('system_') ? Colors.blue : Colors.green;
+  bool _validateFrequencyRequirements() {
+    switch (_selectedFrequency) {
+      case HabitFrequency.hourly:
+        if (_hourlyTimes.isEmpty) {
+          _showError('Please select at least one time for hourly reminders');
+          return false;
+        }
+        if (_selectedWeekdays.isEmpty) {
+          _showError('Please select at least one day of the week');
+          return false;
+        }
+        break;
+
+      case HabitFrequency.weekly:
+        if (!_useAdvancedMode && _simpleWeekdays.isEmpty) {
+          _showError('Please select at least one day of the week');
+          return false;
+        }
+        break;
+
+      case HabitFrequency.monthly:
+        if (!_useAdvancedMode && _simpleMonthDays.isEmpty) {
+          _showError('Please select at least one day of the month');
+          return false;
+        }
+        break;
+
+      case HabitFrequency.yearly:
+        if (!_useAdvancedMode && _simpleYearlyDates.isEmpty) {
+          _showError('Please select at least one date for the year');
+          return false;
+        }
+        break;
+
+      case HabitFrequency.single:
+        if (_singleDateTime == null) {
+          _showError('Please select a date and time for this one-time habit');
+          return false;
+        }
+        break;
+
+      case HabitFrequency.daily:
+        // No additional validation needed
+        break;
+    }
+
+    // Validate notification time for non-hourly, non-single habits
+    if ((_notificationsEnabled || _alarmEnabled) &&
+        _selectedFrequency != HabitFrequency.hourly &&
+        _selectedFrequency != HabitFrequency.single &&
+        _notificationTime == null) {
+      _showError('Please select a notification time');
+      return false;
+    }
+
+    return true;
+  }
+
+  void _generateRRuleFromSimpleMode(Habit habit) {
+    try {
+      String rruleString;
+
+      switch (_selectedFrequency) {
+        case HabitFrequency.daily:
+          rruleString = 'FREQ=DAILY';
+          break;
+
+        case HabitFrequency.weekly:
+          if (_simpleWeekdays.isEmpty) {
+            throw Exception('No weekdays selected');
+          }
+          final weekdayStrings = _simpleWeekdays.map((day) {
+            switch (day) {
+              case 1:
+                return 'MO';
+              case 2:
+                return 'TU';
+              case 3:
+                return 'WE';
+              case 4:
+                return 'TH';
+              case 5:
+                return 'FR';
+              case 6:
+                return 'SA';
+              case 7:
+                return 'SU';
+              default:
+                return 'MO';
+            }
+          }).join(',');
+          rruleString = 'FREQ=WEEKLY;BYDAY=$weekdayStrings';
+          break;
+
+        case HabitFrequency.monthly:
+          if (_simpleMonthDays.isEmpty) {
+            throw Exception('No month days selected');
+          }
+          final monthDayStrings = _simpleMonthDays.toList()..sort();
+          rruleString = 'FREQ=MONTHLY;BYMONTHDAY=${monthDayStrings.join(',')}';
+          break;
+
+        case HabitFrequency.yearly:
+          if (_simpleYearlyDates.isEmpty) {
+            throw Exception('No yearly dates selected');
+          }
+          // For yearly, we'll use the first date as the base and create multiple rules if needed
+          // Sort dates by month and day
+          final sortedDates = _simpleYearlyDates.toList()
+            ..sort((a, b) {
+              if (a.month != b.month) return a.month.compareTo(b.month);
+              return a.day.compareTo(b.day);
+            });
+
+          // Group by month to get unique months and days
+          final monthGroups = <int, List<int>>{};
+          for (final date in sortedDates) {
+            monthGroups.putIfAbsent(date.month, () => []).add(date.day);
+          }
+
+          // Check if all dates are in the same month
+          if (monthGroups.length == 1) {
+            // Single month: FREQ=YEARLY;BYMONTH=3;BYMONTHDAY=15,20,25
+            final month = monthGroups.keys.first;
+            final days = monthGroups[month]!.join(',');
+            rruleString = 'FREQ=YEARLY;BYMONTH=$month;BYMONTHDAY=$days';
+          } else {
+            // Multiple months: Check if we can use BYMONTH with BYMONTHDAY
+            // RRule expands BYMONTH and BYMONTHDAY as a Cartesian product
+            // So we need to check if all selected dates match this pattern
+
+            // Get all unique months and days
+            final allMonths = monthGroups.keys.toList()..sort();
+            final allDays = <int>{};
+            for (final days in monthGroups.values) {
+              allDays.addAll(days);
+            }
+            final sortedDays = allDays.toList()..sort();
+
+            // Check if the Cartesian product matches our selected dates
+            final expectedDates = <String>{};
+            for (final month in allMonths) {
+              for (final day in sortedDays) {
+                // Check if this day is valid for this month
+                try {
+                  DateTime(2024, month, day); // Use leap year to validate
+                  expectedDates.add('$month-$day');
+                } catch (e) {
+                  // Invalid date (e.g., Feb 31), skip
+                }
+              }
+            }
+
+            final selectedDates =
+                sortedDates.map((d) => '${d.month}-${d.day}').toSet();
+
+            // If the pattern matches, use BYMONTH and BYMONTHDAY
+            if (expectedDates.length == selectedDates.length &&
+                expectedDates.containsAll(selectedDates)) {
+              final months = allMonths.join(',');
+              final days = sortedDays.join(',');
+              rruleString = 'FREQ=YEARLY;BYMONTH=$months;BYMONTHDAY=$days';
+            } else {
+              // Pattern doesn't match Cartesian product
+              // Use RDATE for specific dates (requires dtStart + RDATE list)
+              // For now, fall back to creating multiple simple rules
+              // or use the most common pattern
+
+              // Strategy: Use the month with the most dates
+              final maxMonth = monthGroups.entries
+                  .reduce((a, b) => a.value.length > b.value.length ? a : b)
+                  .key;
+              final days = monthGroups[maxMonth]!.join(',');
+              rruleString = 'FREQ=YEARLY;BYMONTH=$maxMonth;BYMONTHDAY=$days';
+
+              AppLogger.warning(
+                  'Yearly habit has complex date pattern. Using primary month ($maxMonth) only. '
+                  'Consider using Advanced Mode for full control.');
+            }
+          }
+          break;
+
+        default:
+          return; // Don't generate RRule for hourly or single
+      }
+
+      habit.rruleString = rruleString;
+      habit.dtStart = DateTime.now();
+      habit.usesRRule = true;
+      AppLogger.info('✅ Generated RRule from simple mode: $rruleString');
+    } catch (e) {
+      AppLogger.warning('Failed to generate RRule from simple mode: $e');
+      // Not critical - habit will work with legacy frequency system
     }
   }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // ==================== HABIT SUGGESTIONS ====================
+
+  /// Load comprehensive habit suggestions
+  Future<void> _loadHabitSuggestions() async {
+    setState(() {
+      _loadingSuggestions = true;
+    });
+
+    try {
+      final suggestions =
+          await ComprehensiveHabitSuggestionsService.generateSuggestions();
+      if (mounted) {
+        setState(() {
+          _habitSuggestions = suggestions;
+          _loadingSuggestions = false;
+        });
+      }
+    } catch (e) {
+      AppLogger.error('Error loading habit suggestions', e);
+      if (mounted) {
+        setState(() {
+          _loadingSuggestions = false;
+        });
+      }
+    }
+  }
+
+  /// Update category suggestions when text changes
+  void _onHabitTextChanged() {
+    setState(() {
+      // This will trigger a rebuild and update category suggestions
+    });
+  }
+
+  /// Build comprehensive habit suggestions dropdown
+  Widget _buildHabitSuggestionsDropdown() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.lightbulb,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Habit Suggestions',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showSuggestions = !_showSuggestions;
+                    });
+                  },
+                  icon: Icon(
+                    _showSuggestions ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                  ),
+                  label: Text(_showSuggestions ? 'Hide' : 'Show'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Get inspired with personalized habit suggestions.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            ),
+            if (_showSuggestions) ...[
+              const SizedBox(height: 16),
+              _buildSuggestionsGrid(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsGrid() {
+    if (_loadingSuggestions) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_habitSuggestions.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          'No suggestions available at the moment.',
+          style: TextStyle(
+            color: Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      );
+    }
+
+    // Group suggestions by type
+    final groupedSuggestions = <String, List<HabitSuggestion>>{};
+    for (final suggestion in _habitSuggestions) {
+      groupedSuggestions.putIfAbsent(suggestion.type, () => []).add(suggestion);
+    }
+
+    return Column(
+      children: groupedSuggestions.entries.map((entry) {
+        final type = entry.key;
+        final suggestions =
+            entry.value.take(3).toList(); // Show max 3 per category
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    _getTypeIcon(type),
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    type,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            ...suggestions.map((suggestion) => Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: Icon(
+                      _getCategoryIcon(suggestion.category),
+                      color: _getCategoryColor(suggestion.category),
+                    ),
+                    title: Text(suggestion.name),
+                    subtitle: Text(
+                      suggestion.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: const Icon(Icons.add),
+                    onTap: () => _applySuggestion(suggestion),
+                  ),
+                )),
+            const SizedBox(height: 8),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  IconData _getTypeIcon(String type) {
+    switch (type.toLowerCase()) {
+      case 'health':
+        return Icons.favorite;
+      case 'fitness':
+        return Icons.fitness_center;
+      case 'productivity':
+        return Icons.work;
+      case 'learning':
+        return Icons.school;
+      case 'mindfulness':
+        return Icons.self_improvement;
+      default:
+        return Icons.star;
+    }
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'health':
+        return Icons.favorite;
+      case 'fitness':
+        return Icons.fitness_center;
+      case 'productivity':
+        return Icons.work;
+      case 'learning':
+        return Icons.school;
+      case 'personal':
+        return Icons.person;
+      case 'social':
+        return Icons.people;
+      case 'finance':
+        return Icons.attach_money;
+      case 'mindfulness':
+        return Icons.self_improvement;
+      default:
+        return Icons.emoji_objects;
+    }
+  }
+
+  void _applySuggestion(HabitSuggestion suggestion) {
+    setState(() {
+      _nameController.text = suggestion.name;
+      _descriptionController.text = suggestion.description;
+      _selectedCategory = suggestion.category;
+      _selectedColor = _getCategoryColor(suggestion.category);
+      _selectedFrequency = suggestion.frequency;
+      _notificationsEnabled = true;
+      _notificationTime = TimeOfDay.now();
+    });
+
+    // Close suggestions after applying
+    setState(() {
+      _showSuggestions = false;
+    });
+  }
+
+  // ==================== ALARM SELECTION ====================
 
   Future<void> _selectAlarmSound() async {
     try {
       final availableSounds = await AlarmService.getAvailableAlarmSounds();
-
-      // Debug logging for available sounds
-      AppLogger.debug('Available sounds from platform channel:');
-      for (int i = 0; i < availableSounds.length && i < 5; i++) {
-        final sound = availableSounds[i];
-        AppLogger.debug(
-            '  Sound $i: ${sound['name']} -> URI: ${sound['uri']} (Type: ${sound['type']})');
-      }
-      AppLogger.debug('Total sounds available: ${availableSounds.length}');
 
       if (!mounted) return;
 
@@ -2028,7 +2046,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                         const SizedBox(width: 8),
                         const Expanded(
                           child: Text(
-                            'Tap the play button to preview sounds. System alarms are recommended for best reliability.',
+                            'Tap the play button to preview sounds.',
                             style: TextStyle(fontSize: 12),
                           ),
                         ),
@@ -2066,7 +2084,6 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                               final soundName =
                                   sound['name'] ?? 'Unknown Sound';
                               final soundUri = sound['uri'] ?? '';
-                              final soundType = sound['type'] ?? 'custom';
                               final isSelected =
                                   soundName == _selectedAlarmSoundName;
                               final isPlaying = currentlyPlaying == soundUri;
@@ -2110,8 +2127,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                                 '🎵 UI: About to play sound: $soundUri');
                                             await AlarmService
                                                 .playAlarmSoundPreview(
-                                              soundUri,
-                                            );
+                                                    soundUri);
                                             AppLogger.info(
                                                 '🎵 UI: Play command completed successfully');
 
@@ -2125,14 +2141,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                               () async {
                                                 await AlarmService
                                                     .stopAlarmSoundPreview();
-                                                // Check if the dialog's StatefulBuilder is still mounted
-                                                // by using a try-catch around setDialogState
                                                 try {
                                                   setDialogState(() {
                                                     currentlyPlaying = null;
                                                   });
                                                 } catch (e) {
-                                                  // Dialog was closed, ignore the error
+                                                  // Dialog was closed, ignore
                                                 }
                                               },
                                             );
@@ -2162,52 +2176,15 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                                     ),
                                   ),
                                   title: Text(soundName),
-                                  subtitle: Text(
-                                    _getSoundTypeDisplay(soundType),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: _getSoundTypeColor(soundType),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  trailing: Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isSelected
-                                          ? _selectedColor
-                                          : Colors.transparent,
-                                    ),
-                                    child: Radio<String>(
-                                      value: soundName,
-                                      // ignore: deprecated_member_use
-                                      groupValue: _selectedAlarmSoundName,
-                                      // ignore: deprecated_member_use
-                                      onChanged: (value) {
-                                        Navigator.of(context).pop({
-                                          'name': soundName,
-                                          'uri': soundUri,
-                                        });
-                                      },
-                                      fillColor: WidgetStateProperty
-                                          .resolveWith<Color?>(
-                                        (Set<WidgetState> states) {
-                                          if (states
-                                              .contains(WidgetState.selected)) {
-                                            return _selectedColor;
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                  selected: isSelected,
+                                  trailing: isSelected
+                                      ? Icon(Icons.check_circle,
+                                          color: _selectedColor)
+                                      : null,
                                   onTap: () {
-                                    if (mounted) {
-                                      Navigator.of(context).pop({
-                                        'name': soundName,
-                                        'uri': soundUri,
-                                      });
-                                    }
+                                    Navigator.of(context).pop({
+                                      'name': soundName,
+                                      'uri': soundUri,
+                                    });
                                   },
                                 ),
                               );
@@ -2219,12 +2196,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () async {
-                  await AlarmService.stopAlarmSoundPreview();
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                },
+                onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Cancel'),
               ),
             ],
@@ -2232,21 +2204,15 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
         ),
       );
 
-      // Stop any playing sound when dialog closes
-      await AlarmService.stopAlarmSoundPreview();
-
       if (selected != null && mounted) {
         setState(() {
           _selectedAlarmSoundName = selected['name'];
           _selectedAlarmSoundUri = selected['uri'];
         });
-
-        // Debug logging for sound selection
-        AppLogger.debug('Sound selected:');
-        AppLogger.debug('  - Name: ${selected['name']}');
-        AppLogger.debug('  - URI: ${selected['uri']}');
-        AppLogger.debug('  - Type: ${selected['type']}');
       }
+
+      // Stop any playing sound when dialog closes
+      await AlarmService.stopAlarmSoundPreview();
     } catch (e, stackTrace) {
       AppLogger.error('Error loading alarm sounds dialog', e);
       AppLogger.error('Stack trace: $stackTrace', null);
@@ -2262,634 +2228,14 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       }
     }
   }
+}
 
-  Future<void> _saveHabit() async {
-    if (_isSaving || !_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      // Validate frequency-specific requirements
-      if (_selectedFrequency == HabitFrequency.weekly &&
-          _selectedWeekdays.isEmpty) {
-        setState(() {
-          _isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select at least one day of the week'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      if (_selectedFrequency == HabitFrequency.monthly &&
-          _selectedMonthDays.isEmpty) {
-        setState(() {
-          _isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select at least one day of the month'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      if (_selectedFrequency == HabitFrequency.yearly &&
-          _selectedYearlyDates.isEmpty) {
-        setState(() {
-          _isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select at least one date for the year'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      if (_selectedFrequency == HabitFrequency.single &&
-          _singleDateTime == null) {
-        setState(() {
-          _isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content:
-                Text('Please select a date and time for this single habit'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      if (_selectedFrequency == HabitFrequency.hourly && _hourlyTimes.isEmpty) {
-        setState(() {
-          _isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Please select at least one time for hourly reminders',
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      if (_selectedFrequency == HabitFrequency.hourly &&
-          _selectedWeekdays.isEmpty) {
-        setState(() {
-          _isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Please select at least one day of the week for hourly habits',
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Validate time for non-hourly, non-single habits when notifications or alarms are enabled
-      if ((_notificationsEnabled || _alarmEnabled) &&
-          _selectedFrequency != HabitFrequency.hourly &&
-          _selectedFrequency != HabitFrequency.single &&
-          _notificationTime == null) {
-        setState(() {
-          _isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _alarmEnabled
-                  ? 'Please select an alarm time'
-                  : 'Please select a notification time',
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      final databaseAsync = ref.read(isarProvider);
-      final database = databaseAsync.value;
-
-      if (database == null) {
-        setState(() {
-          _isSaving = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Database not available'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Convert TimeOfDay to DateTime if notification time is set
-      DateTime? notificationDateTime;
-      if (_notificationTime != null) {
-        final now = DateTime.now();
-        notificationDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          _notificationTime!.hour,
-          _notificationTime!.minute,
-        );
-      }
-
-      // Create habit
-      final habit = Habit.create(
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        category: _selectedCategory,
-        colorValue: _selectedColor.toARGB32(),
-        frequency: _selectedFrequency,
-        targetCount: 1,
-        notificationsEnabled: _notificationsEnabled,
-        notificationTime: notificationDateTime,
-        selectedWeekdays: _selectedWeekdays,
-        selectedMonthDays: _selectedMonthDays,
-        hourlyTimes: _hourlyTimes
-            .map(
-              (time) =>
-                  '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-            )
-            .toList(),
-        selectedYearlyDates: _selectedYearlyDates
-            .map(
-              (date) =>
-                  '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-            )
-            .toList(),
-        singleDateTime: _singleDateTime,
-        alarmEnabled: _alarmEnabled,
-        alarmSoundName: _selectedAlarmSoundName,
-        alarmSoundUri: _selectedAlarmSoundUri,
-      );
-
-      // If using advanced scheduling mode, apply the RRule directly
-      if (_useAdvancedScheduling && _rruleString != null) {
-        habit.rruleString = _rruleString;
-        habit.dtStart = _rruleStartDate;
-        habit.usesRRule = true;
-        AppLogger.info('✅ Using advanced RRule scheduling: $_rruleString');
-        // Note: Hourly times are still stored separately for hybrid approach
-        if (_selectedFrequency == HabitFrequency.hourly) {
-          AppLogger.info(
-              '  📅 Hybrid mode: RRule pattern + ${_hourlyTimes.length} specific times');
-        }
-      } else if (_selectedFrequency != HabitFrequency.single) {
-        // Phase 4: Auto-generate RRule for all new habits (except single)
-        // This provides consistency and enables complex patterns in the future
-        try {
-          // Use the habit's built-in conversion method
-          habit
-              .getOrCreateRRule(); // This auto-converts and sets usesRRule flag
-          AppLogger.info('✅ Auto-generated RRule for new habit: ${habit.name}');
-        } catch (e) {
-          AppLogger.warning(
-              'Failed to auto-generate RRule, using legacy format: $e');
-          // Not critical - habit will work with legacy frequency system
-        }
-      }
-
-      // Debug logging for sound settings
-      AppLogger.debug('Creating habit with sound settings:');
-      AppLogger.debug('  - Sound Name: $_selectedAlarmSoundName');
-      AppLogger.debug('  - Sound URI: $_selectedAlarmSoundUri');
-      AppLogger.debug('  - Alarm Enabled: $_alarmEnabled');
-
-      // Get HabitService instead of direct database access
-      final habitServiceAsync = ref.read(habitServiceIsarProvider);
-      HabitServiceIsar? habitService = habitServiceAsync.value;
-
-      if (habitService == null) {
-        setState(() {
-          _isSaving = false;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Habit service not available'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-        return;
-      }
-
-      try {
-        await habitService.addHabit(habit);
-      } catch (e) {
-        // If it's a database connection error, try to refresh the provider and retry once
-        if (e.toString().contains('Database box is closed') ||
-            e.toString().contains('Database connection lost')) {
-          AppLogger.info(
-              'Database connection lost, refreshing providers and retrying...');
-
-          // Invalidate the providers to force refresh
-          ref.invalidate(isarProvider);
-          ref.invalidate(habitServiceIsarProvider);
-
-          // Wait a moment for providers to refresh
-          await Future.delayed(const Duration(milliseconds: 500));
-
-          // Try to get fresh service and retry
-          try {
-            final freshServiceAsync = ref.read(habitServiceIsarProvider);
-            final freshService = freshServiceAsync.value;
-
-            if (freshService == null) {
-              throw StateError(
-                  'Could not obtain fresh habit service after refresh');
-            }
-
-            AppLogger.info(
-                'Retrying habit creation with fresh database connection...');
-            await freshService.addHabit(habit);
-            AppLogger.info('✅ Habit created successfully on retry');
-          } catch (retryError) {
-            AppLogger.error('Retry failed: $retryError');
-            rethrow; // Rethrow the retry error
-          }
-        } else {
-          rethrow; // Re-throw other errors
-        }
-      }
-
-      // Schedule notifications/alarms if enabled (non-blocking)
-      if (_notificationsEnabled || _alarmEnabled) {
-        try {
-          await NotificationService.scheduleHabitNotifications(habit);
-          AppLogger.info(
-            'Notifications/alarms scheduled successfully for habit: ${habit.name}',
-          );
-        } catch (e) {
-          AppLogger.warning(
-            'Failed to schedule notifications/alarms for habit: ${habit.name} - $e',
-          );
-          // Don't block habit creation if notification scheduling fails
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Habit created but notifications/alarms could not be scheduled: ${e.toString()}',
-                ),
-                backgroundColor: Colors.orange,
-                duration: const Duration(seconds: 4),
-              ),
-            );
-          }
-        }
-      }
-
-      // Log the habit creation
-      if (mounted) {
-        AppLogger.info('Habit created: ${habit.name}');
-      }
-
-      // Show success message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Habit "${habit.name}" created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Navigate back
-        context.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        AppLogger.error('Failed to create habit', e);
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create habit: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
-    }
-  }
-
-  /// Load comprehensive habit suggestions
-  Future<void> _loadHabitSuggestions() async {
-    setState(() {
-      _loadingSuggestions = true;
-    });
-
-    try {
-      final suggestions =
-          await ComprehensiveHabitSuggestionsService.generateSuggestions();
-      if (mounted) {
-        setState(() {
-          _habitSuggestions = suggestions;
-          _loadingSuggestions = false;
-        });
-      }
-    } catch (e) {
-      AppLogger.error('Error loading habit suggestions', e);
-      if (mounted) {
-        setState(() {
-          _loadingSuggestions = false;
-        });
-      }
-    }
-  }
-
-  // Get category suggestions based on habit name and description
-  List<String> _getCategorySuggestions() {
-    final habitName = _nameController.text;
-    final habitDescription = _descriptionController.text;
-
-    if (habitName.isEmpty) return [];
-
-    return CategorySuggestionService.getCategorySuggestions(
-      habitName,
-      habitDescription.isEmpty ? null : habitDescription,
-    );
-  }
-
-  // Update category suggestions when text changes
-  void _onHabitTextChanged() {
-    setState(() {
-      // This will trigger a rebuild and update category suggestions
-    });
-  }
-
-  /// Build comprehensive habit suggestions dropdown
-  Widget _buildHabitSuggestionsDropdown() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.lightbulb,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Habit Suggestions',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _showSuggestions = !_showSuggestions;
-                    });
-                  },
-                  icon: Icon(
-                    _showSuggestions ? Icons.expand_less : Icons.expand_more,
-                    size: 20,
-                  ),
-                  label: Text(_showSuggestions ? 'Hide' : 'Show'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Get inspired with personalized habit suggestions based on popular categories and your health data.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-            ),
-            if (_showSuggestions) ...[
-              const SizedBox(height: 16),
-              _buildSuggestionsGrid(),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSuggestionsGrid() {
-    if (_loadingSuggestions) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    // Group suggestions by type
-    final groupedSuggestions = <String, List<HabitSuggestion>>{};
-    for (final suggestion in _habitSuggestions) {
-      groupedSuggestions.putIfAbsent(suggestion.type, () => []).add(suggestion);
-    }
-
-    return Column(
-      children: groupedSuggestions.entries.map((entry) {
-        final type = entry.key;
-        final suggestions =
-            entry.value.take(3).toList(); // Show max 3 per category
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    _getTypeIcon(type),
-                    size: 16,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    type,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            ...suggestions.map(
-              (suggestion) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Card(
-                  elevation: 1,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.primaryContainer,
-                      child: Icon(
-                        _getIconData(suggestion.icon),
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      suggestion.name,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    subtitle: Text(
-                      suggestion.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextButton(
-                          onPressed: () => _applySuggestion(suggestion),
-                          child: const Text('Apply'),
-                        ),
-                      ],
-                    ),
-                    onTap: () => _applySuggestion(suggestion),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        );
-      }).toList(),
-    );
-  }
-
-  /// Get icon for suggestion type
-  IconData _getTypeIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'health':
-        return Icons.health_and_safety;
-      case 'productivity':
-        return Icons.work;
-      case 'learning':
-        return Icons.school;
-      case 'personal':
-        return Icons.self_improvement;
-      case 'social':
-        return Icons.people;
-      case 'finance':
-        return Icons.account_balance_wallet;
-      case 'lifestyle':
-        return Icons.home;
-      case 'hobbies':
-        return Icons.palette;
-      default:
-        return Icons.category;
-    }
-  }
-
-  /// Get IconData from string
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
-      case 'checklist':
-        return Icons.checklist;
-      case 'email':
-        return Icons.email;
-      case 'psychology':
-        return Icons.psychology;
-      case 'menu_book':
-        return Icons.menu_book;
-      case 'translate':
-        return Icons.translate;
-      case 'school':
-        return Icons.school;
-      case 'favorite':
-        return Icons.favorite;
-      case 'self_improvement':
-        return Icons.self_improvement;
-      case 'lightbulb':
-        return Icons.lightbulb;
-      case 'phone':
-        return Icons.phone;
-      case 'message':
-        return Icons.message;
-      case 'people':
-        return Icons.people;
-      case 'account_balance_wallet':
-        return Icons.account_balance_wallet;
-      case 'trending_up':
-        return Icons.trending_up;
-      case 'savings':
-        return Icons.savings;
-      case 'bed':
-        return Icons.bed;
-      case 'home':
-        return Icons.home;
-      case 'restaurant':
-        return Icons.restaurant;
-      case 'palette':
-        return Icons.palette;
-      case 'music_note':
-        return Icons.music_note;
-      case 'camera_alt':
-        return Icons.camera_alt;
-      case 'directions_walk':
-        return Icons.directions_walk;
-      case 'local_fire_department':
-        return Icons.local_fire_department;
-      case 'bedtime':
-        return Icons.bedtime;
-      case 'water_drop':
-        return Icons.water_drop;
-      case 'monitor_weight':
-        return Icons.monitor_weight;
-      case 'medication':
-        return Icons.medication;
-      case 'health_and_safety':
-        return Icons.health_and_safety;
-      default:
-        return Icons.star;
-    }
-  }
-
-  /// Apply a habit suggestion to the form
-  void _applySuggestion(HabitSuggestion suggestion) {
-    setState(() {
-      _nameController.text = suggestion.name;
-      _descriptionController.text = suggestion.description;
-      _selectedCategory = suggestion.category;
-      _selectedFrequency = suggestion.frequency;
-
-      // Health integration is no longer supported - removed
-    });
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Applied suggestion: ${suggestion.name}'),
-        backgroundColor: Colors.green,
-      ),
-    );
+// Extension to convert Color to ARGB32
+extension ColorExtension on Color {
+  int toARGB32() {
+    return ((a * 255.0).round() & 0xff) << 24 |
+        ((r * 255.0).round() & 0xff) << 16 |
+        ((g * 255.0).round() & 0xff) << 8 |
+        ((b * 255.0).round() & 0xff);
   }
 }

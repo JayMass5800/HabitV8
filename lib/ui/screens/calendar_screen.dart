@@ -5,6 +5,7 @@ import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/calendar_service.dart';
 import '../../services/rrule_service.dart';
+import '../../utils/date_utils.dart';
 import '../widgets/day_detail_sheet.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/loading_widget.dart';
@@ -437,7 +438,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildCalendarDay(DateTime day, List<Habit> habits) {
     final isCurrentMonth = day.month == _focusedDay.month;
-    final isToday = isSameDay(day, DateTime.now());
+    final isToday = DateTimeUtils.isSameDay(day, DateTime.now());
     final events = _getEventsForDay(day, habits);
     final completedCount =
         events.where((habit) => _isHabitCompletedOnDate(habit, day)).length;
@@ -554,9 +555,5 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ],
       ),
     );
-  }
-
-  bool isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }

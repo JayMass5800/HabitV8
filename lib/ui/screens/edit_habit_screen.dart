@@ -10,6 +10,7 @@ import '../../services/category_suggestion_service.dart';
 import '../../services/alarm_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/permission_service.dart';
+import '../../utils/date_utils.dart';
 import '../widgets/rrule_builder_widget.dart';
 
 class EditHabitScreen extends ConsumerStatefulWidget {
@@ -995,7 +996,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                           selectedDate.month == day.month &&
                           selectedDate.day == day.day,
                     );
-                    final isToday = _isSameDay(day, now);
+                    final isToday = DateTimeUtils.isSameDay(day, now);
 
                     return Container(
                       margin: const EdgeInsets.all(2),
@@ -1073,12 +1074,6 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
         ],
       ],
     );
-  }
-
-  bool _isSameDay(DateTime date1, DateTime date2) {
-    return date1.year == date2.year &&
-        date1.month == date2.month &&
-        date1.day == date2.day;
   }
 
   String _getMonthName(int month) {

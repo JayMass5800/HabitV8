@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../domain/model/habit.dart';
+import '../../utils/date_utils.dart';
 
 class DayDetailSheet extends StatefulWidget {
   final DateTime selectedDay;
@@ -104,7 +105,7 @@ class _DayDetailSheetState extends State<DayDetailSheet>
         .where((habit) => _isHabitCompletedOnDate(habit, widget.selectedDay))
         .length;
     final totalCount = widget.habits.length;
-    final isToday = _isSameDay(widget.selectedDay, DateTime.now());
+    final isToday = DateTimeUtils.isSameDay(widget.selectedDay, DateTime.now());
     final isPastDay = widget.selectedDay.isBefore(DateTime.now()) && !isToday;
 
     return AnimatedBuilder(
@@ -249,7 +250,6 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                           ),
                         ],
                       ),
-
                       if (totalCount > 0) ...[
                         const SizedBox(height: 20),
                         Container(
@@ -411,12 +411,14 @@ class _DayDetailSheetState extends State<DayDetailSheet>
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        decoration: isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
+                        decoration:
+                            isCompleted ? TextDecoration.lineThrough : null,
                         color: isCompleted
-                            ? Theme.of(context).textTheme.bodyMedium?.color
-                                  ?.withValues(alpha: 0.6)
+                            ? Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.color
+                                ?.withValues(alpha: 0.6)
                             : null,
                       ),
                     ),
@@ -617,9 +619,5 @@ class _DayDetailSheetState extends State<DayDetailSheet>
     if (percentage >= 0.5) return 'Good progress! 👍';
     if (percentage > 0) return 'Getting started! 🌱';
     return 'Ready to begin? 🚀';
-  }
-
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }
