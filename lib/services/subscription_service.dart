@@ -89,7 +89,8 @@ class SubscriptionService {
 
   /// Check if this is the first app launch and start trial period
   Future<void> _checkAndStartTrial() async {
-        final trialStartDate = await PreferencesService.getString(_trialStartDateKey);
+    final trialStartDate =
+        await PreferencesService.getString(_trialStartDateKey);
 
     if (trialStartDate == null) {
       // First time user - start trial
@@ -116,14 +117,15 @@ class SubscriptionService {
       unawaited(_ensureInitialized());
     }
 
-        // Check if user has purchased premium
+    // Check if user has purchased premium
     final hasPremium = await _hasPremiumSubscription();
     if (hasPremium) {
       return SubscriptionStatus.premium;
     }
 
     // Check trial status
-    final trialStartDateStr = await PreferencesService.getString(_trialStartDateKey);
+    final trialStartDateStr =
+        await PreferencesService.getString(_trialStartDateKey);
     if (trialStartDateStr == null) {
       // This shouldn't happen after initialization, but handle gracefully
       await _checkAndStartTrial();
@@ -144,10 +146,12 @@ class SubscriptionService {
   /// Update internal subscription status cache
   Future<void> _updateSubscriptionStatus() async {
     final status = await getSubscriptionStatus();
-        await PreferencesService.setString(_subscriptionStatusKey, status.toString());
+    await PreferencesService.setString(
+        _subscriptionStatusKey, status.toString());
 
     // Update last check timestamp
-    await PreferencesService.setString(_lastTrialCheckKey, DateTime.now().toIso8601String());
+    await PreferencesService.setString(
+        _lastTrialCheckKey, DateTime.now().toIso8601String());
   }
 
   /// Check if user has premium subscription (to be implemented with in-app purchases)
@@ -173,7 +177,8 @@ class SubscriptionService {
       return -1; // Premium users don't have trial limitation
     }
 
-        final trialStartDateStr = await PreferencesService.getString(_trialStartDateKey);
+    final trialStartDateStr =
+        await PreferencesService.getString(_trialStartDateKey);
     if (trialStartDateStr == null) return 0;
 
     final trialStartDate = DateTime.parse(trialStartDateStr);
@@ -331,7 +336,7 @@ class SubscriptionService {
 
     // Show warning when 3 days or less remaining
     if (remainingDays <= 3 && remainingDays > 0) {
-            final lastNotified = await PreferencesService.getString(_userNotifiedKey);
+      final lastNotified = await PreferencesService.getString(_userNotifiedKey);
       final today = DateTime.now().toIso8601String().substring(0, 10);
 
       // Only show once per day
@@ -346,7 +351,8 @@ class SubscriptionService {
 
   /// Get trial start date
   Future<DateTime?> getTrialStartDate() async {
-        final trialStartDateStr = await PreferencesService.getString(_trialStartDateKey);
+    final trialStartDateStr =
+        await PreferencesService.getString(_trialStartDateKey);
     if (trialStartDateStr != null) {
       return DateTime.parse(trialStartDateStr);
     }
@@ -360,7 +366,7 @@ class SubscriptionService {
       return;
     }
 
-        await PreferencesService.remove(_trialStartDateKey);
+    await PreferencesService.remove(_trialStartDateKey);
     await PreferencesService.remove(_subscriptionStatusKey);
     await PreferencesService.remove(_lastTrialCheckKey);
     await PreferencesService.remove(_userNotifiedKey);
@@ -376,7 +382,7 @@ class SubscriptionService {
       return;
     }
 
-        final expiredStartDate =
+    final expiredStartDate =
         DateTime.now().subtract(Duration(days: _trialDurationDays + 1));
     await PreferencesService.setString(
         _trialStartDateKey, expiredStartDate.toIso8601String());
@@ -414,7 +420,8 @@ class SubscriptionService {
       };
     }
 
-        final trialStartDateStr = await PreferencesService.getString(_trialStartDateKey);
+    final trialStartDateStr =
+        await PreferencesService.getString(_trialStartDateKey);
     final now = DateTime.now();
 
     if (trialStartDateStr == null) {
