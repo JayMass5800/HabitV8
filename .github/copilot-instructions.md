@@ -94,7 +94,7 @@ When working with habit frequency:
 5. All DateTime values passed to RRule methods MUST be UTC
 
 ### Notification System Patterns
-- **NEVER** import `notification_service_monolithic.dart.bak` or other backup files
+- **NOTE:** All backup files (*.bak) have been archived to `archive/removed_backups/` as of Nov 2025
 - Use modular services in `lib/services/notifications/`
 - Schedule notifications via `NotificationScheduler`, not directly through plugin
 - Action handling: Goes through `NotificationActionHandler` with storage persistence
