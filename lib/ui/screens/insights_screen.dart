@@ -87,17 +87,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
       // Check if AI is enabled in settings
       const secureStorage = FlutterSecureStorage();
-      final enableAI =
-          await secureStorage.read(key: 'enable_ai_insights') == 'true';
+      final enableAIString = await secureStorage.read(key: 'enable_ai_insights');
+      final enableAI = enableAIString == 'true';
+
+      // Debug logging
+      print('🔍 AI Status Check:');
+      print('  - enable_ai_insights value: "$enableAIString"');
+      print('  - Parsed enableAI: $enableAI');
+      print('  - isAIAvailable: $isAIAvailable');
 
       if (mounted) {
         setState(() {
           _isAIEnabled = enableAI;
           _isAIAvailable = isAIAvailable;
         });
+        
+        print('  - Final _isAIEnabled: $_isAIEnabled');
+        print('  - Final _isAIAvailable: $_isAIAvailable');
+        print('  - Will show AI insights: ${_isAIEnabled && _isAIAvailable}');
       }
     } catch (e) {
       // If there's an error, default to disabled
+      print('❌ Error updating AI status: $e');
       if (mounted) {
         setState(() {
           _isAIEnabled = false;

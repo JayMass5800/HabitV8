@@ -936,6 +936,15 @@ ${_getRecentTrends(activeHabits)}
         _geminiApiKey != null &&
         _geminiApiKey!.isNotEmpty &&
         _geminiApiKey!.startsWith('AIza');
+    
+    // Debug logging
+    print('🔍 AIService.isConfigured check:');
+    print('  - _openAiApiKey: ${_openAiApiKey == null ? "null" : (_openAiApiKey!.isEmpty ? "empty" : "has value (${_openAiApiKey!.substring(0, 6)}...)")}');
+    print('  - hasValidOpenAI: $hasValidOpenAI');
+    print('  - _geminiApiKey: ${_geminiApiKey == null ? "null" : (_geminiApiKey!.isEmpty ? "empty" : "has value (${_geminiApiKey!.substring(0, 6)}...)")}');
+    print('  - hasValidGemini: $hasValidGemini');
+    print('  - isConfigured result: ${hasValidOpenAI || hasValidGemini}');
+    
     return hasValidOpenAI || hasValidGemini;
   }
 
