@@ -160,27 +160,47 @@ class AIService {
             {
               'role': 'system',
               'content':
-                  'You are a habit coach AI assistant. Analyze habit data and provide personalized insights and recommendations. Return exactly 3 insights in JSON format with fields: type, title, description, icon.'
+                  '''You are an expert habit formation coach and behavioral psychologist. Analyze habit tracking data to provide actionable, personalized insights.
+
+IMPORTANT GUIDELINES:
+- Focus on actionable insights that users can implement immediately
+- Identify specific patterns in temporal behavior, consistency, and category performance
+- Highlight both achievements and opportunities for improvement
+- Use psychological principles (habit stacking, implementation intentions, environmental design)
+- Be encouraging but honest about areas needing attention
+- Consider difficulty levels and suggest appropriate challenges
+- Look for correlations between habits that suggest synergies
+
+Return exactly 3 insights in JSON format with these fields:
+- type: "motivational" (celebration/encouragement) | "pattern" (behavioral pattern detected) | "insight" (data-driven observation) | "achievement" (milestone recognition) | "actionable" (specific recommendation)
+- title: Short, compelling title (max 5 words)
+- description: Specific, actionable insight with concrete suggestions (2-3 sentences)
+- icon: "rocket_launch" | "trending_up" | "emoji_events" | "wb_sunny" | "weekend" | "local_fire_department" | "psychology" | "lightbulb" | "fitness_center"'''
             },
             {
               'role': 'user',
               'content':
-                  '''Analyze these habit tracking data and provide exactly 3 personalized insights.
+                  '''Analyze this detailed habit tracking data and provide exactly 3 personalized, actionable insights.
                   
-Habit Data: $habitSummary
+$habitSummary
 
-Please provide insights in this JSON format:
+Focus on:
+1. Most impactful behavioral patterns (temporal, categorical, difficulty-based)
+2. Specific opportunities for improvement with concrete actions
+3. Achievements worth celebrating or streaks worth maintaining
+
+Provide insights in this exact JSON format:
 [
   {
-    "type": "motivational|pattern|insight|achievement",
+    "type": "motivational|pattern|insight|achievement|actionable",
     "title": "Short insight title",
-    "description": "Detailed insight explanation",
-    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny"
+    "description": "Detailed insight explanation with specific actionable advice",
+    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
 ]'''
             }
           ],
-          'max_tokens': 1000,
+          'max_tokens': 1200,
           'temperature': 0.7,
         }),
       );
@@ -262,17 +282,29 @@ Please provide insights in this JSON format:
               'parts': [
                 {
                   'text':
-                      '''Analyze these habit tracking data and provide exactly 3 personalized insights.
-                  
-Habit Data: $habitSummary
+                      '''You are an expert habit formation coach and behavioral psychologist. Analyze this detailed habit tracking data and provide exactly 3 personalized, actionable insights.
 
-Please provide insights in this JSON format:
+$habitSummary
+
+GUIDELINES:
+- Focus on actionable insights users can implement immediately
+- Identify specific patterns in temporal behavior, consistency, and category performance
+- Highlight both achievements and opportunities for improvement
+- Use psychological principles (habit stacking, implementation intentions)
+- Be encouraging but honest about areas needing attention
+
+Focus on:
+1. Most impactful behavioral patterns (temporal, categorical, difficulty-based)
+2. Specific opportunities for improvement with concrete actions
+3. Achievements worth celebrating or streaks worth maintaining
+
+Provide insights in this exact JSON format:
 [
   {
-    "type": "motivational|pattern|insight|achievement",
+    "type": "motivational|pattern|insight|achievement|actionable",
     "title": "Short insight title", 
-    "description": "Detailed insight explanation",
-    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny"
+    "description": "Detailed insight explanation with specific actionable advice",
+    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
 ]'''
                 }
@@ -346,17 +378,19 @@ Please provide insights in this JSON format:
               'parts': [
                 {
                   'text':
-                      '''Analyze these habit tracking data and provide exactly 3 personalized insights.
-                  
-Habit Data: $habitSummary
+                      '''You are an expert habit formation coach. Analyze this habit data and provide exactly 3 personalized, actionable insights.
 
-Please provide insights in this JSON format:
+$habitSummary
+
+Focus on actionable patterns, achievements, and specific improvement opportunities.
+
+Provide insights in this exact JSON format:
 [
   {
-    "type": "motivational|pattern|insight|achievement",
+    "type": "motivational|pattern|insight|achievement|actionable",
     "title": "Short insight title", 
-    "description": "Detailed insight explanation",
-    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny"
+    "description": "Detailed insight explanation with specific actionable advice",
+    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
 ]'''
                 }
@@ -405,22 +439,22 @@ Please provide insights in this JSON format:
             {
               'role': 'system',
               'content':
-                  'You are a habit coach AI assistant. Analyze habit data and provide personalized insights and recommendations. Return exactly 3 insights in JSON format with fields: type, title, description, icon.'
+                  'You are an expert habit coach. Analyze habit data and provide actionable insights in JSON format.'
             },
             {
               'role': 'user',
               'content':
-                  '''Analyze these habit tracking data and provide exactly 3 personalized insights.
+                  '''Analyze this habit data and provide exactly 3 personalized insights.
                   
-Habit Data: $habitSummary
+$habitSummary
 
-Please provide insights in this JSON format:
+Provide insights in this exact JSON format:
 [
   {
-    "type": "motivational|pattern|insight|achievement",
+    "type": "motivational|pattern|insight|achievement|actionable",
     "title": "Short insight title",
-    "description": "Detailed insight explanation",
-    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny"
+    "description": "Detailed insight explanation with specific actionable advice",
+    "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
 ]'''
             }
@@ -468,14 +502,267 @@ Please provide insights in this JSON format:
     final bestStreak =
         streaks.isNotEmpty ? streaks.reduce((a, b) => a > b ? a : b) : 0;
 
+    // Enhanced analysis sections
+    final temporalPatterns = _analyzeTemporalPatterns(activeHabits);
+    final difficultyAnalysis = _analyzeDifficulty(activeHabits);
+    final categoryPerformance = _analyzeCategoryPerformance(activeHabits);
+    final streakAnalysis = _analyzeStreakPatterns(activeHabits);
+    final consistencyMetrics = _analyzeConsistencyMetrics(activeHabits);
+    final habitCorrelations = _analyzeHabitCorrelations(activeHabits);
+
     return '''
-User has ${activeHabits.length} active habits across ${categories.length} categories: ${categories.join(', ')}.
-Total completions: $totalCompletions
-Average completion rate: ${(avgCompletionRate * 100).toStringAsFixed(1)}%
-Best current streak: $bestStreak days
-Categories: ${categories.join(', ')}
-Recent performance trends: ${_getRecentTrends(activeHabits)}
+HABIT OVERVIEW:
+- ${activeHabits.length} active habits across ${categories.length} categories
+- Total completions: $totalCompletions
+- Average completion rate: ${(avgCompletionRate * 100).toStringAsFixed(1)}%
+- Best current streak: $bestStreak days
+
+TEMPORAL PATTERNS:
+$temporalPatterns
+
+DIFFICULTY ANALYSIS:
+$difficultyAnalysis
+
+CATEGORY PERFORMANCE:
+$categoryPerformance
+
+STREAK PATTERNS:
+$streakAnalysis
+
+CONSISTENCY METRICS:
+$consistencyMetrics
+
+HABIT CORRELATIONS:
+$habitCorrelations
+
+RECENT TRENDS:
+${_getRecentTrends(activeHabits)}
 ''';
+  }
+
+  /// Analyze temporal patterns (weekday vs weekend, morning vs evening)
+  String _analyzeTemporalPatterns(List<Habit> habits) {
+    final now = DateTime.now();
+    final last30Days = now.subtract(const Duration(days: 30));
+
+    int weekdayCompletions = 0;
+    int weekendCompletions = 0;
+    int morningCompletions = 0;
+    int afternoonCompletions = 0;
+    int eveningCompletions = 0;
+
+    for (final habit in habits) {
+      final recentCompletions =
+          habit.completions.where((c) => c.isAfter(last30Days)).toList();
+
+      for (final completion in recentCompletions) {
+        // Weekday vs weekend
+        if (completion.weekday >= 6) {
+          weekendCompletions++;
+        } else {
+          weekdayCompletions++;
+        }
+
+        // Time of day (if we have notification time as proxy)
+        if (habit.notificationTime != null) {
+          final hour = habit.notificationTime!.hour;
+          if (hour < 12) {
+            morningCompletions++;
+          } else if (hour < 17) {
+            afternoonCompletions++;
+          } else {
+            eveningCompletions++;
+          }
+        }
+      }
+    }
+
+    final totalCompletions = weekdayCompletions + weekendCompletions;
+    if (totalCompletions == 0)
+      return 'Insufficient data for temporal analysis.';
+
+    final weekdayRate =
+        (weekdayCompletions / totalCompletions * 100).toStringAsFixed(1);
+    final weekendRate =
+        (weekendCompletions / totalCompletions * 100).toStringAsFixed(1);
+
+    String timeDistribution = '';
+    if (morningCompletions + afternoonCompletions + eveningCompletions > 0) {
+      final total =
+          morningCompletions + afternoonCompletions + eveningCompletions;
+      timeDistribution =
+          '\n- Time distribution: Morning ${(morningCompletions / total * 100).toStringAsFixed(0)}%, '
+          'Afternoon ${(afternoonCompletions / total * 100).toStringAsFixed(0)}%, '
+          'Evening ${(eveningCompletions / total * 100).toStringAsFixed(0)}%';
+    }
+
+    return '- Weekday completion: $weekdayRate%\n'
+        '- Weekend completion: $weekendRate%'
+        '$timeDistribution';
+  }
+
+  /// Analyze habit difficulty distribution and performance
+  String _analyzeDifficulty(List<Habit> habits) {
+    if (habits.isEmpty) return 'No habits to analyze.';
+
+    final difficultyGroups = <HabitDifficulty, List<Habit>>{};
+    for (final habit in habits) {
+      difficultyGroups.putIfAbsent(habit.difficulty, () => []).add(habit);
+    }
+
+    final buffer = StringBuffer();
+    for (final difficulty in HabitDifficulty.values) {
+      final habitsInGroup = difficultyGroups[difficulty] ?? [];
+      if (habitsInGroup.isEmpty) continue;
+
+      final avgRate =
+          habitsInGroup.map((h) => h.completionRate).reduce((a, b) => a + b) /
+              habitsInGroup.length;
+      buffer.writeln(
+          '- ${difficulty.name.toUpperCase()}: ${habitsInGroup.length} habits, ${(avgRate * 100).toStringAsFixed(1)}% avg completion');
+    }
+
+    return buffer.toString().trim();
+  }
+
+  /// Analyze performance by category
+  String _analyzeCategoryPerformance(List<Habit> habits) {
+    if (habits.isEmpty) return 'No habits to analyze.';
+
+    final categoryGroups = <String, List<Habit>>{};
+    for (final habit in habits) {
+      categoryGroups.putIfAbsent(habit.category, () => []).add(habit);
+    }
+
+    // Find best and worst performing categories
+    String bestCategory = '';
+    double bestRate = 0;
+    String worstCategory = '';
+    double worstRate = 1.0;
+
+    for (final entry in categoryGroups.entries) {
+      final avgRate =
+          entry.value.map((h) => h.completionRate).reduce((a, b) => a + b) /
+              entry.value.length;
+      if (avgRate > bestRate) {
+        bestRate = avgRate;
+        bestCategory = entry.key;
+      }
+      if (avgRate < worstRate && avgRate > 0) {
+        worstRate = avgRate;
+        worstCategory = entry.key;
+      }
+    }
+
+    return '- Best category: $bestCategory (${(bestRate * 100).toStringAsFixed(1)}%)\n'
+        '- Needs attention: ${worstCategory.isNotEmpty ? '$worstCategory (${(worstRate * 100).toStringAsFixed(1)}%)' : 'N/A'}\n'
+        '- Total categories: ${categoryGroups.length}';
+  }
+
+  /// Analyze streak patterns
+  String _analyzeStreakPatterns(List<Habit> habits) {
+    if (habits.isEmpty) return 'No habits to analyze.';
+
+    final activeStreaks = habits.where((h) => h.streakInfo.current > 0).length;
+    final longestCurrentStreak =
+        habits.map((h) => h.streakInfo.current).reduce((a, b) => a > b ? a : b);
+    final longestEverStreak =
+        habits.map((h) => h.streakInfo.longest).reduce((a, b) => a > b ? a : b);
+    final avgCurrentStreak =
+        habits.map((h) => h.streakInfo.current).reduce((a, b) => a + b) /
+            habits.length;
+
+    // Find habits close to breaking their record
+    final nearRecord = habits.where((h) {
+      final current = h.streakInfo.current;
+      final longest = h.streakInfo.longest;
+      return current > 0 && longest > current && (longest - current) <= 3;
+    }).toList();
+
+    final buffer = StringBuffer();
+    buffer
+        .writeln('- Active streaks: $activeStreaks of ${habits.length} habits');
+    buffer.writeln('- Longest current: $longestCurrentStreak days');
+    buffer.writeln('- Best ever: $longestEverStreak days');
+    buffer.writeln(
+        '- Average current: ${avgCurrentStreak.toStringAsFixed(1)} days');
+    if (nearRecord.isNotEmpty) {
+      buffer.writeln('- ${nearRecord.length} habit(s) near personal record');
+    }
+
+    return buffer.toString().trim();
+  }
+
+  /// Analyze consistency metrics
+  String _analyzeConsistencyMetrics(List<Habit> habits) {
+    if (habits.isEmpty) return 'No habits to analyze.';
+
+    final consistencyScores = habits.map((h) => h.consistencyScore).toList();
+    final avgConsistency =
+        consistencyScores.reduce((a, b) => a + b) / consistencyScores.length;
+    final highConsistency = habits.where((h) => h.consistencyScore > 80).length;
+    final lowConsistency = habits.where((h) => h.consistencyScore < 50).length;
+
+    // Calculate variance in completion rates
+    final avgRate =
+        habits.map((h) => h.completionRate).reduce((a, b) => a + b) /
+            habits.length;
+    final variance = habits
+            .map((h) =>
+                (h.completionRate - avgRate) * (h.completionRate - avgRate))
+            .reduce((a, b) => a + b) /
+        habits.length;
+    final volatility =
+        variance > 0.04 ? 'HIGH' : (variance > 0.02 ? 'MODERATE' : 'LOW');
+
+    return '- Average consistency: ${avgConsistency.toStringAsFixed(1)}/100\n'
+        '- High performers (>80): $highConsistency habits\n'
+        '- Struggling (<50): $lowConsistency habits\n'
+        '- Volatility: $volatility';
+  }
+
+  /// Analyze correlations between habits (simple co-occurrence analysis)
+  String _analyzeHabitCorrelations(List<Habit> habits) {
+    if (habits.length < 2)
+      return 'Need multiple habits for correlation analysis.';
+
+    final now = DateTime.now();
+    final last14Days = now.subtract(const Duration(days: 14));
+
+    // Find habits that tend to be completed on the same days
+    final correlations = <String, int>{};
+
+    for (int i = 0; i < habits.length; i++) {
+      for (int j = i + 1; j < habits.length; j++) {
+        final habit1 = habits[i];
+        final habit2 = habits[j];
+
+        final completions1 = habit1.completions
+            .where((c) => c.isAfter(last14Days))
+            .map((c) => '${c.year}-${c.month}-${c.day}')
+            .toSet();
+        final completions2 = habit2.completions
+            .where((c) => c.isAfter(last14Days))
+            .map((c) => '${c.year}-${c.month}-${c.day}')
+            .toSet();
+
+        final overlap = completions1.intersection(completions2).length;
+        if (overlap >= 3) {
+          final key = '${habit1.name} + ${habit2.name}';
+          correlations[key] = overlap;
+        }
+      }
+    }
+
+    if (correlations.isEmpty) {
+      return '- No strong habit correlations detected';
+    }
+
+    // Get top correlation
+    final topCorrelation =
+        correlations.entries.reduce((a, b) => a.value > b.value ? a : b);
+    return '- Strong correlation: ${topCorrelation.key} (${topCorrelation.value} days together)\n'
+        '- Total correlations found: ${correlations.length}';
   }
 
   /// Get recent performance trends
