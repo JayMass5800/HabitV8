@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'preferences_service.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'dart:convert';
 import 'logging_service.dart';
@@ -56,8 +56,7 @@ class AlarmService {
       'additionalData': additionalData ?? {},
     };
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('$_alarmDataKey$alarmId', jsonEncode(alarmData));
+        await PreferencesService.setString('$_alarmDataKey$alarmId', jsonEncode(alarmData));
 
     AppLogger.info('🚨 Scheduling exact alarm:');
     AppLogger.info('  - Alarm ID: $alarmId');
@@ -135,8 +134,7 @@ class AlarmService {
       await AwesomeNotifications().cancel(alarmId);
 
       // Clean up stored alarm data
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('$_alarmDataKey$alarmId');
+            await PreferencesService.remove('$_alarmDataKey$alarmId');
 
       AppLogger.info('🚨 Cancelled alarm ID: $alarmId');
     } catch (e) {
@@ -151,22 +149,21 @@ class AlarmService {
   }) async {
     AppLogger.info('🚨 Cancelling all alarms for habit: $habitId');
 
-    final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys();
+        final keys = await PreferencesService.getKeys();
 
     int cancelledCount = 0;
 
     for (String key in keys) {
       if (key.startsWith(_alarmDataKey)) {
         try {
-          final alarmDataJson = prefs.getString(key);
+          final alarmDataJson = await PreferencesService.getString(key);
           if (alarmDataJson != null) {
             final alarmData = jsonDecode(alarmDataJson);
             if (alarmData['habitId'] == habitId) {
               final alarmId = int.tryParse(key.substring(_alarmDataKey.length));
               if (alarmId != null) {
                 await AwesomeNotifications().cancel(alarmId);
-                await prefs.remove(key);
+                await PreferencesService.remove(key);
                 cancelledCount++;
               }
             }
@@ -688,8 +685,7 @@ class AlarmService {
 
     try {
       // Get alarm data
-      final prefs = await SharedPreferences.getInstance();
-      final alarmDataJson = prefs.getString('$_alarmDataKey$alarmId');
+            final alarmDataJson = await PreferencesService.getString('$_alarmDataKey$alarmId');
 
       if (alarmDataJson == null) {
         AppLogger.error('No alarm data found for ID: $alarmId');
@@ -723,7 +719,7 @@ class AlarmService {
 
       // Clean up this alarm's data if it's not recurring
       if (frequency == 'snooze' || additionalData['recurrence'] == null) {
-        await prefs.remove('$_alarmDataKey$alarmId');
+        await PreferencesService.remove('$_alarmDataKey$alarmId');
       }
     } catch (e) {
       AppLogger.error('Error in alarm callback', e);

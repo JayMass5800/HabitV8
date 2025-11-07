@@ -1,5 +1,5 @@
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../preferences_service.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
@@ -47,23 +47,22 @@ class NotificationStorage {
   static Future<void> _storeActionInSharedPreferences(
       Map<String, dynamic> actionEntry) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Get existing pending actions
-      final existingActions = prefs.getStringList(_prefsKey) ?? [];
+            // Get existing pending actions
+      final existingActions = await PreferencesService.getStringList(_prefsKey) ?? [];
 
       // Add new action to the list
       existingActions.add(jsonEncode(actionEntry));
 
       // Store updated list
-      await prefs.setStringList(_prefsKey, existingActions);
+      await PreferencesService.setStringList(_prefsKey, existingActions);
 
       // Debug: Verify storage
-      final verifyActions = prefs.getStringList(_prefsKey) ?? [];
+      final verifyActions = await PreferencesService.getStringList(_prefsKey) ?? [];
       AppLogger.debug(
           '🔍 SharedPrefs: Verified storage: ${verifyActions.length} actions stored');
+      final keys = await PreferencesService.getKeys();
       AppLogger.debug(
-          '🔍 SharedPrefs: All keys after storage: ${prefs.getKeys().toList()}');
+          '🔍 SharedPrefs: All keys after storage: ${keys.toList()}');
     } catch (e) {
       AppLogger.error('Error storing action in SharedPreferences', e);
     }
@@ -164,8 +163,7 @@ class NotificationStorage {
   static Future<void> _removeActionFromSharedPreferences(
       String habitId, String action) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final existingActions = prefs.getStringList(_prefsKey) ?? [];
+            final existingActions = await PreferencesService.getStringList(_prefsKey) ?? [];
 
       // Filter out the matching action
       final filteredActions = existingActions.where((actionString) {
@@ -179,7 +177,7 @@ class NotificationStorage {
         }
       }).toList();
 
-      await prefs.setStringList(_prefsKey, filteredActions);
+      await PreferencesService.setStringList(_prefsKey, filteredActions);
       AppLogger.debug(
           'Removed action from SharedPreferences. Remaining: ${filteredActions.length}');
     } catch (e) {
@@ -247,18 +245,14 @@ class NotificationStorage {
   /// Load all pending actions from storage
   static Future<List<Map<String, dynamic>>> loadAllActions() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Debug: Check all keys in SharedPreferences
-      final allKeys = prefs.getKeys();
+            // Debug: Check all keys in SharedPreferences
+      final allKeys = await PreferencesService.getKeys();
       AppLogger.debug('🔍 All SharedPreferences keys: ${allKeys.toList()}');
 
       // Try multiple approaches to get the data
-      final pendingActions1 = prefs.getStringList(_prefsKey);
-      final pendingActions2 = prefs.get(_prefsKey);
+      final pendingActions1 = await PreferencesService.getStringList(_prefsKey);
 
       AppLogger.debug('🔍 Method 1 (getStringList): $pendingActions1');
-      AppLogger.debug('🔍 Method 2 (get): $pendingActions2');
 
       final pendingActions = pendingActions1 ?? [];
 
@@ -279,7 +273,7 @@ class NotificationStorage {
           'stored_actions'
         ];
         for (final key in alternativeKeys) {
-          final altActions = prefs.getStringList(key);
+          final altActions = await PreferencesService.getStringList(key);
           if (altActions != null && altActions.isNotEmpty) {
             AppLogger.debug(
                 '🔍 Found actions under alternative key "$key": $altActions');
@@ -409,8 +403,7 @@ class NotificationStorage {
   /// Clear actions from SharedPreferences
   static Future<void> _clearSharedPreferences() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_prefsKey);
+            await PreferencesService.remove(_prefsKey);
       AppLogger.debug('Cleared actions from SharedPreferences');
     } catch (e) {
       AppLogger.error('Error clearing SharedPreferences', e);

@@ -2,7 +2,7 @@
 // This ensures all existing notifications use the correct habit ID format
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/preferences_service.dart';
 import '../data/database_isar.dart';
 import '../services/notification_service.dart';
 import '../services/logging_service.dart';
@@ -17,8 +17,7 @@ class NotificationMigration {
   /// Check if migration has already been run
   static Future<bool> isMigrationCompleted() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_migrationKey) ?? false;
+            return await PreferencesService.getBoolOrDefault(_migrationKey, false);
     } catch (e) {
       AppLogger.error('Error checking migration status', e);
       return false;
@@ -28,8 +27,7 @@ class NotificationMigration {
   /// Mark migration as completed
   static Future<void> markMigrationCompleted() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_migrationKey, true);
+            await PreferencesService.setBool(_migrationKey, true);
       AppLogger.info('✅ Migration marked as completed');
     } catch (e) {
       AppLogger.error('Error marking migration as completed', e);

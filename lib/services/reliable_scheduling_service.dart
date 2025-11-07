@@ -1,6 +1,6 @@
 import 'dart:async';
+import 'preferences_service.dart';
 import 'dart:io';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../data/database_isar.dart';
 import '../domain/model/habit.dart';
 import 'notification_service.dart';
@@ -103,8 +103,7 @@ class ReliableSchedulingService {
     try {
       AppLogger.info('🛡️ Layer 3: Running safety net check...');
 
-      final prefs = await SharedPreferences.getInstance();
-      final lastResetStr = prefs.getString(_lastResetKey);
+            final lastResetStr = await PreferencesService.getString(_lastResetKey);
       final now = DateTime.now();
       final currentDate = DateTime(now.year, now.month, now.day);
 
@@ -293,8 +292,7 @@ class ReliableSchedulingService {
   static Future<void> _checkTimezoneChange() async {
     try {
       final currentTz = DateTime.now().timeZoneName;
-      final prefs = await SharedPreferences.getInstance();
-      final lastTz = prefs.getString(_lastTimezoneKey);
+            final lastTz = await PreferencesService.getString(_lastTimezoneKey);
 
       if (lastTz != null && lastTz != currentTz) {
         AppLogger.warning('🌍 TIMEZONE CHANGE DETECTED: $lastTz → $currentTz');
@@ -304,9 +302,9 @@ class ReliableSchedulingService {
         await _scheduleOSBackedTask();
         await _scheduleOptimisticTimer();
 
-        await prefs.setString(_lastTimezoneKey, currentTz);
+        await PreferencesService.setString(_lastTimezoneKey, currentTz);
       } else if (lastTz == null) {
-        await prefs.setString(_lastTimezoneKey, currentTz);
+        await PreferencesService.setString(_lastTimezoneKey, currentTz);
       }
 
       _currentTimezone = currentTz;
@@ -399,29 +397,27 @@ class ReliableSchedulingService {
   static Future<void> _recordResetSuccess(
       String method, DateTime timestamp) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Update last reset timestamp
-      await prefs.setString(_lastResetKey, timestamp.toIso8601String());
-      await prefs.setString(_lastResetMethodKey, method);
+            // Update last reset timestamp
+      await PreferencesService.setString(_lastResetKey, timestamp.toIso8601String());
+      await PreferencesService.setString(_lastResetMethodKey, method);
 
       // Increment counters
-      final totalResets = (prefs.getInt(_resetCountKey) ?? 0) + 1;
-      await prefs.setInt(_resetCountKey, totalResets);
+      final totalResets = (await PreferencesService.getIntOrDefault(_resetCountKey, 0)) + 1;
+      await PreferencesService.setInt(_resetCountKey, totalResets);
 
       switch (method) {
         case 'timer':
-          final timerCount = (prefs.getInt(_timerSuccessCountKey) ?? 0) + 1;
-          await prefs.setInt(_timerSuccessCountKey, timerCount);
+          final timerCount = (await PreferencesService.getIntOrDefault(_timerSuccessCountKey, 0)) + 1;
+          await PreferencesService.setInt(_timerSuccessCountKey, timerCount);
           break;
         case 'workmanager':
         case 'ios_background':
-          final wmCount = (prefs.getInt(_workmanagerSuccessCountKey) ?? 0) + 1;
-          await prefs.setInt(_workmanagerSuccessCountKey, wmCount);
+          final wmCount = (await PreferencesService.getIntOrDefault(_workmanagerSuccessCountKey, 0)) + 1;
+          await PreferencesService.setInt(_workmanagerSuccessCountKey, wmCount);
           break;
         case 'safety_net':
-          final catchupCount = (prefs.getInt(_catchupSuccessCountKey) ?? 0) + 1;
-          await prefs.setInt(_catchupSuccessCountKey, catchupCount);
+          final catchupCount = (await PreferencesService.getIntOrDefault(_catchupSuccessCountKey, 0)) + 1;
+          await PreferencesService.setInt(_catchupSuccessCountKey, catchupCount);
           break;
       }
 
@@ -435,21 +431,20 @@ class ReliableSchedulingService {
   /// Get diagnostic information
   static Future<Map<String, dynamic>> getDiagnostics() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final now = DateTime.now();
+            final now = DateTime.now();
       final nextMidnight = DateTime(now.year, now.month, now.day + 1, 0, 0, 0);
 
       return {
         'isInitialized': _isInitialized,
         'currentTimezone': _currentTimezone ?? DateTime.now().timeZoneName,
-        'lastReset': prefs.getString(_lastResetKey),
-        'lastResetMethod': prefs.getString(_lastResetMethodKey),
+        'lastReset': await PreferencesService.getString(_lastResetKey),
+        'lastResetMethod': await PreferencesService.getString(_lastResetMethodKey),
         'nextScheduledReset': nextMidnight.toIso8601String(),
         'timeUntilNextReset': nextMidnight.difference(now).toString(),
-        'totalResets': prefs.getInt(_resetCountKey) ?? 0,
-        'timerSuccesses': prefs.getInt(_timerSuccessCountKey) ?? 0,
-        'workmanagerSuccesses': prefs.getInt(_workmanagerSuccessCountKey) ?? 0,
-        'safetyNetSuccesses': prefs.getInt(_catchupSuccessCountKey) ?? 0,
+        'totalResets': await PreferencesService.getIntOrDefault(_resetCountKey, 0),
+        'timerSuccesses': await PreferencesService.getIntOrDefault(_timerSuccessCountKey, 0),
+        'workmanagerSuccesses': await PreferencesService.getIntOrDefault(_workmanagerSuccessCountKey, 0),
+        'safetyNetSuccesses': await PreferencesService.getIntOrDefault(_catchupSuccessCountKey, 0),
         'platform': Platform.operatingSystem,
         'timerActive': _optimisticTimer?.isActive ?? false,
       };

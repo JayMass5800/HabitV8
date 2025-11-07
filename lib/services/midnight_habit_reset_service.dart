@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'preferences_service.dart';
 import '../domain/model/habit.dart';
 import '../data/database_isar.dart';
 import 'notification_service.dart';
@@ -64,8 +64,7 @@ class MidnightHabitResetService {
   /// Check if we missed a reset while the app was closed
   static Future<void> _checkMissedReset() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final lastResetStr = prefs.getString(_lastResetKey);
+            final lastResetStr = await PreferencesService.getString(_lastResetKey);
       final now = DateTime.now();
 
       if (lastResetStr != null) {
@@ -158,8 +157,7 @@ class MidnightHabitResetService {
       }
 
       // Update last reset timestamp
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_lastResetKey, now.toIso8601String());
+            await PreferencesService.setString(_lastResetKey, now.toIso8601String());
 
       AppLogger.info(
           '✅ Midnight reset completed: $resetCount reset, $errorCount errors');

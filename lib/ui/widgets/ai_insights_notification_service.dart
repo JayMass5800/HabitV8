@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/preferences_service.dart';
 import '../screens/ai_settings_screen.dart';
 
 /// Service to show AI insights prompts at appropriate times
@@ -18,10 +18,9 @@ class AIInsightsNotificationService {
   }) async {
     if (!context.mounted) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final dismissed = prefs.getBool(_dismissedKey) ?? false;
-    final setupComplete = prefs.getBool(_setupCompleteKey) ?? false;
-    final lastPrompt = prefs.getInt(_lastPromptKey) ?? 0;
+        final dismissed = await PreferencesService.getBoolOrDefault(_dismissedKey, false);
+    final setupComplete = await PreferencesService.getBoolOrDefault(_setupCompleteKey, false);
+    final lastPrompt = await PreferencesService.getIntOrDefault(_lastPromptKey, 0);
     final now = DateTime.now().millisecondsSinceEpoch;
 
     // Don't show if dismissed or setup is complete
@@ -43,28 +42,25 @@ class AIInsightsNotificationService {
 
     if (notificationType != null && context.mounted) {
       await _showNotification(context, notificationType);
-      await prefs.setInt(_lastPromptKey, now);
+      await PreferencesService.setInt(_lastPromptKey, now);
     }
   }
 
   /// Mark setup as complete to stop showing notifications
   static Future<void> markSetupComplete() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_setupCompleteKey, true);
+        await PreferencesService.setBool(_setupCompleteKey, true);
   }
 
   /// Mark notifications as dismissed
   static Future<void> dismiss() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_dismissedKey, true);
+        await PreferencesService.setBool(_dismissedKey, true);
   }
 
   /// Reset all notification preferences (for testing)
   static Future<void> reset() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_dismissedKey);
-    await prefs.remove(_setupCompleteKey);
-    await prefs.remove(_lastPromptKey);
+        await PreferencesService.remove(_dismissedKey);
+    await PreferencesService.remove(_setupCompleteKey);
+    await PreferencesService.remove(_lastPromptKey);
   }
 
   static Future<void> _showNotification(

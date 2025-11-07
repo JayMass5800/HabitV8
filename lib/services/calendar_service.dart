@@ -1,11 +1,11 @@
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:timezone/timezone.dart' as tz;
 import '../domain/model/habit.dart';
 import 'logging_service.dart';
 import 'rrule_service.dart';
+import 'preferences_service.dart';
 
 /// Calendar service that integrates with table_calendar for consistent habit display
 /// This service manages calendar sync preferences and enhances the existing table_calendar
@@ -31,8 +31,8 @@ class CalendarService {
         // Still initialize successfully since we can use table_calendar without device permissions
       } else {
         // Load selected calendar ID from preferences
-        final prefs = await SharedPreferences.getInstance();
-        _selectedCalendarId = prefs.getString('selected_calendar_id');
+        _selectedCalendarId =
+            await PreferencesService.getString('selected_calendar_id');
         AppLogger.info(
           'Calendar service initialized with device calendar support',
         );
@@ -97,8 +97,8 @@ class CalendarService {
   /// Check if calendar sync is enabled in settings
   static Future<bool> isCalendarSyncEnabled() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool('calendar_sync_enabled') ?? false;
+      return await PreferencesService.getBoolOrDefault(
+          'calendar_sync_enabled', false);
     } catch (e) {
       AppLogger.error('Error checking calendar sync setting', e);
       return false;
@@ -108,8 +108,7 @@ class CalendarService {
   /// Set calendar sync enabled status
   static Future<void> setCalendarSyncEnabled(bool enabled) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('calendar_sync_enabled', enabled);
+      await PreferencesService.setBool('calendar_sync_enabled', enabled);
       AppLogger.info('Calendar sync ${enabled ? 'enabled' : 'disabled'}');
     } catch (e) {
       AppLogger.error('Error setting calendar sync status', e);
@@ -153,8 +152,7 @@ class CalendarService {
   /// Set the selected calendar for habit sync
   static Future<bool> setSelectedCalendar(String calendarId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('selected_calendar_id', calendarId);
+      await PreferencesService.setString('selected_calendar_id', calendarId);
       _selectedCalendarId = calendarId;
       AppLogger.info('Selected calendar set to: $calendarId');
       return true;
@@ -496,10 +494,9 @@ class CalendarService {
     DateTime date,
   ) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
       final key =
           'habit_event_${habitId}_${date.toIso8601String().split('T')[0]}';
-      await prefs.setString(key, eventId);
+      await PreferencesService.setString(key, eventId);
       AppLogger.debug(
         'Stored event ID $eventId for habit $habitId on ${date.toIso8601String()}',
       );
@@ -511,15 +508,13 @@ class CalendarService {
   /// Get stored event IDs for a habit
   static Future<List<String>> _getStoredEventIds(String habitId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final keys = prefs
-          .getKeys()
+      final keys = (await PreferencesService.getKeys())
           .where((key) => key.startsWith('habit_event_$habitId'))
           .toList();
       final eventIds = <String>[];
 
       for (final key in keys) {
-        final eventId = prefs.getString(key);
+        final eventId = await PreferencesService.getString(key);
         if (eventId != null) {
           eventIds.add(eventId);
         }
@@ -538,14 +533,12 @@ class CalendarService {
   /// Remove stored event IDs for a habit
   static Future<void> _removeStoredEventIds(String habitId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final keys = prefs
-          .getKeys()
+      final keys = (await PreferencesService.getKeys())
           .where((key) => key.startsWith('habit_event_$habitId'))
           .toList();
 
       for (final key in keys) {
-        await prefs.remove(key);
+        await PreferencesService.remove(key);
       }
 
       AppLogger.debug(
@@ -803,9 +796,7 @@ class CalendarService {
   /// Clean up old event IDs (for events older than 30 days)
   static Future<void> cleanupOldEventIds() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final keys = prefs
-          .getKeys()
+      final keys = (await PreferencesService.getKeys())
           .where((key) => key.startsWith('habit_event_'))
           .toList();
       final cutoffDate = DateTime.now().subtract(const Duration(days: 30));
@@ -821,12 +812,12 @@ class CalendarService {
             final eventDate = DateTime.parse(dateStr);
 
             if (eventDate.isBefore(cutoffDate)) {
-              await prefs.remove(key);
+              await PreferencesService.remove(key);
               removedCount++;
             }
           } catch (e) {
             // If we can't parse the date, remove the key as it's likely corrupted
-            await prefs.remove(key);
+            await PreferencesService.remove(key);
             removedCount++;
           }
         }
@@ -946,13 +937,12 @@ class CalendarService {
   /// Clear all stored event IDs from preferences
   static Future<void> _clearAllStoredEventIds() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final keys = prefs.getKeys();
+      final keys = await PreferencesService.getKeys();
       final eventIdKeys =
           keys.where((key) => key.startsWith('habit_events_')).toList();
 
       for (final key in eventIdKeys) {
-        await prefs.remove(key);
+        await PreferencesService.remove(key);
       }
 
       AppLogger.info('Cleared ${eventIdKeys.length} stored event ID entries');

@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
+import '../../services/preferences_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/settings_tile.dart';
 import '../widgets/calendar_selection_dialog.dart';
 import '../widgets/document_popup_dialog.dart';
@@ -38,8 +38,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _loadDefaultScreen() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final defaultScreen = prefs.getString('default_screen') ?? 'All Habits';
+            final defaultScreen = await PreferencesService.getStringOrDefault('default_screen', 'All Habits');
 
       AppLogger.info('Loading default screen setting: $defaultScreen');
 
@@ -1100,8 +1099,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _saveDefaultScreen(String screenName) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('default_screen', screenName);
+            await PreferencesService.setString('default_screen', screenName);
 
       if (mounted) {
         setState(() {

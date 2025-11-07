@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/preferences_service.dart';
 import '../screens/ai_settings_screen.dart';
 
 /// Onboarding dialog for AI insights feature
@@ -8,12 +8,11 @@ class AIInsightsOnboarding {
 
   /// Show onboarding dialog if user hasn't seen it before
   static Future<void> showIfNeeded(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasShown = prefs.getBool(_shownKey) ?? false;
+        final hasShown = await PreferencesService.getBoolOrDefault(_shownKey, false);
 
     if (!hasShown && context.mounted) {
       await show(context);
-      await prefs.setBool(_shownKey, true);
+      await PreferencesService.setBool(_shownKey, true);
     }
   }
 
@@ -28,8 +27,7 @@ class AIInsightsOnboarding {
 
   /// Reset onboarding (for testing or settings)
   static Future<void> reset() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_shownKey, false);
+        await PreferencesService.setBool(_shownKey, false);
   }
 }
 

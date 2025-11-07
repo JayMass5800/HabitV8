@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'preferences_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/model/habit.dart';
 import '../data/database_isar.dart';
 import '../services/theme_service.dart';
@@ -135,20 +135,18 @@ class WidgetIntegrationService {
   /// Clean up old widget-specific preferences since widgets now follow app theme
   Future<void> _cleanupOldWidgetPreferences() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Remove old widget-specific theme and color preferences
-      await prefs.remove('widget_theme_mode');
-      await prefs.remove('widget_primary_color');
-      await prefs.remove('widget_auto_refresh');
-      await prefs.remove('widget_refresh_interval');
+            // Remove old widget-specific theme and color preferences
+      await PreferencesService.remove('widget_theme_mode');
+      await PreferencesService.remove('widget_primary_color');
+      await PreferencesService.remove('widget_auto_refresh');
+      await PreferencesService.remove('widget_refresh_interval');
 
       // CRITICAL: Remove stale fallback keys that might contain unfiltered habits
       // These keys were causing widgets to show ALL habits instead of today's habits
-      await prefs.remove('flutter.habits_data');
-      await prefs.remove('flutter.habits');
-      await prefs.remove('flutter.today_habits');
-      await prefs.remove('habits_data');
+      await PreferencesService.remove('flutter.habits_data');
+      await PreferencesService.remove('flutter.habits');
+      await PreferencesService.remove('flutter.today_habits');
+      await PreferencesService.remove('habits_data');
 
       debugPrint('Old widget preferences and stale fallback keys cleaned up');
     } catch (e) {

@@ -1,11 +1,11 @@
 import 'dart:async';
+import 'services/preferences_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'data/database_isar.dart'; // CRITICAL: Import Isar database for notification scheduling
 // CRITICAL: Explicit imports prevent tree-shaking of Isar schemas in release builds
@@ -752,8 +752,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   Future<void> _loadDefaultScreen() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final defaultScreen = prefs.getString('default_screen') ?? 'All Habits';
+            final defaultScreen = await PreferencesService.getStringOrDefault('default_screen', 'All Habits');
       final index = _screenNameToIndex[defaultScreen] ?? 1;
 
       setState(() {
@@ -906,19 +905,18 @@ Future<void> _ensureServiceInitialization() async {
 /// This replaces the restricted BOOT_COMPLETED foreground service approach
 Future<void> _handleBootCompletionIfNeeded() async {
   try {
-    final prefs = await SharedPreferences.getInstance();
-    final needsReschedule =
-        prefs.getBool('needs_notification_reschedule_after_boot') ?? false;
+        final needsReschedule =
+        await PreferencesService.getBoolOrDefault('needs_notification_reschedule_after_boot', false);
 
     if (needsReschedule) {
       AppLogger.info(
           '🔄 Detected boot completion flag - rescheduling notifications');
 
       // Clear the flag
-      await prefs.setBool('needs_notification_reschedule_after_boot', false);
+      await PreferencesService.setBool('needs_notification_reschedule_after_boot', false);
 
       // Get boot timestamp for logging
-      final bootTimestamp = prefs.getInt('boot_completion_timestamp') ?? 0;
+      final bootTimestamp = await PreferencesService.getIntOrDefault('boot_completion_timestamp', 0);
       if (bootTimestamp > 0) {
         final bootTime = DateTime.fromMillisecondsSinceEpoch(bootTimestamp);
         AppLogger.info('📱 Device boot detected at: $bootTime');

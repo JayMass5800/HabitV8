@@ -2,8 +2,8 @@
 // Handles proper resource cleanup when the app is shutting down
 
 import 'package:flutter/material.dart';
+import 'preferences_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
 // Old renewal services removed - now using midnight_habit_reset_service.dart
@@ -182,9 +182,8 @@ class AppLifecycleService with WidgetsBindingObserver {
           // Check if database was changed in background (e.g., notification completion)
           // If so, reload database and trigger invalidation to force stream to emit fresh data
           try {
-            final prefs = await SharedPreferences.getInstance();
-            final hasPendingChanges =
-                prefs.getBool('pending_database_changes') ?? false;
+                        final hasPendingChanges =
+                await PreferencesService.getBoolOrDefault('pending_database_changes', false);
 
             if (hasPendingChanges) {
               AppLogger.info(
@@ -205,7 +204,7 @@ class AppLifecycleService with WidgetsBindingObserver {
                   '🔄 Re-invalidated habitsStreamIsarProvider to emit fresh data');
 
               // Clear the flag
-              await prefs.setBool('pending_database_changes', false);
+              await PreferencesService.setBool('pending_database_changes', false);
               AppLogger.info('✅ Cleared pending_database_changes flag');
             } else {
               AppLogger.debug('ℹ️ No pending database changes detected');

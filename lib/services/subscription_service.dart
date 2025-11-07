@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'logging_service.dart';
+import 'preferences_service.dart';
 
 /// Subscription status enum
 enum SubscriptionStatus {
@@ -89,14 +89,13 @@ class SubscriptionService {
 
   /// Check if this is the first app launch and start trial period
   Future<void> _checkAndStartTrial() async {
-    final prefs = await SharedPreferences.getInstance();
-    final trialStartDate = prefs.getString(_trialStartDateKey);
+        final trialStartDate = await PreferencesService.getString(_trialStartDateKey);
 
     if (trialStartDate == null) {
       // First time user - start trial
       final now = DateTime.now();
       final nowString = now.toIso8601String();
-      await prefs.setString(_trialStartDateKey, nowString);
+      await PreferencesService.setString(_trialStartDateKey, nowString);
       AppLogger.info('🎉 Trial period started for new user at: $now');
       AppLogger.info(
           '🎉 Trial will expire after $_trialDurationDays days on: ${now.add(Duration(days: _trialDurationDays))}');
@@ -117,16 +116,14 @@ class SubscriptionService {
       unawaited(_ensureInitialized());
     }
 
-    final prefs = await SharedPreferences.getInstance();
-
-    // Check if user has purchased premium
+        // Check if user has purchased premium
     final hasPremium = await _hasPremiumSubscription();
     if (hasPremium) {
       return SubscriptionStatus.premium;
     }
 
     // Check trial status
-    final trialStartDateStr = prefs.getString(_trialStartDateKey);
+    final trialStartDateStr = await PreferencesService.getString(_trialStartDateKey);
     if (trialStartDateStr == null) {
       // This shouldn't happen after initialization, but handle gracefully
       await _checkAndStartTrial();
@@ -147,11 +144,10 @@ class SubscriptionService {
   /// Update internal subscription status cache
   Future<void> _updateSubscriptionStatus() async {
     final status = await getSubscriptionStatus();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_subscriptionStatusKey, status.toString());
+        await PreferencesService.setString(_subscriptionStatusKey, status.toString());
 
     // Update last check timestamp
-    await prefs.setString(_lastTrialCheckKey, DateTime.now().toIso8601String());
+    await PreferencesService.setString(_lastTrialCheckKey, DateTime.now().toIso8601String());
   }
 
   /// Check if user has premium subscription (to be implemented with in-app purchases)
@@ -177,8 +173,7 @@ class SubscriptionService {
       return -1; // Premium users don't have trial limitation
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final trialStartDateStr = prefs.getString(_trialStartDateKey);
+        final trialStartDateStr = await PreferencesService.getString(_trialStartDateKey);
     if (trialStartDateStr == null) return 0;
 
     final trialStartDate = DateTime.parse(trialStartDateStr);
@@ -336,13 +331,12 @@ class SubscriptionService {
 
     // Show warning when 3 days or less remaining
     if (remainingDays <= 3 && remainingDays > 0) {
-      final prefs = await SharedPreferences.getInstance();
-      final lastNotified = prefs.getString(_userNotifiedKey);
+            final lastNotified = await PreferencesService.getString(_userNotifiedKey);
       final today = DateTime.now().toIso8601String().substring(0, 10);
 
       // Only show once per day
       if (lastNotified != today) {
-        await prefs.setString(_userNotifiedKey, today);
+        await PreferencesService.setString(_userNotifiedKey, today);
         return true;
       }
     }
@@ -352,8 +346,7 @@ class SubscriptionService {
 
   /// Get trial start date
   Future<DateTime?> getTrialStartDate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final trialStartDateStr = prefs.getString(_trialStartDateKey);
+        final trialStartDateStr = await PreferencesService.getString(_trialStartDateKey);
     if (trialStartDateStr != null) {
       return DateTime.parse(trialStartDateStr);
     }
@@ -367,11 +360,10 @@ class SubscriptionService {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_trialStartDateKey);
-    await prefs.remove(_subscriptionStatusKey);
-    await prefs.remove(_lastTrialCheckKey);
-    await prefs.remove(_userNotifiedKey);
+        await PreferencesService.remove(_trialStartDateKey);
+    await PreferencesService.remove(_subscriptionStatusKey);
+    await PreferencesService.remove(_lastTrialCheckKey);
+    await PreferencesService.remove(_userNotifiedKey);
     await _secureStorage.delete(key: 'purchase_token');
     AppLogger.info('🔄 Trial period reset for debugging');
   }
@@ -384,14 +376,13 @@ class SubscriptionService {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final expiredStartDate =
+        final expiredStartDate =
         DateTime.now().subtract(Duration(days: _trialDurationDays + 1));
-    await prefs.setString(
+    await PreferencesService.setString(
         _trialStartDateKey, expiredStartDate.toIso8601String());
-    await prefs.remove(_subscriptionStatusKey);
-    await prefs.remove(_lastTrialCheckKey);
-    await prefs.remove(_userNotifiedKey);
+    await PreferencesService.remove(_subscriptionStatusKey);
+    await PreferencesService.remove(_lastTrialCheckKey);
+    await PreferencesService.remove(_userNotifiedKey);
     await _secureStorage.delete(key: 'purchase_token');
     AppLogger.info(
         '🔄 Trial expiry simulated for debugging - start date set to: $expiredStartDate');
@@ -423,8 +414,7 @@ class SubscriptionService {
       };
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final trialStartDateStr = prefs.getString(_trialStartDateKey);
+        final trialStartDateStr = await PreferencesService.getString(_trialStartDateKey);
     final now = DateTime.now();
 
     if (trialStartDateStr == null) {

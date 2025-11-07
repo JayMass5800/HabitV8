@@ -1,11 +1,11 @@
 // Removed unused kDebugMode import to satisfy analyzer
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import '../data/database_isar.dart';
 
 import 'notification_service.dart';
 import 'logging_service.dart';
 import 'rrule_service.dart';
+import 'preferences_service.dart';
 
 /// Service responsible for ensuring habits continue to work indefinitely
 /// using WorkManager for guaranteed execution on Android
@@ -101,9 +101,8 @@ class WorkManagerHabitService {
   static Future<void> _schedulePeriodicRenewalTask() async {
     try {
       // Get renewal interval from preferences
-      final prefs = await SharedPreferences.getInstance();
-      final intervalHours =
-          prefs.getInt(_renewalIntervalKey) ?? _defaultRenewalIntervalHours;
+      final intervalHours = await PreferencesService.getIntOrDefault(
+          _renewalIntervalKey, _defaultRenewalIntervalHours);
 
       // Cancel any existing periodic task
       await Workmanager().cancelByUniqueName(_renewalTaskName);
@@ -136,8 +135,8 @@ class WorkManagerHabitService {
     try {
       AppLogger.info('🔍 Performing habit continuation renewal check');
 
-      final prefs = await SharedPreferences.getInstance();
-      final lastRenewalStr = prefs.getString(_lastRenewalKey);
+      final lastRenewalStr =
+          await PreferencesService.getString(_lastRenewalKey);
       final now = DateTime.now();
 
       DateTime? lastRenewal;
@@ -172,7 +171,8 @@ class WorkManagerHabitService {
         await _performHabitContinuationRenewal(forceRenewal: false);
 
         // Update last renewal timestamp
-        await prefs.setString(_lastRenewalKey, now.toIso8601String());
+        await PreferencesService.setString(
+            _lastRenewalKey, now.toIso8601String());
         AppLogger.info(
             '✅ Habit continuation renewal completed and timestamp updated');
       }
@@ -330,8 +330,8 @@ class WorkManagerHabitService {
   /// This provides automated alarm restoration while respecting Android 15+ restrictions
   static Future<void> _checkBootCompletionAndScheduleAlarmRenewal() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final lastBootTimestamp = prefs.getInt(_bootTimestampKey) ?? 0;
+      final lastBootTimestamp =
+          await PreferencesService.getIntOrDefault(_bootTimestampKey, 0);
       final currentBootTime = DateTime.now().millisecondsSinceEpoch;
 
       // Check if this is a fresh boot (or first run)
@@ -351,7 +351,7 @@ class WorkManagerHabitService {
         await _scheduleDelayedAlarmRenewal();
 
         // Update boot timestamp
-        await prefs.setInt(_bootTimestampKey, currentBootTime);
+        await PreferencesService.setInt(_bootTimestampKey, currentBootTime);
       } else {
         AppLogger.info(
             '🔄 No recent boot detected, skipping alarm renewal scheduling');
@@ -365,16 +365,16 @@ class WorkManagerHabitService {
   /// CRITICAL: This allows notification rescheduling WITHOUT the app being open
   static Future<void> _checkAndScheduleBootReschedule() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final needsBootReschedule =
-          prefs.getBool('workmanager_boot_reschedule_needed') ?? false;
+      final needsBootReschedule = await PreferencesService.getBoolOrDefault(
+          'workmanager_boot_reschedule_needed', false);
 
       if (needsBootReschedule) {
         AppLogger.info(
             '🔄 Boot reschedule flag detected - scheduling background notification reschedule');
 
         // Clear the flag immediately to prevent duplicate scheduling
-        await prefs.setBool('workmanager_boot_reschedule_needed', false);
+        await PreferencesService.setBool(
+            'workmanager_boot_reschedule_needed', false);
 
         // Schedule the boot reschedule task to run in background
         await Workmanager().registerOneOffTask(
@@ -435,8 +435,8 @@ class WorkManagerHabitService {
     try {
       AppLogger.info('🚨 Performing automated alarm renewal check');
 
-      final prefs = await SharedPreferences.getInstance();
-      final lastAlarmRenewal = prefs.getString(_lastAlarmRenewalKey);
+      final lastAlarmRenewal =
+          await PreferencesService.getString(_lastAlarmRenewalKey);
       final now = DateTime.now();
 
       // Check if alarm renewal is needed
@@ -466,7 +466,8 @@ class WorkManagerHabitService {
         await _performAutomatedAlarmRenewal();
 
         // Update timestamp
-        await prefs.setString(_lastAlarmRenewalKey, now.toIso8601String());
+        await PreferencesService.setString(
+            _lastAlarmRenewalKey, now.toIso8601String());
         AppLogger.info('✅ Automated alarm renewal completed');
       } else {
         AppLogger.info('⏭️ Alarm renewal not needed at this time');
@@ -575,10 +576,10 @@ class WorkManagerHabitService {
       }
 
       // Mark boot reschedule as completed
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
+      await PreferencesService.setString(
           'last_boot_reschedule', DateTime.now().toIso8601String());
-      await prefs.setBool('needs_notification_reschedule_after_boot', false);
+      await PreferencesService.setBool(
+          'needs_notification_reschedule_after_boot', false);
 
       AppLogger.info('✅ Boot notification rescheduling complete (WorkManager): '
           '$rescheduledCount notifications rescheduled, '
@@ -964,8 +965,8 @@ class WorkManagerHabitService {
     );
 
     // Update the last renewal timestamp
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastRenewalKey, DateTime.now().toIso8601String());
+    await PreferencesService.setString(
+        _lastRenewalKey, DateTime.now().toIso8601String());
   }
 
   /// Force immediate renewal of all habits (for debugging/testing)
@@ -980,8 +981,8 @@ class WorkManagerHabitService {
       await _performHabitContinuationRenewal(forceRenewal: true);
 
       // Update the last renewal timestamp
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_lastRenewalKey, DateTime.now().toIso8601String());
+      await PreferencesService.setString(
+          _lastRenewalKey, DateTime.now().toIso8601String());
 
       // Reschedule the periodic task
       await _schedulePeriodicRenewalTask();
@@ -999,8 +1000,7 @@ class WorkManagerHabitService {
       throw ArgumentError('Renewal interval must be between 1 and 24 hours');
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_renewalIntervalKey, hours);
+    await PreferencesService.setInt(_renewalIntervalKey, hours);
 
     // Reschedule periodic task with new interval
     if (_isInitialized) {
@@ -1070,8 +1070,7 @@ class WorkManagerHabitService {
 
       // Import the reliable scheduling service dynamically to avoid circular dependency
       // We'll use SharedPreferences to signal that WorkManager performed the reset
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
+      await PreferencesService.setString(
           'workmanager_midnight_reset_flag', DateTime.now().toIso8601String());
 
       // The actual reset logic will be performed by ReliableSchedulingService

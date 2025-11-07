@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'preferences_service.dart';
 import 'logging_service.dart';
 
 class AchievementsService {
@@ -737,15 +737,13 @@ class AchievementsService {
 
   /// Get user's current level based on XP
   static Future<int> getCurrentLevel() async {
-    final prefs = await SharedPreferences.getInstance();
-    final xp = prefs.getInt(_xpKey) ?? 0;
+        final xp = await PreferencesService.getIntOrDefault(_xpKey, 0);
     return _calculateLevel(xp);
   }
 
   /// Get user's current XP
   static Future<int> getCurrentXP() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_xpKey) ?? 0;
+        return await PreferencesService.getIntOrDefault(_xpKey, 0);
   }
 
   /// Get XP needed for next level
@@ -770,12 +768,11 @@ class AchievementsService {
   /// Award XP for completing a habit
   static Future<bool> awardXP(int xp, {String? reason}) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final currentXP = prefs.getInt(_xpKey) ?? 0;
+            final currentXP = await PreferencesService.getIntOrDefault(_xpKey, 0);
       final oldLevel = _calculateLevel(currentXP);
 
       final newXP = currentXP + xp;
-      await prefs.setInt(_xpKey, newXP);
+      await PreferencesService.setInt(_xpKey, newXP);
 
       final newLevel = _calculateLevel(newXP);
 
@@ -798,8 +795,7 @@ class AchievementsService {
   /// Get all unlocked achievements
   static Future<List<Achievement>> getUnlockedAchievements() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final achievementIds = prefs.getStringList(_achievementsKey) ?? [];
+            final achievementIds = await PreferencesService.getStringList(_achievementsKey) ?? [];
 
       final allAchievements = getAllAchievements();
       return allAchievements
@@ -891,12 +887,11 @@ class AchievementsService {
 
   static Future<void> _unlockAchievement(Achievement achievement) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final currentAchievements = prefs.getStringList(_achievementsKey) ?? [];
+            final currentAchievements = await PreferencesService.getStringList(_achievementsKey) ?? [];
 
       if (!currentAchievements.contains(achievement.id)) {
         currentAchievements.add(achievement.id);
-        await prefs.setStringList(_achievementsKey, currentAchievements);
+        await PreferencesService.setStringList(_achievementsKey, currentAchievements);
 
         // Award XP for the achievement
         await awardXP(achievement.xpReward, reason: achievement.title);

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'preferences_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 import 'widget_integration_service.dart';
@@ -9,8 +9,7 @@ class ThemeService {
   static const String _primaryColorKey = 'primary_color';
 
   static Future<ThemeMode> getThemeMode() async {
-    final prefs = await SharedPreferences.getInstance();
-    final themeModeString = prefs.getString(_themeModeKey) ?? 'system';
+        final themeModeString = await PreferencesService.getStringOrDefault(_themeModeKey, 'system');
     switch (themeModeString) {
       case 'light':
         return ThemeMode.light;
@@ -22,8 +21,7 @@ class ThemeService {
   }
 
   static Future<void> setThemeMode(ThemeMode themeMode) async {
-    final prefs = await SharedPreferences.getInstance();
-    String themeModeString;
+        String themeModeString;
     switch (themeMode) {
       case ThemeMode.light:
         themeModeString = 'light';
@@ -35,11 +33,11 @@ class ThemeService {
         themeModeString = 'system';
         break;
     }
-    await prefs.setString(_themeModeKey, themeModeString);
+    await PreferencesService.setString(_themeModeKey, themeModeString);
 
     // Only push theme changes to widgets if widget setting is set to follow the app
     try {
-      final widgetMode = prefs.getString('widget_theme_mode') ?? 'follow_app';
+      final widgetMode = await PreferencesService.getStringOrDefault('widget_theme_mode', 'follow_app');
       if (widgetMode == 'follow_app') {
         await HomeWidget.saveWidgetData('themeMode', themeModeString);
       }
@@ -47,15 +45,13 @@ class ThemeService {
   }
 
   static Future<Color> getPrimaryColor() async {
-    final prefs = await SharedPreferences.getInstance();
-    final colorValue =
-        prefs.getInt(_primaryColorKey) ?? 0xFF2196F3; // Colors.blue equivalent
+        final colorValue =
+        await PreferencesService.getIntOrDefault(_primaryColorKey, 0xFF2196F3); // Colors.blue equivalent
     return Color(colorValue);
   }
 
   static Future<void> setPrimaryColor(Color color) async {
-    final prefs = await SharedPreferences.getInstance();
-    // Convert color to ARGB32 format (fallback to .value if toARGB32 not available)
+        // Convert color to ARGB32 format (fallback to .value if toARGB32 not available)
     int colorValue;
     try {
       colorValue = color.toARGB32();
@@ -64,11 +60,11 @@ class ThemeService {
       // ignore: deprecated_member_use
       colorValue = color.value;
     }
-    await prefs.setInt(_primaryColorKey, colorValue);
+    await PreferencesService.setInt(_primaryColorKey, colorValue);
 
     // Only push color changes to widgets if widget setting is set to follow the app
     try {
-      final widgetMode = prefs.getString('widget_theme_mode') ?? 'follow_app';
+      final widgetMode = await PreferencesService.getStringOrDefault('widget_theme_mode', 'follow_app');
       if (widgetMode == 'follow_app') {
         await HomeWidget.saveWidgetData('primaryColor', colorValue);
       }
