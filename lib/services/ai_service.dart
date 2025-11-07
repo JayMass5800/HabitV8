@@ -36,8 +36,9 @@ class AIService {
       _isInitialized = true;
 
       _logger.i(
-          'AI Service initialized - OpenAI: ${_openAiApiKey?.isNotEmpty == true ? "configured" : "not configured"}, '
-          'Gemini: ${_geminiApiKey?.isNotEmpty == true ? "configured" : "not configured"}');
+        'AI Service initialized - OpenAI: ${_openAiApiKey?.isNotEmpty == true ? "configured" : "not configured"}, '
+        'Gemini: ${_geminiApiKey?.isNotEmpty == true ? "configured" : "not configured"}',
+      );
     } catch (e) {
       _logger.e('Failed to initialize AI keys from secure storage: $e');
       _isInitialized = false;
@@ -128,7 +129,8 @@ class AIService {
 
   /// Generate AI-powered insights using OpenAI GPT
   Future<List<Map<String, dynamic>>> generateOpenAIInsights(
-      List<Habit> habits) async {
+    List<Habit> habits,
+  ) async {
     await initializeApiKeys(); // Ensure keys are loaded
 
     if (_openAiApiKey == null || _openAiApiKey!.isEmpty) {
@@ -139,7 +141,8 @@ class AIService {
     // Validate API key format (OpenAI keys typically start with 'sk-')
     if (!_openAiApiKey!.startsWith('sk-')) {
       _logger.w(
-          'OpenAI API key appears invalid (should start with sk-), using fallback insights');
+        'OpenAI API key appears invalid (should start with sk-), using fallback insights',
+      );
       return _getFallbackInsights(habits);
     }
 
@@ -147,8 +150,12 @@ class AIService {
       final habitSummary = _generateHabitSummary(habits);
       _logger.i('=== OPENAI API REQUEST ===');
       _logger.i('Habit summary length: ${habitSummary.length} characters');
-      final summaryPreviewLength = habitSummary.length < 500 ? habitSummary.length : 500;
-      _logger.i('Habit summary preview: ${habitSummary.substring(0, summaryPreviewLength)}...');
+      final summaryPreviewLength = habitSummary.length < 500
+          ? habitSummary.length
+          : 500;
+      _logger.i(
+        'Habit summary preview: ${habitSummary.substring(0, summaryPreviewLength)}...',
+      );
       _logger.d('Sending request to OpenAI API: $_openAiApiUrl');
 
       final response = await http.post(
@@ -179,7 +186,7 @@ Return exactly 3 insights in JSON format with these fields:
 - type: "motivational" (celebration/encouragement) | "pattern" (behavioral pattern detected) | "insight" (data-driven observation) | "achievement" (milestone recognition) | "actionable" (specific recommendation)
 - title: Short, compelling title (max 5 words)
 - description: Specific, actionable insight with concrete suggestions (2-3 sentences)
-- icon: "rocket_launch" | "trending_up" | "emoji_events" | "wb_sunny" | "weekend" | "local_fire_department" | "psychology" | "lightbulb" | "fitness_center"'''
+- icon: "rocket_launch" | "trending_up" | "emoji_events" | "wb_sunny" | "weekend" | "local_fire_department" | "psychology" | "lightbulb" | "fitness_center"''',
             },
             {
               'role': 'user',
@@ -201,8 +208,8 @@ Provide insights in this exact JSON format:
     "description": "Detailed insight explanation with specific actionable advice",
     "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
-]'''
-            }
+]''',
+            },
           ],
           'max_tokens': 1200,
           'temperature': 0.7,
@@ -221,7 +228,9 @@ Provide insights in this exact JSON format:
           _logger.i('OpenAI endpoint succeeded');
           _logger.i('Response content length: ${content.length} characters');
           final previewLength = content.length < 300 ? content.length : 300;
-          _logger.i('Response preview: ${content.substring(0, previewLength)}...');
+          _logger.i(
+            'Response preview: ${content.substring(0, previewLength)}...',
+          );
           final parsedInsights = _parseAIResponse(content);
           _logger.i('Parsed ${parsedInsights.length} insights from OpenAI');
           for (var i = 0; i < parsedInsights.length; i++) {
@@ -239,7 +248,8 @@ Provide insights in this exact JSON format:
         // Provide specific handling for different error types
         if (response.statusCode == 503) {
           _logger.i(
-              'OpenAI service is temporarily overloaded, trying alternative model...');
+            'OpenAI service is temporarily overloaded, trying alternative model...',
+          );
         } else if (response.statusCode == 429) {
           _logger.i('OpenAI rate limit exceeded, trying alternative model...');
         } else if (response.statusCode == 404) {
@@ -269,7 +279,8 @@ Provide insights in this exact JSON format:
 
   /// Generate AI insights using Google Gemini
   Future<List<Map<String, dynamic>>> generateGeminiInsights(
-      List<Habit> habits) async {
+    List<Habit> habits,
+  ) async {
     await initializeApiKeys(); // Ensure keys are loaded
 
     if (_geminiApiKey == null || _geminiApiKey!.isEmpty) {
@@ -280,7 +291,8 @@ Provide insights in this exact JSON format:
     // Validate API key format
     if (!_geminiApiKey!.startsWith('AIza')) {
       _logger.w(
-          'Gemini API key appears invalid (should start with AIza), using fallback insights');
+        'Gemini API key appears invalid (should start with AIza), using fallback insights',
+      );
       return _getFallbackInsights(habits);
     }
 
@@ -288,8 +300,12 @@ Provide insights in this exact JSON format:
       final habitSummary = _generateHabitSummary(habits);
       _logger.i('=== GEMINI API REQUEST ===');
       _logger.i('Habit summary length: ${habitSummary.length} characters');
-      final summaryPreviewLength = habitSummary.length < 500 ? habitSummary.length : 500;
-      _logger.i('Habit summary preview: ${habitSummary.substring(0, summaryPreviewLength)}...');
+      final summaryPreviewLength = habitSummary.length < 500
+          ? habitSummary.length
+          : 500;
+      _logger.i(
+        'Habit summary preview: ${habitSummary.substring(0, summaryPreviewLength)}...',
+      );
       _logger.d('Sending request to Gemini API: $_geminiApiUrl');
 
       final response = await http.post(
@@ -325,11 +341,11 @@ Provide insights in this exact JSON format:
     "description": "Detailed insight explanation with specific actionable advice",
     "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
-]'''
-                }
-              ]
-            }
-          ]
+]''',
+                },
+              ],
+            },
+          ],
         }),
       );
 
@@ -346,7 +362,9 @@ Provide insights in this exact JSON format:
           _logger.i('Primary Gemini endpoint succeeded');
           _logger.i('Response content length: ${content.length} characters');
           final previewLength = content.length < 300 ? content.length : 300;
-          _logger.i('Response preview: ${content.substring(0, previewLength)}...');
+          _logger.i(
+            'Response preview: ${content.substring(0, previewLength)}...',
+          );
           final parsedInsights = _parseAIResponse(content);
           _logger.i('Parsed ${parsedInsights.length} insights from Gemini');
           for (var i = 0; i < parsedInsights.length; i++) {
@@ -364,10 +382,12 @@ Provide insights in this exact JSON format:
         // Provide specific handling for different error types
         if (response.statusCode == 503) {
           _logger.i(
-              'Gemini service is temporarily overloaded, trying alternative endpoint...');
+            'Gemini service is temporarily overloaded, trying alternative endpoint...',
+          );
         } else if (response.statusCode == 429) {
-          _logger
-              .i('Gemini rate limit exceeded, trying alternative endpoint...');
+          _logger.i(
+            'Gemini rate limit exceeded, trying alternative endpoint...',
+          );
         } else if (response.statusCode == 404) {
           _logger.i('Gemini model not found, trying alternative endpoint...');
         } else if (response.statusCode >= 500) {
@@ -392,7 +412,9 @@ Provide insights in this exact JSON format:
 
   /// Try alternative Gemini API endpoint
   Future<List<Map<String, dynamic>>> _tryAlternativeGeminiEndpoint(
-      List<Habit> habits, String habitSummary) async {
+    List<Habit> habits,
+    String habitSummary,
+  ) async {
     try {
       // Try v1 API with gemini-pro (more stable model)
       const alternativeUrl =
@@ -421,11 +443,11 @@ Provide insights in this exact JSON format:
     "description": "Detailed insight explanation with specific actionable advice",
     "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
-]'''
-                }
-              ]
-            }
-          ]
+]''',
+                },
+              ],
+            },
+          ],
         }),
       );
 
@@ -443,7 +465,8 @@ Provide insights in this exact JSON format:
       }
 
       _logger.w(
-          'Alternative Gemini endpoint also failed with status ${response.statusCode}');
+        'Alternative Gemini endpoint also failed with status ${response.statusCode}',
+      );
       return _getFallbackInsights(habits);
     } catch (e) {
       _logger.e('Alternative Gemini API error: $e');
@@ -453,7 +476,9 @@ Provide insights in this exact JSON format:
 
   /// Try alternative OpenAI model
   Future<List<Map<String, dynamic>>> _tryAlternativeOpenAIModel(
-      List<Habit> habits, String habitSummary) async {
+    List<Habit> habits,
+    String habitSummary,
+  ) async {
     try {
       // Try gpt-3.5-turbo as fallback
       final response = await http.post(
@@ -468,7 +493,7 @@ Provide insights in this exact JSON format:
             {
               'role': 'system',
               'content':
-                  'You are an expert habit coach. Analyze habit data and provide actionable insights in JSON format.'
+                  'You are an expert habit coach. Analyze habit data and provide actionable insights in JSON format.',
             },
             {
               'role': 'user',
@@ -485,8 +510,8 @@ Provide insights in this exact JSON format:
     "description": "Detailed insight explanation with specific actionable advice",
     "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
-]'''
-            }
+]''',
+            },
           ],
           'max_tokens': 1000,
           'temperature': 0.7,
@@ -506,7 +531,8 @@ Provide insights in this exact JSON format:
       }
 
       _logger.w(
-          'Alternative OpenAI model also failed with status ${response.statusCode}');
+        'Alternative OpenAI model also failed with status ${response.statusCode}',
+      );
       return _getFallbackInsights(habits);
     } catch (e) {
       _logger.e('Alternative OpenAI API error: $e');
@@ -519,17 +545,20 @@ Provide insights in this exact JSON format:
     if (habits.isEmpty) return 'No habits tracked yet.';
 
     final activeHabits = habits.where((h) => h.isActive).toList();
-    final totalCompletions =
-        activeHabits.fold<int>(0, (sum, h) => sum + h.completions.length);
+    final totalCompletions = activeHabits.fold<int>(
+      0,
+      (sum, h) => sum + h.completions.length,
+    );
     final avgCompletionRate = activeHabits.isNotEmpty
         ? activeHabits.map((h) => h.completionRate).reduce((a, b) => a + b) /
-            activeHabits.length
+              activeHabits.length
         : 0.0;
 
     final categories = activeHabits.map((h) => h.category).toSet().toList();
     final streaks = activeHabits.map((h) => h.streakInfo.current).toList();
-    final bestStreak =
-        streaks.isNotEmpty ? streaks.reduce((a, b) => a > b ? a : b) : 0;
+    final bestStreak = streaks.isNotEmpty
+        ? streaks.reduce((a, b) => a > b ? a : b)
+        : 0;
 
     // Enhanced analysis sections
     final temporalPatterns = _analyzeTemporalPatterns(activeHabits);
@@ -581,8 +610,9 @@ ${_getRecentTrends(activeHabits)}
     int eveningCompletions = 0;
 
     for (final habit in habits) {
-      final recentCompletions =
-          habit.completions.where((c) => c.isAfter(last30Days)).toList();
+      final recentCompletions = habit.completions
+          .where((c) => c.isAfter(last30Days))
+          .toList();
 
       for (final completion in recentCompletions) {
         // Weekday vs weekend
@@ -611,10 +641,10 @@ ${_getRecentTrends(activeHabits)}
       return 'Insufficient data for temporal analysis.';
     }
 
-    final weekdayRate =
-        (weekdayCompletions / totalCompletions * 100).toStringAsFixed(1);
-    final weekendRate =
-        (weekendCompletions / totalCompletions * 100).toStringAsFixed(1);
+    final weekdayRate = (weekdayCompletions / totalCompletions * 100)
+        .toStringAsFixed(1);
+    final weekendRate = (weekendCompletions / totalCompletions * 100)
+        .toStringAsFixed(1);
 
     String timeDistribution = '';
     if (morningCompletions + afternoonCompletions + eveningCompletions > 0) {
@@ -647,9 +677,10 @@ ${_getRecentTrends(activeHabits)}
 
       final avgRate =
           habitsInGroup.map((h) => h.completionRate).reduce((a, b) => a + b) /
-              habitsInGroup.length;
+          habitsInGroup.length;
       buffer.writeln(
-          '- ${difficulty.name.toUpperCase()}: ${habitsInGroup.length} habits, ${(avgRate * 100).toStringAsFixed(1)}% avg completion');
+        '- ${difficulty.name.toUpperCase()}: ${habitsInGroup.length} habits, ${(avgRate * 100).toStringAsFixed(1)}% avg completion',
+      );
     }
 
     return buffer.toString().trim();
@@ -673,7 +704,7 @@ ${_getRecentTrends(activeHabits)}
     for (final entry in categoryGroups.entries) {
       final avgRate =
           entry.value.map((h) => h.completionRate).reduce((a, b) => a + b) /
-              entry.value.length;
+          entry.value.length;
       if (avgRate > bestRate) {
         bestRate = avgRate;
         bestCategory = entry.key;
@@ -694,13 +725,15 @@ ${_getRecentTrends(activeHabits)}
     if (habits.isEmpty) return 'No habits to analyze.';
 
     final activeStreaks = habits.where((h) => h.streakInfo.current > 0).length;
-    final longestCurrentStreak =
-        habits.map((h) => h.streakInfo.current).reduce((a, b) => a > b ? a : b);
-    final longestEverStreak =
-        habits.map((h) => h.streakInfo.longest).reduce((a, b) => a > b ? a : b);
+    final longestCurrentStreak = habits
+        .map((h) => h.streakInfo.current)
+        .reduce((a, b) => a > b ? a : b);
+    final longestEverStreak = habits
+        .map((h) => h.streakInfo.longest)
+        .reduce((a, b) => a > b ? a : b);
     final avgCurrentStreak =
         habits.map((h) => h.streakInfo.current).reduce((a, b) => a + b) /
-            habits.length;
+        habits.length;
 
     // Find habits close to breaking their record
     final nearRecord = habits.where((h) {
@@ -710,12 +743,14 @@ ${_getRecentTrends(activeHabits)}
     }).toList();
 
     final buffer = StringBuffer();
-    buffer
-        .writeln('- Active streaks: $activeStreaks of ${habits.length} habits');
+    buffer.writeln(
+      '- Active streaks: $activeStreaks of ${habits.length} habits',
+    );
     buffer.writeln('- Longest current: $longestCurrentStreak days');
     buffer.writeln('- Best ever: $longestEverStreak days');
     buffer.writeln(
-        '- Average current: ${avgCurrentStreak.toStringAsFixed(1)} days');
+      '- Average current: ${avgCurrentStreak.toStringAsFixed(1)} days',
+    );
     if (nearRecord.isNotEmpty) {
       buffer.writeln('- ${nearRecord.length} habit(s) near personal record');
     }
@@ -736,14 +771,18 @@ ${_getRecentTrends(activeHabits)}
     // Calculate variance in completion rates
     final avgRate =
         habits.map((h) => h.completionRate).reduce((a, b) => a + b) /
-            habits.length;
-    final variance = habits
-            .map((h) =>
-                (h.completionRate - avgRate) * (h.completionRate - avgRate))
+        habits.length;
+    final variance =
+        habits
+            .map(
+              (h) =>
+                  (h.completionRate - avgRate) * (h.completionRate - avgRate),
+            )
             .reduce((a, b) => a + b) /
         habits.length;
-    final volatility =
-        variance > 0.04 ? 'HIGH' : (variance > 0.02 ? 'MODERATE' : 'LOW');
+    final volatility = variance > 0.04
+        ? 'HIGH'
+        : (variance > 0.02 ? 'MODERATE' : 'LOW');
 
     return '- Average consistency: ${avgConsistency.toStringAsFixed(1)}/100\n'
         '- High performers (>80): $highConsistency habits\n'
@@ -790,8 +829,9 @@ ${_getRecentTrends(activeHabits)}
     }
 
     // Get top correlation
-    final topCorrelation =
-        correlations.entries.reduce((a, b) => a.value > b.value ? a : b);
+    final topCorrelation = correlations.entries.reduce(
+      (a, b) => a.value > b.value ? a : b,
+    );
     return '- Strong correlation: ${topCorrelation.key} (${topCorrelation.value} days together)\n'
         '- Total correlations found: ${correlations.length}';
   }
@@ -807,14 +847,18 @@ ${_getRecentTrends(activeHabits)}
 
     for (final habit in habits) {
       recentCompletions += habit.completions
-          .where((c) =>
-              c.isAfter(lastWeek) &&
-              c.isBefore(now.add(const Duration(days: 1))))
+          .where(
+            (c) =>
+                c.isAfter(lastWeek) &&
+                c.isBefore(now.add(const Duration(days: 1))),
+          )
           .length;
       previousCompletions += habit.completions
-          .where((c) =>
-              c.isAfter(previousWeek) &&
-              c.isBefore(lastWeek.add(const Duration(days: 1))))
+          .where(
+            (c) =>
+                c.isAfter(previousWeek) &&
+                c.isBefore(lastWeek.add(const Duration(days: 1))),
+          )
           .length;
     }
 
@@ -884,10 +928,12 @@ ${_getRecentTrends(activeHabits)}
   /// Check if AI services are configured
   bool get isConfigured {
     // Return true if we have at least one valid API key
-    final hasValidOpenAI = _openAiApiKey != null &&
+    final hasValidOpenAI =
+        _openAiApiKey != null &&
         _openAiApiKey!.isNotEmpty &&
         _openAiApiKey!.startsWith('sk-');
-    final hasValidGemini = _geminiApiKey != null &&
+    final hasValidGemini =
+        _geminiApiKey != null &&
         _geminiApiKey!.isNotEmpty &&
         _geminiApiKey!.startsWith('AIza');
     return hasValidOpenAI || hasValidGemini;
@@ -923,10 +969,12 @@ ${_getRecentTrends(activeHabits)}
 
   /// Get current API key status for debugging
   Map<String, dynamic> get apiKeyStatus {
-    final openAiValid = _openAiApiKey != null &&
+    final openAiValid =
+        _openAiApiKey != null &&
         _openAiApiKey!.isNotEmpty &&
         _openAiApiKey!.startsWith('sk-');
-    final geminiValid = _geminiApiKey != null &&
+    final geminiValid =
+        _geminiApiKey != null &&
         _geminiApiKey!.isNotEmpty &&
         _geminiApiKey!.startsWith('AIza');
 
