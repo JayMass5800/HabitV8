@@ -145,6 +145,10 @@ class AIService {
 
     try {
       final habitSummary = _generateHabitSummary(habits);
+      _logger.i('=== OPENAI API REQUEST ===');
+      _logger.i('Habit summary length: ${habitSummary.length} characters');
+      final summaryPreviewLength = habitSummary.length < 500 ? habitSummary.length : 500;
+      _logger.i('Habit summary preview: ${habitSummary.substring(0, summaryPreviewLength)}...');
       _logger.d('Sending request to OpenAI API: $_openAiApiUrl');
 
       final response = await http.post(
@@ -207,12 +211,23 @@ Provide insights in this exact JSON format:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        _logger.i('=== OPENAI API RESPONSE ===');
+        _logger.i('Response status: ${response.statusCode}');
         if (data['choices'] != null &&
             data['choices'].isNotEmpty &&
             data['choices'][0]['message'] != null &&
             data['choices'][0]['message']['content'] != null) {
           final content = data['choices'][0]['message']['content'];
-          return _parseAIResponse(content);
+          _logger.i('OpenAI endpoint succeeded');
+          _logger.i('Response content length: ${content.length} characters');
+          final previewLength = content.length < 300 ? content.length : 300;
+          _logger.i('Response preview: ${content.substring(0, previewLength)}...');
+          final parsedInsights = _parseAIResponse(content);
+          _logger.i('Parsed ${parsedInsights.length} insights from OpenAI');
+          for (var i = 0; i < parsedInsights.length; i++) {
+            _logger.i('Insight ${i + 1}: ${parsedInsights[i]['title']}');
+          }
+          return parsedInsights;
         } else {
           _logger.w('OpenAI API response structure unexpected: $data');
           return _getFallbackInsights(habits);
@@ -271,6 +286,10 @@ Provide insights in this exact JSON format:
 
     try {
       final habitSummary = _generateHabitSummary(habits);
+      _logger.i('=== GEMINI API REQUEST ===');
+      _logger.i('Habit summary length: ${habitSummary.length} characters');
+      final summaryPreviewLength = habitSummary.length < 500 ? habitSummary.length : 500;
+      _logger.i('Habit summary preview: ${habitSummary.substring(0, summaryPreviewLength)}...');
       _logger.d('Sending request to Gemini API: $_geminiApiUrl');
 
       final response = await http.post(
@@ -316,6 +335,8 @@ Provide insights in this exact JSON format:
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        _logger.i('=== GEMINI API RESPONSE ===');
+        _logger.i('Response status: ${response.statusCode}');
         if (data['candidates'] != null &&
             data['candidates'].isNotEmpty &&
             data['candidates'][0]['content'] != null &&
@@ -323,7 +344,15 @@ Provide insights in this exact JSON format:
             data['candidates'][0]['content']['parts'].isNotEmpty) {
           final content = data['candidates'][0]['content']['parts'][0]['text'];
           _logger.i('Primary Gemini endpoint succeeded');
-          return _parseAIResponse(content);
+          _logger.i('Response content length: ${content.length} characters');
+          final previewLength = content.length < 300 ? content.length : 300;
+          _logger.i('Response preview: ${content.substring(0, previewLength)}...');
+          final parsedInsights = _parseAIResponse(content);
+          _logger.i('Parsed ${parsedInsights.length} insights from Gemini');
+          for (var i = 0; i < parsedInsights.length; i++) {
+            _logger.i('Insight ${i + 1}: ${parsedInsights[i]['title']}');
+          }
+          return parsedInsights;
         } else {
           _logger.w('Gemini API response structure unexpected: $data');
           return _getFallbackInsights(habits);

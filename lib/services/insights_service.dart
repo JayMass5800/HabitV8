@@ -332,56 +332,112 @@ class InsightsService {
     }
 
     try {
-      // Pattern Analysis with error handling for each method
+      // Enhanced pattern analysis with all methods
+      final allPotentialInsights = <Map<String, dynamic>>[];
+
+      // Original pattern analysis methods
       try {
-        _analyzeWeekendDrops(habits, insights);
+        _analyzeWeekendDrops(habits, allPotentialInsights);
       } catch (e) {
         _logger.e('Error in _analyzeWeekendDrops: $e');
       }
 
       try {
-        _analyzeStreakOpportunities(habits, insights);
+        _analyzeStreakOpportunities(habits, allPotentialInsights);
       } catch (e) {
         _logger.e('Error in _analyzeStreakOpportunities: $e');
       }
 
       try {
-        _analyzeTimeCorrelations(habits, insights);
+        _analyzeTimeCorrelations(habits, allPotentialInsights);
       } catch (e) {
         _logger.e('Error in _analyzeTimeCorrelations: $e');
       }
 
       try {
-        _analyzeCategoryPerformance(habits, insights);
+        _analyzeCategoryPerformance(habits, allPotentialInsights);
       } catch (e) {
         _logger.e('Error in _analyzeCategoryPerformance: $e');
       }
 
       try {
-        _analyzeConsistencyPatterns(habits, insights);
+        _analyzeConsistencyPatterns(habits, allPotentialInsights);
       } catch (e) {
         _logger.e('Error in _analyzeConsistencyPatterns: $e');
       }
 
-      // New: Predictive alerts for at-risk habits based on trajectory
       try {
-        _analyzeAtRiskHabits(habits, insights);
+        _analyzeAtRiskHabits(habits, allPotentialInsights);
       } catch (e) {
         _logger.e('Error in _analyzeAtRiskHabits: $e');
       }
 
-      // New: Volatility detection for habits with high variance
       try {
-        _analyzeVolatility(habits, insights);
+        _analyzeVolatility(habits, allPotentialInsights);
       } catch (e) {
         _logger.e('Error in _analyzeVolatility: $e');
       }
 
-      // New: Per-habit actionable suggestions with estimated impact
       try {
-        _addPerHabitSuggestions(habits, insights);
+        _addPerHabitSuggestions(habits, allPotentialInsights);
       } catch (e) {
         _logger.e('Error in _addPerHabitSuggestions: $e');
+      }
+
+      // NEW: Enhanced analysis methods
+      try {
+        _analyzeTemporalPatterns(habits, allPotentialInsights);
+      } catch (e) {
+        _logger.e('Error in _analyzeTemporalPatterns: $e');
+      }
+
+      try {
+        _analyzeDifficultyPerformance(habits, allPotentialInsights);
+      } catch (e) {
+        _logger.e('Error in _analyzeDifficultyPerformance: $e');
+      }
+
+      try {
+        _analyzeHabitCorrelations(habits, allPotentialInsights);
+      } catch (e) {
+        _logger.e('Error in _analyzeHabitCorrelations: $e');
+      }
+
+      try {
+        _analyzeImprovementOpportunities(habits, allPotentialInsights);
+      } catch (e) {
+        _logger.e('Error in _analyzeImprovementOpportunities: $e');
+      }
+
+      // Prioritize insights: achievements > patterns > motivational
+      final priorityMap = {
+        'achievement': 4,
+        'celebration': 4,
+        'pattern': 3,
+        'insight': 3,
+        'actionable': 3,
+        'strength': 2,
+        'motivation': 2,
+        'motivational': 1,
+      };
+
+      allPotentialInsights.sort((a, b) {
+        final priorityA = priorityMap[a['type']] ?? 0;
+        final priorityB = priorityMap[b['type']] ?? 0;
+        return priorityB.compareTo(priorityA);
+      });
+
+      // Take top 3, ensuring variety in types
+      final selectedTypes = <String>{};
+      for (final insight in allPotentialInsights) {
+        final type = insight['type'] as String;
+        // Allow max 2 insights of the same type
+        final typeCount = selectedTypes.where((t) => t == type).length;
+        if (typeCount < 2) {
+          insights.add(insight);
+          selectedTypes.add(type);
+          if (insights.length >= 3) break;
+        }
       }
     } catch (e) {
       _logger.e('Error in generateAIInsights: $e');
@@ -843,5 +899,200 @@ class InsightsService {
     }
 
     return trendData.reversed.toList(); // Return in chronological order
+  }
+
+  /// Analyze temporal patterns (weekday vs weekend, time of day)
+  void _analyzeTemporalPatterns(
+      List<Habit> habits, List<Map<String, dynamic>> insights) {
+    final now = DateTime.now();
+    final last30Days = now.subtract(const Duration(days: 30));
+
+    int morningCompletions = 0;
+    int afternoonCompletions = 0;
+    int eveningCompletions = 0;
+    int totalWithTime = 0;
+
+    for (final habit in habits) {
+      if (!habit.isActive || habit.notificationTime == null) continue;
+
+      final recentCompletions = habit.completions
+          .where((c) => c.isAfter(last30Days))
+          .length;
+
+      if (recentCompletions > 0) {
+        final hour = habit.notificationTime!.hour;
+        if (hour < 12) {
+          morningCompletions += recentCompletions;
+        } else if (hour < 17) {
+          afternoonCompletions += recentCompletions;
+        } else {
+          eveningCompletions += recentCompletions;
+        }
+        totalWithTime += recentCompletions;
+      }
+    }
+
+    if (totalWithTime > 10) {
+      final morningRate = (morningCompletions / totalWithTime * 100).round();
+      final afternoonRate =
+          (afternoonCompletions / totalWithTime * 100).round();
+      final eveningRate = (eveningCompletions / totalWithTime * 100).round();
+
+      String timeOfDay = 'morning';
+      int maxRate = morningRate;
+      String icon = 'wb_sunny';
+
+      if (afternoonRate > maxRate) {
+        maxRate = afternoonRate;
+        timeOfDay = 'afternoon';
+        icon = 'light_mode';
+      }
+      if (eveningRate > maxRate) {
+        maxRate = eveningRate;
+        timeOfDay = 'evening';
+        icon = 'nightlight';
+      }
+
+      if (maxRate > 45) {
+        insights.add({
+          'type': 'pattern',
+          'title': 'Prime Time Detected',
+          'description':
+              'You\'re crushing it in the $timeOfDay with $maxRate% of completions. Consider scheduling new habits during this window.',
+          'icon': icon,
+        });
+      }
+    }
+  }
+
+  /// Analyze performance by difficulty level
+  void _analyzeDifficultyPerformance(
+      List<Habit> habits, List<Map<String, dynamic>> insights) {
+    final difficultyGroups = <HabitDifficulty, List<Habit>>{};
+    for (final habit in habits) {
+      if (!habit.isActive) continue;
+      difficultyGroups.putIfAbsent(habit.difficulty, () => []).add(habit);
+    }
+
+    // Check if user is consistently succeeding at hard habits
+    final hardHabits = difficultyGroups[HabitDifficulty.hard] ?? [];
+    if (hardHabits.isNotEmpty) {
+      final avgRate = hardHabits.map((h) => h.completionRate).reduce((a, b) => a + b) / hardHabits.length;
+      if (avgRate > 0.8) {
+        insights.add({
+          'type': 'achievement',
+          'title': 'Challenge Champion',
+          'description':
+              'You\'re maintaining ${(avgRate * 100).round()}% completion on hard habits. You\'ve leveled up!',
+          'icon': 'emoji_events',
+        });
+      }
+    }
+
+    // Check if user should upgrade difficulty
+    final easyHabits = difficultyGroups[HabitDifficulty.easy] ?? [];
+    if (easyHabits.length >= 2) {
+      final highPerformers = easyHabits.where((h) => h.completionRate > 0.9 && h.streakInfo.current >= 7).toList();
+      if (highPerformers.isNotEmpty) {
+        final habitName = highPerformers.first.name;
+        insights.add({
+          'type': 'actionable',
+          'title': 'Ready to Level Up?',
+          'description':
+              '"$habitName" has a ${(highPerformers.first.completionRate * 100).round()}% completion rate. Consider increasing frequency or difficulty.',
+          'icon': 'trending_up',
+        });
+      }
+    }
+  }
+
+  /// Analyze correlations between habits
+  void _analyzeHabitCorrelations(
+      List<Habit> habits, List<Map<String, dynamic>> insights) {
+    if (habits.length < 2) return;
+
+    final now = DateTime.now();
+    final last14Days = now.subtract(const Duration(days: 14));
+
+    int bestOverlap = 0;
+    String habit1Name = '';
+    String habit2Name = '';
+
+    for (int i = 0; i < habits.length; i++) {
+      for (int j = i + 1; j < habits.length; j++) {
+        final h1 = habits[i];
+        final h2 = habits[j];
+
+        final completions1 = h1.completions
+            .where((c) => c.isAfter(last14Days))
+            .map((c) => '${c.year}-${c.month}-${c.day}')
+            .toSet();
+        final completions2 = h2.completions
+            .where((c) => c.isAfter(last14Days))
+            .map((c) => '${c.year}-${c.month}-${c.day}')
+            .toSet();
+
+        final overlap = completions1.intersection(completions2).length;
+        if (overlap > bestOverlap) {
+          bestOverlap = overlap;
+          habit1Name = h1.name;
+          habit2Name = h2.name;
+        }
+      }
+    }
+
+    if (bestOverlap >= 5) {
+      insights.add({
+        'type': 'insight',
+        'title': 'Habit Stack Detected',
+        'description':
+            '"$habit1Name" and "$habit2Name" pair well together ($bestOverlap days). This is an effective habit stack!',
+        'icon': 'link',
+      });
+    }
+  }
+
+  /// Analyze improvement opportunities
+  void _analyzeImprovementOpportunities(
+      List<Habit> habits, List<Map<String, dynamic>> insights) {
+    // Find habits with declining performance
+    final now = DateTime.now();
+    final lastWeek = now.subtract(const Duration(days: 7));
+    final previousWeek = now.subtract(const Duration(days: 14));
+
+    for (final habit in habits) {
+      if (!habit.isActive) continue;
+
+      final lastWeekCount = habit.completions
+          .where((c) => c.isAfter(lastWeek))
+          .length;
+      final previousWeekCount = habit.completions
+          .where((c) => c.isAfter(previousWeek) && c.isBefore(lastWeek))
+          .length;
+
+      if (previousWeekCount >= 3 && lastWeekCount < previousWeekCount - 2) {
+        insights.add({
+          'type': 'actionable',
+          'title': 'Needs Attention',
+          'description':
+              '"${habit.name}" dropped from $previousWeekCount to $lastWeekCount completions. Review your schedule or reduce difficulty temporarily.',
+          'icon': 'warning',
+        });
+        return; // Only show one declining habit warning
+      }
+    }
+
+    // Find habits with perfect consistency that could be celebrated
+    final perfectHabits = habits.where((h) => h.isActive && h.consistencyScore == 100 && h.completions.length >= 7).toList();
+    if (perfectHabits.isNotEmpty) {
+      final habit = perfectHabits.first;
+      insights.add({
+        'type': 'celebration',
+        'title': 'Perfect Consistency!',
+        'description':
+            '"${habit.name}" has 100% consistency over ${habit.completions.length} completions. Absolute mastery!',
+        'icon': 'stars',
+      });
+    }
   }
 }
