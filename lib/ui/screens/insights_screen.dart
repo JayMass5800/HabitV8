@@ -87,7 +87,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
       // Check if AI is enabled in settings
       const secureStorage = FlutterSecureStorage();
-      final enableAIString = await secureStorage.read(key: 'enable_ai_insights');
+      final enableAIString =
+          await secureStorage.read(key: 'enable_ai_insights');
       final enableAI = enableAIString == 'true';
 
       // Debug logging
@@ -101,7 +102,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           _isAIEnabled = enableAI;
           _isAIAvailable = isAIAvailable;
         });
-        
+
         print('  - Final _isAIEnabled: $_isAIEnabled');
         print('  - Final _isAIAvailable: $_isAIAvailable');
         print('  - Will show AI insights: ${_isAIEnabled && _isAIAvailable}');
@@ -120,10 +121,13 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   /// Load AI insights only when requested (lazy loading)
   void _loadAIInsights() {
+    print('🔍 _loadAIInsights() called - Current state: _aiInsightsRequested=$_aiInsightsRequested, _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
     if (!_aiInsightsRequested && mounted) {
       setState(() {
         _aiInsightsRequested = true;
+        _aiInsightsFuture = null; // Force new generation
       });
+      print('🔍 State updated: _aiInsightsRequested=true, _aiInsightsFuture set to null');
     }
   }
 
@@ -216,9 +220,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 opacity: _fadeController,
                 child: RefreshIndicator(
                   onRefresh: () async {
+                    print('🔍 RefreshIndicator triggered');
                     ref.invalidate(habitsStreamIsarProvider);
                     _resetAIInsights(); // Reset AI insights on refresh
                     await _updateAIStatus(); // Update AI status on refresh
+                    print('🔍 Refresh complete - AI insights reset');
                   },
                   child: TabBarView(
                     controller: _tabController,
@@ -309,9 +315,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             // Show AI insights if enabled and available, otherwise show backup analysis
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _isAIEnabled && _isAIAvailable
-                  ? _buildAIInsights(habits, theme)
-                  : _buildBackupAnalysis(habits, theme),
+              child: Builder(
+                builder: (context) {
+                  print('🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
+                  final useAI = _isAIEnabled && _isAIAvailable;
+                  print('🔍 Will use AI insights: $useAI');
+                  return useAI
+                      ? _buildAIInsights(habits, theme)
+                      : _buildBackupAnalysis(habits, theme);
+                },
+              ),
             ),
 
             // Debug panel (only in debug mode)
@@ -980,12 +993,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildAIInsights(List<Habit> habits, ThemeData theme) {
+    print('🔍 _buildAIInsights called - _aiInsightsRequested=$_aiInsightsRequested, _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
     final activeHabits = habits.where((h) => h.isActive).toList();
     final totalCompletions =
         activeHabits.fold<int>(0, (sum, h) => sum + h.completions.length);
 
     // If AI insights haven't been requested yet, show a helpful message
     if (!_aiInsightsRequested) {
+      print('🔍 _buildAIInsights: returning early - _aiInsightsRequested is false');
       return Column(
         children: [
           _buildAIInsightsHeader(theme),
@@ -1018,7 +1033,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-                  onPressed: _loadAIInsights,
+                  onPressed: () {
+                    debugPrint('🔍 Load AI Insights button TAPPED');
+                    _loadAIInsights();
+                  },
                   icon: const Icon(Icons.psychology),
                   label: const Text('Load AI Insights'),
                   style: ElevatedButton.styleFrom(
@@ -1036,6 +1054,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     }
 
     // Initialize the future if not already done
+    print('🔍 Building AI insights - _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
+    print('🔍 Number of habits for AI analysis: ${habits.length}');
     _aiInsightsFuture ??=
         _enhancedInsightsService.generateComprehensiveInsights(habits);
 
@@ -1192,6 +1212,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 AIInsightsOnboarding.show(context);
                 break;
               case 'refresh':
+                print('🔍 Refresh Insights button pressed');
+                _resetAIInsights();
                 setState(() {});
                 break;
             }
@@ -3130,6 +3152,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   /// Build backup analysis when AI is not available
   Widget _buildBackupAnalysis(List<Habit> habits, ThemeData theme) {
+    print('🔍 _buildBackupAnalysis called instead of AI insights - _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
     // Use rule-based insights from the insights service
     final allInsights = _insightsService.generateAIInsights(habits);
 

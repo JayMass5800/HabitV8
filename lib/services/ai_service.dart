@@ -150,9 +150,8 @@ class AIService {
       final habitSummary = _generateHabitSummary(habits);
       _logger.i('=== OPENAI API REQUEST ===');
       _logger.i('Habit summary length: ${habitSummary.length} characters');
-      final summaryPreviewLength = habitSummary.length < 500
-          ? habitSummary.length
-          : 500;
+      final summaryPreviewLength =
+          habitSummary.length < 500 ? habitSummary.length : 500;
       _logger.i(
         'Habit summary preview: ${habitSummary.substring(0, summaryPreviewLength)}...',
       );
@@ -300,9 +299,8 @@ Provide insights in this exact JSON format:
       final habitSummary = _generateHabitSummary(habits);
       _logger.i('=== GEMINI API REQUEST ===');
       _logger.i('Habit summary length: ${habitSummary.length} characters');
-      final summaryPreviewLength = habitSummary.length < 500
-          ? habitSummary.length
-          : 500;
+      final summaryPreviewLength =
+          habitSummary.length < 500 ? habitSummary.length : 500;
       _logger.i(
         'Habit summary preview: ${habitSummary.substring(0, summaryPreviewLength)}...',
       );
@@ -551,14 +549,13 @@ Provide insights in this exact JSON format:
     );
     final avgCompletionRate = activeHabits.isNotEmpty
         ? activeHabits.map((h) => h.completionRate).reduce((a, b) => a + b) /
-              activeHabits.length
+            activeHabits.length
         : 0.0;
 
     final categories = activeHabits.map((h) => h.category).toSet().toList();
     final streaks = activeHabits.map((h) => h.streakInfo.current).toList();
-    final bestStreak = streaks.isNotEmpty
-        ? streaks.reduce((a, b) => a > b ? a : b)
-        : 0;
+    final bestStreak =
+        streaks.isNotEmpty ? streaks.reduce((a, b) => a > b ? a : b) : 0;
 
     // Enhanced analysis sections
     final temporalPatterns = _analyzeTemporalPatterns(activeHabits);
@@ -610,9 +607,8 @@ ${_getRecentTrends(activeHabits)}
     int eveningCompletions = 0;
 
     for (final habit in habits) {
-      final recentCompletions = habit.completions
-          .where((c) => c.isAfter(last30Days))
-          .toList();
+      final recentCompletions =
+          habit.completions.where((c) => c.isAfter(last30Days)).toList();
 
       for (final completion in recentCompletions) {
         // Weekday vs weekend
@@ -641,10 +637,10 @@ ${_getRecentTrends(activeHabits)}
       return 'Insufficient data for temporal analysis.';
     }
 
-    final weekdayRate = (weekdayCompletions / totalCompletions * 100)
-        .toStringAsFixed(1);
-    final weekendRate = (weekendCompletions / totalCompletions * 100)
-        .toStringAsFixed(1);
+    final weekdayRate =
+        (weekdayCompletions / totalCompletions * 100).toStringAsFixed(1);
+    final weekendRate =
+        (weekendCompletions / totalCompletions * 100).toStringAsFixed(1);
 
     String timeDistribution = '';
     if (morningCompletions + afternoonCompletions + eveningCompletions > 0) {
@@ -677,7 +673,7 @@ ${_getRecentTrends(activeHabits)}
 
       final avgRate =
           habitsInGroup.map((h) => h.completionRate).reduce((a, b) => a + b) /
-          habitsInGroup.length;
+              habitsInGroup.length;
       buffer.writeln(
         '- ${difficulty.name.toUpperCase()}: ${habitsInGroup.length} habits, ${(avgRate * 100).toStringAsFixed(1)}% avg completion',
       );
@@ -704,7 +700,7 @@ ${_getRecentTrends(activeHabits)}
     for (final entry in categoryGroups.entries) {
       final avgRate =
           entry.value.map((h) => h.completionRate).reduce((a, b) => a + b) /
-          entry.value.length;
+              entry.value.length;
       if (avgRate > bestRate) {
         bestRate = avgRate;
         bestCategory = entry.key;
@@ -725,15 +721,13 @@ ${_getRecentTrends(activeHabits)}
     if (habits.isEmpty) return 'No habits to analyze.';
 
     final activeStreaks = habits.where((h) => h.streakInfo.current > 0).length;
-    final longestCurrentStreak = habits
-        .map((h) => h.streakInfo.current)
-        .reduce((a, b) => a > b ? a : b);
-    final longestEverStreak = habits
-        .map((h) => h.streakInfo.longest)
-        .reduce((a, b) => a > b ? a : b);
+    final longestCurrentStreak =
+        habits.map((h) => h.streakInfo.current).reduce((a, b) => a > b ? a : b);
+    final longestEverStreak =
+        habits.map((h) => h.streakInfo.longest).reduce((a, b) => a > b ? a : b);
     final avgCurrentStreak =
         habits.map((h) => h.streakInfo.current).reduce((a, b) => a + b) /
-        habits.length;
+            habits.length;
 
     // Find habits close to breaking their record
     final nearRecord = habits.where((h) {
@@ -771,18 +765,16 @@ ${_getRecentTrends(activeHabits)}
     // Calculate variance in completion rates
     final avgRate =
         habits.map((h) => h.completionRate).reduce((a, b) => a + b) /
-        habits.length;
-    final variance =
-        habits
+            habits.length;
+    final variance = habits
             .map(
               (h) =>
                   (h.completionRate - avgRate) * (h.completionRate - avgRate),
             )
             .reduce((a, b) => a + b) /
         habits.length;
-    final volatility = variance > 0.04
-        ? 'HIGH'
-        : (variance > 0.02 ? 'MODERATE' : 'LOW');
+    final volatility =
+        variance > 0.04 ? 'HIGH' : (variance > 0.02 ? 'MODERATE' : 'LOW');
 
     return '- Average consistency: ${avgConsistency.toStringAsFixed(1)}/100\n'
         '- High performers (>80): $highConsistency habits\n'
@@ -928,30 +920,34 @@ ${_getRecentTrends(activeHabits)}
   /// Check if AI services are configured
   bool get isConfigured {
     // Return true if we have at least one valid API key
-    final hasValidOpenAI =
-        _openAiApiKey != null &&
+    final hasValidOpenAI = _openAiApiKey != null &&
         _openAiApiKey!.isNotEmpty &&
         _openAiApiKey!.startsWith('sk-');
-    final hasValidGemini =
-        _geminiApiKey != null &&
+    final hasValidGemini = _geminiApiKey != null &&
         _geminiApiKey!.isNotEmpty &&
         _geminiApiKey!.startsWith('AIza');
-    
+
     // Debug logging
-    print('🔍 AIService.isConfigured check:');
-    print('  - _openAiApiKey: ${_openAiApiKey == null ? "null" : (_openAiApiKey!.isEmpty ? "empty" : "has value (${_openAiApiKey!.substring(0, 6)}...)")}');
-    print('  - hasValidOpenAI: $hasValidOpenAI');
-    print('  - _geminiApiKey: ${_geminiApiKey == null ? "null" : (_geminiApiKey!.isEmpty ? "empty" : "has value (${_geminiApiKey!.substring(0, 6)}...)")}');
-    print('  - hasValidGemini: $hasValidGemini');
-    print('  - isConfigured result: ${hasValidOpenAI || hasValidGemini}');
-    
+    _logger.i('🔍 AIService.isConfigured check:');
+    _logger.i(
+        '  - _openAiApiKey: ${_openAiApiKey == null ? "null" : (_openAiApiKey!.isEmpty ? "empty" : "has value (${_openAiApiKey!.substring(0, 6)}...)")}');
+    _logger.i('  - hasValidOpenAI: $hasValidOpenAI');
+    _logger.i(
+        '  - _geminiApiKey: ${_geminiApiKey == null ? "null" : (_geminiApiKey!.isEmpty ? "empty" : "has value (${_geminiApiKey!.substring(0, 6)}...)")}');
+    _logger.i('  - hasValidGemini: $hasValidGemini');
+    _logger.i('  - isConfigured result: ${hasValidOpenAI || hasValidGemini}');
+
     return hasValidOpenAI || hasValidGemini;
   }
 
   /// Check if AI services are configured (async version that ensures initialization)
   Future<bool> get isConfiguredAsync async {
+    _logger.i('🔍 isConfiguredAsync: START');
     await initializeApiKeys();
-    return isConfigured;
+    _logger.i('🔍 isConfiguredAsync: After initializeApiKeys');
+    final result = isConfigured;
+    _logger.i('🔍 isConfiguredAsync: isConfigured returned $result');
+    return result;
   }
 
   /// Get available AI providers
@@ -978,12 +974,10 @@ ${_getRecentTrends(activeHabits)}
 
   /// Get current API key status for debugging
   Map<String, dynamic> get apiKeyStatus {
-    final openAiValid =
-        _openAiApiKey != null &&
+    final openAiValid = _openAiApiKey != null &&
         _openAiApiKey!.isNotEmpty &&
         _openAiApiKey!.startsWith('sk-');
-    final geminiValid =
-        _geminiApiKey != null &&
+    final geminiValid = _geminiApiKey != null &&
         _geminiApiKey!.isNotEmpty &&
         _geminiApiKey!.startsWith('AIza');
 

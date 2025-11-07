@@ -20,14 +20,19 @@ class EnhancedInsightsService {
     bool useAI = true,
     String? preferredAIProvider,
   }) async {
+    _logger.i('🔍 EnhancedInsightsService.generateComprehensiveInsights START');
+    _logger.i('🔍 Parameters: habits=${habits.length}, useAI=$useAI, provider=$preferredAIProvider');
     final insights = <Map<String, dynamic>>[];
 
     // Always get rule-based insights as a baseline with error handling
     try {
+      _logger.i('🔍 Calling _insightsService.generateAIInsights...');
       final ruleBasedInsights = _insightsService.generateAIInsights(habits);
       insights.addAll(ruleBasedInsights);
       _logger.i('Generated ${ruleBasedInsights.length} rule-based insights');
+      _logger.i('🔍 Rule-based insights generated: ${ruleBasedInsights.length}');
     } catch (e) {
+      _logger.e('🔍 ERROR generating rule-based insights: $e');
       _logger.e('Failed to generate rule-based insights: $e');
       // If rule-based insights fail, create a minimal fallback
       insights.add({
@@ -40,14 +45,39 @@ class EnhancedInsightsService {
     }
 
     // Initialize AI service and check if configured
-    final aiConfigured = await _aiService.isConfiguredAsync;
+    _logger.i('🔍 About to call isConfiguredAsync...');
+    bool aiConfigured = false;
+    try {
+      aiConfigured = await _aiService.isConfiguredAsync.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          _logger.w('🔍 ⚠️ isConfiguredAsync TIMED OUT after 5 seconds!');
+          return false;
+        },
+      );
+      _logger.i('🔍 isConfiguredAsync returned: $aiConfigured');
+    } catch (e, stackTrace) {
+      _logger.e('🔍 ❌ ERROR in isConfiguredAsync: $e');
+      _logger.e('🔍 StackTrace: $stackTrace');
+      aiConfigured = false;
+    }
+    _logger.i('🔍 After await block, aiConfigured=$aiConfigured');
     _logger.i('AI configured: $aiConfigured, useAI: $useAI');
 
     // Add AI insights if enabled and configured
     if (useAI && aiConfigured) {
+      _logger.i('🔍 Entering AI insights generation block');
       try {
         List<Map<String, dynamic>> aiInsights;
-        final availableProviders = await _aiService.availableProvidersAsync;
+        _logger.i('🔍 About to call availableProvidersAsync...');
+        final availableProviders = await _aiService.availableProvidersAsync.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            _logger.w('🔍 ⚠️ availableProvidersAsync TIMED OUT!');
+            return <String>[];
+          },
+        );
+        _logger.i('🔍 availableProvidersAsync returned: $availableProviders');
 
         _logger.i(
             'AI insights requested - Preferred: $preferredAIProvider, Available: $availableProviders');

@@ -1,265 +1,316 @@
-
-Conversation with Gemini
-flutter , awesome notifications alarm code example
-
-The awesome_notifications package in Flutter allows you to schedule a notification to act as an alarm using the schedule property with either NotificationInterval or NotificationCalendar. You should also set wakeUpScreen: true and category: NotificationCategory.Alarm in the NotificationContent for proper alarm-like behavior on some platforms.
-
-Here is an example using NotificationInterval to schedule a notification five seconds from the moment the code runs, with an emphasis on alarm-like settings:
-
-Dart
-import 'package:awesome_notifications/awesome_notifications.dart';
-
-Future<void> scheduleAlarmNotification() async {
-  // Get the local time zone identifier for the schedule
-  String localTimeZone = await AwesomeNotifications().getLocalTimeZoneIdentifier();
-
-  await AwesomeNotifications().createNotification(
-    content: NotificationContent(
-      id: 1, // Unique ID for the notification
-      channelKey: 'basic_channel', // Must match one of your initialized channels
-      title: 'Alarm! ⏰',
-      body: 'Time to wake up or check something!',
-      // Set properties for alarm-like behavior
-      wakeUpScreen: true,
-      category: NotificationCategory.Alarm,
-      // You can also add a custom sound in the channel initialization
-    ),
-    // Schedule the notification to fire after a specific interval
-    schedule: NotificationInterval(
-      interval: 5, // The notification will fire after 5 seconds
-      timeZone: localTimeZone,
-      preciseAlarm: true, // For more precise timing
-    ),
-  );
-}
-
-// You must initialize AwesomeNotifications in your main() function:
-// void main() {
-//   AwesomeNotifications().initialize(
-//     null, // Set to null for default app icon, or a resource string
-//     [
-//       NotificationChannel(
-//         channelKey: 'basic_channel',
-//         channelName: 'Basic notifications',
-//         channelDescription: 'Notification channel for tests',
-//         importance: NotificationImportance.Max, // Max importance often helps for alarms
-//         playSound: true,
-//         criticalAlerts: true,
-//         // You can define a custom sound here: sound: 'resource_name',
-//       ),
-//     ],
-//     debug: true,
-//   );
-//   runApp(const MyApp());
-// }
-You can also use NotificationCalendar to set a notification for a specific date and time, and set repeats: true for recurring alarms.
-
-Dart
-// Example for a daily repeating alarm at 8:00 AM
-// (Requires proper channel setup and time zone handling)
-await AwesomeNotifications().createNotification(
-    content: NotificationContent(
-        id: 2,
-        channelKey: 'basic_channel',
-        title: 'Daily Reminder',
-        body: 'It is 8 AM!',
-        category: NotificationCategory.Alarm,
-        wakeUpScreen: true,
-    ),
-    schedule: NotificationCalendar(
-        hour: 8,
-        minute: 0,
-        second: 0,
-        repeats: true, // Set to true for a daily repeating alarm
-        timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
-        preciseAlarm: true,
-    ),
-);
-The video provides a comprehensive tutorial on implementing various types of notifications, including scheduled ones, using the Awesome Notifications package.
-
-Flutter Awesome Notification - YouTube
-
-Flutter Awesome Notification - YouTube
-Coding Orbit · 33K views
-
-
-example when using alarm.mp3 sounds
-
-To use a custom sound like alarm.mp3 with your Flutter alarm notification using awesome_notifications, you need to:
-
-Add the sound file to the correct native platform directories.
-
-Initialize the notification channel with the sound.
-
-Schedule the notification using that channel.
-
-Here is a complete example focusing on the Flutter (Dart) code after you've placed the file correctly.
-
-1. File Placement (Required Native Setup)
-The awesome_notifications package requires the sound file to be placed in the native projects:
-
-Platform	Directory	Requirement
-Android	android/app/src/main/res/raw/	Use lowercase and snake_case for the filename (e.g., alarm.mp3).
-iOS	ios/Runner/	Add the file to the root of the Runner folder in Xcode (no extension needed in Dart code).
-For this example, assume you've placed the file at:
-
-Android: android/app/src/main/res/raw/alarm.mp3
-
-iOS: ios/Runner/alarm.mp3 (Added to Xcode project)
-
-2. Flutter Code Example
-A. Initialization (Setting the Sound on the Channel)
-The sound is set when you define the NotificationChannel. You pass the file name without the extension to the sound property.
-
-Dart
-import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:flutter/material.dart';
-
-// 1. Initialize the plugin in your main function
-Future<void> initializeAwesomeNotifications() async {
-  await AwesomeNotifications().initialize(
-    // Null for default app icon, or a resource string for a custom one
-    null,
-    [
-      NotificationChannel(
-        channelKey: 'alarm_channel',
-        channelName: 'Alarm Notifications',
-        channelDescription: 'Channel for high-priority alarm sounds',
-        importance: NotificationImportance.Max, // High importance for alarms
-        playSound: true,
-        // *** This is where you set the custom sound! ***
-        // Use the filename without the extension, and without the path.
-        // The package handles finding it in the native 'raw' or 'Runner' folders.
-        sound: 'alarm', 
-        criticalAlerts: true, // Bypasses Do Not Disturb on some devices
-      ),
-    ],
-    debug: true,
-  );
-  // Request permission if not already granted
-  await AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
-    if (!isAllowed) {
-      AwesomeNotifications().requestPermissionToSendNotifications();
-    }
-  });
-}
-B. Scheduling the Alarm Notification
-Now, you schedule a notification using the alarm_channel and setting the appropriate alarm-like properties.
-
-Dart
-Future<void> createCustomSoundAlarm() async {
-  String localTimeZone = await AwesomeNotifications().getLocalTimeZoneIdentifier();
-  
-  // Schedule a notification to fire 10 seconds from now
-  int interval = 10; 
-
-  await AwesomeNotifications().createNotification(
-    content: NotificationContent(
-      id: 101, // Unique ID
-      channelKey: 'alarm_channel', // Use the channel with the custom sound
-      title: '🚨 Custom Alarm Sound 🚨',
-      body: 'This notification uses alarm.mp3!',
-      // Properties for true alarm behavior
-      wakeUpScreen: true,
-      category: NotificationCategory.Alarm,
-      autoDismissible: false, // Often alarms stay on screen until dismissed
-    ),
-    schedule: NotificationInterval(
-      interval: interval, 
-      timeZone: localTimeZone,
-      preciseAlarm: true, // For precise scheduling
-      allowWhileIdle: true, // Try to fire even in low-power modes (Android)
-    ),
-    actionButtons: [
-      NotificationActionButton(
-        key: 'STOP_ALARM',
-        label: 'Stop',
-        actionType: ActionType.Dismiss,
-      ),
-    ],
-  );
-  
-  print('Alarm scheduled for $interval seconds from now on the "alarm_channel".');
-}
-
-The awesome_notifications package in Flutter allows you to schedule a notification to act as an alarm using the schedule property with either NotificationInterval or NotificationCalendar. You should also set wakeUpScreen: true and category: NotificationCategory.Alarm in the NotificationContent for proper alarm-like behavior on some platforms.
-
-Here is an example using NotificationInterval to schedule a notification five seconds from the moment the code runs, with an emphasis on alarm-like settings:
-
-Dart
-
-import 'package:awesome_notifications/awesome_notifications.dart';
-
-Future<void> scheduleAlarmNotification() async {
-  // Get the local time zone identifier for the schedule
-  String localTimeZone = await AwesomeNotifications().getLocalTimeZoneIdentifier();
-
-  await AwesomeNotifications().createNotification(
-    content: NotificationContent(
-      id: 1, // Unique ID for the notification
-      channelKey: 'basic_channel', // Must match one of your initialized channels
-      title: 'Alarm! ⏰',
-      body: 'Time to wake up or check something!',
-      // Set properties for alarm-like behavior
-      wakeUpScreen: true,
-      category: NotificationCategory.Alarm,
-      // You can also add a custom sound in the channel initialization
-    ),
-    // Schedule the notification to fire after a specific interval
-    schedule: NotificationInterval(
-      interval: 5, // The notification will fire after 5 seconds
-      timeZone: localTimeZone,
-      preciseAlarm: true, // For more precise timing
-    ),
-  );
-}
-
-// You must initialize AwesomeNotifications in your main() function:
-// void main() {
-//   AwesomeNotifications().initialize(
-//     null, // Set to null for default app icon, or a resource string
-//     [
-//       NotificationChannel(
-//         channelKey: 'basic_channel',
-//         channelName: 'Basic notifications',
-//         channelDescription: 'Notification channel for tests',
-//         importance: NotificationImportance.Max, // Max importance often helps for alarms
-//         playSound: true,
-//         criticalAlerts: true,
-//         // You can define a custom sound here: sound: 'resource_name',
-//       ),
-//     ],
-//     debug: true,
-//   );
-//   runApp(const MyApp());
-// }
-You can also use NotificationCalendar to set a notification for a specific date and time, and set repeats: true for recurring alarms.
-
-Dart
-
-// Example for a daily repeating alarm at 8:00 AM
-// (Requires proper channel setup and time zone handling)
-await AwesomeNotifications().createNotification(
-    content: NotificationContent(
-        id: 2,
-        channelKey: 'basic_channel',
-        title: 'Daily Reminder',
-        body: 'It is 8 AM!',
-        category: NotificationCategory.Alarm,
-        wakeUpScreen: true,
-    ),
-    schedule: NotificationCalendar(
-        hour: 8,
-        minute: 0,
-        second: 0,
-        repeats: true, // Set to true for a daily repeating alarm
-        timeZone: await AwesomeNotifications().getLocalTimeZoneIdentifier(),
-        preciseAlarm: true,
-    ),
-);
-The video provides a comprehensive tutorial on implementing various types of notifications, including scheduled ones, using the Awesome Notifications package.
-
-Flutter Awesome Notification - YouTube
-
-Flutter Awesome Notification - YouTube
-Coding Orbit · 33K views
+_isAIAvailable=true
+11-07 12:41:59.683 13701 13701 I flutter : 🔍 Building AI insights - _aiInsightsFuture is null: false
+11-07 12:41:59.683 13701 13701 I flutter : 🔍 Number of habits for AI analysis: 8
+11-07 12:41:59.683 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:41:59.683 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:41:59.683 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:41:59.683 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:41:59.683 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:41:59.683 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:41:59.752 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:41:59.752 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:41:59.752 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:41:59.752 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:41:59.756 13701 13957 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false  
+11-07 12:41:59.875 13701 13701 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:41:59.982 13701 13963 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:42:00.018 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:00.018 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:00.018 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:00.018 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:00.018 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:00.018 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:02.941 13701 13701 I flutter : 🔍 Refresh Insights button pressed
+11-07 12:42:02.989 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:02.989 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:02.989 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:02.990 13701 13701 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true       
+11-07 12:42:02.990 13701 13701 I flutter : 🔍 Will use AI insights: true
+11-07 12:42:02.990 13701 13701 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=false, _isAIEnabled=true,
+_isAIAvailable=true
+11-07 12:42:02.990 13701 13701 I flutter : 🔍 _buildAIInsights: returning early - _aiInsightsRequested is false
+11-07 12:42:02.990 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:02.990 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:02.990 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:02.990 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:02.990 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:02.990 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:03.787 13701 13701 I flutter : 🔍 _loadAIInsights() called - Current state: _aiInsightsRequested=false, 
+_aiInsightsFuture is null: true
+11-07 12:42:03.787 13701 13701 I flutter : 🔍 State updated: _aiInsightsRequested=true, _aiInsightsFuture set to null
+11-07 12:42:03.820 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:03.820 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:03.820 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:03.821 13701 13701 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true       
+11-07 12:42:03.821 13701 13701 I flutter : 🔍 Will use AI insights: true
+11-07 12:42:03.821 13701 13701 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=true, _isAIEnabled=true, 
+_isAIAvailable=true
+11-07 12:42:03.821 13701 13701 I flutter : 🔍 Building AI insights - _aiInsightsFuture is null: true
+11-07 12:42:03.821 13701 13701 I flutter : 🔍 Number of habits for AI analysis: 8
+11-07 12:42:03.821 13701 13701 I flutter : 🔍 EnhancedInsightsService.generateComprehensiveInsights START
+11-07 12:42:03.821 13701 13701 I flutter : 🔍 Parameters: habits=8, useAI=true, provider=null
+11-07 12:42:03.821 13701 13701 I flutter : 🔍 Calling _insightsService.generateAIInsights...
+11-07 12:42:03.841 13701 13701 I flutter : 🔍 Rule-based insights generated: 3
+11-07 12:42:03.841 13701 13701 I flutter : 🔍 isConfiguredAsync: START
+11-07 12:42:03.841 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:03.841 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:03.841 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:03.841 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:03.841 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:03.841 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:03.845 13701 13701 I flutter : 🔍 isConfiguredAsync: After initializeApiKeys
+11-07 12:42:03.846 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:03.846 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:03.846 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:03.846 13701 13701 I flutter : 🔍 isConfiguredAsync: isConfigured returned true
+11-07 12:42:04.321 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:04.321 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:04.321 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:04.321 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:04.321 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:04.321 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.722 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:42:11.722 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:42:11.722 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:42:11.722 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:42:11.742 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.742 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.742 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.742 13701 13701 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true       
+11-07 12:42:11.742 13701 13701 I flutter : 🔍 Will use AI insights: true
+11-07 12:42:11.742 13701 13701 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=true, _isAIEnabled=true,
+_isAIAvailable=true
+11-07 12:42:11.742 13701 13701 I flutter : 🔍 Building AI insights - _aiInsightsFuture is null: false
+11-07 12:42:11.742 13701 13701 I flutter : 🔍 Number of habits for AI analysis: 8
+11-07 12:42:11.742 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.742 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.742 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.742 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.742 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.742 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.800 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.800 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.800 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.801 13701 13701 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true       
+11-07 12:42:11.801 13701 13701 I flutter : 🔍 Will use AI insights: true
+11-07 12:42:11.801 13701 13701 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=true, _isAIEnabled=true,
+_isAIAvailable=true
+11-07 12:42:11.801 13701 13701 I flutter : 🔍 Building AI insights - _aiInsightsFuture is null: false
+11-07 12:42:11.801 13701 13701 I flutter : 🔍 Number of habits for AI analysis: 8
+11-07 12:42:11.801 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.801 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.801 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.801 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.801 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.801 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.850 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.850 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.850 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.850 13701 13701 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true       
+11-07 12:42:11.850 13701 13701 I flutter : 🔍 Will use AI insights: true
+11-07 12:42:11.850 13701 13701 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=true, _isAIEnabled=true,
+_isAIAvailable=true
+11-07 12:42:11.850 13701 13701 I flutter : 🔍 Building AI insights - _aiInsightsFuture is null: false
+11-07 12:42:11.850 13701 13701 I flutter : 🔍 Number of habits for AI analysis: 8
+11-07 12:42:11.850 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.850 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.850 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.850 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.850 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.850 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.874 13701 13701 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:42:11.892 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.892 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.892 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.893 13701 13701 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true       
+11-07 12:42:11.893 13701 13701 I flutter : 🔍 Will use AI insights: true
+11-07 12:42:11.893 13701 13701 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=true, _isAIEnabled=true,
+_isAIAvailable=true
+11-07 12:42:11.893 13701 13701 I flutter : 🔍 Building AI insights - _aiInsightsFuture is null: false
+11-07 12:42:11.893 13701 13701 I flutter : 🔍 Number of habits for AI analysis: 8
+11-07 12:42:11.893 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.893 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.893 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:11.893 13701 13701 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:42:11.893 13701 13701 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:42:11.893 13701 13701 I flutter :   - hasValidGemini: true
+11-07 12:42:12.080 13701 13957 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:42:12.432 13701 13963 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:42:13.539 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:42:13.539 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:42:13.539 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:42:13.539 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:42:13.667 13701 13701 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:42:13.858 13701 13701 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:42:14.035 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:42:14.035 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:42:14.035 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:42:14.035 13701 13701 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:42:14.161 13701 13701 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:42:14.189 13701 13975 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:42:14.197 13701 13701 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:42:14.519 13701 13980 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:44:59.982 26873 26873 D AlphabeticalAppsList: addAppsWithSections: adding sectionName: G with appInfoTitle: Gemini
+11-07 12:44:59.985 26873 26873 D AlphabeticalAppsList: addAppsWithSections: adding sectionName: G with appInfoTitle: Gemini
+11-07 12:45:00.373 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:45:00.687 26873 26895 D AlphabeticIndexCompat: computeSectionName: cs: Gemini sectionName: G
+11-07 12:47:08.433 14248 14248 I flutter : 🔍 [Widget BG] Checking slot 08:40 for Drink Water: true
+11-07 12:47:08.433 14248 14248 I flutter : 🔍 [Widget BG] Checking slot 11:30 for Drink Water: false
+11-07 12:47:08.433 14248 14248 I flutter : 🔍 [Widget BG] Checking slot 14:40 for Drink Water: false
+11-07 12:47:08.433 14248 14248 I flutter : 🔍 [Widget BG] Checking slot 18:30 for Drink Water: false
+11-07 12:47:08.468 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:49:59.661 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:49:59.661 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:49:59.661 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:49:59.661 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:49:59.882 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:00.392 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:50:00.392 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:50:00.392 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:50:00.392 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:50:00.630 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:00.685 14248 15156 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:01.514 14248 15197 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:03.227 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:50:03.227 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:50:03.227 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:50:03.227 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:50:03.339 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:03.651 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:50:03.651 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:50:03.651 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:50:03.651 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:50:03.762 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:04.286 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:07.324 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:50:07.324 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:50:07.324 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:50:07.324 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:50:07.440 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:07.997 14248 14487 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:08.345 14248 14248 I flutter : 🔍 isConfiguredAsync: START
+11-07 12:50:08.367 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:08.367 14248 14248 I flutter :   - _geminiApiKey: null
+11-07 12:50:08.367 14248 14248 I flutter :   - hasValidGemini: false
+11-07 12:50:08.399 14248 14248 I flutter : 🔍 isConfiguredAsync: After initializeApiKeys
+11-07 12:50:08.400 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:08.400 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:08.400 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:08.400 14248 14248 I flutter : 🔍 isConfiguredAsync: isConfigured returned true
+11-07 12:50:08.401 14248 14248 I flutter : 🔍 AI Status Check:
+11-07 12:50:08.425 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:08.425 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:08.425 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:09.134 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:50:09.134 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:50:09.134 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:50:09.134 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:50:09.260 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:09.622 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 08:40 for Drink Water: true
+11-07 12:50:09.622 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 11:30 for Drink Water: false
+11-07 12:50:09.622 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 14:40 for Drink Water: false
+11-07 12:50:09.622 14248 14248 I flutter : 🔍 [Widget FG] Checking slot 18:30 for Drink Water: false
+11-07 12:50:09.663 14248 14248 I flutter : 🔍 _loadAIInsights() called - Current state: _aiInsightsRequested=false, 
+_aiInsightsFuture is null: true
+11-07 12:50:09.663 14248 14248 I flutter : 🔍 State updated: _aiInsightsRequested=true, _aiInsightsFuture set to null
+11-07 12:50:09.680 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:09.680 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:09.680 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:09.701 14248 14248 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true
+11-07 12:50:09.701 14248 14248 I flutter : 🔍 Will use AI insights: true
+11-07 12:50:09.701 14248 14248 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=true, _isAIEnabled=true,
+_isAIAvailable=true
+11-07 12:50:09.701 14248 14248 I flutter : 🔍 Building AI insights - _aiInsightsFuture is null: true
+11-07 12:50:09.701 14248 14248 I flutter : 🔍 Number of habits for AI analysis: 8
+11-07 12:50:09.701 14248 14248 I flutter : 🔍 EnhancedInsightsService.generateComprehensiveInsights START
+11-07 12:50:09.701 14248 14248 I flutter : 🔍 Parameters: habits=8, useAI=true, provider=null
+11-07 12:50:09.701 14248 14248 I flutter : 🔍 Calling _insightsService.generateAIInsights...
+11-07 12:50:09.719 14248 14248 I flutter : 🔍 Rule-based insights generated: 3
+11-07 12:50:09.719 14248 14248 I flutter : 🔍 About to call isConfiguredAsync...
+11-07 12:50:09.719 14248 14248 I flutter : 🔍 isConfiguredAsync: START
+11-07 12:50:09.719 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:09.719 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:09.719 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:09.719 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:09.719 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:09.719 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:09.722 14248 14248 I flutter : 🔍 isConfiguredAsync: After initializeApiKeys
+11-07 12:50:09.722 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:09.722 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:09.722 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:09.722 14248 14248 I flutter : 🔍 isConfiguredAsync: isConfigured returned true
+11-07 12:50:09.722 14248 14248 I flutter : 🔍 isConfiguredAsync returned: true
+11-07 12:50:09.722 14248 14248 I flutter : 🔍 Entering AI insights generation block
+11-07 12:50:09.735 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false  
+11-07 12:50:09.776 14248 14248 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:09.979 14248 14248 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true
+11-07 12:50:09.979 14248 14248 I flutter : 🔍 Will use AI insights: true
+11-07 12:50:09.979 14248 14248 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=true, _isAIEnabled=true,
+_isAIAvailable=true
+11-07 12:50:09.980 14248 14248 I flutter : 🔍 Building AI insights - _aiInsightsFuture is null: false
+11-07 12:50:09.980 14248 14248 I flutter : 🔍 Number of habits for AI analysis: 8
+11-07 12:50:09.980 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:09.980 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:09.980 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:09.980 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:09.980 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:09.980 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:10.097 14248 14485 D HabitTimelineWidget: 🔍 Widget state check: hasHabits=true, completed=2, total=4, allComplete=false
+11-07 12:50:10.325 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:10.325 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:10.325 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:10.325 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:10.325 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:10.325 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:13.845 14248 14248 I flutter : 🔍 Refresh Insights button pressed
+11-07 12:50:13.872 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:13.872 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:13.872 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:13.873 14248 14248 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true
+11-07 12:50:13.873 14248 14248 I flutter : 🔍 Will use AI insights: true
+11-07 12:50:13.873 14248 14248 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=false, _isAIEnabled=true,
+_isAIAvailable=true
+11-07 12:50:13.873 14248 14248 I flutter : 🔍 _buildAIInsights: returning early - _aiInsightsRequested is false
+11-07 12:50:13.873 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:13.873 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:13.873 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:13.873 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:13.873 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:13.873 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:14.710 14248 14248 I flutter : 🔍 _loadAIInsights() called - Current state: _aiInsightsRequested=false, 
+_aiInsightsFuture is null: true
+11-07 12:50:14.710 14248 14248 I flutter : 🔍 State updated: _aiInsightsRequested=true, _aiInsightsFuture set to null
+11-07 12:50:14.745 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:14.745 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:14.745 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:14.746 14248 14248 I flutter : 🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=true, _isAIAvailable=true       
+11-07 12:50:14.746 14248 14248 I flutter : 🔍 Will use AI insights: true
+11-07 12:50:14.746 14248 14248 I flutter : 🔍 _buildAIInsights called - _aiInsightsRequested=true, _isAIEnabled=true,
+_isAIAvailable=true
+11-07 12:50:14.746 14248 14248 I flutter : 🔍 Building AI insights - _aiInsightsFuture is null: true
+11-07 12:50:14.746 14248 14248 I flutter : 🔍 Number of habits for AI analysis: 8
+11-07 12:50:14.746 14248 14248 I flutter : 🔍 EnhancedInsightsService.generateComprehensiveInsights START
+11-07 12:50:14.746 14248 14248 I flutter : 🔍 Parameters: habits=8, useAI=true, provider=null
+11-07 12:50:14.746 14248 14248 I flutter : 🔍 Calling _insightsService.generateAIInsights...
+11-07 12:50:14.763 14248 14248 I flutter : 🔍 Rule-based insights generated: 3
+11-07 12:50:14.763 14248 14248 I flutter : 🔍 About to call isConfiguredAsync...
+11-07 12:50:14.763 14248 14248 I flutter : 🔍 isConfiguredAsync: START
+11-07 12:50:14.764 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:14.764 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:14.764 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:14.764 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:14.764 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:14.764 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:14.768 14248 14248 I flutter : 🔍 isConfiguredAsync: After initializeApiKeys
+11-07 12:50:14.768 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:14.768 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:14.768 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:14.768 14248 14248 I flutter : 🔍 isConfiguredAsync: isConfigured returned true
+11-07 12:50:14.768 14248 14248 I flutter : 🔍 isConfiguredAsync returned: true
+11-07 12:50:14.768 14248 14248 I flutter : 🔍 Entering AI insights generation block
+11-07 12:50:15.233 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:15.233 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:15.233 14248 14248 I flutter :   - hasValidGemini: true
+11-07 12:50:15.233 14248 14248 I flutter : 🔍 AIService.isConfigured check:
+11-07 12:50:15.233 14248 14248 I flutter :   - _geminiApiKey: has value (AIzaSy...)
+11-07 12:50:15.233 14248 14248 I flutter :   - hasValidGemini: true
