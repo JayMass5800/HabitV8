@@ -22,11 +22,13 @@ class EnhancedInsightsService {
     String? preferredAIProvider,
   }) async {
     // VERY FIRST LINE - synchronous print before ANY async operations
-    debugPrint('🚨 METHOD ENTRY: generateComprehensiveInsights called with ${habits.length} habits');
+    debugPrint(
+        '🚨 METHOD ENTRY: generateComprehensiveInsights called with ${habits.length} habits');
     debugPrint('🚨 useAI=$useAI, preferredAIProvider=$preferredAIProvider');
-    
+
     // Synchronous log to confirm method is called
-    _logger.i('🔍 🚀 SYNC: generateComprehensiveInsights ENTRY POINT - Method called');
+    _logger.i(
+        '🔍 🚀 SYNC: generateComprehensiveInsights ENTRY POINT - Method called');
     _logger.i('🔍 EnhancedInsightsService.generateComprehensiveInsights START');
     _logger.i(
         '🔍 Parameters: habits=${habits.length}, useAI=$useAI, provider=$preferredAIProvider');
@@ -57,10 +59,10 @@ class EnhancedInsightsService {
     // Force sync check first to see if we even have an API key
     final hasApiKeySynchronously = _aiService.isConfigured;
     debugPrint('🚨 SYNC CHECK: hasApiKey=$hasApiKeySynchronously');
-    
+
     _logger.i('🔍 About to call isConfiguredAsync...');
     bool aiConfigured = false;
-    
+
     // If we don't have API key synchronously, skip the async check
     if (!hasApiKeySynchronously) {
       debugPrint('🚨 No API key found synchronously, skipping AI');
@@ -84,8 +86,9 @@ class EnhancedInsightsService {
         aiConfigured = false;
       }
     }
-    
-    debugPrint('🚨 FINAL: aiConfigured=$aiConfigured, useAI=$useAI, willGenerateAI=${useAI && aiConfigured}');
+
+    debugPrint(
+        '🚨 FINAL: aiConfigured=$aiConfigured, useAI=$useAI, willGenerateAI=${useAI && aiConfigured}');
     _logger.i('🔍 After await block, aiConfigured=$aiConfigured');
     _logger.i('AI configured: $aiConfigured, useAI: $useAI');
 
@@ -164,7 +167,8 @@ class EnhancedInsightsService {
 
     _logger.i(
         'Returning ${finalInsights.length} total insights (AI configured: $aiConfigured)');
-    debugPrint('🚨 METHOD EXIT: Returning ${finalInsights.length} insights (AI=$aiConfigured)');
+    debugPrint(
+        '🚨 METHOD EXIT: Returning ${finalInsights.length} insights (AI=$aiConfigured)');
 
     // Ensure we always return at least one insight
     if (finalInsights.isEmpty) {

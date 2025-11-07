@@ -1063,9 +1063,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
         '🔍 Building AI insights - _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
     print('🔍 Number of habits for AI analysis: ${habits.length}');
     print('🔍 About to call generateComprehensiveInsights...');
-    
+
     if (_aiInsightsFuture == null) {
-      print('🔍 _aiInsightsFuture IS NULL, calling generateComprehensiveInsights');
+      print(
+          '🔍 _aiInsightsFuture IS NULL, calling generateComprehensiveInsights');
       _aiInsightsFuture =
           _enhancedInsightsService.generateComprehensiveInsights(habits)
             ..then((value) {
@@ -1079,7 +1080,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     } else {
       print('🔍 _aiInsightsFuture is NOT NULL, reusing existing future');
     }
-    print('🔍 After assignment, _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
+    print(
+        '🔍 After assignment, _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
 
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _aiInsightsFuture,
