@@ -1,9 +1,12 @@
 import 'dart:math' as math;
 import 'package:logger/logger.dart';
 import '../domain/model/habit.dart';
+import '../domain/model/archived_habit.dart';
+import '../data/database_isar.dart';
 import 'rrule_service.dart';
 
 /// Service for calculating comprehensive habit insights and analytics
+/// Automatically includes archived habit completion data for complete historical analytics
 class InsightsService {
   static final InsightsService _instance = InsightsService._internal();
   factory InsightsService() => _instance;
@@ -11,9 +14,26 @@ class InsightsService {
 
   final Logger _logger = Logger();
 
+  /// Get all archived habits for including in analytics
+  Future<List<ArchivedHabit>> _getArchivedHabits() async {
+    try {
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
+      return await habitService.getAllArchivedHabits();
+    } catch (e) {
+      _logger.e('Error fetching archived habits for insights', error: e);
+      return [];
+    }
+  }
+
   /// Calculate overall completion rate for all habits in the last 30 days
-  Map<String, dynamic> calculateOverallCompletionRate(List<Habit> habits) {
-    if (habits.isEmpty) {
+  /// Includes archived habit completions for complete historical data
+  Future<Map<String, dynamic>> calculateOverallCompletionRate(
+      List<Habit> habits) async {
+    // Include archived habit completions
+    final archivedHabits = await _getArchivedHabits();
+    
+    if (habits.isEmpty && archivedHabits.isEmpty) {
       return {
         'rate': 0.0,
         'trend': 0.0,
@@ -63,6 +83,19 @@ class InsightsService {
             .length;
         weekCompleted += actualForWeek;
       }
+      
+      // Include archived habit completions in sparkline
+      for (final archived in archivedHabits) {
+        final archivedCompletionsForWeek = archived.completions
+            .where(
+              (completion) =>
+                  completion.isAfter(weekStart) &&
+                  completion.isBefore(weekEnd.add(const Duration(days: 1))),
+            )
+            .length;
+        weekCompleted += archivedCompletionsForWeek;
+        // Archived habits don't contribute to scheduled count (already deleted)
+      }
 
       final weekRate = weekScheduled > 0
           ? (weekCompleted / weekScheduled)
@@ -109,6 +142,29 @@ class InsightsService {
           )
           .length;
       totalCompletedPrevious += actualPrevious;
+    }
+    
+    // Add archived habit completions to totals
+    for (final archived in archivedHabits) {
+      // Current period completions
+      final archivedCurrentCompletions = archived.completions
+          .where(
+            (completion) =>
+                completion.isAfter(last30Days) &&
+                completion.isBefore(now.add(const Duration(days: 1))),
+          )
+          .length;
+      totalCompletedCurrent += archivedCurrentCompletions;
+      
+      // Previous period completions
+      final archivedPreviousCompletions = archived.completions
+          .where(
+            (completion) =>
+                completion.isAfter(previous30Days) &&
+                completion.isBefore(last30Days.add(const Duration(days: 1))),
+          )
+          .length;
+      totalCompletedPrevious += archivedPreviousCompletions;
     }
 
     final currentRate = totalScheduledCurrent > 0
@@ -227,8 +283,13 @@ class InsightsService {
   }
 
   /// Calculate most powerful day of the week
-  Map<String, dynamic> calculateMostPowerfulDay(List<Habit> habits) {
-    if (habits.isEmpty) {
+  /// Calculate most powerful day of the week
+  /// Includes archived habit completions for comprehensive analysis
+  Future<Map<String, dynamic>> calculateMostPowerfulDay(
+      List<Habit> habits) async {
+    final archivedHabits = await _getArchivedHabits();
+    
+    if (habits.isEmpty && archivedHabits.isEmpty) {
       return {
         'day': 'No data',
         'percentage': 0,
@@ -273,6 +334,18 @@ class InsightsService {
             now,
           );
         }
+      }
+    }
+    
+    // Include archived habit completions
+    for (final archived in archivedHabits) {
+      final recentCompletions = archived.completions
+          .where((completion) => completion.isAfter(last30Days))
+          .toList();
+
+      for (final completion in recentCompletions) {
+        final dayOfWeek = completion.weekday - 1; // Convert to 0-6 (Mon-Sun)
+        dayCompletions[dayOfWeek]++;
       }
     }
 

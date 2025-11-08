@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../domain/model/habit.dart';
+import '../domain/model/archived_habit.dart';
 import '../data/database_isar.dart';
 import 'logging_service.dart';
 import 'habit_stats_service.dart';
@@ -26,11 +27,18 @@ class DataExportImportService {
         );
       }
 
+      // Get archived habits
+      final habitService = await IsarDatabaseService.getInstance()
+          .then((isar) => HabitServiceIsar(isar));
+      final archivedHabits = await habitService.getAllArchivedHabits();
+      
       final exportData = {
         'version': _exportVersion,
         'exportedAt': DateTime.now().toIso8601String(),
         'totalHabits': habits.length,
+        'totalArchivedHabits': archivedHabits.length,
         'habits': habits.map((habit) => habit.toJson()).toList(),
+        'archivedHabits': archivedHabits.map((archived) => archived.toJson()).toList(),
       };
 
       final jsonString = const JsonEncoder.withIndent('  ').convert(exportData);
@@ -357,13 +365,43 @@ class DataExportImportService {
         AppLogger.info('Stats cache invalidated after import');
       }
 
+      // Import archived habits if present in export
+      int archivedImportedCount = 0;
+      if (jsonData.containsKey('archivedHabits')) {
+        final archivedData = jsonData['archivedHabits'] as List;
+        AppLogger.info('Starting import of ${archivedData.length} archived habits');
+        
+        for (final archivedJson in archivedData) {
+          try {
+            final archived = ArchivedHabit.fromJson(archivedJson);
+            // Check if this archived habit already exists
+            final existingArchived = await habitService.getArchivedHabitById(archived.id);
+            if (existingArchived == null) {
+              await habitService.addArchivedHabit(archived);
+              archivedImportedCount++;
+            }
+          } catch (e) {
+            AppLogger.error('Error importing archived habit', e);
+          }
+        }
+        
+        AppLogger.info('Archived habits import completed: $archivedImportedCount imported');
+      }
+
       AppLogger.info(
-          'JSON import completed: $importedCount imported, $duplicateCount duplicates skipped');
+          'JSON import completed: $importedCount habits imported, $archivedImportedCount archived habits imported, $duplicateCount duplicates skipped');
+
+      String message = 'Successfully imported $importedCount habits';
+      if (archivedImportedCount > 0) {
+        message += ' and $archivedImportedCount archived completion histories';
+      }
+      if (duplicateCount > 0) {
+        message += ' ($duplicateCount duplicates skipped)';
+      }
 
       return ImportResult(
         success: true,
-        message:
-            'Successfully imported $importedCount habits${duplicateCount > 0 ? ' ($duplicateCount duplicates skipped)' : ''}',
+        message: message,
         importedCount: importedCount,
         duplicateCount: duplicateCount,
       );

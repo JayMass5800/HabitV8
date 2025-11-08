@@ -496,25 +496,48 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildOverallCompletionCard(List<Habit> habits, ThemeData theme) {
-    final stats = _insightsService.calculateOverallCompletionRate(habits);
-    final completionRate = stats['rate'] as double? ?? 0.0;
-    final trendText = stats['trendText'] as String? ?? '';
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _insightsService.calculateOverallCompletionRate(habits),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _buildPerformanceCard(
+            title: 'Overall Completion',
+            value: '...',
+            subtitle: 'Loading...',
+            icon: Icons.check_circle,
+            theme: theme,
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.primary.withValues(alpha: 0.7),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          );
+        }
+        
+        final stats = snapshot.data!;
+        final completionRate = stats['rate'] as double? ?? 0.0;
+        final trendText = stats['trendText'] as String? ?? '';
 
-    return _buildPerformanceCard(
-      title: 'Overall Completion',
-      value: '${(completionRate * 100).toStringAsFixed(0)}%',
-      subtitle: trendText,
-      icon: Icons.check_circle,
-      gradient: LinearGradient(
-        colors: [
-          theme.colorScheme.primary,
-          theme.colorScheme.primary.withValues(alpha: 0.7),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      theme: theme,
-      sparkline: stats['sparkline'] as List<double>?,
+        return _buildPerformanceCard(
+          title: 'Overall Completion',
+          value: '${(completionRate * 100).toStringAsFixed(0)}%',
+          subtitle: trendText,
+          icon: Icons.check_circle,
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.primary.withValues(alpha: 0.7),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          theme: theme,
+          sparkline: stats['sparkline'] as List<double>?,
+        );
+      },
     );
   }
 
@@ -565,41 +588,47 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildMostPowerfulDayCard(List<Habit> habits, ThemeData theme) {
-    // Calculate most powerful day from completion data
-    final dayCompletions = <int, int>{};
-    for (final habit in habits) {
-      for (final completion in habit.completions) {
-        final dayOfWeek = completion.weekday;
-        dayCompletions[dayOfWeek] = (dayCompletions[dayOfWeek] ?? 0) + 1;
-      }
-    }
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _insightsService.calculateMostPowerfulDay(habits),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return _buildPerformanceCard(
+            title: 'Most Powerful Day',
+            value: '...',
+            subtitle: 'Loading...',
+            icon: Icons.calendar_today,
+            theme: theme,
+            gradient: LinearGradient(
+              colors: [
+                Colors.purple.shade600,
+                Colors.deepPurple.shade400,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          );
+        }
+        
+        final data = snapshot.data!;
+        final day = data['day'] as String;
+        final percentage = data['percentage'] as int;
 
-    int bestDay = 1;
-    int bestDayCount = 0;
-    dayCompletions.forEach((day, count) {
-      if (count > bestDayCount) {
-        bestDay = day;
-        bestDayCount = count;
-      }
-    });
-
-    final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final bestDayName = dayCompletions.isEmpty ? 'N/A' : dayNames[bestDay - 1];
-
-    return _buildPerformanceCard(
-      title: 'Most Powerful Day',
-      value: bestDayName,
-      subtitle: '$bestDayCount completions',
-      icon: Icons.calendar_today,
-      gradient: LinearGradient(
-        colors: [
-          Colors.purple.shade600,
-          Colors.deepPurple.shade400,
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      theme: theme,
+        return _buildPerformanceCard(
+          title: 'Most Powerful Day',
+          value: day,
+          subtitle: '$percentage% completion rate',
+          icon: Icons.calendar_today,
+          theme: theme,
+          gradient: LinearGradient(
+            colors: [
+              Colors.purple.shade600,
+              Colors.deepPurple.shade400,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        );
+      },
     );
   }
 

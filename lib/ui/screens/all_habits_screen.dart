@@ -10,6 +10,7 @@ import '../widgets/loading_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/collapsible_hourly_habit_card.dart';
+import '../widgets/delete_habit_dialog.dart';
 import 'edit_habit_screen.dart';
 
 class AllHabitsScreen extends ConsumerStatefulWidget {
@@ -689,41 +690,35 @@ class _HabitCard extends ConsumerWidget {
         break;
 
       case 'delete':
-        // Show confirmation dialog
-        final confirmed = await showDialog<bool>(
+        // Show confirmation dialog with archive option
+        final result = await showDialog<DeleteHabitResult>(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Delete Habit'),
-            content: Text(
-              'Are you sure you want to delete "${habit.name}"? This action cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Delete'),
-              ),
-            ],
+          builder: (context) => DeleteHabitDialog(
+            habitName: habit.name,
+            hasCompletions: habit.completions.isNotEmpty,
           ),
         );
 
-        if (confirmed == true) {
+        if (result != null && result.confirmed) {
           // Use Riverpod to access the habitServiceIsarProvider
           final habitServiceAsync = ref.read(habitServiceIsarProvider);
 
           await habitServiceAsync.when(
             data: (habitService) async {
               try {
-                await habitService.deleteHabit(habit.id);
+                await habitService.deleteHabit(
+                  habit.id,
+                  archiveCompletions: result.archiveCompletions,
+                );
 
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${habit.name} deleted successfully'),
+                      content: Text(
+                        result.archiveCompletions
+                            ? '${habit.name} deleted (completion history archived)'
+                            : '${habit.name} deleted successfully',
+                      ),
                     ),
                   );
                 }

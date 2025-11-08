@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../domain/model/habit.dart';
+import '../domain/model/archived_habit.dart';
 import '../domain/model/scheduled_notification.dart';
 import '../services/logging_service.dart';
 import '../services/notification_service.dart';
@@ -101,7 +102,7 @@ class IsarDatabaseService {
     final dir = await getApplicationDocumentsDirectory();
 
     _isar = await Isar.open(
-      [HabitSchema, ScheduledNotificationSchema],
+      [HabitSchema, ArchivedHabitSchema, ScheduledNotificationSchema],
       directory: dir.path,
       name: 'habitv8_db',
       inspector: true, // Enable Isar Inspector for debugging
@@ -195,14 +196,37 @@ class HabitServiceIsar {
     }
   }
 
-  /// Delete habit
-  Future<void> deleteHabit(String habitId) async {
+  /// Delete habit with optional archival of completion data
+  /// If [archiveCompletions] is true, completion history is preserved in ArchivedHabit collection
+  Future<void> deleteHabit(String habitId, {bool archiveCompletions = false}) async {
     String? habitName;
     await _isar.writeTxn(() async {
       final habit = await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
         habitName = habit.name;
+        
+        // Archive completion data if requested
+        if (archiveCompletions && habit.completions.isNotEmpty) {
+          final archivedHabit = ArchivedHabit.fromHabit(
+            id: habit.id,
+            name: habit.name,
+            description: habit.description,
+            category: habit.category,
+            colorValue: habit.colorValue,
+            createdAt: habit.createdAt,
+            completions: habit.completions,
+            currentStreak: habit.currentStreak,
+            longestStreak: habit.longestStreak,
+            rruleString: habit.rruleString,
+            dtStart: habit.dtStart,
+            usedRRule: habit.usesRRule,
+          );
+          
+          await _isar.archivedHabits.put(archivedHabit);
+          AppLogger.info('📦 Archived completion data for: ${habit.name} (${habit.completions.length} completions)');
+        }
+        
         await _isar.habits.delete(habit.isarId);
         AppLogger.info('✅ Habit deleted: ${habit.name}');
       }
@@ -379,6 +403,41 @@ class HabitServiceIsar {
     }
 
     return streak;
+  }
+
+  /// Get all archived habits
+  Future<List<ArchivedHabit>> getAllArchivedHabits() async {
+    return await _isar.archivedHabits.where().findAll();
+  }
+
+  /// Get archived habit by original ID
+  Future<ArchivedHabit?> getArchivedHabitById(String habitId) async {
+    return await _isar.archivedHabits
+        .filter()
+        .idEqualTo(habitId)
+        .findFirst();
+  }
+
+  /// Delete archived habit
+  Future<void> deleteArchivedHabit(String habitId) async {
+    await _isar.writeTxn(() async {
+      final archived = await _isar.archivedHabits
+          .filter()
+          .idEqualTo(habitId)
+          .findFirst();
+      if (archived != null) {
+        await _isar.archivedHabits.delete(archived.isarId);
+        AppLogger.info('✅ Archived habit deleted: ${archived.name}');
+      }
+    });
+  }
+
+  /// Add archived habit (for import operations)
+  Future<void> addArchivedHabit(ArchivedHabit archivedHabit) async {
+    await _isar.writeTxn(() async {
+      await _isar.archivedHabits.put(archivedHabit);
+      AppLogger.info('✅ Archived habit added: ${archivedHabit.name}');
+    });
   }
 }
 

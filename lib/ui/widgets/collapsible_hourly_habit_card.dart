@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/model/habit.dart';
 import '../../data/database_isar.dart';
 import '../screens/edit_habit_screen.dart';
+import 'delete_habit_dialog.dart';
 
 class CollapsibleHourlyHabitCard extends ConsumerStatefulWidget {
   final Habit habit;
@@ -477,47 +478,42 @@ class _CollapsibleHourlyHabitCardState
     }
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
+  void _showDeleteConfirmation(BuildContext context) async {
+    final result = await showDialog<DeleteHabitResult>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Habit'),
-          content: Text(
-            'Are you sure you want to delete "${widget.habit.name}"? This action cannot be undone.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _deleteHabit();
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Delete'),
-            ),
-          ],
+        return DeleteHabitDialog(
+          habitName: widget.habit.name,
+          hasCompletions: widget.habit.completions.isNotEmpty,
         );
       },
     );
+
+    if (result != null && result.confirmed) {
+      await _deleteHabit(archiveCompletions: result.archiveCompletions);
+    }
   }
 
-  Future<void> _deleteHabit() async {
+  Future<void> _deleteHabit({bool archiveCompletions = false}) async {
     try {
       final habitServiceAsync = ref.read(habitServiceIsarProvider);
       await habitServiceAsync.when(
         data: (habitService) async {
-          await habitService.deleteHabit(widget.habit.id);
+          await habitService.deleteHabit(
+            widget.habit.id,
+            archiveCompletions: archiveCompletions,
+          );
           // Force UI refresh by invalidating the provider
           ref.invalidate(habitServiceIsarProvider);
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('${widget.habit.name} deleted successfully'),
+                content: Text(
+                  archiveCompletions
+                      ? '${widget.habit.name} deleted (completion history archived)'
+                      : '${widget.habit.name} deleted successfully',
+                ),
                 backgroundColor: Colors.green,
               ),
             );
