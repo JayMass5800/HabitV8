@@ -20,7 +20,7 @@ class AIService {
   static const String _openAiApiUrl =
       'https://api.openai.com/v1/chat/completions';
   static const String _geminiApiUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
   static const String _geminiAlternativeApiUrl =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent'; // Note: Never hardcode API keys - use secure storage or environment variables
   String? _openAiApiKey;
