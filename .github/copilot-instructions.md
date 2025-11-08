@@ -9,6 +9,14 @@ HabitV8 is a cross-platform habit tracking Flutter app (Android, iOS, Web, Deskt
 
 ```
 HabitV8/
+├── docs/ (All documentation files - .md files)
+│   ├── DEVELOPER_GUIDE.md
+│   ├── RRULE_ARCHITECTURE.md
+│   ├── NOTIFICATION_REFACTORING_PLAN.md
+│   ├── BUILD_SCRIPTS_README.md
+│   ├── CHANGELOG.md
+│   └── ... (250+ other documentation files)
+│
 ├── lib/
 │   ├── main.dart (Entry point, GoRouter setup, initialization)
 │   │
@@ -336,9 +344,15 @@ flutter test test/services/rrule_service_test.dart
 - **Main Branch**: `master` (stable)
 - **Feature Branches**: Create for new features and major refactoring
 - **Strategy**: Feature branch workflow with periodic merges to master when stable
-- See `GIT_BRANCHING_STRATEGY.md` for full branching strategy
+- See `docs/GIT_BRANCHING_STRATEGY.md` for full branching strategy
 
 ## Project-Specific Conventions
+
+### Documentation Structure
+- **IMPORTANT**: All documentation files (.md) are stored in `docs/` folder
+- Only `README.md` remains in project root (standard practice)
+- When creating new documentation, always save to `docs/` folder
+- Reference documentation files using `docs/` path prefix
 
 ### Naming & Style
 - Files: `snake_case.dart`
@@ -376,13 +390,13 @@ When working with habit frequency:
 - Foreground Service: Required for reliable background operations on Android 15+
 
 ## Key Documentation Files
-- `DEVELOPER_GUIDE.md`: Comprehensive architecture, setup, deployment
-- `RRULE_ARCHITECTURE.md`: RRule system architecture diagrams and data flow
-- `NOTIFICATION_REFACTORING_PLAN.md`: Notification modularization plan
-- `BUILD_SCRIPTS_README.md`: PowerShell build automation guide
-- `CHANGELOG.md`: Version history and feature additions
-- `ISAR_MIGRATION_PLAN.md`: Database migration from Hive to Isar
-- `WIDGET_UPDATE_ARCHITECTURE.md`: Home screen widget architecture
+- `docs/DEVELOPER_GUIDE.md`: Comprehensive architecture, setup, deployment
+- `docs/RRULE_ARCHITECTURE.md`: RRule system architecture diagrams and data flow
+- `docs/NOTIFICATION_REFACTORING_PLAN.md`: Notification modularization plan
+- `docs/BUILD_SCRIPTS_README.md`: PowerShell build automation guide
+- `docs/CHANGELOG.md`: Version history and feature additions
+- `docs/ISAR_MIGRATION_PLAN.md`: Database migration from Hive to Isar
+- `docs/WIDGET_UPDATE_ARCHITECTURE.md`: Home screen widget architecture
 
 ## Common Pitfalls to Avoid
 1. **RRule API**: Don't use `getAllInstances()` - it hangs. Use `getInstances()` with UTC DateTime
@@ -414,9 +428,9 @@ When working with habit frequency:
 - `workmanager: ^0.9.0+3` - Background tasks
 
 ## When Confused About...
-- **Habit recurrence**: Read `RRULE_ARCHITECTURE.md` sections on "System Architecture Overview" and "Data Flow"
-- **Build errors**: Check `BUILD_SCRIPTS_README.md` and use automated PowerShell scripts
-- **Notification bugs**: Reference `NOTIFICATION_REFACTORING_PLAN.md` module responsibilities
-- **Database migrations**: See `ISAR_MIGRATION_PLAN.md` for migration strategy
-- **Widget updates**: Check `WIDGET_UPDATE_ARCHITECTURE.md` for home screen widget architecture
-- **Performance issues**: Look for `PERFORMANCE_OPTIMIZATION_SUMMARY.md` and `MEMORY_PERFORMANCE_OPTIMIZATION.md`
+- **Habit recurrence**: Read `docs/RRULE_ARCHITECTURE.md` sections on "System Architecture Overview" and "Data Flow"
+- **Build errors**: Check `docs/BUILD_SCRIPTS_README.md` and use automated PowerShell scripts
+- **Notification bugs**: Reference `docs/NOTIFICATION_REFACTORING_PLAN.md` module responsibilities
+- **Database migrations**: See `docs/ISAR_MIGRATION_PLAN.md` for migration strategy
+- **Widget updates**: Check `docs/WIDGET_UPDATE_ARCHITECTURE.md` for home screen widget architecture
+- **Performance issues**: Look for `docs/PERFORMANCE_OPTIMIZATION_SUMMARY.md` and `docs/MEMORY_PERFORMANCE_OPTIMIZATION.md`

@@ -383,8 +383,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildCustomCalendar(List<Habit> habits) {
     final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
-    final startDate =
-        firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday % 7));
+    // Fix: Convert Flutter's weekday (1=Monday, 7=Sunday) to calendar weekday (0=Sunday, 6=Saturday)
+    // This ensures the calendar grid aligns correctly with the day headers
+    final firstWeekday = firstDayOfMonth.weekday % 7; // 0=Sunday, 1=Monday, ..., 6=Saturday
+    final startDate = firstDayOfMonth.subtract(Duration(days: firstWeekday));
 
     return Column(
       children: [

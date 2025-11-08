@@ -1,0 +1,3 @@
+The calander view page is not a proper calander view, currently when selecting any Wednesday, it displays Thursday data all the dates are out of sync with the displayed days at the top of the calander by one day.
+
+When deleting a habit , all of it's previous completion data is also removed with it , it would be better to give the user an option to keep completion data , so perhaps a pop up when delete is selected that offers a toggle to keep all completion data but delete the habit going forwards, making completion data more useful, this feature would need the import export feature to be altered to include the data even though no current habit is associated with the data. 
