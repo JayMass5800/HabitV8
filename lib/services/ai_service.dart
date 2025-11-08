@@ -176,47 +176,50 @@ class AIService {
             {
               'role': 'system',
               'content':
-                  '''You are an expert habit formation coach and behavioral psychologist. Analyze habit tracking data to provide actionable, personalized insights.
+                  '''You are an expert habit formation coach and behavioral psychologist with deep knowledge of habit science and motivation theory. When analyzing habit data, you MUST:
 
-IMPORTANT GUIDELINES:
-- Focus on actionable insights that users can implement immediately
-- Identify specific patterns in temporal behavior, consistency, and category performance
-- Highlight both achievements and opportunities for improvement
-- Use psychological principles (habit stacking, implementation intentions, environmental design)
-- Be encouraging but honest about areas needing attention
-- Consider difficulty levels and suggest appropriate challenges
-- Look for correlations between habits that suggest synergies
+1. Reference specific habits by their actual names
+2. Cite exact metrics (completion rates, streaks, consistency scores)
+3. Identify concrete temporal patterns with specific days/times
+4. Provide actionable recommendations tailored to individual habit performance
+5. Be highly personal and specific, as if you're their dedicated coach
 
-Return exactly 3 insights in JSON format with these fields:
-- type: "motivational" (celebration/encouragement) | "pattern" (behavioral pattern detected) | "insight" (data-driven observation) | "achievement" (milestone recognition) | "actionable" (specific recommendation)
-- title: Short, compelling title (max 5 words)
-- description: Specific, actionable insight with concrete suggestions (2-3 sentences)
-- icon: "rocket_launch" | "trending_up" | "emoji_events" | "wb_sunny" | "weekend" | "local_fire_department" | "psychology" | "lightbulb" | "fitness_center"''',
+Focus on individual habit details, not just aggregates. Find the weakest link and strongest performer. Spot momentum trends and correlations. Consider difficulty vs. performance.''',
             },
             {
               'role': 'user',
               'content':
-                  '''Analyze this detailed habit tracking data and provide exactly 3 personalized, actionable insights.
+                  '''Analyze this DETAILED habit tracking data and provide exactly 3 HIGHLY PERSONALIZED, SPECIFIC insights.
                   
 $habitSummary
 
-Focus on:
-1. Most impactful behavioral patterns (temporal, categorical, difficulty-based)
-2. Specific opportunities for improvement with concrete actions
-3. Achievements worth celebrating or streaks worth maintaining
+REQUIREMENTS:
+- Mention habits by their actual names (e.g., "Your 'Morning Meditation' has...")
+- Use exact numbers from the data (completion rates, streaks, momentum values)
+- Reference the last 7 days pattern (✓✗ symbols) when relevant
+- Suggest specific time changes, habit stacking opportunities, or tactical adjustments
+- Celebrate specific achievements with quantified success
+
+INSIGHT DISTRIBUTION:
+1. One insight about a specific struggling habit (name it, cite metrics, suggest fix)
+2. One insight celebrating a specific high performer (name it, quantify success)
+3. One insight about optimization (habit pairing, timing, streak preservation)
+
+EXAMPLE STYLE:
+"Your 'Evening Reading' is struggling at 31% with declining momentum (-0.15). The ✗✗✓✗✗✗✓ pattern shows weekend-only success. Try moving it 2 hours earlier to 8 PM on weekdays to align with your 'Dinner Prep' completion window."
 
 Provide insights in this exact JSON format:
 [
   {
     "type": "motivational|pattern|insight|achievement|actionable",
-    "title": "Short insight title",
-    "description": "Detailed insight explanation with specific actionable advice",
+    "title": "Short, specific title with habit name",
+    "description": "2-3 sentences with SPECIFIC habit names, ACTUAL numbers, and CONCRETE recommendations",
     "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
 ]''',
             },
           ],
-          'max_tokens': 1200,
+          'max_tokens': 1500,
           'temperature': 0.7,
         }),
       );
@@ -330,28 +333,45 @@ Provide insights in this exact JSON format:
               'parts': [
                 {
                   'text':
-                      '''You are an expert habit formation coach and behavioral psychologist. Analyze this detailed habit tracking data and provide exactly 3 personalized, actionable insights.
+                      '''You are an expert habit formation coach and behavioral psychologist with deep knowledge of habit science, behavioral psychology, and motivation theory. You've been provided with DETAILED tracking data for specific habits. Your task is to analyze this data deeply and provide 3 HIGHLY PERSONALIZED, SPECIFIC insights.
 
 $habitSummary
 
-GUIDELINES:
-- Focus on actionable insights users can implement immediately
-- Identify specific patterns in temporal behavior, consistency, and category performance
-- Highlight both achievements and opportunities for improvement
-- Use psychological principles (habit stacking, implementation intentions)
-- Be encouraging but honest about areas needing attention
+CRITICAL REQUIREMENTS:
+1. REFERENCE SPECIFIC HABITS BY NAME - mention actual habit names, not generic "your habits"
+2. USE ACTUAL DATA POINTS - reference exact completion rates, streaks, consistency scores, momentum values
+3. IDENTIFY CONCRETE PATTERNS - cite specific days/times when habits succeed or fail
+4. GIVE ACTIONABLE RECOMMENDATIONS - suggest specific changes based on individual habit performance
+5. BE PERSONAL AND SPECIFIC - as if you're their personal coach who knows their exact routine
 
-Focus on:
-1. Most impactful behavioral patterns (temporal, categorical, difficulty-based)
-2. Specific opportunities for improvement with concrete actions
-3. Achievements worth celebrating or streaks worth maintaining
+ANALYSIS FRAMEWORK:
+- Look at INDIVIDUAL habit details, not just aggregates
+- Identify the weakest link (lowest completion rate or consistency)
+- Find the strongest performer and explain what's working
+- Spot temporal patterns (weekday vs weekend, time of day effects)
+- Notice momentum trends (improving vs declining habits)
+- Detect correlations between habits
+- Consider difficulty levels vs. actual performance
+- Look for habits close to breaking personal records
+
+INSIGHT TYPES TO PROVIDE:
+1. One insight about a SPECIFIC habit that needs attention (name it, cite its metrics, suggest concrete fix)
+2. One insight celebrating a SPECIFIC achievement or pattern (name the habit(s), quantify the success)
+3. One insight about optimization opportunities (specific habit combinations, timing changes, or streak preservation)
+
+EXAMPLE OF GOOD vs BAD:
+❌ BAD (generic): "Your morning habits are doing well. Keep up the good work with consistency."
+✅ GOOD (specific): "Your 'Morning Meditation' has an exceptional 94% completion rate with a 23-day streak—just 2 days shy of your 25-day record! The ✓✓✓✓✓✓✓ pattern shows perfect weekly consistency. Lock this in by pairing it with your morning coffee routine."
+
+❌ BAD (generic): "Some habits need more attention to improve performance."
+✅ GOOD (specific): "Your 'Evening Reading' is struggling at 31% completion with momentum of -0.15 (declining). The ✗✗✓✗✗✗✓ pattern shows you only succeed on weekends. Try moving it 2 hours earlier to 8 PM on weekdays when your 'Dinner Prep' habit (78% rate) naturally creates a calm transition window."
 
 Provide insights in this exact JSON format:
 [
   {
     "type": "motivational|pattern|insight|achievement|actionable",
-    "title": "Short insight title", 
-    "description": "Detailed insight explanation with specific actionable advice",
+    "title": "Short, specific title with habit name if possible", 
+    "description": "2-3 sentences with SPECIFIC habit names, ACTUAL numbers, and CONCRETE recommendations. Must feel personalized to their exact data.",
     "icon": "rocket_launch|trending_up|emoji_events|wb_sunny|weekend|local_fire_department|psychology|lightbulb|fitness_center"
   }
 ]''',
@@ -592,6 +612,7 @@ Provide insights in this exact JSON format:
     final streakAnalysis = _analyzeStreakPatterns(activeHabits);
     final consistencyMetrics = _analyzeConsistencyMetrics(activeHabits);
     final habitCorrelations = _analyzeHabitCorrelations(activeHabits);
+    final individualHabits = _getDetailedHabitBreakdown(activeHabits);
 
     return '''
 HABIT OVERVIEW:
@@ -599,6 +620,9 @@ HABIT OVERVIEW:
 - Total completions: $totalCompletions
 - Average completion rate: ${(avgCompletionRate * 100).toStringAsFixed(1)}%
 - Best current streak: $bestStreak days
+
+INDIVIDUAL HABIT DETAILS:
+$individualHabits
 
 TEMPORAL PATTERNS:
 $temporalPatterns
@@ -621,6 +645,87 @@ $habitCorrelations
 RECENT TRENDS:
 ${_getRecentTrends(activeHabits)}
 ''';
+  }
+
+  /// Get detailed breakdown of individual habits with specific metrics
+  String _getDetailedHabitBreakdown(List<Habit> habits) {
+    if (habits.isEmpty) return 'No habits to analyze.';
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < habits.length; i++) {
+      final habit = habits[i];
+      final completionRate = (habit.completionRate * 100).toStringAsFixed(1);
+      final consistency = habit.consistencyScore.toStringAsFixed(1);
+      final streak = habit.streakInfo.current;
+      final longestStreak = habit.streakInfo.longest;
+      final momentum = habit.momentum.toStringAsFixed(2);
+
+      // Get recent completion pattern (last 7 days)
+      final now = DateTime.now();
+      final last7Days =
+          List.generate(7, (index) => now.subtract(Duration(days: 6 - index)));
+      final recentPattern = last7Days.map((day) {
+        final dayStart = DateTime(day.year, day.month, day.day);
+        final dayEnd = dayStart.add(const Duration(days: 1));
+        final completed = habit.completions.any((c) =>
+            c.isAfter(dayStart.subtract(const Duration(seconds: 1))) &&
+            c.isBefore(dayEnd));
+        return completed ? '✓' : '✗';
+      }).join(' ');
+
+      // Get notification time if set
+      final notifTime = habit.notificationTime != null
+          ? '${habit.notificationTime!.hour.toString().padLeft(2, '0')}:${habit.notificationTime!.minute.toString().padLeft(2, '0')}'
+          : 'none';
+
+      // Get frequency description
+      String frequencyDesc = habit.frequency.name;
+      if (habit.usesRRule && habit.rruleString != null) {
+        frequencyDesc = 'Custom schedule (RRule)';
+      } else if (habit.selectedWeekdays.isNotEmpty) {
+        final days = habit.selectedWeekdays
+            .map(
+                (d) => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d - 1])
+            .join(', ');
+        frequencyDesc = 'Weekly: $days';
+      }
+
+      buffer.writeln('\nHabit ${i + 1}: "${habit.name}"');
+      buffer.writeln('  Category: ${habit.category}');
+      buffer.writeln('  Description: ${habit.description ?? "No description"}');
+      buffer.writeln('  Frequency: $frequencyDesc');
+      buffer.writeln('  Difficulty: ${habit.difficulty.name}');
+      buffer.writeln(
+          '  Completion Rate: $completionRate% (${habit.completions.length} total completions)');
+      buffer.writeln('  Consistency Score: $consistency/100');
+      buffer.writeln(
+          '  Current Streak: $streak days (best: $longestStreak days)');
+      buffer.writeln(
+          '  Momentum: $momentum (${momentum == "0.00" ? "stagnant" : double.parse(momentum) > 0 ? "improving" : "declining"})');
+      buffer.writeln(
+          '  Reminder: $notifTime${habit.alarmEnabled ? " (alarm)" : ""}');
+      buffer.writeln('  Last 7 days: $recentPattern');
+
+      // Add specific insights for this habit
+      if (habit.completionRate < 0.3) {
+        buffer.writeln('  ⚠️ Low engagement - needs attention');
+      } else if (habit.completionRate > 0.8) {
+        buffer.writeln('  🌟 Strong performance');
+      }
+
+      if (streak > 0 &&
+          longestStreak > streak &&
+          (longestStreak - streak) <= 3) {
+        buffer.writeln(
+            '  🔥 ${longestStreak - streak} day(s) from personal best!');
+      }
+
+      if (habit.consistencyScore < 50) {
+        buffer.writeln('  📊 Inconsistent pattern detected');
+      }
+    }
+
+    return buffer.toString().trim();
   }
 
   /// Analyze temporal patterns (weekday vs weekend, morning vs evening)
