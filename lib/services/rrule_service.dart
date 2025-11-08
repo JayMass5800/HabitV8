@@ -248,18 +248,17 @@ class RRuleService {
     required DateTime checkDate,
   }) {
     try {
-      // Create a date range for the entire day in UTC
-      // This ensures we're checking only the specific day, not bleeding into adjacent days
-      final dayStartUtc =
-          DateTime.utc(checkDate.year, checkDate.month, checkDate.day);
-      final dayEndUtc = DateTime.utc(
-          checkDate.year, checkDate.month, checkDate.day, 23, 59, 59);
+      // Normalize dates to start of day in local time to avoid timezone issues
+      // CRITICAL: Keep everything in local time - don't convert to UTC
+      final dayStart = DateTime(checkDate.year, checkDate.month, checkDate.day);
+      final dayEnd =
+          DateTime(checkDate.year, checkDate.month, checkDate.day, 23, 59, 59);
 
       final occurrences = getOccurrences(
         rruleString: rruleString,
         startDate: startDate,
-        rangeStart: dayStartUtc,
-        rangeEnd: dayEndUtc,
+        rangeStart: dayStart,
+        rangeEnd: dayEnd,
       );
 
       return occurrences.isNotEmpty;

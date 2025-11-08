@@ -54,7 +54,7 @@ dependencies:
   rrule: ^0.2.15  # RRule (Recurrence Rule) for flexible habit scheduling
   logger: ^2.4.0
   url_launcher: ^6.2.5
-  table_calendar: ^3.0.9 # Calendar integration for habit events
+  table_calendar: ^3.2.0 # Calendar integration for habit events
   device_calendar: ^4.3.3 # Device calendar integration
   audioplayers: ^6.1.0 # For playing custom alarm sounds
   workmanager: ^0.9.0+3 # For reliable background tasks on Android
