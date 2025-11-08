@@ -22,7 +22,7 @@ class AIService {
   static const String _geminiApiUrl =
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
   static const String _geminiAlternativeApiUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';  // Note: Never hardcode API keys - use secure storage or environment variables
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent'; // Note: Never hardcode API keys - use secure storage or environment variables
   String? _openAiApiKey;
   String? _geminiApiKey;
   bool _isInitialized = false;
