@@ -20,9 +20,9 @@ class AIService {
   static const String _openAiApiUrl =
       'https://api.openai.com/v1/chat/completions';
   static const String _geminiApiUrl =
-      'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent';
-
-  // Note: Never hardcode API keys - use secure storage or environment variables
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
+  static const String _geminiAlternativeApiUrl =
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent';  // Note: Never hardcode API keys - use secure storage or environment variables
   String? _openAiApiKey;
   String? _geminiApiKey;
   bool _isInitialized = false;
@@ -435,12 +435,8 @@ Provide insights in this exact JSON format:
   ) async {
     try {
       debugPrint('🚨 Gemini: Attempting alternative endpoint');
-      // Try v1 API with gemini-pro (more stable model)
-      const alternativeUrl =
-          'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
-
       final response = await http.post(
-        Uri.parse('$alternativeUrl?key=$_geminiApiKey'),
+        Uri.parse('$_geminiAlternativeApiUrl?key=$_geminiApiKey'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'contents': [
