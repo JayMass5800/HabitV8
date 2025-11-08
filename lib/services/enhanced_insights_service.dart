@@ -57,17 +57,20 @@ class EnhancedInsightsService {
 
     // Initialize AI service and check if configured
     // Force sync check first to see if we even have an API key
-    final hasApiKeySynchronously = _aiService.isConfigured;
-    debugPrint('🚨 SYNC CHECK: hasApiKey=$hasApiKeySynchronously');
+    bool hasApiKeySynchronously = false;
+    if (useAI) {
+      await _aiService.initializeApiKeys();
+      hasApiKeySynchronously = _aiService.isConfigured;
+      debugPrint(
+          '🚨 SYNC CHECK (post init): hasApiKey=$hasApiKeySynchronously');
+    } else {
+      debugPrint('🚨 AI disabled for this request, skipping key init');
+    }
 
-    _logger.i('🔍 About to call isConfiguredAsync...');
+    _logger.i('� About to call isConfiguredAsync...');
     bool aiConfigured = false;
 
-    // If we don't have API key synchronously, skip the async check
-    if (!hasApiKeySynchronously) {
-      debugPrint('🚨 No API key found synchronously, skipping AI');
-      aiConfigured = false;
-    } else {
+    if (useAI) {
       try {
         aiConfigured = await _aiService.isConfiguredAsync.timeout(
           const Duration(seconds: 5),
@@ -85,10 +88,12 @@ class EnhancedInsightsService {
         _logger.e('🔍 StackTrace: $stackTrace');
         aiConfigured = false;
       }
+    } else {
+      _logger.i('🔍 AI generation disabled via useAI flag');
     }
 
     debugPrint(
-        '🚨 FINAL: aiConfigured=$aiConfigured, useAI=$useAI, willGenerateAI=${useAI && aiConfigured}');
+        '🚨 FINAL: hasApiKey=$hasApiKeySynchronously, aiConfigured=$aiConfigured, useAI=$useAI, willGenerateAI=${useAI && aiConfigured}');
     _logger.i('🔍 After await block, aiConfigured=$aiConfigured');
     _logger.i('AI configured: $aiConfigured, useAI: $useAI');
 

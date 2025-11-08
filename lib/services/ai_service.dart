@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
 import '../domain/model/habit.dart';
 import 'insights_service.dart';
 
@@ -131,15 +132,19 @@ class AIService {
   Future<List<Map<String, dynamic>>> generateOpenAIInsights(
     List<Habit> habits,
   ) async {
+    debugPrint(
+        '🚨 OpenAI: generateOpenAIInsights invoked with ${habits.length} habits');
     await initializeApiKeys(); // Ensure keys are loaded
 
     if (_openAiApiKey == null || _openAiApiKey!.isEmpty) {
+      debugPrint('🚨 OpenAI: API key missing, returning fallback insights');
       _logger.w('OpenAI API key not configured, using fallback insights');
       return _getFallbackInsights(habits);
     }
 
     // Validate API key format (OpenAI keys typically start with 'sk-')
     if (!_openAiApiKey!.startsWith('sk-')) {
+      debugPrint('🚨 OpenAI: API key invalid format, returning fallback');
       _logger.w(
         'OpenAI API key appears invalid (should start with sk-), using fallback insights',
       );
@@ -147,6 +152,7 @@ class AIService {
     }
 
     try {
+      debugPrint('🚨 OpenAI: Preparing request payload');
       final habitSummary = _generateHabitSummary(habits);
       _logger.i('=== OPENAI API REQUEST ===');
       _logger.i('Habit summary length: ${habitSummary.length} characters');
@@ -216,6 +222,7 @@ Provide insights in this exact JSON format:
       );
 
       if (response.statusCode == 200) {
+        debugPrint('🚨 OpenAI: Received HTTP 200 response');
         final data = jsonDecode(response.body);
         _logger.i('=== OPENAI API RESPONSE ===');
         _logger.i('Response status: ${response.statusCode}');
@@ -231,6 +238,7 @@ Provide insights in this exact JSON format:
             'Response preview: ${content.substring(0, previewLength)}...',
           );
           final parsedInsights = _parseAIResponse(content);
+          debugPrint('🚨 OpenAI: Parsed ${parsedInsights.length} insights');
           _logger.i('Parsed ${parsedInsights.length} insights from OpenAI');
           for (var i = 0; i < parsedInsights.length; i++) {
             _logger.i('Insight ${i + 1}: ${parsedInsights[i]['title']}');
@@ -243,6 +251,7 @@ Provide insights in this exact JSON format:
       } else {
         _logger.w('OpenAI API returned status ${response.statusCode}');
         _logger.w('Response body: ${response.body}');
+        debugPrint('🚨 OpenAI: HTTP ${response.statusCode}, falling back');
 
         // Provide specific handling for different error types
         if (response.statusCode == 503) {
@@ -272,6 +281,7 @@ Provide insights in this exact JSON format:
       }
     } catch (e) {
       _logger.e('OpenAI API error: $e');
+      debugPrint('🚨 OpenAI: Exception encountered - $e');
       return _getFallbackInsights(habits);
     }
   }
@@ -280,15 +290,19 @@ Provide insights in this exact JSON format:
   Future<List<Map<String, dynamic>>> generateGeminiInsights(
     List<Habit> habits,
   ) async {
+    debugPrint(
+        '🚨 Gemini: generateGeminiInsights invoked with ${habits.length} habits');
     await initializeApiKeys(); // Ensure keys are loaded
 
     if (_geminiApiKey == null || _geminiApiKey!.isEmpty) {
+      debugPrint('🚨 Gemini: API key missing, returning fallback insights');
       _logger.w('Gemini API key not configured, using fallback insights');
       return _getFallbackInsights(habits);
     }
 
     // Validate API key format
     if (!_geminiApiKey!.startsWith('AIza')) {
+      debugPrint('🚨 Gemini: API key invalid format, returning fallback');
       _logger.w(
         'Gemini API key appears invalid (should start with AIza), using fallback insights',
       );
@@ -296,6 +310,7 @@ Provide insights in this exact JSON format:
     }
 
     try {
+      debugPrint('🚨 Gemini: Preparing request payload');
       final habitSummary = _generateHabitSummary(habits);
       _logger.i('=== GEMINI API REQUEST ===');
       _logger.i('Habit summary length: ${habitSummary.length} characters');
@@ -348,6 +363,7 @@ Provide insights in this exact JSON format:
       );
 
       if (response.statusCode == 200) {
+        debugPrint('🚨 Gemini: Received HTTP 200 response');
         final data = jsonDecode(response.body);
         _logger.i('=== GEMINI API RESPONSE ===');
         _logger.i('Response status: ${response.statusCode}');
@@ -364,6 +380,7 @@ Provide insights in this exact JSON format:
             'Response preview: ${content.substring(0, previewLength)}...',
           );
           final parsedInsights = _parseAIResponse(content);
+          debugPrint('🚨 Gemini: Parsed ${parsedInsights.length} insights');
           _logger.i('Parsed ${parsedInsights.length} insights from Gemini');
           for (var i = 0; i < parsedInsights.length; i++) {
             _logger.i('Insight ${i + 1}: ${parsedInsights[i]['title']}');
@@ -376,6 +393,7 @@ Provide insights in this exact JSON format:
       } else {
         _logger.w('Gemini API returned status ${response.statusCode}');
         _logger.w('Response body: ${response.body}');
+        debugPrint('🚨 Gemini: HTTP ${response.statusCode}, falling back');
 
         // Provide specific handling for different error types
         if (response.statusCode == 503) {
@@ -404,6 +422,7 @@ Provide insights in this exact JSON format:
       }
     } catch (e) {
       _logger.e('Gemini API error: $e');
+      debugPrint('🚨 Gemini: Exception encountered - $e');
       return _getFallbackInsights(habits);
     }
   }
@@ -414,6 +433,7 @@ Provide insights in this exact JSON format:
     String habitSummary,
   ) async {
     try {
+      debugPrint('🚨 Gemini: Attempting alternative endpoint');
       // Try v1 API with gemini-pro (more stable model)
       const alternativeUrl =
           'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
@@ -450,6 +470,7 @@ Provide insights in this exact JSON format:
       );
 
       if (response.statusCode == 200) {
+        debugPrint('🚨 Gemini: Alternative endpoint returned 200');
         final data = jsonDecode(response.body);
         if (data['candidates'] != null &&
             data['candidates'].isNotEmpty &&
@@ -458,6 +479,7 @@ Provide insights in this exact JSON format:
             data['candidates'][0]['content']['parts'].isNotEmpty) {
           final content = data['candidates'][0]['content']['parts'][0]['text'];
           _logger.i('Alternative Gemini endpoint succeeded');
+          debugPrint('🚨 Gemini: Alternative endpoint succeeded');
           return _parseAIResponse(content);
         }
       }
@@ -465,9 +487,12 @@ Provide insights in this exact JSON format:
       _logger.w(
         'Alternative Gemini endpoint also failed with status ${response.statusCode}',
       );
+      debugPrint(
+          '🚨 Gemini: Alternative endpoint failed with status ${response.statusCode}');
       return _getFallbackInsights(habits);
     } catch (e) {
       _logger.e('Alternative Gemini API error: $e');
+      debugPrint('🚨 Gemini: Alternative endpoint exception - $e');
       return _getFallbackInsights(habits);
     }
   }
@@ -478,6 +503,7 @@ Provide insights in this exact JSON format:
     String habitSummary,
   ) async {
     try {
+      debugPrint('🚨 OpenAI: Attempting alternative model');
       // Try gpt-3.5-turbo as fallback
       final response = await http.post(
         Uri.parse(_openAiApiUrl),
@@ -517,6 +543,7 @@ Provide insights in this exact JSON format:
       );
 
       if (response.statusCode == 200) {
+        debugPrint('🚨 OpenAI: Alternative model returned 200');
         final data = jsonDecode(response.body);
         if (data['choices'] != null &&
             data['choices'].isNotEmpty &&
@@ -524,6 +551,7 @@ Provide insights in this exact JSON format:
             data['choices'][0]['message']['content'] != null) {
           final content = data['choices'][0]['message']['content'];
           _logger.i('Alternative OpenAI model succeeded');
+          debugPrint('🚨 OpenAI: Alternative model succeeded');
           return _parseAIResponse(content);
         }
       }
@@ -531,9 +559,12 @@ Provide insights in this exact JSON format:
       _logger.w(
         'Alternative OpenAI model also failed with status ${response.statusCode}',
       );
+      debugPrint(
+          '🚨 OpenAI: Alternative model failed with status ${response.statusCode}');
       return _getFallbackInsights(habits);
     } catch (e) {
       _logger.e('Alternative OpenAI API error: $e');
+      debugPrint('🚨 OpenAI: Alternative model exception - $e');
       return _getFallbackInsights(habits);
     }
   }
@@ -952,24 +983,38 @@ ${_getRecentTrends(activeHabits)}
 
   /// Get available AI providers
   List<String> get availableProviders {
+    debugPrint('🚨 availableProviders getter called');
+    debugPrint(
+        '🚨 _openAiApiKey: ${_openAiApiKey == null ? "null" : (_openAiApiKey!.isEmpty ? "empty" : "length ${_openAiApiKey!.length}, starts with ${_openAiApiKey!.substring(0, 3)}")}');
+    debugPrint(
+        '🚨 _geminiApiKey: ${_geminiApiKey == null ? "null" : (_geminiApiKey!.isEmpty ? "empty" : "length ${_geminiApiKey!.length}, starts with ${_geminiApiKey!.substring(0, 6)}")}');
+
     final providers = <String>[];
     if (_openAiApiKey != null &&
         _openAiApiKey!.isNotEmpty &&
         _openAiApiKey!.startsWith('sk-')) {
+      debugPrint('🚨 Adding OpenAI to providers');
       providers.add('OpenAI');
     }
     if (_geminiApiKey != null &&
         _geminiApiKey!.isNotEmpty &&
         _geminiApiKey!.startsWith('AIza')) {
+      debugPrint('🚨 Adding Gemini to providers');
       providers.add('Gemini');
     }
+    debugPrint('🚨 availableProviders returning: $providers');
     return providers;
   }
 
   /// Get available AI providers (async version that ensures initialization)
   Future<List<String>> get availableProvidersAsync async {
+    debugPrint('🚨 availableProvidersAsync: START');
     await initializeApiKeys();
-    return availableProviders;
+    debugPrint('🚨 availableProvidersAsync: After initializeApiKeys');
+    final result = availableProviders;
+    debugPrint(
+        '🚨 availableProvidersAsync: availableProviders returned $result');
+    return result;
   }
 
   /// Get current API key status for debugging
