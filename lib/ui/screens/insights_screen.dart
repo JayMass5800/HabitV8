@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:logger/logger.dart';
 import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/insights_service.dart';
@@ -29,6 +30,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late TabController _tabController;
+  final Logger _logger = Logger();
   final InsightsService _insightsService = InsightsService();
   final EnhancedInsightsService _enhancedInsightsService =
       EnhancedInsightsService();
@@ -92,10 +94,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       final enableAI = enableAIString == 'true';
 
       // Debug logging
-      print('🔍 AI Status Check:');
-      print('  - enable_ai_insights value: "$enableAIString"');
-      print('  - Parsed enableAI: $enableAI');
-      print('  - isAIAvailable: $isAIAvailable');
+      _logger.d('🔍 AI Status Check:');
+      _logger.d('  - enable_ai_insights value: "$enableAIString"');
+      _logger.d('  - Parsed enableAI: $enableAI');
+      _logger.d('  - isAIAvailable: $isAIAvailable');
 
       if (mounted) {
         setState(() {
@@ -103,13 +105,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
           _isAIAvailable = isAIAvailable;
         });
 
-        print('  - Final _isAIEnabled: $_isAIEnabled');
-        print('  - Final _isAIAvailable: $_isAIAvailable');
-        print('  - Will show AI insights: ${_isAIEnabled && _isAIAvailable}');
+        _logger.d('  - Final _isAIEnabled: $_isAIEnabled');
+        _logger.d('  - Final _isAIAvailable: $_isAIAvailable');
+        _logger
+            .d('  - Will show AI insights: ${_isAIEnabled && _isAIAvailable}');
       }
     } catch (e) {
       // If there's an error, default to disabled
-      print('❌ Error updating AI status: $e');
+      _logger.e('❌ Error updating AI status: $e');
       if (mounted) {
         setState(() {
           _isAIEnabled = false;
@@ -121,14 +124,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   /// Load AI insights only when requested (lazy loading)
   void _loadAIInsights() {
-    print(
+    _logger.d(
         '🔍 _loadAIInsights() called - Current state: _aiInsightsRequested=$_aiInsightsRequested, _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
     if (!_aiInsightsRequested && mounted) {
       setState(() {
         _aiInsightsRequested = true;
         _aiInsightsFuture = null; // Force new generation
       });
-      print(
+      _logger.d(
           '🔍 State updated: _aiInsightsRequested=true, _aiInsightsFuture set to null');
     }
   }
@@ -222,11 +225,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 opacity: _fadeController,
                 child: RefreshIndicator(
                   onRefresh: () async {
-                    print('🔍 RefreshIndicator triggered');
+                    _logger.d('🔍 RefreshIndicator triggered');
                     ref.invalidate(habitsStreamIsarProvider);
                     _resetAIInsights(); // Reset AI insights on refresh
                     await _updateAIStatus(); // Update AI status on refresh
-                    print('🔍 Refresh complete - AI insights reset');
+                    _logger.d('🔍 Refresh complete - AI insights reset');
                   },
                   child: TabBarView(
                     controller: _tabController,
@@ -319,10 +322,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Builder(
                 builder: (context) {
-                  print(
+                  _logger.d(
                       '🔍 _buildAIInsightsTab: checking conditions - _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
                   final useAI = _isAIEnabled && _isAIAvailable;
-                  print('🔍 Will use AI insights: $useAI');
+                  _logger.d('🔍 Will use AI insights: $useAI');
                   return useAI
                       ? _buildAIInsights(habits, theme)
                       : _buildBackupAnalysis(habits, theme);
@@ -996,7 +999,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   Widget _buildAIInsights(List<Habit> habits, ThemeData theme) {
-    print(
+    _logger.d(
         '🔍 _buildAIInsights called - _aiInsightsRequested=$_aiInsightsRequested, _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
     final activeHabits = habits.where((h) => h.isActive).toList();
     final totalCompletions =
@@ -1004,7 +1007,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
     // If AI insights haven't been requested yet, show a helpful message
     if (!_aiInsightsRequested) {
-      print(
+      _logger.d(
           '🔍 _buildAIInsights: returning early - _aiInsightsRequested is false');
       return Column(
         children: [
@@ -1059,28 +1062,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
     }
 
     // Initialize the future if not already done
-    print(
+    _logger.d(
         '🔍 Building AI insights - _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
-    print('🔍 Number of habits for AI analysis: ${habits.length}');
-    print('🔍 About to call generateComprehensiveInsights...');
+    _logger.d('🔍 Number of habits for AI analysis: ${habits.length}');
+    _logger.d('🔍 About to call generateComprehensiveInsights...');
 
     if (_aiInsightsFuture == null) {
-      print(
+      _logger.d(
           '🔍 _aiInsightsFuture IS NULL, calling generateComprehensiveInsights');
       _aiInsightsFuture =
           _enhancedInsightsService.generateComprehensiveInsights(habits)
             ..then((value) {
-              print('🔍 ✅ Future completed with ${value.length} insights');
+              _logger.d('🔍 ✅ Future completed with ${value.length} insights');
               return value;
             }).catchError((error) {
-              print('🔍 ❌ Future error: $error');
+              _logger.e('🔍 ❌ Future error: $error');
               throw error;
             });
-      print('🔍 Called generateComprehensiveInsights, future assigned');
+      _logger.d('🔍 Called generateComprehensiveInsights, future assigned');
     } else {
-      print('🔍 _aiInsightsFuture is NOT NULL, reusing existing future');
+      _logger.d('🔍 _aiInsightsFuture is NOT NULL, reusing existing future');
     }
-    print(
+    _logger.d(
         '🔍 After assignment, _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
 
     return FutureBuilder<List<Map<String, dynamic>>>(
@@ -1236,7 +1239,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 AIInsightsOnboarding.show(context);
                 break;
               case 'refresh':
-                print('🔍 Refresh Insights button pressed');
+                _logger.d('🔍 Refresh Insights button pressed');
                 _resetAIInsights();
                 setState(() {});
                 break;
@@ -3176,7 +3179,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
 
   /// Build backup analysis when AI is not available
   Widget _buildBackupAnalysis(List<Habit> habits, ThemeData theme) {
-    print(
+    _logger.d(
         '🔍 _buildBackupAnalysis called instead of AI insights - _isAIEnabled=$_isAIEnabled, _isAIAvailable=$_isAIAvailable');
     // Use rule-based insights from the insights service
     final allInsights = _insightsService.generateAIInsights(habits);
