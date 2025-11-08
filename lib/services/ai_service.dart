@@ -20,7 +20,7 @@ class AIService {
   static const String _openAiApiUrl =
       'https://api.openai.com/v1/chat/completions';
   static const String _geminiApiUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+    'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent';
 
   // Note: Never hardcode API keys - use secure storage or environment variables
   String? _openAiApiKey;
@@ -394,6 +394,7 @@ Provide insights in this exact JSON format:
         _logger.w('Gemini API returned status ${response.statusCode}');
         _logger.w('Response body: ${response.body}');
         debugPrint('🚨 Gemini: HTTP ${response.statusCode}, falling back');
+        debugPrint('🚨 Gemini: Response body: ${response.body}');
 
         // Provide specific handling for different error types
         if (response.statusCode == 503) {
