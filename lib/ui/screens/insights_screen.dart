@@ -516,7 +516,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ),
           );
         }
-        
+
         final stats = snapshot.data!;
         final completionRate = stats['rate'] as double? ?? 0.0;
         final trendText = stats['trendText'] as String? ?? '';
@@ -608,7 +608,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ),
           );
         }
-        
+
         final data = snapshot.data!;
         final day = data['day'] as String;
         final percentage = data['percentage'] as int;

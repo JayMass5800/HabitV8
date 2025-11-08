@@ -14,24 +14,24 @@ class ArchivedHabit {
   late String id; // Original habit ID
 
   late String name; // Habit name at time of deletion
-  
+
   String? description;
-  
+
   late String category;
-  
+
   late int colorValue;
-  
+
   late DateTime createdAt; // When habit was originally created
-  
+
   late DateTime archivedAt; // When habit was archived/deleted
-  
+
   // Completion history preserved from the original habit
   List<DateTime> completions = [];
-  
+
   // Metadata at time of archival
   int finalCurrentStreak = 0;
   int finalLongestStreak = 0;
-  
+
   // RRule information for reference
   String? rruleString;
   DateTime? dtStart;
@@ -92,8 +92,7 @@ class ArchivedHabit {
       'colorValue': colorValue,
       'createdAt': createdAt.toIso8601String(),
       'archivedAt': archivedAt.toIso8601String(),
-      'completions':
-          completions.map((dt) => dt.toIso8601String()).toList(),
+      'completions': completions.map((dt) => dt.toIso8601String()).toList(),
       'finalCurrentStreak': finalCurrentStreak,
       'finalLongestStreak': finalLongestStreak,
       'rruleString': rruleString,

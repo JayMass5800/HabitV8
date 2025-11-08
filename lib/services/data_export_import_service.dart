@@ -31,14 +31,15 @@ class DataExportImportService {
       final habitService = await IsarDatabaseService.getInstance()
           .then((isar) => HabitServiceIsar(isar));
       final archivedHabits = await habitService.getAllArchivedHabits();
-      
+
       final exportData = {
         'version': _exportVersion,
         'exportedAt': DateTime.now().toIso8601String(),
         'totalHabits': habits.length,
         'totalArchivedHabits': archivedHabits.length,
         'habits': habits.map((habit) => habit.toJson()).toList(),
-        'archivedHabits': archivedHabits.map((archived) => archived.toJson()).toList(),
+        'archivedHabits':
+            archivedHabits.map((archived) => archived.toJson()).toList(),
       };
 
       final jsonString = const JsonEncoder.withIndent('  ').convert(exportData);
@@ -369,13 +370,15 @@ class DataExportImportService {
       int archivedImportedCount = 0;
       if (jsonData.containsKey('archivedHabits')) {
         final archivedData = jsonData['archivedHabits'] as List;
-        AppLogger.info('Starting import of ${archivedData.length} archived habits');
-        
+        AppLogger.info(
+            'Starting import of ${archivedData.length} archived habits');
+
         for (final archivedJson in archivedData) {
           try {
             final archived = ArchivedHabit.fromJson(archivedJson);
             // Check if this archived habit already exists
-            final existingArchived = await habitService.getArchivedHabitById(archived.id);
+            final existingArchived =
+                await habitService.getArchivedHabitById(archived.id);
             if (existingArchived == null) {
               await habitService.addArchivedHabit(archived);
               archivedImportedCount++;
@@ -384,8 +387,9 @@ class DataExportImportService {
             AppLogger.error('Error importing archived habit', e);
           }
         }
-        
-        AppLogger.info('Archived habits import completed: $archivedImportedCount imported');
+
+        AppLogger.info(
+            'Archived habits import completed: $archivedImportedCount imported');
       }
 
       AppLogger.info(

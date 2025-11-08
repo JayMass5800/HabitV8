@@ -198,14 +198,15 @@ class HabitServiceIsar {
 
   /// Delete habit with optional archival of completion data
   /// If [archiveCompletions] is true, completion history is preserved in ArchivedHabit collection
-  Future<void> deleteHabit(String habitId, {bool archiveCompletions = false}) async {
+  Future<void> deleteHabit(String habitId,
+      {bool archiveCompletions = false}) async {
     String? habitName;
     await _isar.writeTxn(() async {
       final habit = await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
         habitName = habit.name;
-        
+
         // Archive completion data if requested
         if (archiveCompletions && habit.completions.isNotEmpty) {
           final archivedHabit = ArchivedHabit.fromHabit(
@@ -222,11 +223,12 @@ class HabitServiceIsar {
             dtStart: habit.dtStart,
             usedRRule: habit.usesRRule,
           );
-          
+
           await _isar.archivedHabits.put(archivedHabit);
-          AppLogger.info('📦 Archived completion data for: ${habit.name} (${habit.completions.length} completions)');
+          AppLogger.info(
+              '📦 Archived completion data for: ${habit.name} (${habit.completions.length} completions)');
         }
-        
+
         await _isar.habits.delete(habit.isarId);
         AppLogger.info('✅ Habit deleted: ${habit.name}');
       }
@@ -412,19 +414,14 @@ class HabitServiceIsar {
 
   /// Get archived habit by original ID
   Future<ArchivedHabit?> getArchivedHabitById(String habitId) async {
-    return await _isar.archivedHabits
-        .filter()
-        .idEqualTo(habitId)
-        .findFirst();
+    return await _isar.archivedHabits.filter().idEqualTo(habitId).findFirst();
   }
 
   /// Delete archived habit
   Future<void> deleteArchivedHabit(String habitId) async {
     await _isar.writeTxn(() async {
-      final archived = await _isar.archivedHabits
-          .filter()
-          .idEqualTo(habitId)
-          .findFirst();
+      final archived =
+          await _isar.archivedHabits.filter().idEqualTo(habitId).findFirst();
       if (archived != null) {
         await _isar.archivedHabits.delete(archived.isarId);
         AppLogger.info('✅ Archived habit deleted: ${archived.name}');

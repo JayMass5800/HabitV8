@@ -32,7 +32,7 @@ class InsightsService {
       List<Habit> habits) async {
     // Include archived habit completions
     final archivedHabits = await _getArchivedHabits();
-    
+
     if (habits.isEmpty && archivedHabits.isEmpty) {
       return {
         'rate': 0.0,
@@ -83,7 +83,7 @@ class InsightsService {
             .length;
         weekCompleted += actualForWeek;
       }
-      
+
       // Include archived habit completions in sparkline
       for (final archived in archivedHabits) {
         final archivedCompletionsForWeek = archived.completions
@@ -97,9 +97,8 @@ class InsightsService {
         // Archived habits don't contribute to scheduled count (already deleted)
       }
 
-      final weekRate = weekScheduled > 0
-          ? (weekCompleted / weekScheduled)
-          : 0.0;
+      final weekRate =
+          weekScheduled > 0 ? (weekCompleted / weekScheduled) : 0.0;
       sparklineData.insert(
         0,
         weekRate,
@@ -143,7 +142,7 @@ class InsightsService {
           .length;
       totalCompletedPrevious += actualPrevious;
     }
-    
+
     // Add archived habit completions to totals
     for (final archived in archivedHabits) {
       // Current period completions
@@ -155,7 +154,7 @@ class InsightsService {
           )
           .length;
       totalCompletedCurrent += archivedCurrentCompletions;
-      
+
       // Previous period completions
       final archivedPreviousCompletions = archived.completions
           .where(
@@ -231,9 +230,8 @@ class InsightsService {
 
     return {
       'days': longestCurrentStreak,
-      'habitName': streakHabitName.isEmpty
-          ? 'No active habits'
-          : streakHabitName,
+      'habitName':
+          streakHabitName.isEmpty ? 'No active habits' : streakHabitName,
       'comparison': comparison,
     };
   }
@@ -288,7 +286,7 @@ class InsightsService {
   Future<Map<String, dynamic>> calculateMostPowerfulDay(
       List<Habit> habits) async {
     final archivedHabits = await _getArchivedHabits();
-    
+
     if (habits.isEmpty && archivedHabits.isEmpty) {
       return {
         'day': 'No data',
@@ -336,7 +334,7 @@ class InsightsService {
         }
       }
     }
-    
+
     // Include archived habit completions
     for (final archived in archivedHabits) {
       final recentCompletions = archived.completions
@@ -376,9 +374,8 @@ class InsightsService {
     // Calculate percentage above average
     final totalCompletions = dayCompletions.reduce((a, b) => a + b);
     final totalExpected = dayTotals.reduce((a, b) => a + b);
-    final averageRate = totalExpected > 0
-        ? totalCompletions / totalExpected
-        : 0.0;
+    final averageRate =
+        totalExpected > 0 ? totalCompletions / totalExpected : 0.0;
     final improvement = bestRate > averageRate
         ? ((bestRate - averageRate) / averageRate * 100)
         : 0.0;
@@ -596,18 +593,16 @@ class InsightsService {
       }
     }
 
-    final weekdayRate = weekdayExpected > 0
-        ? weekdayCompletions / weekdayExpected
-        : 0.0;
-    final weekendRate = weekendExpected > 0
-        ? weekendCompletions / weekendExpected
-        : 0.0;
+    final weekdayRate =
+        weekdayExpected > 0 ? weekdayCompletions / weekdayExpected : 0.0;
+    final weekendRate =
+        weekendExpected > 0 ? weekendCompletions / weekendExpected : 0.0;
 
     if (weekdayRate > 0 &&
         weekendRate > 0 &&
         weekdayRate - weekendRate > 0.25) {
-      final dropPercentage = ((weekdayRate - weekendRate) / weekdayRate * 100)
-          .round();
+      final dropPercentage =
+          ((weekdayRate - weekendRate) / weekdayRate * 100).round();
       insights.add({
         'type': 'pattern',
         'title': 'Weekend Challenge Detected',
@@ -675,10 +670,10 @@ class InsightsService {
     if (morningHabits.isNotEmpty && eveningHabits.isNotEmpty) {
       final morningAvgRate =
           morningHabits.map((h) => h.completionRate).reduce((a, b) => a + b) /
-          morningHabits.length;
+              morningHabits.length;
       final eveningAvgRate =
           eveningHabits.map((h) => h.completionRate).reduce((a, b) => a + b) /
-          eveningHabits.length;
+              eveningHabits.length;
 
       if (morningAvgRate > eveningAvgRate + 0.2) {
         insights.add({
@@ -734,15 +729,12 @@ class InsightsService {
     List<Habit> habits,
     List<Map<String, dynamic>> insights,
   ) {
-    final highConsistencyHabits = habits
-        .where((h) => h.isActive && h.consistencyScore > 85)
-        .toList();
+    final highConsistencyHabits =
+        habits.where((h) => h.isActive && h.consistencyScore > 85).toList();
 
     if (highConsistencyHabits.isNotEmpty) {
-      final habitNames = highConsistencyHabits
-          .take(2)
-          .map((h) => '"${h.name}"')
-          .join(' and ');
+      final habitNames =
+          highConsistencyHabits.take(2).map((h) => '"${h.name}"').join(' and ');
       insights.add({
         'type': 'achievement',
         'title': 'Consistency Master',
@@ -911,7 +903,7 @@ class InsightsService {
       final mean = series.reduce((a, b) => a + b) / series.length;
       final variance =
           series.map((v) => (v - mean) * (v - mean)).reduce((a, b) => a + b) /
-          series.length;
+              series.length;
       if (variance > highestVar && variance > 0.5) {
         highestVar = variance;
         volatile = h;
@@ -1014,9 +1006,8 @@ class InsightsService {
         );
       }
 
-      final completionRate = totalExpected > 0
-          ? (totalCompletions / totalExpected) * 100
-          : 0.0;
+      final completionRate =
+          totalExpected > 0 ? (totalCompletions / totalExpected) * 100 : 0.0;
 
       trendData.add({
         'week': 'Week ${i + 1}',
@@ -1046,9 +1037,8 @@ class InsightsService {
     for (final habit in habits) {
       if (!habit.isActive || habit.notificationTime == null) continue;
 
-      final recentCompletions = habit.completions
-          .where((c) => c.isAfter(last30Days))
-          .length;
+      final recentCompletions =
+          habit.completions.where((c) => c.isAfter(last30Days)).length;
 
       if (recentCompletions > 0) {
         final hour = habit.notificationTime!.hour;
@@ -1065,8 +1055,8 @@ class InsightsService {
 
     if (totalWithTime > 10) {
       final morningRate = (morningCompletions / totalWithTime * 100).round();
-      final afternoonRate = (afternoonCompletions / totalWithTime * 100)
-          .round();
+      final afternoonRate =
+          (afternoonCompletions / totalWithTime * 100).round();
       final eveningRate = (eveningCompletions / totalWithTime * 100).round();
 
       String timeOfDay = 'morning';
@@ -1112,7 +1102,7 @@ class InsightsService {
     if (hardHabits.isNotEmpty) {
       final avgRate =
           hardHabits.map((h) => h.completionRate).reduce((a, b) => a + b) /
-          hardHabits.length;
+              hardHabits.length;
       if (avgRate > 0.8) {
         insights.add({
           'type': 'achievement',
@@ -1204,9 +1194,8 @@ class InsightsService {
     for (final habit in habits) {
       if (!habit.isActive) continue;
 
-      final lastWeekCount = habit.completions
-          .where((c) => c.isAfter(lastWeek))
-          .length;
+      final lastWeekCount =
+          habit.completions.where((c) => c.isAfter(lastWeek)).length;
       final previousWeekCount = habit.completions
           .where((c) => c.isAfter(previousWeek) && c.isBefore(lastWeek))
           .length;
