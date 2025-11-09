@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
+import '../../domain/model/archived_habit.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/progressive_disclosure.dart';
 
@@ -17,11 +18,31 @@ class StatsScreen extends ConsumerStatefulWidget {
 class _StatsScreenState extends ConsumerState<StatsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  List<ArchivedHabit> _archivedHabits = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadArchivedHabits();
+  }
+
+  Future<void> _loadArchivedHabits() async {
+    try {
+      final isar = await IsarDatabaseService.getInstance();
+      final habitService = HabitServiceIsar(isar);
+      final archived = await habitService.getAllArchivedHabits();
+      if (mounted) {
+        setState(() {
+          _archivedHabits = archived;
+        });
+      }
+    } catch (e) {
+      // Error loading archived habits - continue with empty list
+      if (mounted) {
+        setState(() {});
+      }
+    }
   }
 
   @override
@@ -1102,8 +1123,23 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     final dateOnly = DateTime(date.year, date.month, date.day);
     int count = 0;
 
+    // Count active habit completions
     for (final habit in habits) {
       for (final completion in habit.completions) {
+        final completionDate = DateTime(
+          completion.year,
+          completion.month,
+          completion.day,
+        );
+        if (completionDate == dateOnly) {
+          count++;
+        }
+      }
+    }
+
+    // Count archived habit completions
+    for (final archived in _archivedHabits) {
+      for (final completion in archived.completions) {
         final completionDate = DateTime(
           completion.year,
           completion.month,
@@ -1121,12 +1157,46 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   Map<String, int> _getCategoryData(List<Habit> habits, String period) {
     final data = <String, int>{};
 
+    // Process active habits
     for (final habit in habits) {
       final completions = _getCompletionsForPeriod(habit, period);
       data[habit.category] = (data[habit.category] ?? 0) + completions;
     }
 
+    // Process archived habits
+    for (final archived in _archivedHabits) {
+      final completions = _getArchivedCompletionsForPeriod(archived, period);
+      data[archived.category] = (data[archived.category] ?? 0) + completions;
+    }
+
     return data;
+  }
+
+  int _getArchivedCompletionsForPeriod(ArchivedHabit archived, String period) {
+    final now = DateTime.now();
+    DateTime startDate;
+
+    switch (period) {
+      case 'week':
+        startDate = now.subtract(const Duration(days: 7));
+        break;
+      case 'month':
+        startDate = DateTime(now.year, now.month, 1);
+        break;
+      case 'year':
+        startDate = DateTime(now.year, 1, 1);
+        break;
+      default:
+        startDate = now.subtract(const Duration(days: 7));
+    }
+
+    return archived.completions
+        .where(
+          (completion) =>
+              completion.isAfter(startDate) &&
+              completion.isBefore(now.add(const Duration(days: 1))),
+        )
+        .length;
   }
 
   int _getCompletionsForPeriod(Habit habit, String period) {
@@ -1229,8 +1299,18 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       }
 
       int monthCompletions = 0;
+      // Count active habit completions
       for (final habit in habits) {
         monthCompletions += habit.completions
+            .where(
+              (completion) =>
+                  completion.year == now.year && completion.month == month,
+            )
+            .length;
+      }
+      // Count archived habit completions
+      for (final archived in _archivedHabits) {
+        monthCompletions += archived.completions
             .where(
               (completion) =>
                   completion.year == now.year && completion.month == month,
@@ -1514,14 +1594,21 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
     final categoryData = <String, List<int>>{};
 
-    // Initialize categories with empty data
+    // Initialize categories with empty data (active habits)
     for (final habit in habits) {
       if (!categoryData.containsKey(habit.category)) {
         categoryData[habit.category] = List.filled(daysInMonth, 0);
       }
     }
 
-    // Fill in the completion data for each day
+    // Initialize categories for archived habits
+    for (final archived in _archivedHabits) {
+      if (!categoryData.containsKey(archived.category)) {
+        categoryData[archived.category] = List.filled(daysInMonth, 0);
+      }
+    }
+
+    // Fill in the completion data for each day (active habits)
     for (int day = 1; day <= daysInMonth; day++) {
       final currentDate = DateTime(now.year, now.month, day);
 
@@ -1541,6 +1628,26 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       }
     }
 
+    // Fill in completion data for archived habits
+    for (int day = 1; day <= daysInMonth; day++) {
+      final currentDate = DateTime(now.year, now.month, day);
+
+      for (final archived in _archivedHabits) {
+        final completionsForDay = archived.completions.where((completion) {
+          final completionDate = DateTime(
+            completion.year,
+            completion.month,
+            completion.day,
+          );
+          return completionDate == currentDate;
+        }).length;
+
+        if (categoryData.containsKey(archived.category)) {
+          categoryData[archived.category]![day - 1] += completionsForDay;
+        }
+      }
+    }
+
     // Remove categories with no data
     categoryData.removeWhere(
       (key, value) => value.every((element) => element == 0),
@@ -1553,14 +1660,21 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     final now = DateTime.now();
     final categoryData = <String, List<int>>{};
 
-    // Initialize categories with empty data for 12 months
+    // Initialize categories with empty data for 12 months (active habits)
     for (final habit in habits) {
       if (!categoryData.containsKey(habit.category)) {
         categoryData[habit.category] = List.filled(12, 0);
       }
     }
 
-    // Fill in the completion data for each month
+    // Initialize categories for archived habits
+    for (final archived in _archivedHabits) {
+      if (!categoryData.containsKey(archived.category)) {
+        categoryData[archived.category] = List.filled(12, 0);
+      }
+    }
+
+    // Fill in the completion data for each month (active habits)
     for (int month = 1; month <= 12; month++) {
       for (final habit in habits) {
         final completionsForMonth = habit.completions
@@ -1572,6 +1686,22 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
         if (categoryData.containsKey(habit.category)) {
           categoryData[habit.category]![month - 1] += completionsForMonth;
+        }
+      }
+    }
+
+    // Fill in completion data for archived habits
+    for (int month = 1; month <= 12; month++) {
+      for (final archived in _archivedHabits) {
+        final completionsForMonth = archived.completions
+            .where(
+              (completion) =>
+                  completion.year == now.year && completion.month == month,
+            )
+            .length;
+
+        if (categoryData.containsKey(archived.category)) {
+          categoryData[archived.category]![month - 1] += completionsForMonth;
         }
       }
     }
@@ -1591,8 +1721,23 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     int daysWithCompletions = 0;
     final completedDays = <String>{};
 
+    // Process active habits
     for (final habit in habits) {
       for (final completion in habit.completions) {
+        if (completion.year == now.year) {
+          totalCompletions++;
+          monthlyCompletions[completion.month] =
+              (monthlyCompletions[completion.month] ?? 0) + 1;
+          completedDays.add(
+            '${completion.year}-${completion.month}-${completion.day}',
+          );
+        }
+      }
+    }
+
+    // Include archived habit completions
+    for (final archived in _archivedHabits) {
+      for (final completion in archived.completions) {
         if (completion.year == now.year) {
           totalCompletions++;
           monthlyCompletions[completion.month] =
@@ -1648,6 +1793,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       final currentDate = startOfYear.add(Duration(days: i));
       int completionsForDay = 0;
 
+      // Count completions from active habits
       for (final habit in habits) {
         completionsForDay += habit.completions.where((completion) {
           final completionDate = DateTime(
@@ -1660,8 +1806,21 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
         }).length;
       }
 
+      // Count completions from archived habits
+      for (final archived in _archivedHabits) {
+        completionsForDay += archived.completions.where((completion) {
+          final completionDate = DateTime(
+            completion.year,
+            completion.month,
+            completion.day,
+          );
+          return completionDate ==
+              DateTime(currentDate.year, currentDate.month, currentDate.day);
+        }).length;
+      }
+
       // Normalize intensity (0.0 to 1.0)
-      final maxPossibleCompletions = habits.length;
+      final maxPossibleCompletions = habits.length + _archivedHabits.length;
       final intensity = maxPossibleCompletions > 0
           ? completionsForDay / maxPossibleCompletions
           : 0.0;
@@ -1700,6 +1859,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
     final habitCompletions = <String, int>{};
     final monthlyCompletions = <int, int>{};
 
+    // Process active habits
     for (final habit in habits) {
       int habitTotal = 0;
       for (final completion in habit.completions) {
@@ -1713,10 +1873,34 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
       habitCompletions[habit.name] = habitTotal;
     }
 
+    // Process archived habits
+    for (final archived in _archivedHabits) {
+      int habitTotal = 0;
+      for (final completion in archived.completions) {
+        if (completion.year == now.year) {
+          totalCompletions++;
+          habitTotal++;
+          monthlyCompletions[completion.month] =
+              (monthlyCompletions[completion.month] ?? 0) + 1;
+        }
+      }
+      habitCompletions['${archived.name} (archived)'] = habitTotal;
+    }
+
     // Calculate streaks (simplified)
     final sortedDates = <DateTime>[];
     for (final habit in habits) {
       for (final completion in habit.completions) {
+        if (completion.year == now.year) {
+          sortedDates.add(
+            DateTime(completion.year, completion.month, completion.day),
+          );
+        }
+      }
+    }
+    // Include archived habit completions in streak calculation
+    for (final archived in _archivedHabits) {
+      for (final completion in archived.completions) {
         if (completion.year == now.year) {
           sortedDates.add(
             DateTime(completion.year, completion.month, completion.day),
