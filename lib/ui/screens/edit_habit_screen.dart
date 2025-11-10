@@ -1244,23 +1244,78 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
                     // Open system settings
                     await PermissionService.openFullScreenIntentSettings();
 
+                    // Wait for user to return from settings and check permission again
+                    // We'll poll the permission status to detect when it's granted
                     if (mounted) {
-                      // Show instructions
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            '1. Enable "Display over other apps"\n2. Return to this app\n3. Toggle alarms ON again',
+                      bool permissionGranted = false;
+                      int attempts = 0;
+                      const maxAttempts = 30; // Wait up to 30 seconds
+
+                      // Show a loading indicator
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Waiting for permission... Please grant "Display over other apps" in settings',
+                            ),
+                            duration: Duration(seconds: 30),
                           ),
-                          duration: Duration(seconds: 6),
-                        ),
-                      );
+                        );
+                      }
+
+                      // Poll for permission grant
+                      while (!permissionGranted &&
+                          attempts < maxAttempts &&
+                          mounted) {
+                        await Future.delayed(const Duration(seconds: 1));
+                        permissionGranted =
+                            await PermissionService.canUseFullScreenIntent();
+                        attempts++;
+                      }
+
+                      // Dismiss the loading message
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      }
+
+                      if (permissionGranted) {
+                        // Permission granted! Enable the alarm
+                        if (mounted) {
+                          setState(() {
+                            _alarmEnabled = true;
+                            _notificationsEnabled = false;
+                          });
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text('✅ Permission granted! Alarms enabled.'),
+                              backgroundColor: Colors.green,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      } else {
+                        // Permission not granted or timeout
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Permission not granted. Please try again and enable the permission.',
+                              ),
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      }
                     }
 
-                    // Don't enable alarm - user needs to grant permission first
+                    // Exit early - we've handled everything
                     return;
                   }
                 }
 
+                // Permission already granted or disabling alarm
                 setState(() {
                   _alarmEnabled = value;
                   // When enabling alarms, disable notifications (mutually exclusive)
