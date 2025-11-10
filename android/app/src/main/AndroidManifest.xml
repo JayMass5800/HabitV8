@@ -14,11 +14,6 @@
     <!-- Audio permissions for alarm playback -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     
-    <!-- High priority alarm permissions -->
-    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
-    <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    
     <!-- Full screen intent permission for alarms (Android 14+) -->
     <!-- User must manually grant this permission through system settings -->
     <!-- This is required for alarms to display as full-screen intents -->
@@ -30,10 +25,6 @@
     <!-- Exact alarm permission for Android 12+ (API 31+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
     
-    <!-- Android Alarm Manager Plus permissions -->
-    <!-- SYSTEM_ALERT_WINDOW removed - causes app crashes on Android 16 when denied -->
-    <!-- <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> -->
-
     <!-- Calendar permissions -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />

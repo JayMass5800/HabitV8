@@ -1209,6 +1209,51 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               value: _alarmEnabled,
               onChanged: (value) async {
                 if (value) {
+                  final hasExactAlarmPermission =
+                      await PermissionService.hasExactAlarmPermission();
+
+                  if (!hasExactAlarmPermission && mounted) {
+                    final shouldOpenExactSettings = await showDialog<bool>(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Allow Alarms & Reminders'),
+                        content: const Text(
+                          'Android 12 and newer require the "Alarms & reminders" permission so alarms can ring exactly on time.\n\nOpen settings to enable this now?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Maybe Later'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Open Settings'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldOpenExactSettings == true) {
+                      await PermissionService.requestExactAlarmPermission();
+
+                      if (mounted) {
+                        final granted =
+                            await PermissionService.hasExactAlarmPermission();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              granted
+                                  ? 'Exact alarm permission granted. Your alarms will trigger on time.'
+                                  : 'Enable "Alarms & reminders" in system settings so alarms can trigger on time.',
+                            ),
+                            duration: const Duration(seconds: 4),
+                          ),
+                        );
+                      }
+                    }
+                  }
+
                   // Check if full screen intent permission is granted (Android 14+)
                   final hasPermission =
                       await PermissionService.canUseFullScreenIntent();

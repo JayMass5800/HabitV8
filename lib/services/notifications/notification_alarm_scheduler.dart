@@ -1,6 +1,7 @@
 import 'package:timezone/timezone.dart' as tz;
 import '../logging_service.dart';
 import '../alarm_service.dart';
+import '../permission_service.dart';
 import '../rrule_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_helpers.dart';
@@ -56,6 +57,14 @@ class NotificationAlarmScheduler {
 
     // Initialize AlarmService to use awesome_notifications alarms for this habit
     await AlarmService.initialize();
+
+    final hasExactAlarmPermission =
+        await PermissionService.hasExactAlarmPermission();
+    if (!hasExactAlarmPermission) {
+      AppLogger.warning(
+        '⚠️ Exact alarm permission not granted - alarms may be delayed on Android 12/12L',
+      );
+    }
 
     // For non-hourly, non-single habits, require notification time
     if (habit.frequency != HabitFrequency.hourly &&

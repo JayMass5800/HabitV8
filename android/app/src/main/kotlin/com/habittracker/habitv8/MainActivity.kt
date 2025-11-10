@@ -35,6 +35,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val ANDROID_RESOURCES_CHANNEL = "habitv8/android_resources"
     private val WIDGET_UPDATE_CHANNEL = "com.habittracker.habitv8/widget_update"
     private val FULL_SCREEN_INTENT_CHANNEL = "com.habittracker.habitv8/full_screen_intent"
+    private val EXACT_ALARM_CHANNEL = "com.habittracker.habitv8/exact_alarm"
     private val RINGTONE_PICKER_REQUEST_CODE = 1
 
     private var previewRingtone: Ringtone? = null
@@ -448,32 +449,19 @@ class MainActivity : FlutterFragmentActivity() {
             when (call.method) {
                 "canUseFullScreenIntent" -> {
                     try {
-                        // Android 14+ introduced USE_FULL_SCREEN_INTENT permission that requires user approval
-                        // However, NotificationManager.canUseFullScreenIntent() is unreliable on Android 15/16
-                        // It often returns false even when permission is granted in settings
-                        // 
-                        // WORKAROUND: Always return true if permission is declared in manifest
-                        // This means we trust the user has granted permission, and if they haven't,
-                        // alarms simply won't show on lock screen (graceful degradation)
-                        
-                        val canUse = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            // Android 14+ (API 34+) - Check if permission is declared in manifest
-                            val pm = packageManager
-                            val packageInfo = pm.getPackageInfo(packageName, android.content.pm.PackageManager.GET_PERMISSIONS)
-                            val hasPermissionDeclared = packageInfo.requestedPermissions?.contains(android.Manifest.permission.USE_FULL_SCREEN_INTENT) == true
-                            
-                            if (hasPermissionDeclared) {
-                                android.util.Log.i("FullScreenIntent", "USE_FULL_SCREEN_INTENT permission is declared in manifest - assuming granted (API ${Build.VERSION.SDK_INT} workaround)")
-                                true
-                            } else {
-                                android.util.Log.e("FullScreenIntent", "USE_FULL_SCREEN_INTENT permission not declared in manifest!")
-                                false
+                        val canUse = when {
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+                                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                                val allowed = notificationManager.canUseFullScreenIntent()
+                                android.util.Log.i("FullScreenIntent", "System reported full-screen intent permission: $allowed")
+                                allowed
                             }
-                        } else {
-                            // Android 13 and below - Permission is automatically granted
-                            true
+                            else -> {
+                                // Android 13 and below - permission granted implicitly
+                                true
+                            }
                         }
-                        
+
                         result.success(canUse)
                     } catch (e: Exception) {
                         android.util.Log.e("FullScreenIntent", "Error checking full screen intent permission", e)
@@ -499,6 +487,64 @@ class MainActivity : FlutterFragmentActivity() {
                     } catch (e: Exception) {
                         android.util.Log.e("FullScreenIntent", "Error opening full screen intent settings", e)
                         result.error("SETTINGS_ERROR", "Failed to open full screen intent settings: ${e.message}", null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, EXACT_ALARM_CHANNEL).setMethodCallHandler { call, result ->
+            if (isFinishing || isDestroyed) {
+                result.error("ACTIVITY_INVALID", "Activity is no longer valid", null)
+                return@setMethodCallHandler
+            }
+
+            when (call.method) {
+                "canScheduleExactAlarms" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                            result.success(true)
+                            return@setMethodCallHandler
+                        }
+
+                        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                        val canSchedule = alarmManager.canScheduleExactAlarms()
+                        android.util.Log.i("ExactAlarm", "canScheduleExactAlarms -> $canSchedule")
+                        result.success(canSchedule)
+                    } catch (e: Exception) {
+                        android.util.Log.e("ExactAlarm", "Error checking exact alarm capability", e)
+                        result.error("EXACT_ALARM_ERROR", "Failed to check exact alarm permission: ${e.message}", null)
+                    }
+                }
+                "requestExactAlarmPermission" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                            result.success(true)
+                            return@setMethodCallHandler
+                        }
+
+                        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                        if (alarmManager.canScheduleExactAlarms()) {
+                            result.success(true)
+                            return@setMethodCallHandler
+                        }
+
+                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                            data = Uri.parse("package:$packageName")
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+
+                        if (intent.resolveActivity(packageManager) != null) {
+                            startActivity(intent)
+                            android.util.Log.i("ExactAlarm", "Opened exact alarm permission settings")
+                            result.success(false)
+                        } else {
+                            android.util.Log.w("ExactAlarm", "Exact alarm settings activity unavailable")
+                            result.success(false)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("ExactAlarm", "Error requesting exact alarm permission", e)
+                        result.error("EXACT_ALARM_ERROR", "Failed to request exact alarm permission: ${e.message}", null)
                     }
                 }
                 else -> result.notImplemented()

@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../services/notification_service.dart';
 import 'logging_service.dart';
 
 class PermissionService {
   static final PermissionService _instance = PermissionService._internal();
   factory PermissionService() => _instance;
   PermissionService._internal();
+
+  static const MethodChannel _exactAlarmChannel =
+      MethodChannel('com.habittracker.habitv8/exact_alarm');
 
   /// Request only essential permissions during app startup
   /// This prevents app crashes by avoiding heavy permission requests during initialization
@@ -141,9 +143,24 @@ class PermissionService {
   /// Check if exact alarm permission is granted
   /// This is required for precise notification scheduling on Android 12+
   static Future<bool> hasExactAlarmPermission() async {
-    // Permission is declared in manifest and handled by awesome_notifications
-    // Return true as the permission is requested when needed
-    return true;
+    if (!Platform.isAndroid) {
+      return true;
+    }
+
+    if (_getAndroidSdkInt() < 31) {
+      return true;
+    }
+
+    try {
+      final bool? canSchedule =
+          await _exactAlarmChannel.invokeMethod<bool>('canScheduleExactAlarms');
+      AppLogger.info('Exact alarm permission status: $canSchedule');
+      return canSchedule ?? true;
+    } catch (e) {
+      AppLogger.error('Error checking exact alarm permission', e);
+      // Fail open so alarms still attempt to schedule
+      return true;
+    }
   }
 
   /// Request exact alarm permission when actually needed
@@ -151,10 +168,30 @@ class PermissionService {
   /// For Android 12 with SCHEDULE_EXACT_ALARM: Requires manual user action
   /// This should only be called when the user is trying to schedule notifications
   static Future<bool> requestExactAlarmPermission() async {
-    // Permission is declared in manifest and handled by awesome_notifications
-    // The permission will be requested automatically when scheduling alarms
-    AppLogger.info('Exact alarm permission handled by awesome_notifications');
-    return true;
+    if (!Platform.isAndroid) {
+      return true;
+    }
+
+    if (_getAndroidSdkInt() < 31) {
+      return true;
+    }
+
+    try {
+      final bool? result = await _exactAlarmChannel
+          .invokeMethod<bool>('requestExactAlarmPermission');
+      AppLogger.info('Exact alarm permission request result: $result');
+
+      if (result == true) {
+        return true;
+      }
+
+      // Give the system a moment before re-checking
+      await Future.delayed(const Duration(milliseconds: 300));
+      return await hasExactAlarmPermission();
+    } catch (e) {
+      AppLogger.error('Error requesting exact alarm permission', e);
+      return false;
+    }
   }
 
   /// Request exact alarm permission with user-friendly context
@@ -172,8 +209,8 @@ class PermissionService {
 
       AppLogger.info('Requesting exact alarm permission with user context...');
 
-      // Request the permission with timeout
-      final bool granted = await requestExactAlarmPermission().timeout(
+      // Open settings to allow the user to grant permission
+      final bool requested = await requestExactAlarmPermission().timeout(
         const Duration(seconds: 15),
         onTimeout: () {
           AppLogger.warning(
@@ -182,6 +219,14 @@ class PermissionService {
           return false;
         },
       );
+
+      if (!requested) {
+        AppLogger.warning(
+          'Exact alarm permission request returned false - user interaction required',
+        );
+      }
+
+      final bool granted = await hasExactAlarmPermission();
 
       if (granted) {
         AppLogger.info('Exact alarm permission granted successfully');
@@ -298,20 +343,18 @@ class PermissionService {
     }
   }
 
-  /// Test notification permissions and send a test notification
-  Future<void> testNotifications() async {
-    // Check if notifications are enabled
-    final isEnabled = await isNotificationPermissionGranted();
-
-    if (isEnabled) {
-      // Send a test notification using static method
-      await NotificationService.showTestNotification();
-    } else {
-      // Request permission first
-      final granted = await requestPermission(Permission.notification);
-      if (granted) {
-        await NotificationService.showTestNotification();
+  static int _getAndroidSdkInt() {
+    try {
+      if (!Platform.isAndroid) {
+        return -1;
       }
+      final match = RegExp(r'SDK (\d+)').firstMatch(Platform.version);
+      if (match != null && match.groupCount >= 1) {
+        return int.parse(match.group(1)!);
+      }
+    } catch (e) {
+      AppLogger.error('Error parsing Android SDK version', e);
     }
+    return -1;
   }
 }

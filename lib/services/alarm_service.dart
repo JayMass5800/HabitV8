@@ -1,11 +1,14 @@
 import 'dart:async';
-import 'preferences_service.dart';
+import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/material.dart';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
-import 'dart:convert';
+import 'package:flutter/material.dart';
+
 import 'logging_service.dart';
+import 'permission_service.dart';
+import 'preferences_service.dart';
 
 @pragma('vm:entry-point')
 class AlarmService {
@@ -56,7 +59,8 @@ class AlarmService {
       'additionalData': additionalData ?? {},
     };
 
-        await PreferencesService.setString('$_alarmDataKey$alarmId', jsonEncode(alarmData));
+    await PreferencesService.setString(
+        '$_alarmDataKey$alarmId', jsonEncode(alarmData));
 
     AppLogger.info('🚨 Scheduling exact alarm:');
     AppLogger.info('  - Alarm ID: $alarmId');
@@ -134,7 +138,7 @@ class AlarmService {
       await AwesomeNotifications().cancel(alarmId);
 
       // Clean up stored alarm data
-            await PreferencesService.remove('$_alarmDataKey$alarmId');
+      await PreferencesService.remove('$_alarmDataKey$alarmId');
 
       AppLogger.info('🚨 Cancelled alarm ID: $alarmId');
     } catch (e) {
@@ -149,7 +153,7 @@ class AlarmService {
   }) async {
     AppLogger.info('🚨 Cancelling all alarms for habit: $habitId');
 
-        final keys = await PreferencesService.getKeys();
+    final keys = await PreferencesService.getKeys();
 
     int cancelledCount = 0;
 
@@ -510,6 +514,11 @@ class AlarmService {
       notificationSound = 'resource://raw/alarm'; // Default alarm sound
     }
 
+    final bool canUseFullScreenIntent =
+        await PermissionService.canUseFullScreenIntent();
+    AppLogger.info(
+        'Full screen intent available for alarm? $canUseFullScreenIntent');
+
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: alarmId,
@@ -519,8 +528,8 @@ class AlarmService {
         body: 'Time to complete your habit! Tap buttons below.',
         category: NotificationCategory.Alarm,
         notificationLayout: NotificationLayout.Default,
-        fullScreenIntent: true,
-        wakeUpScreen: true,
+        fullScreenIntent: canUseFullScreenIntent,
+        wakeUpScreen: canUseFullScreenIntent,
         criticalAlert: true,
         locked: true, // Cannot swipe away - must use buttons
         autoDismissible: false, // Prevent accidental dismissal
@@ -685,7 +694,8 @@ class AlarmService {
 
     try {
       // Get alarm data
-            final alarmDataJson = await PreferencesService.getString('$_alarmDataKey$alarmId');
+      final alarmDataJson =
+          await PreferencesService.getString('$_alarmDataKey$alarmId');
 
       if (alarmDataJson == null) {
         AppLogger.error('No alarm data found for ID: $alarmId');
