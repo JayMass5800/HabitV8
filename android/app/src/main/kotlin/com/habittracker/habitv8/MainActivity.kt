@@ -2,6 +2,7 @@ package com.habittracker.habitv8
 
 import android.app.Activity
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -33,6 +34,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val SYSTEM_SOUND_CHANNEL = "com.habittracker.habitv8/system_sound"
     private val ANDROID_RESOURCES_CHANNEL = "habitv8/android_resources"
     private val WIDGET_UPDATE_CHANNEL = "com.habittracker.habitv8/widget_update"
+    private val FULL_SCREEN_INTENT_CHANNEL = "com.habittracker.habitv8/full_screen_intent"
     private val RINGTONE_PICKER_REQUEST_CODE = 1
 
     private var previewRingtone: Ringtone? = null
@@ -428,6 +430,60 @@ class MainActivity : FlutterFragmentActivity() {
                     } catch (e: Exception) {
                         result.error("BROADCAST_ERROR", "Failed to send habit completion broadcast: ${e.message}", null)
                         android.util.Log.e("MainActivity", "Failed to send broadcast", e)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // Full Screen Intent Permission channel for Google Play Store compliance
+        // Required for alarm notifications to display as full-screen intents on Android 14+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, FULL_SCREEN_INTENT_CHANNEL).setMethodCallHandler { call, result ->
+            // Check if activity is still valid before processing method calls
+            if (isFinishing || isDestroyed) {
+                result.error("ACTIVITY_INVALID", "Activity is no longer valid", null)
+                return@setMethodCallHandler
+            }
+
+            when (call.method) {
+                "canUseFullScreenIntent" -> {
+                    try {
+                        val canUse = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                            // Android 14+ (API 34+) - Must check if permission is actually granted
+                            // According to Android docs, we need to check Settings.canDrawOverlays()
+                            // which returns true if USE_FULL_SCREEN_INTENT permission is granted
+                            android.provider.Settings.canDrawOverlays(this)
+                        } else {
+                            // Android 13 and below - Permission is automatically granted
+                            true
+                        }
+                        
+                        android.util.Log.i("FullScreenIntent", "Can use full screen intent: $canUse (API ${Build.VERSION.SDK_INT})")
+                        result.success(canUse)
+                    } catch (e: Exception) {
+                        android.util.Log.e("FullScreenIntent", "Error checking full screen intent permission", e)
+                        result.error("PERMISSION_CHECK_ERROR", "Failed to check full screen intent permission: ${e.message}", null)
+                    }
+                }
+                "openFullScreenIntentSettings" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                            // Android 14+ (API 34+) - Open system settings for full screen intent
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                                data = Uri.parse("package:$packageName")
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            startActivity(intent)
+                            android.util.Log.i("FullScreenIntent", "Opened full screen intent settings")
+                            result.success(true)
+                        } else {
+                            // Android 13 and below - Settings not needed
+                            android.util.Log.i("FullScreenIntent", "Full screen intent settings not needed for API ${Build.VERSION.SDK_INT}")
+                            result.success(false)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("FullScreenIntent", "Error opening full screen intent settings", e)
+                        result.error("SETTINGS_ERROR", "Failed to open full screen intent settings: ${e.message}", null)
                     }
                 }
                 else -> result.notImplemented()

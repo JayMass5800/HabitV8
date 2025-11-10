@@ -19,6 +19,11 @@
     <uses-permission android:name="android.permission.TURN_SCREEN_ON" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     
+    <!-- Full screen intent permission for alarms (Android 14+) -->
+    <!-- User must manually grant this permission through system settings -->
+    <!-- This is required for alarms to display as full-screen intents -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    
     <!-- Exact alarm permissions for Android 14+ (API 34+) - automatically granted -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     

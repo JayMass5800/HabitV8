@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/notification_service.dart';
 import 'logging_service.dart';
@@ -208,6 +210,92 @@ class PermissionService {
   /// Open app settings for manual permission management
   Future<void> openSettings() async {
     await openAppSettings();
+  }
+
+  // ==================== FULL SCREEN INTENT PERMISSION ====================
+  // Required for alarm notifications to display as full-screen intents on Android 14+
+  // Google Play Store compliance: Users must manually grant this permission
+
+  static const _fullScreenIntentChannel =
+      MethodChannel('com.habittracker.habitv8/full_screen_intent');
+
+  /// Check if the app can use full screen intent for alarm notifications
+  ///
+  /// On Android 14+ (API 34+), this permission must be manually granted by the user.
+  /// On Android 13 and below, the permission is automatically granted.
+  /// On iOS, this always returns true (not applicable).
+  ///
+  /// Returns true if full screen intent can be used, false otherwise.
+  static Future<bool> canUseFullScreenIntent() async {
+    try {
+      // iOS doesn't have this restriction
+      if (!Platform.isAndroid) {
+        return true;
+      }
+
+      final bool canUse =
+          await _fullScreenIntentChannel.invokeMethod('canUseFullScreenIntent');
+      AppLogger.info('Full screen intent permission check: $canUse');
+      return canUse;
+    } catch (e) {
+      AppLogger.error('Error checking full screen intent permission', e);
+      // Assume permission is granted to avoid blocking alarm functionality
+      return true;
+    }
+  }
+
+  /// Open system settings page for full screen intent permission
+  ///
+  /// On Android 14+, this opens the system settings where users can manually
+  /// grant the "Display over other apps" permission for alarms.
+  /// On Android 13 and below, this returns false (not needed).
+  /// On iOS, this returns false (not applicable).
+  ///
+  /// Returns true if settings were opened, false if not needed or failed.
+  static Future<bool> openFullScreenIntentSettings() async {
+    try {
+      // iOS doesn't have this restriction
+      if (!Platform.isAndroid) {
+        return false;
+      }
+
+      final bool opened = await _fullScreenIntentChannel
+          .invokeMethod('openFullScreenIntentSettings');
+      AppLogger.info(
+          'Opened full screen intent settings: ${opened ? "yes" : "not needed"}');
+      return opened;
+    } catch (e) {
+      AppLogger.error('Error opening full screen intent settings', e);
+      return false;
+    }
+  }
+
+  /// Request full screen intent permission with user-friendly context
+  ///
+  /// This is the high-level method that should be called when the user tries
+  /// to enable alarms. It checks if the permission is already granted, and if
+  /// not, it returns false to prompt the UI to show a dialog explaining why
+  /// the permission is needed and offering to open settings.
+  ///
+  /// Returns true if permission is granted or not needed, false if user needs
+  /// to grant it through system settings.
+  static Future<bool> requestFullScreenIntentPermission() async {
+    try {
+      // Check if we already have the permission
+      final bool hasPermission = await canUseFullScreenIntent();
+      if (hasPermission) {
+        AppLogger.info('Full screen intent permission already granted');
+        return true;
+      }
+
+      AppLogger.info(
+          'Full screen intent permission not granted - user must enable in settings');
+      return false;
+    } catch (e) {
+      AppLogger.error('Error requesting full screen intent permission', e);
+      // Assume permission is granted to avoid blocking alarm functionality
+      return true;
+    }
   }
 
   /// Test notification permissions and send a test notification

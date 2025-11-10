@@ -9,6 +9,7 @@ import '../../services/notification_service.dart';
 import '../../services/category_suggestion_service.dart';
 import '../../services/alarm_service.dart';
 import '../../services/logging_service.dart';
+import '../../services/permission_service.dart';
 import '../../utils/date_utils.dart';
 import '../widgets/rrule_builder_widget.dart';
 
@@ -1207,6 +1208,59 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
               ),
               value: _alarmEnabled,
               onChanged: (value) async {
+                if (value) {
+                  // Check if full screen intent permission is granted (Android 14+)
+                  final hasPermission =
+                      await PermissionService.canUseFullScreenIntent();
+
+                  if (!hasPermission && mounted) {
+                    // Show dialog explaining permission requirement - MUST grant to continue
+                    final shouldOpenSettings = await showDialog<bool>(
+                      context: context,
+                      barrierDismissible: false, // User must choose
+                      builder: (context) => AlertDialog(
+                        title: const Text('Alarm Permission Required'),
+                        content: const Text(
+                          'Alarms require the "Display over other apps" permission to work properly on Android 14+.\n\nThis allows alarms to appear on your lock screen and wake your device.\n\nPlease grant this permission in settings to enable alarms.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Open Settings'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (shouldOpenSettings != true) {
+                      // User cancelled - don't enable alarm
+                      return;
+                    }
+
+                    // Open system settings
+                    await PermissionService.openFullScreenIntentSettings();
+
+                    if (mounted) {
+                      // Show instructions
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            '1. Enable "Display over other apps"\n2. Return to this app\n3. Toggle alarms ON again',
+                          ),
+                          duration: Duration(seconds: 6),
+                        ),
+                      );
+                    }
+
+                    // Don't enable alarm - user needs to grant permission first
+                    return;
+                  }
+                }
+
                 setState(() {
                   _alarmEnabled = value;
                   // When enabling alarms, disable notifications (mutually exclusive)
