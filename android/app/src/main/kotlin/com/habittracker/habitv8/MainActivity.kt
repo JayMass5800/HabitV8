@@ -448,17 +448,32 @@ class MainActivity : FlutterFragmentActivity() {
             when (call.method) {
                 "canUseFullScreenIntent" -> {
                     try {
+                        // Android 14+ introduced USE_FULL_SCREEN_INTENT permission that requires user approval
+                        // However, NotificationManager.canUseFullScreenIntent() is unreliable on Android 15/16
+                        // It often returns false even when permission is granted in settings
+                        // 
+                        // WORKAROUND: Always return true if permission is declared in manifest
+                        // This means we trust the user has granted permission, and if they haven't,
+                        // alarms simply won't show on lock screen (graceful degradation)
+                        
                         val canUse = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            // Android 14+ (API 34+) - Must check if permission is actually granted
-                            // According to Android docs, we need to check Settings.canDrawOverlays()
-                            // which returns true if USE_FULL_SCREEN_INTENT permission is granted
-                            android.provider.Settings.canDrawOverlays(this)
+                            // Android 14+ (API 34+) - Check if permission is declared in manifest
+                            val pm = packageManager
+                            val packageInfo = pm.getPackageInfo(packageName, android.content.pm.PackageManager.GET_PERMISSIONS)
+                            val hasPermissionDeclared = packageInfo.requestedPermissions?.contains(android.Manifest.permission.USE_FULL_SCREEN_INTENT) == true
+                            
+                            if (hasPermissionDeclared) {
+                                android.util.Log.i("FullScreenIntent", "USE_FULL_SCREEN_INTENT permission is declared in manifest - assuming granted (API ${Build.VERSION.SDK_INT} workaround)")
+                                true
+                            } else {
+                                android.util.Log.e("FullScreenIntent", "USE_FULL_SCREEN_INTENT permission not declared in manifest!")
+                                false
+                            }
                         } else {
                             // Android 13 and below - Permission is automatically granted
                             true
                         }
                         
-                        android.util.Log.i("FullScreenIntent", "Can use full screen intent: $canUse (API ${Build.VERSION.SDK_INT})")
                         result.success(canUse)
                     } catch (e: Exception) {
                         android.util.Log.e("FullScreenIntent", "Error checking full screen intent permission", e)

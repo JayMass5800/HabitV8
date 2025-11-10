@@ -1210,19 +1210,19 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                       await PermissionService.canUseFullScreenIntent();
 
                   if (!hasPermission && mounted) {
-                    // Show dialog explaining permission requirement - MUST grant to continue
+                    // Show dialog explaining permission requirement
                     final shouldOpenSettings = await showDialog<bool>(
                       context: context,
-                      barrierDismissible: false, // User must choose
+                      barrierDismissible: false,
                       builder: (context) => AlertDialog(
                         title: const Text('Alarm Permission Required'),
                         content: const Text(
-                          'Alarms require the "Display over other apps" permission to work properly on Android 14+.\n\nThis allows alarms to appear on your lock screen and wake your device.\n\nPlease grant this permission in settings to enable alarms.',
+                          'For alarms to appear on your lock screen on Android 14+, you need to enable "Full-screen notifications" permission.\n\nWould you like to open settings to enable it now?\n\n(Note: Alarms will still work without this permission, but won\'t show on the lock screen)',
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(false),
-                            child: const Text('Cancel'),
+                            child: const Text('Skip'),
                           ),
                           ElevatedButton(
                             onPressed: () => Navigator.of(context).pop(true),
@@ -1232,86 +1232,28 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                       ),
                     );
 
-                    if (shouldOpenSettings != true) {
-                      // User cancelled - don't enable alarm
-                      return;
-                    }
+                    if (shouldOpenSettings == true) {
+                      // Open system settings
+                      await PermissionService.openFullScreenIntentSettings();
 
-                    // Open system settings
-                    await PermissionService.openFullScreenIntentSettings();
-
-                    // Wait for user to return from settings and check permission again
-                    // We'll poll the permission status to detect when it's granted
-                    if (mounted) {
-                      bool permissionGranted = false;
-                      int attempts = 0;
-                      const maxAttempts = 30; // Wait up to 30 seconds
-
-                      // Show a loading indicator
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
-                              'Waiting for permission... Please grant "Display over other apps" in settings',
+                              'Enable "Full-screen notifications" in settings, then return to this app.',
                             ),
-                            duration: Duration(seconds: 30),
+                            duration: Duration(seconds: 4),
                           ),
                         );
                       }
-
-                      // Poll for permission grant
-                      while (!permissionGranted &&
-                          attempts < maxAttempts &&
-                          mounted) {
-                        await Future.delayed(const Duration(seconds: 1));
-                        permissionGranted =
-                            await PermissionService.canUseFullScreenIntent();
-                        attempts++;
-                      }
-
-                      // Dismiss the loading message
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      }
-
-                      if (permissionGranted) {
-                        // Permission granted! Enable the alarm
-                        if (mounted) {
-                          setState(() {
-                            _alarmEnabled = true;
-                            _notificationsEnabled = false;
-                          });
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('✅ Permission granted! Alarms enabled.'),
-                              backgroundColor: Colors.green,
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        }
-                      } else {
-                        // Permission not granted or timeout
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Permission not granted. Please try again and enable the permission.',
-                              ),
-                              duration: Duration(seconds: 4),
-                            ),
-                          );
-                        }
-                      }
                     }
 
-                    // Exit early - we've handled everything
-                    return;
+                    // Always enable the alarm regardless of permission status
+                    // If permission not granted, alarms will work but won't show on lock screen
                   }
                 }
 
-                // Permission already granted or disabling alarm
+                // Enable/disable alarm
                 setState(() {
                   _alarmEnabled = value;
                   // Disable notifications when enabling alarms
