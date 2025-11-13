@@ -197,7 +197,10 @@ Future<void> onNotificationDisplayed(
     AppLogger.info('   Category: ${receivedNotification.category}');
 
     // For alarm notifications, start looping audio
-    if (receivedNotification.channelKey == 'habit_alarms') {
+    final channelKey = receivedNotification.channelKey ?? '';
+    final isHabitAlarmChannel = channelKey.startsWith('habit_alarm');
+
+    if (isHabitAlarmChannel) {
       AppLogger.info(
           '🚨 Alarm notification displayed - starting looping audio');
 
@@ -241,7 +244,10 @@ Future<void> onNotificationDismissed(ReceivedAction receivedAction) async {
     AppLogger.info('   Channel: ${receivedAction.channelKey}');
 
     // If it's an alarm notification, stop the looping audio
-    if (receivedAction.channelKey == 'habit_alarms') {
+    final channelKey = receivedAction.channelKey ?? '';
+    final isHabitAlarmChannel = channelKey.startsWith('habit_alarm');
+
+    if (isHabitAlarmChannel) {
       AppLogger.info('🔇 Stopping alarm audio due to notification dismissal');
       await AlarmService.stopAlarmAudio(alarmId: receivedAction.id);
       AppLogger.info('✅ Alarm audio stopped');
