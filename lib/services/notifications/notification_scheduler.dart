@@ -29,6 +29,7 @@ class NotificationScheduler {
     required String title,
     required String body,
     required DateTime scheduledTime,
+    String? payload,
   }) async {
     // Check and request all notification permissions if needed
     final bool permissionsGranted =
@@ -78,7 +79,8 @@ class NotificationScheduler {
       );
     }
 
-    final payload = jsonEncode({'habitId': habitId, 'type': 'habit_reminder'});
+    final payloadJson =
+        payload ?? jsonEncode({'habitId': habitId, 'type': 'habit_reminder'});
 
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
@@ -86,7 +88,7 @@ class NotificationScheduler {
         channelKey: 'habit_scheduled_channel',
         title: title,
         body: body,
-        payload: {'data': payload},
+        payload: {'data': payloadJson},
         notificationLayout: NotificationLayout.Default,
         wakeUpScreen: true,
         category: NotificationCategory.Reminder,
@@ -331,7 +333,7 @@ class NotificationScheduler {
       int scheduledCount = 0;
       for (int i = 0; i < 3; i++) {
         final futureNotification = nextNotification.add(Duration(days: i));
-        
+
         await scheduleHabitNotification(
           id: NotificationHelpers.generateSafeId('${habit.id}_day$i'),
           habitId: habit.id,
@@ -341,7 +343,7 @@ class NotificationScheduler {
         );
         scheduledCount++;
       }
-      
+
       AppLogger.debug(
         'Daily notifications scheduled for ${habit.name}: $scheduledCount days ahead (${nextNotification.toIso8601String()})',
       );
@@ -721,18 +723,14 @@ class NotificationScheduler {
       // Schedule notification for each occurrence
       int scheduledCount = 0;
       for (final occurrence in occurrences) {
-        final scheduledTime = DateTime(
-          occurrence.year,
-          occurrence.month,
-          occurrence.day,
-          hour,
-          minute,
-        );
+        final scheduledTime =
+            _resolveOccurrenceDateTime(habit, occurrence, hour, minute);
 
         if (scheduledTime.isAfter(now)) {
           await scheduleHabitNotification(
             id: NotificationHelpers.generateSafeId(
-                '${habit.id}_${occurrence.toIso8601String()}'),
+              '${habit.id}_${scheduledTime.toIso8601String()}',
+            ),
             habitId: habit.id,
             title: '🎯 ${habit.name}',
             body: 'Time to complete your habit!',
@@ -749,5 +747,59 @@ class NotificationScheduler {
       AppLogger.error('Failed to schedule RRule notifications', e);
       rethrow;
     }
+  }
+
+  DateTime _resolveOccurrenceDateTime(
+    Habit habit,
+    DateTime occurrence,
+    int fallbackHour,
+    int fallbackMinute,
+  ) {
+    DateTime toLocal = occurrence.toLocal();
+
+    if (_hasTimeComponent(toLocal)) {
+      return toLocal;
+    }
+
+    final notificationTime = habit.notificationTime;
+    if (notificationTime != null) {
+      return DateTime(
+        toLocal.year,
+        toLocal.month,
+        toLocal.day,
+        notificationTime.hour,
+        notificationTime.minute,
+      );
+    }
+
+    final dtStart = habit.dtStart?.toLocal();
+    if (dtStart != null && _hasTimeComponent(dtStart)) {
+      return DateTime(
+        toLocal.year,
+        toLocal.month,
+        toLocal.day,
+        dtStart.hour,
+        dtStart.minute,
+        dtStart.second,
+        dtStart.millisecond,
+        dtStart.microsecond,
+      );
+    }
+
+    return DateTime(
+      toLocal.year,
+      toLocal.month,
+      toLocal.day,
+      fallbackHour,
+      fallbackMinute,
+    );
+  }
+
+  bool _hasTimeComponent(DateTime value) {
+    return value.hour != 0 ||
+        value.minute != 0 ||
+        value.second != 0 ||
+        value.millisecond != 0 ||
+        value.microsecond != 0;
   }
 }

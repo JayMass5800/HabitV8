@@ -53,34 +53,33 @@ class NotificationService {
   static Future<void> scheduleHabitNotifications(Habit habit,
       {bool isNewHabit = false}) async {
     try {
-      final allPending = await getPendingNotifications();
-      final existingAudit =
-          NotificationValidationService.auditHabitFromSnapshot(
-        habit,
-        allPending,
-      );
-      final existingTotal =
-          existingAudit.notificationCount + existingAudit.alarmCount;
+      final bool wantsNotifications = habit.notificationsEnabled;
+      final bool wantsAlarms = habit.alarmEnabled;
 
-      AppLogger.debug(
-        'Scheduling notifications/alarms for ${habit.name}: $existingTotal '
-        'existing '
-        '(notifications: ${existingAudit.notificationCount}, '
-        'alarms: ${existingAudit.alarmCount})',
-      );
+      if (wantsNotifications) {
+        final allPending = await getPendingNotifications();
+        final existingAudit =
+            NotificationValidationService.auditHabitFromSnapshot(
+          habit,
+          allPending,
+        );
+        final existingTotal =
+            existingAudit.notificationCount + existingAudit.alarmCount;
 
-      // Cancel existing notifications
-      await cancelHabitNotificationsByHabitId(habit.id);
+        AppLogger.debug(
+          'Scheduling notifications/alarms for ${habit.name}: $existingTotal '
+          'existing '
+          '(notifications: ${existingAudit.notificationCount}, '
+          'alarms: ${existingAudit.alarmCount})',
+        );
 
-      // Schedule new notifications
-      await _scheduler.scheduleHabitNotifications(habit,
-          isNewHabit: isNewHabit);
+        await cancelHabitNotificationsByHabitId(habit.id);
 
-      // Schedule alarms
-      await _alarmScheduler.scheduleHabitAlarms(habit);
+        await _scheduler.scheduleHabitNotifications(
+          habit,
+          isNewHabit: isNewHabit,
+        );
 
-      // Verify at least one notification was successfully scheduled (if notifications enabled)
-      if (habit.notificationsEnabled) {
         final newPending = await getPendingNotifications();
         final newAudit = NotificationValidationService.auditHabitFromSnapshot(
           habit,
@@ -88,7 +87,7 @@ class NotificationService {
         );
         final newTotal = newAudit.notificationCount + newAudit.alarmCount;
 
-        if (newAudit.notificationCount == 0 && !habit.alarmEnabled) {
+        if (newAudit.notificationCount == 0 && !wantsAlarms) {
           AppLogger.error(
             'Failed to schedule any notifications for ${habit.name} - no notifications found after scheduling attempt',
           );
@@ -103,6 +102,23 @@ class NotificationService {
           '(notifications: ${newAudit.notificationCount}, '
           'alarms: ${newAudit.alarmCount})',
         );
+      } else {
+        AppLogger.debug(
+          'Notifications disabled for ${habit.name} - cancelling any '
+          'existing notifications',
+        );
+        await cancelHabitNotificationsByHabitId(habit.id);
+        AppLogger.info(
+          'Notifications remain disabled for habit: ${habit.name}',
+        );
+      }
+
+      await _alarmScheduler.scheduleHabitAlarms(habit);
+
+      if (wantsAlarms) {
+        AppLogger.info('Alarms refreshed for habit: ${habit.name}');
+      } else {
+        AppLogger.debug('Alarms disabled for habit: ${habit.name}');
       }
     } catch (e) {
       AppLogger.error(
@@ -175,6 +191,7 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime scheduledTime,
+    String? payload,
   }) async {
     await _scheduler.scheduleHabitNotification(
       id: id,
@@ -182,6 +199,7 @@ class NotificationService {
       title: title,
       body: body,
       scheduledTime: scheduledTime,
+      payload: payload,
     );
   }
 
@@ -198,6 +216,7 @@ class NotificationService {
       title: title,
       body: body,
       scheduledTime: scheduledTime,
+      payload: payload,
     );
   }
 

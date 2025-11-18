@@ -591,22 +591,22 @@ class NotificationAlarmScheduler {
 
       // Schedule alarm for each valid occurrence
       int scheduledCount = 0;
+      final nowTz = tz.TZDateTime.now(tz.local);
+
       for (final occurrence in occurrences) {
-        final scheduledTime = tz.TZDateTime(
-          tz.local,
-          occurrence.year,
-          occurrence.month,
-          occurrence.day,
+        final scheduledTime = _resolveOccurrenceTzDateTime(
+          habit,
+          occurrence,
           hour,
           minute,
         );
 
         // Only schedule if the time is in the future
-        if (scheduledTime.isAfter(tz.TZDateTime.now(tz.local))) {
+        if (scheduledTime.isAfter(nowTz)) {
           try {
             await AlarmService.scheduleExactAlarm(
               alarmId: NotificationHelpers.generateSafeId(
-                '${habit.id}_${occurrence.toIso8601String()}',
+                '${habit.id}_${scheduledTime.toIso8601String()}',
               ),
               habitId: habit.id.toString(),
               habitName: habit.name,
@@ -673,5 +673,74 @@ class NotificationAlarmScheduler {
 
     // Default to system alarm sound (OGG format to match Flutter assets)
     return 'sounds/alarm.ogg';
+  }
+
+  tz.TZDateTime _resolveOccurrenceTzDateTime(
+    Habit habit,
+    DateTime occurrence,
+    int fallbackHour,
+    int fallbackMinute,
+  ) {
+    final resolved = _resolveOccurrenceDateTime(
+      habit,
+      occurrence,
+      fallbackHour,
+      fallbackMinute,
+    );
+    return tz.TZDateTime.from(resolved, tz.local);
+  }
+
+  DateTime _resolveOccurrenceDateTime(
+    Habit habit,
+    DateTime occurrence,
+    int fallbackHour,
+    int fallbackMinute,
+  ) {
+    final localOccurrence = occurrence.toLocal();
+
+    if (_hasTimeComponent(localOccurrence)) {
+      return localOccurrence;
+    }
+
+    final notificationTime = habit.notificationTime;
+    if (notificationTime != null) {
+      return DateTime(
+        localOccurrence.year,
+        localOccurrence.month,
+        localOccurrence.day,
+        notificationTime.hour,
+        notificationTime.minute,
+      );
+    }
+
+    final dtStart = habit.dtStart?.toLocal();
+    if (dtStart != null && _hasTimeComponent(dtStart)) {
+      return DateTime(
+        localOccurrence.year,
+        localOccurrence.month,
+        localOccurrence.day,
+        dtStart.hour,
+        dtStart.minute,
+        dtStart.second,
+        dtStart.millisecond,
+        dtStart.microsecond,
+      );
+    }
+
+    return DateTime(
+      localOccurrence.year,
+      localOccurrence.month,
+      localOccurrence.day,
+      fallbackHour,
+      fallbackMinute,
+    );
+  }
+
+  bool _hasTimeComponent(DateTime value) {
+    return value.hour != 0 ||
+        value.minute != 0 ||
+        value.second != 0 ||
+        value.millisecond != 0 ||
+        value.microsecond != 0;
   }
 }

@@ -40,20 +40,29 @@ class NotificationBootRescheduler {
       await AwesomeNotifications().cancelAll();
       AppLogger.info('🧹 Cleared all existing OS notifications');
 
-      int rescheduledCount = 0;
+      int notificationRescheduledCount = 0;
+      int alarmOnlyRefreshedCount = 0;
       int skippedCount = 0;
       int errorCount = 0;
 
       // Process each habit
       for (final habit in habits) {
         try {
-          // Only reschedule if notifications are enabled
-          if (habit.notificationsEnabled) {
-            // Use NotificationService to reschedule properly
-            // This handles all frequency types (daily, weekly, RRule, etc.)
+          // Reschedule if notifications or alarms are enabled
+          if (habit.notificationsEnabled || habit.alarmEnabled) {
             await NotificationService.scheduleHabitNotifications(habit);
-            rescheduledCount++;
-            AppLogger.debug('✅ Rescheduled notifications for: ${habit.name}');
+
+            if (habit.notificationsEnabled) {
+              notificationRescheduledCount++;
+              AppLogger.debug(
+                '✅ Rescheduled notifications for: ${habit.name}',
+              );
+            } else {
+              alarmOnlyRefreshedCount++;
+              AppLogger.debug(
+                '✅ Refreshed alarms for alarm-only habit: ${habit.name}',
+              );
+            }
           } else {
             skippedCount++;
           }
@@ -66,7 +75,8 @@ class NotificationBootRescheduler {
 
       AppLogger.info(
         '✅ Notification rescheduling complete: '
-        '$rescheduledCount rescheduled, '
+        '$notificationRescheduledCount notifications rescheduled, '
+        '$alarmOnlyRefreshedCount alarm-only habits refreshed, '
         '$skippedCount skipped, '
         '$errorCount errors',
       );
