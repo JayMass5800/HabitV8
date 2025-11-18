@@ -7,6 +7,7 @@ import 'notifications/notification_scheduler.dart';
 import 'notifications/notification_alarm_scheduler.dart';
 import 'notifications/notification_action_handler.dart';
 import 'notifications/notification_boot_rescheduler.dart';
+import 'notifications/notification_validation_service.dart';
 
 /// Notification Service Facade - delegates to specialized modules
 class NotificationService {
@@ -52,22 +53,28 @@ class NotificationService {
   static Future<void> scheduleHabitNotifications(Habit habit,
       {bool isNewHabit = false}) async {
     try {
-      // Get count of currently scheduled notifications for this habit before making changes
       final allPending = await getPendingNotifications();
-      final existingCount = allPending.where((n) {
-        final payload = n.content?.payload?['data'];
-        return payload != null && payload.contains(habit.id);
-      }).length;
+      final existingAudit =
+          NotificationValidationService.auditHabitFromSnapshot(
+        habit,
+        allPending,
+      );
+      final existingTotal =
+          existingAudit.notificationCount + existingAudit.alarmCount;
 
       AppLogger.debug(
-        'Scheduling notifications and alarms for ${habit.name}: $existingCount existing',
+        'Scheduling notifications/alarms for ${habit.name}: $existingTotal '
+        'existing '
+        '(notifications: ${existingAudit.notificationCount}, '
+        'alarms: ${existingAudit.alarmCount})',
       );
 
       // Cancel existing notifications
       await cancelHabitNotificationsByHabitId(habit.id);
 
       // Schedule new notifications
-      await _scheduler.scheduleHabitNotifications(habit, isNewHabit: isNewHabit);
+      await _scheduler.scheduleHabitNotifications(habit,
+          isNewHabit: isNewHabit);
 
       // Schedule alarms
       await _alarmScheduler.scheduleHabitAlarms(habit);
@@ -75,12 +82,13 @@ class NotificationService {
       // Verify at least one notification was successfully scheduled (if notifications enabled)
       if (habit.notificationsEnabled) {
         final newPending = await getPendingNotifications();
-        final newCount = newPending.where((n) {
-          final payload = n.content?.payload?['data'];
-          return payload != null && payload.contains(habit.id);
-        }).length;
+        final newAudit = NotificationValidationService.auditHabitFromSnapshot(
+          habit,
+          newPending,
+        );
+        final newTotal = newAudit.notificationCount + newAudit.alarmCount;
 
-        if (newCount == 0 && !habit.alarmEnabled) {
+        if (newAudit.notificationCount == 0 && !habit.alarmEnabled) {
           AppLogger.error(
             'Failed to schedule any notifications for ${habit.name} - no notifications found after scheduling attempt',
           );
@@ -90,7 +98,10 @@ class NotificationService {
         }
 
         AppLogger.info(
-          'Successfully scheduled notifications for ${habit.name}: $existingCount → $newCount',
+          'Successfully scheduled notifications for ${habit.name}: '
+          '$existingTotal → $newTotal '
+          '(notifications: ${newAudit.notificationCount}, '
+          'alarms: ${newAudit.alarmCount})',
         );
       }
     } catch (e) {
@@ -104,12 +115,13 @@ class NotificationService {
 
   static Future<void> scheduleHabitNotificationsOnly(Habit habit) async {
     try {
-      // Get count of currently scheduled notifications for this habit before making changes
       final allPending = await getPendingNotifications();
-      final existingCount = allPending.where((n) {
-        final payload = n.content?.payload?['data'];
-        return payload != null && payload.contains(habit.id);
-      }).length;
+      final existingAudit =
+          NotificationValidationService.auditHabitFromSnapshot(
+        habit,
+        allPending,
+      );
+      final existingCount = existingAudit.notificationCount;
 
       AppLogger.debug(
         'Rescheduling notifications for ${habit.name}: $existingCount existing',
@@ -123,10 +135,11 @@ class NotificationService {
 
       // Verify at least one notification was successfully scheduled
       final newPending = await getPendingNotifications();
-      final newCount = newPending.where((n) {
-        final payload = n.content?.payload?['data'];
-        return payload != null && payload.contains(habit.id);
-      }).length;
+      final newAudit = NotificationValidationService.auditHabitFromSnapshot(
+        habit,
+        newPending,
+      );
+      final newCount = newAudit.notificationCount;
 
       if (newCount == 0) {
         AppLogger.error(

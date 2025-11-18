@@ -2,6 +2,7 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import '../logging_service.dart';
 import '../../data/database_isar.dart';
 import '../notification_service.dart';
+import 'notification_validation_service.dart';
 
 /// Service for rescheduling notifications after device reboot
 ///
@@ -68,6 +69,14 @@ class NotificationBootRescheduler {
         '$rescheduledCount rescheduled, '
         '$skippedCount skipped, '
         '$errorCount errors',
+      );
+
+      final auditResults =
+          await NotificationValidationService.auditHabits(habits);
+      NotificationValidationService.logAuditDiscrepancies(
+        habits: habits,
+        results: auditResults,
+        context: 'boot_reschedule',
       );
     } catch (e) {
       AppLogger.error('❌ Error during notification rescheduling', e);

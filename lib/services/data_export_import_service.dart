@@ -9,6 +9,23 @@ import '../domain/model/archived_habit.dart';
 import '../data/database_isar.dart';
 import 'logging_service.dart';
 import 'habit_stats_service.dart';
+import 'notification_service.dart';
+import 'notifications/notification_validation_service.dart';
+
+class _RescheduleSummary {
+  _RescheduleSummary({
+    required this.totalEligible,
+    required this.scheduled,
+    required this.failed,
+  });
+
+  final int totalEligible;
+  final int scheduled;
+  final int failed;
+
+  bool get hasEligible => totalEligible > 0;
+  bool get hasFailures => failed > 0;
+}
 
 class DataExportImportService {
   static const String _exportVersion = '1.0.0';
@@ -325,6 +342,7 @@ class DataExportImportService {
           .then((isar) => HabitServiceIsar(isar));
       int duplicateCount = 0;
       int importedCount = 0;
+      final newlyImportedHabits = <Habit>[];
 
       // Get existing habits once to avoid repeated database calls
       final existingHabits = await habitService.getAllHabits();
@@ -349,6 +367,7 @@ class DataExportImportService {
                 '${DateTime.now().millisecondsSinceEpoch}_$importedCount';
             await habitService.addHabit(habit);
             importedCount++;
+            newlyImportedHabits.add(habit);
 
             // Add a small delay between imports to reduce race conditions
             if (importedCount % 5 == 0) {
@@ -395,12 +414,46 @@ class DataExportImportService {
       AppLogger.info(
           'JSON import completed: $importedCount habits imported, $archivedImportedCount archived habits imported, $duplicateCount duplicates skipped');
 
+      _RescheduleSummary? rescheduleSummary;
+      if (newlyImportedHabits.isNotEmpty) {
+        rescheduleSummary = await _rescheduleImportedHabits(
+          newlyImportedHabits,
+          context: 'import_json',
+        );
+
+        final auditResults = await NotificationValidationService.auditHabits(
+            newlyImportedHabits);
+        NotificationValidationService.logAuditDiscrepancies(
+          habits: newlyImportedHabits,
+          results: auditResults,
+          context: 'import_json',
+        );
+      }
+
       String message = 'Successfully imported $importedCount habits';
       if (archivedImportedCount > 0) {
         message += ' and $archivedImportedCount archived completion histories';
       }
       if (duplicateCount > 0) {
         message += ' ($duplicateCount duplicates skipped)';
+      }
+
+      if (rescheduleSummary != null) {
+        final _RescheduleSummary summary = rescheduleSummary;
+        message += '. ';
+        if (!summary.hasEligible) {
+          message += 'No active reminders required rescheduling';
+        } else {
+          message +=
+              'Rescheduled ${summary.scheduled}/${summary.totalEligible} reminders';
+          if (summary.failed > 0) {
+            message += ' (${summary.failed} failed - check logs)';
+          }
+        }
+      }
+
+      if (!message.endsWith('.')) {
+        message += '.';
       }
 
       return ImportResult(
@@ -488,6 +541,7 @@ class DataExportImportService {
           .then((isar) => HabitServiceIsar(isar));
       int duplicateCount = 0;
       int importedCount = 0;
+      final newlyImportedHabits = <Habit>[];
 
       // Get existing habits once to avoid repeated database calls
       final existingHabits = await habitService.getAllHabits();
@@ -512,6 +566,7 @@ class DataExportImportService {
                 '${DateTime.now().millisecondsSinceEpoch}_$importedCount';
             await habitService.addHabit(habit);
             importedCount++;
+            newlyImportedHabits.add(habit);
 
             // Add a small delay between imports to reduce race conditions
             if (importedCount % 5 == 0) {
@@ -532,10 +587,29 @@ class DataExportImportService {
       AppLogger.info(
           'CSV import completed: $importedCount imported, $duplicateCount duplicates skipped');
 
+      _RescheduleSummary? rescheduleSummary;
+      if (newlyImportedHabits.isNotEmpty) {
+        rescheduleSummary = await _rescheduleImportedHabits(
+          newlyImportedHabits,
+          context: 'import_csv',
+        );
+
+        final auditResults = await NotificationValidationService.auditHabits(
+            newlyImportedHabits);
+        NotificationValidationService.logAuditDiscrepancies(
+          habits: newlyImportedHabits,
+          results: auditResults,
+          context: 'import_csv',
+        );
+      }
+
       return ImportResult(
         success: true,
-        message:
-            'Successfully imported $importedCount habits${duplicateCount > 0 ? ' ($duplicateCount duplicates skipped)' : ''}',
+        message: _buildCsvImportMessage(
+          importedCount: importedCount,
+          duplicateCount: duplicateCount,
+          rescheduleSummary: rescheduleSummary,
+        ),
         importedCount: importedCount,
         duplicateCount: duplicateCount,
       );
@@ -608,6 +682,86 @@ class DataExportImportService {
     } catch (e) {
       return 34; // Default to modern Android
     }
+  }
+
+  static String _buildCsvImportMessage({
+    required int importedCount,
+    required int duplicateCount,
+    _RescheduleSummary? rescheduleSummary,
+  }) {
+    var message = 'Successfully imported $importedCount habits';
+    if (duplicateCount > 0) {
+      message += ' ($duplicateCount duplicates skipped)';
+    }
+
+    if (rescheduleSummary != null) {
+      final _RescheduleSummary summary = rescheduleSummary;
+      message += '. ';
+      if (!summary.hasEligible) {
+        message += 'No active reminders required rescheduling';
+      } else {
+        message +=
+            'Rescheduled ${summary.scheduled}/${summary.totalEligible} reminders';
+        if (summary.failed > 0) {
+          message += ' (${summary.failed} failed - check logs)';
+        }
+      }
+    }
+
+    if (!message.endsWith('.')) {
+      message += '.';
+    }
+
+    return message;
+  }
+
+  static Future<_RescheduleSummary> _rescheduleImportedHabits(
+    List<Habit> habits, {
+    required String context,
+  }) async {
+    final eligible = habits
+        .where(
+          (habit) =>
+              habit.isActive &&
+              (habit.notificationsEnabled || habit.alarmEnabled),
+        )
+        .toList();
+
+    if (eligible.isEmpty) {
+      AppLogger.info('[$context] No eligible imported habits to reschedule');
+      return _RescheduleSummary(totalEligible: 0, scheduled: 0, failed: 0);
+    }
+
+    int scheduled = 0;
+    int failed = 0;
+
+    for (final habit in eligible) {
+      try {
+        await NotificationService.scheduleHabitNotifications(
+          habit,
+          isNewHabit: true,
+        );
+        scheduled++;
+      } catch (e) {
+        failed++;
+        AppLogger.error(
+          '[$context] Failed to reschedule imported habit '
+          '${habit.name} (${habit.id})',
+          e,
+        );
+      }
+    }
+
+    AppLogger.info(
+      '[$context] Rescheduled $scheduled/${eligible.length} '
+      'imported habits ($failed failures)',
+    );
+
+    return _RescheduleSummary(
+      totalEligible: eligible.length,
+      scheduled: scheduled,
+      failed: failed,
+    );
   }
 
   /// Validate export data structure
