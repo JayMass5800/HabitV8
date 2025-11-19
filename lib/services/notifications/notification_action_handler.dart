@@ -630,7 +630,16 @@ class NotificationActionHandlerIsar {
           ),
         ],
         schedule: NotificationCalendar.fromDate(
-          date: snoozeTime,
+          date: DateTime(
+            snoozeTime.year,
+            snoozeTime.month,
+            snoozeTime.day,
+            snoozeTime.hour,
+            snoozeTime.minute,
+            snoozeTime.second,
+            snoozeTime.millisecond,
+            snoozeTime.microsecond,
+          ),
           allowWhileIdle: true,
           preciseAlarm: true,
         ),
@@ -806,7 +815,18 @@ class NotificationActionHandlerIsar {
             autoDismissible: false,
           ),
         ],
-        schedule: NotificationCalendar.fromDate(date: snoozeTime),
+        schedule: NotificationCalendar.fromDate(
+          date: DateTime(
+            snoozeTime.year,
+            snoozeTime.month,
+            snoozeTime.day,
+            snoozeTime.hour,
+            snoozeTime.minute,
+            snoozeTime.second,
+            snoozeTime.millisecond,
+            snoozeTime.microsecond,
+          ),
+        ),
       );
 
       AppLogger.info(

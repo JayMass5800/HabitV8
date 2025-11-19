@@ -83,6 +83,20 @@ class NotificationScheduler {
       );
     }
 
+    // CRITICAL FIX: Convert TZDateTime to regular DateTime for awesome_notifications compatibility
+    // NotificationCalendar.fromDate() expects regular DateTime in local time, not TZDateTime
+    // TZDateTime gets misinterpreted as UTC, causing double timezone conversion
+    final scheduledDateTime = DateTime(
+      localScheduledTime.year,
+      localScheduledTime.month,
+      localScheduledTime.day,
+      localScheduledTime.hour,
+      localScheduledTime.minute,
+      localScheduledTime.second,
+      localScheduledTime.millisecond,
+      localScheduledTime.microsecond,
+    );
+
     final payloadJson =
         payload ?? jsonEncode({'habitId': habitId, 'type': 'habit_reminder'});
 
@@ -112,7 +126,7 @@ class NotificationScheduler {
         ),
       ],
       schedule: NotificationCalendar.fromDate(
-        date: localScheduledTime,
+        date: scheduledDateTime,
         preciseAlarm:
             true, // Enable precise timing (requires exact alarm permission)
         allowWhileIdle: true, // Allow notification even in doze mode

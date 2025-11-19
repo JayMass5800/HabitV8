@@ -560,7 +560,16 @@ class AlarmService {
         ),
       ],
       schedule: NotificationCalendar.fromDate(
-        date: scheduledTime,
+        date: DateTime(
+          scheduledTime.year,
+          scheduledTime.month,
+          scheduledTime.day,
+          scheduledTime.hour,
+          scheduledTime.minute,
+          scheduledTime.second,
+          scheduledTime.millisecond,
+          scheduledTime.microsecond,
+        ),
         allowWhileIdle: true,
         preciseAlarm: true,
         repeats: false,
