@@ -55,7 +55,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   // Simple mode selections (converted to RRule on save)
   final Set<int> _simpleWeekdays = {}; // For weekly
   final Set<int> _simpleMonthDays = {}; // For monthly
-  DateTime _focusedMonth = TimeService.instance.nowLocal(); // For calendar navigation
+  DateTime _focusedMonth =
+      TimeService.instance.nowLocal(); // For calendar navigation
   final Set<DateTime> _simpleYearlyDates = {}; // For yearly
 
   // Single habit date/time
@@ -1212,6 +1213,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                       await PermissionService.hasExactAlarmPermission();
 
                   if (!hasExactAlarmPermission && mounted) {
+                    if (!mounted) return;
                     final shouldOpenExactSettings = await showDialog<bool>(
                       context: context,
                       barrierDismissible: false,
@@ -1233,23 +1235,25 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                       ),
                     );
 
+                    if (!mounted) return;
+
                     if (shouldOpenExactSettings == true) {
                       await PermissionService.requestExactAlarmPermission();
+                      final granted =
+                          await PermissionService.hasExactAlarmPermission();
 
-                      if (mounted) {
-                        final granted =
-                            await PermissionService.hasExactAlarmPermission();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              granted
-                                  ? 'Exact alarm permission granted. Your alarms will trigger on time.'
-                                  : 'Enable "Alarms & reminders" in system settings so alarms can trigger on time.',
-                            ),
-                            duration: const Duration(seconds: 4),
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            granted
+                                ? 'Exact alarm permission granted. Your alarms will trigger on time.'
+                                : 'Enable "Alarms & reminders" in system settings so alarms can trigger on time.',
                           ),
-                        );
-                      }
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
                     }
                   }
 
@@ -1257,7 +1261,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                   final hasPermission =
                       await PermissionService.canUseFullScreenIntent();
 
-                  if (!hasPermission && mounted) {
+                  if (!hasPermission) {
+                    if (!mounted) return;
                     // Show dialog explaining permission requirement
                     final shouldOpenSettings = await showDialog<bool>(
                       context: context,
@@ -1280,20 +1285,22 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
                       ),
                     );
 
+                    if (!mounted) return;
+
                     if (shouldOpenSettings == true) {
                       // Open system settings
                       await PermissionService.openFullScreenIntentSettings();
 
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Enable "Full-screen notifications" in settings, then return to this app.',
-                            ),
-                            duration: Duration(seconds: 4),
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Enable "Full-screen notifications" in settings, then return to this app.',
                           ),
-                        );
-                      }
+                          duration: Duration(seconds: 4),
+                        ),
+                      );
                     }
 
                     // Always enable the alarm regardless of permission status

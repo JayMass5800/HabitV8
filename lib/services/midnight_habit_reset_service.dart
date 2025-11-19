@@ -66,8 +66,8 @@ class MidnightHabitResetService {
   /// Check if we missed a reset while the app was closed
   static Future<void> _checkMissedReset() async {
     try {
-            final lastResetStr = await PreferencesService.getString(_lastResetKey);
-          final now = _time.nowLocal();
+      final lastResetStr = await PreferencesService.getString(_lastResetKey);
+      final now = _time.nowLocal();
 
       if (lastResetStr != null) {
         final lastReset = DateTime.parse(lastResetStr);
@@ -158,7 +158,7 @@ class MidnightHabitResetService {
       }
 
       // Update last reset timestamp
-            await PreferencesService.setString(_lastResetKey, now.toIso8601String());
+      await PreferencesService.setString(_lastResetKey, now.toIso8601String());
 
       AppLogger.info(
           '✅ Midnight reset completed: $resetCount reset, $errorCount errors');

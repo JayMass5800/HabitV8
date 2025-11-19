@@ -53,7 +53,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   bool _isSaving = false;
 
   // Calendar-related state variables
-  DateTime _focusedMonth = TimeService.instance.nowLocal(); // For calendar navigation
+  DateTime _focusedMonth =
+      TimeService.instance.nowLocal(); // For calendar navigation
   final List<DateTime> _selectedYearlyDates = []; // For yearly habits
   DateTime? _singleDateTime; // For single habits
 
@@ -102,8 +103,8 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
     // Initialize RRule state from habit
     _rruleString = widget.habit.rruleString;
     _rruleStartDate = widget.habit.dtStart != null
-      ? _time.toLocal(widget.habit.dtStart!)
-      : _time.nowLocal();
+        ? _time.toLocal(widget.habit.dtStart!)
+        : _time.nowLocal();
     // Show advanced mode if habit uses RRule
     _useAdvancedMode = widget.habit.usesRRule;
     // Load from new fields first, fall back to old fields for backward compatibility
@@ -1970,8 +1971,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
       context: context,
       initialDate: _singleDateTime ?? now.add(const Duration(days: 1)),
       firstDate: now,
-      lastDate: now
-          .add(const Duration(days: 365 * 5)), // 5 years into future
+      lastDate: now.add(const Duration(days: 365 * 5)), // 5 years into future
       helpText: 'Select the date for this habit',
       builder: (context, child) {
         return Theme(

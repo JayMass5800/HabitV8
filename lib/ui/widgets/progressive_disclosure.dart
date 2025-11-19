@@ -92,7 +92,8 @@ class _ProgressiveDisclosureState extends State<ProgressiveDisclosure>
               padding: widget.padding,
               decoration: BoxDecoration(
                 color: widget.headerColor?.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(12)),
               ),
               child: Row(
                 children: [
@@ -102,17 +103,19 @@ class _ProgressiveDisclosureState extends State<ProgressiveDisclosure>
                       children: [
                         Text(
                           widget.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         if (widget.subtitle != null) ...[
                           const SizedBox(height: 4),
                           Text(
                             widget.subtitle!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
                           ),
                         ],
                         const SizedBox(height: 8),
@@ -125,7 +128,8 @@ class _ProgressiveDisclosureState extends State<ProgressiveDisclosure>
                     duration: widget.animationDuration,
                     child: Icon(
                       _isExpanded ? widget.collapseIcon : widget.expandIcon,
-                      color: widget.headerColor ?? Theme.of(context).primaryColor,
+                      color:
+                          widget.headerColor ?? Theme.of(context).primaryColor,
                     ),
                   ),
                 ],
@@ -138,7 +142,8 @@ class _ProgressiveDisclosureState extends State<ProgressiveDisclosure>
             child: Container(
               padding: widget.padding,
               decoration: const BoxDecoration(
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(12)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,21 +222,27 @@ class HabitStatsDisclosure extends StatelessWidget {
         Text(
           'Detailed Statistics',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 12),
         if (detailedStats != null) ...[
-          _buildDetailRow('Total Completions', '${detailedStats!['totalCompletions'] ?? 0}'),
-          _buildDetailRow('Best Streak', '${detailedStats!['bestStreak'] ?? 0} days'),
-          _buildDetailRow('Average per Week', '${detailedStats!['averagePerWeek'] ?? 0.0}'),
-          _buildDetailRow('Last Completed', detailedStats!['lastCompleted'] ?? 'Never'),
+          _buildDetailRow('Total Completions',
+              '${detailedStats!['totalCompletions'] ?? 0}'),
+          _buildDetailRow(
+              'Best Streak', '${detailedStats!['bestStreak'] ?? 0} days'),
+          _buildDetailRow(
+              'Average per Week', '${detailedStats!['averagePerWeek'] ?? 0.0}'),
+          _buildDetailRow(
+              'Last Completed', detailedStats!['lastCompleted'] ?? 'Never'),
         ] else ...[
           _buildDetailRow('Total Completions', '${recentCompletions.length}'),
           _buildDetailRow('Current Streak', '$currentStreak days'),
-          _buildDetailRow('Completion Rate', '${(completionRate * 100).toInt()}%'),
+          _buildDetailRow(
+              'Completion Rate', '${(completionRate * 100).toInt()}%'),
           if (recentCompletions.isNotEmpty)
-            _buildDetailRow('Last Completed', _formatDate(recentCompletions.last)),
+            _buildDetailRow(
+                'Last Completed', _formatDate(recentCompletions.last)),
         ],
       ],
     );
@@ -261,16 +272,16 @@ class HabitStatsDisclosure extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontSize: 10,
-                ),
+                      color: color,
+                      fontSize: 10,
+                    ),
               ),
               Text(
                 value,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ],
           ),
@@ -298,11 +309,11 @@ class HabitStatsDisclosure extends StatelessWidget {
   String _formatDate(DateTime date) {
     final now = _time.nowLocal();
     final difference = now.difference(date).inDays;
-    
+
     if (difference == 0) return 'Today';
     if (difference == 1) return 'Yesterday';
     if (difference < 7) return '$difference days ago';
-    
+
     return '${date.day}/${date.month}/${date.year}';
   }
 }
@@ -338,8 +349,8 @@ class SettingsDisclosure extends StatelessWidget {
           Text(
             'Advanced Settings',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 8),
           ...advancedSettings,
@@ -385,8 +396,8 @@ class FeatureExplanationDisclosure extends StatelessWidget {
             Text(
               'Examples',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             ...examples!,

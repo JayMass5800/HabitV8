@@ -126,7 +126,8 @@ class TimeService {
   }
 
   /// Returns the next midnight converted to UTC.
-  DateTime nextMidnightUtc({DateTime? from}) => toUtc(nextMidnightLocal(from: from));
+  DateTime nextMidnightUtc({DateTime? from}) =>
+      toUtc(nextMidnightLocal(from: from));
 
   /// Ensures a scheduled time is in the future; otherwise adds [minLead].
   DateTime ensureFutureLocal(

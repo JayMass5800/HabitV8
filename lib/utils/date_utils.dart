@@ -10,6 +10,7 @@ import '../services/time_service.dart';
 /// Utility class for date and time operations
 class DateTimeUtils {
   static final TimeService _time = TimeService.instance;
+
   /// Check if two DateTime objects represent the same calendar day
   ///
   /// Compares year, month, and day, ignoring time components.

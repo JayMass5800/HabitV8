@@ -19,9 +19,12 @@ class AIInsightsNotificationService {
   }) async {
     if (!context.mounted) return;
 
-        final dismissed = await PreferencesService.getBoolOrDefault(_dismissedKey, false);
-    final setupComplete = await PreferencesService.getBoolOrDefault(_setupCompleteKey, false);
-    final lastPrompt = await PreferencesService.getIntOrDefault(_lastPromptKey, 0);
+    final dismissed =
+        await PreferencesService.getBoolOrDefault(_dismissedKey, false);
+    final setupComplete =
+        await PreferencesService.getBoolOrDefault(_setupCompleteKey, false);
+    final lastPrompt =
+        await PreferencesService.getIntOrDefault(_lastPromptKey, 0);
     final now = TimeService.instance.nowLocal().millisecondsSinceEpoch;
 
     // Don't show if dismissed or setup is complete
@@ -49,17 +52,17 @@ class AIInsightsNotificationService {
 
   /// Mark setup as complete to stop showing notifications
   static Future<void> markSetupComplete() async {
-        await PreferencesService.setBool(_setupCompleteKey, true);
+    await PreferencesService.setBool(_setupCompleteKey, true);
   }
 
   /// Mark notifications as dismissed
   static Future<void> dismiss() async {
-        await PreferencesService.setBool(_dismissedKey, true);
+    await PreferencesService.setBool(_dismissedKey, true);
   }
 
   /// Reset all notification preferences (for testing)
   static Future<void> reset() async {
-        await PreferencesService.remove(_dismissedKey);
+    await PreferencesService.remove(_dismissedKey);
     await PreferencesService.remove(_setupCompleteKey);
     await PreferencesService.remove(_lastPromptKey);
   }
