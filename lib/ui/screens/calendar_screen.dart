@@ -5,6 +5,7 @@ import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/calendar_service.dart';
 import '../../services/rrule_service.dart';
+import '../../services/time_service.dart';
 import '../../utils/date_utils.dart';
 import '../widgets/day_detail_sheet.dart';
 import '../widgets/category_filter_widget.dart';
@@ -19,7 +20,7 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  DateTime _focusedDay = DateTime.now();
+  DateTime _focusedDay = TimeService.instance.nowLocal();
   DateTime? _selectedDay;
   String _selectedCategory = 'All';
   CalendarFormat _calendarFormat = CalendarFormat.month;

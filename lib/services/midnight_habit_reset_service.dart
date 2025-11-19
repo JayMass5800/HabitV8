@@ -6,6 +6,7 @@ import 'notification_service.dart';
 import 'widget_integration_service.dart';
 import 'rrule_service.dart';
 import 'logging_service.dart';
+import 'time_service.dart';
 
 /// Service responsible for resetting habits at midnight based on their frequency
 /// This replaces the complex renewal system with a simple, predictable midnight reset
@@ -14,6 +15,7 @@ class MidnightHabitResetService {
   static Timer? _midnightTimer;
   static bool _isInitialized = false;
   static const String _lastResetKey = 'last_midnight_reset';
+  static final TimeService _time = TimeService.instance;
 
   /// Initialize the midnight reset service
   static Future<void> initialize() async {
@@ -42,8 +44,8 @@ class MidnightHabitResetService {
     _midnightTimer?.cancel();
 
     // Calculate time until next midnight
-    final now = DateTime.now();
-    final nextMidnight = DateTime(now.year, now.month, now.day + 1, 0, 0, 0);
+    final now = _time.nowLocal();
+    final nextMidnight = _time.nextMidnightLocal(from: now);
     final timeUntilMidnight = nextMidnight.difference(now);
 
     AppLogger.info(
@@ -65,15 +67,14 @@ class MidnightHabitResetService {
   static Future<void> _checkMissedReset() async {
     try {
             final lastResetStr = await PreferencesService.getString(_lastResetKey);
-      final now = DateTime.now();
+          final now = _time.nowLocal();
 
       if (lastResetStr != null) {
         final lastReset = DateTime.parse(lastResetStr);
 
         // Check if we've crossed midnight since the last reset
-        final lastResetDate =
-            DateTime(lastReset.year, lastReset.month, lastReset.day);
-        final currentDate = DateTime(now.year, now.month, now.day);
+        final lastResetDate = _time.startOfDayLocal(lastReset);
+        final currentDate = _time.startOfDayLocal(now);
 
         if (currentDate.isAfter(lastResetDate)) {
           AppLogger.info(
@@ -97,7 +98,7 @@ class MidnightHabitResetService {
   /// or an actual scheduled midnight reset
   static Future<void> _performMidnightReset({bool isCatchUp = false}) async {
     try {
-      final now = DateTime.now();
+      final now = _time.nowLocal();
       final resetType = isCatchUp ? 'CATCH-UP' : 'SCHEDULED MIDNIGHT';
       AppLogger.info(
           '🌙 Performing $resetType habit reset at ${now.hour}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}');
@@ -278,7 +279,7 @@ class MidnightHabitResetService {
 
   /// Get service status
   static Map<String, dynamic> getStatus() {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final nextMidnight = DateTime(now.year, now.month, now.day + 1, 0, 0, 0);
     final timeUntilMidnight = nextMidnight.difference(now);
 

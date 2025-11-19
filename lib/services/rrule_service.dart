@@ -1,6 +1,7 @@
 import 'package:rrule/rrule.dart';
 import '../domain/model/habit.dart';
 import 'logging_service.dart';
+import 'time_service.dart';
 
 /// Centralized service for all RRule (Recurrence Rule) operations.
 /// Handles conversion, generation, parsing, and validation of RRule patterns.
@@ -10,6 +11,7 @@ import 'logging_service.dart';
 class RRuleService {
   // Cache for parsed RRule objects to improve performance
   static final Map<String, RecurrenceRule> _rruleCache = {};
+  static final TimeService _time = TimeService.instance;
 
   /// Convert a legacy Habit to an RRule string
   ///
@@ -187,19 +189,9 @@ class RRuleService {
       final rule = parseRRule(rruleString, startDate);
       if (rule == null) return [];
 
-      // Convert to UTC as required by rrule package
-      // Preserve time components from input if already in UTC, otherwise extract date parts
-      final start =
-          DateTime.utc(startDate.year, startDate.month, startDate.day);
-
-      final rangeStartUtc = rangeStart.isUtc
-          ? rangeStart
-          : DateTime.utc(rangeStart.year, rangeStart.month, rangeStart.day);
-
-      final rangeEndUtc = rangeEnd.isUtc
-          ? rangeEnd
-          : DateTime.utc(
-              rangeEnd.year, rangeEnd.month, rangeEnd.day, 23, 59, 59);
+      final start = _time.toUtc(startDate);
+      final rangeStartUtc = _time.startOfDayUtc(rangeStart);
+      final rangeEndUtc = _time.endOfDayUtc(rangeEnd);
 
       // Get instances starting from the habit start date
       final instances = rule.getInstances(start: start);
@@ -248,11 +240,8 @@ class RRuleService {
     required DateTime checkDate,
   }) {
     try {
-      // Normalize dates to start of day in local time to avoid timezone issues
-      // CRITICAL: Keep everything in local time - don't convert to UTC
-      final dayStart = DateTime(checkDate.year, checkDate.month, checkDate.day);
-      final dayEnd =
-          DateTime(checkDate.year, checkDate.month, checkDate.day, 23, 59, 59);
+      final dayStart = _time.startOfDayLocal(checkDate);
+      final dayEnd = _time.endOfDayLocal(checkDate);
 
       final occurrences = getOccurrences(
         rruleString: rruleString,
@@ -329,9 +318,8 @@ class RRuleService {
       final rule = parseRRule(rruleString, startDate);
       if (rule == null) return [];
 
-      // Convert to UTC as required by rrule package
-      final now = DateTime.now();
-      final start = DateTime.utc(now.year, now.month, now.day);
+      final now = _time.nowLocal();
+      final start = _time.toUtc(now);
 
       final occurrences = rule.getInstances(start: start).take(count).toList();
 

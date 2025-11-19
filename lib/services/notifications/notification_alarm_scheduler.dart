@@ -3,6 +3,7 @@ import '../logging_service.dart';
 import '../alarm_service.dart';
 import '../permission_service.dart';
 import '../rrule_service.dart';
+import '../time_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_helpers.dart';
 import 'notification_core.dart';
@@ -21,6 +22,8 @@ class NotificationAlarmScheduler {
   /// Singleton instance
   static final NotificationAlarmScheduler instance =
       NotificationAlarmScheduler._();
+
+  final TimeService _time = TimeService.instance;
 
   // ==================== MAIN ENTRY POINT ====================
 
@@ -150,14 +153,11 @@ class NotificationAlarmScheduler {
     AppLogger.debug('Scheduling daily alarm for ${habit.name}');
 
     // Calculate next alarm time
-    tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime nextAlarm = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
+    final now = _time.nowLocal();
+    DateTime nextAlarm = _time.combineDateWithTime(
+      now,
+      hour: hour,
+      minute: minute,
     );
 
     // If the time has passed today, schedule for tomorrow
@@ -206,8 +206,8 @@ class NotificationAlarmScheduler {
     final alarmSoundUri = _normalizeAlarmSoundUri(habit);
 
     for (int weekday in selectedWeekdays) {
-      tz.TZDateTime baseTime = tz.TZDateTime.now(tz.local);
-      tz.TZDateTime nextAlarm =
+      final baseTime = _time.nowLocal();
+      final nextAlarm =
           _getNextWeekdayDateTime(baseTime, weekday, hour, minute);
 
       try {
@@ -245,7 +245,7 @@ class NotificationAlarmScheduler {
     int minute,
   ) async {
     AppLogger.debug('Scheduling monthly alarms for ${habit.name}');
-    final now = DateTime.now();
+    final now = _time.nowLocal();
 
     final selectedMonthDays = habit.selectedMonthDays;
     if (selectedMonthDays.isEmpty) {
@@ -299,7 +299,7 @@ class NotificationAlarmScheduler {
     int minute,
   ) async {
     AppLogger.debug('Scheduling yearly alarms for ${habit.name}');
-    final now = DateTime.now();
+    final now = _time.nowLocal();
 
     final selectedYearlyDates = habit.selectedYearlyDates;
     if (selectedYearlyDates.isEmpty) {
@@ -364,7 +364,7 @@ class NotificationAlarmScheduler {
     }
 
     final singleDateTime = habit.singleDateTime!;
-    final now = DateTime.now();
+    final now = _time.nowLocal();
 
     // Check if date/time is in the past
     if (singleDateTime.isBefore(now)) {
@@ -401,7 +401,7 @@ class NotificationAlarmScheduler {
 
   /// Schedule hourly habit alarms
   Future<void> _scheduleHourlyHabitAlarms(Habit habit) async {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final selectedWeekdays = habit.selectedWeekdays;
     final hourlyTimes = habit.hourlyTimes;
 
@@ -478,8 +478,8 @@ class NotificationAlarmScheduler {
 
         // Schedule alarm for each selected weekday
         for (final weekday in selectedWeekdays) {
-          tz.TZDateTime baseTime = tz.TZDateTime.now(tz.local);
-          tz.TZDateTime nextAlarm =
+          final baseTime = _time.nowLocal();
+          final nextAlarm =
               _getNextWeekdayDateTime(baseTime, weekday, hour, minute);
 
           await AlarmService.scheduleExactAlarm(
@@ -516,19 +516,16 @@ class NotificationAlarmScheduler {
   ///
   /// Given a base time and a target weekday (1=Monday, 7=Sunday),
   /// calculates the next occurrence of that weekday at the specified hour/minute.
-  tz.TZDateTime _getNextWeekdayDateTime(
-    tz.TZDateTime baseTime,
+  DateTime _getNextWeekdayDateTime(
+    DateTime baseTime,
     int targetWeekday,
     int hour,
     int minute,
   ) {
-    tz.TZDateTime scheduled = tz.TZDateTime(
-      tz.local,
-      baseTime.year,
-      baseTime.month,
-      baseTime.day,
-      hour,
-      minute,
+    DateTime scheduled = _time.combineDateWithTime(
+      baseTime,
+      hour: hour,
+      minute: minute,
     );
 
     // If today is the target weekday but time has passed, or if it's a different weekday,
@@ -565,7 +562,7 @@ class NotificationAlarmScheduler {
     try {
       // Use the same 14-day look-ahead as notification scheduler
       // to prevent hitting Android's 500 concurrent alarm limit
-      final now = DateTime.now();
+      final now = _time.nowLocal();
       final startDate = habit.dtStart ?? now;
       final rangeEnd = now.add(const Duration(days: 14));
 
@@ -591,7 +588,7 @@ class NotificationAlarmScheduler {
 
       // Schedule alarm for each valid occurrence
       int scheduledCount = 0;
-      final nowTz = tz.TZDateTime.now(tz.local);
+      final nowTz = _time.nowLocal();
 
       for (final occurrence in occurrences) {
         final scheduledTime = _resolveOccurrenceTzDateTime(
@@ -687,7 +684,7 @@ class NotificationAlarmScheduler {
       fallbackHour,
       fallbackMinute,
     );
-    return tz.TZDateTime.from(resolved, tz.local);
+    return _time.toLocal(resolved) as tz.TZDateTime;
   }
 
   DateTime _resolveOccurrenceDateTime(

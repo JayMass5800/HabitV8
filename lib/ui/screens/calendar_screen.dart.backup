@@ -5,6 +5,7 @@ import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/calendar_service.dart';
 import '../../services/rrule_service.dart';
+import '../../services/time_service.dart';
 import '../../utils/date_utils.dart';
 import '../widgets/day_detail_sheet.dart';
 import '../widgets/category_filter_widget.dart';
@@ -19,7 +20,8 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  DateTime _focusedDay = DateTime.now();
+  final TimeService _time = TimeService.instance;
+  DateTime _focusedDay = TimeService.instance.nowLocal();
   String _selectedCategory = 'All';
 
   @override
@@ -442,7 +444,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildCalendarDay(DateTime day, List<Habit> habits) {
     final isCurrentMonth = day.month == _focusedDay.month;
-    final isToday = DateTimeUtils.isSameDay(day, DateTime.now());
+    final isToday = DateTimeUtils.isSameDay(day, _time.nowLocal());
     final events = _getEventsForDay(day, habits);
     final completedCount =
         events.where((habit) => _isHabitCompletedOnDate(habit, day)).length;

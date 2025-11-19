@@ -10,6 +10,7 @@ import 'rrule_service.dart';
 import 'logging_service.dart';
 import 'work_manager_habit_service.dart';
 import 'ios_background_tasks_service.dart';
+import 'time_service.dart';
 
 /// **Reliable Scheduling Service - Production-Grade Midnight Reset**
 ///
@@ -66,6 +67,7 @@ class ReliableSchedulingService {
   static bool _isInitialized = false;
   static Timer? _optimisticTimer;
   static String? _currentTimezone;
+  static final TimeService _time = TimeService.instance;
 
   /// Initialize the reliable scheduling service
   static Future<void> initialize() async {
@@ -79,7 +81,7 @@ class ReliableSchedulingService {
           '⏰ Initializing ReliableSchedulingService (Resilient Chain Architecture)');
 
       // Get current timezone for tracking
-      _currentTimezone = DateTime.now().timeZoneName;
+      _currentTimezone = _time.timezoneName;
 
       // Layer 3: Safety net - check for missed resets on app launch
       await _performSafetyNetCheck();
@@ -105,13 +107,12 @@ class ReliableSchedulingService {
       AppLogger.info('🛡️ Layer 3: Running safety net check...');
 
       final lastResetStr = await PreferencesService.getString(_lastResetKey);
-      final now = DateTime.now();
-      final currentDate = DateTime(now.year, now.month, now.day);
+      final now = _time.nowLocal();
+      final currentDate = _time.startOfDayLocal(now);
 
       if (lastResetStr != null) {
         final lastReset = DateTime.parse(lastResetStr);
-        final lastResetDate =
-            DateTime(lastReset.year, lastReset.month, lastReset.day);
+        final lastResetDate = _time.startOfDayLocal(lastReset);
 
         if (currentDate.isAfter(lastResetDate)) {
           final daysMissed = currentDate.difference(lastResetDate).inDays;
@@ -153,7 +154,7 @@ class ReliableSchedulingService {
           '🏗️ Layer 1: Scheduling OS-backed midnight reset task...');
 
       final nextMidnightUtc = _calculateNextMidnightUtc();
-      final now = DateTime.now().toUtc();
+      final now = _time.nowUtc();
       final delay = nextMidnightUtc.difference(now);
 
       AppLogger.info(
@@ -186,8 +187,8 @@ class ReliableSchedulingService {
       _optimisticTimer?.cancel();
 
       // Calculate time until next midnight (local time)
-      final now = DateTime.now();
-      final nextMidnight = DateTime(now.year, now.month, now.day + 1, 0, 0, 0);
+      final now = _time.nowLocal();
+      final nextMidnight = _time.nextMidnightLocal(from: now);
       final delay = nextMidnight.difference(now);
 
       AppLogger.info('⏰ Next local midnight: ${nextMidnight.toIso8601String()} '
@@ -215,15 +216,7 @@ class ReliableSchedulingService {
 
   /// Calculate next midnight in UTC (timezone-safe)
   static DateTime _calculateNextMidnightUtc() {
-    // Get next midnight in LOCAL timezone
-    final now = DateTime.now();
-    final nextMidnightLocal =
-        DateTime(now.year, now.month, now.day + 1, 0, 0, 0);
-
-    // Convert to UTC for scheduling
-    final nextMidnightUtc = nextMidnightLocal.toUtc();
-
-    return nextMidnightUtc;
+    return _time.nextMidnightUtc();
   }
 
   /// Schedule iOS background task via platform channel
@@ -243,7 +236,7 @@ class ReliableSchedulingService {
     required String reason,
   }) async {
     try {
-      final now = DateTime.now();
+      final now = _time.nowLocal();
       AppLogger.info('🌙 PERFORMING MIDNIGHT RESET at ${now.toIso8601String()} '
           'via $method: $reason');
 
@@ -307,7 +300,7 @@ class ReliableSchedulingService {
   /// Check if timezone has changed and handle accordingly
   static Future<void> _checkTimezoneChange() async {
     try {
-      final currentTz = DateTime.now().timeZoneName;
+      final currentTz = _time.timezoneName;
       final lastTz = await PreferencesService.getString(_lastTimezoneKey);
 
       if (lastTz != null && lastTz != currentTz) {
@@ -456,12 +449,12 @@ class ReliableSchedulingService {
   /// Get diagnostic information
   static Future<Map<String, dynamic>> getDiagnostics() async {
     try {
-      final now = DateTime.now();
-      final nextMidnight = DateTime(now.year, now.month, now.day + 1, 0, 0, 0);
+      final now = _time.nowLocal();
+      final nextMidnight = _time.nextMidnightLocal(from: now);
 
       return {
         'isInitialized': _isInitialized,
-        'currentTimezone': _currentTimezone ?? DateTime.now().timeZoneName,
+        'currentTimezone': _currentTimezone ?? _time.timezoneName,
         'lastReset': await PreferencesService.getString(_lastResetKey),
         'lastResetMethod':
             await PreferencesService.getString(_lastResetMethodKey),

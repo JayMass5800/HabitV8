@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/time_service.dart';
 
 /// A widget that optimizes performance by preventing unnecessary rebuilds
 /// when the data hasn't actually changed
@@ -56,19 +57,20 @@ class _PerformanceOptimizedWidgetState<T>
 mixin PerformanceOptimizationMixin<T extends StatefulWidget> on State<T> {
   final Map<String, dynamic> _cache = {};
   final Map<String, DateTime> _cacheTimestamps = {};
+  final TimeService _time = TimeService.instance;
 
   /// Cache a value with an optional expiry duration
   void cacheValue(String key, dynamic value, [Duration? expiry]) {
     _cache[key] = value;
     if (expiry != null) {
-      _cacheTimestamps[key] = DateTime.now().add(expiry);
+      _cacheTimestamps[key] = _time.nowLocal().add(expiry);
     }
   }
 
   /// Get a cached value, returns null if not found or expired
   V? getCachedValue<V>(String key) {
     final timestamp = _cacheTimestamps[key];
-    if (timestamp != null && DateTime.now().isAfter(timestamp)) {
+    if (timestamp != null && _time.nowLocal().isAfter(timestamp)) {
       _cache.remove(key);
       _cacheTimestamps.remove(key);
       return null;
@@ -113,19 +115,20 @@ class DebouncedWidget extends StatefulWidget {
 class _DebouncedWidgetState extends State<DebouncedWidget> {
   Widget? _cachedChild;
   DateTime? _lastUpdateTime;
+  final TimeService _time = TimeService.instance;
 
   @override
   void initState() {
     super.initState();
     _cachedChild = widget.child;
-    _lastUpdateTime = DateTime.now();
+    _lastUpdateTime = _time.nowLocal();
   }
 
   @override
   void didUpdateWidget(DebouncedWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     if (_lastUpdateTime == null ||
         now.difference(_lastUpdateTime!) >= widget.debounceTime) {
       _cachedChild = widget.child;

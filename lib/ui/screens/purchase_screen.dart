@@ -6,6 +6,7 @@ import 'dart:async';
 import '../../services/subscription_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/android_resource_service.dart';
+import '../../services/time_service.dart';
 
 /// Screen for purchasing premium access (one-time purchase)
 class PurchaseScreen extends ConsumerStatefulWidget {
@@ -17,6 +18,7 @@ class PurchaseScreen extends ConsumerStatefulWidget {
 
 class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     with TickerProviderStateMixin {
+  final TimeService _time = TimeService.instance;
   bool _isLoading = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -1015,7 +1017,9 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       if (purchaseDetails.transactionDate != null) {
         final purchaseTime = DateTime.fromMillisecondsSinceEpoch(
             int.parse(purchaseDetails.transactionDate!));
-        final timeDifference = DateTime.now().difference(purchaseTime);
+        final now = _time.nowLocal();
+        final localPurchaseTime = _time.toLocal(purchaseTime);
+        final timeDifference = now.difference(localPurchaseTime);
 
         if (timeDifference.inDays > 30) {
           throw Exception(
@@ -1063,7 +1067,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                 ? 'present'
                 : 'missing',
         'status': purchaseDetails.status.toString(),
-        'timestamp': DateTime.now().toIso8601String(),
+        'timestamp': _time.nowUtc().toIso8601String(),
         'deviceInfo': 'mobile_app', // Could be enhanced with actual device info
       };
 
@@ -1071,7 +1075,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
       final auditJson =
           auditData.entries.map((e) => '${e.key}:${e.value}').join(',');
       await SubscriptionService().storeAuditData(
-        'purchase_audit_${DateTime.now().millisecondsSinceEpoch}',
+        'purchase_audit_${_time.nowUtc().millisecondsSinceEpoch}',
         auditJson,
       );
 

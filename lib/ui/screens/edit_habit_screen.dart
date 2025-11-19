@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:timezone/timezone.dart' as tz;
 import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/notification_service.dart';
@@ -10,6 +9,7 @@ import '../../services/category_suggestion_service.dart';
 import '../../services/alarm_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/permission_service.dart';
+import '../../services/time_service.dart';
 import '../../utils/date_utils.dart';
 import '../widgets/rrule_builder_widget.dart';
 
@@ -23,6 +23,7 @@ class EditHabitScreen extends ConsumerStatefulWidget {
 }
 
 class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
+  final TimeService _time = TimeService.instance;
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
@@ -52,7 +53,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   bool _isSaving = false;
 
   // Calendar-related state variables
-  DateTime _focusedMonth = DateTime.now(); // For calendar navigation
+  DateTime _focusedMonth = TimeService.instance.nowLocal(); // For calendar navigation
   final List<DateTime> _selectedYearlyDates = []; // For yearly habits
   DateTime? _singleDateTime; // For single habits
 
@@ -100,7 +101,9 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
 
     // Initialize RRule state from habit
     _rruleString = widget.habit.rruleString;
-    _rruleStartDate = widget.habit.dtStart ?? DateTime.now();
+    _rruleStartDate = widget.habit.dtStart != null
+      ? _time.toLocal(widget.habit.dtStart!)
+      : _time.nowLocal();
     // Show advanced mode if habit uses RRule
     _useAdvancedMode = widget.habit.usesRRule;
     // Load from new fields first, fall back to old fields for backward compatibility
@@ -638,7 +641,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   }
 
   Widget _buildMonthDaySelector() {
-    final now = tz.TZDateTime.now(tz.local);
+    final now = _time.nowLocal();
     final focusedDay = DateTime(now.year, now.month, 1);
 
     return Container(
@@ -889,7 +892,7 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   }
 
   Widget _buildYearlyCalendarSelector() {
-    final now = tz.TZDateTime.now(tz.local);
+    final now = _time.nowLocal();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1962,12 +1965,12 @@ class _EditHabitScreenState extends ConsumerState<EditHabitScreen> {
   // Helper method for selecting single date/time
   Future<void> _selectSingleDateTime() async {
     // First select date
+    final now = _time.nowLocal();
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate:
-          _singleDateTime ?? DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now()
+      initialDate: _singleDateTime ?? now.add(const Duration(days: 1)),
+      firstDate: now,
+      lastDate: now
           .add(const Duration(days: 365 * 5)), // 5 years into future
       helpText: 'Select the date for this habit',
       builder: (context, child) {

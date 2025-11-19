@@ -1,6 +1,7 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import '../domain/model/habit.dart';
 import 'logging_service.dart';
+import 'time_service.dart';
 import 'notifications/notification_core.dart';
 import 'notifications/notification_helpers.dart';
 import 'notifications/notification_scheduler.dart';
@@ -14,6 +15,7 @@ class NotificationService {
   static late final NotificationScheduler _scheduler;
   static late final NotificationAlarmScheduler _alarmScheduler;
   static late final NotificationBootRescheduler _bootRescheduler;
+  static final TimeService _time = TimeService.instance;
 
   static Future<void> initialize() async {
     await NotificationCore.initialize(
@@ -193,12 +195,13 @@ class NotificationService {
     required DateTime scheduledTime,
     String? payload,
   }) async {
+    final scheduledTimeUtc = _time.toUtc(scheduledTime);
     await _scheduler.scheduleHabitNotification(
       id: id,
       habitId: habitId,
       title: title,
       body: body,
-      scheduledTime: scheduledTime,
+      scheduledTimeUtc: scheduledTimeUtc,
       payload: payload,
     );
   }
@@ -210,12 +213,13 @@ class NotificationService {
     required DateTime scheduledTime,
     String? payload,
   }) async {
+    final scheduledTimeUtc = _time.toUtc(scheduledTime);
     await _scheduler.scheduleHabitNotification(
       id: id,
       habitId: id.toString(),
       title: title,
       body: body,
-      scheduledTime: scheduledTime,
+      scheduledTimeUtc: scheduledTimeUtc,
       payload: payload,
     );
   }

@@ -10,6 +10,7 @@ import '../../services/enhanced_insights_service.dart';
 import '../../services/ai_service.dart';
 import '../../services/achievements_service.dart';
 import '../../services/subscription_service.dart';
+import '../../services/time_service.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/ai_status_banner.dart';
 import '../widgets/enhanced_empty_insights_state.dart';
@@ -35,6 +36,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   final InsightsService _insightsService = InsightsService();
   final EnhancedInsightsService _enhancedInsightsService =
       EnhancedInsightsService();
+  final TimeService _time = TimeService.instance;
 
   // State for lazy loading AI insights to avoid unnecessary API calls
   // AI insights are only loaded when the AI Insights tab is accessed
@@ -2643,7 +2645,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       }
 
       // Calculate weekly completion counts over last 8 weeks
-      final now = DateTime.now();
+      final now = _time.nowLocal();
       final weeklyData = <double>[];
 
       for (int i = 7; i >= 0; i--) {

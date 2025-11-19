@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../domain/model/habit.dart';
+import '../../services/time_service.dart';
+
+final TimeService _time = TimeService.instance;
 
 /// Widget UI component that represents a habit timeline suitable for home screen widgets
 class WidgetTimelineView extends StatelessWidget {
@@ -425,7 +428,7 @@ class WidgetTimelineView extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final today = DateTime(now.year, now.month, now.day);
     final selectedDay = DateTime(date.year, date.month, date.day);
 
@@ -502,7 +505,7 @@ class WidgetTimelineView extends StatelessWidget {
   }
 
   String _getHabitStatus(Habit habit, DateTime date) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final today = DateTime(now.year, now.month, now.day);
     final selectedDay = DateTime(date.year, date.month, date.day);
 
@@ -834,7 +837,7 @@ class CompactWidgetTimelineView extends StatelessWidget {
   }
 
   String _getHabitStatus(Habit habit, DateTime date) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final today = DateTime(now.year, now.month, now.day);
     final selectedDay = DateTime(date.year, date.month, date.day);
 

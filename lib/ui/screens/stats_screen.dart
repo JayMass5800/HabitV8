@@ -7,6 +7,7 @@ import '../../domain/model/habit.dart';
 import '../../domain/model/archived_habit.dart';
 import '../widgets/smooth_transitions.dart';
 import '../widgets/progressive_disclosure.dart';
+import '../../services/time_service.dart';
 
 class StatsScreen extends ConsumerStatefulWidget {
   const StatsScreen({super.key});
@@ -17,6 +18,7 @@ class StatsScreen extends ConsumerStatefulWidget {
 
 class _StatsScreenState extends ConsumerState<StatsScreen>
     with SingleTickerProviderStateMixin {
+  final TimeService _time = TimeService.instance;
   late TabController _tabController;
   List<ArchivedHabit> _archivedHabits = [];
 
@@ -417,7 +419,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   Widget _buildHeatmapGrid(List<Habit> habits) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
 
@@ -1096,7 +1098,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
 
   // Helper methods for data processing
   bool _hasEnoughDataForPeriod(List<Habit> habits, int minDays) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final cutoffDate = now.subtract(Duration(days: minDays));
 
     return habits.any(
@@ -1106,7 +1108,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   Map<String, int> _getWeeklyCompletionData(List<Habit> habits) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
     final data = <String, int>{};
 
@@ -1173,7 +1175,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   int _getArchivedCompletionsForPeriod(ArchivedHabit archived, String period) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     DateTime startDate;
 
     switch (period) {
@@ -1200,7 +1202,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   int _getCompletionsForPeriod(Habit habit, String period) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     DateTime startDate;
 
     switch (period) {
@@ -1253,7 +1255,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   int _getExpectedCompletionsForPeriod(Habit habit, String period) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     int days;
 
     switch (period) {
@@ -1264,7 +1266,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
         days = now.day;
         break;
       case 'year':
-        days = DateTime.now().difference(DateTime(now.year, 1, 1)).inDays + 1;
+        days = now.difference(DateTime(now.year, 1, 1)).inDays + 1;
         break;
       default:
         days = 7;
@@ -1289,7 +1291,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   List<int> _getMonthlyTrendData(List<Habit> habits) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final data = <int>[];
 
     for (int month = 1; month <= 12; month++) {
@@ -1588,7 +1590,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   Map<String, List<int>> _getMonthlyCategoryTrendData(List<Habit> habits) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
     final daysInMonth = lastDayOfMonth.day;
 
@@ -1657,7 +1659,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   Map<String, List<int>> _getYearlyCategoryData(List<Habit> habits) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final categoryData = <String, List<int>>{};
 
     // Initialize categories with empty data for 12 months (active habits)
@@ -1715,7 +1717,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   Map<String, dynamic> _getYearlyOverviewStats(List<Habit> habits) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     int totalCompletions = 0;
     final monthlyCompletions = <int, int>{};
     int daysWithCompletions = 0;
@@ -1784,7 +1786,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   List<double> _getYearlyHeatmapData(List<Habit> habits) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final startOfYear = DateTime(now.year, 1, 1);
     final daysSoFar = now.difference(startOfYear).inDays + 1;
     final heatmapData = <double>[];
@@ -1849,7 +1851,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen>
   }
 
   List<Map<String, dynamic>> _getYearlyMilestones(List<Habit> habits) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final milestones = <Map<String, dynamic>>[];
 
     // Calculate various milestone metrics

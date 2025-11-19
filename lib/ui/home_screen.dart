@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../services/notification_service.dart';
 import '../../data/database_isar.dart';
+import '../services/time_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -12,6 +13,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final TimeService _time = TimeService.instance;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -160,7 +162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           final activeHabits =
                               habits.where((h) => h.isActive).length;
                           final completedToday = habits.where((h) {
-                            final today = DateTime.now();
+                            final today = _time.nowLocal();
                             return h.completions.any((completion) {
                               return completion.year == today.year &&
                                   completion.month == today.month &&

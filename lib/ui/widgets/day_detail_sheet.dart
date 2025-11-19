@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../domain/model/habit.dart';
 import '../../utils/date_utils.dart';
+import '../../services/time_service.dart';
 
 class DayDetailSheet extends StatefulWidget {
   final DateTime selectedDay;
@@ -21,6 +22,7 @@ class DayDetailSheet extends StatefulWidget {
 
 class _DayDetailSheetState extends State<DayDetailSheet>
     with SingleTickerProviderStateMixin {
+  final TimeService _time = TimeService.instance;
   late AnimationController _animationController;
   late Animation<double> _animation;
 
@@ -105,8 +107,9 @@ class _DayDetailSheetState extends State<DayDetailSheet>
         .where((habit) => _isHabitCompletedOnDate(habit, widget.selectedDay))
         .length;
     final totalCount = widget.habits.length;
-    final isToday = DateTimeUtils.isSameDay(widget.selectedDay, DateTime.now());
-    final isPastDay = widget.selectedDay.isBefore(DateTime.now()) && !isToday;
+    final now = _time.nowLocal();
+    final isToday = DateTimeUtils.isSameDay(widget.selectedDay, now);
+    final isPastDay = widget.selectedDay.isBefore(now) && !isToday;
 
     return AnimatedBuilder(
       animation: _animation,

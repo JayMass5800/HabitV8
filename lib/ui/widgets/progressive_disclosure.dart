@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/time_service.dart';
 import 'smooth_transitions.dart';
 
 /// Widget that implements progressive disclosure pattern for complex features
@@ -160,6 +161,7 @@ class _ProgressiveDisclosureState extends State<ProgressiveDisclosure>
 
 /// Specialized progressive disclosure for habit statistics
 class HabitStatsDisclosure extends StatelessWidget {
+  static final TimeService _time = TimeService.instance;
   final String habitName;
   final int currentStreak;
   final double completionRate;
@@ -294,7 +296,7 @@ class HabitStatsDisclosure extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final difference = now.difference(date).inDays;
     
     if (difference == 0) return 'Today';

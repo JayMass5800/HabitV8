@@ -5,8 +5,11 @@
 /// consistency and reduces code duplication.
 library;
 
+import '../services/time_service.dart';
+
 /// Utility class for date and time operations
 class DateTimeUtils {
+  static final TimeService _time = TimeService.instance;
   /// Check if two DateTime objects represent the same calendar day
   ///
   /// Compares year, month, and day, ignoring time components.
@@ -108,14 +111,14 @@ class DateTimeUtils {
   ///
   /// Compares the given date with the current date
   static bool isToday(DateTime date) {
-    return isSameDay(date, DateTime.now());
+    return isSameDay(date, _time.nowLocal());
   }
 
   /// Check if a date is in the past (before today)
   ///
   /// Returns true if the date is before today (not including today)
   static bool isPast(DateTime date) {
-    final today = startOfDay(DateTime.now());
+    final today = startOfDay(_time.nowLocal());
     final compareDate = startOfDay(date);
     return compareDate.isBefore(today);
   }
@@ -124,7 +127,7 @@ class DateTimeUtils {
   ///
   /// Returns true if the date is after today (not including today)
   static bool isFuture(DateTime date) {
-    final today = startOfDay(DateTime.now());
+    final today = startOfDay(_time.nowLocal());
     final compareDate = startOfDay(date);
     return compareDate.isAfter(today);
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/preferences_service.dart';
+import '../../services/time_service.dart';
 import '../screens/ai_settings_screen.dart';
 
 /// Service to show AI insights prompts at appropriate times
@@ -21,7 +22,7 @@ class AIInsightsNotificationService {
         final dismissed = await PreferencesService.getBoolOrDefault(_dismissedKey, false);
     final setupComplete = await PreferencesService.getBoolOrDefault(_setupCompleteKey, false);
     final lastPrompt = await PreferencesService.getIntOrDefault(_lastPromptKey, 0);
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final now = TimeService.instance.nowLocal().millisecondsSinceEpoch;
 
     // Don't show if dismissed or setup is complete
     if (dismissed || setupComplete) return;

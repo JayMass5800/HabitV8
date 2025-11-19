@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/rrule_service.dart';
+import '../../services/time_service.dart';
 import '../../domain/model/habit.dart';
 
 /// RRule Builder Widget - Visual interface for creating recurrence patterns
@@ -35,6 +36,7 @@ class RRuleBuilderWidget extends StatefulWidget {
 }
 
 class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
+  final TimeService _time = TimeService.instance;
   // Mode toggle
   late bool _isAdvancedMode;
 
@@ -75,13 +77,13 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
   @override
   void initState() {
     super.initState();
-    _startDate = widget.initialStartDate ?? DateTime.now();
+    _startDate = widget.initialStartDate ?? _time.nowLocal();
     _isAdvancedMode =
         widget.forceAdvancedMode; // Start in forced mode if requested
 
     // If initialStartDate was provided and is not today, mark as customized
     if (widget.initialStartDate != null) {
-      final today = DateTime.now();
+      final today = _time.nowLocal();
       final initialDate = widget.initialStartDate!;
       _isStartDateCustomized = !(initialDate.year == today.year &&
           initialDate.month == today.month &&
@@ -193,7 +195,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
       }
 
       // Get next 5 occurrences
-      final now = DateTime.now();
+      final now = _time.nowLocal();
       final endDate = now.add(const Duration(days: 365)); // Look ahead 1 year
 
       final occurrences = RRuleService.getOccurrences(
@@ -506,7 +508,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                         initialDate: _startDate,
                         firstDate: DateTime(2020),
                         lastDate:
-                            DateTime.now().add(const Duration(days: 3650)),
+                            _time.nowLocal().add(const Duration(days: 3650)),
                       );
                       if (picked != null && picked != _startDate) {
                         setState(() {
@@ -522,7 +524,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                     tooltip: 'Reset to today',
                     onPressed: () {
                       setState(() {
-                        _startDate = DateTime.now();
+                        _startDate = _time.nowLocal();
                         _isStartDateCustomized = false;
                       });
                       _updatePreview();
@@ -1123,10 +1125,10 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
                         final picked = await showDatePicker(
                           context: context,
                           initialDate: _untilDate ??
-                              DateTime.now().add(const Duration(days: 30)),
-                          firstDate: DateTime.now(),
+                              _time.nowLocal().add(const Duration(days: 30)),
+                          firstDate: _time.nowLocal(),
                           lastDate:
-                              DateTime.now().add(const Duration(days: 3650)),
+                              _time.nowLocal().add(const Duration(days: 3650)),
                         );
                         if (picked != null) {
                           setState(() {
@@ -1230,7 +1232,7 @@ class _RRuleBuilderWidgetState extends State<RRuleBuilderWidget> {
 
   Widget _buildMonthlyCalendarView() {
     // Get the current month to show a realistic calendar layout
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
     final daysInMonth = lastDayOfMonth.day;

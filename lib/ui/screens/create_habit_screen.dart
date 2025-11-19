@@ -9,6 +9,7 @@ import '../../services/comprehensive_habit_suggestions_service.dart';
 import '../../services/alarm_service.dart';
 import '../../services/logging_service.dart';
 import '../../services/permission_service.dart';
+import '../../services/time_service.dart';
 import '../widgets/rrule_builder_widget.dart';
 
 /// Streamlined Create Habit Screen
@@ -29,6 +30,7 @@ class CreateHabitScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
+  final TimeService _time = TimeService.instance;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -44,7 +46,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   // RRule integration (for daily through yearly)
   bool _useAdvancedMode = false;
   String? _rruleString;
-  DateTime _rruleStartDate = DateTime.now();
+  DateTime _rruleStartDate = TimeService.instance.nowLocal();
 
   // Hourly frequency (legacy system)
   final List<TimeOfDay> _hourlyTimes = [];
@@ -53,7 +55,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   // Simple mode selections (converted to RRule on save)
   final Set<int> _simpleWeekdays = {}; // For weekly
   final Set<int> _simpleMonthDays = {}; // For monthly
-  DateTime _focusedMonth = DateTime.now(); // For calendar navigation
+  DateTime _focusedMonth = TimeService.instance.nowLocal(); // For calendar navigation
   final Set<DateTime> _simpleYearlyDates = {}; // For yearly
 
   // Single habit date/time
@@ -799,7 +801,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   }
 
   Widget _buildMonthDayCalendar() {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final focusedDay = DateTime(now.year, now.month, 1);
 
     return Container(
@@ -915,7 +917,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   }
 
   Widget _buildYearlyCalendar() {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1113,11 +1115,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
   }
 
   Future<void> _selectSingleDateTime() async {
+    final now = _time.nowLocal();
     final date = await showDatePicker(
       context: context,
-      initialDate: _singleDateTime ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+      initialDate: _singleDateTime ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365 * 5)),
     );
 
     if (date != null && mounted) {
@@ -1462,7 +1465,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       // Convert TimeOfDay to DateTime if notification time is set
       DateTime? notificationDateTime;
       if (_notificationTime != null) {
-        final now = DateTime.now();
+        final now = _time.nowLocal();
         notificationDateTime = DateTime(
           now.year,
           now.month,
@@ -1795,7 +1798,7 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       }
 
       habit.rruleString = rruleString;
-      habit.dtStart = DateTime.now();
+      habit.dtStart = _time.nowLocal();
       habit.usesRRule = true;
       AppLogger.info('✅ Generated RRule from simple mode: $rruleString');
     } catch (e) {

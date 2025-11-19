@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import '../logging_service.dart';
 import '../rrule_service.dart';
+import '../time_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_core.dart';
 import 'notification_helpers.dart';
@@ -17,6 +18,8 @@ class NotificationScheduler {
   /// Create a notification scheduler
   NotificationScheduler();
 
+  final TimeService _time = TimeService.instance;
+
   // ==================== CORE SCHEDULING METHODS ====================
 
   /// Schedule a habit notification with action buttons
@@ -28,7 +31,7 @@ class NotificationScheduler {
     required String habitId,
     required String title,
     required String body,
-    required DateTime scheduledTime,
+    required DateTime scheduledTimeUtc,
     String? payload,
   }) async {
     // Check and request all notification permissions if needed
@@ -41,8 +44,9 @@ class NotificationScheduler {
       return; // Don't schedule if permissions are denied
     }
 
-    final deviceNow = DateTime.now();
-    final localScheduledTime = scheduledTime.toLocal();
+    final normalizedScheduledUtc = _time.toUtc(scheduledTimeUtc);
+    final localScheduledTime = _time.toLocal(normalizedScheduledUtc);
+    final deviceNow = _time.nowLocal();
 
     // Enhanced time validation and timezone handling
     final timeDiff = localScheduledTime.difference(deviceNow);
@@ -57,13 +61,13 @@ class NotificationScheduler {
       AppLogger.warning(
         '⚠️ Warning: Scheduling time is in the past! Adjusting to 1 minute from now.',
       );
-      final adjustedTime = deviceNow.add(const Duration(minutes: 1));
+      final adjustedTime = _time.ensureFutureLocal(deviceNow);
       return await scheduleHabitNotification(
         id: id,
         habitId: habitId,
         title: title,
         body: body,
-        scheduledTime: adjustedTime,
+        scheduledTimeUtc: _time.toUtc(adjustedTime),
       );
     }
 
@@ -303,13 +307,11 @@ class NotificationScheduler {
     int hour,
     int minute,
   ) async {
-    final now = DateTime.now();
-    DateTime nextNotification = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
+    final now = _time.nowLocal();
+    DateTime nextNotification = _time.combineDateWithTime(
+      now,
+      hour: hour,
+      minute: minute,
     );
 
     // If the time has passed today, schedule for tomorrow
@@ -339,7 +341,7 @@ class NotificationScheduler {
           habitId: habit.id,
           title: '🎯 ${habit.name}',
           body: 'Time to complete your daily habit! Keep your streak going.',
-          scheduledTime: futureNotification,
+          scheduledTimeUtc: _time.toUtc(futureNotification),
         );
         scheduledCount++;
       }
@@ -359,7 +361,7 @@ class NotificationScheduler {
     int hour,
     int minute,
   ) async {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final selectedWeekdays = habit.selectedWeekdays;
 
     if (selectedWeekdays.isEmpty) {
@@ -376,7 +378,7 @@ class NotificationScheduler {
         habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your weekly habit!',
-        scheduledTime: nextNotification,
+        scheduledTimeUtc: _time.toUtc(nextNotification),
       );
     }
 
@@ -391,7 +393,7 @@ class NotificationScheduler {
     int hour,
     int minute,
   ) async {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final selectedMonthDays = habit.selectedMonthDays;
 
     if (selectedMonthDays.isEmpty) {
@@ -409,7 +411,7 @@ class NotificationScheduler {
         habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your monthly habit!',
-        scheduledTime: nextNotification,
+        scheduledTimeUtc: _time.toUtc(nextNotification),
       );
     }
 
@@ -432,7 +434,7 @@ class NotificationScheduler {
       return;
     }
 
-    final now = DateTime.now();
+    final now = _time.nowLocal();
 
     for (final dateStr in selectedYearlyDates) {
       // Parse date string (format: "MM-DD")
@@ -467,7 +469,7 @@ class NotificationScheduler {
         habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your yearly habit!',
-        scheduledTime: nextNotification,
+        scheduledTimeUtc: _time.toUtc(nextNotification),
       );
     }
 
@@ -483,14 +485,14 @@ class NotificationScheduler {
       return;
     }
 
-    final scheduledTime = habit.singleDateTime!;
+    final scheduledTime = _time.toLocal(habit.singleDateTime!);
 
     await scheduleHabitNotification(
       id: NotificationHelpers.generateSafeId(habit.id),
       habitId: habit.id,
       title: '🎯 ${habit.name}',
       body: 'Time to complete your habit!',
-      scheduledTime: scheduledTime,
+      scheduledTimeUtc: _time.toUtc(scheduledTime),
     );
 
     AppLogger.debug(
@@ -524,7 +526,7 @@ class NotificationScheduler {
       return;
     }
 
-    final now = DateTime.now();
+    final now = _time.nowLocal();
 
     for (final timeStr in hourlyTimes) {
       // Parse time string (format: "HH:mm")
@@ -557,7 +559,7 @@ class NotificationScheduler {
           habitId: habitIdWithTimeSlot,
           title: '🎯 ${habit.name}',
           body: 'Time to complete your habit!',
-          scheduledTime: nextNotification,
+          scheduledTimeUtc: _time.toUtc(nextNotification),
         );
       }
     }
@@ -703,7 +705,7 @@ class NotificationScheduler {
       // With multiple habits, this quickly exceeds 500 alarms total.
       // 14 days provides good coverage while staying well under the limit.
       // The midnight reset service will reschedule notifications daily.
-      final now = DateTime.now();
+      final now = _time.nowLocal();
       final startDate = habit.dtStart ?? now;
       final rangeEnd =
           now.add(const Duration(days: 14)); // Look ahead 14 days (was 90)
@@ -734,7 +736,7 @@ class NotificationScheduler {
             habitId: habit.id,
             title: '🎯 ${habit.name}',
             body: 'Time to complete your habit!',
-            scheduledTime: scheduledTime,
+            scheduledTimeUtc: _time.toUtc(scheduledTime),
           );
           scheduledCount++;
         }

@@ -6,6 +6,7 @@ import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/rrule_service.dart';
 import '../../services/logging_service.dart';
+import '../../services/time_service.dart';
 import '../widgets/category_filter_widget.dart';
 import '../widgets/create_habit_fab.dart';
 import '../widgets/smooth_transitions.dart';
@@ -27,8 +28,9 @@ class TimelineScreen extends ConsumerStatefulWidget {
 }
 
 class _TimelineScreenState extends ConsumerState<TimelineScreen> {
+  final TimeService _time = TimeService.instance;
   String _selectedCategory = 'All';
-  DateTime _selectedDate = DateTime.now();
+  DateTime _selectedDate = TimeService.instance.nowLocal();
   bool _isUpdatingHabit = false;
   final Map<String, bool> _optimisticCompletions = {};
 
@@ -597,7 +599,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   }
 
   String _getHabitStatus(Habit habit, DateTime date) {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final today = DateTime(now.year, now.month, now.day);
     final selectedDay = DateTime(date.year, date.month, date.day);
 
@@ -708,11 +710,12 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   }
 
   Future<void> _selectDate() async {
+    final now = _time.nowLocal();
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      firstDate: now.subtract(const Duration(days: 365)),
+      lastDate: now.add(const Duration(days: 365)),
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {

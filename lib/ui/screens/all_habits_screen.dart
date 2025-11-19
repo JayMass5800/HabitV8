@@ -5,6 +5,7 @@ import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/logging_service.dart';
 import '../../services/rrule_service.dart';
+import '../../services/time_service.dart';
 
 import '../widgets/loading_widget.dart';
 import '../widgets/create_habit_fab.dart';
@@ -21,6 +22,7 @@ class AllHabitsScreen extends ConsumerStatefulWidget {
 }
 
 class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
+  final TimeService _time = TimeService.instance;
   String _selectedCategory = 'All';
   String _selectedSort = 'Recent';
 
@@ -170,7 +172,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
                         habit.hourlyTimes.isNotEmpty) {
                       return CollapsibleHourlyHabitCard(
                         habit: habit,
-                        selectedDate: DateTime.now(),
+                        selectedDate: _time.nowLocal(),
                         onToggleHourlyCompletion: (habit, timeSlot) =>
                             _toggleHourlyHabitCompletion(habit, timeSlot),
                         isHourlyHabitCompletedAtTime:
@@ -310,7 +312,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
   }
 
   void _toggleHourlyHabitCompletion(Habit habit, TimeOfDay timeSlot) async {
-    final now = DateTime.now();
+    final now = _time.nowLocal();
     final targetDateTime = DateTime(
       now.year,
       now.month,
@@ -417,7 +419,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
     }
 
     // For non-hourly habits, check if completed today
-    final today = DateTime.now();
+    final today = _time.nowLocal();
     final isCompletedToday = habit.completions.any((completion) {
       return completion.year == today.year &&
           completion.month == today.month &&
