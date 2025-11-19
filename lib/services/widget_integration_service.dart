@@ -135,7 +135,7 @@ class WidgetIntegrationService {
   /// Clean up old widget-specific preferences since widgets now follow app theme
   Future<void> _cleanupOldWidgetPreferences() async {
     try {
-            // Remove old widget-specific theme and color preferences
+      // Remove old widget-specific theme and color preferences
       await PreferencesService.remove('widget_theme_mode');
       await PreferencesService.remove('widget_primary_color');
       await PreferencesService.remove('widget_auto_refresh');
@@ -572,8 +572,9 @@ class WidgetIntegrationService {
           '✅ Found habit: ${habit.name} (frequency: ${habit.frequency})');
 
       // For hourly habits, complete the next pending time slot
-      // For other habits, complete with current time
+      // For other habits, toggle completion (complete <-> incomplete)
       DateTime completionTime = DateTime.now();
+      bool shouldUncomplete = false;
 
       if (habit.frequency == HabitFrequency.hourly &&
           habit.hourlyTimes.isNotEmpty) {
@@ -612,11 +613,30 @@ class WidgetIntegrationService {
           await instance.updateAllWidgets();
           return;
         }
+      } else {
+        // Regular habit - check if already completed today to toggle
+        final now = DateTime.now();
+        final isCompletedToday = habit.completions.any((completion) =>
+            completion.year == now.year &&
+            completion.month == now.month &&
+            completion.day == now.day);
+
+        if (isCompletedToday) {
+          shouldUncomplete = true;
+          debugPrint('🔄 Toggling habit: Uncompleting ${habit.name}');
+        } else {
+          debugPrint('🔄 Toggling habit: Completing ${habit.name}');
+        }
       }
 
-      // Add completion using habit service for proper transaction handling
-      await habitService.markHabitComplete(habitId, completionTime);
-      debugPrint('✅ Habit marked as complete in database at $completionTime');
+      // Update database using habit service for proper transaction handling
+      if (shouldUncomplete) {
+        await habitService.removeHabitCompletion(habitId, completionTime);
+        debugPrint('✅ Habit uncompleted in database');
+      } else {
+        await habitService.markHabitComplete(habitId, completionTime);
+        debugPrint('✅ Habit marked as complete in database at $completionTime');
+      }
 
       // **2. EXPLICIT WIDGET REFRESH (THE KEY STEP):**
       // Following the example pattern - update widgets with new data

@@ -27,6 +27,11 @@ class AIService {
   String? _geminiApiKey;
   bool _isInitialized = false;
 
+  // Cache keys
+  static const String _insightsCacheKey = 'ai_insights_cache';
+  static const String _insightsCacheTimeKey = 'ai_insights_cache_time';
+  static const Duration _cacheDuration = Duration(hours: 6);
+
   /// Initialize API keys from secure storage
   Future<void> initializeApiKeys() async {
     if (_isInitialized) return;
@@ -130,11 +135,21 @@ class AIService {
 
   /// Generate AI-powered insights using OpenAI GPT
   Future<List<Map<String, dynamic>>> generateOpenAIInsights(
-    List<Habit> habits,
-  ) async {
+    List<Habit> habits, {
+    bool forceRefresh = false,
+  }) async {
     debugPrint(
-        '🚨 OpenAI: generateOpenAIInsights invoked with ${habits.length} habits');
+        '🚨 OpenAI: generateOpenAIInsights invoked with ${habits.length} habits (forceRefresh: $forceRefresh)');
     await initializeApiKeys(); // Ensure keys are loaded
+
+    // Check cache first if not forcing refresh
+    if (!forceRefresh) {
+      final cached = await _getCachedInsights();
+      if (cached != null) {
+        debugPrint('🚨 OpenAI: Returning cached insights');
+        return cached;
+      }
+    }
 
     if (_openAiApiKey == null || _openAiApiKey!.isEmpty) {
       debugPrint('🚨 OpenAI: API key missing, returning fallback insights');
@@ -183,6 +198,7 @@ class AIService {
 3. Identify concrete temporal patterns with specific days/times
 4. Provide actionable recommendations tailored to individual habit performance
 5. Be highly personal and specific, as if you're their dedicated coach
+6. Identify correlations between habits (e.g., "You tend to miss 'Reading' when you miss 'Meditation'")
 
 Focus on individual habit details, not just aggregates. Find the weakest link and strongest performer. Spot momentum trends and correlations. Consider difficulty vs. performance.''',
             },
@@ -243,6 +259,12 @@ Provide insights in this exact JSON format:
           final parsedInsights = _parseAIResponse(content);
           debugPrint('🚨 OpenAI: Parsed ${parsedInsights.length} insights');
           _logger.i('Parsed ${parsedInsights.length} insights from OpenAI');
+
+          // Cache the successful response
+          if (parsedInsights.isNotEmpty) {
+            await _cacheInsights(parsedInsights);
+          }
+
           for (var i = 0; i < parsedInsights.length; i++) {
             _logger.i('Insight ${i + 1}: ${parsedInsights[i]['title']}');
           }
@@ -291,11 +313,21 @@ Provide insights in this exact JSON format:
 
   /// Generate AI insights using Google Gemini
   Future<List<Map<String, dynamic>>> generateGeminiInsights(
-    List<Habit> habits,
-  ) async {
+    List<Habit> habits, {
+    bool forceRefresh = false,
+  }) async {
     debugPrint(
-        '🚨 Gemini: generateGeminiInsights invoked with ${habits.length} habits');
+        '🚨 Gemini: generateGeminiInsights invoked with ${habits.length} habits (forceRefresh: $forceRefresh)');
     await initializeApiKeys(); // Ensure keys are loaded
+
+    // Check cache first if not forcing refresh
+    if (!forceRefresh) {
+      final cached = await _getCachedInsights();
+      if (cached != null) {
+        debugPrint('🚨 Gemini: Returning cached insights');
+        return cached;
+      }
+    }
 
     if (_geminiApiKey == null || _geminiApiKey!.isEmpty) {
       debugPrint('🚨 Gemini: API key missing, returning fallback insights');
@@ -343,6 +375,7 @@ CRITICAL REQUIREMENTS:
 3. IDENTIFY CONCRETE PATTERNS - cite specific days/times when habits succeed or fail
 4. GIVE ACTIONABLE RECOMMENDATIONS - suggest specific changes based on individual habit performance
 5. BE PERSONAL AND SPECIFIC - as if you're their personal coach who knows their exact routine
+6. IDENTIFY CORRELATIONS - "You tend to miss 'Reading' when you miss 'Meditation'"
 
 ANALYSIS FRAMEWORK:
 - Look at INDIVIDUAL habit details, not just aggregates
@@ -402,6 +435,12 @@ Provide insights in this exact JSON format:
           final parsedInsights = _parseAIResponse(content);
           debugPrint('🚨 Gemini: Parsed ${parsedInsights.length} insights');
           _logger.i('Parsed ${parsedInsights.length} insights from Gemini');
+
+          // Cache the successful response
+          if (parsedInsights.isNotEmpty) {
+            await _cacheInsights(parsedInsights);
+          }
+
           for (var i = 0; i < parsedInsights.length; i++) {
             _logger.i('Insight ${i + 1}: ${parsedInsights[i]['title']}');
           }
@@ -1047,6 +1086,61 @@ ${_getRecentTrends(activeHabits)}
           'icon': 'emoji_events',
         },
       ];
+    }
+  }
+
+  /// Get cached insights if valid
+  Future<List<Map<String, dynamic>>?> _getCachedInsights() async {
+    try {
+      final cacheTimeStr =
+          await _secureStorage.read(key: _insightsCacheTimeKey);
+      if (cacheTimeStr == null) return null;
+
+      final cacheTime = DateTime.parse(cacheTimeStr);
+      if (DateTime.now().difference(cacheTime) > _cacheDuration) {
+        _logger.i('Cached insights expired');
+        return null;
+      }
+
+      final cachedData = await _secureStorage.read(key: _insightsCacheKey);
+      if (cachedData == null) return null;
+
+      final List<dynamic> decoded = jsonDecode(cachedData);
+      _logger
+          .i('Returning cached insights from ${cacheTime.toIso8601String()}');
+      return decoded.cast<Map<String, dynamic>>();
+    } catch (e) {
+      _logger.e('Error reading cached insights: $e');
+      return null;
+    }
+  }
+
+  /// Cache generated insights
+  Future<void> _cacheInsights(List<Map<String, dynamic>> insights) async {
+    try {
+      await _secureStorage.write(
+        key: _insightsCacheKey,
+        value: jsonEncode(insights),
+      );
+      await _secureStorage.write(
+        key: _insightsCacheTimeKey,
+        value: DateTime.now().toIso8601String(),
+      );
+      _logger.i('Insights cached successfully');
+    } catch (e) {
+      _logger.e('Error caching insights: $e');
+    }
+  }
+
+  /// Get the timestamp of the last cached insights
+  Future<DateTime?> getLastInsightsTime() async {
+    try {
+      final cacheTimeStr =
+          await _secureStorage.read(key: _insightsCacheTimeKey);
+      if (cacheTimeStr == null) return null;
+      return DateTime.parse(cacheTimeStr);
+    } catch (e) {
+      return null;
     }
   }
 

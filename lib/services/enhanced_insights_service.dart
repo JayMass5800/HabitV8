@@ -20,18 +20,20 @@ class EnhancedInsightsService {
     List<Habit> habits, {
     bool useAI = true,
     String? preferredAIProvider,
+    bool forceRefresh = false,
   }) async {
     // VERY FIRST LINE - synchronous print before ANY async operations
     debugPrint(
         '🚨 METHOD ENTRY: generateComprehensiveInsights called with ${habits.length} habits');
-    debugPrint('🚨 useAI=$useAI, preferredAIProvider=$preferredAIProvider');
+    debugPrint(
+        '🚨 useAI=$useAI, preferredAIProvider=$preferredAIProvider, forceRefresh=$forceRefresh');
 
     // Synchronous log to confirm method is called
     _logger.i(
         '🔍 🚀 SYNC: generateComprehensiveInsights ENTRY POINT - Method called');
     _logger.i('🔍 EnhancedInsightsService.generateComprehensiveInsights START');
     _logger.i(
-        '🔍 Parameters: habits=${habits.length}, useAI=$useAI, provider=$preferredAIProvider');
+        '🔍 Parameters: habits=${habits.length}, useAI=$useAI, provider=$preferredAIProvider, forceRefresh=$forceRefresh');
     final insights = <Map<String, dynamic>>[];
 
     // Always get rule-based insights as a baseline with error handling
@@ -125,21 +127,25 @@ class EnhancedInsightsService {
         if (preferredAIProvider?.toLowerCase() == 'gemini' &&
             availableProviders.contains('Gemini')) {
           _logger.i('Using preferred Gemini provider');
-          aiInsights = await _aiService.generateGeminiInsights(habits);
+          aiInsights = await _aiService.generateGeminiInsights(habits,
+              forceRefresh: forceRefresh);
         } else if (preferredAIProvider?.toLowerCase() == 'openai' &&
             availableProviders.contains('OpenAI')) {
           _logger.i('Using preferred OpenAI provider');
-          aiInsights = await _aiService.generateOpenAIInsights(habits);
+          aiInsights = await _aiService.generateOpenAIInsights(habits,
+              forceRefresh: forceRefresh);
         } else if (availableProviders.contains('OpenAI')) {
           // Fallback to OpenAI if available
           _logger.i(
               'Preferred provider $preferredAIProvider not available, falling back to OpenAI');
-          aiInsights = await _aiService.generateOpenAIInsights(habits);
+          aiInsights = await _aiService.generateOpenAIInsights(habits,
+              forceRefresh: forceRefresh);
         } else if (availableProviders.contains('Gemini')) {
           // Fallback to Gemini if available
           _logger.i(
               'Preferred provider $preferredAIProvider not available, falling back to Gemini');
-          aiInsights = await _aiService.generateGeminiInsights(habits);
+          aiInsights = await _aiService.generateGeminiInsights(habits,
+              forceRefresh: forceRefresh);
         } else {
           // No providers available, this shouldn't happen given aiConfigured check
           _logger

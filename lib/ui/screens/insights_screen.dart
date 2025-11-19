@@ -7,6 +7,7 @@ import '../../data/database_isar.dart';
 import '../../domain/model/habit.dart';
 import '../../services/insights_service.dart';
 import '../../services/enhanced_insights_service.dart';
+import '../../services/ai_service.dart';
 import '../../services/achievements_service.dart';
 import '../../services/subscription_service.dart';
 import '../widgets/smooth_transitions.dart';
@@ -38,6 +39,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   // State for lazy loading AI insights to avoid unnecessary API calls
   // AI insights are only loaded when the AI Insights tab is accessed
   bool _aiInsightsRequested = false;
+  bool _shouldForceRefresh = false;
   Future<List<Map<String, dynamic>>>? _aiInsightsFuture;
 
   // AI Status state for conditional visibility
@@ -123,16 +125,17 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
   }
 
   /// Load AI insights only when requested (lazy loading)
-  void _loadAIInsights() {
+  void _loadAIInsights({bool forceRefresh = false}) {
     _logger.d(
         '🔍 _loadAIInsights() called - Current state: _aiInsightsRequested=$_aiInsightsRequested, _aiInsightsFuture is null: ${_aiInsightsFuture == null}');
-    if (!_aiInsightsRequested && mounted) {
+    if (mounted) {
       setState(() {
         _aiInsightsRequested = true;
         _aiInsightsFuture = null; // Force new generation
+        _shouldForceRefresh = forceRefresh;
       });
       _logger.d(
-          '🔍 State updated: _aiInsightsRequested=true, _aiInsightsFuture set to null');
+          '🔍 State updated: _aiInsightsRequested=true, _aiInsightsFuture set to null, forceRefresh=$forceRefresh');
     }
   }
 
@@ -1100,8 +1103,11 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
       _logger.d(
           '🔍 _aiInsightsFuture IS NULL, calling generateComprehensiveInsights');
       _aiInsightsFuture =
-          _enhancedInsightsService.generateComprehensiveInsights(habits)
-            ..then((value) {
+          _enhancedInsightsService.generateComprehensiveInsights(
+        habits,
+        forceRefresh: _shouldForceRefresh,
+      )..then((value) {
+              _shouldForceRefresh = false; // Reset after call
               _logger.d('🔍 ✅ Future completed with ${value.length} insights');
               return value;
             }).catchError((error) {
@@ -1239,6 +1245,28 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              if (_enhancedInsightsService.isAIAvailable)
+                FutureBuilder<DateTime?>(
+                  future: AIService().getLastInsightsTime(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData && snapshot.data != null) {
+                      final time = snapshot.data!;
+                      final timeStr =
+                          '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 2.0),
+                        child: Text(
+                          'Last updated: $timeStr',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
               Text(
                 _enhancedInsightsService.isAIAvailable
                     ? 'Personalized AI recommendations and discoveries'
@@ -1250,6 +1278,16 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
             ],
           ),
         ),
+        if (_enhancedInsightsService.isAIAvailable)
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Insights',
+            onPressed: () {
+              setState(() {
+                _shouldForceRefresh = true;
+              });
+            },
+          ),
         PopupMenuButton<String>(
           icon: Icon(
             Icons.more_vert,

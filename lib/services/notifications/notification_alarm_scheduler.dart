@@ -696,51 +696,54 @@ class NotificationAlarmScheduler {
     int fallbackHour,
     int fallbackMinute,
   ) {
-    final localOccurrence = occurrence.toLocal();
+    // CRITICAL FIX: RRule occurrences are in UTC.
+    // If we convert to local directly, we might shift the day and get a time component
+    // (e.g. midnight UTC -> 7pm previous day EST).
+    // We should treat the UTC occurrence as "floating" time (date components only)
+    // unless it has a specific time set in the RRule.
 
-    if (_hasTimeComponent(localOccurrence)) {
-      return localOccurrence;
-    }
+    // Check if the occurrence is exactly midnight UTC (implies date-only RRule)
+    final isMidnightUtc = occurrence.hour == 0 &&
+        occurrence.minute == 0 &&
+        occurrence.second == 0 &&
+        occurrence.millisecond == 0 &&
+        occurrence.microsecond == 0;
 
-    final notificationTime = habit.notificationTime;
-    if (notificationTime != null) {
+    if (isMidnightUtc) {
+      // It's a date-only occurrence (e.g. FREQ=DAILY).
+      // Use the date from the occurrence, but apply the habit's notification time.
+      final notificationTime = habit.notificationTime;
+      if (notificationTime != null) {
+        return DateTime(
+          occurrence.year,
+          occurrence.month,
+          occurrence.day,
+          notificationTime.hour,
+          notificationTime.minute,
+        );
+      }
+
+      // Fallback if no notification time
       return DateTime(
-        localOccurrence.year,
-        localOccurrence.month,
-        localOccurrence.day,
-        notificationTime.hour,
-        notificationTime.minute,
+        occurrence.year,
+        occurrence.month,
+        occurrence.day,
+        fallbackHour,
+        fallbackMinute,
       );
     }
 
-    final dtStart = habit.dtStart?.toLocal();
-    if (dtStart != null && _hasTimeComponent(dtStart)) {
-      return DateTime(
-        localOccurrence.year,
-        localOccurrence.month,
-        localOccurrence.day,
-        dtStart.hour,
-        dtStart.minute,
-        dtStart.second,
-        dtStart.millisecond,
-        dtStart.microsecond,
-      );
-    }
-
+    // If it's NOT midnight UTC, the RRule has a specific time (e.g. BYHOUR=10).
+    // We treat this as floating time (local time).
     return DateTime(
-      localOccurrence.year,
-      localOccurrence.month,
-      localOccurrence.day,
-      fallbackHour,
-      fallbackMinute,
+      occurrence.year,
+      occurrence.month,
+      occurrence.day,
+      occurrence.hour,
+      occurrence.minute,
+      occurrence.second,
+      occurrence.millisecond,
+      occurrence.microsecond,
     );
-  }
-
-  bool _hasTimeComponent(DateTime value) {
-    return value.hour != 0 ||
-        value.minute != 0 ||
-        value.second != 0 ||
-        value.millisecond != 0 ||
-        value.microsecond != 0;
   }
 }

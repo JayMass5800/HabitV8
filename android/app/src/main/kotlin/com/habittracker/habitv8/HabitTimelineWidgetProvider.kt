@@ -418,7 +418,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         // Send the completion action to Flutter via home_widget
         val backgroundPendingIntent = HomeWidgetBackgroundIntent.getBroadcast(
             context,
-            Uri.parse("habitv8://habit/complete?id=$habitId")
+            Uri.parse("habitv8://complete_habit?habitId=$habitId")
         )
         try {
             backgroundPendingIntent.send()
