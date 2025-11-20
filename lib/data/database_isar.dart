@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -154,14 +155,36 @@ class HabitServiceIsar {
 
   /// Add new habit
   Future<void> addHabit(Habit habit) async {
+    // DIAGNOSTIC: Log BEFORE Isar save
+    debugPrint('🔍 BEFORE ISAR SAVE - Habit: ${habit.name}');
+    debugPrint('🔍 notificationTime: ${habit.notificationTime}');
+    debugPrint('🔍 notificationTime.isUtc: ${habit.notificationTime?.isUtc}');
+    debugPrint('🔍 notificationTime.hour: ${habit.notificationTime?.hour}');
+    debugPrint('🔍 notificationTime.minute: ${habit.notificationTime?.minute}');
+
     await _isar.writeTxn(() async {
       await _isar.habits.put(habit);
     });
+
+    // DIAGNOSTIC: Read back and log AFTER Isar save
+    final savedHabit = await _isar.habits.get(habit.id);
+    debugPrint('🔍 AFTER ISAR SAVE - Habit: ${savedHabit?.name}');
+    debugPrint('🔍 notificationTime: ${savedHabit?.notificationTime}');
+    debugPrint(
+        '🔍 notificationTime.isUtc: ${savedHabit?.notificationTime?.isUtc}');
+    debugPrint(
+        '🔍 notificationTime.hour: ${savedHabit?.notificationTime?.hour}');
+    debugPrint(
+        '🔍 notificationTime.minute: ${savedHabit?.notificationTime?.minute}');
+
     AppLogger.info('✅ Habit added: ${habit.name}');
     AppLogger.info('   Notification time: ${habit.notificationTime}');
-    AppLogger.info('   Notification time isUtc: ${habit.notificationTime?.isUtc}');
-    AppLogger.info('   Notification time hour: ${habit.notificationTime?.hour}');
-    AppLogger.info('   Notification time minute: ${habit.notificationTime?.minute}');
+    AppLogger.info(
+        '   Notification time isUtc: ${habit.notificationTime?.isUtc}');
+    AppLogger.info(
+        '   Notification time hour: ${habit.notificationTime?.hour}');
+    AppLogger.info(
+        '   Notification time minute: ${habit.notificationTime?.minute}');
     AppLogger.info('   Alarm enabled: ${habit.alarmEnabled}');
     AppLogger.info('   RRule: ${habit.rruleString}');
     AppLogger.info('   dtStart: ${habit.dtStart}');
@@ -172,10 +195,14 @@ class HabitServiceIsar {
         // Re-read the habit from database to see if Isar changed it
         final savedHabit = await getHabitById(habit.id);
         if (savedHabit != null) {
-          AppLogger.info('   After Isar save - Notification time: ${savedHabit.notificationTime}');
-          AppLogger.info('   After Isar save - isUtc: ${savedHabit.notificationTime?.isUtc}');
-          AppLogger.info('   After Isar save - hour: ${savedHabit.notificationTime?.hour}');
-          AppLogger.info('   After Isar save - minute: ${savedHabit.notificationTime?.minute}');
+          AppLogger.info(
+              '   After Isar save - Notification time: ${savedHabit.notificationTime}');
+          AppLogger.info(
+              '   After Isar save - isUtc: ${savedHabit.notificationTime?.isUtc}');
+          AppLogger.info(
+              '   After Isar save - hour: ${savedHabit.notificationTime?.hour}');
+          AppLogger.info(
+              '   After Isar save - minute: ${savedHabit.notificationTime?.minute}');
         }
         await NotificationService.scheduleHabitNotifications(habit,
             isNewHabit: true);
