@@ -1681,7 +1681,8 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
     return true;
   }
 
-  void _generateRRuleFromSimpleMode(Habit habit, DateTime? notificationDateTime) {
+  void _generateRRuleFromSimpleMode(
+      Habit habit, DateTime? notificationDateTime) {
     try {
       String rruleString;
 
@@ -1814,10 +1815,12 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       // This prevents timezone conversion issues where midnight local converts to non-midnight UTC
       if (notificationDateTime != null) {
         habit.dtStart = notificationDateTime;
-        AppLogger.info('✅ Using notificationDateTime for dtStart: $notificationDateTime');
+        AppLogger.info(
+            '✅ Using notificationDateTime for dtStart: $notificationDateTime');
       } else {
         habit.dtStart = _time.startOfDayLocal(_time.nowLocal());
-        AppLogger.info('✅ Using start of day for dtStart (no notification time set)');
+        AppLogger.info(
+            '✅ Using start of day for dtStart (no notification time set)');
       }
       habit.usesRRule = true;
       AppLogger.info('✅ Generated RRule from simple mode: $rruleString');

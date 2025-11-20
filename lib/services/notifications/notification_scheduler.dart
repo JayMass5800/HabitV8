@@ -810,7 +810,8 @@ class NotificationScheduler {
         localOccurrence.millisecond == 0 &&
         localOccurrence.microsecond == 0;
 
-    debugPrint('🔍 isMidnightUtc=$isMidnightUtc, isMidnightLocal=$isMidnightLocal');
+    debugPrint(
+        '🔍 isMidnightUtc=$isMidnightUtc, isMidnightLocal=$isMidnightLocal');
 
     if (isMidnightUtc || isMidnightLocal) {
       // It's a date-only occurrence (e.g. FREQ=DAILY).
