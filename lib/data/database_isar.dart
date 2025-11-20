@@ -167,7 +167,7 @@ class HabitServiceIsar {
     });
 
     // DIAGNOSTIC: Read back and log AFTER Isar save
-    final savedHabit = await _isar.habits.get(habit.id);
+    final savedHabit = await _isar.habits.filter().idEqualTo(habit.id).findFirst();
     debugPrint('🔍 AFTER ISAR SAVE - Habit: ${savedHabit?.name}');
     debugPrint('🔍 notificationTime: ${savedHabit?.notificationTime}');
     debugPrint(

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:flutter/foundation.dart';
 import '../logging_service.dart';
 import '../rrule_service.dart';
 import '../time_service.dart';
@@ -47,6 +48,10 @@ class NotificationScheduler {
     final normalizedScheduledUtc = _time.toUtc(scheduledTimeUtc);
     final localScheduledTime = _time.toLocal(normalizedScheduledUtc);
     final deviceNow = _time.nowLocal();
+
+    debugPrint('🔍 scheduleHabitNotification received scheduledTimeUtc: $scheduledTimeUtc (hour: ${scheduledTimeUtc.hour}, minute: ${scheduledTimeUtc.minute})');
+    debugPrint('🔍 After normalizedScheduledUtc: $normalizedScheduledUtc (hour: ${normalizedScheduledUtc.hour}, minute: ${normalizedScheduledUtc.minute})');
+    debugPrint('🔍 After toLocal conversion: $localScheduledTime (hour: ${localScheduledTime.hour}, minute: ${localScheduledTime.minute})');
 
     // Enhanced time validation and timezone handling
     final timeDiff = localScheduledTime.difference(deviceNow);
@@ -96,6 +101,8 @@ class NotificationScheduler {
       localScheduledTime.millisecond,
       localScheduledTime.microsecond,
     );
+    
+    debugPrint('🔍 Final scheduledDateTime for notification: $scheduledDateTime (hour: ${scheduledDateTime.hour}, minute: ${scheduledDateTime.minute})');
 
     final payloadJson =
         payload ?? jsonEncode({'habitId': habitId, 'type': 'habit_reminder'});
@@ -181,6 +188,13 @@ class NotificationScheduler {
     Habit habit, {
     bool isNewHabit = false,
   }) async {
+    // DIAGNOSTIC: Log what we receive
+    debugPrint('🔍 SCHEDULING - Habit: ${habit.name}');
+    debugPrint('🔍 notificationTime received: ${habit.notificationTime}');
+    debugPrint('🔍 notificationTime.isUtc: ${habit.notificationTime?.isUtc}');
+    debugPrint('🔍 notificationTime.hour: ${habit.notificationTime?.hour}');
+    debugPrint('🔍 notificationTime.minute: ${habit.notificationTime?.minute}');
+    
     AppLogger.debug(
       'Starting notification scheduling for habit: ${habit.name} (isNewHabit: $isNewHabit)',
     );
@@ -749,7 +763,12 @@ class NotificationScheduler {
         final scheduledTime =
             _resolveOccurrenceDateTime(habit, occurrence, hour, minute);
 
+        debugPrint('🔍 Resolved scheduledTime: $scheduledTime (hour: ${scheduledTime.hour}, minute: ${scheduledTime.minute})');
+        
         if (scheduledTime.isAfter(now)) {
+          final scheduledTimeUtc = _time.toUtc(scheduledTime);
+          debugPrint('🔍 After toUtc conversion: $scheduledTimeUtc (hour: ${scheduledTimeUtc.hour}, minute: ${scheduledTimeUtc.minute})');
+          
           await scheduleHabitNotification(
             id: NotificationHelpers.generateSafeId(
               '${habit.id}_${scheduledTime.toIso8601String()}',
@@ -757,7 +776,7 @@ class NotificationScheduler {
             habitId: habit.id,
             title: '🎯 ${habit.name}',
             body: 'Time to complete your habit!',
-            scheduledTimeUtc: _time.toUtc(scheduledTime),
+            scheduledTimeUtc: scheduledTimeUtc,
           );
           scheduledCount++;
         }
