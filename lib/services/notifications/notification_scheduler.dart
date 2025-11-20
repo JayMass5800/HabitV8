@@ -26,13 +26,15 @@ class NotificationScheduler {
   /// Schedule a habit notification with action buttons
   ///
   /// This is the core scheduling method used by all frequency-specific schedulers.
-  /// Handles timezone conversion, permission checks, and validation.
+  /// Handles permission checks and validation.
+  ///
+  /// [scheduledTime] should be a local DateTime (not UTC).
   Future<void> scheduleHabitNotification({
     required int id,
     required String habitId,
     required String title,
     required String body,
-    required DateTime scheduledTimeUtc,
+    required DateTime scheduledTime,
     String? payload,
   }) async {
     // Check and request all notification permissions if needed
@@ -45,18 +47,15 @@ class NotificationScheduler {
       return; // Don't schedule if permissions are denied
     }
 
-    final normalizedScheduledUtc = _time.toUtc(scheduledTimeUtc);
-    final localScheduledTime = _time.toLocal(normalizedScheduledUtc);
-    final deviceNow = _time.nowLocal();
+    final deviceNow = DateTime.now();
 
-    debugPrint('🔍 scheduleHabitNotification received scheduledTimeUtc: $scheduledTimeUtc (hour: ${scheduledTimeUtc.hour}, minute: ${scheduledTimeUtc.minute})');
-    debugPrint('🔍 After normalizedScheduledUtc: $normalizedScheduledUtc (hour: ${normalizedScheduledUtc.hour}, minute: ${normalizedScheduledUtc.minute})');
-    debugPrint('🔍 After toLocal conversion: $localScheduledTime (hour: ${localScheduledTime.hour}, minute: ${localScheduledTime.minute})');
+    debugPrint(
+        '🔍 scheduleHabitNotification received scheduledTime: $scheduledTime (hour: ${scheduledTime.hour}, minute: ${scheduledTime.minute})');
 
-    // Enhanced time validation and timezone handling
-    final timeDiff = localScheduledTime.difference(deviceNow);
+    // Enhanced time validation
+    final timeDiff = scheduledTime.difference(deviceNow);
     AppLogger.debug('Device current time: $deviceNow');
-    AppLogger.debug('Target scheduled time: $localScheduledTime');
+    AppLogger.debug('Target scheduled time: $scheduledTime');
     AppLogger.debug(
       'Time until notification: ${timeDiff.inSeconds} seconds (${timeDiff.inMinutes} minutes)',
     );
@@ -66,13 +65,13 @@ class NotificationScheduler {
       AppLogger.warning(
         '⚠️ Warning: Scheduling time is in the past! Adjusting to 1 minute from now.',
       );
-      final adjustedTime = _time.ensureFutureLocal(deviceNow);
+      final adjustedTime = deviceNow.add(const Duration(minutes: 1));
       return await scheduleHabitNotification(
         id: id,
         habitId: habitId,
         title: title,
         body: body,
-        scheduledTimeUtc: _time.toUtc(adjustedTime),
+        scheduledTime: adjustedTime,
       );
     }
 
@@ -88,24 +87,11 @@ class NotificationScheduler {
       );
     }
 
-    // CRITICAL FIX: Convert TZDateTime to regular DateTime for awesome_notifications compatibility
-    // NotificationCalendar.fromDate() expects regular DateTime in local time, not TZDateTime
-    // TZDateTime gets misinterpreted as UTC, causing double timezone conversion
-    final scheduledDateTime = DateTime(
-      localScheduledTime.year,
-      localScheduledTime.month,
-      localScheduledTime.day,
-      localScheduledTime.hour,
-      localScheduledTime.minute,
-      localScheduledTime.second,
-      localScheduledTime.millisecond,
-      localScheduledTime.microsecond,
-    );
-    
-    debugPrint('🔍 Final scheduledDateTime for notification: $scheduledDateTime (hour: ${scheduledDateTime.hour}, minute: ${scheduledDateTime.minute})');
-
     final payloadJson =
         payload ?? jsonEncode({'habitId': habitId, 'type': 'habit_reminder'});
+
+    debugPrint(
+        '🔍 Scheduling notification for: $scheduledTime (hour: ${scheduledTime.hour}, minute: ${scheduledTime.minute})');
 
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
@@ -133,7 +119,7 @@ class NotificationScheduler {
         ),
       ],
       schedule: NotificationCalendar.fromDate(
-        date: scheduledDateTime,
+        date: scheduledTime,
         preciseAlarm:
             true, // Enable precise timing (requires exact alarm permission)
         allowWhileIdle: true, // Allow notification even in doze mode
@@ -144,7 +130,7 @@ class NotificationScheduler {
     // Boot rescheduling queries habits directly from Isar database
 
     AppLogger.info(
-      '✅ Scheduled notification ID $id for habit $habitId at $localScheduledTime',
+      '✅ Scheduled notification ID $id for habit $habitId at $scheduledTime',
     );
   }
 
@@ -194,7 +180,7 @@ class NotificationScheduler {
     debugPrint('🔍 notificationTime.isUtc: ${habit.notificationTime?.isUtc}');
     debugPrint('🔍 notificationTime.hour: ${habit.notificationTime?.hour}');
     debugPrint('🔍 notificationTime.minute: ${habit.notificationTime?.minute}');
-    
+
     AppLogger.debug(
       'Starting notification scheduling for habit: ${habit.name} (isNewHabit: $isNewHabit)',
     );
@@ -371,7 +357,7 @@ class NotificationScheduler {
           habitId: habit.id,
           title: '🎯 ${habit.name}',
           body: 'Time to complete your daily habit! Keep your streak going.',
-          scheduledTimeUtc: _time.toUtc(futureNotification),
+          scheduledTime: futureNotification,
         );
         scheduledCount++;
       }
@@ -408,7 +394,7 @@ class NotificationScheduler {
         habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your weekly habit!',
-        scheduledTimeUtc: _time.toUtc(nextNotification),
+        scheduledTime: nextNotification,
       );
     }
 
@@ -441,7 +427,7 @@ class NotificationScheduler {
         habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your monthly habit!',
-        scheduledTimeUtc: _time.toUtc(nextNotification),
+        scheduledTime: nextNotification,
       );
     }
 
@@ -499,7 +485,7 @@ class NotificationScheduler {
         habitId: habit.id,
         title: '🎯 ${habit.name}',
         body: 'Time to complete your yearly habit!',
-        scheduledTimeUtc: _time.toUtc(nextNotification),
+        scheduledTime: nextNotification,
       );
     }
 
@@ -518,11 +504,11 @@ class NotificationScheduler {
     final scheduledTime = _time.toLocal(habit.singleDateTime!);
 
     await scheduleHabitNotification(
-      id: NotificationHelpers.generateSafeId(habit.id),
+      id: NotificationHelpers.generateSafeId('${habit.id}_single'),
       habitId: habit.id,
       title: '🎯 ${habit.name}',
       body: 'Time to complete your habit!',
-      scheduledTimeUtc: _time.toUtc(scheduledTime),
+      scheduledTime: scheduledTime,
     );
 
     AppLogger.debug(
@@ -589,7 +575,7 @@ class NotificationScheduler {
           habitId: habitIdWithTimeSlot,
           title: '🎯 ${habit.name}',
           body: 'Time to complete your habit!',
-          scheduledTimeUtc: _time.toUtc(nextNotification),
+          scheduledTime: nextNotification,
         );
       }
     }
@@ -763,20 +749,18 @@ class NotificationScheduler {
         final scheduledTime =
             _resolveOccurrenceDateTime(habit, occurrence, hour, minute);
 
-        debugPrint('🔍 Resolved scheduledTime: $scheduledTime (hour: ${scheduledTime.hour}, minute: ${scheduledTime.minute})');
-        
+        debugPrint(
+            '🔍 Resolved scheduledTime: $scheduledTime (hour: ${scheduledTime.hour}, minute: ${scheduledTime.minute})');
+
         if (scheduledTime.isAfter(now)) {
-          final scheduledTimeUtc = _time.toUtc(scheduledTime);
-          debugPrint('🔍 After toUtc conversion: $scheduledTimeUtc (hour: ${scheduledTimeUtc.hour}, minute: ${scheduledTimeUtc.minute})');
-          
           await scheduleHabitNotification(
             id: NotificationHelpers.generateSafeId(
               '${habit.id}_${scheduledTime.toIso8601String()}',
             ),
             habitId: habit.id,
             title: '🎯 ${habit.name}',
-            body: 'Time to complete your habit!',
-            scheduledTimeUtc: scheduledTimeUtc,
+            body: 'Time to work on your habit!',
+            scheduledTime: scheduledTime,
           );
           scheduledCount++;
         }
@@ -797,6 +781,13 @@ class NotificationScheduler {
     int fallbackHour,
     int fallbackMinute,
   ) {
+    debugPrint('🔍 _resolveOccurrenceDateTime called');
+    debugPrint('🔍 occurrence: $occurrence (isUtc=${occurrence.isUtc})');
+    debugPrint(
+        '🔍 occurrence.hour=${occurrence.hour}, minute=${occurrence.minute}');
+    debugPrint('🔍 habit.notificationTime=${habit.notificationTime}');
+    debugPrint('🔍 fallbackHour=$fallbackHour, fallbackMinute=$fallbackMinute');
+
     // CRITICAL FIX: RRule occurrences are in UTC.
     // If we convert to local directly, we might shift the day and get a time component
     // (e.g. midnight UTC -> 7pm previous day EST).
@@ -810,18 +801,38 @@ class NotificationScheduler {
         occurrence.millisecond == 0 &&
         occurrence.microsecond == 0;
 
-    if (isMidnightUtc) {
+    // CRITICAL FIX: Also check for local midnight to handle timezone conversion issues
+    // When dtStart is set to local midnight, it converts to non-midnight UTC (e.g., 08:00 UTC for PST)
+    final localOccurrence = occurrence.toLocal();
+    final isMidnightLocal = localOccurrence.hour == 0 &&
+        localOccurrence.minute == 0 &&
+        localOccurrence.second == 0 &&
+        localOccurrence.millisecond == 0 &&
+        localOccurrence.microsecond == 0;
+
+    debugPrint('🔍 isMidnightUtc=$isMidnightUtc, isMidnightLocal=$isMidnightLocal');
+
+    if (isMidnightUtc || isMidnightLocal) {
       // It's a date-only occurrence (e.g. FREQ=DAILY).
       // Use the date from the occurrence, but apply the habit's notification time.
+      // CRITICAL: Convert UTC occurrence to local time first to get correct date
+      debugPrint('🔍 Inside _resolveOccurrenceDateTime: isMidnightUtc=true');
+      debugPrint('🔍 localOccurrence: $localOccurrence');
       final notificationTime = habit.notificationTime;
+      debugPrint('🔍 habit.notificationTime: $notificationTime');
+      debugPrint('🔍 notificationTime == null? ${notificationTime == null}');
       if (notificationTime != null) {
+        debugPrint(
+            '🔍 Using notificationTime.hour=${notificationTime.hour}, minute=${notificationTime.minute}');
         final resolved = DateTime(
-          occurrence.year,
-          occurrence.month,
-          occurrence.day,
+          localOccurrence.year,
+          localOccurrence.month,
+          localOccurrence.day,
           notificationTime.hour,
           notificationTime.minute,
         );
+        debugPrint(
+            '🔍 Resolved DateTime: $resolved (hour=${resolved.hour}, minute=${resolved.minute})');
         AppLogger.debug(
           'Resolved occurrence: ${occurrence.toIso8601String()} + time(${notificationTime.hour}:${notificationTime.minute}) = ${resolved.toIso8601String()}',
         );
@@ -829,26 +840,29 @@ class NotificationScheduler {
       }
 
       // Fallback if no notification time
+      debugPrint(
+          '🔍 No notificationTime, using fallback: hour=$fallbackHour, minute=$fallbackMinute');
       return DateTime(
-        occurrence.year,
-        occurrence.month,
-        occurrence.day,
+        localOccurrence.year,
+        localOccurrence.month,
+        localOccurrence.day,
         fallbackHour,
         fallbackMinute,
       );
     }
 
-    // If it's NOT midnight UTC, the RRule has a specific time (e.g. BYHOUR=10).
+    // If it's NOT midnight UTC or local, the RRule has a specific time (e.g. BYHOUR=10).
     // We treat this as floating time (local time).
+    // Note: localOccurrence already declared above
     return DateTime(
-      occurrence.year,
-      occurrence.month,
-      occurrence.day,
-      occurrence.hour,
-      occurrence.minute,
-      occurrence.second,
-      occurrence.millisecond,
-      occurrence.microsecond,
+      localOccurrence.year,
+      localOccurrence.month,
+      localOccurrence.day,
+      localOccurrence.hour,
+      localOccurrence.minute,
+      localOccurrence.second,
+      localOccurrence.millisecond,
+      localOccurrence.microsecond,
     );
   }
 }
