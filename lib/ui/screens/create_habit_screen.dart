@@ -1473,12 +1473,17 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       DateTime? notificationDateTime;
       if (_notificationTime != null) {
         final now = _time.nowLocal();
+        // CRITICAL: Create a plain DateTime (not TZDateTime) for Isar storage
+        // Isar stores DateTime as-is, so we need local time components
         notificationDateTime = DateTime(
           now.year,
           now.month,
           now.day,
           _notificationTime!.hour,
           _notificationTime!.minute,
+        );
+        AppLogger.info(
+          'Created notificationDateTime: $notificationDateTime (hour: ${notificationDateTime.hour}, minute: ${notificationDateTime.minute}, isUtc: ${notificationDateTime.isUtc})',
         );
       }
 
@@ -1805,7 +1810,9 @@ class _CreateHabitScreenState extends ConsumerState<CreateHabitScreen> {
       }
 
       habit.rruleString = rruleString;
-      habit.dtStart = _time.nowLocal();
+      // CRITICAL FIX: dtStart should be start of today, not current time
+      // This ensures RRule finds occurrences today even if notification time has passed
+      habit.dtStart = _time.startOfDayLocal(_time.nowLocal());
       habit.usesRRule = true;
       AppLogger.info('✅ Generated RRule from simple mode: $rruleString');
     } catch (e) {

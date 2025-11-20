@@ -242,6 +242,8 @@ class NotificationScheduler {
       hour = notificationTime.hour;
       minute = notificationTime.minute;
       AppLogger.debug('Scheduling for $hour:$minute');
+      AppLogger.debug('Full notificationTime: $notificationTime');
+      AppLogger.debug('Is UTC: ${notificationTime.isUtc}');
     } else {
       AppLogger.debug('Using default time for hourly habit');
     }
@@ -724,10 +726,15 @@ class NotificationScheduler {
       final rangeEnd =
           now.add(const Duration(days: 14)); // Look ahead 14 days (was 90)
 
+      // CRITICAL FIX: Start looking from the beginning of today, not from now
+      // This ensures we find occurrences today even if their notification time has passed
+      // The isAfter(now) check below will filter out past times
+      final rangeStart = _time.startOfDayLocal(now);
+
       final occurrences = RRuleService.getOccurrences(
         rruleString: habit.rruleString!,
         startDate: startDate,
-        rangeStart: now,
+        rangeStart: rangeStart,
         rangeEnd: rangeEnd,
       );
 
@@ -789,13 +796,17 @@ class NotificationScheduler {
       // Use the date from the occurrence, but apply the habit's notification time.
       final notificationTime = habit.notificationTime;
       if (notificationTime != null) {
-        return DateTime(
+        final resolved = DateTime(
           occurrence.year,
           occurrence.month,
           occurrence.day,
           notificationTime.hour,
           notificationTime.minute,
         );
+        AppLogger.debug(
+          'Resolved occurrence: ${occurrence.toIso8601String()} + time(${notificationTime.hour}:${notificationTime.minute}) = ${resolved.toIso8601String()}',
+        );
+        return resolved;
       }
 
       // Fallback if no notification time
