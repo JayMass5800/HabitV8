@@ -905,22 +905,30 @@ class WorkManagerHabitService {
     };
 
     try {
+      // CRITICAL FIX: Start looking from the beginning of today, not from now
+      // This ensures we find occurrences today even if their notification time has passed
+      final rangeStart = DateTime(now.year, now.month, now.day);
+
       // Get all occurrences from RRule
       final occurrences = RRuleService.getOccurrences(
         rruleString: habit.rruleString!,
         startDate: habit.dtStart ?? habit.createdAt,
-        rangeStart: now,
+        rangeStart: rangeStart,
         rangeEnd: endDate,
       );
 
       int scheduledCount = 0;
 
       for (final occurrence in occurrences) {
+        // CRITICAL FIX: Convert occurrence to local time first to get correct date
+        // RRule returns UTC times, which may be a different day in local timezone
+        final localOccurrence = occurrence.toLocal();
+
         // Combine occurrence date with notification time
         DateTime scheduledTime = DateTime(
-          occurrence.year,
-          occurrence.month,
-          occurrence.day,
+          localOccurrence.year,
+          localOccurrence.month,
+          localOccurrence.day,
           notificationTime.hour,
           notificationTime.minute,
         );

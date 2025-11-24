@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import '../data/database_isar.dart';
 import '../domain/model/habit.dart';
 // CRITICAL: Import prevents tree-shaking of ScheduledNotificationSchema in release builds
@@ -123,6 +125,29 @@ void callbackDispatcher() {
 
       // Handle both task types - they both do the same thing: update widgets
       if (task == 'widget_background_update' || task == 'widgetUpdate') {
+        // Initialize timezones for RRule calculations
+        try {
+          tz.initializeTimeZones();
+          // Try to set local location based on device timezone
+          // This is critical for RRuleService to work correctly in background
+          final String timeZoneName = DateTime.now().timeZoneName;
+          try {
+            tz.setLocalLocation(tz.getLocation(timeZoneName));
+            debugPrint('✅ [Background] Timezone set to: $timeZoneName');
+          } catch (e) {
+            debugPrint(
+                '⚠️ [Background] Could not set local location from $timeZoneName: $e');
+            // Fallback: Try to find a location with the same offset
+            final offset = DateTime.now().timeZoneOffset;
+            debugPrint(
+                '⚠️ [Background] Attempting to find timezone for offset: $offset');
+            // We can't easily search all locations here without more logic,
+            // but RRuleService might default to UTC if local is not set.
+          }
+        } catch (e) {
+          debugPrint('❌ [Background] Error initializing timezones: $e');
+        }
+
         // Initialize Isar in the background isolate
         final isar = await IsarDatabaseService.getInstance();
         final habitService = HabitServiceIsar(isar);
@@ -241,6 +266,16 @@ Future<bool> _handleAlarmCompletion(Map<String, dynamic>? inputData) async {
     }
 
     debugPrint('🔔 [Background] Completing habit: $habitName (ID: $habitId)');
+
+    // Initialize timezones for RRule calculations
+    try {
+      tz.initializeTimeZones();
+      final String timeZoneName = DateTime.now().timeZoneName;
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } catch (e) {
+      debugPrint(
+          '⚠️ [Background] Error initializing timezones in alarm handler: $e');
+    }
 
     // Initialize Isar in the background isolate
     final isar = await IsarDatabaseService.getInstance();

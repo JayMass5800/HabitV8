@@ -873,6 +873,8 @@ class WidgetIntegrationService {
 
   /// Check if habit is scheduled for a specific date
   bool _isHabitScheduledForDate(Habit habit, DateTime date) {
+    if (!habit.isActive) return false;
+
     // Check if habit uses RRule system
     if (habit.usesRRule && habit.rruleString != null) {
       return RRuleService.isDueOnDate(

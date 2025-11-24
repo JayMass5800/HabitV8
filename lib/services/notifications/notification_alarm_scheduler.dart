@@ -566,12 +566,17 @@ class NotificationAlarmScheduler {
       final startDate = habit.dtStart ?? now;
       final rangeEnd = now.add(const Duration(days: 14));
 
+      // CRITICAL FIX: Start looking from the beginning of today, not from now
+      // This ensures we find occurrences today even if their notification time has passed
+      // The isAfter(now) check below will filter out past times
+      final rangeStart = _time.startOfDayLocal(now);
+
       // CRITICAL: Use RRuleService to get valid occurrences
       // This respects both dtStart and UNTIL from the RRule
       final occurrences = RRuleService.getOccurrences(
         rruleString: habit.rruleString!,
         startDate: startDate,
-        rangeStart: now,
+        rangeStart: rangeStart,
         rangeEnd: rangeEnd,
       );
 
@@ -706,15 +711,31 @@ class NotificationAlarmScheduler {
         occurrence.millisecond == 0 &&
         occurrence.microsecond == 0;
 
-    if (isMidnightUtc) {
+    // CRITICAL FIX: Also check for local midnight to handle timezone conversion issues
+    // When dtStart is set to local midnight, it converts to non-midnight UTC (e.g., 08:00 UTC for PST)
+    final localOccurrence = occurrence.toLocal();
+    final isMidnightLocal = localOccurrence.hour == 0 &&
+        localOccurrence.minute == 0 &&
+        localOccurrence.second == 0 &&
+        localOccurrence.millisecond == 0 &&
+        localOccurrence.microsecond == 0;
+
+    if (isMidnightUtc || isMidnightLocal) {
       // It's a date-only occurrence (e.g. FREQ=DAILY).
-      // Use the date from the occurrence, but apply the habit's notification time.
+      // Use the date from the LOCAL occurrence, but apply the habit's notification time.
+      // CRITICAL: Use localOccurrence to get the correct date in user's timezone
       final notificationTime = habit.notificationTime;
       if (notificationTime != null) {
+        AppLogger.debug(
+          'Resolved alarm occurrence: ${occurrence.toIso8601String()} + '
+          'time(${notificationTime.hour}:${notificationTime.minute}) = '
+          '${localOccurrence.year}-${localOccurrence.month}-${localOccurrence.day} '
+          '${notificationTime.hour}:${notificationTime.minute}',
+        );
         return DateTime(
-          occurrence.year,
-          occurrence.month,
-          occurrence.day,
+          localOccurrence.year,
+          localOccurrence.month,
+          localOccurrence.day,
           notificationTime.hour,
           notificationTime.minute,
         );
@@ -722,25 +743,25 @@ class NotificationAlarmScheduler {
 
       // Fallback if no notification time
       return DateTime(
-        occurrence.year,
-        occurrence.month,
-        occurrence.day,
+        localOccurrence.year,
+        localOccurrence.month,
+        localOccurrence.day,
         fallbackHour,
         fallbackMinute,
       );
     }
 
-    // If it's NOT midnight UTC, the RRule has a specific time (e.g. BYHOUR=10).
+    // If it's NOT midnight UTC or local, the RRule has a specific time (e.g. BYHOUR=10).
     // We treat this as floating time (local time).
     return DateTime(
-      occurrence.year,
-      occurrence.month,
-      occurrence.day,
-      occurrence.hour,
-      occurrence.minute,
-      occurrence.second,
-      occurrence.millisecond,
-      occurrence.microsecond,
+      localOccurrence.year,
+      localOccurrence.month,
+      localOccurrence.day,
+      localOccurrence.hour,
+      localOccurrence.minute,
+      localOccurrence.second,
+      localOccurrence.millisecond,
+      localOccurrence.microsecond,
     );
   }
 }

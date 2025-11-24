@@ -864,6 +864,34 @@ class DataExportImportService {
     }
     habit.usesRRule = json['usesRRule'] as bool? ?? false;
 
+    // CRITICAL FIX: Imported habits may have dtStart=midnight from old logic
+    // If habit uses RRule and has notificationTime, align dtStart with notificationTime
+    // This ensures the timezone fix works correctly for imported habits
+    if (habit.usesRRule &&
+        habit.notificationTime != null &&
+        habit.frequency != HabitFrequency.hourly &&
+        habit.frequency != HabitFrequency.single) {
+      // Check if dtStart is at midnight (old behavior)
+      final dtStartLocal = habit.dtStart?.toLocal();
+      if (dtStartLocal != null &&
+          dtStartLocal.hour == 0 &&
+          dtStartLocal.minute == 0) {
+        // Align dtStart with notificationTime to match new creation logic
+        final notifTime = habit.notificationTime!;
+        habit.dtStart = DateTime(
+          dtStartLocal.year,
+          dtStartLocal.month,
+          dtStartLocal.day,
+          notifTime.hour,
+          notifTime.minute,
+        );
+        AppLogger.info(
+          'Import fix: Aligned dtStart with notificationTime for habit: ${habit.name} '
+          '(${notifTime.hour}:${notifTime.minute})',
+        );
+      }
+    }
+
     return habit;
   }
 
@@ -1036,6 +1064,34 @@ class DataExportImportService {
         case 'Uses RRule':
           habit.usesRRule = value.toLowerCase() == 'true';
           break;
+      }
+    }
+
+    // CRITICAL FIX: Imported habits may have dtStart=midnight from old logic
+    // If habit uses RRule and has notificationTime, align dtStart with notificationTime
+    // This ensures the timezone fix works correctly for imported habits
+    if (habit.usesRRule &&
+        habit.notificationTime != null &&
+        habit.frequency != HabitFrequency.hourly &&
+        habit.frequency != HabitFrequency.single) {
+      // Check if dtStart is at midnight (old behavior)
+      final dtStartLocal = habit.dtStart?.toLocal();
+      if (dtStartLocal != null &&
+          dtStartLocal.hour == 0 &&
+          dtStartLocal.minute == 0) {
+        // Align dtStart with notificationTime to match new creation logic
+        final notifTime = habit.notificationTime!;
+        habit.dtStart = DateTime(
+          dtStartLocal.year,
+          dtStartLocal.month,
+          dtStartLocal.day,
+          notifTime.hour,
+          notifTime.minute,
+        );
+        AppLogger.info(
+          'CSV import fix: Aligned dtStart with notificationTime for habit: ${habit.name} '
+          '(${notifTime.hour}:${notifTime.minute})',
+        );
       }
     }
 
