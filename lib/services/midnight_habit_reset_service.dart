@@ -7,14 +7,22 @@ import 'widget_integration_service.dart';
 import 'rrule_service.dart';
 import 'logging_service.dart';
 import 'time_service.dart';
+import 'notifications/scheduling_reliability_service.dart';
 
 /// Service responsible for resetting habits at midnight based on their frequency
 /// This replaces the complex renewal system with a simple, predictable midnight reset
 /// Also handles widget refresh at midnight to ensure widgets show current day data
+///
+/// Timer Resilience Strategy:
+/// - Uses one-time timers with self-rescheduling (avoids drift)
+/// - Stores timer state in preferences for recovery
+/// - Validates timer is scheduled on app resume
+/// - Falls back to catch-up reset if timer was missed
 class MidnightHabitResetService {
   static Timer? _midnightTimer;
   static bool _isInitialized = false;
   static const String _lastResetKey = 'last_midnight_reset';
+  static const String _timerScheduledKey = 'midnight_timer_scheduled_for';
   static final TimeService _time = TimeService.instance;
 
   /// Initialize the midnight reset service
@@ -37,7 +45,7 @@ class MidnightHabitResetService {
     }
   }
 
-  /// Start the midnight timer
+  /// Start the midnight timer with persistence for resilience
   /// PERFORMANCE: Uses one-time timer with rescheduling instead of periodic
   static Future<void> _startMidnightTimer() async {
     // Cancel existing timer if any
@@ -51,16 +59,68 @@ class MidnightHabitResetService {
     AppLogger.info(
         '⏰ Next midnight reset in: ${timeUntilMidnight.inHours}h ${timeUntilMidnight.inMinutes % 60}m');
 
+    // Store when timer is scheduled for (for resilience checking)
+    await PreferencesService.setString(
+      _timerScheduledKey,
+      nextMidnight.toIso8601String(),
+    );
+
     // PERFORMANCE: Use one-time timer instead of periodic
     // After firing, it reschedules itself for the next midnight
     _midnightTimer = Timer(timeUntilMidnight, () async {
-      await _performMidnightReset();
-
-      // Reschedule for next midnight (recursive pattern)
-      _startMidnightTimer();
+      try {
+        await _performMidnightReset();
+      } catch (e) {
+        AppLogger.error('❌ Error in midnight reset timer callback', e);
+      } finally {
+        // CRITICAL: Always reschedule, even if reset failed
+        // This ensures the timer chain isn't broken
+        await _startMidnightTimer();
+      }
     });
 
     AppLogger.info('🌙 Midnight reset timer scheduled (one-time)');
+  }
+
+  /// Validate that the timer is properly scheduled.
+  /// Call this on app resume to catch cases where timer was killed.
+  static Future<void> validateTimerOnResume() async {
+    try {
+      final scheduledForStr =
+          await PreferencesService.getString(_timerScheduledKey);
+      if (scheduledForStr == null) {
+        AppLogger.warning(
+            '⚠️ No timer scheduled timestamp found, restarting timer');
+        await _startMidnightTimer();
+        return;
+      }
+
+      final scheduledFor = DateTime.parse(scheduledForStr);
+      final now = _time.nowLocal();
+
+      // If scheduled time has passed but timer didn't fire, we missed it
+      if (now.isAfter(scheduledFor)) {
+        AppLogger.warning(
+          '⚠️ Timer was scheduled for ${scheduledFor.toIso8601String()} '
+          'but it\'s now ${now.toIso8601String()} - timer may have been killed',
+        );
+
+        // Perform catch-up reset
+        await _checkMissedReset();
+
+        // Restart timer for next midnight
+        await _startMidnightTimer();
+      } else if (_midnightTimer == null || !_midnightTimer!.isActive) {
+        AppLogger.warning('⚠️ Timer is not active, restarting');
+        await _startMidnightTimer();
+      } else {
+        AppLogger.debug('✅ Midnight timer is active and valid');
+      }
+    } catch (e) {
+      AppLogger.error('❌ Error validating timer on resume', e);
+      // Safety net: restart timer
+      await _startMidnightTimer();
+    }
   }
 
   /// Check if we missed a reset while the app was closed
@@ -77,8 +137,11 @@ class MidnightHabitResetService {
         final currentDate = _time.startOfDayLocal(now);
 
         if (currentDate.isAfter(lastResetDate)) {
+          final daysMissed = currentDate.difference(lastResetDate).inDays;
           AppLogger.info(
-              '📅 Missed reset detected (last: ${lastResetDate.toIso8601String()}, current: ${currentDate.toIso8601String()}), performing catch-up reset');
+              '📅 Missed reset detected (last: ${lastResetDate.toIso8601String()}, '
+              'current: ${currentDate.toIso8601String()}, days missed: $daysMissed), '
+              'performing catch-up reset');
           await _performMidnightReset(isCatchUp: true);
         } else {
           AppLogger.debug('✅ No missed reset - last reset was today');
@@ -93,10 +156,12 @@ class MidnightHabitResetService {
     }
   }
 
-  /// Perform the midnight reset
+  /// Perform the midnight reset with retry logic
   /// [isCatchUp] indicates if this is a catch-up reset (app started after midnight)
   /// or an actual scheduled midnight reset
   static Future<void> _performMidnightReset({bool isCatchUp = false}) async {
+    final failedHabits = <String>[];
+
     try {
       final now = _time.nowLocal();
       final resetType = isCatchUp ? 'CATCH-UP' : 'SCHEDULED MIDNIGHT';
@@ -113,18 +178,25 @@ class MidnightHabitResetService {
           '🔄 Processing ${activeHabits.length} active habits for reset');
 
       int resetCount = 0;
-      int errorCount = 0;
 
       for (final habit in activeHabits) {
-        try {
-          if (_shouldResetHabit(habit, now)) {
-            await _resetHabit(habit);
+        if (_shouldResetHabit(habit, now)) {
+          // Use retry logic for reliability
+          final success = await SchedulingReliabilityService.retryWithBackoff(
+            operation: () => _resetHabit(habit),
+            operationName: 'midnight_reset_${habit.name}',
+            maxAttempts:
+                2, // Fewer retries during midnight (many habits to process)
+          );
+
+          if (success) {
             resetCount++;
-            AppLogger.info('✅ Reset habit: ${habit.name}');
+            AppLogger.debug('✅ Reset habit: ${habit.name}');
+          } else {
+            failedHabits.add(habit.name);
+            AppLogger.error(
+                '❌ Failed to reset habit after retries: ${habit.name}');
           }
-        } catch (e) {
-          errorCount++;
-          AppLogger.error('❌ Error resetting habit: ${habit.name}', e);
         }
       }
 
@@ -137,7 +209,7 @@ class MidnightHabitResetService {
         // Also trigger Android WorkManager update as backup
         try {
           await WidgetIntegrationService.instance.forceWidgetUpdate();
-          AppLogger.info('✅ Android WorkManager widget update triggered');
+          AppLogger.debug('✅ Android WorkManager widget update triggered');
         } catch (e) {
           AppLogger.warning(
               '⚠️ Android WorkManager widget update failed (non-critical): $e');
@@ -160,8 +232,16 @@ class MidnightHabitResetService {
       // Update last reset timestamp
       await PreferencesService.setString(_lastResetKey, now.toIso8601String());
 
+      final errorCount = failedHabits.length;
       AppLogger.info(
           '✅ Midnight reset completed: $resetCount reset, $errorCount errors');
+
+      // Log failures for debugging
+      if (failedHabits.isNotEmpty) {
+        AppLogger.error(
+          '⚠️ MIDNIGHT RESET FAILURES: ${failedHabits.join(", ")}',
+        );
+      }
     } catch (e) {
       AppLogger.error('❌ Error during midnight reset', e);
     }
@@ -270,6 +350,10 @@ class MidnightHabitResetService {
   static Future<void> checkForMissedResetOnAppActive() async {
     try {
       AppLogger.debug('🔍 Checking for missed resets on app activation');
+
+      // Also validate timer is still running
+      await validateTimerOnResume();
+
       await _checkMissedReset();
     } catch (e) {
       AppLogger.error(
@@ -285,6 +369,7 @@ class MidnightHabitResetService {
 
     return {
       'isActive': _isInitialized,
+      'timerActive': _midnightTimer?.isActive ?? false,
       'nextReset': nextMidnight.toIso8601String(),
       'timeUntilReset':
           '${timeUntilMidnight.inHours}h ${timeUntilMidnight.inMinutes % 60}m',

@@ -14,6 +14,7 @@ import 'midnight_habit_reset_service.dart';
 import 'notification_update_coordinator.dart';
 import 'logging_service.dart';
 import 'notifications/notification_action_handler.dart';
+import 'notifications/scheduling_reliability_service.dart';
 import '../data/database_isar.dart';
 
 /// Service that manages app lifecycle events and ensures proper resource cleanup
@@ -182,8 +183,8 @@ class AppLifecycleService with WidgetsBindingObserver {
           // Check if database was changed in background (e.g., notification completion)
           // If so, reload database and trigger invalidation to force stream to emit fresh data
           try {
-                        final hasPendingChanges =
-                await PreferencesService.getBoolOrDefault('pending_database_changes', false);
+            final hasPendingChanges = await PreferencesService.getBoolOrDefault(
+                'pending_database_changes', false);
 
             if (hasPendingChanges) {
               AppLogger.info(
@@ -204,7 +205,8 @@ class AppLifecycleService with WidgetsBindingObserver {
                   '🔄 Re-invalidated habitsStreamIsarProvider to emit fresh data');
 
               // Clear the flag
-              await PreferencesService.setBool('pending_database_changes', false);
+              await PreferencesService.setBool(
+                  'pending_database_changes', false);
               AppLogger.info('✅ Cleared pending_database_changes flag');
             } else {
               AppLogger.debug('ℹ️ No pending database changes detected');
@@ -383,6 +385,10 @@ class AppLifecycleService with WidgetsBindingObserver {
       // Add delay to ensure app is fully resumed and services are ready
       Future.delayed(const Duration(milliseconds: 2000), () async {
         try {
+          // Check for timezone changes that may require rescheduling
+          await SchedulingReliabilityService.checkTimezoneChange();
+
+          // Check for missed resets and validate timer
           await MidnightHabitResetService.checkForMissedResetOnAppActive();
           AppLogger.debug('✅ Missed reset check completed on app resume');
         } catch (e) {

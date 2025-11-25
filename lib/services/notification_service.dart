@@ -8,6 +8,7 @@ import 'notifications/notification_alarm_scheduler.dart';
 import 'notifications/notification_action_handler.dart';
 import 'notifications/notification_boot_rescheduler.dart';
 import 'notifications/notification_validation_service.dart';
+import 'notifications/scheduling_reliability_service.dart';
 
 /// Notification Service Facade - delegates to specialized modules
 class NotificationService {
@@ -24,6 +25,9 @@ class NotificationService {
     _scheduler = NotificationScheduler();
     _alarmScheduler = NotificationAlarmScheduler.instance;
     _bootRescheduler = NotificationBootRescheduler();
+
+    // Initialize the reliability service for health monitoring and retry logic
+    await SchedulingReliabilityService.initialize();
   }
 
   static Future<void> recreateNotificationChannels() async {
@@ -73,12 +77,32 @@ class NotificationService {
           'alarms: ${existingAudit.alarmCount})',
         );
 
-        await cancelHabitNotificationsByHabitId(habit.id);
+        // Use atomic rescheduling with retry for existing habits
+        // For new habits, we can skip the atomic approach since there's nothing to preserve
+        if (!isNewHabit && existingAudit.notificationCount > 0) {
+          final success = await SchedulingReliabilityService.atomicReschedule(
+            habit: habit,
+            scheduleFunction: (h) =>
+                _scheduler.scheduleHabitNotifications(h, isNewHabit: false),
+            cancelFunction: (habitId) =>
+                cancelHabitNotificationsByHabitId(habitId),
+          );
 
-        await _scheduler.scheduleHabitNotifications(
-          habit,
-          isNewHabit: isNewHabit,
-        );
+          if (!success) {
+            AppLogger.warning(
+              'Atomic reschedule failed for ${habit.name}, falling back to standard approach',
+            );
+            // Fall through to standard approach
+            await cancelHabitNotificationsByHabitId(habit.id);
+            await _scheduler.scheduleHabitNotifications(habit,
+                isNewHabit: isNewHabit);
+          }
+        } else {
+          // New habit or no existing notifications - standard approach is fine
+          await cancelHabitNotificationsByHabitId(habit.id);
+          await _scheduler.scheduleHabitNotifications(habit,
+              isNewHabit: isNewHabit);
+        }
 
         final newPending = await getPendingNotifications();
         final newAudit = NotificationValidationService.auditHabitFromSnapshot(
@@ -87,9 +111,15 @@ class NotificationService {
         );
         final newTotal = newAudit.notificationCount + newAudit.alarmCount;
 
-        if (newAudit.notificationCount == 0 && !wantsAlarms) {
+        // Verify scheduling with expected count check
+        final expectedCount =
+            SchedulingReliabilityService.calculateExpectedNotificationCount(
+                habit);
+        if (newAudit.notificationCount == 0 &&
+            !wantsAlarms &&
+            expectedCount > 0) {
           AppLogger.error(
-            'Failed to schedule any notifications for ${habit.name} - no notifications found after scheduling attempt',
+            'Failed to schedule any notifications for ${habit.name} - expected $expectedCount, got 0',
           );
           throw Exception(
             'Notification scheduling verification failed: no notifications were created',
@@ -100,7 +130,7 @@ class NotificationService {
           'Successfully scheduled notifications for ${habit.name}: '
           '$existingTotal → $newTotal '
           '(notifications: ${newAudit.notificationCount}, '
-          'alarms: ${newAudit.alarmCount})',
+          'alarms: ${newAudit.alarmCount}, expected: ~$expectedCount)',
         );
       } else {
         AppLogger.debug(
@@ -113,10 +143,18 @@ class NotificationService {
         );
       }
 
-      await _alarmScheduler.scheduleHabitAlarms(habit);
+      // Schedule alarms with retry logic
+      final alarmSuccess = await SchedulingReliabilityService.retryWithBackoff(
+        operation: () => _alarmScheduler.scheduleHabitAlarms(habit),
+        operationName: 'schedule_alarms_${habit.name}',
+      );
 
       if (wantsAlarms) {
-        AppLogger.info('Alarms refreshed for habit: ${habit.name}');
+        if (alarmSuccess) {
+          AppLogger.info('Alarms refreshed for habit: ${habit.name}');
+        } else {
+          AppLogger.error('Failed to schedule alarms for habit: ${habit.name}');
+        }
       } else {
         AppLogger.debug('Alarms disabled for habit: ${habit.name}');
       }
@@ -130,54 +168,72 @@ class NotificationService {
   }
 
   static Future<void> scheduleHabitNotificationsOnly(Habit habit) async {
-    try {
-      final allPending = await getPendingNotifications();
-      final existingAudit =
-          NotificationValidationService.auditHabitFromSnapshot(
-        habit,
-        allPending,
+    // Use atomic rescheduling with retry logic for reliability
+    // This ensures old notifications are only cancelled AFTER new ones are verified
+    final success = await SchedulingReliabilityService.atomicReschedule(
+      habit: habit,
+      scheduleFunction: (h) async {
+        await _scheduler.scheduleHabitNotifications(h);
+      },
+      cancelFunction: (habitId) async {
+        await _scheduler.cancelHabitNotificationsByHabitId(habitId);
+      },
+    );
+
+    if (!success) {
+      // Atomic reschedule failed - attempt fallback with retry
+      AppLogger.warning(
+        'Atomic reschedule failed for ${habit.name}, attempting fallback...',
       );
-      final existingCount = existingAudit.notificationCount;
 
-      AppLogger.debug(
-        'Rescheduling notifications for ${habit.name}: $existingCount existing',
+      final fallbackSuccess =
+          await SchedulingReliabilityService.retryWithBackoff(
+        operation: () async {
+          // Fallback: traditional cancel-then-schedule with verification
+          final allPending = await getPendingNotifications();
+          final existingAudit =
+              NotificationValidationService.auditHabitFromSnapshot(
+            habit,
+            allPending,
+          );
+          final existingCount = existingAudit.notificationCount;
+
+          AppLogger.debug(
+            'Fallback rescheduling notifications for ${habit.name}: $existingCount existing',
+          );
+
+          await cancelHabitNotificationsByHabitId(habit.id);
+          await _scheduler.scheduleHabitNotifications(habit);
+
+          // Verify at least one notification was successfully scheduled
+          final newPending = await getPendingNotifications();
+          final newAudit = NotificationValidationService.auditHabitFromSnapshot(
+            habit,
+            newPending,
+          );
+          final newCount = newAudit.notificationCount;
+
+          if (newCount == 0 && habit.notificationsEnabled) {
+            throw Exception(
+              'Notification scheduling verification failed: no notifications were created',
+            );
+          }
+
+          AppLogger.info(
+            'Successfully rescheduled notifications for ${habit.name}: $existingCount → $newCount',
+          );
+        },
+        operationName: 'fallback_reschedule_${habit.name}',
       );
 
-      // Cancel existing notifications first
-      await cancelHabitNotificationsByHabitId(habit.id);
-
-      // Attempt to schedule new notifications
-      await _scheduler.scheduleHabitNotifications(habit);
-
-      // Verify at least one notification was successfully scheduled
-      final newPending = await getPendingNotifications();
-      final newAudit = NotificationValidationService.auditHabitFromSnapshot(
-        habit,
-        newPending,
-      );
-      final newCount = newAudit.notificationCount;
-
-      if (newCount == 0) {
+      if (!fallbackSuccess) {
         AppLogger.error(
-          'Failed to schedule any notifications for ${habit.name} - no notifications found after scheduling attempt',
+          'Failed to reschedule notifications for habit: ${habit.name} after all retries',
         );
         throw Exception(
-          'Notification scheduling verification failed: no notifications were created',
+          'Failed to reschedule notifications for ${habit.name} after multiple attempts',
         );
       }
-
-      AppLogger.info(
-        'Successfully rescheduled notifications for ${habit.name}: $existingCount → $newCount',
-      );
-    } catch (e) {
-      AppLogger.error(
-        'Failed to reschedule notifications for habit: ${habit.name}',
-        e,
-      );
-      // Rethrow to notify caller that scheduling failed
-      // Note: Old notifications have already been cancelled at this point
-      // This is a known limitation - consider this a critical failure
-      rethrow;
     }
   }
 
@@ -330,5 +386,70 @@ class NotificationService {
     String habitName,
   ) async {
     await NotificationActionHandlerIsar.handleSnoozeAction(habitId, habitName);
+  }
+
+  // ==================== RELIABILITY & HEALTH ====================
+
+  /// Check if timezone has changed (call on app resume).
+  ///
+  /// Returns true if timezone changed and notifications may need rescheduling.
+  static Future<bool> checkTimezoneChange() async {
+    return await SchedulingReliabilityService.checkTimezoneChange();
+  }
+
+  /// Perform a health check on the notification system.
+  ///
+  /// Returns a report with status, issues, and statistics.
+  static Future<Map<String, dynamic>> performHealthCheck() async {
+    return await SchedulingReliabilityService.performHealthCheck();
+  }
+
+  /// Get scheduling statistics (success rate, retry count, etc.).
+  static Map<String, dynamic> getSchedulingStats() {
+    return SchedulingReliabilityService.getStats();
+  }
+
+  /// Self-heal notifications for habits that have discrepancies.
+  ///
+  /// Audits all provided habits and reschedules those with missing notifications.
+  static Future<int> selfHealNotifications(List<Habit> habits) async {
+    // First, audit all habits
+    final auditResults = await SchedulingReliabilityService.auditHabits(habits);
+
+    // Find habits that need fixing
+    final habitsToFix = habits.where((habit) {
+      if (!habit.notificationsEnabled) return false;
+      final audit = auditResults[habit.id];
+      if (audit == null) return true; // No audit result = needs fixing
+      return !audit.hasNotifications;
+    }).toList();
+
+    if (habitsToFix.isEmpty) {
+      AppLogger.info('🏥 Self-heal: No habits need fixing');
+      return 0;
+    }
+
+    AppLogger.info('🏥 Self-heal: ${habitsToFix.length} habits need fixing');
+
+    return await SchedulingReliabilityService.selfHeal(
+      habitsToFix: habitsToFix,
+      scheduleFunction: (habit) => _scheduler.scheduleHabitNotifications(habit),
+    );
+  }
+
+  /// Generate a collision-resistant notification ID.
+  static int generateCollisionResistantId(String input) {
+    return SchedulingReliabilityService.generateCollisionResistantId(input);
+  }
+
+  /// Get expected notification count for a habit based on its frequency.
+  static int getExpectedNotificationCount(Habit habit) {
+    return SchedulingReliabilityService.calculateExpectedNotificationCount(
+        habit);
+  }
+
+  /// Get recent failure log entries for debugging.
+  static Future<List<String>> getFailureLog() async {
+    return await SchedulingReliabilityService.getFailureLog();
   }
 }
