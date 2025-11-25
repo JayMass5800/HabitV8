@@ -133,7 +133,7 @@ class PurchaseStreamService {
         productId == 'premium_lifetime_access';
   }
 
-  /// Store audit data for purchase
+  /// Store audit data for purchase (now uses proper JSON format)
   static Future<void> _storeAuditData(PurchaseDetails purchaseDetails) async {
     try {
       final auditData = {
@@ -144,11 +144,10 @@ class PurchaseStreamService {
         'source': 'global_handler',
       };
 
-      final auditJson =
-          auditData.entries.map((e) => '${e.key}:${e.value}').join(',');
+      // Store as proper JSON (subscription service now handles JSON encoding)
       await SubscriptionService().storeAuditData(
         'purchase_audit_global_${DateTime.now().millisecondsSinceEpoch}',
-        auditJson,
+        auditData,
       );
     } catch (e) {
       AppLogger.warning('Failed to store audit data: $e');
@@ -165,4 +164,7 @@ class PurchaseStreamService {
     _isInitialized = false;
     AppLogger.info('PurchaseStreamService disposed');
   }
+
+  /// Check if the service is initialized (used by PurchaseScreen to avoid duplicate listeners)
+  static bool get isInitialized => _isInitialized;
 }

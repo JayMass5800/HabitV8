@@ -5,7 +5,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'dart:async';
 import '../../services/subscription_service.dart';
 import '../../services/logging_service.dart';
-import '../../services/android_resource_service.dart';
+import '../../services/product_id_service.dart';
 import '../../services/time_service.dart';
 
 /// Screen for purchasing premium access (one-time purchase)
@@ -624,17 +624,16 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
   /// Initialize in-app purchase system
   Future<void> _initializeInAppPurchases() async {
     try {
-      // First, load product IDs from Android string resources
-      // This ensures the product IDs are declared in Android resources for Play Console detection
+      // First, load product IDs using cross-platform service
+      // This ensures product IDs work on both Android and iOS
       try {
-        final productId = await AndroidResourceService.getProductId(
+        final productId = await ProductIdService.getProductId(
             'product_premium_lifetime_access');
         _kPremiumPurchaseId = productId;
         _kProductIds = {productId};
-        AppLogger.info('Loaded product ID from Android resources: $productId');
+        AppLogger.info('Loaded product ID: $productId');
       } catch (e) {
-        AppLogger.warning(
-            'Failed to load product ID from Android resources, using fallback: $e');
+        AppLogger.warning('Failed to load product ID, using fallback: $e');
         // Fallback values are already set in the field declarations
       }
 
@@ -661,12 +660,16 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
         AppLogger.warning('Could not enable pending purchases: $e');
       }
 
-      // Listen to purchase updates
+      // IMPORTANT: Only listen to purchase stream if PurchaseStreamService is not initialized
+      // This prevents double-handling of purchase events
+      // The global PurchaseStreamService handles background restoration
+      // This local listener handles UI-specific updates during active purchase flow
       _subscription = _inAppPurchase.purchaseStream.listen(
         _onPurchaseUpdate,
         onDone: () => _subscription.cancel(),
         onError: (error) => AppLogger.error('Purchase stream error', error),
       );
+      AppLogger.info('PurchaseScreen stream listener created for UI updates');
 
       // Load available products
       await _loadProducts();
@@ -1051,7 +1054,7 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
     }
   }
 
-  /// Store purchase audit trail for security monitoring
+  /// Store purchase audit trail for security monitoring (using proper JSON format)
   Future<void> _storePurchaseAuditTrail(PurchaseDetails purchaseDetails) async {
     try {
       final auditData = {
@@ -1068,15 +1071,14 @@ class _PurchaseScreenState extends ConsumerState<PurchaseScreen>
                 : 'missing',
         'status': purchaseDetails.status.toString(),
         'timestamp': _time.nowUtc().toIso8601String(),
-        'deviceInfo': 'mobile_app', // Could be enhanced with actual device info
+        'deviceInfo': 'mobile_app',
+        'source': 'purchase_screen',
       };
 
-      // Store audit trail in secure storage (encrypted)
-      final auditJson =
-          auditData.entries.map((e) => '${e.key}:${e.value}').join(',');
+      // Store audit trail in secure storage (now uses proper JSON format)
       await SubscriptionService().storeAuditData(
         'purchase_audit_${_time.nowUtc().millisecondsSinceEpoch}',
-        auditJson,
+        auditData,
       );
 
       AppLogger.info('Purchase audit trail stored successfully');

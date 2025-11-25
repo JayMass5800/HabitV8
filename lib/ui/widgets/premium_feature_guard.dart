@@ -3,8 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/subscription_service.dart';
 
+/// Provider that triggers refresh of subscription status
+final subscriptionRefreshProvider = StateProvider<int>((ref) => 0);
+
 /// Widget that wraps premium features and shows trial/purchase prompts when needed
-class PremiumFeatureGuard extends ConsumerStatefulWidget {
+/// Now reactive - updates automatically when subscription status changes
+class PremiumFeatureGuard extends ConsumerWidget {
   final PremiumFeature feature;
   final Widget child;
   final Widget? lockedWidget;
@@ -21,61 +25,45 @@ class PremiumFeatureGuard extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<PremiumFeatureGuard> createState() =>
-      _PremiumFeatureGuardState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the refresh provider to trigger rebuilds when subscription changes
+    ref.watch(subscriptionRefreshProvider);
 
-class _PremiumFeatureGuardState extends ConsumerState<PremiumFeatureGuard> {
-  bool _isFeatureAvailable = false;
-  bool _isLoading = true;
-  SubscriptionStatus _subscriptionStatus = SubscriptionStatus.trial;
+    // Use the reactive provider
+    final featureAvailableAsync =
+        ref.watch(featureAvailabilityProvider(feature));
+    final subscriptionStatusAsync = ref.watch(subscriptionStatusProvider);
 
-  @override
-  void initState() {
-    super.initState();
-    _checkFeatureAvailability();
+    return featureAvailableAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) =>
+          lockedWidget ??
+          _buildDefaultLockedUI(
+            context,
+            ref,
+            SubscriptionStatus.trialExpired,
+            showRetry: true,
+            onRetry: () => ref.invalidate(featureAvailabilityProvider(feature)),
+          ),
+      data: (isAvailable) {
+        if (isAvailable) {
+          return child;
+        }
+
+        final status = subscriptionStatusAsync.valueOrNull ??
+            SubscriptionStatus.trialExpired;
+        return lockedWidget ?? _buildDefaultLockedUI(context, ref, status);
+      },
+    );
   }
 
-  Future<void> _checkFeatureAvailability() async {
-    final subscriptionService = SubscriptionService();
-
-    try {
-      final isAvailable =
-          await subscriptionService.isFeatureAvailable(widget.feature);
-      final status = await subscriptionService.getSubscriptionStatus();
-
-      if (mounted) {
-        setState(() {
-          _isFeatureAvailable = isAvailable;
-          _subscriptionStatus = status;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isFeatureAvailable = false;
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_isFeatureAvailable) {
-      return widget.child;
-    }
-
-    // Show locked widget or default locked UI
-    return widget.lockedWidget ?? _buildDefaultLockedUI(context);
-  }
-
-  Widget _buildDefaultLockedUI(BuildContext context) {
+  Widget _buildDefaultLockedUI(
+    BuildContext context,
+    WidgetRef ref,
+    SubscriptionStatus status, {
+    bool showRetry = false,
+    VoidCallback? onRetry,
+  }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -118,7 +106,7 @@ class _PremiumFeatureGuardState extends ConsumerState<PremiumFeatureGuard> {
 
           // Title
           Text(
-            widget.customTitle ?? _getDefaultTitle(),
+            customTitle ?? _getDefaultTitle(status),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
@@ -130,7 +118,7 @@ class _PremiumFeatureGuardState extends ConsumerState<PremiumFeatureGuard> {
 
           // Description
           Text(
-            widget.customDescription ?? _getDefaultDescription(),
+            customDescription ?? _getDefaultDescription(status),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurface.withValues(alpha: 0.7),
             ),
@@ -140,18 +128,24 @@ class _PremiumFeatureGuardState extends ConsumerState<PremiumFeatureGuard> {
           const SizedBox(height: 20),
 
           // Status-specific content
-          if (_subscriptionStatus == SubscriptionStatus.trial) ...[
-            _buildTrialExpiredContent(context),
-          ] else if (_subscriptionStatus ==
-              SubscriptionStatus.trialExpired) ...[
-            _buildTrialExpiredContent(context),
+          _buildTrialExpiredContent(context, ref, status),
+
+          // Retry button for error state
+          if (showRetry && onRetry != null) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildTrialExpiredContent(BuildContext context) {
+  Widget _buildTrialExpiredContent(
+      BuildContext context, WidgetRef ref, SubscriptionStatus status) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -161,7 +155,7 @@ class _PremiumFeatureGuardState extends ConsumerState<PremiumFeatureGuard> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: _subscriptionStatus == SubscriptionStatus.trial
+            color: status == SubscriptionStatus.trial
                 ? colorScheme.primaryContainer
                 : colorScheme.errorContainer,
             borderRadius: BorderRadius.circular(20),
@@ -172,7 +166,7 @@ class _PremiumFeatureGuardState extends ConsumerState<PremiumFeatureGuard> {
               return Text(
                 snapshot.data ?? 'Loading...',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: _subscriptionStatus == SubscriptionStatus.trial
+                  color: status == SubscriptionStatus.trial
                       ? colorScheme.onPrimaryContainer
                       : colorScheme.onErrorContainer,
                   fontWeight: FontWeight.w500,
@@ -198,8 +192,12 @@ class _PremiumFeatureGuardState extends ConsumerState<PremiumFeatureGuard> {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  context.push('/purchase');
+                onPressed: () async {
+                  final result = await context.push('/purchase');
+                  // Refresh subscription status after returning from purchase
+                  if (result == true) {
+                    refreshSubscriptionStatus(ref);
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
@@ -214,8 +212,8 @@ class _PremiumFeatureGuardState extends ConsumerState<PremiumFeatureGuard> {
     );
   }
 
-  String _getDefaultTitle() {
-    switch (_subscriptionStatus) {
+  String _getDefaultTitle(SubscriptionStatus status) {
+    switch (status) {
       case SubscriptionStatus.trial:
         return 'Premium Feature';
       case SubscriptionStatus.trialExpired:
@@ -227,8 +225,8 @@ class _PremiumFeatureGuardState extends ConsumerState<PremiumFeatureGuard> {
     }
   }
 
-  String _getDefaultDescription() {
-    switch (_subscriptionStatus) {
+  String _getDefaultDescription(SubscriptionStatus status) {
+    switch (status) {
       case SubscriptionStatus.trial:
         return 'This feature is part of HabitV8 Premium. Your trial is still active, but this feature requires an upgrade.';
       case SubscriptionStatus.trialExpired:
@@ -256,18 +254,22 @@ class PremiumFeatureBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return FutureBuilder<bool>(
-      future: SubscriptionService().isFeatureAvailable(feature),
-      builder: (context, snapshot) {
-        final isAvailable = snapshot.data ?? false;
+    // Watch refresh provider for reactivity
+    ref.watch(subscriptionRefreshProvider);
 
+    final isAvailableAsync = ref.watch(featureAvailabilityProvider(feature));
+
+    return isAvailableAsync.when(
+      loading: () => child, // Show child while loading
+      error: (_, __) => child, // Show child on error
+      data: (isAvailable) {
         if (isAvailable || !showBanner) {
           return child;
         }
 
         return Column(
           children: [
-            _buildPremiumBanner(context),
+            _buildPremiumBanner(context, ref),
             child,
           ],
         );
@@ -275,7 +277,7 @@ class PremiumFeatureBanner extends ConsumerWidget {
     );
   }
 
-  Widget _buildPremiumBanner(BuildContext context) {
+  Widget _buildPremiumBanner(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -310,8 +312,11 @@ class PremiumFeatureBanner extends ConsumerWidget {
             ),
           ),
           TextButton(
-            onPressed: () {
-              context.push('/purchase');
+            onPressed: () async {
+              final result = await context.push('/purchase');
+              if (result == true) {
+                refreshSubscriptionStatus(ref);
+              }
             },
             child: Text(
               'Upgrade',
@@ -327,19 +332,28 @@ class PremiumFeatureBanner extends ConsumerWidget {
   }
 }
 
-/// Provider for subscription status
+/// Provider for subscription status - now auto-refreshing
 final subscriptionStatusProvider =
     FutureProvider<SubscriptionStatus>((ref) async {
+  // Watch refresh provider to enable manual refresh
+  ref.watch(subscriptionRefreshProvider);
   return await SubscriptionService().getSubscriptionStatus();
 });
 
 /// Provider for remaining trial days
 final remainingTrialDaysProvider = FutureProvider<int>((ref) async {
+  ref.watch(subscriptionRefreshProvider);
   return await SubscriptionService().getRemainingTrialDays();
 });
 
 /// Provider for checking if a specific feature is available
 final featureAvailabilityProvider =
     FutureProvider.family<bool, PremiumFeature>((ref, feature) async {
+  ref.watch(subscriptionRefreshProvider);
   return await SubscriptionService().isFeatureAvailable(feature);
 });
+
+/// Helper function to trigger subscription status refresh across all providers
+void refreshSubscriptionStatus(WidgetRef ref) {
+  ref.read(subscriptionRefreshProvider.notifier).state++;
+}

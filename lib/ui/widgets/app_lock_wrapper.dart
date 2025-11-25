@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/subscription_service.dart';
+import '../../services/logging_service.dart';
 import '../screens/purchase_screen.dart';
 
 /// Wrapper widget that locks the entire app when trial expires
@@ -16,6 +17,9 @@ class AppLockWrapper extends StatefulWidget {
 class _AppLockWrapperState extends State<AppLockWrapper> {
   SubscriptionStatus? _subscriptionStatus;
   bool _isLoading = true;
+  bool _hasError = false;
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
 
   @override
   void initState() {
@@ -30,15 +34,31 @@ class _AppLockWrapperState extends State<AppLockWrapper> {
         setState(() {
           _subscriptionStatus = status;
           _isLoading = false;
+          _hasError = false;
+          _retryCount = 0;
         });
       }
     } catch (e) {
-      // On error, assume trial expired for safety
+      AppLogger.error('Error checking subscription status', e);
+      _retryCount++;
+
       if (mounted) {
-        setState(() {
-          _subscriptionStatus = SubscriptionStatus.trialExpired;
-          _isLoading = false;
-        });
+        if (_retryCount < _maxRetries) {
+          // Retry after a short delay
+          await Future.delayed(Duration(milliseconds: 500 * _retryCount));
+          if (mounted) {
+            _checkSubscriptionStatus();
+          }
+        } else {
+          // After max retries, show error state with retry option
+          // DON'T lock the app on transient errors - show error with retry
+          setState(() {
+            _hasError = true;
+            _isLoading = false;
+            // Default to allowing access on error to avoid locking out paying users
+            _subscriptionStatus = SubscriptionStatus.trial;
+          });
+        }
       }
     }
   }
@@ -47,7 +67,9 @@ class _AppLockWrapperState extends State<AppLockWrapper> {
   Future<void> refreshStatus() async {
     setState(() {
       _isLoading = true;
+      _hasError = false;
     });
+    _retryCount = 0;
     await _checkSubscriptionStatus();
   }
 
@@ -57,6 +79,56 @@ class _AppLockWrapperState extends State<AppLockWrapper> {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Show error state with retry option if subscription check failed
+    if (_hasError) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.cloud_off,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Unable to verify subscription',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Please check your internet connection and try again.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: refreshStatus,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () {
+                    // Allow continuing anyway - don't lock out users on transient errors
+                    setState(() {
+                      _hasError = false;
+                      _subscriptionStatus = SubscriptionStatus.trial;
+                    });
+                  },
+                  child: const Text('Continue Anyway'),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
