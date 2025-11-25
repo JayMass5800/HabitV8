@@ -186,6 +186,9 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
                 <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <!-- Custom actions for habit completion from widget -->
+                <action android:name="com.habittracker.habitv8.HABIT_COMPLETE" />
+                <action android:name="com.habittracker.habitv8.HABIT_OPEN" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/habit_timeline_widget_info" />
@@ -199,6 +202,9 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
                 <action android:name="android.appwidget.action.APPWIDGET_ENABLED" />
                 <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <!-- Custom actions for habit completion from widget -->
+                <action android:name="com.habittracker.habitv8.COMPACT_COMPLETE" />
+                <action android:name="com.habittracker.habitv8.COMPACT_OPEN" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/habit_compact_widget_info" />

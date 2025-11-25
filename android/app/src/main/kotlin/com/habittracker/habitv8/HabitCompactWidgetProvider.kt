@@ -170,10 +170,10 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun setupListItemClickTemplate(context: Context, views: RemoteViews, appWidgetId: Int) {
-        // Create pending intent template for habit actions
-        // Use HomeWidgetBackgroundIntent for direct Flutter communication
+        // Create pending intent template using our custom action
         // The habit ID will be provided via fillInIntent in the RemoteViewsFactory
-        // Using FLAG_MUTABLE to allow the fillInIntent's data (URI with habit ID) to be merged
+        // Using FLAG_MUTABLE to allow the fillInIntent's data to be merged with the template
+        
         val templateIntent = Intent(context, HabitCompactWidgetProvider::class.java).apply {
             action = COMPACT_ACTION_COMPLETE
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
@@ -187,7 +187,7 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
         )
         
         views.setPendingIntentTemplate(R.id.compact_habits_list, completePendingIntentTemplate)
-        Log.d("HabitCompactWidget", "Set up list item click template for widget $appWidgetId")
+        Log.d("HabitCompactWidget", "Set up list item click template for widget $appWidgetId with action $COMPACT_ACTION_COMPLETE")
     }
 
     private fun setupHeaderClickHandlers(context: Context, views: RemoteViews, appWidgetId: Int) {
@@ -369,14 +369,24 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        Log.d("HabitCompactWidget", "🔔 onReceive called!")
+        Log.d("HabitCompactWidget", "  - Action: ${intent.action}")
+        Log.d("HabitCompactWidget", "  - Extras: ${intent.extras?.keySet()?.toList()}")
+        Log.d("HabitCompactWidget", "  - Data URI: ${intent.data}")
+        
         super.onReceive(context, intent)
         
         when (intent.action) {
             COMPACT_ACTION_COMPLETE -> {
+                Log.d("HabitCompactWidget", "✅ Matched COMPACT_ACTION_COMPLETE action")
                 handleHabitComplete(context, intent)
             }
             COMPACT_ACTION_OPEN -> {
+                Log.d("HabitCompactWidget", "✅ Matched COMPACT_ACTION_OPEN action")
                 handleHabitOpen(context, intent)
+            }
+            else -> {
+                Log.d("HabitCompactWidget", "⚠️ Unhandled action: ${intent.action}")
             }
         }
     }

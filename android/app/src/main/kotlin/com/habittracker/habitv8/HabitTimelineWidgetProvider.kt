@@ -155,10 +155,16 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun setupListItemClickTemplate(context: Context, views: RemoteViews, appWidgetId: Int) {
-        // Create pending intent template for habit actions
-        // Use HomeWidgetBackgroundIntent for direct Flutter communication
-        // The habit ID will be provided via fillInIntent in the RemoteViewsFactory
-        // Using FLAG_MUTABLE to allow the fillInIntent's data (URI with habit ID) to be merged
+        // Create pending intent template using HomeWidgetBackgroundIntent for direct Flutter communication
+        // The habit ID will be embedded in the URI via fillInIntent in the RemoteViewsFactory
+        // Using FLAG_MUTABLE to allow the fillInIntent's URI data to be merged with the template
+        
+        // Create a base URI that the fillInIntent will modify by appending query parameters
+        val baseUri = Uri.parse("habitv8://complete_habit")
+        val backgroundIntent = HomeWidgetBackgroundIntent.getBroadcast(context, baseUri)
+        
+        // We need to extract the intent from the PendingIntent and create a mutable template
+        // Since HomeWidgetBackgroundIntent returns an immutable PendingIntent, we'll use our own approach
         val templateIntent = Intent(context, HabitTimelineWidgetProvider::class.java).apply {
             action = HABIT_ACTION_COMPLETE
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
@@ -172,7 +178,7 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
         )
         
         views.setPendingIntentTemplate(R.id.habits_list, completePendingIntentTemplate)
-        Log.d("HabitTimelineWidget", "Set up list item click template for widget $appWidgetId")
+        Log.d("HabitTimelineWidget", "Set up list item click template for widget $appWidgetId with action $HABIT_ACTION_COMPLETE")
     }
 
     private fun setupHeaderClickHandlers(context: Context, views: RemoteViews, appWidgetId: Int) {
@@ -402,14 +408,24 @@ open class HabitTimelineWidgetProvider : HomeWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        Log.d("HabitTimelineWidget", "🔔 onReceive called!")
+        Log.d("HabitTimelineWidget", "  - Action: ${intent.action}")
+        Log.d("HabitTimelineWidget", "  - Extras: ${intent.extras?.keySet()?.toList()}")
+        Log.d("HabitTimelineWidget", "  - Data URI: ${intent.data}")
+        
         super.onReceive(context, intent)
         
         when (intent.action) {
             HABIT_ACTION_COMPLETE -> {
+                Log.d("HabitTimelineWidget", "✅ Matched HABIT_ACTION_COMPLETE action")
                 handleHabitComplete(context, intent)
             }
             HABIT_ACTION_OPEN -> {
+                Log.d("HabitTimelineWidget", "✅ Matched HABIT_ACTION_OPEN action")
                 handleHabitOpen(context, intent)
+            }
+            else -> {
+                Log.d("HabitTimelineWidget", "⚠️ Unhandled action: ${intent.action}")
             }
         }
     }
