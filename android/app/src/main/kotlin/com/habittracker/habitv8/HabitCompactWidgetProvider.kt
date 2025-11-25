@@ -170,21 +170,24 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun setupListItemClickTemplate(context: Context, views: RemoteViews, appWidgetId: Int) {
-        // Create pending intent template for habit completion
-        val completePendingIntent = Intent(context, HabitCompactWidgetProvider::class.java).apply {
+        // Create pending intent template for habit actions
+        // Use HomeWidgetBackgroundIntent for direct Flutter communication
+        // The habit ID will be provided via fillInIntent in the RemoteViewsFactory
+        // Using FLAG_MUTABLE to allow the fillInIntent's data (URI with habit ID) to be merged
+        val templateIntent = Intent(context, HabitCompactWidgetProvider::class.java).apply {
             action = COMPACT_ACTION_COMPLETE
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
         }
         
         val completePendingIntentTemplate = PendingIntent.getBroadcast(
             context, 
-            0, 
-            completePendingIntent, 
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            appWidgetId,  // Use appWidgetId as request code for uniqueness
+            templateIntent, 
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
         
         views.setPendingIntentTemplate(R.id.compact_habits_list, completePendingIntentTemplate)
+        Log.d("HabitCompactWidget", "Set up list item click template for widget $appWidgetId")
     }
 
     private fun setupHeaderClickHandlers(context: Context, views: RemoteViews, appWidgetId: Int) {
@@ -379,23 +382,37 @@ open class HabitCompactWidgetProvider : HomeWidgetProvider() {
     }
 
     private fun handleHabitComplete(context: Context, intent: Intent) {
+        // Try to get habit ID from extras (set by fillInIntent in RemoteViewsFactory)
         val habitId = intent.getStringExtra(EXTRA_HABIT_ID)
-        Log.d("HabitCompactWidget", "Habit completion requested for ID: $habitId")
+            ?: intent.getStringExtra("habit_id")  // Fallback key
         
-        // Send the completion action to Flutter via home_widget
+        Log.d("HabitCompactWidget", "🎯 Habit completion requested")
+        Log.d("HabitCompactWidget", "  - Habit ID from intent extras: $habitId")
+        Log.d("HabitCompactWidget", "  - Intent action: ${intent.action}")
+        Log.d("HabitCompactWidget", "  - Intent extras: ${intent.extras?.keySet()?.toList()}")
+        
+        if (habitId.isNullOrEmpty()) {
+            Log.e("HabitCompactWidget", "❌ No habit ID found in intent - cannot complete habit")
+            return
+        }
+        
+        // Send the completion action to Flutter via home_widget background intent
+        Log.d("HabitCompactWidget", "📤 Sending completion to Flutter for habit: $habitId")
         val backgroundPendingIntent = HomeWidgetBackgroundIntent.getBroadcast(
             context,
             Uri.parse("habitv8://complete_habit?habitId=$habitId")
         )
         try {
             backgroundPendingIntent.send()
+            Log.d("HabitCompactWidget", "✅ Background intent sent successfully")
         } catch (e: Exception) {
-            Log.e("HabitCompactWidget", "Error sending background intent", e)
+            Log.e("HabitCompactWidget", "❌ Error sending background intent", e)
         }
         
-        // Refresh the widget after a short delay
+        // Refresh the widget immediately to show updated state
         val appWidgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1)
         if (appWidgetId != -1) {
+            Log.d("HabitCompactWidget", "🔄 Triggering widget refresh for widget $appWidgetId")
             val appWidgetManager = AppWidgetManager.getInstance(context)
             appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.compact_habits_list)
         }

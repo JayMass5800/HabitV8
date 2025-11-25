@@ -133,12 +133,17 @@ class HabitCompactRemoteViewsFactory(
             remoteViews.setInt(R.id.compact_habit_item_container, "setBackgroundColor", bgColor.toInt())
 
             // Set click intent for completion toggle
+            Log.d("HabitCompactWidget", "📱 Setting up click intent for habit: $habitName, ID: $habitId")
             val completionIntent = Intent().apply {
                 putExtra("habit_id", habitId)
                 putExtra("action", "toggle_completion")
                 putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             }
             remoteViews.setOnClickFillInIntent(R.id.compact_complete_button, completionIntent)
+            
+            // Also make the entire item row clickable for completion (better UX)
+            // This provides a larger tap target for completing habits
+            remoteViews.setOnClickFillInIntent(R.id.compact_habit_item_container, completionIntent)
 
             // Set habit name click intent for details
             val detailIntent = Intent().apply {

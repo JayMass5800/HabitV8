@@ -142,8 +142,7 @@
             android:padding="10dp"
             android:layout_marginEnd="6dp"
             android:clickable="true"
-            android:contentDescription="Mark habit complete"
-            android:visibility="gone" />
+            android:contentDescription="Mark habit complete" />
 
         <!-- Edit Button (Optimized size) -->
         <ImageView

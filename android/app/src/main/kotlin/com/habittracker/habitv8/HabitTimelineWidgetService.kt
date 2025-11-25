@@ -182,16 +182,23 @@ class HabitTimelineRemoteViewsFactory(
             }
 
             // Set up click intent for completion toggle
+            val habitIdForIntent = habit["id"] as? String ?: ""
+            Log.d("HabitTimelineService", "📱 Setting up click intent for habit: $habitName, ID: $habitIdForIntent")
+            
             val fillInIntent = Intent().apply {
-                putExtra("habit_id", habit["id"] as? String ?: "")
+                putExtra("habit_id", habitIdForIntent)
                 putExtra("action", "toggle_completion")
                 putExtra("position", position)
             }
             remoteViews.setOnClickFillInIntent(R.id.complete_button, fillInIntent)
+            
+            // Also make the entire item row clickable for completion (better UX)
+            // This provides a larger tap target for completing habits
+            remoteViews.setOnClickFillInIntent(R.id.habit_item_container, fillInIntent)
 
             // Set up click intent for opening habit details
             val habitDetailIntent = Intent().apply {
-                putExtra("habit_id", habit["id"] as? String ?: "")
+                putExtra("habit_id", habitIdForIntent)
                 putExtra("action", "open_habit")
                 putExtra("position", position)
             }
@@ -199,7 +206,7 @@ class HabitTimelineRemoteViewsFactory(
 
             // Set up click intent for edit button
             val editHabitIntent = Intent().apply {
-                putExtra("habit_id", habit["id"] as? String ?: "")
+                putExtra("habit_id", habitIdForIntent)
                 putExtra("action", "edit_habit")
                 putExtra("position", position)
             }
