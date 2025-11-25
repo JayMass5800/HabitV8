@@ -140,6 +140,8 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
             receivedAction.buttonKeyPressed == 'snooze' ||
             receivedAction.buttonKeyPressed == 'snooze_alarm') {
           AppLogger.info('🔇 Stopping alarm audio due to user action');
+          // Mark alarm as handled to prevent re-starting audio on app resume
+          await AlarmService.markAlarmAsHandled(receivedAction.id!);
           await AlarmService.stopAlarmAudio(alarmId: receivedAction.id);
           AppLogger.info('✅ Alarm action - notification auto-dismissing');
         }
@@ -249,8 +251,10 @@ Future<void> onNotificationDismissed(ReceivedAction receivedAction) async {
 
     if (isHabitAlarmChannel) {
       AppLogger.info('🔇 Stopping alarm audio due to notification dismissal');
+      // Mark alarm as handled to prevent re-starting audio on app resume
+      await AlarmService.markAlarmAsHandled(receivedAction.id!);
       await AlarmService.stopAlarmAudio(alarmId: receivedAction.id);
-      AppLogger.info('✅ Alarm audio stopped');
+      AppLogger.info('✅ Alarm audio stopped and marked as handled');
     }
   } catch (e) {
     AppLogger.error('Error in onNotificationDismissed', e);

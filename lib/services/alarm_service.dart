@@ -240,12 +240,86 @@ class AlarmService {
   static AudioPlayer? _activeAlarmPlayer;
   static int? _activeAlarmId;
 
+  // Track alarm IDs that have been handled (dismissed/completed/snoozed)
+  // This prevents re-starting audio when app resumes with a stale notification
+  static const String _handledAlarmsKey = 'handled_alarm_ids';
+  static Set<int> _handledAlarmIds = {};
+  static bool _handledAlarmsLoaded = false;
+
+  /// Load handled alarm IDs from storage
+  static Future<void> _loadHandledAlarms() async {
+    if (_handledAlarmsLoaded) return;
+    try {
+      final stored = await PreferencesService.getString(_handledAlarmsKey);
+      if (stored != null && stored.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(stored);
+        _handledAlarmIds = decoded.map((e) => e as int).toSet();
+        AppLogger.debug(
+            '📋 Loaded ${_handledAlarmIds.length} handled alarm IDs from storage');
+      }
+      _handledAlarmsLoaded = true;
+    } catch (e) {
+      AppLogger.warning('Failed to load handled alarm IDs: $e');
+      _handledAlarmIds = {};
+      _handledAlarmsLoaded = true;
+    }
+  }
+
+  /// Save handled alarm IDs to storage
+  static Future<void> _saveHandledAlarms() async {
+    try {
+      final encoded = jsonEncode(_handledAlarmIds.toList());
+      await PreferencesService.setString(_handledAlarmsKey, encoded);
+    } catch (e) {
+      AppLogger.warning('Failed to save handled alarm IDs: $e');
+    }
+  }
+
+  /// Mark an alarm ID as handled (won't re-start audio for it)
+  static Future<void> markAlarmAsHandled(int alarmId) async {
+    await _loadHandledAlarms();
+    _handledAlarmIds.add(alarmId);
+    AppLogger.info('🏷️ Marked alarm $alarmId as handled');
+    await _saveHandledAlarms();
+
+    // Clean up old entries (keep only last 50 to prevent memory buildup)
+    if (_handledAlarmIds.length > 50) {
+      final toRemove = _handledAlarmIds.length - 50;
+      _handledAlarmIds = _handledAlarmIds.skip(toRemove).toSet();
+      await _saveHandledAlarms();
+      AppLogger.debug('🧹 Cleaned up $toRemove old handled alarm IDs');
+    }
+  }
+
+  /// Check if an alarm ID was already handled
+  static Future<bool> isAlarmHandled(int alarmId) async {
+    await _loadHandledAlarms();
+    return _handledAlarmIds.contains(alarmId);
+  }
+
+  /// Clear a specific alarm from handled list (for rescheduling)
+  static Future<void> clearHandledAlarm(int alarmId) async {
+    await _loadHandledAlarms();
+    if (_handledAlarmIds.remove(alarmId)) {
+      await _saveHandledAlarms();
+      AppLogger.debug('🗑️ Cleared alarm $alarmId from handled list');
+    }
+  }
+
   /// Start looping alarm audio for a notification
   static Future<void> startAlarmAudio({
     required int alarmId,
     String? alarmSoundName,
   }) async {
     try {
+      // Check if this alarm was already handled (dismissed/completed/snoozed)
+      // This prevents re-starting audio when app resumes with a stale notification
+      if (await isAlarmHandled(alarmId)) {
+        AppLogger.info(
+            '⏭️ Skipping alarm audio for $alarmId - already handled');
+        return;
+      }
+
       // Stop any existing alarm first
       await stopAlarmAudio();
 
