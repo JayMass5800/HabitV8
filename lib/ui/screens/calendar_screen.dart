@@ -300,6 +300,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Widget _buildCalendar(List<Habit> habits) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -322,18 +325,26 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 CalendarFormat.week: 'Week',
               },
               calendarStyle: CalendarStyle(
-                // Today's date styling
+                // Today's date styling - improved visibility for dark theme
                 todayDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+                  color: isDarkMode
+                      ? primaryColor.withValues(alpha: 0.4)
+                      : primaryColor.withValues(alpha: 0.25),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDarkMode
+                        ? primaryColor.withValues(alpha: 0.9)
+                        : primaryColor,
+                    width: 2.5,
+                  ),
                 ),
                 todayTextStyle: TextStyle(
-                  color: Theme.of(context).primaryColor,
+                  color: isDarkMode ? Colors.white : primaryColor,
                   fontWeight: FontWeight.bold,
                 ),
                 // Selected day styling
                 selectedDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
+                  color: primaryColor,
                   shape: BoxShape.circle,
                 ),
                 selectedTextStyle: const TextStyle(
@@ -484,14 +495,23 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       }
     }
 
+    // Determine if we're in dark mode for better contrast adjustments
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).primaryColor;
+
     if (isToday) {
-      backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.2);
-      textColor = Theme.of(context).primaryColor;
+      // Use a more visible background for today in both themes
+      backgroundColor = isDarkMode
+          ? primaryColor.withValues(alpha: 0.4)
+          : primaryColor.withValues(alpha: 0.25);
+      // Use a contrasting text color that's visible in both themes
+      textColor = isDarkMode ? Colors.white : primaryColor;
     }
 
     if (isSelected) {
-      backgroundColor = Theme.of(context).primaryColor.withValues(alpha: 0.3);
-      textColor = Theme.of(context).primaryColor;
+      // Selected day should be most prominent
+      backgroundColor = primaryColor.withValues(alpha: isDarkMode ? 0.5 : 0.35);
+      textColor = isDarkMode ? Colors.white : primaryColor;
     }
 
     return Container(
@@ -500,7 +520,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
         border: isToday
-            ? Border.all(color: Theme.of(context).primaryColor, width: 2)
+            ? Border.all(
+                color: isDarkMode
+                    ? primaryColor.withValues(alpha: 0.9)
+                    : primaryColor,
+                width: 2.5,
+              )
             : null,
       ),
       child: Stack(
