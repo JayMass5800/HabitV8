@@ -190,6 +190,10 @@ Future<void> onNotificationActionIsar(ReceivedAction receivedAction) async {
 ///
 /// CRITICAL: For alarm notifications, we start a looping audio player here
 /// because Awesome Notifications doesn't natively support looping sounds.
+///
+/// NOTE: This handler can also fire when the app is opened while a notification
+/// is already visible in the notification tray. We detect this by comparing
+/// the notification's creation time with the app's initialization time.
 @pragma('vm:entry-point')
 Future<void> onNotificationDisplayed(
     ReceivedNotification receivedNotification) async {
@@ -197,12 +201,41 @@ Future<void> onNotificationDisplayed(
     AppLogger.info('🔔 Notification displayed: ${receivedNotification.id}');
     AppLogger.info('   Channel: ${receivedNotification.channelKey}');
     AppLogger.info('   Category: ${receivedNotification.category}');
+    AppLogger.info('   CreatedDate: ${receivedNotification.createdDate}');
 
     // For alarm notifications, start looping audio
     final channelKey = receivedNotification.channelKey ?? '';
     final isHabitAlarmChannel = channelKey.startsWith('habit_alarm');
 
     if (isHabitAlarmChannel) {
+      // Check if this is a stale notification (created before app started)
+      // This prevents alarm audio from playing when opening the app with
+      // an old notification still visible in the notification tray
+      final appInitTime = AlarmService.appInitializationTime;
+      final notificationCreatedDate = receivedNotification.createdDate;
+
+      // If appInitTime is null, the app just started and AlarmService hasn't
+      // been fully initialized yet - this is likely a stale notification
+      // from a previous session that's firing during the race window
+      if (appInitTime == null) {
+        AppLogger.warning(
+            '⚠️ Alarm notification received before AlarmService initialized - likely stale, skipping audio');
+        await AlarmService.markAlarmAsHandled(receivedNotification.id!);
+        return;
+      }
+
+      if (notificationCreatedDate != null) {
+        // Add a small buffer (5 seconds) to account for timing differences
+        final bufferTime = appInitTime.subtract(const Duration(seconds: 5));
+        if (notificationCreatedDate.isBefore(bufferTime)) {
+          AppLogger.info(
+              '⏭️ Skipping alarm audio for stale notification (created: $notificationCreatedDate, app started: $appInitTime)');
+          // Mark this alarm as handled so it won't trigger again
+          await AlarmService.markAlarmAsHandled(receivedNotification.id!);
+          return;
+        }
+      }
+
       AppLogger.info(
           '🚨 Alarm notification displayed - starting looping audio');
 

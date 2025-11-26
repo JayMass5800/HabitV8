@@ -15,11 +15,36 @@ class AlarmService {
   static bool _isInitialized = false;
   static const String _alarmDataKey = 'alarm_data_';
 
+  /// Timestamp when the app was initialized (used to detect stale notifications)
+  /// Notifications created before this time should not trigger alarm audio
+  static DateTime? _appInitializationTime;
+
+  /// Get the app initialization timestamp
+  static DateTime? get appInitializationTime => _appInitializationTime;
+
+  /// Record the app initialization time early in the startup sequence
+  /// This should be called BEFORE NotificationService.initialize() to prevent
+  /// stale notifications from triggering alarm audio during the race window
+  static void recordAppInitializationTime() {
+    if (_appInitializationTime == null) {
+      _appInitializationTime = DateTime.now();
+      AppLogger.info(
+          '⏰ App initialization time recorded early: $_appInitializationTime');
+    }
+  }
+
   /// Initialize the alarm service
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
+      // Record the initialization time if not already set
+      if (_appInitializationTime == null) {
+        _appInitializationTime = DateTime.now();
+        AppLogger.info(
+            '⏰ App initialization time recorded: $_appInitializationTime');
+      }
+
       // Verify AwesomeNotifications is initialized (should be done by NotificationCore)
       if (!await AwesomeNotifications().isNotificationAllowed()) {
         await AwesomeNotifications().requestPermissionToSendNotifications();

@@ -78,6 +78,13 @@ void main() async {
     // Continue with app startup even if timezone fails
   }
 
+  // CRITICAL: Record app initialization time BEFORE notification service
+  // This prevents stale alarm notifications from playing audio when the app starts
+  // The race window exists because NotificationService.initialize() registers
+  // the onNotificationDisplayed listener, which can fire immediately for any
+  // pending scheduled notifications
+  AlarmService.recordAppInitializationTime();
+
   // Initialize notification service with awesome_notifications
   try {
     await NotificationService.initialize();
