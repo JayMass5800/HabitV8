@@ -759,7 +759,8 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   Future<void> _loadDefaultScreen() async {
     try {
-            final defaultScreen = await PreferencesService.getStringOrDefault('default_screen', 'All Habits');
+      final defaultScreen = await PreferencesService.getStringOrDefault(
+          'default_screen', 'All Habits');
       final index = _screenNameToIndex[defaultScreen] ?? 1;
 
       setState(() {
@@ -912,18 +913,20 @@ Future<void> _ensureServiceInitialization() async {
 /// This replaces the restricted BOOT_COMPLETED foreground service approach
 Future<void> _handleBootCompletionIfNeeded() async {
   try {
-        final needsReschedule =
-        await PreferencesService.getBoolOrDefault('needs_notification_reschedule_after_boot', false);
+    final needsReschedule = await PreferencesService.getBoolOrDefault(
+        'needs_notification_reschedule_after_boot', false);
 
     if (needsReschedule) {
       AppLogger.info(
           '🔄 Detected boot completion flag - rescheduling notifications');
 
       // Clear the flag
-      await PreferencesService.setBool('needs_notification_reschedule_after_boot', false);
+      await PreferencesService.setBool(
+          'needs_notification_reschedule_after_boot', false);
 
       // Get boot timestamp for logging
-      final bootTimestamp = await PreferencesService.getIntOrDefault('boot_completion_timestamp', 0);
+      final bootTimestamp = await PreferencesService.getIntOrDefault(
+          'boot_completion_timestamp', 0);
       if (bootTimestamp > 0) {
         final bootTime = DateTime.fromMillisecondsSinceEpoch(bootTimestamp);
         AppLogger.info('📱 Device boot detected at: $bootTime');
