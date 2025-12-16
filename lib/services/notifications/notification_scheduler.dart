@@ -15,6 +15,7 @@ import 'notification_helpers.dart';
 /// - Frequency-specific scheduling (daily, weekly, monthly, yearly, hourly, single)
 /// - Notification cancellation
 /// - Schedule validation and timezone handling
+/// - Budget-aware scheduling to respect Android's 500 alarm limit
 class NotificationScheduler {
   /// Create a notification scheduler
   NotificationScheduler();
@@ -249,18 +250,21 @@ class NotificationScheduler {
     }
 
     try {
-      // Only cancel existing notifications if this is an existing habit being updated
-      // New habits can't have notifications yet, so skip the expensive scan
+      // IMPORTANT: Cancellation is now handled by the calling code (NotificationService)
+      // which uses atomicReschedule for safe cancel-then-schedule operations.
+      // We only cancel here for new habits that might have stale notifications
+      // from a previous install or data restore.
       if (!isNewHabit) {
-        await cancelHabitNotifications(
-          NotificationHelpers.generateSafeId(habit.id),
-        );
+        // For existing habits, let atomicReschedule handle cancellation
+        // This prevents race conditions where we cancel before the new ones are verified
         AppLogger.debug(
-          'Cancelled existing notifications for habit ID: ${habit.id}',
+          'Existing habit - atomicReschedule will handle cancellation for: ${habit.id}',
         );
       } else {
+        // For truly new habits, do a safety cleanup in case of stale data
+        await cancelHabitNotificationsByHabitId(habit.id);
         AppLogger.debug(
-          'Skipping notification cancellation - new habit with no existing notifications',
+          'New habit - cleaned up any stale notifications for: ${habit.id}',
         );
       }
 
@@ -610,6 +614,351 @@ class NotificationScheduler {
     }
 
     return next;
+  }
+
+  // ==================== BUDGET-AWARE SCHEDULING ====================
+
+  /// Schedule notifications for a habit with a maximum slot limit.
+  ///
+  /// This method is used by the budget system to ensure we don't exceed
+  /// Android's 500 alarm limit. It limits the number of notifications
+  /// scheduled to [maxNotifications].
+  Future<void> scheduleHabitNotificationsWithLimit(
+    Habit habit, {
+    required int maxNotifications,
+  }) async {
+    if (!habit.notificationsEnabled) {
+      AppLogger.debug('Notifications disabled for ${habit.name}');
+      return;
+    }
+
+    if (maxNotifications <= 0) {
+      AppLogger.warning('No budget slots available for ${habit.name}');
+      return;
+    }
+
+    // For hourly habits with alarms, skip regular notifications
+    if (habit.frequency == HabitFrequency.hourly && habit.alarmEnabled) {
+      AppLogger.debug(
+        'Skipping regular notifications for hourly habit - alarm system will handle it',
+      );
+      return;
+    }
+
+    // Check permissions
+    try {
+      final bool permissionsGranted =
+          await NotificationCore.ensureNotificationPermissions();
+      if (!permissionsGranted) {
+        AppLogger.warning(
+          'Cannot schedule notifications for habit: ${habit.name} - permissions not granted',
+        );
+        return;
+      }
+    } catch (e) {
+      AppLogger.error(
+        'Error checking notification permissions for habit: ${habit.name}',
+        e,
+      );
+      return;
+    }
+
+    final notificationTime = habit.notificationTime;
+    int hour = 9;
+    int minute = 0;
+
+    if (notificationTime != null) {
+      hour = notificationTime.hour;
+      minute = notificationTime.minute;
+    }
+
+    try {
+      // Use RRule-based scheduling with budget limits
+      if (habit.usesRRule && habit.rruleString != null) {
+        await _scheduleRRuleHabitNotificationsWithLimit(
+          habit,
+          hour,
+          minute,
+          maxNotifications,
+        );
+      } else {
+        // Legacy scheduling - apply limit
+        await _scheduleLegacyHabitNotificationsWithLimit(
+          habit,
+          hour,
+          minute,
+          maxNotifications,
+        );
+      }
+
+      AppLogger.info(
+        '✅ Budget-scheduled notifications for ${habit.name} (max: $maxNotifications)',
+      );
+    } catch (e) {
+      AppLogger.error(
+        'Failed to budget-schedule notifications for ${habit.name}',
+        e,
+      );
+      rethrow;
+    }
+  }
+
+  /// Schedule RRule notifications with a budget limit.
+  Future<void> _scheduleRRuleHabitNotificationsWithLimit(
+    Habit habit,
+    int hour,
+    int minute,
+    int maxNotifications,
+  ) async {
+    if (habit.rruleString == null) {
+      AppLogger.error('Habit ${habit.name} has no RRule string');
+      return;
+    }
+
+    try {
+      final now = _time.nowLocal();
+      final startDate = habit.dtStart ?? now;
+
+      // Calculate days to look ahead based on budget
+      // More budget = can look further ahead
+      final daysAhead = _calculateDaysAhead(maxNotifications, habit);
+      final rangeEnd = now.add(Duration(days: daysAhead));
+      final rangeStart = _time.startOfDayLocal(now);
+
+      final occurrences = RRuleService.getOccurrences(
+        rruleString: habit.rruleString!,
+        startDate: startDate,
+        rangeStart: rangeStart,
+        rangeEnd: rangeEnd,
+      );
+
+      if (occurrences.isEmpty) {
+        AppLogger.warning('No occurrences found for habit: ${habit.name}');
+        return;
+      }
+
+      // Schedule up to maxNotifications
+      int scheduledCount = 0;
+      for (final occurrence in occurrences) {
+        if (scheduledCount >= maxNotifications) {
+          AppLogger.debug(
+            'Reached budget limit of $maxNotifications for ${habit.name}',
+          );
+          break;
+        }
+
+        final scheduledTime =
+            _resolveOccurrenceDateTime(habit, occurrence, hour, minute);
+
+        if (scheduledTime.isAfter(now)) {
+          await scheduleHabitNotification(
+            id: NotificationHelpers.generateSafeId(
+              '${habit.id}_${scheduledTime.toIso8601String()}',
+            ),
+            habitId: habit.id,
+            title: '🎯 ${habit.name}',
+            body: 'Time to work on your habit!',
+            scheduledTime: scheduledTime,
+          );
+          scheduledCount++;
+        }
+      }
+
+      AppLogger.info(
+        'RRule budget-scheduled for ${habit.name}: $scheduledCount/$maxNotifications slots used',
+      );
+    } catch (e) {
+      AppLogger.error('Failed to budget-schedule RRule notifications', e);
+      rethrow;
+    }
+  }
+
+  /// Schedule legacy (non-RRule) notifications with a budget limit.
+  Future<void> _scheduleLegacyHabitNotificationsWithLimit(
+    Habit habit,
+    int hour,
+    int minute,
+    int maxNotifications,
+  ) async {
+    final now = _time.nowLocal();
+    int scheduledCount = 0;
+
+    switch (habit.frequency) {
+      case HabitFrequency.daily:
+        // Schedule daily notifications up to budget limit
+        DateTime nextNotification = _time.combineDateWithTime(
+          now,
+          hour: hour,
+          minute: minute,
+        );
+        if (nextNotification.isBefore(now)) {
+          nextNotification = nextNotification.add(const Duration(days: 1));
+        }
+
+        for (int i = 0;
+            i < maxNotifications && scheduledCount < maxNotifications;
+            i++) {
+          final futureNotification = nextNotification.add(Duration(days: i));
+          await scheduleHabitNotification(
+            id: NotificationHelpers.generateSafeId('${habit.id}_day$i'),
+            habitId: habit.id,
+            title: '🎯 ${habit.name}',
+            body: 'Time to complete your daily habit!',
+            scheduledTime: futureNotification,
+          );
+          scheduledCount++;
+        }
+        break;
+
+      case HabitFrequency.weekly:
+        final selectedWeekdays = habit.selectedWeekdays;
+        if (selectedWeekdays.isEmpty) break;
+
+        for (final weekday in selectedWeekdays) {
+          if (scheduledCount >= maxNotifications) break;
+          DateTime nextNotification =
+              _getNextWeekday(now, weekday, hour, minute);
+          await scheduleHabitNotification(
+            id: NotificationHelpers.generateSafeId('${habit.id}_$weekday'),
+            habitId: habit.id,
+            title: '🎯 ${habit.name}',
+            body: 'Time to complete your weekly habit!',
+            scheduledTime: nextNotification,
+          );
+          scheduledCount++;
+        }
+        break;
+
+      case HabitFrequency.monthly:
+        final selectedMonthDays = habit.selectedMonthDays;
+        if (selectedMonthDays.isEmpty) break;
+
+        for (final day in selectedMonthDays) {
+          if (scheduledCount >= maxNotifications) break;
+          DateTime nextNotification = _getNextMonthDay(now, day, hour, minute);
+          await scheduleHabitNotification(
+            id: NotificationHelpers.generateSafeId('${habit.id}_$day'),
+            habitId: habit.id,
+            title: '🎯 ${habit.name}',
+            body: 'Time to complete your monthly habit!',
+            scheduledTime: nextNotification,
+          );
+          scheduledCount++;
+        }
+        break;
+
+      case HabitFrequency.yearly:
+        final selectedYearlyDates = habit.selectedYearlyDates;
+        if (selectedYearlyDates.isEmpty) break;
+
+        for (final dateStr in selectedYearlyDates) {
+          if (scheduledCount >= maxNotifications) break;
+          final parts = dateStr.split('-');
+          if (parts.length != 2) continue;
+          final month = int.tryParse(parts[0]);
+          final day = int.tryParse(parts[1]);
+          if (month == null || day == null) continue;
+
+          DateTime nextNotification =
+              DateTime(now.year, month, day, hour, minute);
+          if (nextNotification.isBefore(now)) {
+            nextNotification = DateTime(now.year + 1, month, day, hour, minute);
+          }
+
+          await scheduleHabitNotification(
+            id: NotificationHelpers.generateSafeId('${habit.id}_${month}_$day'),
+            habitId: habit.id,
+            title: '🎯 ${habit.name}',
+            body: 'Time to complete your yearly habit!',
+            scheduledTime: nextNotification,
+          );
+          scheduledCount++;
+        }
+        break;
+
+      case HabitFrequency.single:
+        if (habit.singleDateTime == null) break;
+        final scheduledTime = _time.toLocal(habit.singleDateTime!);
+        if (scheduledTime.isAfter(now)) {
+          await scheduleHabitNotification(
+            id: NotificationHelpers.generateSafeId('${habit.id}_single'),
+            habitId: habit.id,
+            title: '🎯 ${habit.name}',
+            body: 'Time to complete your habit!',
+            scheduledTime: scheduledTime,
+          );
+          scheduledCount++;
+        }
+        break;
+
+      case HabitFrequency.hourly:
+        // Hourly habits with alarms are handled separately
+        // For notification-only hourly, schedule with budget
+        final hourlyTimes = habit.hourlyTimes;
+        final selectedWeekdays = habit.selectedWeekdays.isNotEmpty
+            ? habit.selectedWeekdays
+            : habit.weeklySchedule;
+
+        if (hourlyTimes.isEmpty || selectedWeekdays.isEmpty) break;
+
+        outerLoop:
+        for (final timeStr in hourlyTimes) {
+          final parts = timeStr.split(':');
+          if (parts.length != 2) continue;
+          final timeHour = int.tryParse(parts[0]);
+          final timeMinute = int.tryParse(parts[1]);
+          if (timeHour == null || timeMinute == null) continue;
+
+          for (final weekday in selectedWeekdays) {
+            if (scheduledCount >= maxNotifications) break outerLoop;
+            DateTime nextNotification =
+                _getNextWeekday(now, weekday, timeHour, timeMinute);
+            final habitIdWithTimeSlot =
+                '${habit.id}|$timeHour:${timeMinute.toString().padLeft(2, '0')}';
+
+            await scheduleHabitNotification(
+              id: NotificationHelpers.generateSafeId(
+                  '${habit.id}_${weekday}_${timeHour}_$timeMinute'),
+              habitId: habitIdWithTimeSlot,
+              title: '🎯 ${habit.name}',
+              body: 'Time to complete your habit!',
+              scheduledTime: nextNotification,
+            );
+            scheduledCount++;
+          }
+        }
+        break;
+    }
+
+    AppLogger.debug(
+      'Legacy budget-scheduled for ${habit.name}: $scheduledCount notifications',
+    );
+  }
+
+  /// Calculate how many days ahead to look based on budget and frequency.
+  int _calculateDaysAhead(int maxNotifications, Habit habit) {
+    // For daily habits: 1 notification per day
+    // For weekly habits: up to 7 notifications per week
+    // etc.
+
+    if (habit.usesRRule && habit.rruleString != null) {
+      // Estimate occurrences per day based on frequency
+      final freq = habit.rruleString!.toLowerCase();
+      if (freq.contains('freq=daily')) {
+        return maxNotifications; // 1 per day
+      } else if (freq.contains('freq=weekly')) {
+        return maxNotifications * 7; // At most 1 per week
+      } else if (freq.contains('freq=monthly')) {
+        return maxNotifications * 30;
+      } else if (freq.contains('freq=yearly')) {
+        return maxNotifications * 365;
+      } else if (freq.contains('freq=hourly')) {
+        return (maxNotifications / 8).ceil(); // Assume ~8 hourly slots per day
+      }
+    }
+
+    // Default: assume daily frequency
+    return maxNotifications.clamp(7, 30); // At least a week, at most a month
   }
 
   // ==================== CANCELLATION METHODS ====================

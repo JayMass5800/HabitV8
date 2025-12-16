@@ -200,16 +200,13 @@ class Habit {
   }
 
   bool _checkCompletedToday() {
+    // Use current time (timezone-aware comparison happens via day boundaries)
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = todayStart.add(const Duration(days: 1));
 
     return completions.any((completion) {
-      final completionDay = DateTime(
-        completion.year,
-        completion.month,
-        completion.day,
-      );
-      return completionDay.isAtSameMomentAs(today);
+      return !completion.isBefore(todayStart) && completion.isBefore(todayEnd);
     });
   }
 

@@ -9,6 +9,7 @@ import 'notifications/notification_action_handler.dart';
 import 'notifications/notification_boot_rescheduler.dart';
 import 'notifications/notification_validation_service.dart';
 import 'notifications/scheduling_reliability_service.dart';
+import 'notifications/notification_budget_service.dart';
 
 /// Notification Service Facade - delegates to specialized modules
 class NotificationService {
@@ -239,6 +240,77 @@ class NotificationService {
 
   static Future<void> scheduleHabitAlarms(Habit habit) async {
     await _alarmScheduler.scheduleHabitAlarms(habit);
+  }
+
+  /// Schedule notifications for a habit using budget allocation.
+  ///
+  /// This method uses a pre-calculated budget allocation to determine
+  /// how many notifications each habit should receive, ensuring the
+  /// total stays under Android's 500 alarm limit.
+  ///
+  /// Budget allocation should be calculated via
+  /// [NotificationBudgetService.calculateBudgetAllocation] before bulk scheduling.
+  static Future<void> scheduleHabitNotificationsWithBudget(Habit habit) async {
+    try {
+      final bool wantsNotifications = habit.notificationsEnabled;
+      final bool wantsAlarms = habit.alarmEnabled;
+
+      if (wantsNotifications) {
+        // Get the budget allocation for this habit
+        final allocatedSlots =
+            NotificationBudgetService.getBudgetForHabit(habit.id);
+
+        if (allocatedSlots <= 0) {
+          AppLogger.warning(
+            'No budget allocation for ${habit.name}, scheduling with default limits',
+          );
+          // Fall back to standard scheduling with conservative limits
+          await _scheduler.scheduleHabitNotifications(habit, isNewHabit: false);
+        } else {
+          AppLogger.debug(
+            'Budget-aware scheduling for ${habit.name}: $allocatedSlots slots',
+          );
+
+          // Schedule using the budgeted approach
+          await _scheduler.scheduleHabitNotificationsWithLimit(
+            habit,
+            maxNotifications: allocatedSlots,
+          );
+        }
+
+        // Log the result
+        final newPending = await getPendingNotifications();
+        final newAudit = NotificationValidationService.auditHabitFromSnapshot(
+          habit,
+          newPending,
+        );
+
+        AppLogger.info(
+          'Budget-scheduled notifications for ${habit.name}: '
+          '${newAudit.notificationCount} notifications, '
+          '${newAudit.alarmCount} alarms',
+        );
+      } else {
+        await cancelHabitNotificationsByHabitId(habit.id);
+        AppLogger.debug('Notifications disabled for ${habit.name}');
+      }
+
+      // Schedule alarms with retry logic
+      final alarmSuccess = await SchedulingReliabilityService.retryWithBackoff(
+        operation: () => _alarmScheduler.scheduleHabitAlarms(habit),
+        operationName: 'budget_alarms_${habit.name}',
+      );
+
+      if (wantsAlarms && !alarmSuccess) {
+        AppLogger.error('Failed to schedule alarms for habit: ${habit.name}');
+      }
+    } catch (e) {
+      AppLogger.error(
+        'Failed to budget-schedule notifications for habit: ${habit.name}',
+        e,
+      );
+      rethrow;
+    }
   }
 
   static Future<void> scheduleHabitNotification({

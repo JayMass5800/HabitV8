@@ -8,6 +8,7 @@ import 'rrule_service.dart';
 import 'logging_service.dart';
 import 'time_service.dart';
 import 'notifications/scheduling_reliability_service.dart';
+import 'notifications/notification_budget_service.dart';
 
 /// Service responsible for resetting habits at midnight based on their frequency
 /// This replaces the complex renewal system with a simple, predictable midnight reset
@@ -177,6 +178,22 @@ class MidnightHabitResetService {
       AppLogger.info(
           '🔄 Processing ${activeHabits.length} active habits for reset');
 
+      // Recalculate notification budget for all habits at midnight
+      // This ensures optimal budget distribution as the rolling window moves forward
+      try {
+        AppLogger.info('📊 Recalculating notification budget allocation...');
+        await NotificationBudgetService.calculateBudgetAllocation(activeHabits);
+        final stats = NotificationBudgetService.getBudgetStats();
+        AppLogger.info(
+          '📊 Budget recalculated: ${stats['currentTotalAllocated']}/${stats['availableSlots']} slots, '
+          '${stats['habitCount']} habits with notifications',
+        );
+      } catch (e) {
+        AppLogger.error(
+            '❌ Failed to recalculate budget, using existing allocation', e);
+        // Continue with existing budget - don't block the reset
+      }
+
       int resetCount = 0;
 
       for (final habit in activeHabits) {
@@ -304,9 +321,10 @@ class MidnightHabitResetService {
       // The habit's completion status is determined by checking completions list
       // We just need to ensure notifications are scheduled for the new period
 
-      // Schedule notifications for the new period (SAFE: no alarms during boot)
+      // Schedule notifications for the new period using budget-aware scheduling
+      // This respects the pre-calculated budget allocation for optimal distribution
       if (habit.notificationsEnabled) {
-        await NotificationService.scheduleHabitNotificationsOnly(habit);
+        await NotificationService.scheduleHabitNotificationsWithBudget(habit);
       }
 
       AppLogger.debug('🔄 Successfully reset habit: ${habit.name}');

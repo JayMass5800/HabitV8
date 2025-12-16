@@ -7,6 +7,8 @@ import '../domain/model/archived_habit.dart';
 import '../domain/model/scheduled_notification.dart';
 import '../services/logging_service.dart';
 import '../services/notification_service.dart';
+import '../services/time_service.dart';
+import '../services/rrule_service.dart';
 
 // Provider for Isar instance
 final isarProvider = FutureProvider<Isar>((ref) async {
@@ -220,6 +222,13 @@ class HabitServiceIsar {
     await _isar.writeTxn(() async {
       await _isar.habits.put(habit);
     });
+
+    // Clear RRule cache to ensure fresh scheduling data
+    RRuleService.clearCache();
+
+    // Invalidate habit's stats cache
+    habit.invalidateCache();
+
     AppLogger.info('✅ Habit updated: ${habit.name}');
 
     // Reschedule notifications and alarms for the updated habit
@@ -290,6 +299,7 @@ class HabitServiceIsar {
   }
 
   /// Mark habit as complete
+  /// Uses TimeService for timezone-aware date handling
   Future<void> completeHabit(String habitId, DateTime completionTime) async {
     await _isar.writeTxn(() async {
       final habit = await _isar.habits.filter().idEqualTo(habitId).findFirst();
@@ -304,6 +314,9 @@ class HabitServiceIsar {
           habit.longestStreak = habit.currentStreak;
         }
 
+        // Invalidate stats cache for this habit
+        habit.invalidateCache();
+
         await _isar.habits.put(habit);
         AppLogger.info(
             '✅ Habit completed: ${habit.name} (Streak: ${habit.currentStreak})');
@@ -312,27 +325,26 @@ class HabitServiceIsar {
   }
 
   /// Uncomplete habit (remove completion)
+  /// Uses TimeService for timezone-aware date comparison
   Future<void> uncompleteHabit(String habitId, DateTime completionTime) async {
     await _isar.writeTxn(() async {
       final habit = await _isar.habits.filter().idEqualTo(habitId).findFirst();
 
       if (habit != null) {
+        // Use TimeService for timezone-aware date comparison
+        final targetDay = TimeService.instance.startOfDayLocal(completionTime);
+
         habit.completions.removeWhere((completion) {
-          final completionDay = DateTime(
-            completion.year,
-            completion.month,
-            completion.day,
-          );
-          final targetDay = DateTime(
-            completionTime.year,
-            completionTime.month,
-            completionTime.day,
-          );
+          final completionDay =
+              TimeService.instance.startOfDayLocal(completion);
           return completionDay.isAtSameMomentAs(targetDay);
         });
 
         // Recalculate streak after removing completion
         habit.currentStreak = _calculateStreak(habit.completions);
+
+        // Invalidate stats cache for this habit
+        habit.invalidateCache();
 
         await _isar.habits.put(habit);
         AppLogger.info(
@@ -421,6 +433,7 @@ class HabitServiceIsar {
 
   /// Calculate current streak from completions
   /// Same logic as notification handler to ensure consistency
+  /// Uses TimeService for timezone-aware date comparisons
   int _calculateStreak(List<DateTime> completions) {
     if (completions.isEmpty) return 0;
 
@@ -429,8 +442,9 @@ class HabitServiceIsar {
       ..sort((a, b) => b.compareTo(a));
 
     int streak = 0;
-    final today = DateTime.now();
-    DateTime checkDate = DateTime(today.year, today.month, today.day);
+    // Use TimeService for timezone-aware "today" calculation
+    final now = TimeService.instance.nowLocal();
+    DateTime checkDate = DateTime(now.year, now.month, now.day);
 
     for (final completion in sorted) {
       final completionDate = DateTime(

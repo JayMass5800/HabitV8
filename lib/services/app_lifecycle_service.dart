@@ -6,11 +6,11 @@ import 'preferences_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'background_task_service.dart';
 import 'notification_queue_processor.dart';
-// Old renewal services removed - now using midnight_habit_reset_service.dart
+// Old renewal services removed - now using reliable_scheduling_service.dart
 import 'notification_action_service.dart';
 import 'notification_service.dart';
 import 'widget_integration_service.dart';
-import 'midnight_habit_reset_service.dart';
+import 'reliable_scheduling_service.dart';
 import 'notification_update_coordinator.dart';
 import 'logging_service.dart';
 import 'notifications/notification_action_handler.dart';
@@ -138,8 +138,9 @@ class AppLifecycleService with WidgetsBindingObserver {
       AppLogger.error('Error closing database', e);
     }
 
-    // Old renewal services removed - now using MidnightHabitResetService
-    AppLogger.info('App paused - midnight reset service continues running');
+    // ReliableSchedulingService continues running (WorkManager/BGTaskScheduler backed)
+    AppLogger.info(
+        'App paused - ReliableSchedulingService continues in background');
 
     AppLogger.info('✅ Service cleanup completed');
   }
@@ -388,8 +389,9 @@ class AppLifecycleService with WidgetsBindingObserver {
           // Check for timezone changes that may require rescheduling
           await SchedulingReliabilityService.checkTimezoneChange();
 
-          // Check for missed resets and validate timer
-          await MidnightHabitResetService.checkForMissedResetOnAppActive();
+          // Use ReliableSchedulingService for unified app resume handling
+          // This checks for missed resets, validates timers, and reschedules if needed
+          await ReliableSchedulingService.onAppResume();
           AppLogger.debug('✅ Missed reset check completed on app resume');
         } catch (e) {
           AppLogger.error(

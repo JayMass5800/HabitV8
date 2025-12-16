@@ -10,7 +10,9 @@ import 'time_service.dart';
 /// the iCalendar specification (RFC 5545).
 class RRuleService {
   // Cache for parsed RRule objects to improve performance
+  // Limit cache size to prevent memory issues
   static final Map<String, RecurrenceRule> _rruleCache = {};
+  static const int _maxCacheSize = 100;
   static final TimeService _time = TimeService.instance;
 
   /// Convert a legacy Habit to an RRule string
@@ -156,6 +158,7 @@ class RRuleService {
   ///
   /// Parses the RRule string and caches the result for performance.
   /// The cache key includes both the RRule string and start date.
+  /// Cache is automatically pruned when it exceeds max size.
   static RecurrenceRule? parseRRule(String rruleString, DateTime startDate) {
     final cacheKey = '$rruleString|${startDate.toIso8601String()}';
 
@@ -168,6 +171,18 @@ class RRuleService {
       final rruleWithPrefix =
           rruleString.startsWith('RRULE:') ? rruleString : 'RRULE:$rruleString';
       final rule = RecurrenceRule.fromString(rruleWithPrefix);
+
+      // Prune cache if it's getting too large (LRU-like behavior)
+      if (_rruleCache.length >= _maxCacheSize) {
+        // Remove oldest entries (first 20% of cache)
+        final keysToRemove = _rruleCache.keys.take(_maxCacheSize ~/ 5).toList();
+        for (final key in keysToRemove) {
+          _rruleCache.remove(key);
+        }
+        AppLogger.debug(
+            'Pruned RRule cache: removed ${keysToRemove.length} entries');
+      }
+
       _rruleCache[cacheKey] = rule;
       return rule;
     } catch (e) {
@@ -304,11 +319,35 @@ class RRuleService {
   /// Call this when habits are modified to ensure fresh data.
   static void clearCache() {
     _rruleCache.clear();
+    AppLogger.debug('RRule cache cleared');
+  }
+
+  /// Clear cache entries for a specific RRule string
+  ///
+  /// More targeted than clearCache() - use when only one habit is modified.
+  static void clearCacheForRRule(String rruleString) {
+    final keysToRemove =
+        _rruleCache.keys.where((key) => key.startsWith(rruleString)).toList();
+    for (final key in keysToRemove) {
+      _rruleCache.remove(key);
+    }
+    if (keysToRemove.isNotEmpty) {
+      AppLogger.debug('Cleared ${keysToRemove.length} RRule cache entries');
+    }
+  }
+
+  /// Get cache statistics for debugging
+  static Map<String, int> getCacheStats() {
+    return {
+      'size': _rruleCache.length,
+      'maxSize': _maxCacheSize,
+    };
   }
 
   /// Get next N occurrences from now
   ///
   /// Useful for previewing upcoming dates in the UI.
+  /// Uses the habit's startDate as the RRule anchor and filters to future dates only.
   static List<DateTime> getNextOccurrences({
     required String rruleString,
     required DateTime startDate,
@@ -319,11 +358,31 @@ class RRuleService {
       if (rule == null) return [];
 
       final now = _time.nowLocal();
-      final start = _time.toUtc(now);
+      final nowUtc = _time.toUtc(now);
 
-      final occurrences = rule.getInstances(start: start).take(count).toList();
+      // CRITICAL: Use the habit's startDate as the RRule anchor, not now
+      // This ensures the RRule pattern generates correctly from its origin
+      final start = _time.toUtc(startDate);
 
-      return occurrences;
+      // Get instances starting from habit creation, then filter to future dates
+      final allInstances = rule.getInstances(start: start);
+      final futureOccurrences = <DateTime>[];
+
+      int checked = 0;
+      const maxCheck = 1000; // Safety limit
+
+      for (final date in allInstances) {
+        checked++;
+        if (checked > maxCheck) break;
+
+        // Only include future dates
+        if (!date.isBefore(nowUtc)) {
+          futureOccurrences.add(date);
+          if (futureOccurrences.length >= count) break;
+        }
+      }
+
+      return futureOccurrences;
     } catch (e) {
       AppLogger.error('Failed to get next occurrences: $e');
       return [];

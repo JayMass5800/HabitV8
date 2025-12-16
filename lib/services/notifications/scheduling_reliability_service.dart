@@ -9,6 +9,7 @@ import '../time_service.dart';
 import '../../domain/model/habit.dart';
 import 'notification_helpers.dart';
 import 'notification_validation_service.dart';
+import 'notification_budget_service.dart';
 
 /// Provides reliable notification scheduling with retry logic, atomic operations,
 /// health monitoring, and self-healing capabilities.
@@ -318,6 +319,25 @@ class SchedulingReliabilityService {
       if (pending.isEmpty) {
         report['status'] = 'warning';
         (report['issues'] as List).add('No pending notifications found');
+      }
+
+      // Check budget utilization
+      final budgetValidation = await NotificationBudgetService.validateBudget();
+      report['budgetStatus'] = budgetValidation['status'];
+      report['budgetUtilization'] = budgetValidation['utilizationPercent'];
+
+      if (budgetValidation['isOverBudget'] == true) {
+        report['status'] = 'critical';
+        (report['issues'] as List).add(
+          'Over notification budget: ${budgetValidation['pendingCount']}/${budgetValidation['availableSlots']}',
+        );
+      } else if (budgetValidation['isApproachingLimit'] == true) {
+        if (report['status'] != 'critical') {
+          report['status'] = 'warning';
+        }
+        (report['issues'] as List).add(
+          'Approaching notification budget limit: ${budgetValidation['utilizationPercent']}%',
+        );
       }
 
       // Check success rate

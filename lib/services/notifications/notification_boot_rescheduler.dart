@@ -4,11 +4,13 @@ import '../../data/database_isar.dart';
 import '../notification_service.dart';
 import 'notification_validation_service.dart';
 import 'scheduling_reliability_service.dart';
+import 'notification_budget_service.dart';
 
 /// Service for rescheduling notifications after device reboot
 ///
 /// This service:
 /// - Queries active habits from Isar database
+/// - Calculates budget allocation to stay under Android's 500 alarm limit
 /// - Reschedules notifications for habits with notifications enabled
 /// - Uses Isar habit data as source of truth (no separate notification storage)
 /// - Implements retry logic and error aggregation for reliability
@@ -18,7 +20,7 @@ class NotificationBootRescheduler {
   /// Reschedule all pending notifications after device reboot
   ///
   /// This method queries all active habits from Isar and reschedules
-  /// their notifications based on habit configuration.
+  /// their notifications based on habit configuration and budget allocation.
   ///
   /// Uses retry logic for transient failures and aggregates errors
   /// for comprehensive reporting.
@@ -28,7 +30,7 @@ class NotificationBootRescheduler {
 
     try {
       AppLogger.info(
-          '🔄 Starting notification rescheduling after reboot (using Isar)');
+          '🔄 Starting notification rescheduling after reboot (using Isar + Budget)');
 
       // Get Isar database instance
       final isar = await IsarDatabaseService.getInstance();
@@ -43,6 +45,16 @@ class NotificationBootRescheduler {
         return;
       }
 
+      // Calculate budget allocation for all habits
+      await NotificationBudgetService.calculateBudgetAllocation(habits);
+
+      // Log budget summary
+      final stats = NotificationBudgetService.getBudgetStats();
+      AppLogger.info(
+        '📊 Budget allocation: ${stats['currentTotalAllocated']}/${stats['availableSlots']} slots used, '
+        '${stats['habitCount']} habits',
+      );
+
       // Clear all existing scheduled notifications from the OS
       // This prevents duplicates and ensures a clean slate
       await AwesomeNotifications().cancelAll();
@@ -52,7 +64,7 @@ class NotificationBootRescheduler {
       int alarmOnlyRefreshedCount = 0;
       int skippedCount = 0;
 
-      // Process each habit with retry logic
+      // Process each habit with retry logic, using budget allocation
       for (final habit in habits) {
         // Skip habits with neither notifications nor alarms enabled
         if (!habit.notificationsEnabled && !habit.alarmEnabled) {
@@ -63,7 +75,9 @@ class NotificationBootRescheduler {
         // Use retry with backoff for resilience
         final success = await SchedulingReliabilityService.retryWithBackoff(
           operation: () async {
-            await NotificationService.scheduleHabitNotifications(habit);
+            // Use budget-aware scheduling
+            await NotificationService.scheduleHabitNotificationsWithBudget(
+                habit);
           },
           operationName: 'boot_reschedule_${habit.name}',
           maxAttempts: 3,
