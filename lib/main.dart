@@ -44,17 +44,36 @@ import 'ui/screens/purchase_screen.dart';
 import 'ui/widgets/app_lock_wrapper.dart';
 import 'widgets/alarm_test_widget.dart';
 
+/// Top-level function for widget background callbacks
+/// CRITICAL: This MUST be a top-level function (not a class method) for background isolate execution
+/// The @pragma ensures this function is not removed by tree-shaking in release builds
+@pragma('vm:entry-point')
+Future<void> widgetBackgroundCallback(Uri? uri) async {
+  // Delegate to the widget integration service's handler
+  await WidgetIntegrationService.handleWidgetInteraction(uri);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // **CRITICAL: Register widget callback early in main() following example pattern**
-  // This ensures the background handler is registered before any widget interactions
+  // **CRITICAL: Register widget background callback FIRST before anything else**
+  // This enables widget interactions to work even when app is in background or not running
+  // Must be called BEFORE runApp() and any async delays
+  try {
+    await HomeWidget.registerInteractivityCallback(widgetBackgroundCallback);
+    AppLogger.info('✅ Widget background interactivity callback registered');
+  } catch (e) {
+    AppLogger.error('❌ Failed to register widget background callback', e);
+  }
+
+  // Also listen for widget clicks when app is in foreground (different from background callback)
+  // This handles navigation/deep linking when user taps widget to open app
   try {
     HomeWidget.widgetClicked
         .listen(WidgetIntegrationService.handleWidgetInteraction);
-    AppLogger.info('✅ Widget interaction callback registered in main()');
+    AppLogger.info('✅ Widget clicked stream listener registered');
   } catch (e) {
-    AppLogger.error('❌ Failed to register widget callback in main()', e);
+    AppLogger.error('❌ Failed to register widget clicked listener', e);
   }
 
   // Edge-to-edge design - Updated for Android 15+ compatibility

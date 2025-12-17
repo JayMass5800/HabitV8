@@ -32,10 +32,12 @@ class WidgetIntegrationService {
 
   /// Initialize widget integration and set up background handlers
   /// PERFORMANCE: Uses Isar listener for event-driven updates instead of polling
+  /// NOTE: Background callback is now registered early in main.dart
   Future<void> initialize() async {
     try {
-      // Register background callback for widget interactions
-      await HomeWidget.registerInteractivityCallback(_backgroundCallback);
+      // NOTE: Background callback registration moved to main.dart for early initialization
+      // The widgetBackgroundCallback is registered before runApp() to ensure
+      // widget interactions work even when app is in background or not running
 
       // Clean up old widget-specific preferences since we now follow app theme
       await _cleanupOldWidgetPreferences();
@@ -500,18 +502,29 @@ class WidgetIntegrationService {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
-  /// Public method to handle widget interactions (called from main.dart)
+  /// Public method to handle widget interactions (called from main.dart's top-level callback)
+  /// This is the entry point for both foreground (widgetClicked) and background (interactivityCallback) interactions
   static Future<void> handleWidgetInteraction(Uri? uri) async {
+    debugPrint('🔧 handleWidgetInteraction called with URI: $uri');
     await _backgroundCallback(uri);
   }
 
-  /// Handle widget interactions from background
+  /// Handle widget interactions from background or foreground
+  /// This method processes the URI to determine the action and execute it
   @pragma('vm:entry-point')
   static Future<void> _backgroundCallback(Uri? uri) async {
     try {
-      if (uri == null) return;
+      if (uri == null) {
+        debugPrint('⚠️ Widget callback received null URI - ignoring');
+        return;
+      }
 
-      debugPrint('🔧 Widget background callback received: $uri');
+      debugPrint('🔧 Widget callback processing URI: $uri');
+      debugPrint('   - Scheme: ${uri.scheme}');
+      debugPrint('   - Host: ${uri.host}');
+      debugPrint('   - Path: ${uri.path}');
+      debugPrint('   - Query: ${uri.query}');
+      debugPrint('   - QueryParams: ${uri.queryParameters}');
 
       // **CRITICAL: Initialize HomeWidget in background context**
       // This ensures the platform channel is properly initialized for background execution
@@ -527,14 +540,17 @@ class WidgetIntegrationService {
       final action = uri.host;
       final params = uri.queryParameters;
 
-      debugPrint('🎯 Processing widget action: $action with params: $params');
+      debugPrint('🎯 Processing widget action: "$action" with params: $params');
 
       switch (action) {
         case 'complete_habit':
           final habitId = params['habitId'];
-          if (habitId != null) {
+          if (habitId != null && habitId.isNotEmpty) {
             debugPrint('🔄 Handling habit completion from widget: $habitId');
             await _handleCompleteHabit(habitId);
+          } else {
+            debugPrint(
+                '❌ No habitId found in URI params for complete_habit action');
           }
           break;
 
@@ -544,10 +560,22 @@ class WidgetIntegrationService {
           break;
 
         default:
-          debugPrint('❓ Unknown widget action: $action');
+          debugPrint(
+              '❓ Unknown widget action: "$action" - checking alternative patterns');
+          // Try to extract habitId from path or query for backwards compatibility
+          final pathHabitId =
+              uri.pathSegments.isNotEmpty ? uri.pathSegments.last : null;
+          final queryHabitId = params['id'] ?? params['habitId'];
+          if (pathHabitId != null || queryHabitId != null) {
+            final habitId = queryHabitId ?? pathHabitId;
+            debugPrint(
+                '🔄 Found habitId through alternative pattern: $habitId');
+            await _handleCompleteHabit(habitId!);
+          }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ Error handling widget callback: $e');
+      debugPrint('   Stack trace: $stackTrace');
     }
   }
 
