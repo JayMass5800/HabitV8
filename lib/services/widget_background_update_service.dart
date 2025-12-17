@@ -10,6 +10,7 @@ import '../domain/model/habit.dart';
 // ignore: unused_import
 import '../domain/model/scheduled_notification.dart' as notification_model;
 import 'rrule_service.dart';
+import 'work_manager_habit_service.dart';
 
 /// Background service for updating widgets when app is closed
 ///
@@ -112,11 +113,20 @@ class WidgetBackgroundUpdateService {
 /// - 'widget_background_update': Periodic background updates (every 30 min)
 /// - 'widgetUpdate': Immediate updates triggered from notification actions
 /// - 'alarmComplete': Alarm completion triggered from AlarmActionReceiver
+/// - 'com.habitv8.HABIT_RENEWAL_TASK': Periodic habit notification renewal
+/// - 'com.habitv8.ALARM_RENEWAL_TASK': Alarm renewal after boot
+/// - 'com.habitv8.BOOT_RESCHEDULE_TASK': Notification reschedule after boot
+/// - 'com.habitv8.MIDNIGHT_RESET_TASK': Midnight reset from ReliableSchedulingService
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
-      debugPrint('🔄 [Background] Widget update task started: $task');
+      debugPrint('🔄 [Background] WorkManager task started: $task');
+
+      // Handle habit-related tasks from WorkManagerHabitService
+      if (task.startsWith('com.habitv8.')) {
+        return await _handleHabitServiceTask(task, inputData);
+      }
 
       // Handle alarm completion task
       if (task == 'alarmComplete') {
@@ -340,6 +350,45 @@ Future<bool> _handleAlarmCompletion(Map<String, dynamic>? inputData) async {
     return true;
   } catch (e, stackTrace) {
     debugPrint('❌ [Background] Error processing alarm completion: $e');
+    debugPrint('❌ [Background] Stack trace: $stackTrace');
+    return false;
+  }
+}
+
+/// Handle habit service tasks from WorkManagerHabitService
+///
+/// This function routes habit-related WorkManager tasks to their handlers.
+/// Tasks are delegated to WorkManagerHabitService's static methods.
+@pragma('vm:entry-point')
+Future<bool> _handleHabitServiceTask(
+    String taskName, Map<String, dynamic>? inputData) async {
+  try {
+    debugPrint('🔄 [Background] Executing habit service task: $taskName');
+
+    // Import WorkManagerHabitService dynamically to handle its tasks
+    // This is done via static method calls since we can't use dynamic imports
+    switch (taskName) {
+      case 'com.habitv8.HABIT_RENEWAL_TASK':
+        await WorkManagerHabitService.executeRenewalTask();
+        break;
+      case 'com.habitv8.ALARM_RENEWAL_TASK':
+        await WorkManagerHabitService.executeAlarmRenewalTask();
+        break;
+      case 'com.habitv8.BOOT_RESCHEDULE_TASK':
+        await WorkManagerHabitService.executeBootRescheduleTask();
+        break;
+      case 'com.habitv8.MIDNIGHT_RESET_TASK':
+        await WorkManagerHabitService.executeMidnightResetTask();
+        break;
+      default:
+        debugPrint('⚠️ [Background] Unknown habit task: $taskName');
+        return true; // Return true to prevent retries
+    }
+
+    debugPrint('✅ [Background] Habit service task completed: $taskName');
+    return true;
+  } catch (e, stackTrace) {
+    debugPrint('❌ [Background] Error executing habit service task: $e');
     debugPrint('❌ [Background] Stack trace: $stackTrace');
     return false;
   }

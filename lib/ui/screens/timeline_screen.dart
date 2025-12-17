@@ -34,7 +34,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   bool _isUpdatingHabit = false;
   final Map<String, bool> _optimisticCompletions = {};
 
-  // No more timer! Hive's reactive streams handle updates automatically ✨
+  // No more timer! Isar's reactive streams handle updates automatically ✨
   // The StreamProvider will emit new data whenever the database changes
 
   @override
@@ -127,7 +127,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     return Consumer(
       builder: (context, ref, child) {
         // 🔔 REACTIVE: Watch habits stream for instant updates when database changes!
-        // No more polling - Hive's watch() automatically emits new data
+        // No more polling - Isar's watch() automatically emits new data
         final habitsAsync = ref.watch(habitsStreamIsarProvider);
 
         return habitsAsync.when(
@@ -136,6 +136,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
               return RefreshIndicator(
                 onRefresh: () async {
                   ref.invalidate(habitsStreamIsarProvider);
+                  await Future.delayed(const Duration(milliseconds: 100));
                 },
                 child: ListView(
                   children: const [

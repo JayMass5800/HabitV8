@@ -153,8 +153,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
               return RefreshIndicator(
                 onRefresh: () async {
                   ref.invalidate(habitsStreamIsarProvider);
-                  // Wait a bit for the stream to emit fresh data
-                  await Future.delayed(const Duration(milliseconds: 300));
+                  await Future.delayed(const Duration(milliseconds: 100));
                 },
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -350,7 +349,7 @@ class _AllHabitsScreenState extends ConsumerState<AllHabitsScreen> {
       await habitService.updateHabit(freshHabit);
 
       // 🔔 REACTIVE: Database change automatically triggers stream update!
-      // No manual invalidation needed - Hive's watch() handles it
+      // No manual invalidation needed - Isar's watch() handles it
       AppLogger.info(
           '✅ ALL_HABITS: Hourly completion updated, stream will auto-emit');
     } catch (error) {

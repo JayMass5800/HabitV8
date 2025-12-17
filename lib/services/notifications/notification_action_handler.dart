@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:isar/isar.dart';
@@ -332,7 +333,8 @@ class NotificationActionHandlerIsar {
         [HabitSchema, ScheduledNotificationSchema],
         directory: dir.path,
         name: 'habitv8_db', // MUST match database name in database_isar.dart
-        inspector: true, // MUST match inspector setting in database_isar.dart
+        inspector:
+            kDebugMode, // MUST match inspector setting in database_isar.dart
       );
 
       AppLogger.info('✅ Isar opened in background isolate');
@@ -520,7 +522,7 @@ class NotificationActionHandlerIsar {
         [HabitSchema, ScheduledNotificationSchema],
         directory: dir.path,
         name: 'habitv8_db',
-        inspector: true,
+        inspector: kDebugMode,
       );
 
       AppLogger.info('✅ Isar opened in background isolate for snooze');
@@ -786,7 +788,7 @@ class NotificationActionHandlerIsar {
           [HabitSchema, ScheduledNotificationSchema],
           directory: dir.path,
           name: 'habitv8_db',
-          inspector: true,
+          inspector: kDebugMode,
         );
 
         final habit = await isar.habits.filter().idEqualTo(habitId).findFirst();

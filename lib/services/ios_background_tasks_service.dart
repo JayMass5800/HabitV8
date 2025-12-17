@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'logging_service.dart';
+import 'preferences_service.dart';
 
 /// iOS Background Tasks Service
 /// Implements BGTaskScheduler integration for iOS background execution
@@ -97,9 +98,10 @@ class IOSBackgroundTasksService {
       // Set flag for ReliableSchedulingService to detect
       // (Similar to WorkManager approach)
       // We don't perform the reset here to avoid code duplication
-      // TODO: Implement SharedPreferences flag when integrated with ReliableSchedulingService
-      // final prefs = await SharedPreferences.getInstance();
-      // await prefs.setString('ios_midnight_reset_flag', DateTime.now().toIso8601String());
+      await PreferencesService.setString(
+        'ios_midnight_reset_flag',
+        DateTime.now().toIso8601String(),
+      );
 
       AppLogger.info('✅ iOS background task completion flag set');
       return true;

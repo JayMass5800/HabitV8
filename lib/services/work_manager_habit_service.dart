@@ -29,18 +29,18 @@ class WorkManagerHabitService {
   static bool _isInitialized = false;
 
   /// Initialize the WorkManager habit service
+  ///
+  /// NOTE: WorkManager initialization is now handled by WidgetBackgroundUpdateService
+  /// to prevent double initialization. This service only schedules tasks.
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
       AppLogger.info('🔄 Initializing WorkManager Habit Service');
 
-      // Initialize WorkManager
-      await Workmanager().initialize(
-        callbackDispatcher,
-        // isInDebugMode is deprecated in newer workmanager versions.
-        // Debugging can be configured via Workmanager's own debug handlers.
-      );
+      // NOTE: WorkManager().initialize() is called by WidgetBackgroundUpdateService
+      // The unified callback dispatcher in that service routes tasks to our
+      // execute methods below. This prevents the double-initialization issue.
 
       // Schedule periodic renewal task
       await _schedulePeriodicRenewalTask();
@@ -62,7 +62,34 @@ class WorkManagerHabitService {
     }
   }
 
+  // ============================================================================
+  // PUBLIC TASK EXECUTORS - Called by unified callback dispatcher
+  // These methods are called from WidgetBackgroundUpdateService's callbackDispatcher
+  // ============================================================================
+
+  /// Execute the renewal task (called from unified callback dispatcher)
+  static Future<void> executeRenewalTask() async {
+    await _performRenewalCheck();
+  }
+
+  /// Execute the alarm renewal task (called from unified callback dispatcher)
+  static Future<void> executeAlarmRenewalTask() async {
+    await _performAlarmRenewalCheck();
+  }
+
+  /// Execute the boot reschedule task (called from unified callback dispatcher)
+  static Future<void> executeBootRescheduleTask() async {
+    await _performBootReschedule();
+  }
+
+  /// Execute the midnight reset task (called from unified callback dispatcher)
+  static Future<void> executeMidnightResetTask() async {
+    await _performMidnightResetFromWorkManager();
+  }
+
   /// The callback dispatcher for WorkManager tasks
+  /// @deprecated Use WidgetBackgroundUpdateService.callbackDispatcher instead
+  /// Kept for backwards compatibility in case app is launched with old WorkManager state
   @pragma('vm:entry-point')
   static void callbackDispatcher() {
     Workmanager().executeTask((taskName, inputData) async {

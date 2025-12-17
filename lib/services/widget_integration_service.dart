@@ -706,27 +706,8 @@ class WidgetIntegrationService {
     }
   }
 
-  /// DEPRECATED: Periodic updates removed - now using Isar listeners
-  /// This method is kept for backward compatibility but does nothing
-  @Deprecated('Widget updates are now event-driven via Isar listeners')
-  void startPeriodicUpdates() {
-    debugPrint(
-        '⚠️ startPeriodicUpdates called but is deprecated - using Isar listeners instead');
-  }
-
-  /// DEPRECATED: Periodic updates removed - now using Isar listeners
-  @Deprecated('Widget updates are now event-driven via Isar listeners')
-  void stopPeriodicUpdates() {
-    debugPrint(
-        '⚠️ stopPeriodicUpdates called but is deprecated - using Isar listeners instead');
-  }
-
-  /// DEPRECATED: Now using Isar listeners
-  @Deprecated('Widget updates are now event-driven via Isar listeners')
-  Future<void> schedulePeriodicUpdates() async {
-    debugPrint(
-        '⚠️ schedulePeriodicUpdates called but is deprecated - using Isar listeners instead');
-  }
+  // NOTE: Legacy periodic update methods removed - widget updates are now
+  // event-driven via Isar listeners in _setupHabitListener()
 
   /// Check if the app was launched from a widget
   Future<bool> wasLaunchedFromWidget() async {

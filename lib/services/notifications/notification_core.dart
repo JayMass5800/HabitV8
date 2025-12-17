@@ -11,17 +11,39 @@ import 'notification_action_handler.dart';
 /// This module handles:
 /// - Plugin initialization with platform-specific settings
 /// - Notification channel creation and management
-/// - Permission requests and validation
+/// - Permission requests and validation (with caching)
 /// - Platform capability detection
 class NotificationCore {
   static bool _isInitialized = false;
   static bool _channelsCreated = false;
+
+  // Permission caching to avoid redundant system calls
+  // Cache is valid for 30 seconds - permissions rarely change mid-session
+  static bool? _cachedPermissionResult;
+  static DateTime? _permissionCacheTime;
+  static const Duration _permissionCacheDuration = Duration(seconds: 30);
 
   /// Check if the notification system is initialized
   static bool get isInitialized => _isInitialized;
 
   /// Check if notification channels have been created
   static bool get channelsCreated => _channelsCreated;
+
+  /// Clear permission cache (call when user changes permissions in settings)
+  static void clearPermissionCache() {
+    _cachedPermissionResult = null;
+    _permissionCacheTime = null;
+    AppLogger.debug('Permission cache cleared');
+  }
+
+  /// Check if the cached permission result is still valid
+  static bool _isPermissionCacheValid() {
+    if (_cachedPermissionResult == null || _permissionCacheTime == null) {
+      return false;
+    }
+    return DateTime.now().difference(_permissionCacheTime!) <
+        _permissionCacheDuration;
+  }
 
   /// Initialize the notification system
   ///
@@ -235,8 +257,19 @@ class NotificationCore {
   }
 
   /// Ensure all required permissions are granted before scheduling notifications
-  /// This method requests permissions only when actually needed
+  /// This method requests permissions only when actually needed.
+  ///
+  /// Uses caching to avoid redundant permission checks when scheduling
+  /// multiple notifications in quick succession.
   static Future<bool> ensureNotificationPermissions() async {
+    // Check cache first - avoids redundant system calls
+    if (_isPermissionCacheValid()) {
+      AppLogger.debug(
+        'Using cached permission result: $_cachedPermissionResult',
+      );
+      return _cachedPermissionResult!;
+    }
+
     try {
       // First, ensure basic notification permission is granted
       AppLogger.info('Checking notification permission...');
@@ -252,6 +285,9 @@ class NotificationCore {
           AppLogger.warning(
             'Notification permission denied - cannot schedule notifications',
           );
+          // Cache negative result for shorter duration to allow retry
+          _cachedPermissionResult = false;
+          _permissionCacheTime = DateTime.now();
           return false;
         }
       } else {
@@ -262,6 +298,8 @@ class NotificationCore {
       final bool isAndroid12Plus = await NotificationCore.isAndroid12Plus();
       if (!isAndroid12Plus) {
         AppLogger.info('Exact alarm permission not required for Android < 12');
+        _cachedPermissionResult = true;
+        _permissionCacheTime = DateTime.now();
         return true;
       }
 
@@ -278,6 +316,8 @@ class NotificationCore {
       );
       if (hasExactAlarmPermission) {
         AppLogger.info('Exact alarm permission already available');
+        _cachedPermissionResult = true;
+        _permissionCacheTime = DateTime.now();
         return true;
       }
 
@@ -313,6 +353,8 @@ class NotificationCore {
 
       // Always return true - don't block the UI based on exact alarm permission
       // Basic notifications will work regardless of exact alarm permission status
+      _cachedPermissionResult = true;
+      _permissionCacheTime = DateTime.now();
       return true;
     } catch (e) {
       AppLogger.error('Error ensuring notification permissions', e);

@@ -65,16 +65,31 @@ class ReliableSchedulingService {
 
   // State
   static bool _isInitialized = false;
+  static Completer<void>? _initializationCompleter;
   static Timer? _optimisticTimer;
   static String? _currentTimezone;
   static final TimeService _time = TimeService.instance;
 
   /// Initialize the reliable scheduling service
+  ///
+  /// Uses Completer pattern to prevent race conditions when called
+  /// from multiple places simultaneously.
   static Future<void> initialize() async {
+    // Already initialized
     if (_isInitialized) {
       AppLogger.info('⏰ ReliableSchedulingService already initialized');
       return;
     }
+
+    // Initialization in progress - wait for it
+    if (_initializationCompleter != null) {
+      AppLogger.debug(
+          '⏰ ReliableSchedulingService initialization in progress, waiting...');
+      return _initializationCompleter!.future;
+    }
+
+    // Start initialization
+    _initializationCompleter = Completer<void>();
 
     try {
       AppLogger.info(
@@ -93,10 +108,13 @@ class ReliableSchedulingService {
       await _scheduleOptimisticTimer();
 
       _isInitialized = true;
+      _initializationCompleter!.complete();
       await _logDiagnostics();
       AppLogger.info('✅ ReliableSchedulingService initialized successfully');
     } catch (e) {
       AppLogger.error('❌ Failed to initialize ReliableSchedulingService', e);
+      _initializationCompleter!.completeError(e);
+      _initializationCompleter = null;
       rethrow;
     }
   }

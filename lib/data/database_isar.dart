@@ -108,7 +108,7 @@ class IsarDatabaseService {
       [HabitSchema, ArchivedHabitSchema, ScheduledNotificationSchema],
       directory: dir.path,
       name: 'habitv8_db',
-      inspector: true, // Enable Isar Inspector for debugging
+      inspector: kDebugMode, // Only enable Isar Inspector in debug builds
     );
 
     AppLogger.info('✅ Isar database initialized at: ${dir.path}');

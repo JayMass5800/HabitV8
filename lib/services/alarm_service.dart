@@ -260,6 +260,9 @@ class AlarmService {
 
   // Audio player for previewing sounds
   static AudioPlayer? _previewPlayer;
+  // Stream subscriptions for preview player - must be cancelled to prevent leaks
+  static StreamSubscription<PlayerState>? _previewStateSubscription;
+  static StreamSubscription<void>? _previewCompleteSubscription;
 
   // Audio player for active alarm (looping until dismissed)
   static AudioPlayer? _activeAlarmPlayer;
@@ -470,7 +473,8 @@ class AlarmService {
       );
 
       // Listen for player state changes (consolidated listener)
-      _previewPlayer!.onPlayerStateChanged.listen(
+      // Store subscription to cancel on cleanup
+      _previewStateSubscription = _previewPlayer!.onPlayerStateChanged.listen(
         (state) {
           AppLogger.info('🎵 Player state changed: $state');
           if (state == PlayerState.stopped) {
@@ -490,8 +494,9 @@ class AlarmService {
         },
       );
 
-      // Listen for completion
-      _previewPlayer!.onPlayerComplete.listen((event) {
+      // Listen for completion - store subscription to cancel on cleanup
+      _previewCompleteSubscription =
+          _previewPlayer!.onPlayerComplete.listen((event) {
         AppLogger.info('🎵 Playback completed normally');
       });
 
@@ -522,6 +527,12 @@ class AlarmService {
   /// Stop alarm sound preview
   static Future<void> stopAlarmSoundPreview() async {
     try {
+      // Cancel stream subscriptions first to prevent memory leaks
+      await _previewStateSubscription?.cancel();
+      _previewStateSubscription = null;
+      await _previewCompleteSubscription?.cancel();
+      _previewCompleteSubscription = null;
+
       if (_previewPlayer != null) {
         await _previewPlayer!.stop();
         await _previewPlayer!.dispose();

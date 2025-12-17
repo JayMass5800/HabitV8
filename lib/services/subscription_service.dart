@@ -539,12 +539,7 @@ class SubscriptionService {
     return null;
   }
 
-  /// Legacy method for backward compatibility
-  @Deprecated('Use shouldShowTrialExpiryWarning() which returns warning type')
-  Future<bool> shouldShowTrialExpiryWarningLegacy() async {
-    final warning = await shouldShowTrialExpiryWarning();
-    return warning != null;
-  }
+  // NOTE: shouldShowTrialExpiryWarningLegacy removed - use shouldShowTrialExpiryWarning() instead
 
   /// Get trial start date
   Future<DateTime?> getTrialStartDate() async {

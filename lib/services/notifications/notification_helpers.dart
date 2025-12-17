@@ -336,14 +336,51 @@ class NotificationHelpers {
 
   /// Start periodic cleanup of expired notifications
   ///
-  /// Placeholder for future implementation of notification cleanup logic.
-  /// Will prevent buildup of stale notifications in the system tray.
-  static void startPeriodicCleanup() {
-    // TODO: Implement periodic cleanup logic
-    // - Remove expired notifications
-    // - Clean up completed habit notifications
-    // - Remove orphaned snooze notifications
-    AppLogger.debug('Periodic cleanup started');
+  /// Removes notifications that are in the past or no longer relevant.
+  /// Call this during app initialization or on schedule to prevent
+  /// buildup of stale notifications.
+  static Future<void> startPeriodicCleanup() async {
+    try {
+      AppLogger.debug('Starting periodic notification cleanup...');
+
+      final pending = await AwesomeNotifications().listScheduledNotifications();
+      final now = DateTime.now();
+      int removedCount = 0;
+
+      for (final notification in pending) {
+        // Check if notification schedule is in the past
+        final schedule = notification.schedule;
+        if (schedule != null) {
+          // For calendar-based schedules, check if they're expired
+          // Note: AwesomeNotifications handles most cleanup automatically,
+          // but we remove any clearly stale notifications
+          final scheduleDate = schedule.toMap();
+          if (scheduleDate.containsKey('year') &&
+              scheduleDate.containsKey('month') &&
+              scheduleDate.containsKey('day')) {
+            final year = scheduleDate['year'] as int?;
+            final month = scheduleDate['month'] as int?;
+            final day = scheduleDate['day'] as int?;
+
+            if (year != null && month != null && day != null) {
+              final scheduledDate = DateTime(year, month, day);
+              // Remove if more than 1 day in the past
+              if (scheduledDate
+                  .isBefore(now.subtract(const Duration(days: 1)))) {
+                await AwesomeNotifications()
+                    .cancel(notification.content?.id ?? 0);
+                removedCount++;
+              }
+            }
+          }
+        }
+      }
+
+      AppLogger.info(
+          'Periodic cleanup complete: removed $removedCount stale notifications');
+    } catch (e) {
+      AppLogger.error('Error during periodic notification cleanup', e);
+    }
   }
 
   // ==================== QUERY METHODS ====================
